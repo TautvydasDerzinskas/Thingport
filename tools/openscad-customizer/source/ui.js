@@ -5,13 +5,16 @@
 
 import {
   changedValues,
+  chosenFiles,
   controlFor,
   defaultValues,
   generatedName,
   groupParameters,
+  missingFiles,
   readyScript,
   readableWarnings,
   scriptsAmong,
+  uploadName,
 } from "./script.js";
 import { createViewer } from "./viewer.js";
 
@@ -42,19 +45,25 @@ export default async function mount(thingport) {
   let current = null;
   let generated = null;
   let busy = false;
+  /** Goes up each time the form is drawn afresh, so a slow file read can tell the field it was for has gone. */
+  let formDrawn = 0;
 
   // ---- loading a script --------------------------------------------------------------------------------------
 
   /** Whatever went wrong reading a model's files, said in the window rather than only in the console. */
   const unreadable = (err) => ui.toast(t("error.unreadable", { reason: err.message }), "error");
 
-  async function loadScript({ text: raw, name, from }) {
+  async function loadScript({ text: raw, name, from, read }) {
     setBusy(true, t("busy.reading"));
     try {
       const text = readyScript(raw);
       const openscad = await library("openscad");
       const { parameters } = await openscad.parameters(text);
-      current = { text, name, from, parameters, values: defaultValues(parameters) };
+      // Only a script with a typeface to pick pays for the list of them.
+      const fonts = parameters.some((parameter) => parameter.widget === "font") ? (await library("fonts")).list : [];
+      // A script opened from a file has nothing beside it here: the render names what that leaves it without.
+      const files = read ? await openscad.includedFiles(text, read) : {};
+      current = { text, name, from, parameters, fonts, files, values: defaultValues(parameters), uploads: new Map() };
       $("name").textContent = name;
       $("where").textContent = from ? t("bar.fromModel", { model: from.name }) : t("bar.fromFile");
       buildForm();
@@ -87,7 +96,12 @@ export default async function mount(thingport) {
     const choose = async (fileId) => {
       const file = scripts.find((s) => s.id === fileId) ?? scripts[0];
       const text = await models.relatedText(model.id, file.id);
-      await loadScript({ text, name: file.name, from: model });
+      const read = async (fileName) => {
+        const wanted = fileName.toLowerCase();
+        const sibling = scripts.find((candidate) => candidate.name.toLowerCase() === wanted);
+        return sibling ? models.relatedText(model.id, sibling.id).catch(() => null) : null;
+      };
+      await loadScript({ text, name: file.name, from: model, read });
     };
     // Reading a file can fail on a network error or a file that went: said out loud rather than left as an
     // unhandled rejection with the window looking as though nothing happened.
@@ -98,6 +112,7 @@ export default async function mount(thingport) {
   // ---- the form ----------------------------------------------------------------------------------------------
 
   function buildForm() {
+    formDrawn += 1;
     const side = $("side");
     side.replaceChildren();
     const groups = groupParameters(current.parameters);
@@ -152,9 +167,11 @@ export default async function mount(thingport) {
     }
     field.append(label);
 
+    // A typeface and a file say what they hold in the control itself.
+    const showsItself = ["font", "file"].includes(controlFor(parameter).kind);
     const set = (value) => {
       current.values[parameter.name] = value;
-      shown.textContent = typeof value === "boolean" ? "" : String(value);
+      shown.textContent = typeof value === "boolean" || showsItself ? "" : String(value);
       $("generate").disabled = busy;
     };
     field.append(controlElement(parameter, set));
@@ -230,6 +247,19 @@ export default async function mount(thingport) {
       return input;
     }
 
+    if (control.kind === "color") {
+      const input = document.createElement("input");
+      input.type = "color";
+      input.value = String(value).toLowerCase();
+      input.title = t("form.pickColor");
+      input.setAttribute("aria-label", `${parameter.name}: ${t("form.pickColor")}`);
+      input.oninput = () => set(input.value);
+      return input;
+    }
+
+    if (control.kind === "font") return fontElement(parameter, value, set);
+    if (control.kind === "file") return fileElement(parameter, control, value, set);
+
     const input = document.createElement("input");
     input.type = control.kind === "number" ? "number" : "text";
     if (control.kind === "number") input.step = String(control.step);
@@ -246,6 +276,107 @@ export default async function mount(thingport) {
       } else set(input.value);
     };
     return input;
+  }
+
+  /**
+   * A typeface, from the ones Thingport carries. A script may start on one that isn't here: it stays in the list under
+   * its own name, saying what it comes out in instead, rather than the field quietly claiming something else.
+   */
+  function fontElement(parameter, value, set) {
+    const fonts = current.fonts;
+    const select = document.createElement("select");
+    select.setAttribute("aria-label", parameter.name);
+    const optionOf = (label, name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = label;
+      return option;
+    };
+    if (!fonts.some((font) => font.name === value)) {
+      // A style after the family, "PT Sans:style=Bold", is still that family.
+      const family = String(value).split(":")[0].trim();
+      const carried = fonts.some((font) => font.name === family);
+      select.append(
+        optionOf(carried ? value : t("form.fontFallback", { name: value, fallback: fonts[0]?.name }), value),
+      );
+    }
+    const groups = new Map();
+    for (const font of fonts) {
+      if (!groups.has(font.group)) {
+        const group = document.createElement("optgroup");
+        group.label = t(`font.${font.group}`);
+        groups.set(font.group, group);
+        select.append(group);
+      }
+      groups.get(font.group).append(optionOf(font.name, font.name));
+    }
+    select.value = String(value);
+    select.onchange = () => set(select.value);
+    return select;
+  }
+
+  /** A file the script reads. Nothing goes anywhere: the bytes stay in the tab and are handed to the engine here. */
+  function fileElement(parameter, control, value, set) {
+    const row = document.createElement("div");
+    row.className = "osc-file";
+    const type = control.accept.slice(1).toUpperCase();
+    const drawn = formDrawn;
+    let latest = 0;
+
+    const name = document.createElement("span");
+    name.className = "osc-sub osc-file-name";
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "osc-file-clear";
+    clear.textContent = "×";
+    clear.title = t("form.fileClear");
+    clear.setAttribute("aria-label", t("form.fileClear"));
+    const show = (now) => {
+      const chosen = now !== parameter.initial;
+      name.textContent = chosen ? now : t("form.fileStandIn");
+      name.title = chosen ? now : "";
+      clear.hidden = !chosen;
+    };
+    clear.onclick = () => {
+      latest += 1;
+      set(parameter.initial);
+      show(parameter.initial);
+    };
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = control.accept;
+    input.hidden = true;
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      // Cleared so choosing the same file again still says something changed.
+      input.value = "";
+      if (!file) return;
+      // The picker's filter is only a suggestion, and the engine reads nothing else.
+      if (!file.name.toLowerCase().endsWith(control.accept)) {
+        ui.toast(t("form.fileWrongType", { type }), "error");
+        return;
+      }
+      const request = ++latest;
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      // A slow read doesn't get to overwrite a later choice or a clear, or land on a form drawn since.
+      if (request !== latest || drawn !== formDrawn) return;
+      const unique = uploadName(current.uploads, file.name, bytes);
+      current.uploads.set(unique, bytes);
+      set(unique);
+      show(unique);
+    };
+
+    const choose = document.createElement("button");
+    choose.type = "button";
+    choose.className = "osc-btn";
+    choose.textContent = t("form.chooseFile", { type });
+    choose.setAttribute("aria-label", `${parameter.name}: ${t("form.chooseFile", { type })}`);
+    choose.onclick = () => input.click();
+
+    show(value);
+    row.append(choose, name, clear, input);
+    return row;
   }
 
   // ---- generating --------------------------------------------------------------------------------------------
@@ -277,21 +408,39 @@ export default async function mount(thingport) {
       const openscad = await library("openscad");
       const values = changedValues(current.parameters, current.values);
       const name = generatedName(current.name, current.from?.name, values);
-      const result = await openscad.render(current.text, { parameters: values, name });
+      const result = await openscad.render(current.text, {
+        parameters: values,
+        files: { ...current.files, ...chosenFiles(current.uploads, values) },
+        name,
+      });
       generated = { bytes: result.bytes, name };
       viewer.show(result.mesh);
       $("status").textContent = t("status.generated", {
         seconds: result.seconds.toFixed(1),
         size: Math.max(1, Math.round(result.bytes.length / 1024)),
       });
-      showNotes(readableWarnings(result.log));
+      const missing = missingFiles(result.log);
+      showNotes([
+        ...(missing.length
+          ? [`${t("notes.missingFiles", { files: missing.join(", ") })} ${t("notes.missingParts")}`]
+          : []),
+        ...readableWarnings(result.log),
+      ]);
     } catch (err) {
       generated = null;
       viewer.clear();
       showNotes([]);
       $("status").textContent = "";
       ui.toast(t("error.failed"), "error");
-      showNotes(String(err.message).split("\n").slice(0, 6));
+      // In plain words where it's only that a file is missing, and the engine's own otherwise.
+      const said = String(err.message).split("\n");
+      const missing = missingFiles(said);
+      showNotes(
+        (missing.length
+          ? [t("notes.missingFiles", { files: missing.join(", ") }), ...readableWarnings(said)]
+          : said
+        ).slice(0, 6),
+      );
     } finally {
       setBusy(false);
     }

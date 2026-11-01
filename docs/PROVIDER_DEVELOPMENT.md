@@ -289,6 +289,24 @@ Clients in the wild, older Grab versions from the stores among them, depend on t
 - The built-in Grab sites (MakerWorld, Printables, Thingiverse). The `buildManifest` snapshot test fails on any change
   to their matches.
 - `CategoryOut`'s `<id>_cat_ids` fields.
+- The import routes for a client that doesn't ask for the line with `?queue=1`, which
+  `backend/tests/importQueueRoutes.test.ts` guards:
+  - `POST /import` (`?async=1` too), `/import/links`, `/import/zip`, `/import/<provider>/list`,
+    `/import/<provider>/profiles` and their aliases run at once and answer as they always have, including the 409 a new
+    job gets while one of the user's imports is running.
+  - `POST /import/queue` keeps its keys and codes, adding `started` and `position`. The link waits on hold, unless its
+    owner turned on starting them.
+  - `POST /import/jobs/<id>/retry` answers `202 { job_id }`, though the job now joins the line.
+  - `GET /import/jobs/<id>` and `GET /admin/import-queue` read `QUEUED` as `RUNNING` (an admin row with
+    `runner_live: true`), because older Grab versions take anything else for finished. `GET /import/jobs/active` gives
+    only what's really running, and `/import/tasks/<id>` knows nothing of the line.
+  - The bulk routes under `/admin/import-queue` keep their shapes and their older, wider meanings.
+
+A client joins the line by adding `?queue=1` to those submit routes, which then answer
+`202 { job_id, status: "QUEUED", position }`; `GET /import/jobs/<id>?queue=1` gives the real status, and
+`import_queue: true` in `GET /health` says an instance has the line. A request that can't wait still runs at once: one
+with `makerworld_cookie`, any `resolved_*`, `makerworld_design`, `notify: false` or a signed link. A list from a provider
+that waits for Grab still answers `{ queued, collection_id }`.
 
 Credentials are stored unencrypted in `ProviderConnection` and `Setting`. Encrypting them at rest is a separate,
 still-open decision.

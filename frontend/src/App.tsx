@@ -3,10 +3,12 @@ import { useTranslation } from "react-i18next";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import AppLayout from "./components/Layout/AppLayout";
+import { useImportQueue } from "./components/importQueue/ImportQueueContext";
+import { QUEUE_PARAM, queueLinkPath } from "./components/importQueue/queueView";
 import DashboardPage, { HOMEPAGE_PATH } from "./pages/DashboardPage";
 import HomepageView from "./pages/DashboardPage/HomepageView";
 import ModelsPage from "./pages/ModelsPage";
@@ -41,7 +43,6 @@ import NotificationsPage from "./pages/NotificationsPage";
 import TriggersPage from "./pages/TriggersPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import CaptchaPage from "./pages/CaptchaPage";
-import ImportQueuePage from "./pages/ImportQueuePage";
 import RenderingPage from "./pages/RenderingPage";
 import AiPage from "./pages/AiPage";
 import { healthApi, type HealthInfo } from "./api/health";
@@ -58,7 +59,6 @@ import {
   storeUser,
   tokenLifetime,
 } from "./utils/auth";
-import { type AppSettings, type MakerWorldSettings, loadSettings, saveSettings } from "./utils/settings";
 import { useResolvedTheme } from "./hooks/useResolvedTheme";
 import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./hooks/useAccentColor";
 import { resetCardPreview } from "./hooks/useCardPreview";
@@ -93,8 +93,6 @@ type AppShellProps = {
   isAdmin: boolean;
   user: AuthUser | null;
   apiUp: boolean | null;
-  settings: AppSettings;
-  setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
   previewMode: PreviewMode;
   setPreviewMode: (mode: PreviewMode) => void;
   themeSelection: ThemeSelection;
@@ -106,13 +104,18 @@ type AppShellProps = {
   onUserUpdated: (user: AuthUser) => void;
 };
 
+function ImportQueueLink() {
+  const [params] = useSearchParams();
+  // Stays until the session is known to be alive: signing back in, single sign-on too, returns to this address.
+  const { loading } = useImportQueue();
+  return loading ? null : <Navigate to={queueLinkPath(params.get(QUEUE_PARAM))} replace />;
+}
+
 /** Split out so App can stay outside <BrowserRouter>. */
 function AppShell({
   isAdmin,
   user,
   apiUp,
-  settings,
-  setSettings,
   previewMode,
   setPreviewMode,
   themeSelection,
@@ -146,12 +149,6 @@ function AppShell({
     setNonce((n) => n + 1);
   }, []);
 
-  const updateMakerWorld = React.useCallback(
-    (patch: Partial<MakerWorldSettings>) =>
-      setSettings((prev) => ({ ...prev, makerworld: { ...prev.makerworld, ...patch } })),
-    [setSettings],
-  );
-
   // The homepage view: the dashboard alone, without the app's side menu and top bar.
   if (location.pathname === HOMEPAGE_PATH)
     return (
@@ -178,8 +175,6 @@ function AppShell({
       isAdmin={isAdmin}
       onOpenProfile={() => navigate("/profile")}
       onLogout={onLogout}
-      makerworldCookie={settings.makerworld.cookie}
-      onUpdateMakerWorld={updateMakerWorld}
       user={user}
       onThemeChange={onThemeChange}
     >
@@ -342,10 +337,9 @@ function AppShell({
           path="/admin-connections"
           element={isAdmin ? <ConnectionsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
-        <Route
-          path="/admin-queue"
-          element={isAdmin ? <ImportQueuePage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
-        />
+        {/* The queue's page became a dialog; stored notifications, Thingport Grab and bookmarks still come here. */}
+        <Route path="/admin-queue" element={<ImportQueueLink />} />
+        <Route path="/import-queue" element={<ImportQueueLink />} />
         <Route
           path="/admin-captcha"
           element={isAdmin ? <CaptchaPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
@@ -374,7 +368,6 @@ export default function App() {
   const [showExpiredToast, setShowExpiredToast] = React.useState(false);
   // A ref so concurrent 401s see the guard synchronously and only one alert shows.
   const sessionExpiredRef = React.useRef(false);
-  const [settings, setSettings] = React.useState<AppSettings>(() => loadSettings());
   const [previewMode, setPreviewMode] = React.useState<PreviewMode>("automatic");
   // Server-persisted so it follows the account across devices.
   const [themeSelection, setThemeSelection] = React.useState<ThemeSelection>("light");
@@ -427,9 +420,6 @@ export default function App() {
       active = false;
     };
   }, [token]);
-  React.useEffect(() => {
-    saveSettings(settings);
-  }, [settings]);
   const apiUp = health?.ok ?? null;
   const authRequired = health?.auth_required ?? true;
 
@@ -677,8 +667,6 @@ export default function App() {
           isAdmin={isAdmin}
           user={user}
           apiUp={apiUp}
-          settings={settings}
-          setSettings={setSettings}
           previewMode={previewMode}
           setPreviewMode={setPreviewMode}
           themeSelection={themeSelection}

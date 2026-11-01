@@ -1,5 +1,6 @@
 import { Impit } from "impit";
 import { manifestOf, PROVIDER_IDS } from "../providers/index.generated";
+import { withIdleLimit } from "./readCapped";
 
 // Some providers' Cloudflare challenges clients by their TLS handshake, whatever the headers or cookies, and Node's
 // fetch is on its list. impit sends Chrome's handshake and headers.
@@ -25,7 +26,7 @@ export function needsBrowserFetch(url: string): boolean {
 }
 
 /** fetch with Chrome's TLS fingerprint. `timeoutMs` covers waiting for the response, not reading
- * the body. The caller's User-Agent is dropped: one that doesn't match the handshake is itself a
+ * the body, which only fails on silence (readCapped.ts). The caller's User-Agent is dropped: one that doesn't match the handshake is itself a
  * bot signal. */
 export async function browserFetch(
   url: string,
@@ -54,7 +55,8 @@ export async function browserFetch(
     const client = redirect === "follow" ? following : manual;
     const res = await client.fetch(url, { method, body, headers: sent, signal: controller.signal });
     // A standard Response, so callers and helpers typed for fetch's take it as is.
-    const resBody = NULL_BODY_STATUSES.has(res.status) ? null : res.body;
+    // Unlike Node's fetch, this has no limit of its own on a body that goes silent.
+    const resBody = NULL_BODY_STATUSES.has(res.status) ? null : res.body && withIdleLimit(res.body);
     const out = new Response(resBody, { status: res.status, statusText: res.statusText, headers: res.headers });
     Object.defineProperty(out, "url", { value: res.url || url });
     return out;

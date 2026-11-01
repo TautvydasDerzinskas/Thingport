@@ -240,19 +240,19 @@ describe("the import queue", () => {
       const notifications = await prisma.notification.findMany({ where: { userId: member.id, type: "queue" } });
       expect(notifications).toHaveLength(1);
       expect(notifications[0].title).toBe("Links are waiting in the import queue");
-      // A member can't open the admin page, so the notification doesn't link there.
-      expect(notifications[0].internalPath).toBeNull();
+      // Everyone can start their own now, so it opens the queue where they wait.
+      expect(notifications[0].internalPath).toBe("/admin-queue?import-queue=wait");
 
       // The notification isn't tied to the queue: deleting it leaves the queue as it was.
       await prisma.notification.deleteMany({ where: { userId: member.id } });
       expect((await job(first.body.job_id)).status).toBe("PAUSED");
     });
 
-    it("links an admin's notification to the queue page", async () => {
+    it("links an admin's notification to the queue's Waiting section", async () => {
       await prisma.notification.deleteMany({ where: { userId: admin.id } });
       await queue(admin, { url: modelUrl(base + 4) });
       const notification = await prisma.notification.findFirst({ where: { userId: admin.id, type: "queue" } });
-      expect(notification!.internalPath).toBe("/admin-queue");
+      expect(notification!.internalPath).toBe("/admin-queue?import-queue=wait");
     });
 
     it("doesn't add a link that's already waiting", async () => {
@@ -305,7 +305,7 @@ describe("the import queue", () => {
     });
   });
 
-  describe("the admin queue page", () => {
+  describe("the admin queue routes", () => {
     it("is admin-only", async () => {
       expect((await request(app).get("/api/admin/import-queue").set(auth(member))).status).toBe(403);
       expect((await request(app).post("/api/admin/import-queue/start-all").set(auth(member))).status).toBe(403);
@@ -381,7 +381,7 @@ describe("the import queue", () => {
       await waitStatus(first.body.job_id, "DONE");
     });
 
-    it("refuses to start a job that isn't paused, or while the owner has another import running", async () => {
+    it("refuses to start a job that isn't paused, and a second one of the owner's waits its turn", async () => {
       const release = gate(String(base + 50));
       const a = await queue(member, { url: modelUrl(base + 50) });
       await request(app).post(`/api/admin/import-queue/jobs/${a.body.job_id}/start`).set(auth(admin));
@@ -393,11 +393,11 @@ describe("the import queue", () => {
       const again = await request(app).post(`/api/admin/import-queue/jobs/${a.body.job_id}/start`).set(auth(admin));
       expect(again.status).toBe(409);
 
-      // A second queue of the same owner can't run next to the first.
+      // A second queue of the same owner can't run next to the first: it waits in line.
       const b = await queue(member, { url: modelUrl(base + 51) });
       const blocked = await request(app).post(`/api/admin/import-queue/jobs/${b.body.job_id}/start`).set(auth(admin));
-      expect(blocked.status).toBe(409);
-      expect((await job(b.body.job_id)).status).toBe("PAUSED");
+      expect(blocked.status).toBe(202);
+      expect((await job(b.body.job_id)).status).toBe("QUEUED");
 
       release();
       await waitStatus(a.body.job_id, "DONE");

@@ -36,6 +36,9 @@ export const TOOL_FONTS: readonly ToolFont[] = [
   { id: "pacifico", name: "Pacifico", group: "Script" },
 ];
 
+/** What OpenSCAD draws a typeface Thingport doesn't carry in: the plainest, rather than whichever it finds first. */
+export const FALLBACK_TOOL_FONT = TOOL_FONTS[0];
+
 // Addresses only: the bundler emits each file as its own asset and nothing is fetched until a tool asks for one.
 const files = import.meta.glob("../assets/toolFonts/*.ttf", {
   query: "?url",

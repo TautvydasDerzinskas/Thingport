@@ -19,7 +19,6 @@ import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { UnauthorizedError } from "../../../api/client";
 import { providersApi, type ProviderState } from "../../../api/providers";
-import type { MakerWorldSettings } from "../../../utils/settings";
 import { useConfirm } from "../../ConfirmProvider";
 import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader } from "./AppTiles";
 import { PanelHeader } from "./parts";
@@ -45,13 +44,12 @@ const forget = (auth: AuthSlot) => Object.fromEntries(auth.fields.map((field) =>
 
 type Props = {
   isAdmin: boolean;
-  onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   onUnauthorized?: () => void;
 };
 
 /** The import sites as app icons: right-click one to connect or disconnect it, or double-click a
  *  disconnected one to connect it. Stored credentials are never shown, only whether one is set. */
-export default function ProvidersPanel({ isAdmin, onUpdateMakerWorld, onUnauthorized }: Props) {
+export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
   const providers = useProviders();
@@ -99,8 +97,6 @@ export default function ProvidersPanel({ isAdmin, onUpdateMakerWorld, onUnauthor
       }
       await providersApi.saveConnection(id, auth.slot, forget(auth));
     }
-    // Its imports read the cookie from the saved settings too.
-    if (id === MANIFESTS.makerworld.id) onUpdateMakerWorld({ cookie: values?.cookie ?? "" });
     await refreshProviders();
   };
 

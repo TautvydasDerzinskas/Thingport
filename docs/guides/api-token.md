@@ -59,7 +59,7 @@ and under **Permissions** set each kind of data to **Allow** or **Deny**:
 | Authors         | `/api/author/{id}` and the author profiles linked to you                                                                                                                              |
 | Images          | Thumbnails, renders, preview pictures, description images and tag mosaics                                                                                                             |
 | Model files     | Model files and 3D previews (`.glb`), supporting files, the sliced print, and a category as a ZIP                                                                                     |
-| Imports         | The progress of running imports, and the ones waiting for Thingport Grab                                                                                                              |
+| Imports         | `/api/import/queue`, the progress of your imports, and the ones waiting for Thingport Grab                                                                                            |
 | Everything else | Any other read: your settings, notifications, AI suggestions and so on                                                                                                                |
 
 Changes apply straight away, without a new token. A request the token isn't allowed is refused with `403` and a

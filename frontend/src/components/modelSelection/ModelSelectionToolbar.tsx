@@ -15,6 +15,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AutoFixNormalIcon from "@mui/icons-material/AutoFixNormal";
+import AddLinkIcon from "@mui/icons-material/AddLink";
 import { UnauthorizedError } from "../../api/client";
 import { BULK_LIMIT, type Print, printsApi } from "../../api/prints";
 import { AiCategorizationError, aiCategorizationApi } from "../../api/aiCategorization";
@@ -25,6 +26,8 @@ import { useAiDescriptionRun, useAiRun } from "../Layout/AiRunContext";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import DownloadZipConfirmDialog from "../DownloadZipConfirmDialog";
+import LinkSourceDialog from "../linkSource/LinkSourceDialog";
+import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
 import BulkEditCollectionsDialog from "./BulkEditCollectionsDialog";
 import BulkEditTagsDialog from "./BulkEditTagsDialog";
 import SelectionToolbar, { SelectionAction } from "../selection/SelectionToolbar";
@@ -43,6 +46,8 @@ type Props = {
   onRemovedFromCollection?: (ids: string[]) => void;
   /** Every model in the grid belongs to a tool, as in a tool's collection: what would change them isn't offered. */
   toolOwned?: boolean;
+  /** Offers linking a model with no source to its page on a provider, one at a time. */
+  offerLink?: boolean;
 };
 
 type Busy = "favorite" | "removeFromCollection" | "delete" | "ai" | null;
@@ -58,6 +63,7 @@ export default function ModelSelectionToolbar({
   collectionId,
   onRemovedFromCollection,
   toolOwned = false,
+  offerLink = false,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const confirm = useConfirm();
@@ -71,6 +77,8 @@ export default function ModelSelectionToolbar({
   const [addOpen, setAddOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const disabledProviders = useDisabledProviders();
   const { active, selected } = selection;
   const ids = selected.map((item) => item.id);
   const count = ids.length;
@@ -82,6 +90,12 @@ export default function ModelSelectionToolbar({
   // picked, what would change them waits until they're left out.
   const toolPicked = selected.filter((item) => item.tool_id).length;
   const toolHint = toolPicked ? t("models:selection.toolOwned", { count: toolPicked }) : undefined;
+  const linkHint =
+    count !== 1
+      ? t("models:linkSource.selectOne")
+      : selected[0].source_provider
+        ? t("models:linkSource.alreadyLinked")
+        : toolHint;
 
   // Both statuses are cached for the session, so this costs nothing after the first grid.
   useEffect(() => {
@@ -306,6 +320,14 @@ export default function ModelSelectionToolbar({
             title={t("models:selection.downloadTitle", { count })}
             onUnauthorized={onUnauthorized}
           />
+          {linkOpen && selected[0] && (
+            <LinkSourceDialog
+              print={selected[0]}
+              onClose={() => setLinkOpen(false)}
+              onLinked={(updated) => onUpdated([updated])}
+              onUnauthorized={onUnauthorized}
+            />
+          )}
         </>
       }
     >
@@ -330,6 +352,10 @@ export default function ModelSelectionToolbar({
         () => void toggleFavorite(),
       )}
       {action(t("common:download"), <DownloadIcon fontSize="small" />, () => setDownloadOpen(true))}
+      {offerLink &&
+        !toolOwned &&
+        !allProvidersOff(disabledProviders) &&
+        action(t("models:linkSource.action"), <AddLinkIcon fontSize="small" />, () => setLinkOpen(true), linkHint)}
       {!toolOwned &&
         action(
           t("common:delete"),

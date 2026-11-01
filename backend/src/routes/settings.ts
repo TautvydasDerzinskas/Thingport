@@ -704,8 +704,8 @@ router.get(
   }),
 );
 
-// Tests the credentials before hot-swapping the live connection. Not persisted across restarts
-// (see databaseSettingsService.ts); host/port can't change.
+// Tests the credentials before hot-swapping the live connection, and refuses while imports run. Not
+// persisted across restarts (see databaseSettingsService.ts); host/port can't change.
 const databaseSettingsSchema = z.object({
   database: z.string().trim().min(1, "Database name is required"),
   user: z.string().trim().min(1, "User is required"),

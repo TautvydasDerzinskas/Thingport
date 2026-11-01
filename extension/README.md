@@ -6,7 +6,7 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
 Visiting a model page, or a collection or likes page, shows a floating Thingport icon. Clicking it opens the import
 panel: the model's picture and name as the page shows them, and one box that picks one of your collections or makes a
 new one as you type (on a list's page, the models it lists instead). It imports the same way Thingport's own
-"+ Add > Import" does.
+"Add > Import" does.
 
 It's useful without Thingport too: on MakerWorld model pages it adds a **Download normalized**
 button that turns the Bambu Studio project into a 3MF that PrusaSlicer, Cura and other slicers open
@@ -373,7 +373,7 @@ also be turned on in Thingport, from the collection's **Sync configuration**.
   and the other way round: if a collection of the same name already follows another source, the
   new one gets its own, named after the provider (e.g. "Things (MakerWorld)").
 - If the provider rate-limits the imports (a MakerWorld CAPTCHA or daily download limit, say), the
-  rest wait, paused, in the import queue until it's started again from Administration > Import queue.
+  rest wait, paused, in the import queue until it's started again there.
 - If the provider's collection is deleted, the Thingport collection is unsynced (its models stay)
   and you get a notification. Deleting the Thingport collection removes the sync with it.
 - **Sync now** checks the collection right away instead of waiting for the next check, and a notification

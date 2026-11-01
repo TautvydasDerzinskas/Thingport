@@ -498,7 +498,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
         onUninstall={() => current && void uninstall(current)}
         onOpen={current && openable(current) ? () => setRunning(openable(current)) : undefined}
       />
-      <ToolWindow tool={running} onClose={() => setRunning(null)} />
+      <ToolWindow tool={running} onClose={() => setRunning(null)} onUnauthorized={onUnauthorized} />
     </Stack>
   );
 }

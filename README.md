@@ -365,6 +365,11 @@ Thingport locally with hot reload. Adding a model site is in
       <a href="https://ruivalim.com.br"><img src="docs/assets/icons/website.svg" width="16" height="16" alt="Website"></a>&nbsp;
       <a href="https://www.linkedin.com/in/rui-valim/"><img src="docs/assets/icons/linkedin.svg" width="16" height="16" alt="LinkedIn"></a>
     </td>
+    <td align="center" width="140">
+      <a href="https://github.com/kreativmonkey"><img src="https://avatars.githubusercontent.com/u/8607439?v=4&s=160" width="80" height="80" alt="Sebastian"></a><br>
+      <sub><b>kreativmonkey</b></sub><br>
+      <a href="https://github.com/kreativmonkey"><img src="docs/assets/icons/github.svg" width="16" height="16" alt="GitHub"></a>
+    </td>
   </tr>
 </table>
 

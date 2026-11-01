@@ -47,6 +47,8 @@ type Props = {
   selected?: boolean;
   /** `range` is a shift-click. */
   onToggleSelect?: (range: boolean) => void;
+  /** Offers linking a model with no source to its page on a provider, in the card's menu. */
+  offerLink?: boolean;
 };
 
 const OVERLAY_BUTTON_SIZE = 30;
@@ -75,6 +77,7 @@ export default function ModelCard({
   selectMode = false,
   selected = false,
   onToggleSelect,
+  offerLink = false,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
@@ -218,6 +221,7 @@ export default function ModelCard({
             viewer={viewer}
             contextMenuAt={contextMenu.at}
             onContextMenuClose={contextMenu.close}
+            offerLink={offerLink}
           />
         </Stack>
       )}

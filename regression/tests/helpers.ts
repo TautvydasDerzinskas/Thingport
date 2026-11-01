@@ -35,7 +35,7 @@ export async function apiGet(request: APIRequestContext, token: string, url: str
 export async function uploadCube(page: Page) {
   await page.getByRole("button", { name: "Add", exact: true }).click();
   const chooser = page.waitForEvent("filechooser");
-  await page.getByRole("menuitem", { name: "Upload files" }).click();
+  await page.getByRole("dialog", { name: "Add" }).getByRole("button", { name: "Upload files" }).click();
   await (await chooser).setFiles(CUBE_STL);
   // A single upload opens the new model straight in its edit dialog.
   await page.waitForURL(/\/models\/[^/?]+\?edit=/);
@@ -48,7 +48,7 @@ type FilePayload = { name: string; mimeType: string; buffer: Buffer };
 export async function pickFiles(page: Page, files: string | string[] | FilePayload | FilePayload[]) {
   await page.getByRole("button", { name: "Add", exact: true }).click();
   const chooser = page.waitForEvent("filechooser");
-  await page.getByRole("menuitem", { name: "Upload files" }).click();
+  await page.getByRole("dialog", { name: "Add" }).getByRole("button", { name: "Upload files" }).click();
   await (await chooser).setFiles(files);
 }
 
@@ -56,7 +56,7 @@ export async function pickFiles(page: Page, files: string | string[] | FilePaylo
 export async function pickFolder(page: Page, dir: string) {
   await page.getByRole("button", { name: "Add", exact: true }).click();
   const chooser = page.waitForEvent("filechooser");
-  await page.getByRole("menuitem", { name: "Upload folder" }).click();
+  await page.getByRole("dialog", { name: "Add" }).getByRole("button", { name: "Upload folder" }).click();
   await (await chooser).setFiles(dir);
 }
 

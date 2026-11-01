@@ -24,7 +24,7 @@ import {
   sanitizeFilename,
 } from "../utils/fileUtils";
 import { validateRemoteUrl } from "../utils/urlUtils";
-import { readCapped } from "../utils/readCapped";
+import { readCapped, readChunk } from "../utils/readCapped";
 import { fetchWithGuard, rawFetch } from "./guardedFetch";
 import { createKeyedLock, maybeSleep, sleep } from "../utils/concurrency";
 import { isCloudflareChallenge } from "./flaresolverr";
@@ -529,7 +529,7 @@ export async function openImportResponse(
   return { response: res, finalUrl, meta: inheritedMeta };
 }
 
-async function streamToFileCapped(response: Response, destPath: string, maxBytes: number): Promise<number> {
+export async function streamToFileCapped(response: Response, destPath: string, maxBytes: number): Promise<number> {
   if (!response.body) {
     await fs.writeFile(destPath, Buffer.alloc(0));
     return 0;
@@ -539,7 +539,7 @@ async function streamToFileCapped(response: Response, destPath: string, maxBytes
   let total = 0;
   try {
     for (;;) {
-      const { done, value } = await reader.read();
+      const { done, value } = await readChunk(reader);
       if (done) break;
       const chunk = Buffer.from(value);
       total += chunk.length;
@@ -601,9 +601,9 @@ export async function inspectImportLink(
 }
 
 const PREVIEW_IMAGE_MAX_BYTES = 16 * 1024 * 1024;
-const PREVIEW_IMAGE_MAX_COUNT = 20;
+export const PREVIEW_IMAGE_MAX_COUNT = 20;
 
-async function fetchImageBytes(url: string): Promise<Buffer | null> {
+export async function fetchImageBytes(url: string): Promise<Buffer | null> {
   try {
     const res = await rawFetch(url, { "User-Agent": IMPORT_BROWSER_USER_AGENT, Accept: "image/*" });
     if (!res.ok) {
@@ -615,8 +615,8 @@ async function fetchImageBytes(url: string): Promise<Buffer | null> {
       await res.body?.cancel().catch(() => undefined);
       return null;
     }
-    const buf = Buffer.from(await res.arrayBuffer());
-    return buf.length > PREVIEW_IMAGE_MAX_BYTES ? null : buf;
+    const { buffer, truncated } = await readCapped(res, PREVIEW_IMAGE_MAX_BYTES);
+    return truncated ? null : buffer;
   } catch {
     return null;
   }

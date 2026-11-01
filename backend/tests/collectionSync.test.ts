@@ -494,8 +494,12 @@ describe("synced collections", () => {
     const running = await prisma.importJob.create({
       data: { userId, type: "LINKS", status: "RUNNING", sourceUrl: "https://example.com" },
     });
+    const upToDate = { where: { userId, title: `"Flock ${cid}" is up to date` } };
+    const answered = await prisma.notification.count(upToDate);
     try {
-      expect((await run()).status).toBe(409);
+      // Not refused: only an import from the same provider holds a sync back, and it just waits for that.
+      expect((await run()).status).toBe(202);
+      await vi.waitFor(async () => expect(await prisma.notification.count(upToDate)).toBe(answered + 1));
     } finally {
       await prisma.importJob.delete({ where: { id: running.id } });
     }
@@ -675,12 +679,12 @@ describe("synced collections", () => {
     expect(await prisma.print.findFirst({ where: { userId, sourceExternalId: added } })).not.toBeNull();
   });
 
-  it("waits while another import of the user's is running", async () => {
+  it("waits while an import from the same provider is running", async () => {
     const cid = newId();
     collections.set(cid, []);
     const enabled = await enable({ url: collectionUrl(cid), title: `Flock ${cid}`, known_ids: [] });
     const running = await prisma.importJob.create({
-      data: { userId, type: "LINKS", status: "RUNNING", sourceUrl: "https://example.com" },
+      data: { userId, type: "LINKS", status: "RUNNING", sourceUrl: `https://makerworld.com/en/models/${newId()}` },
     });
     try {
       collections.set(cid, [newId()]);

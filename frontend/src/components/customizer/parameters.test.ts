@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import type { ScadParameter } from "../../sdk/openscad";
 import {
   changedValues,
+  chosenFiles,
   controlFor,
   defaultValues,
   generatedName,
   groupParameters,
   hasChanges,
+  missingFiles,
   readableWarnings,
   readyScript,
+  uploadName,
 } from "./parameters";
 
 const parameter = (over: Partial<ScadParameter>): ScadParameter => ({
@@ -84,6 +87,15 @@ describe("controlFor", () => {
     expect(controlFor(parameter({ type: "vector", initial: [1, 2, 3] })).kind).toBe("vector");
     expect(controlFor(parameter({ type: "string", initial: "x" })).kind).toBe("text");
   });
+
+  it("gives a widget the control it names", () => {
+    expect(controlFor(parameter({ type: "string", widget: "color" }))).toEqual({ kind: "color" });
+    expect(controlFor(parameter({ type: "string", widget: "font" }))).toEqual({ kind: "font" });
+    expect(controlFor(parameter({ type: "string", widget: "file", accept: ".png" }))).toEqual({
+      kind: "file",
+      accept: ".png",
+    });
+  });
 });
 
 describe("groupParameters", () => {
@@ -142,6 +154,58 @@ describe("generatedName", () => {
     expect(generatedName("keychain.scad", "Keyring", { TEXT: "x".repeat(40) })).toBe("Keyring");
     expect(generatedName("keychain.scad", "Keyring", { size: 12 })).toBe("Keyring");
   });
+
+  it("doesn't take a colour for a name, but will take the text beside one", () => {
+    expect(generatedName("keychain.scad", "Keyring", { tint: "#ff0000" })).toBe("Keyring");
+    expect(generatedName("keychain.scad", "Keyring", { tint: "#FF0000", TEXT: "Ada" })).toBe("Keyring - Ada");
+  });
+});
+
+describe("uploadName", () => {
+  const one = Uint8Array.from([1, 2, 3]);
+  const other = Uint8Array.from([1, 2, 4]);
+
+  it("keeps a file's own name while nothing else has it", () => {
+    expect(uploadName(new Map(), "logo.png", one)).toBe("logo.png");
+  });
+
+  it("lands on the same name for the same file, so choosing it again isn't another step to undo", () => {
+    expect(uploadName(new Map([["logo.png", one]]), "logo.png", Uint8Array.from([1, 2, 3]))).toBe("logo.png");
+  });
+
+  it("gives a different file of the same name one of its own", () => {
+    const uploads = new Map([["logo.png", one]]);
+    expect(uploadName(uploads, "logo.png", other)).toBe("logo (2).png");
+    uploads.set("logo (2).png", other);
+    expect(uploadName(uploads, "logo.png", Uint8Array.from([9]))).toBe("logo (3).png");
+    expect(uploadName(new Map([["logo", one]]), "logo", other)).toBe("logo (2)");
+  });
+
+  it("never takes a stand-in's name, which would read as nothing chosen", () => {
+    const uploads = new Map<string, Uint8Array>();
+    expect(uploadName(uploads, "default.svg", one)).toBe("default (2).svg");
+    expect(uploadName(uploads, "default.stl", one)).toBe("default (2).stl");
+
+    const name = uploadName(uploads, "default.png", one);
+    expect(name).toBe("default (2).png");
+    // The whole way through: the value still counts as a change, so the file still reaches the engine.
+    const changed = changedValues([parameter({ name: "image", type: "string", initial: "default.png" })], {
+      image: name,
+    });
+    expect(chosenFiles(new Map([[name, one]]), changed)).toEqual({ [name]: one });
+  });
+});
+
+describe("chosenFiles", () => {
+  it("hands over only the files these values point at", () => {
+    const logo = Uint8Array.from([1]);
+    const uploads = new Map([
+      ["logo.png", logo],
+      ["old.png", Uint8Array.from([2])],
+    ]);
+    expect(chosenFiles(uploads, { image: "logo.png", label: "Ada", size: 3 })).toEqual({ "logo.png": logo });
+    expect(chosenFiles(uploads, {})).toEqual({});
+  });
 });
 
 describe("readableWarnings", () => {
@@ -155,6 +219,47 @@ describe("readableWarnings", () => {
         "Geometries in cache: 12",
       ]),
     ).toEqual(["WARNING: Can't find font Foo", "ERROR: Parser error: syntax error"]);
+  });
+});
+
+describe("missingFiles", () => {
+  const log = [
+    "WARNING: Can't open include file 'shapes.scad'. in file /model.scad, line 1",
+    "WARNING: Can't open include file '../openscad-bitmap/bitmap.scad'. in file /model.scad, line 2",
+    "WARNING: Can't open include file 'shapes.scad'. in file /model.scad, line 9",
+    "WARNING: Can't open library 'helper.scad'. in file /model.scad, line 3",
+    "WARNING: Can't open import file '/part.stl', import() at line 4",
+    "ERROR: Can't open file '/art.svg', import() at line 5",
+    "WARNING: Can't open DXF file '/art.dxf'.",
+    "WARNING: The file '/h.png' couldn't be opened.",
+    "WARNING: Ignoring unknown module 'hexagon' in file /model.scad, line 7",
+    "WARNING: Normalized tree is growing past 200000 elements",
+  ];
+
+  it("names each file once, by name alone, however it was asked for", () => {
+    expect(missingFiles(log)).toEqual([
+      "shapes.scad",
+      "bitmap.scad",
+      "helper.scad",
+      "part.stl",
+      "art.svg",
+      "art.dxf",
+      "h.png",
+    ]);
+  });
+
+  it("is nothing when nothing is missing", () => {
+    expect(missingFiles(["WARNING: Ignoring unknown module 'hexagon'", "Geometries in cache: 12"])).toEqual([]);
+  });
+
+  it("leaves readableWarnings only what isn't already said by name", () => {
+    expect(readableWarnings(log)).toEqual(["WARNING: Normalized tree is growing past 200000 elements"]);
+  });
+
+  it("still reports an unknown module when nothing is missing, since that's news in itself", () => {
+    expect(readableWarnings(["WARNING: Ignoring unknown module 'hexagon' in file /model.scad, line 7"])).toEqual([
+      "WARNING: Ignoring unknown module 'hexagon'",
+    ]);
   });
 });
 

@@ -10,10 +10,14 @@ import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
 import ButtonBase from "@mui/material/ButtonBase";
+import Skeleton from "@mui/material/Skeleton";
+import { keyframes } from "@mui/material/styles";
 import FolderIcon from "@mui/icons-material/Folder";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import PrintIcon from "@mui/icons-material/Print";
 import type { Print } from "../../api/prints";
 import { aiCategorizationApi } from "../../api/aiCategorization";
@@ -24,6 +28,7 @@ import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import { switchSlicer } from "../../hooks/useSlicerPreference";
 import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
+import { importProviderInfo } from "../../constants/importProviders";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
@@ -31,12 +36,43 @@ import NormalizedOpenButton from "./NormalizedOpenButton";
 import ModelFileSelect from "./ModelFileSelect";
 import OpenInSlicerButton from "./OpenInSlicerButton";
 import { useNormalizedOpen } from "./useNormalizedOpen";
+import AddToCollectionModal from "./AddToCollectionModal";
 import RollingNumber from "../../components/RollingNumber";
 import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
 
+const statChipSx = { flex: 1, px: 0.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 };
+
+const fillUp = keyframes`
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+`;
+
+/** A bookmark filling up and draining again, while the model's collections load. */
+function BookmarkLoader() {
+  return (
+    <Box component="span" sx={{ position: "relative", display: "inline-flex", color: "text.secondary" }}>
+      <BookmarkBorderIcon fontSize="small" />
+      <BookmarkIcon
+        fontSize="small"
+        sx={{
+          position: "absolute",
+          inset: 0,
+          animation: `${fillUp} 700ms ease-in-out infinite alternate`,
+          "@media (prefers-reduced-motion: reduce)": { display: "none" },
+        }}
+      />
+    </Box>
+  );
+}
+
+/** "failed" still opens the dialog, just without showing a number. */
+export type CollectionCount = number | "loading" | "failed";
+
 type Props = {
   print: Print;
+  collectionCount: CollectionCount;
+  onCollectionCountChange: (count: number) => void;
   onSelectCategory: (id: string) => void;
   onUnauthorized?: () => void;
   onUpdated?: (print: Print) => void;
@@ -45,11 +81,22 @@ type Props = {
 };
 
 /** The detail page's sticky summary card. */
-export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized, onUpdated, viewer }: Props) {
+export default function ModelSidePanel({
+  print,
+  collectionCount,
+  onCollectionCountChange,
+  onSelectCategory,
+  onUnauthorized,
+  onUpdated,
+  viewer,
+}: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
   const showToast = useToast();
   const [suggestionBusy, setSuggestionBusy] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
+  // The provider whose own category this maps from, when it isn't AI's answer.
+  const suggestedBy = importProviderInfo(print.ai_suggestion?.provider)?.label;
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 56);
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
@@ -78,6 +125,10 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
   const authorName =
     print.author?.name || print.author?.handle || print.creator || (showViewerAsAuthor ? viewer!.display_name : null);
   const authorAvatarUrl = print.author?.avatar_url || (showViewerAsAuthor ? viewerAvatarUrl : undefined);
+  const collectionsLabel =
+    typeof collectionCount === "number" && collectionCount > 0
+      ? t("models:detail.addToCollectionAlreadyIn", { count: collectionCount })
+      : t("models:detail.addToCollection");
 
   return (
     <Paper
@@ -188,10 +239,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           <Paper variant="outlined" sx={{ p: 1.5, bgcolor: "action.hover" }}>
             <Stack spacing={1}>
               <Typography variant="caption" color="text.secondary">
-                {t("models:aiCategorization.suggestionLabel")}
+                {suggestedBy
+                  ? t("models:aiCategorization.suggestionFromProvider", { provider: suggestedBy })
+                  : t("models:aiCategorization.suggestionLabel")}
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {print.ai_suggestion.category_path} · {Math.round(print.ai_suggestion.confidence * 100)}%
+                {print.ai_suggestion.category_path}
+                {!suggestedBy && ` · ${Math.round(print.ai_suggestion.confidence * 100)}%`}
               </Typography>
               {print.ai_suggestion.reason && (
                 <Typography variant="caption" color="text.secondary">
@@ -209,7 +263,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
                       try {
                         const result = await aiCategorizationApi.accept(print.id);
                         onUpdated?.(result.print);
-                        showToast({ message: t("models:aiCategorization.accepted") });
+                        showToast({
+                          message: t(
+                            suggestedBy
+                              ? "models:aiCategorization.suggestionAccepted"
+                              : "models:aiCategorization.accepted",
+                          ),
+                        });
                       } catch (err) {
                         if (err instanceof UnauthorizedError) onUnauthorized?.();
                         else
@@ -232,7 +292,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
                       try {
                         const result = await aiCategorizationApi.reject(print.id);
                         onUpdated?.(result.print);
-                        showToast({ message: t("models:aiCategorization.rejected") });
+                        showToast({
+                          message: t(
+                            suggestedBy
+                              ? "models:aiCategorization.suggestionRejected"
+                              : "models:aiCategorization.rejected",
+                          ),
+                        });
                       } catch (err) {
                         if (err instanceof UnauthorizedError) onUnauthorized?.();
                         else
@@ -301,26 +367,55 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           />
         )}
 
-        <Stack direction="row" spacing={1.5}>
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="center"
-            spacing={0.75}
-            sx={{ flex: 1, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
-          >
+        <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
+          <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
             <VisibilityIcon fontSize="small" sx={{ color: "text.secondary" }} />
             <Typography variant="body2" fontWeight={600}>
               {print.view_count}
             </Typography>
           </Stack>
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="center"
-            spacing={0.75}
-            sx={{ flex: 1, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
-          >
+          <Tooltip title={collectionsLabel}>
+            <ButtonBase
+              onClick={() => setCollectionsOpen(true)}
+              aria-label={collectionsLabel}
+              aria-busy={collectionCount === "loading"}
+              sx={{
+                ...statChipSx,
+                gap: 0.75,
+                transition: (muiTheme) => muiTheme.transitions.create("background-color", { duration: 150 }),
+                "&:hover": { bgcolor: "action.hover" },
+                "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
+              }}
+            >
+              {collectionCount === "loading" ? (
+                <>
+                  <BookmarkLoader />
+                  <Skeleton
+                    variant="text"
+                    width={8}
+                    sx={{
+                      fontSize: "0.875rem",
+                      "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  {typeof collectionCount === "number" && collectionCount > 0 ? (
+                    <BookmarkIcon fontSize="small" color="primary" />
+                  ) : (
+                    <BookmarkBorderIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                  )}
+                  {typeof collectionCount === "number" && (
+                    <Typography variant="body2" fontWeight={600}>
+                      <RollingNumber value={collectionCount} />
+                    </Typography>
+                  )}
+                </>
+              )}
+            </ButtonBase>
+          </Tooltip>
+          <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
             <PrintIcon fontSize="small" sx={{ color: "text.secondary" }} />
             <Typography variant="body2" fontWeight={600}>
               <RollingNumber value={print.print_count} />
@@ -335,6 +430,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
         )}
       </Stack>
       {customize.window}
+      <AddToCollectionModal
+        open={collectionsOpen}
+        onClose={() => setCollectionsOpen(false)}
+        printId={print.id}
+        onUnauthorized={onUnauthorized}
+        onCountChange={onCollectionCountChange}
+      />
     </Paper>
   );
 }

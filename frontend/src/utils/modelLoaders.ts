@@ -158,8 +158,8 @@ export function objectFromMesh(mesh: SdkMesh): THREE.Object3D {
 
 export async function loadObjectFromAsset(ext: string, url: string): Promise<THREE.Object3D | null> {
   const obj = await loadRawObjectFromAsset(ext, url);
-  // 3MF is already Y-up from bambuThreeMf.ts.
-  if (obj && ext.toLowerCase() !== "3mf") {
+  // 3MF is already Y-up from bambuThreeMf.ts, and glTF is Y-up by definition.
+  if (obj && ext.toLowerCase() !== "3mf" && ext.toLowerCase() !== "glb") {
     // Print files are Z-up; three.js is Y-up.
     obj.rotateX(-Math.PI / 2);
   }
@@ -194,7 +194,29 @@ async function loadRawObjectFromAsset(ext: string, url: string): Promise<THREE.O
   if (ext === "step" || ext === "stp") {
     return await loadStepGroup(url);
   }
+  if (ext === "glb") {
+    return await loadGlbScene(url);
+  }
   return null;
+}
+
+// glTF is in metres; print files, and the build plate the viewer draws under them, are in millimetres.
+const METRES_TO_MM = 1000;
+
+async function loadGlbScene(url: string): Promise<THREE.Object3D> {
+  const [{ GLTFLoader }, { MeshoptDecoder }] = await Promise.all([
+    import("three/examples/jsm/loaders/GLTFLoader.js"),
+    import("three/examples/jsm/libs/meshopt_decoder.module.js"),
+  ]);
+  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url);
+  const scene = gltf.scene;
+  scene.scale.multiplyScalar(METRES_TO_MM);
+  // A glTF's materials are its own look, textures and all, so the theme's colour doesn't paint over them.
+  scene.traverse((child) => {
+    const material = (child as THREE.Mesh).material;
+    if (material) (Array.isArray(material) ? material : [material]).forEach(keepsOwnColor);
+  });
+  return scene;
 }
 
 export function disposeObject3D(obj: THREE.Object3D) {

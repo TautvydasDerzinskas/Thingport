@@ -12,7 +12,6 @@ import Alert from "@mui/material/Alert";
 import Sidebar from "./Sidebar";
 import AdminSubnav from "./AdminSubnav";
 import TopBar from "./TopBar";
-import ImportProgressBar from "./ImportProgressBar";
 import AiRunProgressBar from "./AiRunProgressBar";
 import StorageMoveProgressBar from "./StorageMoveProgressBar";
 import { StorageMoveProvider } from "./StorageMoveContext";
@@ -20,18 +19,19 @@ import ModelRepairProgressBar from "./ModelRepairProgressBar";
 import { ModelRepairProvider } from "./ModelRepairContext";
 import MissingFilesDialog from "../missingFiles/MissingFilesDialog";
 import BackToTopButton from "./BackToTopButton";
-import { ConfirmProvider } from "../ConfirmProvider";
+import { settleRetiredSettings } from "../../utils/settings";
+import { ConfirmProvider, useConfirm } from "../ConfirmProvider";
 import { ToastProvider, useToast } from "../ToastProvider";
 import { ProviderAboutProvider } from "../providerAbout/ProviderAboutProvider";
 import { WhatsNewProvider } from "../whatsNew/WhatsNewProvider";
 import { PageHeaderContext, type PageHeader } from "./PageHeaderContext";
 import { NavigationHistoryProvider, useSmartBack } from "./NavigationHistoryContext";
-import { ImportJobProvider } from "./ImportJobContext";
+import { ImportQueueProvider } from "../importQueue/ImportQueueContext";
+import ImportQueueDialog from "../importQueue/ImportQueueDialog";
 import { AiRunProvider } from "./AiRunContext";
 import { NotificationsProvider, useNotifications } from "./NotificationsContext";
 import type { ThemeSelection } from "../../constants/settingsOptions";
 import type { AuthUser } from "../../api/auth";
-import type { MakerWorldSettings } from "../../utils/settings";
 
 type AppLayoutProps = {
   muiTheme: Theme;
@@ -46,8 +46,6 @@ type AppLayoutProps = {
   isAdmin: boolean;
   onOpenProfile: () => void;
   onLogout: () => Promise<void>;
-  makerworldCookie: string;
-  onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   user: AuthUser | null;
   onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
   children: React.ReactNode;
@@ -133,9 +131,6 @@ function useRouteChrome() {
   } else if (path.startsWith("/admin-users")) {
     title = t("adminSettings.users.heading");
     onBack = () => navigate("/admin");
-  } else if (path.startsWith("/admin-queue")) {
-    title = t("adminSettings.importQueue.heading");
-    onBack = () => navigate("/admin");
   } else if (path.startsWith("/admin-logs")) {
     title = t("adminSettings.logs.heading");
     onBack = () => navigate("/admin");
@@ -167,13 +162,25 @@ function AppLayoutShell({
   isAdmin,
   onOpenProfile,
   onLogout,
-  makerworldCookie,
-  onUpdateMakerWorld,
   user,
   onThemeChange,
   children,
 }: ShellProps) {
   const { t } = useTranslation(["app", "common"]);
+  const confirm = useConfirm();
+  const signedInId = user?.id;
+  React.useEffect(() => {
+    if (!signedInId) return;
+    void settleRetiredSettings(() =>
+      confirm({
+        title: t("retiredMakerworldCookie.title"),
+        message: t("retiredMakerworldCookie.message", { name: user?.display_name ?? "" }),
+        confirmLabel: t("retiredMakerworldCookie.keep"),
+        cancelLabel: t("retiredMakerworldCookie.discard"),
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signedInId]);
   const { title: routeTitle, subtitle: routeSubtitle, onBack: routeOnBack } = useRouteChrome();
   const { pathname, key: locationKey } = useLocation();
   const mobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("md"));
@@ -199,7 +206,12 @@ function AppLayoutShell({
   }, [onPrintsChanged, refreshNotifications]);
 
   return (
-    <ImportJobProvider onUnauthorized={onUnauthorized} onJobCompleted={handleJobCompleted}>
+    <ImportQueueProvider
+      viewerId={user?.id ?? null}
+      isAdmin={isAdmin}
+      onUnauthorized={onUnauthorized}
+      onJobCompleted={handleJobCompleted}
+    >
       <AiRunProvider onUnauthorized={onUnauthorized} onRunFinished={handleJobCompleted}>
         <StorageMoveProvider isAdmin={isAdmin} onUnauthorized={onUnauthorized}>
           <ModelRepairProvider onUnauthorized={onUnauthorized} onRepairFinished={handleJobCompleted}>
@@ -271,8 +283,6 @@ function AppLayoutShell({
                   onBack={pageHeader?.onBack ?? routeOnBack}
                   actions={pageHeader?.actions}
                   categoryId={categoryId}
-                  makerworldCookie={makerworldCookie}
-                  onUpdateMakerWorld={onUpdateMakerWorld}
                   onUploaded={onPrintsChanged}
                   onUnauthorized={onUnauthorized}
                   user={user}
@@ -289,17 +299,17 @@ function AppLayoutShell({
             <Box sx={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: (theme) => theme.zIndex.appBar }}>
               <AiRunProgressBar kind="categorization" />
               <AiRunProgressBar kind="descriptions" />
-              <ImportProgressBar />
               <StorageMoveProgressBar />
               <ModelRepairProgressBar />
             </Box>
             <BackToTopButton />
+            <ImportQueueDialog isAdmin={isAdmin} />
             {/* Comes up on its own when a look at the library finds models with no files left. */}
             <MissingFilesDialog />
           </ModelRepairProvider>
         </StorageMoveProvider>
       </AiRunProvider>
-    </ImportJobProvider>
+    </ImportQueueProvider>
   );
 }
 

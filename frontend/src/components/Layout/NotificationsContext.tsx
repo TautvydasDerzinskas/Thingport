@@ -12,7 +12,7 @@ type NotificationsContextValue = {
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null);
 
-// Only catches notifications from other tabs/devices; the tracked import job refreshes directly.
+// Only catches notifications from other tabs/devices; a finished import refreshes directly.
 const POLL_INTERVAL_MS = 45_000;
 
 /** The unread count for the bell's badge. The lists themselves load per tab (useNotificationFeed). */

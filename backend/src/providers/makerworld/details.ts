@@ -6,6 +6,7 @@ import type { ProviderDetails } from "../types";
 import {
   extractMakerworldBearerToken,
   fetchMakerworldDesignAuthor,
+  MAKERWORLD_AUTH_CODE,
   makerworldCaptchaCooloffActive,
   MakerworldAuthError,
   MakerworldCaptchaError,
@@ -29,6 +30,12 @@ export const makerworldDetails: ProviderDetails = {
       : fetchMakerworldPageAuthor(designId, cookie, IMPORT_MAKERWORLD_CALL_DELAY_MS);
   },
   missingMessage: `This ${manifest.name} model could not be found, or isn't public.`,
+  async mapError(_userId, err) {
+    if (err instanceof MakerworldCaptchaError) return new HttpError(429, err.message);
+    // 400, not 401: the frontend treats any 401 as an expired Thingport session and logs out.
+    if (err instanceof MakerworldAuthError) return new HttpError(400, err.message, MAKERWORLD_AUTH_CODE);
+    return err;
+  },
   unavailable: { check: async () => (makerworldCaptchaCooloffActive() ? "makerworld_captcha" : null) },
   problemOf(err) {
     if (err instanceof MakerworldCaptchaError) return { problem: "makerworld_captcha" };

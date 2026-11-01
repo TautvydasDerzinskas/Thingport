@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { type Request, Router } from "express";
 import { prisma } from "../db";
 import { requireAdmin, requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
@@ -26,18 +26,20 @@ import { INVITATION_TTL_DAYS, inviteUser } from "../services/invitationService";
 import { listJobItems } from "../services/importJobService";
 import {
   bulkRunState,
+  type BulkScope,
   clearFinishedJobs,
   deleteQueueJob,
   getQueueJob,
   listQueueJobs,
   pauseAll,
-  pauseLinksJob,
+  pauseQueueJob,
+  readEveryonesQueue,
   removeQueueItem,
   retryAllFailed,
   startAllPaused,
-  startLinksJob,
+  startQueueJob,
 } from "../services/importQueueService";
-import { toAdminImportJobOut, toImportJobItemOut } from "../dto";
+import { toAdminImportJobOut, toAdminQueueJobOut, toImportJobItemOut } from "../dto";
 import { authorLinkingSummary, currentAuthorLinkingRun, startAuthorLinking } from "../services/authorLinkingService";
 import {
   currentDescriptionRefetch,
@@ -233,14 +235,25 @@ router.post(
   }),
 );
 
-// ---- Import queue: every user's batch imports. Start/retry run as the job's owner, with the
-// owner's saved MakerWorld cookie. ----
+// ---- Import queue: every user's batch imports. Start/retry join the line and run as the job's
+// owner, with the owner's saved MakerWorld cookie. ?queue=1 is the import queue's own view and meaning; a page from
+// before it, left open, sends none and gets what it always did. ----
 
 router.get(
   "/import-queue",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
+    if (req.query.queue === "1") {
+      const queue = await readEveryonesQueue();
+      res.json({
+        jobs: queue.jobs.map(toAdminQueueJobOut),
+        bulk: await bulkRunState(),
+        finished_total: queue.finishedTotal,
+        finished_by_owner: queue.finishedByOwner,
+      });
+      return;
+    }
     const jobs = await listQueueJobs();
-    res.json({ jobs: jobs.map(toAdminImportJobOut), bulk: bulkRunState() });
+    res.json({ jobs: jobs.map(toAdminImportJobOut), bulk: await bulkRunState() });
   }),
 );
 
@@ -255,7 +268,7 @@ router.get(
 router.post(
   "/import-queue/jobs/:id/start",
   asyncHandler(async (req, res) => {
-    await startLinksJob(await getQueueJob(req.params.id), { manual: true });
+    await startQueueJob(await getQueueJob(req.params.id), { manual: true });
     res.status(202).json({ ok: true });
   }),
 );
@@ -263,7 +276,7 @@ router.post(
 router.post(
   "/import-queue/jobs/:id/retry",
   asyncHandler(async (req, res) => {
-    await startLinksJob(await getQueueJob(req.params.id), { retryFailed: true, manual: true });
+    await startQueueJob(await getQueueJob(req.params.id), { retryFailed: true, manual: true });
     res.status(202).json({ ok: true });
   }),
 );
@@ -271,7 +284,7 @@ router.post(
 router.post(
   "/import-queue/jobs/:id/pause",
   asyncHandler(async (req, res) => {
-    await pauseLinksJob(await getQueueJob(req.params.id));
+    await pauseQueueJob(await getQueueJob(req.params.id));
     res.json({ ok: true });
   }),
 );
@@ -291,31 +304,37 @@ router.delete(
   }),
 );
 
+/** Which jobs a bulk action covers: everyone's, or one person's with `?user_id=`. */
+function bulkScope(req: Request): BulkScope {
+  const ownerId = typeof req.query.user_id === "string" && req.query.user_id ? req.query.user_id : undefined;
+  return { ownerId, line: req.query.queue === "1" };
+}
+
 router.post(
   "/import-queue/start-all",
-  asyncHandler(async (_req, res) => {
-    res.status(202).json({ queued: await startAllPaused(), bulk: bulkRunState() });
+  asyncHandler(async (req, res) => {
+    res.status(202).json({ queued: await startAllPaused(bulkScope(req)), bulk: await bulkRunState() });
   }),
 );
 
 router.post(
   "/import-queue/retry-failed",
-  asyncHandler(async (_req, res) => {
-    res.status(202).json({ queued: await retryAllFailed(), bulk: bulkRunState() });
+  asyncHandler(async (req, res) => {
+    res.status(202).json({ queued: await retryAllFailed(bulkScope(req)), bulk: await bulkRunState() });
   }),
 );
 
 router.post(
   "/import-queue/pause-all",
-  asyncHandler(async (_req, res) => {
-    res.json({ paused: await pauseAll(), bulk: bulkRunState() });
+  asyncHandler(async (req, res) => {
+    res.json({ paused: await pauseAll(bulkScope(req)), bulk: await bulkRunState() });
   }),
 );
 
 router.post(
   "/import-queue/clear-finished",
-  asyncHandler(async (_req, res) => {
-    res.json({ deleted: await clearFinishedJobs() });
+  asyncHandler(async (req, res) => {
+    res.json({ deleted: await clearFinishedJobs(bulkScope(req)) });
   }),
 );
 

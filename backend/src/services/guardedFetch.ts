@@ -5,6 +5,7 @@ import { IMPORT_TIMEOUT_SECONDS } from "../config";
 import { assertCredentialDestination } from "../providers/credentialRequest";
 import { HttpError } from "../utils/fileUtils";
 import { remoteRequest } from "../utils/remoteRequest";
+import { noteImportActivity } from "./importActivity";
 import {
   CLOUDFLARE_BLOCKED_CODE,
   fetchViaFlaresolverr,
@@ -25,6 +26,7 @@ function guardedHeaders(url: string, headers: Record<string, string>): Headers {
 }
 
 export async function rawFetch(url: string, headers: Record<string, string>): Promise<Response> {
+  noteImportActivity();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), IMPORT_TIMEOUT_SECONDS * 1000);
   try {

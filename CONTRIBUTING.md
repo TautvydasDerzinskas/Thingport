@@ -34,7 +34,8 @@ Thingport into your language, see [docs/TRANSLATING.md](docs/TRANSLATING.md) -- 
 4. **Push** to your fork and open a pull request against `develop`.
 
 `develop` is where work comes together; `main` is what's released. Neither takes direct pushes: changes reach
-`develop` by pull request, and a release is a pull request from `develop` into `main`.
+`develop` by pull request, and a release is a pull request from `develop` into `main`, merged with a merge commit,
+never a squash.
 
 A husky pre-commit hook formats your staged files and runs oxlint over whichever project you touched.
 If it blocks your commit, fix the lint error rather than passing `--no-verify`.

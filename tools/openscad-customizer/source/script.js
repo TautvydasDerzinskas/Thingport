@@ -30,6 +30,9 @@ export function scriptsAmong(relatedFiles) {
  * buttons, a long list is a dropdown, a number with both ends is a slider, and everything else is a field.
  */
 export function controlFor(parameter) {
+  if (parameter.widget === "color") return { kind: "color" };
+  if (parameter.widget === "font") return { kind: "font" };
+  if (parameter.widget === "file") return { kind: "file", accept: parameter.accept ?? "" };
   const options = parameter.options ?? [];
   if (options.length) {
     const yesNo = options.length === 2 && options.every((o) => /^(yes|no|true|false|on|off)$/i.test(String(o.value)));
@@ -104,17 +107,63 @@ export function changedValues(parameters, values) {
 export function generatedName(scriptName, modelName, values) {
   const base = (modelName || scriptName.replace(/\.scad$/i, "")).trim() || "model";
   const text = Object.values(values).find(
-    (value) => typeof value === "string" && /\S/.test(value) && value.length < 24,
+    // A colour is a value, not a name: "Keyring - #ff0000" tells nobody anything, and a # is a nuisance in a filename.
+    (value) => typeof value === "string" && /\S/.test(value) && value.length < 24 && !/^#[0-9a-f]{6}$/i.test(value),
   );
   return text ? `${base} - ${text}` : base;
+}
+
+const sameBytes = (a, b) => a.length === b.length && a.every((byte, at) => byte === b[at]);
+
+/** Where the stand-ins live. A chosen file under one of these would read as nothing chosen, and would replace the
+ *  stand-in for any other parameter still on it. */
+const STAND_IN_NAME = /^default\.(png|svg|stl)$/;
+
+/**
+ * The name a chosen file goes to the engine under: its own, unless a different file already has it, so a second
+ * file of the same name doesn't swap out what the first parameter pointed at.
+ */
+export function uploadName(uploads, fileName, bytes) {
+  const dot = fileName.lastIndexOf(".");
+  const [stem, extension] = dot > 0 ? [fileName.slice(0, dot), fileName.slice(dot)] : [fileName, ""];
+  for (let copy = 1; ; copy++) {
+    const name = copy === 1 ? fileName : `${stem} (${copy})${extension}`;
+    if (STAND_IN_NAME.test(name)) continue;
+    const held = uploads.get(name);
+    if (!held || sameBytes(held, bytes)) return name;
+  }
+}
+
+/** Of the files chosen so far, the ones these values point at, as a render takes them. */
+export function chosenFiles(uploads, values) {
+  const files = {};
+  for (const value of Object.values(values)) {
+    const bytes = typeof value === "string" ? uploads.get(value) : undefined;
+    if (bytes) files[value] = bytes;
+  }
+  return files;
+}
+
+/** How the engine says it couldn't open a file, which differs by what wanted it. */
+const MISSING_FILE =
+  /^(?:WARNING|ERROR):\s*(?:Can't open (?:include file|library|import file|DXF file|file)|The file) '([^']+)'/;
+
+/** The files the engine couldn't find, by name, once each. */
+export function missingFiles(log) {
+  return [...new Set(log.flatMap((line) => MISSING_FILE.exec(line)?.[1].split("/").at(-1) ?? []))];
 }
 
 /** A warning the engine printed that the reader can do something about; the rest is progress chatter. */
 export function readableWarnings(log) {
   const seen = new Set();
   const out = [];
+  const somethingMissing = missingFiles(log).length > 0;
   for (const line of log) {
     if (!/^(WARNING|ERROR):/i.test(line)) continue;
+    // Said by name instead, and what a missing file defined coming up unknown is only the same news again.
+    if (MISSING_FILE.test(line) || (somethingMissing && /Ignoring unknown (?:module|function|variable)/.test(line))) {
+      continue;
+    }
     // Said once per use of the font, which for a nameplate is once per letter.
     const text = line.replace(/\s+in file .*$/, "").trim();
     if (seen.has(text)) continue;

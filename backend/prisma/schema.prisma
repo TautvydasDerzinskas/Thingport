@@ -86,6 +86,8 @@ model User {
   authorPreviewEnabled     Boolean              @default(true)
   // Model cards cycle through a model's pictures while hovered.
   hoverSlideshowEnabled    Boolean              @default(true)
+  // Links sent from Thingport Grab's "Add to the queue" join the line by themselves instead of waiting on hold.
+  startGrabLinks           Boolean              @default(false)
   // Filled from the first linked Author with this data; later links never overwrite it.
   bio                      String?
   backgroundUrl            String?
@@ -378,12 +380,17 @@ enum ImportJobStatus {
   RUNNING
   DONE
   ERROR
-  // A LINKS job waiting for someone to start it: the extension's "Add to the queue" collects links
-  // here, and pausing a running job parks its remaining links here too.
+  // A job waiting for someone to start it: the extension's "Add to the queue" collects links here,
+  // pausing a running LINKS job parks its remaining links here too, and any job in line can be held here.
   PAUSED
+  // In line for the one import worker (services/importWorker.ts), in queuedAt order. A sync's job never is:
+  // it runs in the sync lane. Old clients read this as RUNNING (dto.ts).
+  QUEUED
 }
 
-/// A background batch import. At most one RUNNING job per user (enforced in routes/imports.ts).
+/// A background batch import. The worker runs one line job at a time for the whole server, the sync lane
+/// its own beside it; a job started without the line still refuses a second RUNNING one of the user
+/// (routes/imports.ts).
 model ImportJob {
   id                 String          @id @default(cuid())
   userId             String
@@ -402,18 +409,24 @@ model ImportJob {
   resultCollectionId String?
   // Set when the job created exactly one Print, so the frontend can open it directly.
   resultPrintId      String?
-  // The LINKS job's shared request body (never the MakerWorld cookie), so a retry can rerun it.
+  // The request a job runs from (never the MakerWorld cookie, a captcha or anything resolved in the
+  // browser), so the worker or a retry can run it later, and what its run has to say about itself.
   payload            Json?
   // Set on the LINKS jobs a collection sync queues. They pause on a rate limit instead of failing
   // the rest, and are kept out of the extension's "Add to the queue" job.
   collectionSyncId   String?
   collectionSync     CollectionSync? @relation(fields: [collectionSyncId], references: [id], onDelete: SetNull)
+  // When it joined the line, which orders it (Start and Retry go to the back). Null on anything that never did.
+  queuedAt           DateTime?
+  // When this run began. Null until then.
+  startedAt          DateTime?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   items              ImportJobItem[]
 
   @@index([userId, status])
   @@index([collectionSyncId])
+  @@index([status, queuedAt])
 }
 
 enum ImportJobItemStatus {

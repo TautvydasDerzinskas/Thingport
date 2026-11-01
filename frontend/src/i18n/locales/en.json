@@ -100,7 +100,6 @@
     "uploadBar": {
       "uploading": "Uploading…",
       "linkPlaceholder": "Paste model link (MakerWorld, Printables, Thingiverse, MyMiniFactory...)",
-      "importing": "Importing…",
       "importFailed": "Import failed",
       "uploadFailed": "Failed to upload: {{files}}",
       "multiplateImportFailedWithMessage": "Multi-file import ({{message}})",
@@ -120,6 +119,7 @@
       "prompt": "How would you like to handle this zip file?",
       "importAsZip": "Import as zip",
       "importAndUnzip": "Import and unzip",
+      "reading": "Reading zip…",
       "selectedCount": "{{selected}} of {{total}} selected",
       "selectAll": "Select all",
       "clear": "Clear",
@@ -409,7 +409,7 @@
             },
             "imports": {
               "title": "Imports",
-              "description": "Progress of running imports."
+              "description": "Your import queue and the progress of your imports."
             },
             "other": {
               "title": "Everything else",
@@ -462,11 +462,17 @@
         "disconnectMessage": "You won't be able to sign in with {{name}} until you connect it again."
       }
     },
+    "retiredMakerworldCookie": {
+      "title": "Keep this MakerWorld sign-in?",
+      "message": "An older version of Thingport kept a MakerWorld sign-in in this browser. Save it to {{name}}'s account only if it's yours: on a shared browser it may be someone else's.",
+      "keep": "Save to my account",
+      "discard": "Discard"
+    },
     "addMenu": {
       "uploadFiles": "Upload files",
       "uploadFolder": "Upload folder",
       "importTitle": "Import from link",
-      "disabledWhileImporting": "Wait for the current import to finish before starting another",
+      "finishFirst": "Finish what you're adding first",
       "exampleLinksFor": "Example {{provider}} links",
       "exampleModel": "Model",
       "exampleCollection": "Collection",
@@ -606,34 +612,256 @@
         "stop": "Stop improving descriptions"
       }
     },
-    "importProgress": {
-      "starting": "Starting import…",
-      "label": "{{phrase}} {{processed}} of {{total}}",
-      "phrases": [
-        "Thingporting models…",
-        "Opening a portal to the model…",
-        "Beaming files into your library…",
-        "Unpacking the 3MF…",
-        "Counting the plates…",
-        "Checking for a Benchy…",
-        "Rescuing models from the internet…",
-        "Teleporting filament-free…",
-        "Grabbing the STLs before they wander off…",
-        "Dusting off the thumbnails…"
-      ],
-      "tooltip": "{{imported}} imported, {{alreadyInLibrary}} already in your library, {{failedCount}} failed. Click to see the queue.",
-      "done": "Imported {{imported}}, {{alreadyInLibrary}} already in your library. Click to see the queue.",
-      "doneWithFailures": "Imported {{imported}}, {{alreadyInLibrary}} already in your library, {{failedCount}} failed. Click to see which and why.",
-      "tooltipFailed": "{{failedCount}} links failed. Click to see which ones and why.",
-      "retryFailed": "Retry failed",
-      "dismiss": "Dismiss",
-      "queueTitle": "Import queue",
-      "queueEmpty": "No links in this queue.",
-      "queueClose": "Close",
-      "itemPending": "waiting",
-      "itemRunning": "importing",
-      "itemDone": "imported",
-      "itemFailed": "failed"
+    "importQueue": {
+      "title": "Import queue",
+      "titleEveryone": "Server import queue",
+      "importingNow": "{{count}} importing now",
+      "settings": "Queue settings",
+      "sectionsLabel": "Queue sections",
+      "autoStart": "Start links from Grab automatically",
+      "autoStartOn": "New links go straight into the line.",
+      "autoStartOff": "New links stay on hold until you start them.",
+      "scope": {
+        "label": "Whose imports",
+        "mine": "Mine",
+        "everyone": "Everyone"
+      },
+      "people": "People",
+      "everyone": "Everyone",
+      "loadFailed": "Unable to load the import queue.",
+      "sentFromGrab": "Sent from Thingport Grab",
+      "untitled": "Untitled import",
+      "sections": {
+        "run": "Importing",
+        "att": "Needs attention",
+        "wait": "Waiting",
+        "done": "Finished"
+      },
+      "panel": {
+        "run": {
+          "sub": "What's running now, live."
+        },
+        "att": {
+          "sub": "Failed or cut off, with what to do next."
+        },
+        "wait": {
+          "subMine": "One import runs at a time, in order. Other people's imports stay private.",
+          "subAll": "One import runs at a time for the whole server, in order."
+        },
+        "done": {
+          "sub": "Imports that have finished."
+        }
+      },
+      "empty": {
+        "running": {
+          "busyTitle": "Another import is running",
+          "busyNext": "Your next import is #{{n}} in line, and starts by itself.",
+          "busyNone": "Imports run one at a time. Yours start by themselves when their turn comes.",
+          "title": "Nothing importing",
+          "text": "Imports show their progress here while they run."
+        },
+        "att": {
+          "title": "All clear",
+          "text": "Failed and interrupted imports land here."
+        },
+        "wait": {
+          "title": "Nothing waiting",
+          "text": "New imports wait here for their turn. Links you send with \"Add to the queue\" in Thingport Grab stay on hold until you start them.",
+          "textAuto": "New imports wait here for their turn."
+        },
+        "done": {
+          "title": "Nothing finished yet",
+          "text": "Completed imports stay here until you clear them."
+        }
+      },
+      "group": {
+        "inLine": "In line",
+        "onHold": "On hold",
+        "inLineHintMine": "Your number only goes down",
+        "inLineHintAll": "Start by themselves",
+        "onHoldHint": "Won't run until started",
+        "onHoldHintAuto": "New Grab links skip this"
+      },
+      "line": {
+        "now": "Now",
+        "yourImport": "Your import: {{label}}",
+        "private": "Private import",
+        "privateMany_one": "{{count}} private import",
+        "privateMany_other": "{{count}} private imports",
+        "nextUp": "Next up",
+        "place": "#{{n}} in line",
+        "ahead_one": "{{count}} import ahead",
+        "ahead_other": "{{count}} imports ahead"
+      },
+      "unit": {
+        "link_one": "{{count}} link",
+        "link_other": "{{count}} links",
+        "model_one": "{{count}} model",
+        "model_other": "{{count}} models"
+      },
+      "action": {
+        "hold": "Hold",
+        "pause": "Pause",
+        "pauseHint": "Pause after the current link",
+        "start": "Start",
+        "retry": "Retry",
+        "retryMany": "Retry {{count}}",
+        "pauseAll": "Pause all",
+        "retryAll": "Retry all ({{count}})",
+        "startAll": "Start all on hold ({{count}})",
+        "clearFinished": "Clear finished ({{count}})"
+      },
+      "menu": {
+        "more": "More actions for {{label}}",
+        "openSource": "Open source",
+        "openModel": "Open model",
+        "openCollection": "Open collection",
+        "delete": "Delete import"
+      },
+      "hub": {
+        "open": "Open",
+        "attention": "Attention",
+        "nothing": "Nothing importing"
+      },
+      "clear": {
+        "title": "Clear finished imports?",
+        "message": "They leave this list, along with any failed links in them, which can't be retried afterwards. Models already imported stay in the library.",
+        "messageEveryone_one": "This clears {{count}} finished import, whoever it belongs to, along with any failed links in it, which can't be retried afterwards. Models already imported stay in their libraries.",
+        "messageEveryone_other": "This clears {{count}} finished imports, whoever they belong to, along with any failed links in them, which can't be retried afterwards. Models already imported stay in their libraries.",
+        "messagePerson_one": "This clears {{count}} finished import of {{name}}, along with any failed links in it, which can't be retried afterwards. Models already imported stay in their library.",
+        "messagePerson_other": "This clears {{count}} finished imports of {{name}}, along with any failed links in them, which can't be retried afterwards. Models already imported stay in their library.",
+        "confirm": "Clear"
+      },
+      "finishedList": {
+        "newest": "Showing the newest {{shown}} of {{total}}",
+        "older_one": "{{count}} older import isn't listed here",
+        "older_other": "{{count}} older imports aren't listed here"
+      },
+      "delete": {
+        "title": "Delete this import?",
+        "message": "This removes \"{{label}}\" from the queue. Models already imported stay in the library.",
+        "messageSync": "This removes \"{{label}}\" from the queue for good: the sync won't bring its links back. Models already imported stay in the library.",
+        "confirm": "Delete"
+      },
+      "links": {
+        "show_one": "Show {{count}} link",
+        "show_other": "Show {{count}} links",
+        "hide_one": "Hide {{count}} link",
+        "hide_other": "Hide {{count}} links",
+        "remove": "Remove link",
+        "empty": "No links in this queue.",
+        "loadFailed": "Unable to load the links."
+      },
+      "itemStatus": {
+        "PENDING": "waiting",
+        "RUNNING": "importing",
+        "DONE": "imported",
+        "FAILED": "failed",
+        "cutOff": "cut off"
+      },
+      "linkScope": {
+        "designer": "All designer print profiles",
+        "all": "Designer and community print profiles"
+      },
+      "syncTag": "SYNC",
+      "syncTagHint": "Synced collections run alongside the line, so they never hold it up",
+      "syncWaitingHelp": "Synced collections run one at a time beside the line, and give way while it imports from the same site",
+      "type": {
+        "LINKS": "Links",
+        "COLLECTION": "Collection",
+        "ZIP": "ZIP",
+        "PROFILES": "Print profiles",
+        "SINGLE": "Single link"
+      },
+      "status": {
+        "running": "Importing",
+        "queued": "In line",
+        "paused": "On hold",
+        "pausing": "Pausing",
+        "error": "Error",
+        "partial": "Some failed",
+        "done": "Done",
+        "unknown": "Unknown"
+      },
+      "statusHint": {
+        "running": "Importing now.",
+        "queued": "Starts by itself when its turn comes.",
+        "paused": "Won't run until someone starts it.",
+        "pausing": "Finishing the link it's on, then it stops.",
+        "error": "The import failed.",
+        "partial": "Finished, but some links failed.",
+        "partialModels": "Finished, but some models failed.",
+        "done": "Every link imported.",
+        "doneModels": "Every model imported.",
+        "unknown": "This version of Thingport doesn't know this state."
+      },
+      "progress": "{{processed}} of {{total}}",
+      "progressFailed": "{{processed}} of {{total}}, {{failed}} failed",
+      "why": {
+        "linksFailed_one": "{{count}} link failed. Open the links to see why.",
+        "linksFailed_other": "{{count}} links failed. Open the links to see why.",
+        "modelsFailed_one": "{{count}} model failed.",
+        "modelsFailed_other": "{{count}} models failed.",
+        "interruptedNoRetry": "Cut off by a server restart. Some files may already be in your library.",
+        "interruptedNoRetryOwner": "Cut off by a server restart. Some files may already be in their library.",
+        "interrupted": "Cut off by a server restart. A model may be incomplete in your library: delete it before retrying.",
+        "interruptedOwner": "Cut off by a server restart. A model may be incomplete in their library: it should be deleted before retrying.",
+        "interruptedZip": "Cut off by a server restart. Some models are already in. Start a new import with only the missing files.",
+        "stalled": "This import stopped responding, so the line moved on. If Retry isn't offered, restart the server.",
+        "noRequest": "This older import has no saved request."
+      },
+      "when": {
+        "started": "Started {{time}}",
+        "startedJustNow": "Started just now",
+        "added": "Added {{time}}",
+        "addedJustNow": "Added just now",
+        "waiting": "Waiting",
+        "onHold": "On hold",
+        "justNow": "Just now",
+        "today": "Today, {{time}}",
+        "yesterday": "Yesterday"
+      },
+      "indicator": {
+        "importing": "Importing, {{pct}}%",
+        "importingNoPercent": "Importing",
+        "inLine": "{{count}} in line",
+        "needsAttention_one": "{{count}} needs attention",
+        "needsAttention_other": "{{count}} need attention",
+        "nextUp": "Your next import is next up",
+        "nextPlace": "Your next import is #{{n}} in line",
+        "finished": "All imports finished",
+        "onHold": "{{count}} on hold",
+        "syncing": "A synced collection is updating"
+      },
+      "toast": {
+        "added": "Added to the queue. It's next up.",
+        "addedPlace": "Added to the queue. It's #{{n}} in line.",
+        "started": "Import started.",
+        "open": "Open",
+        "tryAgain": "Try again",
+        "retriedAll_one": "Back in line: {{count}} import.",
+        "retriedAll_other": "Back in line: {{count}} imports.",
+        "startedAll_one": "Added {{count}} import to the line.",
+        "startedAll_other": "Added {{count}} imports to the line.",
+        "cleared_one": "Cleared {{count}} finished import.",
+        "cleared_other": "Cleared {{count}} finished imports.",
+        "finishFailed": "Couldn't import \"{{name}}\"",
+        "finishedPlain": "\"{{name}}\" finished",
+        "finishedImported_one": "Imported {{count}} model.",
+        "finishedImported_other": "Imported {{count}} models.",
+        "finishedWithExisting": "Imported {{imported}}, {{alreadyInLibrary}} already in your library.",
+        "finishedWithFailures": "Imported {{imported}}, {{alreadyInLibrary}} already in your library, {{failedCount}} failed.",
+        "finishedSomeFailed_one": "Imported {{count}} model, {{failedCount}} failed.",
+        "finishedSomeFailed_other": "Imported {{count}} models, {{failedCount}} failed.",
+        "finishedAllFailed_one": "Couldn't import {{count}} model.",
+        "finishedAllFailed_other": "Couldn't import {{count}} models.",
+        "finishedExistingFailed": "{{alreadyInLibrary}} already in your library, {{failedCount}} failed.",
+        "finishedOnlyExisting": "{{alreadyInLibrary}} already in your library.",
+        "finishedMany_one": "{{count}} import finished.",
+        "finishedMany_other": "{{count}} imports finished.",
+        "finishedManyFailed_one": "{{count}} import finished, with problems.",
+        "finishedManyFailed_other": "{{count}} imports finished, some with problems."
+      }
     },
     "dashboard": {
       "loadError": "Failed to load your dashboard.",
@@ -1795,6 +2023,7 @@
           "import_completed": "Import completed",
           "model_edited": "Model edited",
           "model_reimported": "Missing details fetched",
+          "model_linked": "Model linked to a provider",
           "model_deleted": "Model deleted",
           "models_repaired": "Models repaired",
           "collection_created": "Collection created",
@@ -1907,77 +2136,6 @@
               "desc": "Under 1 mm or over 2 m across: probably exported in the wrong unit."
             }
           }
-        }
-      },
-      "importQueue": {
-        "heading": "Import queue",
-        "loadFailed": "Unable to load the import queue.",
-        "empty": "Nothing in the queue. Links sent from Thingport Grab with \"Add to the queue\" wait here until you start them.",
-        "emptyFilter": "No imports match this filter.",
-        "startAll": "Start all ({{count}})",
-        "retryAll": "Retry all failed ({{count}})",
-        "pauseAll": "Pause all",
-        "clearFinished": "Clear finished",
-        "startedAll": "Started {{count}} import(s). They run one at a time.",
-        "retriedAll": "Retrying {{count}} import(s), one at a time.",
-        "cleared": "Cleared {{count}} finished import(s).",
-        "bulkRunning": "Running imports one at a time, {{count}} more waiting.",
-        "filter": {
-          "all": "All",
-          "paused": "Paused",
-          "running": "Running",
-          "failed": "With failures",
-          "done": "Finished"
-        },
-        "columnSource": "Import",
-        "columnUser": "User",
-        "columnStatus": "Status",
-        "columnProgress": "Progress",
-        "columnCreated": "Created",
-        "columnActions": "Actions",
-        "progress": "{{processed}} of {{total}}, {{imported}} imported, {{failed}} failed",
-        "type": {
-          "LINKS": "Links",
-          "COLLECTION": "Collection",
-          "ZIP": "ZIP",
-          "PROFILES": "Print profiles"
-        },
-        "status": {
-          "paused": "Paused",
-          "pausing": "Pausing",
-          "running": "Running",
-          "stalled": "Stalled",
-          "error": "Error",
-          "done": "Done",
-          "doneWithFailures": "Done, with failures"
-        },
-        "statusHint": {
-          "paused": "Waiting to be started.",
-          "pausing": "Finishing the link it's on, then it stops.",
-          "running": "Importing now.",
-          "stalled": "Cut off by a restart. Pause it, then start it again to finish.",
-          "error": "The import failed.",
-          "done": "Every link imported.",
-          "doneWithFailures": "Finished, but some links failed. Retry them once the cause is fixed."
-        },
-        "start": "Start",
-        "pause": "Pause after the current link",
-        "retry": "Retry {{count}} failed",
-        "delete": "Delete",
-        "deleteTitle": "Delete this import?",
-        "deleteMessage": "Its {{count}} link(s) are removed from the queue. Models already imported stay in the library.",
-        "showLinks": "Show links",
-        "hideLinks": "Hide links",
-        "removeLink": "Remove from queue",
-        "itemStatus": {
-          "PENDING": "waiting",
-          "RUNNING": "importing",
-          "DONE": "imported",
-          "FAILED": "failed"
-        },
-        "scope": {
-          "designer": "All designer print profiles",
-          "all": "Designer and community print profiles"
         }
       },
       "storageBrowser": {
@@ -2694,8 +2852,6 @@
         "empty": "No collections yet. Name one below to make it.",
         "count_one": "{{count}} model",
         "count_other": "{{count}} models",
-        "newName": "New collection",
-        "create": "Make this collection",
         "cancel": "Cancel",
         "choose": "Choose"
       },
@@ -3514,6 +3670,34 @@
       "importedFrom": "Imported from {{provider}}",
       "uploadedDirectly": "Uploaded directly to Thingport"
     },
+    "linkSource": {
+      "action": "Link to a provider",
+      "title": "Link to a provider",
+      "help": "Takes the page's pictures, description, tags and author. No files are downloaded, and the model stays where it is: a category that matches the site's is only suggested.",
+      "label": "Model link",
+      "placeholder": "Paste the link of this model's page",
+      "link": "Link",
+      "linking": "Linking…",
+      "problem": {
+        "several": "Paste one link only.",
+        "list": "That's a list of models. Paste the link of one model.",
+        "notModel": "That isn't a link to a model on a supported site.",
+        "disabled": "An admin has turned this site off."
+      },
+      "previewFailed": "No preview: {{reason}}",
+      "linkedElsewhere": "\"{{name}}\" is already linked to this page.",
+      "openModel": "Open it",
+      "pictures_one": "{{count}} picture",
+      "pictures_other": "{{count}} pictures",
+      "tags_one": "{{count}} tag",
+      "tags_other": "{{count}} tags",
+      "replacesDescription": "This replaces the model's current description.",
+      "linked": "Linked to {{provider}}.",
+      "linkedWithSuggestion": "Linked to {{provider}}. Suggested category: {{category}}.",
+      "failed": "Couldn't link this model. Please try again.",
+      "alreadyLinked": "Already linked to a provider",
+      "selectOne": "Select one model to link it"
+    },
     "aiCategorization": {
       "suggestionPending": "Accept or reject the suggestion first",
       "section": "AI Categorization",
@@ -3549,6 +3733,9 @@
       "loadMore": "Load more",
       "noSuggestions": "No pending suggestions.",
       "suggestionLabel": "AI suggestion",
+      "suggestionFromProvider": "Suggested by {{provider}}",
+      "suggestionAccepted": "Category suggestion accepted.",
+      "suggestionRejected": "Category suggestion rejected.",
       "byAi": "by AI",
       "accepted": "AI suggestion accepted.",
       "rejected": "AI suggestion rejected.",
@@ -3601,6 +3788,7 @@
       "deleteFailed": "Failed to delete the model.",
       "confirmDelete": "Delete \"{{name}}\"? This cannot be undone.",
       "addToCollection": "Add to collection",
+      "addToCollectionAlreadyIn": "Add to collection (already in {{count}})",
       "addToCollectionTitle": "Add to collection",
       "addToCollectionEmpty": "You don't have any collections yet.",
       "addToCollectionLoadFailed": "Failed to load collections. Please try again.",
@@ -3763,7 +3951,26 @@
         "undo": "Undo",
         "redo": "Redo",
         "reset": "Back to the script's own values",
-        "code": "Show the code of {{name}}"
+        "code": "Show the code of {{name}}",
+        "pickColor": "Pick a colour",
+        "fontFallback": "{{name}} (uses {{fallback}})",
+        "fontGroup": {
+          "Sans": "Sans",
+          "Condensed": "Condensed",
+          "Serif": "Serif",
+          "Heavy": "Heavy",
+          "Rounded": "Rounded",
+          "Display": "Display",
+          "Script": "Script"
+        },
+        "chooseFile": "Choose {{type}}",
+        "fileStandIn": "A plain stand-in for now",
+        "fileClear": "Back to the stand-in",
+        "fileWrongType": "That isn't a {{type}} file."
+      },
+      "notes": {
+        "missingFiles": "This script needs {{files}}, which didn't come with the model.",
+        "missingParts": "Parts of the result may be missing."
       },
       "busy": {
         "reading": "Reading the script…",

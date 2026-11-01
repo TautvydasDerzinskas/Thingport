@@ -8,6 +8,7 @@ const EN: Record<PageId, string> = {
   tags: "Tags",
   downloads: "Downloads",
   tools: "Tools",
+  importQueue: "Import queue",
   myModels: "My models",
   profile: "Profile",
   admin: "Administration",
@@ -18,7 +19,6 @@ const EN: Record<PageId, string> = {
   adminTools: "Tools",
   adminAi: "AI",
   adminUsers: "Users",
-  adminQueue: "Import queue",
   adminLogs: "Logs",
   adminTriggers: "Triggers",
   adminConnections: "Connections",
@@ -52,6 +52,11 @@ describe("matchPages", () => {
     expect(ids("health", true)).toEqual(["admin"]);
     expect(ids("oidc", true)).toEqual(["adminAuth"]);
     expect(ids("admin", true)).toHaveLength(SEARCH_PAGES.filter((page) => page.adminOnly).length);
+  });
+
+  it("finds the import queue for everyone, by a path that opens it for them", () => {
+    expect(ids("import queue")).toContain("importQueue");
+    expect(SEARCH_PAGES.find((page) => page.id === "importQueue")?.path).toBe("/import-queue");
   });
 
   it("marks every admin path as admin-only", () => {

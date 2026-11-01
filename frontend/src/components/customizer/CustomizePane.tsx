@@ -25,6 +25,7 @@ type Props = {
   parameters: ScadParameter[];
   values: ParameterValues;
   onChange: (name: string, value: unknown) => void;
+  onFile: (name: string, fileName: string, bytes: Uint8Array) => void;
   onGenerate: () => void;
   onReset: () => void;
   onShowCode: () => void;
@@ -44,6 +45,7 @@ export default function CustomizePane({
   parameters,
   values,
   onChange,
+  onFile,
   onGenerate,
   onReset,
   onShowCode,
@@ -184,6 +186,7 @@ export default function CustomizePane({
                     value={values[parameter.name]}
                     disabled={busy}
                     onChange={(value) => onChange(parameter.name, value)}
+                    onFile={(fileName, bytes) => onFile(parameter.name, fileName, bytes)}
                   />
                 ))}
               </Stack>

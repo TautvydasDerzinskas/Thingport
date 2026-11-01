@@ -68,9 +68,19 @@ export const PUBLIC_URL = (process.env.PUBLIC_URL || "").trim().replace(/\/+$/, 
 export const AUTH_SECRET = process.env.AUTH_SECRET || "changeme-secret";
 export const AUTH_ALGO = "HS256" as const;
 
-export const IMPORT_ALLOWED_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".lbrn", ".lbrn2", ".zip"]);
+export const IMPORT_ALLOWED_EXTS = new Set([
+  ".stl",
+  ".3mf",
+  ".step",
+  ".stp",
+  ".obj",
+  ".glb",
+  ".lbrn",
+  ".lbrn2",
+  ".zip",
+]);
 // Mirrors frontend's MODEL_EXTS. Other files in a multi-file upload become SUPPORTING files.
-export const RENDERABLE_MODEL_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj"]);
+export const RENDERABLE_MODEL_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".glb"]);
 // The script a model is generated from, kept so it can be generated again with other parameters. It holds no
 // geometry until something runs it, so it is never a plate: it comes along as a SUPPORTING file.
 export const PARAMETRIC_SOURCE_EXTS = new Set([".scad"]);
@@ -88,6 +98,9 @@ export const UPLOADABLE_EXTS = new Set([
   ".stp",
   ".3mf",
   ".obj",
+  ".glb",
+  // Packed into a .glb with the files it points at (services/gltfPacker.ts).
+  ".gltf",
   ".f3d",
   ".lbrn",
   ".lbrn2",
@@ -129,6 +142,8 @@ export const IMPORT_DOWNLOAD_RETRY_DELAY_MS = envInt("IMPORT_DOWNLOAD_RETRY_DELA
 // MakerWorld request (listing pages, each resolution step, each image), not just each model.
 // MakerWorld's pacing against its CAPTCHA, here with the other settings an admin can set by environment variable.
 export const IMPORT_MAKERWORLD_CALL_DELAY_MS = envInt("IMPORT_MAKERWORLD_CALL_DELAY_MS", 5000);
+// How long a job in the import queue may show no sign of life before the line moves on without it.
+export const IMPORT_STALL_LIMIT_MINUTES = Math.max(1, envInt("IMPORT_STALL_LIMIT_MINUTES", 60));
 // Synced collections are checked on each one's own interval; "false" turns the scheduled sync off
 // ("Sync now" still works).
 export const COLLECTION_SYNC_ENABLED = (process.env.COLLECTION_SYNC_ENABLED ?? "").trim().toLowerCase() !== "false";

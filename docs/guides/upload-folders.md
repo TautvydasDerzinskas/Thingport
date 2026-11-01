@@ -8,7 +8,7 @@ way to bring in an organized library from the browser. Your originals stay where
 1. Click **Add** at the top right, then **Upload folder**.
 2. Pick the folder. You pick one folder at a time; everything inside it, however deep, comes along. Your browser may
    ask you to confirm uploading that many files. That's the browser checking, not Thingport.
-3. If the folder contains model files (STL, 3MF, STEP or OBJ), Thingport asks how to import them:
+3. If the folder contains model files (STL, 3MF, STEP, OBJ or glTF), Thingport asks how to import them:
 
    ![Choosing how to import a folder](images/folder-import-mode.png)
 
@@ -35,7 +35,9 @@ Miniatures/                         Folders: Miniatures › Dragons, Miniatures 
 
 Each folder that directly contains model files becomes **one** model, named after the folder:
 
-- its STL, 3MF, STEP and OBJ files become the model's files, in name order
+- its STL, 3MF, STEP, OBJ and glTF files become the model's files, in name order; a `.gltf` is packed with the
+  `.bin` and textures it uses into one `.glb`, wherever they sit below it, so a `textures` folder doesn't become
+  models or photos of its own
 - its images (PNG, JPG, WebP or BMP, up to 8 MB) become the model's photos, and the first one becomes the thumbnail
   if the model files don't carry one
 - everything else, like a PDF manual, a readme or slicer settings, is attached to the model

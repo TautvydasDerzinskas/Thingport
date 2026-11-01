@@ -108,8 +108,9 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
   {
     id: "imports",
     title: "Imports",
-    description: "Progress of running imports.",
+    description: "Your import queue and the progress of your imports.",
     paths: [
+      "/import/queue",
       "/import/status",
       "/import/tasks/:id",
       "/import/jobs/active",
