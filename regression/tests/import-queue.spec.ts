@@ -476,7 +476,7 @@ test("Everyone's Clear finished says how many and whose, and clears as far as it
   const confirm = page.getByRole("dialog", { name: "Clear finished imports?" });
 
   await dialog.getByRole("button", { name: "Clear finished (3)" }).click();
-  await expect(confirm).toContainText("This clears 3 finished imports, other people's too");
+  await expect(confirm).toContainText("This clears 3 finished imports, whoever they belong to");
   await confirm.getByRole("button", { name: "Cancel" }).click();
   await expect(confirm).toBeHidden();
 

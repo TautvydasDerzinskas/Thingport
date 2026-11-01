@@ -716,7 +716,7 @@
         "title": "Clear finished imports?",
         "message": "They leave this list, along with any failed links in them, which can't be retried afterwards. Models already imported stay in the library.",
         "messageEveryone_one": "This clears {{count}} finished import, whoever it belongs to, along with any failed links in it, which can't be retried afterwards. Models already imported stay in their libraries.",
-        "messageEveryone_other": "This clears {{count}} finished imports, other people's too, along with any failed links in them, which can't be retried afterwards. Models already imported stay in their libraries.",
+        "messageEveryone_other": "This clears {{count}} finished imports, whoever they belong to, along with any failed links in them, which can't be retried afterwards. Models already imported stay in their libraries.",
         "messagePerson_one": "This clears {{count}} finished import of {{name}}, along with any failed links in it, which can't be retried afterwards. Models already imported stay in their library.",
         "messagePerson_other": "This clears {{count}} finished imports of {{name}}, along with any failed links in them, which can't be retried afterwards. Models already imported stay in their library.",
         "confirm": "Clear"

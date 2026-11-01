@@ -152,7 +152,10 @@ function QueuePanel({ list, counts }: { list: QueueJob[]; counts: SectionCounts 
     const owner = list.find((job) => job.owner?.id === person)?.owner;
     const text = clearFinishedConfirmText(
       t,
-      everyone ? { count: counts.done, person: person && (owner ? ownerName(owner) : person) } : undefined,
+      // A backend older than the line counts and clears by its own rule, so there's no number to promise.
+      everyone && !queue.everyone.olderBackend
+        ? { count: counts.done, person: person && (owner ? ownerName(owner) : person) }
+        : undefined,
     );
     if (await confirm({ ...text, destructive: true })) await queue.clearFinished(person);
   };

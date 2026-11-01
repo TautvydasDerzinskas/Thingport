@@ -693,10 +693,10 @@ describe("clearFinishedConfirmText", () => {
     });
   });
 
-  it("says how many on everyone's list, and that they're other people's too", () => {
+  it("says how many on everyone's list, true even when there's only one person", () => {
     const { title, message } = clearFinishedConfirmText(t, { count: 1400, person: null });
     expect(title).toBe("Clear finished imports?");
-    expect(message).toContain("This clears 1400 finished imports, other people's too");
+    expect(message).toContain("This clears 1400 finished imports, whoever they belong to");
   });
 
   it("doesn't claim one is someone else's", () => {
@@ -722,8 +722,8 @@ describe("clearFinishedConfirmText", () => {
     const message = (count: number, person: string | null = null) =>
       clearFinishedConfirmText(inLithuanian, { count, person }).message;
     expect(message(1)).toContain("Bus išvalytas 1 baigtas importas, kad ir kieno jis būtų");
-    expect(message(3)).toContain("Bus išvalyti 3 baigti importai, taip pat ir kitų žmonių");
-    expect(message(12)).toContain("Bus išvalyta 12 baigtų importų, taip pat ir kitų žmonių");
+    expect(message(3)).toContain("Bus išvalyti 3 baigti importai, kad ir kieno jie būtų");
+    expect(message(12)).toContain("Bus išvalyta 12 baigtų importų, kad ir kieno jie būtų");
     expect(message(3, "Jonas")).toContain("Bus išvalyti 3 baigti importai (Jonas)");
   });
 });

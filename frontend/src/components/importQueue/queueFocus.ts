@@ -87,7 +87,8 @@ export async function keepingPanelFocus(event: { currentTarget: Element }, actio
   if (!dialog) return;
   requestAnimationFrame(() => {
     if (document.activeElement !== button && !focusFellFrom(dialog)) return;
-    if (button.isConnected && !button.disabled) button.focus();
+    // Without moving the list, which may have been scrolled while the answer came.
+    if (button.isConnected && !button.disabled) button.focus({ preventScroll: true });
     else focusHeading(dialog);
   });
 }
