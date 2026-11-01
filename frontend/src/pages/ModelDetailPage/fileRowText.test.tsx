@@ -63,7 +63,7 @@ describe("fileRowText", () => {
       weight_g: 12.34,
     };
     expect(fileRowText(t, "part.3mf", 0, profile).primary).toBe("0.22mm layer, 2 walls, 10% infill");
-    expect(secondaryText(profile)).toBe("part|·|0.4|0.22|PLA|3|1h 23m|12g|Bambu Lab A1 mini");
+    expect(secondaryText(profile)).toBe("part|0.4|0.22|PLA|3|1h 23m|12g|Bambu Lab A1 mini");
   });
 
   it("falls back to the file name when only badges are known", () => {

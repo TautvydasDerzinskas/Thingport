@@ -25,11 +25,10 @@ export function fileRowText(
   // A title replaces the name as the headline, so the name moves to the second line instead of vanishing.
   const secondary = badges ? (
     title ? (
-      <Box component="span" sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0 }}>
-        <Box component="span" sx={{ flexShrink: 4, minWidth: "3ch", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <Box component="span" sx={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {stem}
         </Box>
-        <span aria-hidden>·</span>
         {badges}
       </Box>
     ) : (
