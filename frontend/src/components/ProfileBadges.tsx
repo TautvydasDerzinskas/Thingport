@@ -11,8 +11,8 @@ import ScaleOutlined from "@mui/icons-material/ScaleOutlined";
 import ScheduleOutlined from "@mui/icons-material/ScheduleOutlined";
 import type { PlateProfile } from "../api/prints";
 
-/** 0.40 -> "0.4": no trailing zeros. */
-const num = (n: number) => String(Number(n.toFixed(3)));
+/** 0.40 -> "0.4" (or "0,4"): no trailing zeros, decimal mark of the user's language. */
+const formatMm = (n: number, locale: string) => new Intl.NumberFormat(locale, { maximumFractionDigits: 3 }).format(n);
 
 /** Material Design has no nozzle, so this is a hot-end tip: block, taper, orifice. */
 function NozzleIcon() {
@@ -48,8 +48,8 @@ function formatWeight(grams: number, locale: string): string {
 /** The values a badge is shown for; a time or weight of 0 means the file was never sliced, so it counts as unknown. */
 function shownValues(p: PlateProfile) {
   return {
-    nozzle: p.nozzle_mm != null ? num(p.nozzle_mm) : null,
-    layer: p.layer_height_mm != null ? num(p.layer_height_mm) : null,
+    nozzle: p.nozzle_mm ?? null,
+    layer: p.layer_height_mm ?? null,
     materials: p.materials?.length ? p.materials : null,
     plates: p.plates,
     seconds: p.estimated_seconds != null && p.estimated_seconds > 0 ? p.estimated_seconds : null,
@@ -70,41 +70,43 @@ export function hasProfileBadges(profile: PlateProfile): boolean {
 export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
   const { t, i18n } = useTranslation(["models"]);
   const locale = i18n.resolvedLanguage ?? i18n.language;
-  const { nozzle, layer, seconds, grams } = shownValues(profile);
+  const { nozzle, layer, materials, plates, seconds, grams, printer } = shownValues(profile);
+  const nozzleText = nozzle != null ? formatMm(nozzle, locale) : null;
+  const layerText = layer != null ? formatMm(layer, locale) : null;
   const time = seconds != null ? formatDuration(seconds, locale) : null;
   const weight = grams != null ? formatWeight(grams, locale) : null;
 
   const items: (Item | null)[] = [
-    nozzle
+    nozzleText
       ? {
           key: "nozzle",
           icon: <NozzleIcon />,
-          text: nozzle,
-          label: t("models:detail.profileNozzle", { value: nozzle }),
+          text: nozzleText,
+          label: t("models:detail.profileNozzle", { value: nozzleText }),
         }
       : null,
-    layer
+    layerText
       ? {
           key: "layer",
           icon: <LayersOutlined />,
-          text: layer,
-          label: t("models:detail.profileLayer", { value: layer }),
+          text: layerText,
+          label: t("models:detail.profileLayer", { value: layerText }),
         }
       : null,
-    profile.materials?.length
+    materials
       ? {
           key: "materials",
           icon: <Inventory2Outlined />,
-          text: profile.materials.join("/"),
-          label: profile.materials.join(", "),
+          text: materials.join("/"),
+          label: materials.join(", "),
         }
       : null,
-    profile.plates != null
+    plates != null
       ? {
           key: "plates",
           icon: <GridViewOutlined />,
-          text: String(profile.plates),
-          label: t("models:detail.profilePlates", { count: profile.plates }),
+          text: String(plates),
+          label: t("models:detail.profilePlates", { count: plates }),
         }
       : null,
     time
@@ -119,7 +121,7 @@ export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
         }
       : null,
     // Last, so a narrow row clips the long name before the numbers.
-    profile.printer ? { key: "printer", icon: <PrintOutlined />, text: profile.printer, label: profile.printer } : null,
+    printer ? { key: "printer", icon: <PrintOutlined />, text: printer, label: printer } : null,
   ];
   const shown = items.filter((i): i is Item => !!i);
   if (!shown.length) return null;
@@ -148,6 +150,8 @@ export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
             // An icon and its value read as one picture with a name; an <img> can't hold both.
             // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
             role="img"
+            // The MUI tooltip is the hover text; without this an ancestor's title (the file name) shows too.
+            title=""
             data-item={i.key}
             sx={{
               display: "inline-flex",

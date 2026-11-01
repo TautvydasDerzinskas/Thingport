@@ -3813,7 +3813,7 @@
       "fileLabel": "Fichier {{n}}",
       "fileMeta": "Fichier {{n}} · {{type}}",
       "profileNozzle": "buse {{value}} mm",
-      "profileLayer": "{{value}} mm",
+      "profileLayer": "Hauteur de couche de {{value}} mm",
       "profileTime": "Durée d’impression {{value}}",
       "profileWeight": "Filament {{value}}",
       "profilePlates_one": "{{count}} plaque",

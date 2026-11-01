@@ -3800,7 +3800,7 @@
       "fileLabel": "Archivo {{n}}",
       "fileMeta": "Archivo {{n}} · {{type}}",
       "profileNozzle": "boquilla {{value}} mm",
-      "profileLayer": "{{value}} mm",
+      "profileLayer": "Altura de capa de {{value}} mm",
       "profileTime": "Tiempo de impresión {{value}}",
       "profileWeight": "Filamento {{value}}",
       "profilePlates_one": "{{count}} placa",

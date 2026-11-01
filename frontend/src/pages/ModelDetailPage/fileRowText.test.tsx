@@ -4,11 +4,15 @@ import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import type { PlateProfile } from "../../api/prints";
 import en from "../../i18n/locales/en.json";
+import lt from "../../i18n/locales/lt.json";
 import { fileRowText } from "./fileRowText";
 
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", defaultNS: "models", resources: { en: { models: en.models } } });
 const t = i18n.t.bind(i18n);
+
+const i18nLt = i18next.createInstance();
+await i18nLt.init({ lng: "lt", defaultNS: "models", resources: { lt: { models: lt.models } } });
 
 const empty: PlateProfile = {
   title: null,
@@ -84,7 +88,19 @@ describe("fileRowText", () => {
     const html = secondaryHtml({ ...empty, nozzle_mm: 0.4, estimated_seconds: 4980 });
     expect(html).toContain('role="img"');
     expect(html).toContain('aria-label="0.4 mm nozzle"');
+    expect(secondaryHtml({ ...empty, layer_height_mm: 0.22 })).toContain('aria-label="0.22 mm layer height"');
     expect(html).toContain('aria-label="Print time 1h 23m"');
+  });
+
+  it("formats nozzle and layer with the language's decimal mark", () => {
+    const { secondary } = fileRowText(i18nLt.t.bind(i18nLt), "part.3mf", 0, {
+      ...empty,
+      nozzle_mm: 0.4,
+      layer_height_mm: 0.2,
+    });
+    const html = renderToStaticMarkup(<I18nextProvider i18n={i18nLt}>{secondary}</I18nextProvider>);
+    expect(html).toContain(">0,4<");
+    expect(html).toContain(">0,2<");
   });
 
   it("treats zero time and weight as unknown", () => {
