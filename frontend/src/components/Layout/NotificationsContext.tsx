@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type React from "react";
 import { notificationsApi } from "../../api/notifications";
 import { UnauthorizedError } from "../../api/client";
+import { useUnreadBadge } from "../notifications/useUnreadBadge";
 
 type NotificationsContextValue = {
   unreadCount: number;
@@ -24,6 +25,7 @@ export function NotificationsProvider({
   children: React.ReactNode;
 }) {
   const [unreadCount, setUnreadCount] = useState(0);
+  useUnreadBadge(unreadCount);
 
   const refresh = useCallback(async () => {
     try {
