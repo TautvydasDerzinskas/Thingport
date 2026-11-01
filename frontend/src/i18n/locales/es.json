@@ -716,6 +716,11 @@
         "openCollection": "Abrir colección",
         "delete": "Eliminar importación"
       },
+      "hub": {
+        "open": "Abrir",
+        "attention": "Atención",
+        "nothing": "No se está importando nada"
+      },
       "clear": {
         "title": "¿Borrar las importaciones terminadas?",
         "message": "Salen de esta lista junto con sus enlaces fallidos, que ya no se podrán reintentar. Los modelos ya importados se mantienen en la biblioteca.",
@@ -822,7 +827,6 @@
         "yesterday": "Ayer"
       },
       "indicator": {
-        "label": "Cola de importación: {{tip}}",
         "importing": "Importando, {{pct}} %",
         "importingNoPercent": "Importando",
         "inLine": "En la fila: {{count}}",
@@ -833,8 +837,7 @@
         "nextPlace": "Tu próxima importación es la #{{n}} de la fila",
         "finished": "Todas las importaciones han terminado",
         "onHold": "Retenidas: {{count}}",
-        "syncing": "Se está actualizando una colección sincronizada",
-        "empty": "La cola de importación está vacía"
+        "syncing": "Se está actualizando una colección sincronizada"
       },
       "toast": {
         "added": "Añadida a la cola. Es la siguiente.",

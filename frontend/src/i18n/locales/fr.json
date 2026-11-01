@@ -716,6 +716,11 @@
         "openCollection": "Ouvrir la collection",
         "delete": "Supprimer l’importation"
       },
+      "hub": {
+        "open": "Ouvrir",
+        "attention": "Attention",
+        "nothing": "Aucune importation en cours"
+      },
       "clear": {
         "title": "Effacer les importations terminées ?",
         "message": "Elles quittent cette liste avec leurs liens en échec, qui ne pourront plus être réessayés. Les modèles déjà importés restent dans la bibliothèque.",
@@ -822,7 +827,6 @@
         "yesterday": "Hier"
       },
       "indicator": {
-        "label": "File d’attente d’importation : {{tip}}",
         "importing": "Importation, {{pct}} %",
         "importingNoPercent": "Importation",
         "inLine": "Dans la file : {{count}}",
@@ -833,8 +837,7 @@
         "nextPlace": "Votre prochaine importation est #{{n}} dans la file",
         "finished": "Toutes les importations sont terminées",
         "onHold": "En suspens : {{count}}",
-        "syncing": "Une collection synchronisée est en cours de mise à jour",
-        "empty": "La file d’attente d’importation est vide"
+        "syncing": "Une collection synchronisée est en cours de mise à jour"
       },
       "toast": {
         "added": "Ajoutée à la file d’attente. C’est la prochaine.",

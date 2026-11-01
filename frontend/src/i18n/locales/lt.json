@@ -721,6 +721,11 @@
         "openCollection": "Atverti kolekciją",
         "delete": "Ištrinti importą"
       },
+      "hub": {
+        "open": "Atidaryti",
+        "attention": "Dėmesio",
+        "nothing": "Niekas neimportuojama"
+      },
       "clear": {
         "title": "Išvalyti baigtus importus?",
         "message": "Jie dings iš šio sąrašo kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
@@ -827,7 +832,6 @@
         "yesterday": "Vakar"
       },
       "indicator": {
-        "label": "Importavimo eilė: {{tip}}",
         "importing": "Importuojama, {{pct}} %",
         "importingNoPercent": "Importuojama",
         "inLine": "Eilėje: {{count}}",
@@ -838,8 +842,7 @@
         "nextPlace": "Jūsų kitas importas yra #{{n}} eilėje",
         "finished": "Visi importai baigti",
         "onHold": "Sulaikyta: {{count}}",
-        "syncing": "Atnaujinama sinchronizuojama kolekcija",
-        "empty": "Importavimo eilė tuščia"
+        "syncing": "Atnaujinama sinchronizuojama kolekcija"
       },
       "toast": {
         "added": "Pridėta į eilę. Jis bus kitas.",

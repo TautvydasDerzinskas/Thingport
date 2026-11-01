@@ -558,16 +558,13 @@ export function clearFinishedConfirmText(t: TFunction, everyone?: { count: numbe
 
 export type IndicatorState = {
   kind: "running" | "inLine" | "finished" | "attention" | "hold" | "idle";
-  /** `arc` is 0 to 100; null shows the track alone. No ring at all when null. */
-  ring: { arc: number | null } | null;
+  /** `arc` is 0 to 100. No ring at all when null. */
+  ring: { arc: number } | null;
   comet: boolean;
-  /** The number in the middle, which is what's still to come. */
-  number: number | null;
-  numberTone: "accent" | "info";
-  glyph: "tray" | "tick" | null;
-  arrowTone: "accent" | "error";
-  badge: { count: number; tone: "error" | "neutral" } | null;
-  /** Where clicking leads: what the indicator was showing. */
+  /** "add" is the cube with its plus, for when nothing is going on: the badge takes the plus's place otherwise. */
+  glyph: "add" | "cube" | "tick";
+  badge: { text: string; tone: "error" | "neutral" | "accent" | "info" } | null;
+  /** Where the queue opens from here: what the indicator was showing. */
   section: QueueSection;
   /** Null when no totals are known yet. */
   percent: number | null;
@@ -599,14 +596,12 @@ export function indicatorState(jobs: QueueJob[], flash: boolean): IndicatorState
   const places = started.flatMap((job) => (job.status === "QUEUED" && job.position !== null ? [job.position] : []));
   const attention = jobs.filter((job) => sectionOf(job) === "att").length;
   const hold = jobs.filter(isOnHold).length;
+  const needsThem = attention > 0 ? ({ text: String(attention), tone: "error" } as const) : null;
   const common = {
     ring: null,
     comet: false,
-    number: null,
-    numberTone: "accent",
-    glyph: null,
-    arrowTone: "accent",
-    badge: attention > 0 ? { count: attention, tone: "error" } : null,
+    glyph: "cube",
+    badge: needsThem,
     percent: null,
     inLine,
     attention,
@@ -622,13 +617,15 @@ export function indicatorState(jobs: QueueJob[], flash: boolean): IndicatorState
       kind: "running",
       ring: { arc: percent ?? 0 },
       comet: true,
-      number: running.length + inLine,
+      badge:
+        needsThem ?? (running.length + inLine > 1 ? { text: String(running.length + inLine), tone: "accent" } : null),
       percent,
       section: "run",
     };
   }
   if (inLine) {
-    return { ...common, kind: "inLine", ring: { arc: null }, number: inLine, numberTone: "info", section: "wait" };
+    const place = common.nextPlace === null ? String(inLine) : `#${common.nextPlace}`;
+    return { ...common, kind: "inLine", badge: needsThem ?? { text: place, tone: "info" }, section: "wait" };
   }
   if (flash) {
     return {
@@ -639,20 +636,21 @@ export function indicatorState(jobs: QueueJob[], flash: boolean): IndicatorState
       section: attention ? "att" : "done",
     };
   }
-  if (attention) return { ...common, kind: "attention", glyph: "tray", arrowTone: "error", section: "att" };
+  if (attention) return { ...common, kind: "attention", section: "att" };
   if (hold) {
-    return { ...common, kind: "hold", glyph: "tray", badge: { count: hold, tone: "neutral" }, section: "wait" };
+    return { ...common, kind: "hold", badge: { text: String(hold), tone: "neutral" }, section: "wait" };
   }
   const syncing = jobs.find((job) => isImporting(job) || isInLine(job));
   return {
     ...common,
     kind: "idle",
-    glyph: "tray",
+    glyph: "add",
     syncing: Boolean(syncing),
     section: syncing ? sectionOf(syncing) : "run",
   };
 }
 
+/** How the viewer's imports are getting on, in words. Empty when there's nothing to say. */
 export function indicatorTip(state: IndicatorState, t: TFunction): string {
   const needs = state.attention ? t("importQueue.indicator.needsAttention", { count: state.attention }) : null;
   const inLine = () => t("importQueue.indicator.inLine", { count: state.inLine });
@@ -682,14 +680,46 @@ export function indicatorTip(state: IndicatorState, t: TFunction): string {
       case "hold":
         return [t("importQueue.indicator.onHold", { count: state.hold })];
       default:
-        return [t(state.syncing ? "importQueue.indicator.syncing" : "importQueue.indicator.empty")];
+        return [state.syncing ? t("importQueue.indicator.syncing") : null];
     }
   };
   return parts().filter(Boolean).join(". ");
 }
 
-export function indicatorLabel(state: IndicatorState, t: TFunction): string {
-  return t("importQueue.indicator.label", { tip: indicatorTip(state, t) });
+// ---- The Add hub
+
+export type HubRow = { job: QueueJob; kind: "att" | "run" | "wait"; name: string; text: string | null };
+
+const HUB_ROWS = 2;
+
+/** The few imports worth showing without opening the queue: what needs the viewer first, then what's going on. As with
+ *  the indicator, a sync only shows when it needs them. */
+export function hubRows(jobs: QueueJob[], t: TFunction, viewerId: string | null): HubRow[] {
+  const started = jobs.filter((job) => !isSyncJob(job));
+  const status = (job: QueueJob, detail: string | null | undefined) =>
+    [jobChip(job, t).label, detail].filter(Boolean).join(" · ");
+  const rows: HubRow[] = [
+    ...jobs
+      .filter((job) => sectionOf(job) === "att")
+      .map((job) => ({ job, kind: "att" as const, name: jobLabel(job, t), text: whyText(job, t, viewerId) })),
+    ...started
+      .filter(isImporting)
+      .map((job) => ({ job, kind: "run" as const, name: jobLabel(job, t), text: status(job, jobBar(job, t)?.text) })),
+    ...started
+      .filter(isInLine)
+      .toSorted((a, b) => (a.position ?? Infinity) - (b.position ?? Infinity))
+      .map((job) => ({ job, kind: "wait" as const, name: jobLabel(job, t), text: status(job, inLineText(job, t)) })),
+  ];
+  return rows.slice(0, HUB_ROWS);
+}
+
+/** What the hub says with nothing to list. */
+export function hubIdleText(jobs: QueueJob[], context: QueueTextContext): string {
+  const newest = jobs
+    .filter((job) => sectionOf(job) === "done")
+    .reduce<QueueJob | null>((latest, job) => (!latest || job.updated_at > latest.updated_at ? job : latest), null);
+  const when = newest && whenText(newest, context);
+  return [context.t("importQueue.hub.nothing"), when].filter(Boolean).join(" · ");
 }
 
 // ---- The dialog

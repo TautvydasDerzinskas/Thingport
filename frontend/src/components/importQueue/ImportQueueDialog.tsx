@@ -8,6 +8,7 @@ import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import AddIcon from "@mui/icons-material/Add";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
@@ -19,6 +20,8 @@ import ReplayIcon from "@mui/icons-material/Replay";
 import Segmented from "../controls/Segmented";
 import { PanelHeader, SectionLabel } from "../Layout/ConfigurationDialog/parts";
 import { useConfirm } from "../ConfirmProvider";
+import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
+import { ImportLinkIcon } from "../Layout/topBarIcons";
 import SectionedDialog, { SectionNavButton, type DialogSection } from "../SectionedDialog";
 import { useCurrentToast } from "../ToastProvider";
 import { useImportQueue } from "./ImportQueueContext";
@@ -117,7 +120,8 @@ function GroupView({ group }: { group: QueueGroup }) {
   );
 }
 
-function EmptyPanel({ state }: { state: QueueEmptyState }) {
+function EmptyPanel({ state, onImport }: { state: QueueEmptyState; onImport?: () => void }) {
+  const { t } = useTranslation("common");
   const Icon = EMPTY_ICONS[state.icon];
   return (
     <Stack alignItems="center" spacing={1} sx={{ py: 6, px: 3, textAlign: "center" }}>
@@ -128,6 +132,18 @@ function EmptyPanel({ state }: { state: QueueEmptyState }) {
       <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 340 }}>
         {state.text}
       </Typography>
+      {onImport && (
+        <Button
+          size="small"
+          variant="outlined"
+          color="inherit"
+          startIcon={<ImportLinkIcon />}
+          onClick={onImport}
+          sx={[{ mt: 0.5 }, quietButtonSx as object, tapTargetSx]}
+        >
+          {t("import")}
+        </Button>
+      )}
     </Stack>
   );
 }
@@ -136,6 +152,7 @@ function EmptyPanel({ state }: { state: QueueEmptyState }) {
 function QueuePanel({ list, counts }: { list: QueueJob[]; counts: SectionCounts }) {
   const { t } = useTranslation(["app", "common"]);
   const queue = useImportQueue();
+  const canImport = !allProvidersOff(useDisabledProviders());
   const { section, scope, person } = queue.dialog;
   const everyone = scope === "everyone";
   const loading = everyone ? queue.everyone.loading : queue.loading;
@@ -216,6 +233,8 @@ function QueuePanel({ list, counts }: { list: QueueJob[]; counts: SectionCounts 
               { scope, line: queue.line, own: queue.jobs, autoStart: queue.startGrabLinks },
               t,
             )}
+            // Where a new import would show up.
+            onImport={canImport && (section === "run" || section === "wait") ? queue.startImport : undefined}
           />
         )
       )}
@@ -317,6 +336,7 @@ export default function ImportQueueDialog({ isAdmin }: Props) {
   const { t } = useTranslation("app");
   const queue = useImportQueue();
   const { supported, setScope, setPerson } = queue;
+  const canImport = !allProvidersOff(useDisabledProviders());
   const { open, section, scope, person } = queue.dialog;
   const everyone = queue.everyone;
 
@@ -378,7 +398,22 @@ export default function ImportQueueDialog({ isAdmin }: Props) {
           </Typography>
         )
       }
-      headerActions={supported ? <QueueSettingsPopover /> : undefined}
+      headerActions={
+        <>
+          {canImport && (
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={queue.startImport}
+              sx={[{ flexShrink: 0 }, tapTargetSx]}
+            >
+              {t("common:import")}
+            </Button>
+          )}
+          {supported && <QueueSettingsPopover />}
+        </>
+      }
       railHeader={
         isAdmin && supported ? (
           <Box sx={{ mb: { xs: 0.5, md: 1.25 }, "& button": tapTargetSx }}>

@@ -51,21 +51,20 @@ export function AddModelIcon(props: SvgIconProps) {
   );
 }
 
+/** The same cube with room for a ring around it or a badge in place of the plus. */
+export function ModelCubeIcon(props: SvgIconProps) {
+  return (
+    <TwoToneIcon viewBox="1 1 20 21.5" {...props}>
+      <path className="line" d="M11 2.5 3 7v9.5l8 4.5 8-4.5V7l-8-4.5zM3.2 7.1 11 11.6l7.8-4.5M11 11.6V21" />
+    </TwoToneIcon>
+  );
+}
+
 export function NotificationsTwoToneIcon(props: SvgIconProps) {
   return (
     <TwoToneIcon {...props}>
       <path d="M18 16v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
       <path className="detail" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2z" />
-    </TwoToneIcon>
-  );
-}
-
-/** A tray with an arrow dropping into it. */
-export function ImportQueueIcon(props: SvgIconProps) {
-  return (
-    <TwoToneIcon {...props}>
-      <path d="M4 14h3.5l1.5 3h6l1.5-3H20v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-5z" />
-      <path className="detail" d="M11 3h2v6.2l2.3-2.3 1.4 1.4L12 13 7.3 8.3l1.4-1.4L11 9.2V3z" />
     </TwoToneIcon>
   );
 }

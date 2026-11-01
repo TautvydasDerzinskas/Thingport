@@ -16,7 +16,6 @@ import {
 } from "../../utils/configurationEvents";
 import AddMenu, { type AddMenuHandle } from "./AddMenu";
 import ConfigurationDialog, { type ConfigurationTab } from "./ConfigurationDialog";
-import ImportQueueIndicator from "../importQueue/ImportQueueIndicator";
 import NotificationBell from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 import GlobalSearch from "./GlobalSearch";
@@ -154,7 +153,6 @@ export default function TopBar({
           isAdmin={user?.role === "ADMIN"}
         />
         <AddMenu ref={addMenuRef} categoryId={categoryId} onUploaded={onUploaded} onUnauthorized={onUnauthorized} />
-        <ImportQueueIndicator />
         <NotificationBell />
         <UserMenu user={user} onOpenConfiguration={setConfigTab} onOpenProfile={onOpenProfile} onLogout={onLogout} />
       </Stack>

@@ -712,6 +712,11 @@
         "openCollection": "Open collection",
         "delete": "Delete import"
       },
+      "hub": {
+        "open": "Open",
+        "attention": "Attention",
+        "nothing": "Nothing importing"
+      },
       "clear": {
         "title": "Clear finished imports?",
         "message": "They leave this list, along with any failed links in them, which can't be retried afterwards. Models already imported stay in the library.",
@@ -811,7 +816,6 @@
         "yesterday": "Yesterday"
       },
       "indicator": {
-        "label": "Import queue: {{tip}}",
         "importing": "Importing, {{pct}}%",
         "importingNoPercent": "Importing",
         "inLine": "{{count}} in line",
@@ -821,8 +825,7 @@
         "nextPlace": "Your next import is #{{n}} in line",
         "finished": "All imports finished",
         "onHold": "{{count}} on hold",
-        "syncing": "A synced collection is updating",
-        "empty": "Import queue is empty"
+        "syncing": "A synced collection is updating"
       },
       "toast": {
         "added": "Added to the queue. It's next up.",

@@ -21,7 +21,8 @@ import {
   finishedListNote,
   finishToastOf,
   hasLinkList,
-  indicatorLabel,
+  hubIdleText,
+  hubRows,
   indicatorState,
   indicatorTip,
   inLineText,
@@ -319,14 +320,11 @@ describe("indicatorState", () => {
       kind: "running",
       ring: { arc: 60 },
       comet: true,
-      number: 2,
-      numberTone: "accent",
-      glyph: null,
-      badge: { count: 1, tone: "error" },
+      glyph: "cube",
+      badge: { text: "1", tone: "error" },
       section: "run",
     });
     expect(indicatorTip(state, t)).toBe("Importing, 60%. 1 in line. 1 needs attention");
-    expect(indicatorLabel(state, t)).toBe("Import queue: Importing, 60%. 1 in line. 1 needs attention");
   });
 
   it("leaves out of the tooltip what there's none of", () => {
@@ -339,16 +337,20 @@ describe("indicatorState", () => {
       false,
     );
     expect(state.percent).toBe(10);
-    expect(state.number).toBe(2);
+    expect(state.badge).toEqual({ text: "2", tone: "accent" });
   });
 
-  it("leaves a running sync out of the ring and the number", () => {
+  it("has no count for one import on its own", () => {
+    expect(indicatorState([running()], false).badge).toBeNull();
+  });
+
+  it("leaves a running sync out of the ring and the count", () => {
     const state = indicatorState(
       [running({ total: 10, processed: 10 }), running({ id: "s", total: 90, collection_sync_id: "c", processed: 0 })],
       false,
     );
     expect(state.percent).toBe(100);
-    expect(state.number).toBe(1);
+    expect(state.badge).toBeNull();
   });
 
   it("shows no ring or comet for a sync alone, and says it's coming in", () => {
@@ -357,8 +359,8 @@ describe("indicatorState", () => {
       kind: "idle",
       ring: null,
       comet: false,
-      number: null,
-      glyph: "tray",
+      glyph: "add",
+      badge: null,
       syncing: true,
       section: "run",
     });
@@ -367,11 +369,11 @@ describe("indicatorState", () => {
 
   it("still counts what a sync needs from them", () => {
     const stopped = job({ id: "s", status: "PAUSED", collection_sync_id: "c" });
-    expect(indicatorState([stopped], false)).toMatchObject({ kind: "hold", badge: { count: 1, tone: "neutral" } });
+    expect(indicatorState([stopped], false)).toMatchObject({ kind: "hold", badge: { text: "1", tone: "neutral" } });
     const failedSync = job({ id: "s", status: "ERROR", attention: true, collection_sync_id: "c" });
     expect(indicatorState([failedSync], false)).toMatchObject({
       kind: "attention",
-      badge: { count: 1, tone: "error" },
+      badge: { text: "1", tone: "error" },
     });
   });
 
@@ -393,33 +395,33 @@ describe("indicatorState", () => {
     expect(indicatorState([running({ total: 2, processed: 5 })], false).percent).toBe(100);
   });
 
-  it("shows a job in line by its place, with the track and no comet", () => {
+  it("shows a job in line by its place, with no ring or comet", () => {
     const next = indicatorState([queued(1)], false);
     expect(next).toMatchObject({
       kind: "inLine",
-      ring: { arc: null },
+      ring: null,
       comet: false,
-      number: 1,
-      numberTone: "info",
-      badge: null,
+      glyph: "cube",
+      badge: { text: "#1", tone: "info" },
       section: "wait",
     });
     expect(indicatorTip(next, t)).toBe("Your next import is next up");
 
     const later = indicatorState([queued(9), queued(4), failed()], false);
-    expect(later.number).toBe(2);
-    expect(later.badge).toEqual({ count: 1, tone: "error" });
+    expect(later.inLine).toBe(2);
+    expect(later.badge).toEqual({ text: "1", tone: "error" });
     expect(indicatorTip(later, t)).toBe("Your next import is #4 in line. 1 needs attention");
   });
 
-  it("leaves a waiting sync job out of the number and the place", () => {
+  it("leaves a waiting sync job out of the count and the place", () => {
     const both = indicatorState([queued(4), syncWaiting()], false);
-    expect(both.number).toBe(1);
+    expect(both.inLine).toBe(1);
     expect(both.nextPlace).toBe(4);
+    expect(both.badge).toEqual({ text: "#4", tone: "info" });
     expect(indicatorTip(both, t)).toBe("Your next import is #4 in line");
 
     const alone = indicatorState([syncWaiting()], false);
-    expect(alone).toMatchObject({ kind: "idle", number: null, ring: null, nextPlace: null, section: "wait" });
+    expect(alone).toMatchObject({ kind: "idle", badge: null, ring: null, nextPlace: null, section: "wait" });
     expect(indicatorTip(alone, t)).toBe("A synced collection is updating");
 
     expect(indicatorTip(indicatorState([running(), syncWaiting()], false), t)).toBe("Importing, 60%");
@@ -431,7 +433,6 @@ describe("indicatorState", () => {
       kind: "finished",
       ring: { arc: 100 },
       comet: false,
-      number: null,
       glyph: "tick",
       badge: null,
       section: "done",
@@ -441,7 +442,7 @@ describe("indicatorState", () => {
 
   it("keeps the attention count on the tick, and opens where that's shown", () => {
     const state = indicatorState([failed(), failed("g")], true);
-    expect(state.badge).toEqual({ count: 2, tone: "error" });
+    expect(state.badge).toEqual({ text: "2", tone: "error" });
     expect(indicatorTip(state, t)).toBe("All imports finished. 2 need attention");
     expect(state.section).toBe("att");
   });
@@ -456,7 +457,7 @@ describe("indicatorState", () => {
 
     it("keeps its ring and comet until the link it's on is done", () => {
       const state = indicatorState([pausing()], false);
-      expect(state).toMatchObject({ kind: "running", comet: true, number: 1, percent: 25, section: "run", hold: 0 });
+      expect(state).toMatchObject({ kind: "running", comet: true, percent: 25, section: "run", hold: 0 });
       expect(indicatorTip(state, t)).toBe("Importing, 25%");
     });
 
@@ -470,20 +471,19 @@ describe("indicatorState", () => {
 
     it("leaves a sync's out, as it does all of a sync's", () => {
       const state = indicatorState([pausing({ collection_sync_id: "c" })], false);
-      expect(state).toMatchObject({ kind: "idle", ring: null, comet: false, number: null, syncing: true });
+      expect(state).toMatchObject({ kind: "idle", ring: null, comet: false, badge: null, syncing: true });
       expect(state.section).toBe("run");
     });
   });
 
-  it("shows what needs attention with a red arrow", () => {
+  it("shows what needs attention with a red count in place of the plus", () => {
     const state = indicatorState([failed(), held()], false);
     expect(state).toMatchObject({
       kind: "attention",
       ring: null,
       comet: false,
-      glyph: "tray",
-      arrowTone: "error",
-      badge: { count: 1, tone: "error" },
+      glyph: "cube",
+      badge: { text: "1", tone: "error" },
       section: "att",
     });
     expect(indicatorTip(state, t)).toBe("1 needs attention");
@@ -495,9 +495,8 @@ describe("indicatorState", () => {
     expect(state).toMatchObject({
       kind: "hold",
       ring: null,
-      glyph: "tray",
-      arrowTone: "accent",
-      badge: { count: 2, tone: "neutral" },
+      glyph: "cube",
+      badge: { text: "2", tone: "neutral" },
       section: "wait",
     });
     expect(indicatorTip(state, t)).toBe("2 on hold");
@@ -510,13 +509,11 @@ describe("indicatorState", () => {
         kind: "idle",
         ring: null,
         comet: false,
-        number: null,
-        glyph: "tray",
-        arrowTone: "accent",
+        glyph: "add",
         badge: null,
         section: "run",
       });
-      expect(indicatorTip(state, t)).toBe("Import queue is empty");
+      expect(indicatorTip(state, t)).toBe("");
     }
   });
 
@@ -531,6 +528,46 @@ describe("indicatorState", () => {
 
   it("doesn't count a running job's failures as needing attention yet", () => {
     expect(indicatorState([running({ failed_count: 2, attention: true })], false).badge).toBeNull();
+  });
+});
+
+describe("the Add hub", () => {
+  const failed = job({
+    id: "f",
+    status: "ERROR",
+    attention: true,
+    source_label: "Dragon",
+    failure_reason: "No files.",
+  });
+  const importing = job({ id: "r", status: "RUNNING", total: 12, processed: 5, source_label: "Wall mounts" });
+  const next = job({ id: "w", status: "QUEUED", position: 2, single: true, source_label: "Planters" });
+  const later = job({ id: "z", status: "QUEUED", position: 7, source_label: "Hooks" });
+
+  it("lists what needs the viewer first, and then what's going on", () => {
+    expect(hubRows([importing, failed], t, "me").map((row) => [row.kind, row.name, row.text])).toEqual([
+      ["att", "Dragon", "No files."],
+      ["run", "Wall mounts", "Importing · 5 of 12"],
+    ]);
+  });
+
+  it("stops at two, nearest in line first", () => {
+    const rows = hubRows([later, next, importing], t, "me");
+    expect(rows.map((row) => row.job.id)).toEqual(["r", "w"]);
+    expect(rows[1].text).toContain("In line · 1 import ahead");
+  });
+
+  it("leaves a sync out, unless it needs them", () => {
+    const syncing = job({ id: "s", status: "RUNNING", collection_sync_id: "c" });
+    const stuck = job({ id: "t", status: "ERROR", attention: true, collection_sync_id: "c" });
+    expect(hubRows([syncing], t, "me")).toEqual([]);
+    expect(hubRows([syncing, stuck], t, "me").map((row) => row.job.id)).toEqual(["t"]);
+  });
+
+  it("says when the last import finished, or just that nothing is importing", () => {
+    expect(hubIdleText([], { t, locale: "en" })).toBe("Nothing importing");
+    const older = job({ id: "a", status: "DONE", updated_at: ago(3 * HOUR) });
+    const newer = job({ id: "b", status: "DONE", updated_at: ago(MINUTE) });
+    expect(hubIdleText([older, newer], context)).toBe(`Nothing importing · ${whenText(newer, context)}`);
   });
 });
 

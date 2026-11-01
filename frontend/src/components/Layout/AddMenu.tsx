@@ -6,11 +6,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
-import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -25,7 +21,12 @@ import Typography from "@mui/material/Typography";
 import BookmarkAddOutlinedIcon from "@mui/icons-material/BookmarkAddOutlined";
 import BookmarkletGuideDialog from "../BookmarkletGuideDialog";
 import { useUploadImport } from "../uploads/useUploadImport";
-import { AddModelIcon, ImportLinkIcon, topBarButtonSx, UploadFilesIcon, UploadFolderIcon } from "./topBarIcons";
+import { topBarButtonSx } from "./topBarIcons";
+import AddHub from "../importQueue/AddHub";
+import { useImportQueue } from "../importQueue/ImportQueueContext";
+import { IndicatorFace } from "../importQueue/ImportQueueIndicator";
+import { focusRingSx, visuallyHiddenSx } from "../importQueue/queueParts";
+import { indicatorTip } from "../importQueue/queueView";
 import { useToast } from "../ToastProvider";
 import { IMPORT_PROVIDER_INFO } from "../../constants/importProviders";
 import { COMING_SOON_PROVIDERS, ProviderLogo } from "./ConfigurationDialog/providerLogos";
@@ -57,7 +58,8 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** The top bar's Add button. Lists of a provider that imports them through Thingport Grab only are blocked here. */
+/** The top bar's Add button, which also shows how the viewer's imports are getting on, and opens onto both. Lists of a
+ *  provider that imports them through Thingport Grab only are blocked here. */
 const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   { categoryId, onUploaded, onUnauthorized },
   ref,
@@ -66,6 +68,8 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
   // Turned off by an admin: not offered.
   const disabledProviders = useDisabledProviders();
   const showToast = useToast();
+  const { indicator, registerImporter } = useImportQueue();
+  const statusId = React.useId();
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [importOpen, setImportOpen] = React.useState(false);
   const [linkValue, setLinkValue] = React.useState("");
@@ -125,9 +129,20 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
     setImportOpen(true);
   };
 
+  // The import queue's own Import button, the same as Import here.
+  React.useEffect(
+    () =>
+      registerImporter(() => {
+        if (upload.isBusy) showToast({ message: t("addMenu.finishFirst"), severity: "info" });
+        else openImport();
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [registerImporter, upload.isBusy],
+  );
+
   React.useImperativeHandle(ref, () => ({
     importFromCommand: (link) => {
-      // The same rule as the Add button, which is disabled meanwhile.
+      // The same rule as the Add button's own actions, which are disabled meanwhile.
       if (upload.isBusy) {
         showToast({ message: t("addMenu.finishFirst"), severity: "info" });
         return;
@@ -172,55 +187,43 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
 
   const addLabel = upload.uploading ? t("uploadBar.uploading") : t("common:add");
   const canImport = !allProvidersOff(disabledProviders);
+  const adding = upload.uploading || upload.submitting;
+  const importStatus = indicatorTip(indicator, t);
 
   return (
     <>
       {upload.fileInput}
       {upload.folderInput}
-      <Tooltip title={addLabel}>
-        <span>
-          <IconButton
-            size="small"
-            aria-label={addLabel}
-            disabled={upload.isBusy}
-            onClick={(e) => setAnchorEl(e.currentTarget)}
-            sx={{ ...topBarButtonSx, "&.Mui-disabled svg": { opacity: 0.45 } }}
-          >
-            {upload.uploading || upload.submitting ? <CircularProgress size={18} /> : <AddModelIcon />}
-          </IconButton>
-        </span>
+      <Box component="span" id={statusId} sx={visuallyHiddenSx}>
+        {importStatus}
+      </Box>
+      <Tooltip title={importStatus || addLabel}>
+        {/* Stays pressable while uploading: it's the way to the import queue too. */}
+        <IconButton
+          size="small"
+          aria-label={addLabel}
+          aria-describedby={importStatus ? statusId : undefined}
+          aria-haspopup="dialog"
+          aria-expanded={Boolean(anchorEl)}
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          sx={{ ...topBarButtonSx, ...focusRingSx }}
+        >
+          {adding && indicator.kind !== "running" ? (
+            <CircularProgress size={18} />
+          ) : (
+            <IndicatorFace state={indicator} />
+          )}
+        </IconButton>
       </Tooltip>
-      <Menu
+      <AddHub
         anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
         onClose={closeMenu}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { mt: 0.75 } } }}
-      >
-        {/* Nothing to import from with every provider turned off. */}
-        {canImport && (
-          <MenuItem onClick={() => openImport()}>
-            <ListItemIcon>
-              <ImportLinkIcon />
-            </ListItemIcon>
-            <ListItemText>{t("common:import")}</ListItemText>
-          </MenuItem>
-        )}
-        {canImport && <Divider />}
-        <MenuItem onClick={handleUpload}>
-          <ListItemIcon>
-            <UploadFilesIcon />
-          </ListItemIcon>
-          <ListItemText>{t("addMenu.uploadFiles")}</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleFolderUpload}>
-          <ListItemIcon>
-            <UploadFolderIcon />
-          </ListItemIcon>
-          <ListItemText>{t("addMenu.uploadFolder")}</ListItemText>
-        </MenuItem>
-      </Menu>
+        canImport={canImport}
+        busy={upload.isBusy}
+        onImport={() => openImport()}
+        onUploadFiles={handleUpload}
+        onUploadFolder={handleFolderUpload}
+      />
 
       <Dialog open={importOpen} onClose={closeImport} fullWidth maxWidth="sm">
         <DialogTitle>{t("addMenu.importTitle")}</DialogTitle>

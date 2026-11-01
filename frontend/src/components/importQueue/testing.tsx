@@ -57,6 +57,8 @@ export function testQueue(overrides: Partial<ImportQueueValue> = {}): ImportQueu
     everyone: { jobs: [], olderBackend: false, finishedTotal: 0, finishedByOwner: {}, loading: false, failed: false },
     dialog: { open: true, section: "run", scope: "mine", person: null },
     indicator: indicatorState([], false),
+    startImport: () => undefined,
+    registerImporter: () => () => undefined,
     ...overrides,
   };
 }

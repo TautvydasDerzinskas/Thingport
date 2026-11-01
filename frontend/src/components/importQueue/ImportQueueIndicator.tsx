@@ -1,14 +1,9 @@
 import { keyframes } from "@emotion/react";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import { alpha, type Theme } from "@mui/material/styles";
-import { useTranslation } from "react-i18next";
-import { statusTint } from "../../theme";
-import { ImportQueueIcon, topBarButtonSx } from "../Layout/topBarIcons";
-import { useImportQueue } from "./ImportQueueContext";
-import { focusRingSx, REDUCED_MOTION, spinSx } from "./queueParts";
-import { indicatorLabel, indicatorTip, type IndicatorState } from "./queueView";
+import { AddModelIcon, ModelCubeIcon } from "../Layout/topBarIcons";
+import { REDUCED_MOTION, spinSx } from "./queueParts";
+import type { IndicatorState } from "./queueView";
 
 const pop = keyframes`from { opacity: 0; transform: scale(0.6); }`;
 const popSx = (ms: number) => ({ animation: `${pop} ${ms}ms ease-out both`, [REDUCED_MOTION]: { animation: "none" } });
@@ -34,7 +29,7 @@ const ringSx = (theme: Theme) => {
   };
 };
 
-function Ring({ arc }: { arc: number | null }) {
+export function Ring({ arc }: { arc: number | null }) {
   return (
     <Box component="svg" viewBox="0 0 30 30" aria-hidden sx={ringSx}>
       <circle className="track" cx="15" cy="15" r="10.5" />
@@ -55,7 +50,7 @@ function Ring({ arc }: { arc: number | null }) {
 const COMET_MASK =
   "radial-gradient(circle farthest-side, transparent calc(100% - 2.5px), black calc(100% - 2px), black calc(100% - 0.5px), transparent 100%)";
 
-function Comet() {
+export function Comet() {
   return (
     <Box
       component="span"
@@ -94,7 +89,14 @@ function Tick() {
   );
 }
 
-function Badge({ count, tone }: NonNullable<IndicatorState["badge"]>) {
+const BADGE_TONES = {
+  error: { bgcolor: "error.main", color: "error.contrastText" },
+  neutral: { bgcolor: "text.secondary", color: "background.paper" },
+  accent: { bgcolor: "primary.main", color: "primary.contrastText" },
+  info: { bgcolor: "info.dark", color: "info.contrastText" },
+};
+
+function Badge({ text, tone }: NonNullable<IndicatorState["badge"]>) {
   return (
     <Box
       component="span"
@@ -115,71 +117,26 @@ function Badge({ count, tone }: NonNullable<IndicatorState["badge"]>) {
           lineHeight: 1,
           boxShadow: (theme) => `0 0 0 2px ${theme.thingport.pageBackground}`,
         },
-        tone === "error"
-          ? { bgcolor: "error.main", color: "error.contrastText" }
-          : { bgcolor: "text.secondary", color: "background.paper" },
+        BADGE_TONES[tone],
         popSx(220),
       ]}
     >
-      {count}
+      {text}
     </Box>
   );
 }
 
-/** What the button shows, for each of the indicator's states. */
+/** What the top bar's Add button shows, for each of the indicator's states: Add itself, with the viewer's imports on it. */
 export function IndicatorFace({ state }: { state: IndicatorState }) {
   return (
     <>
       {state.ring && <Ring arc={state.ring.arc} />}
       {state.comet && <Comet />}
-      {state.number !== null && (
-        <Box
-          component="span"
-          sx={(theme) => ({
-            position: "relative",
-            fontSize: 11,
-            fontWeight: 700,
-            lineHeight: 1,
-            color:
-              state.numberTone === "info"
-                ? statusTint(theme, "info").text
-                : theme.palette.mode === "dark"
-                  ? theme.palette.primary.light
-                  : theme.palette.primary.dark,
-          })}
-        >
-          {state.number}
-        </Box>
-      )}
+      {state.glyph === "add" && <AddModelIcon />}
+      {/* Smaller inside the ring, so the two don't touch. */}
+      {state.glyph === "cube" && <ModelCubeIcon sx={state.ring ? { fontSize: 15 } : undefined} />}
       {state.glyph === "tick" && <Tick />}
-      {state.glyph === "tray" && (
-        <ImportQueueIcon
-          sx={
-            state.arrowTone === "error" ? (theme) => ({ "& .detail": { fill: theme.palette.error.main } }) : undefined
-          }
-        />
-      )}
       {state.badge && <Badge {...state.badge} />}
     </>
-  );
-}
-
-/** The top bar's button for the viewer's own imports, which opens the queue on what it's showing. Not there when the
- *  backend is older than the queue. */
-export default function ImportQueueIndicator() {
-  const { t } = useTranslation("app");
-  const { supported, indicator, open } = useImportQueue();
-  if (!supported) return null;
-  return (
-    <Tooltip title={indicatorTip(indicator, t)}>
-      <IconButton
-        size="small"
-        aria-label={indicatorLabel(indicator, t)}
-        onClick={() => open()}
-        sx={{ ...topBarButtonSx, ...focusRingSx }}
-      >
-        <IndicatorFace state={indicator} />
-      </IconButton>
-    </Tooltip>
   );
 }

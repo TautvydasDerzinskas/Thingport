@@ -73,10 +73,12 @@ line: the **Add** dialog closes straight away and tells you your place, and a no
 done. A model you already have is never imported twice, so importing the same collection again only brings in what's
 new.
 
-Everyone has their own queue, opened from the icon between **Add** and the bell in the top bar. That icon only shows
-imports you started: a ring and a number while they run or wait, with the details in its tooltip, a tick when they've
+Everyone has their own queue, under **Add** in the top bar, which opens onto your imports at a glance: how many are in
+each section below, what's running or needs you, and **Open** for the queue itself. **Add** also shows imports you
+started: a ring while one runs, your place while one waits, with the details in its tooltip, a tick when they've
 finished, and a badge when one needs attention or all that's left is on hold. Other people's imports never move it, and
-your [synced collections](../guides/synced-collections.md#how-it-works) only reach it through that badge.
+your [synced collections](../guides/synced-collections.md#how-it-works) only reach it through that badge. **Import** at
+the top of the queue starts another without leaving it.
 
 - **Importing** is what's running. **Pause** stops a list of links after the link it's on. Anything else that's running
   goes on to its end.

@@ -5,7 +5,14 @@ import { useToast } from "../ToastProvider";
 import { createQueueStore, initialQueueState, type QueueActions, type QueueState, type QueueStore } from "./queueStore";
 import { deepLinkTarget, indicatorState, opensQueueLink, QUEUE_PARAM, type IndicatorState } from "./queueView";
 
-export type ImportQueueValue = QueueState & QueueActions & { indicator: IndicatorState };
+export type ImportQueueValue = QueueState &
+  QueueActions & {
+    indicator: IndicatorState;
+    /** Opens the import dialog, whose home is the top bar's Add button. */
+    startImport: () => void;
+    /** For that button, to say what starting one does. Returns how to stop. */
+    registerImporter: (start: () => void) => () => void;
+  };
 
 const ImportQueueContext = React.createContext<ImportQueueValue | null>(null);
 const QueueStoreContext = React.createContext<QueueStore | null>(null);
@@ -72,9 +79,23 @@ export function ImportQueueProvider({ viewerId, isAdmin, onUnauthorized, onJobCo
     setSearchParams(rest, { replace: true });
   }, [pathname, searchParams, setSearchParams, isAdmin, store, loading]);
 
+  const importer = React.useRef<(() => void) | null>(null);
+  const importing = React.useMemo(
+    () => ({
+      startImport: () => importer.current?.(),
+      registerImporter: (start: () => void) => {
+        importer.current = start;
+        return () => {
+          importer.current = null;
+        };
+      },
+    }),
+    [],
+  );
+
   const value = React.useMemo(
-    () => ({ ...state, ...store.actions, indicator: indicatorState(state.jobs, state.flash) }),
-    [state, store],
+    () => ({ ...state, ...store.actions, ...importing, indicator: indicatorState(state.jobs, state.flash) }),
+    [state, store, importing],
   );
 
   return (
@@ -91,6 +112,8 @@ const OUTSIDE_PROVIDER: ImportQueueValue = {
   loading: false,
   ...createQueueStore({ viewerId: null, isAdmin: false, isHidden: () => true }).actions,
   indicator: indicatorState([], false),
+  startImport: () => undefined,
+  registerImporter: () => () => undefined,
 };
 
 /** Doesn't throw outside the provider, as no error boundary would catch it, though nothing in the app reaches that

@@ -72,10 +72,12 @@ type Client = ReturnType<typeof client>;
 
 /** The line is one for the whole server, so a test leaves it empty for the next. */
 async function clearQueue(account: Client) {
-  await expect
-    .poll(async () => (await account.queue()).jobs.every((job) => job.can_delete), { timeout: IMPORT_TIMEOUT })
-    .toBe(true);
-  for (const job of (await account.queue()).jobs) await account.remove(job.id);
+  // Read afresh each time: one in line can start between reading the list and deleting it, which is refused.
+  await expect(async () => {
+    const { jobs } = await account.queue();
+    expect(jobs.every((job) => job.can_delete)).toBe(true);
+    for (const job of jobs) await account.remove(job.id);
+  }).toPass({ timeout: IMPORT_TIMEOUT });
 }
 
 /** Starts an import the fake provider won't let finish, and waits for the line to be on it. */
@@ -86,7 +88,14 @@ async function holdTheLine(account: Client) {
   return id;
 }
 
-const indicator = (page: Page) => page.getByRole("button", { name: /^Import queue: / });
+/** The top bar's Add button, which also says how the viewer's imports are getting on. */
+const addButton = (page: Page) => page.getByRole("button", { name: "Add", exact: true });
+const addHub = (page: Page) => page.getByRole("dialog", { name: "Add", exact: true });
+/** Add, then the hub's way into the queue. */
+async function openQueue(page: Page) {
+  await addButton(page).click();
+  await addHub(page).getByRole("button", { name: "Open", exact: true }).click();
+}
 const queueDialog = (page: Page, title = "Import queue") => page.getByRole("dialog", { name: title, exact: true });
 const section = (dialog: Locator, name: string) => dialog.getByRole("button", { name: new RegExp(`^${name}`) });
 const whose = (dialog: Locator, name: string) =>
@@ -104,8 +113,8 @@ const importDialog = (page: Page) => page.getByRole("dialog", { name: "Import fr
 
 /** Add -> Import, and waits for the dialog to close: what's submitted goes on in the background. */
 async function addLink(page: Page, url: string) {
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Import", exact: true }).click();
+  await addButton(page).click();
+  await addHub(page).getByRole("button", { name: "Import", exact: true }).click();
   const dialog = importDialog(page);
   await linkField(dialog).fill(url);
   await dialog.getByRole("button", { name: "Import", exact: true }).click();
@@ -154,10 +163,13 @@ test.afterEach(async () => {
   accounts.clear();
 });
 
-test("the top bar's button opens the queue, by keyboard too, and takes the focus back", async ({ page }) => {
+test("the top bar's Add button leads to the queue, by keyboard too, and the focus comes back", async ({ page }) => {
   await page.goto("/models");
-  const button = indicator(page);
+  const button = addButton(page);
   await button.focus();
+  await page.keyboard.press("Enter");
+  await expect(addHub(page).getByText("Nothing importing")).toBeVisible();
+  await addHub(page).getByRole("button", { name: "Open", exact: true }).focus();
   await page.keyboard.press("Enter");
 
   const dialog = queueDialog(page);
@@ -243,27 +255,28 @@ test("Administration has no entry for the queue: everyone's imports open from th
   await expect(administration.getByRole("button", { name: "Users" })).toBeVisible();
   await expect(administration.getByRole("button", { name: "Import queue" })).toHaveCount(0);
 
-  await indicator(page).click();
+  await openQueue(page);
   await whose(queueDialog(page), "Everyone").click();
   await expect(queueDialog(page, "Server import queue")).toBeVisible();
   await expect(page).toHaveURL(/\/admin-users$/);
 });
 
-test("on a backend older than the queue there's no indicator, and an admin still gets everyone's", async ({ page }) => {
+test("on a backend older than the queue Add is only that, and an admin still gets everyone's", async ({ page }) => {
   await page.route("**/api/import/queue", (route) =>
     route.request().method() === "GET" ? route.fulfill({ status: 404, json: {} }) : route.continue(),
   );
   await page.goto("/models");
-  await expect(indicator(page)).toHaveCount(0);
   // No sign-out, either.
-  await expect(page.getByRole("button", { name: "Add", exact: true })).toBeVisible();
+  await addButton(page).click();
+  await expect(addHub(page).getByRole("button", { name: "Upload files" })).toBeVisible();
+  await expect(addHub(page).getByRole("button", { name: "Open", exact: true })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   await page.goto("/?import-queue=wait");
   const dialog = queueDialog(page, "Server import queue");
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("group", { name: "Whose imports" })).toHaveCount(0);
   await expect(dialog.getByRole("button", { name: "Queue settings" })).toHaveCount(0);
-  await expect(indicator(page)).toHaveCount(0);
 });
 
 test("the Add dialog closes on submit, and a refused link comes back with Try again", async ({ page }) => {
@@ -290,8 +303,8 @@ test("double-clicking Import sends the links once", async ({ page }) => {
   });
 
   await page.goto("/models");
-  await page.getByRole("button", { name: "Add", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Import", exact: true }).click();
+  await addButton(page).click();
+  await addHub(page).getByRole("button", { name: "Import", exact: true }).click();
   const dialog = importDialog(page);
   const links = [modelId(), modelId()].map(linkTo);
   await linkField(dialog).fill(links.join("\n"));
@@ -314,9 +327,11 @@ test("a link goes through the line to Finished, without leaving the page, and th
   await addLink(page, linkTo(id));
   await expect(toast(page, "Added to the queue.")).toBeVisible();
 
-  const importing = page.getByRole("button", { name: /^Import queue: Importing/ });
-  await expect(importing).toBeVisible({ timeout: IMPORT_TIMEOUT });
-  await importing.click();
+  await expect(addButton(page)).toHaveAccessibleDescription(/^Importing/, { timeout: IMPORT_TIMEOUT });
+  await addButton(page).click();
+  await addHub(page)
+    .getByRole("button", { name: /^1\s*Importing/ })
+    .click();
   const dialog = queueDialog(page);
   await expectChosen(section(dialog, "Importing"));
   await expect(jobCard(dialog, id).getByText("Importing", { exact: true })).toBeVisible();
@@ -335,7 +350,7 @@ test("a link goes through the line to Finished, without leaving the page, and th
   await expect(page.getByRole("heading", { name })).toBeVisible();
   await api.printsNamed(name);
 
-  await indicator(page).click();
+  await openQueue(page);
   await section(dialog, "Finished").click();
   await expect(jobCard(dialog, id).getByText("Done", { exact: true })).toBeVisible();
   await expect(section(dialog, "Finished")).toContainText("1");
@@ -359,9 +374,9 @@ test("a link that fails lands in Needs attention, and its toast opens it there",
   await expectChosen(section(dialog, "Needs attention"));
   await expect(section(dialog, "Needs attention")).toContainText("1");
   await expect(jobCard(dialog, id).getByRole("button", { name: "Retry" })).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /^Import queue: .*1 needs attention/, includeHidden: true }),
-  ).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Add", exact: true, includeHidden: true })).toHaveAccessibleDescription(
+    /1 needs attention/,
+  );
 });
 
 test("Hold takes an import out of the line, past its turn, and Start puts it back", async ({ page }) => {
@@ -577,6 +592,40 @@ test("Clear finished leaves the keyboard on the heading once its button has gone
   await expect(dialog.locator("[data-queue-heading]")).toBeFocused();
 });
 
+test("the queue starts a new import itself, over its own dialog, and stays open behind it", async ({ page }) => {
+  const id = heldModel();
+  await page.goto("/models");
+  await openQueue(page);
+  const dialog = queueDialog(page);
+  await expect(dialog.getByText("Nothing importing")).toBeVisible();
+
+  // Its header's button, and the empty panel's beside it.
+  await expect(dialog.getByRole("button", { name: "Import", exact: true })).toHaveCount(2);
+  await dialog.getByRole("button", { name: "Import", exact: true }).first().click();
+  const importing = importDialog(page);
+  await linkField(importing).fill(linkTo(id));
+  await importing.getByRole("button", { name: "Import", exact: true }).click();
+  await expect(importing).toBeHidden();
+
+  await expect(dialog).toBeVisible();
+  await expect(jobCard(dialog, id)).toBeVisible({ timeout: IMPORT_TIMEOUT });
+  release(id);
+});
+
+test("a failure can be retried from the Add hub, without opening the queue", async ({ page }) => {
+  const id = modelId("breaks");
+  await page.goto("/models");
+  await addLink(page, linkTo(id));
+  await expect(addButton(page)).toHaveAccessibleDescription(/1 needs attention/, { timeout: IMPORT_TIMEOUT });
+
+  await addButton(page).click();
+  const hub = addHub(page);
+  await expect(hub.getByRole("button", { name: /^1\s*Attention/ })).toBeVisible();
+  await hub.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(queueDialog(page)).toHaveCount(0);
+  await expect(hub).toBeVisible();
+});
+
 test("a tag's page and search results pick up a model that finishes while they're open", async ({ page }) => {
   /** The queue's first read only takes note of what's there, so what finishes has to come after it. */
   const open = async (path: string) => {
@@ -644,8 +693,10 @@ test("another person's waiting import is a private row, and only an admin sees w
   await addLink(member.page, linkTo(mine));
   await expect(toast(member.page, "Added to the queue. It's #2 in line.")).toBeVisible();
 
-  const button = member.page.getByRole("button", { name: /^Import queue: Your next import is #2 in line/ });
-  await button.click({ timeout: IMPORT_TIMEOUT });
+  await expect(addButton(member.page)).toHaveAccessibleDescription(/^Your next import is #2 in line/, {
+    timeout: IMPORT_TIMEOUT,
+  });
+  await openQueue(member.page);
   const dialog = queueDialog(member.page);
   await expectChosen(section(dialog, "Waiting"));
   await expect(dialog.getByRole("article")).toHaveCount(1);
@@ -673,7 +724,7 @@ test("the cog's switch stays through a reload", async ({ page }) => {
   const setting = page.getByRole("switch", { name: /^Start links from Grab automatically/ });
   try {
     await page.goto("/models");
-    await indicator(page).click();
+    await openQueue(page);
     await queueDialog(page).getByRole("button", { name: "Queue settings" }).click();
     await expect(setting).not.toBeChecked();
 
@@ -684,7 +735,7 @@ test("the cog's switch stays through a reload", async ({ page }) => {
     await expect(page.getByText("New links go straight into the line.")).toBeVisible();
 
     await page.reload();
-    await indicator(page).click();
+    await openQueue(page);
     await queueDialog(page).getByRole("button", { name: "Queue settings" }).click();
     await expect(setting).toBeChecked();
     expect((await admin.queue()).settings.start_grab_links).toBe(true);
@@ -696,9 +747,13 @@ test("the cog's switch stays through a reload", async ({ page }) => {
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 393, height: 852 } });
 
-  test("the queue opens from the top bar and fits the screen", async ({ page }) => {
+  test("Add and the queue both fit the screen", async ({ page }) => {
     await page.goto("/models");
-    await indicator(page).click();
+    await addButton(page).click();
+    const hub = (await addHub(page).boundingBox())!;
+    expect(hub.x).toBeGreaterThanOrEqual(0);
+    expect(hub.x + hub.width).toBeLessThanOrEqual(393);
+    await addHub(page).getByRole("button", { name: "Open", exact: true }).click();
     const dialog = queueDialog(page);
     await expect(dialog).toBeVisible();
     await section(dialog, "Waiting").click();

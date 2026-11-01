@@ -6,7 +6,7 @@ left where they are.
 **Supported files:** STL, 3MF, STEP/STP, OBJ, F3D and LightBurn (`.lbrn`, `.lbrn2`) models, images (PNG, JPG, WebP,
 BMP, GIF, SVG), and ZIP archives. Each file can be up to 512 MB by default.
 
-![The Add menu, with Upload files, Upload folder and Import](images/add-menu.png)
+![What Add opens, with Import, Upload files, Upload folder and the import queue](images/add-menu.png)
 
 ## Upload one file
 

@@ -378,7 +378,8 @@ const SHOTS = [
       await page.route(/\/api\/admin\/import-queue\?queue=1$/, (route) => route.fulfill({ json: everyone }));
       await open(page, "/admin");
       // From the top bar, which leaves this page behind the dialog, where the /admin-queue address has the dashboard.
-      await page.getByRole("button", { name: /^Import queue: / }).click();
+      await page.getByRole("button", { name: "Add", exact: true }).click();
+      await page.getByRole("dialog", { name: "Add" }).getByRole("button", { name: "Open", exact: true }).click();
       await page
         .getByRole("dialog")
         .getByRole("group", { name: "Whose imports" })
@@ -545,7 +546,7 @@ const SHOTS = [
       // Measured first: the open menu hides the rest of the page from role queries.
       const button = await add.boundingBox();
       await add.click();
-      const menu = page.getByRole("menu");
+      const menu = page.getByRole("dialog", { name: "Add" });
       await menu.waitFor();
       await page.waitForTimeout(400);
       const box = await menu.boundingBox();
