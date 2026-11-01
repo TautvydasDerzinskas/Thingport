@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Switch from "@mui/material/Switch";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import CallMergeIcon from "@mui/icons-material/CallMerge";
@@ -19,8 +19,11 @@ import MergeDialog, { type MergeItem } from "../../components/MergeDialog";
 import SelectionToolbar, { SelectionAction } from "../../components/selection/SelectionToolbar";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useSelection } from "../../hooks/useSelection";
 import { colorForTag } from "../../utils/tagColors";
+import { readMinCount, saveMinCount } from "./minCount";
+import TagFiltersButton from "./TagFiltersButton";
 import TagTile, { TagTileSkeletons } from "./TagTile";
 import VirtualTagGrid from "./VirtualTagGrid";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
@@ -70,7 +73,7 @@ const TILE_GRID = {
 } as const;
 
 /** Every tag as a square of its models' pictures, with its count and a bookmark toggle. Rarely-used tags
- *  (under 2 models) are hidden by default. */
+ *  (under 2 models, unless changed in the filters) are hidden. */
 export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const confirm = useConfirm();
@@ -81,8 +84,9 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   const [hasMore, setHasMore] = useState(false);
   const [anyTags, setAnyTags] = useState(false);
   const [sortMode, setSortMode] = useState<TagSortMode>("popular");
-  const [hideRarelyUsed, setHideRarelyUsed] = useState(true);
-  const minCount = hideRarelyUsed ? 2 : 1;
+  const [minCountChoice, setMinCountChoice] = useState(readMinCount);
+  // Each change empties the grid and loads it again, so typing 10 shouldn't load the tags for 1 on the way.
+  const minCount = useDebouncedValue(minCountChoice, 300);
   const [pageSize] = useState(pageSizeForScreen);
   // Bumped whenever the sort or filter changes, so a page still on its way for the old one is dropped.
   const generation = useRef(0);
@@ -98,6 +102,11 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   const toggleRef = useRef(selection.toggle);
   toggleRef.current = selection.toggle;
   const onToggleSelect = useCallback((tag: TagSummary, range: boolean) => toggleRef.current(tag.name, range), []);
+
+  const changeMinCount = (next: number) => {
+    setMinCountChoice(next);
+    saveMinCount(next);
+  };
 
   const handleError = (err: unknown, message: string) => {
     if (err instanceof UnauthorizedError) {
@@ -256,16 +265,6 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   return (
     <Stack spacing={2}>
       <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, rowGap: 1 }}>
-        <FormControlLabel
-          control={
-            <Switch size="small" checked={hideRarelyUsed} onChange={(e) => setHideRarelyUsed(e.target.checked)} />
-          }
-          label={
-            <Typography variant="body2" color="text.secondary">
-              {t("models:tags.hideRarelyUsed")}
-            </Typography>
-          }
-        />
         {anyTags && (
           <SelectionToolbar
             selection={selection}
@@ -325,8 +324,10 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
             />
           </SelectionToolbar>
         )}
-        <Box sx={{ ml: "auto" }}>
+        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
           <SortTabs value={sortMode} options={sortOptions} onChange={setSortMode} />
+          <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+          <TagFiltersButton minCount={minCountChoice} onChange={changeMinCount} />
         </Box>
       </Box>
 
@@ -356,7 +357,14 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
         </>
       ) : (
         <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
-          <Typography variant="body2">{anyTags ? t("models:tags.allHidden") : t("models:tags.empty")}</Typography>
+          <Typography variant="body2">
+            {anyTags ? t("models:tags.allHidden", { min: minCount }) : t("models:tags.empty")}
+          </Typography>
+          {anyTags && (
+            <Button size="small" onClick={() => changeMinCount(1)}>
+              {t("models:tags.showAll")}
+            </Button>
+          )}
         </Stack>
       )}
     </Stack>
