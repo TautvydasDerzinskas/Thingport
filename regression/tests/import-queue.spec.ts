@@ -588,11 +588,11 @@ test("a tag's page and search results pick up a model that finishes while they'r
 
   const second = modelId();
   await open(`/search-results?q=${encodeURIComponent(modelName(second))}`);
-  await expect(page.getByRole("main").getByText(modelName(second))).toHaveCount(0);
+  // The page quotes what was searched for, so it's the model card's picture that counts.
+  const result = page.getByRole("main").getByRole("img", { name: modelName(second) });
+  await expect(result).toHaveCount(0);
   await admin.enqueue(linkTo(second));
-  await expect(page.getByRole("main").getByRole("link", { name: new RegExp(second) })).toBeVisible({
-    timeout: IMPORT_TIMEOUT,
-  });
+  await expect(result).toBeVisible({ timeout: IMPORT_TIMEOUT });
 });
 
 test("a queue link outlasts a session that has ended, and opens after signing back in", async ({

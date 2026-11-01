@@ -143,8 +143,9 @@ mutate the same global `Setting` rows, and parallel workers race each other. See
 
 ### Frontend
 
-There are no frontend tests yet. `npm run test:run` uses `--passWithNoTests`, so it succeeds
-against an empty suite. New tests are welcome.
+`npm run test:run` in `frontend/` runs the tests with Vitest, and `npm run verify` adds the type check, lint and build.
+They run without a DOM: components are rendered to static markup and read as text (see
+`frontend/src/components/importQueue/testing.tsx`).
 
 ### Regression pack
 

@@ -36,7 +36,10 @@ let admin: Account;
 let member: Account;
 
 beforeEach(async () => {
-  [owner, admin, member] = await Promise.all([account("owner"), account("admin"), account("member")]);
+  // One at a time: on an empty database, registering together would have them all count as the first account.
+  owner = await account("owner");
+  admin = await account("admin");
+  member = await account("member");
 });
 
 describe("roles", () => {
