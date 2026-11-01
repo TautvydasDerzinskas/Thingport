@@ -17,21 +17,20 @@ afterEach(() => {
 
 describe("toSubmitAnswer", () => {
   it("reads a job in line", () => {
-    expect(toSubmitAnswer({ job_id: "j", status: "QUEUED", position: 3 })).toEqual({
-      kind: "job",
-      job_id: "j",
-      status: "QUEUED",
-      position: 3,
-    });
+    expect(toSubmitAnswer({ job_id: "j", status: "QUEUED", position: 3 })).toEqual({ kind: "job", position: 3 });
   });
 
   it("reads a job from a backend older than the line, which says only its id", () => {
-    expect(toSubmitAnswer({ job_id: "j" })).toEqual({ kind: "job", job_id: "j", status: null, position: null });
+    expect(toSubmitAnswer({ job_id: "j" })).toEqual({ kind: "job", position: null });
+  });
+
+  it("doesn't take a job with an id of its own for a print", () => {
+    expect(toSubmitAnswer({ id: "x", job_id: "j", position: 1 })).toEqual({ kind: "job", position: 1 });
   });
 
   it("reads models left waiting for Thingport Grab", () => {
-    expect(toSubmitAnswer({ queued: 4, collection_id: "c" })).toEqual({ kind: "grab", queued: 4, collection_id: "c" });
-    expect(toSubmitAnswer({ queued: 1 })).toEqual({ kind: "grab", queued: 1, collection_id: null });
+    expect(toSubmitAnswer({ queued: 4, collection_id: "c" })).toEqual({ kind: "grab", queued: 4 });
+    expect(toSubmitAnswer({ queued: 1 })).toEqual({ kind: "grab", queued: 1 });
   });
 
   it("reads a print imported before answering", () => {
@@ -40,7 +39,7 @@ describe("toSubmitAnswer", () => {
   });
 
   it("takes anything else for an import that was accepted", () => {
-    const accepted = { kind: "job", job_id: null, status: null, position: null };
+    const accepted = { kind: "job", position: null };
     expect(toSubmitAnswer({ task_id: "t" })).toEqual(accepted);
     expect(toSubmitAnswer({})).toEqual(accepted);
     expect(toSubmitAnswer(null)).toEqual(accepted);
@@ -66,7 +65,7 @@ describe("submitting to the line", () => {
     ],
   ])("asks for the line when submitting %s", async (_name, submit, url) => {
     const fetchMock = stubFetch(() => json({ job_id: "j", status: "QUEUED", position: 1 }, 202));
-    await expect(submit()).resolves.toEqual({ kind: "job", job_id: "j", status: "QUEUED", position: 1 });
+    await expect(submit()).resolves.toEqual({ kind: "job", position: 1 });
     const [called, init] = fetchMock.mock.calls[0];
     expect(called).toBe(url);
     expect(init?.method).toBe("POST");
@@ -78,7 +77,6 @@ describe("submitting to the line", () => {
     await expect(importQueueApi.submitList("makeronline", { ...payload, model_ids: ["1", "2"] })).resolves.toEqual({
       kind: "grab",
       queued: 2,
-      collection_id: "c",
     });
   });
 
@@ -155,10 +153,19 @@ describe("adminQueueApi", () => {
     const fetchMock = stubFetch(() => json({ jobs: [], bulk: {} }));
     await adminQueueApi.get();
     expect(fetchMock.mock.calls[0][0]).toBe("/api/admin/import-queue?queue=1");
+    // A real fetch throws on a GET with a body, which this mock wouldn't.
+    expect(fetchMock.mock.calls[0][1]?.body).toBeUndefined();
+  });
+
+  it("rejects with the server's reason, and tells a signed-out read apart", async () => {
+    stubFetch(() => json({ detail: "Broken" }, 500));
+    await expect(adminQueueApi.get()).rejects.toThrow("Broken");
+    stubFetch(() => json({}, 401));
+    await expect(adminQueueApi.links("j")).rejects.toBeInstanceOf(UnauthorizedError);
   });
 
   it.each([
-    ["links", () => adminQueueApi.links("j"), undefined, "/api/admin/import-queue/jobs/j/items"],
+    ["links", () => adminQueueApi.links("j"), "GET", "/api/admin/import-queue/jobs/j/items"],
     ["start", () => adminQueueApi.start("j"), "POST", "/api/admin/import-queue/jobs/j/start"],
     ["retry", () => adminQueueApi.retry("j"), "POST", "/api/admin/import-queue/jobs/j/retry"],
     ["pause", () => adminQueueApi.pause("j"), "POST", "/api/admin/import-queue/jobs/j/pause"],

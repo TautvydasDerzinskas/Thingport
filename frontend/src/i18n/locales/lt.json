@@ -665,7 +665,8 @@
         },
         "wait": {
           "title": "Niekas nelaukia",
-          "text": "Nauji importai čia laukia savo eilės. Nuorodos, išsiųstos iš Thingport Grab mygtuku „Pridėti į eilę“, lieka sulaikytos, kol jas paleisite."
+          "text": "Nauji importai čia laukia savo eilės. Nuorodos, išsiųstos iš Thingport Grab mygtuku „Pridėti į eilę“, lieka sulaikytos, kol jas paleisite.",
+          "textAuto": "Nauji importai čia laukia savo eilės."
         },
         "done": {
           "title": "Dar niekas nebaigta",
@@ -723,7 +724,19 @@
       "clear": {
         "title": "Išvalyti baigtus importus?",
         "message": "Jie dings iš šio sąrašo kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
+        "messageEveryone_one": "Bus išvalytas {{count}} baigtas importas, kad ir kieno jis būtų, kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekose.",
+        "messageEveryone_few": "Bus išvalyti {{count}} baigti importai, taip pat ir kitų žmonių, kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekose.",
+        "messageEveryone_other": "Bus išvalyta {{count}} baigtų importų, taip pat ir kitų žmonių, kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekose.",
+        "messagePerson_one": "Bus išvalytas {{count}} baigtas importas ({{name}}) kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
+        "messagePerson_few": "Bus išvalyti {{count}} baigti importai ({{name}}) kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
+        "messagePerson_other": "Bus išvalyta {{count}} baigtų importų ({{name}}) kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
         "confirm": "Išvalyti"
+      },
+      "finishedList": {
+        "newest": "Rodoma naujausių: {{shown}} iš {{total}}",
+        "older_one": "{{count}} senesnis importas čia nerodomas",
+        "older_few": "{{count}} senesni importai čia nerodomi",
+        "older_other": "{{count}} senesnių importų čia nerodoma"
       },
       "delete": {
         "title": "Ištrinti šį importą?",
@@ -754,7 +767,7 @@
         "all": "Dizainerio ir bendruomenės spausdinimo profiliai"
       },
       "syncTag": "SINCH",
-      "syncTagHint": "Sinchronizuojamos kolekcijos vykdomos šalia eilės, todėl jos niekada nestabdo",
+      "syncTagHint": "Sinchronizuojamos kolekcijos vykdomos šalia eilės, todėl eilės niekada nestabdo",
       "syncWaitingHelp": "Sinchronizuojamos kolekcijos vykdomos po vieną šalia eilės ir užleidžia vietą, kol eilė importuoja iš tos pačios svetainės",
       "type": {
         "LINKS": "Nuorodos",
@@ -780,7 +793,9 @@
         "pausing": "Baigia dabartinę nuorodą ir sustoja.",
         "error": "Importas nepavyko.",
         "partial": "Baigta, bet kai kurios nuorodos nepavyko.",
+        "partialModels": "Baigta, bet kai kurių modelių nepavyko importuoti.",
         "done": "Visos nuorodos importuotos.",
+        "doneModels": "Visi modeliai importuoti.",
         "unknown": "Ši Thingport versija tokios būsenos nežino."
       },
       "progress": "{{processed}} iš {{total}}",
@@ -793,7 +808,9 @@
         "modelsFailed_few": "Nepavyko {{count}} modeliai.",
         "modelsFailed_other": "Nepavyko {{count}} modelių.",
         "interruptedNoRetry": "Nutraukta paleidus serverį iš naujo. Dalis failų jau gali būti jūsų bibliotekoje.",
+        "interruptedNoRetryOwner": "Nutraukta paleidus serverį iš naujo. Dalis failų jau gali būti šio žmogaus bibliotekoje.",
         "interrupted": "Nutraukta paleidus serverį iš naujo. Modelis jūsų bibliotekoje gali būti nepilnas: prieš kartodami jį ištrinkite.",
+        "interruptedOwner": "Nutraukta paleidus serverį iš naujo. Modelis šio žmogaus bibliotekoje gali būti nepilnas: prieš kartojant jį reikėtų ištrinti.",
         "interruptedZip": "Nutraukta paleidus serverį iš naujo. Dalis modelių jau importuoti. Pradėkite naują importą tik su trūkstamais failais.",
         "stalled": "Šis importas nustojo reaguoti, todėl eilė pajudėjo toliau. Jei kartoti nesiūloma, paleiskite serverį iš naujo.",
         "noRequest": "Šis senesnis importas neturi išsaugotos užklausos."
@@ -827,7 +844,6 @@
       "toast": {
         "added": "Pridėta į eilę. Jis bus kitas.",
         "addedPlace": "Pridėta į eilę. Jis yra #{{n}} eilėje.",
-        "addedPlain": "Pridėta į eilę.",
         "started": "Importas pradėtas.",
         "open": "Atverti",
         "tryAgain": "Bandyti dar kartą",

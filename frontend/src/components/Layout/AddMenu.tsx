@@ -159,6 +159,8 @@ const AddMenu = React.forwardRef<AddMenuHandle, Props>(function AddMenu(
 
   /** Closes first: what's submitted goes on in the background, and says how it went in a toast. */
   const submitImport = () => {
+    // Its button stays pressable while the dialog fades out.
+    if (!importOpen) return;
     if (!links.length || isBlockedCollection) return;
     if (needsCaptcha && !captcha?.captcha_answer.trim()) return;
     const answer = needsCaptcha ? captcha : null;

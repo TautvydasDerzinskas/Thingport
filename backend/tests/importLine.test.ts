@@ -41,6 +41,7 @@ import {
   personKey,
   positionOf,
   queueLink,
+  readEveryonesQueue,
   readLine,
   readOwnQueue,
   removeQueueItem,
@@ -425,6 +426,82 @@ describe("the import line", () => {
       await removeQueueItem((await itemsOf(sync.id))[0].id);
       expect((await reload(sync.id)).sourceUrl).toBe("https://example.com/collection");
     });
+
+    it("finishes a held batch left with nothing to start or retry", async () => {
+      const job = await row(alice, { imported: 1, processed: 1 }, ["DONE", "PENDING", "PENDING"]);
+      const [second, third] = (await itemsOf(job.id)).filter((item) => item.status === "PENDING");
+      expect(await removeQueueItem(second.id)).toEqual({ jobDeleted: false });
+      expect(await reload(job.id)).toMatchObject({ status: "PAUSED", total: 2, processed: 1 });
+
+      expect(await removeQueueItem(third.id)).toEqual({ jobDeleted: false });
+      expect(await reload(job.id)).toMatchObject({
+        status: "DONE",
+        errorMessage: null,
+        total: 1,
+        processed: 1,
+        imported: 1,
+        failedCount: 0,
+      });
+      const { jobs, finishedTotal } = await readOwnQueue(alice);
+      expect(jobs.find((card) => card.id === job.id)).toMatchObject({ attention: false, position: null });
+      expect(finishedTotal).toBe(1);
+    });
+
+    const removeFirstPending = async (jobId: string) => {
+      const pending = (await itemsOf(jobId)).find((item) => item.status === "PENDING");
+      await removeQueueItem(pending!.id);
+    };
+
+    it("keeps a held batch on hold while it has a link to retry or run", async () => {
+      const failed = await row(alice, {}, ["DONE", "FAILED", "PENDING"]);
+      await removeFirstPending(failed.id);
+      expect(await reload(failed.id)).toMatchObject({ status: "PAUSED", processed: 2, failedCount: 1 });
+
+      const waiting = await row(alice, {}, ["DONE", "PENDING", "PENDING"]);
+      await removeFirstPending(waiting.id);
+      expect((await reload(waiting.id)).status).toBe("PAUSED");
+    });
+
+    it("leaves a sync's job as it is, whose end says what it brought in", async () => {
+      const collectionSyncId = await syncedCollection(alice);
+      const held = await row(alice, { collectionSyncId, payload: { sync_new: ["print1"] } }, ["DONE", "PENDING"]);
+      await removeFirstPending(held.id);
+      expect(await reload(held.id)).toMatchObject({ status: "PAUSED", payload: { sync_new: ["print1"] } });
+    });
+
+    it("leaves a batch in line to run to its own end", async () => {
+      const inLine = await row(alice, { status: "QUEUED", queuedAt: new Date() }, ["DONE", "PENDING"]);
+      await removeFirstPending(inLine.id);
+      expect((await reload(inLine.id)).status).toBe("QUEUED");
+    });
+
+    it("makes a Delete wait for a Grab link on its way into that job, so neither fails", async () => {
+      const first = await queueLink(alice, url("one"), {});
+      const read = prisma.importJobItem.findFirst.bind(prisma.importJobItem);
+      let deleting: Promise<void> | undefined;
+      // queueLink has found its job, and would be left adding to nothing.
+      vi.spyOn(prisma.importJobItem, "findFirst").mockImplementationOnce((async (
+        args: Prisma.ImportJobItemFindFirstArgs,
+      ) => {
+        deleting = deleteQueueJob(first.job.id, alice);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return read(args);
+      }) as never);
+
+      const second = await queueLink(alice, url("two"), {});
+      expect(second).toMatchObject({ duplicate: false, waiting: 2 });
+      expect(second.job.id).toBe(first.job.id);
+      await deleting;
+      expect(await prisma.importJob.findUnique({ where: { id: first.job.id } })).toBeNull();
+    });
+
+    it("lets the next Grab link make a new job once a Delete has landed", async () => {
+      const first = await queueLink(alice, url("one"), {});
+      await deleteQueueJob(first.job.id, alice);
+      const second = await queueLink(alice, url("two"), {});
+      expect(second.job.id).not.toBe(first.job.id);
+      expect(second).toMatchObject({ duplicate: false, waiting: 1 });
+    });
   });
 
   describe("links from Grab", () => {
@@ -687,7 +764,7 @@ describe("the import line", () => {
         })),
       });
       expect((await listQueueJobs()).some((job) => job.id === oldest.id)).toBe(false);
-      expect((await listQueueJobs({ line: true })).some((job) => job.id === oldest.id)).toBe(true);
+      expect((await readEveryonesQueue()).jobs.some((job) => job.id === oldest.id)).toBe(true);
     });
 
     it("shows other people's places in the line and nothing about them", async () => {

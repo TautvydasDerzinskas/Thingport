@@ -98,6 +98,30 @@ describe("the batch panel's import", () => {
     expect(last()).toContain(`href="${INSTANCE}/models"`);
   });
 
+  it("shows no success at DONE when every model failed", async () => {
+    await importSelected([job("DONE", { imported: 0, failed_count: 2, total: 2 })]);
+    expect(last()).not.toContain("Imported!");
+    expect(last()).toContain("Nothing imported");
+    expect(last()).toContain("Imported 0 of 2.");
+  });
+
+  it("says partly at DONE when some models failed", async () => {
+    await importSelected([job("DONE", { imported: 1, failed_count: 1, total: 2 })]);
+    expect(last()).not.toContain("Imported!");
+    expect(last()).toContain("Partly imported");
+    expect(last()).toContain("Imported 1 of 2.");
+  });
+
+  it("still calls it a success when every model was already there", async () => {
+    await importSelected([job("DONE", { imported: 0, already_in_library: 2, total: 2 })]);
+    expect(last()).toContain("Imported!");
+  });
+
+  it("reads an older instance's answer, which may not count failures, as ever", async () => {
+    await importSelected([job("DONE", { imported: 2, total: 2 })]);
+    expect(last()).toContain("Imported!");
+  });
+
   it("links DONE to the one model it made, as ever", async () => {
     await importSelected([job("DONE", { imported: 1, total: 1, result_print_id: "print1" })]);
     expect(last()).toContain(`href="${INSTANCE}/models/print1"`);
@@ -130,14 +154,6 @@ describe("the batch panel's import", () => {
     await importSelected([job("SOMETHING_NEW")]);
     expect(last()).not.toContain("Imported!");
     expect(last()).toContain("Import paused");
-  });
-
-  it("keeps polling through QUEUED, should that ever reach it", async () => {
-    await importSelected([job("QUEUED", { processed: 0 }), job("RUNNING"), job("DONE", { imported: 10 })]);
-    expect(rendered.some((html) => html.includes("Importing 0 of 10…"))).toBe(true);
-    expect(rendered.filter((html) => html.includes("Imported!") || html.includes("paused"))).toHaveLength(1);
-    expect(last()).toContain("Imported 10 of 10.");
-    expect(calls.filter((route) => route === "GET /import/jobs/job1")).toHaveLength(3);
   });
 
   it("shows a busy older instance's 409 in its own words, and never polls", async () => {

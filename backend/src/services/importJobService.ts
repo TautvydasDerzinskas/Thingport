@@ -45,6 +45,12 @@ export async function getJobStatus(id: string): Promise<ImportJob["status"] | nu
   return job?.status ?? null;
 }
 
+/** Whether something took a batch from its runner: the watchdog, or its owner's account going with it. The rest of it
+ *  would run beside the line. A failed read says nothing, and a database blip mustn't fail the batch. */
+export async function jobTakenFromRunner(id: string): Promise<boolean> {
+  return (await getJobStatus(id).catch(() => "RUNNING")) !== "RUNNING";
+}
+
 export async function getJob(id: string, userId: string): Promise<ImportJob | null> {
   return prisma.importJob.findFirst({ where: { id, userId } });
 }
@@ -116,6 +122,12 @@ export async function resetFailedItems(jobId: string): Promise<number> {
 
 export async function countJobItems(jobId: string, status: Prisma.ImportJobItemWhereInput["status"]): Promise<number> {
   return prisma.importJobItem.count({ where: { jobId, status } });
+}
+
+/** A LINKS job's counts, as its links stand. */
+export async function linkTotals(jobId: string): Promise<{ processed: number; failedCount: number }> {
+  const failedCount = await countJobItems(jobId, "FAILED");
+  return { processed: (await countJobItems(jobId, "DONE")) + failedCount, failedCount };
 }
 
 /** A job's stored JSON: what it runs from, and what its run has to say about itself. Null on old rows. */

@@ -25,7 +25,7 @@ import {
   SYNC_JOB_INTERRUPTED,
   trackRunner,
 } from "./importJobRunner";
-import { countJobItems, hasSavedRequest, jobPayload, QUEUE_ATTENTION_PATH } from "./importJobService";
+import { hasSavedRequest, jobPayload, linkTotals, QUEUE_ATTENTION_PATH } from "./importJobService";
 import type { ImportRequestBody } from "./importService";
 import { createNotification } from "./notificationService";
 
@@ -137,11 +137,7 @@ async function claimLinksJob(job: ImportJob): Promise<Launched | null> {
         where: { jobId: job.id, status: "RUNNING" },
         data: { status: "PENDING" },
       });
-      const failedCount = await countJobItems(job.id, "FAILED");
-      await prisma.importJob.updateMany({
-        where: { id: job.id },
-        data: { processed: (await countJobItems(job.id, "DONE")) + failedCount, failedCount },
-      });
+      await prisma.importJob.updateMany({ where: { id: job.id }, data: await linkTotals(job.id) });
     } catch (err) {
       await markJobFailed(job.id, err);
       return NOTHING_TO_RUN;
@@ -254,6 +250,18 @@ function watchOver(jobId: string, activity: ImportActivity): { stalled: Promise<
   return { stalled, disarm: () => clearInterval(timer) };
 }
 
+/** A job from the line ended in an error: its owner joined it and walked away. Never rejects: a notification lost
+ *  isn't worth failing what comes after it. */
+async function notifyJobFailed(job: ImportJob): Promise<void> {
+  await createNotification(job.userId, {
+    type: "import",
+    title: job.sourceLabel ? `Couldn't finish importing "${job.sourceLabel}"` : "Couldn't finish an import",
+    body: job.errorMessage,
+    externalUrl: job.sourceUrl,
+    internalPath: QUEUE_ATTENTION_PATH,
+  }).catch((err) => log.error("couldn't notify about a failed job", { job: job.id, error: err }));
+}
+
 // Jobs whose end couldn't be written, the database being down: tried again before the next job is read.
 const unsettled = new Set<string>();
 
@@ -265,14 +273,7 @@ async function settleJob(jobId: string): Promise<void> {
   });
   const job = await prisma.importJob.findUnique({ where: { id: jobId } });
   unsettled.delete(jobId);
-  if (job?.status !== "ERROR") return;
-  await createNotification(job.userId, {
-    type: "import",
-    title: job.sourceLabel ? `Couldn't finish importing "${job.sourceLabel}"` : "Couldn't finish an import",
-    body: job.errorMessage,
-    externalUrl: job.sourceUrl,
-    internalPath: QUEUE_ATTENTION_PATH,
-  }).catch((err) => log.error("couldn't notify about a failed job", { job: jobId, error: err }));
+  if (job?.status === "ERROR") await notifyJobFailed(job);
 }
 
 async function runJob(job: ImportJob): Promise<void> {
@@ -346,12 +347,9 @@ async function workThroughLine(): Promise<void> {
 
 /** Never rejects: no handler exists for an unhandled rejection, so one would take the whole server down. */
 async function drain(): Promise<void> {
+  woken = false;
   try {
-    for (;;) {
-      if (!woken || !mayClaim()) return;
-      woken = false;
-      await workThroughLine();
-    }
+    await workThroughLine();
   } catch (err) {
     pollFailed(err);
   }
@@ -425,10 +423,17 @@ export async function recoverImportJobs(before?: Date): Promise<void> {
       }),
     ]);
   }
-  await prisma.importJob.updateMany({
+  // A batch has nothing left to run to its end and report it. Another try can't tell twice: it has left RUNNING by then.
+  const batches = await prisma.importJob.findMany({
     where: { status: "RUNNING", queuedAt: { not: null }, ...untouched },
-    data: { status: "ERROR", errorMessage: JOB_INTERRUPTED },
   });
+  for (const job of batches) {
+    const { count } = await prisma.importJob.updateMany({
+      where: { id: job.id, status: "RUNNING", ...untouched },
+      data: { status: "ERROR", errorMessage: JOB_INTERRUPTED },
+    });
+    if (count) await notifyJobFailed({ ...job, errorMessage: JOB_INTERRUPTED });
+  }
   // Jobs that never were in line, as it has always been for them. Their links stay as they are.
   await prisma.importJob.updateMany({
     where: { status: "RUNNING", ...untouched },

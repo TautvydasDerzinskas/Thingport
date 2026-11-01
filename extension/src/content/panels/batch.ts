@@ -3,7 +3,7 @@
 // Printables collection is read as its owner (providers/printables/content.ts), and Snapmaker's likes and bookmarks
 // share one page, which the panel switches between.
 
-import { jobInProgress, type BatchEntriesResult, type ImportJob, type SyncLookup } from "../../shared/api";
+import type { BatchEntriesResult, ImportJob, SyncLookup } from "../../shared/api";
 import { ctx, setContext } from "../context";
 import { MANIFESTS, manifestOf } from "../../providers/index.generated";
 import { parseSnapmakerListUrl, snapmakerListUrl, type SnapmakerList } from "../../shared/urls";
@@ -220,13 +220,19 @@ async function runBatchImport(result: PanelEntries, sync: SyncLookup | null): Pr
   }
 }
 
+/** A finished job isn't always a success: its links can all have failed. Undefined leaves the usual heading. */
+function doneTitle(job: ImportJob): string | undefined {
+  if (!job.imported && !job.already_in_library) return "Nothing imported";
+  return job.failed_count ? "Partly imported" : undefined;
+}
+
 async function pollJobWithProgress(jobId: string, instanceUrl: string, note: string | null = null): Promise<void> {
   for (;;) {
     // The panel is gone; the job keeps running server-side.
     if (!isPanelMounted()) return;
     const job = await api<ImportJob>("GET", `/import/jobs/${jobId}`);
     if (!isPanelMounted()) return;
-    if (jobInProgress(job)) {
+    if (job.status === "RUNNING") {
       renderPanel(statusHtml(`Importing ${job.processed} of ${job.total}…`));
       await sleep(1000);
       continue;
@@ -240,7 +246,9 @@ async function pollJobWithProgress(jobId: string, instanceUrl: string, note: str
       return;
     }
     const link = job.result_print_id ? `${instanceUrl}/models/${job.result_print_id}` : `${instanceUrl}/models`;
-    renderPanel(successHtml(link, `Imported ${job.imported} of ${job.total}.${note ? ` ${note}` : ""}`));
+    renderPanel(
+      successHtml(link, `Imported ${job.imported} of ${job.total}.${note ? ` ${note}` : ""}`, doneTitle(job)),
+    );
     return;
   }
 }

@@ -31,7 +31,6 @@ import { AiRunProvider } from "./AiRunContext";
 import { NotificationsProvider, useNotifications } from "./NotificationsContext";
 import type { ThemeSelection } from "../../constants/settingsOptions";
 import type { AuthUser } from "../../api/auth";
-import type { MakerWorldSettings } from "../../utils/settings";
 
 type AppLayoutProps = {
   muiTheme: Theme;
@@ -46,7 +45,6 @@ type AppLayoutProps = {
   isAdmin: boolean;
   onOpenProfile: () => void;
   onLogout: () => Promise<void>;
-  onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   user: AuthUser | null;
   onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
   children: React.ReactNode;
@@ -163,7 +161,6 @@ function AppLayoutShell({
   isAdmin,
   onOpenProfile,
   onLogout,
-  onUpdateMakerWorld,
   user,
   onThemeChange,
   children,
@@ -271,7 +268,6 @@ function AppLayoutShell({
                   onBack={pageHeader?.onBack ?? routeOnBack}
                   actions={pageHeader?.actions}
                   categoryId={categoryId}
-                  onUpdateMakerWorld={onUpdateMakerWorld}
                   onUploaded={onPrintsChanged}
                   onUnauthorized={onUnauthorized}
                   user={user}

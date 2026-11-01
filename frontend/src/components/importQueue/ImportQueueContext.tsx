@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "../ToastProvider";
 import { createQueueStore, initialQueueState, type QueueActions, type QueueState, type QueueStore } from "./queueStore";
-import { deepLinkTarget, handsOnQueueParam, indicatorState, QUEUE_PARAM, type IndicatorState } from "./queueView";
+import { deepLinkTarget, indicatorState, opensQueueLink, QUEUE_PARAM, type IndicatorState } from "./queueView";
 
 export type ImportQueueValue = QueueState & QueueActions & { indicator: IndicatorState };
 
@@ -61,15 +61,16 @@ export function ImportQueueProvider({ viewerId, isAdmin, onUnauthorized, onJobCo
     };
   }, [store]);
 
+  const { loading } = state;
   React.useEffect(() => {
     const value = searchParams.get(QUEUE_PARAM);
-    if (value === null || handsOnQueueParam(pathname)) return;
+    if (value === null || !opensQueueLink(pathname, loading)) return;
     const { section, scope } = deepLinkTarget(value, isAdmin);
     store.actions.open(section, scope);
     const rest = new URLSearchParams(searchParams);
     rest.delete(QUEUE_PARAM);
     setSearchParams(rest, { replace: true });
-  }, [pathname, searchParams, setSearchParams, isAdmin, store]);
+  }, [pathname, searchParams, setSearchParams, isAdmin, store, loading]);
 
   const value = React.useMemo(
     () => ({ ...state, ...store.actions, indicator: indicatorState(state.jobs, state.flash) }),
@@ -92,7 +93,8 @@ const OUTSIDE_PROVIDER: ImportQueueValue = {
   indicator: indicatorState([], false),
 };
 
-/** Safe outside the layout, where the home page's search sits: there's no queue there, and nothing throws. */
+/** Doesn't throw outside the provider, as no error boundary would catch it, though nothing in the app reaches that
+ *  fallback today. */
 export function useImportQueue(): ImportQueueValue {
   return React.useContext(ImportQueueContext) ?? OUTSIDE_PROVIDER;
 }

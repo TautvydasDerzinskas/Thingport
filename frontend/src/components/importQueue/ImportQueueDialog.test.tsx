@@ -69,7 +69,14 @@ const everyoneJobs = [
   testJob({ id: "c", owner: MIA, status: "QUEUED", source_label: "Mia first", position: 1, can_pause: true }),
   testJob({ id: "e", owner: SAM, status: "DONE", source_label: "Sam done", total: 2, processed: 2 }),
 ];
-const everyone = { jobs: everyoneJobs, olderBackend: false, loading: false, failed: false };
+const everyone = {
+  jobs: everyoneJobs,
+  olderBackend: false,
+  finishedTotal: 0,
+  finishedByOwner: {},
+  loading: false,
+  failed: false,
+};
 
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW });
@@ -152,6 +159,42 @@ describe("ImportQueueDialog's rail", () => {
     expect(text).not.toContain("Finished 120");
   });
 
+  describe("on everyone's, with the server's totals", () => {
+    const totals = { ...everyone, finishedTotal: 1400, finishedByOwner: { sam: 300, mia: 1100 } };
+
+    it("counts every finished import, on the rail and the button", () => {
+      const text = rendered({ everyone: totals, dialog: dialogState("done", "everyone") }, true);
+      expect(text).toContain("Finished 1400");
+      expect(text).toContain("Clear finished (1400)");
+    });
+
+    it("counts one person's when they're picked", () => {
+      const text = rendered({ everyone: totals, dialog: dialogState("done", "everyone", "sam") }, true);
+      expect(text).toContain("Finished 300");
+      expect(text).toContain("Clear finished (300)");
+    });
+
+    it("falls back to the list on a backend that doesn't say", () => {
+      const text = rendered({ everyone, dialog: dialogState("done", "everyone") }, true);
+      expect(text).toContain("Clear finished (1)");
+      expect(rendered({ everyone, dialog: dialogState("done", "everyone", "sam") }, true)).toContain(
+        "Clear finished (1)",
+      );
+    });
+
+    it("says how far the list goes", () => {
+      const text = rendered({ everyone: totals, dialog: dialogState("done", "everyone") }, true);
+      expect(text).toContain("Showing the newest 1 of 1400");
+    });
+
+    it("has more to say than 'nothing finished' when all of someone's are too old to list", () => {
+      const text = rendered({ everyone: totals, dialog: dialogState("done", "everyone", "mia") }, true);
+      expect(text).toContain("Clear finished (1100)");
+      expect(text).toContain("1100 older imports aren't listed here");
+      expect(text).not.toContain("Nothing finished yet");
+    });
+  });
+
   it("offers Mine and Everyone to admins only", () => {
     expect(render({}, true)).toContain('aria-label="Whose imports"');
     expect(render({}, true)).toContain('role="group"');
@@ -214,6 +257,28 @@ describe("ImportQueueDialog's panels", () => {
     expect(text).not.toContain("Clear finished");
   });
 
+  it("says when Finished lists only the newest, and not while it lists them all", () => {
+    expect(rendered({ jobs: [finished], finishedTotal: 312, dialog: dialogState("done") })).toContain(
+      "Showing the newest 1 of 312",
+    );
+    expect(rendered({ jobs: [finished], finishedTotal: 1, dialog: dialogState("done") })).not.toContain("Showing");
+    expect(rendered({ jobs: [finished], finishedTotal: 312, dialog: dialogState("run") })).not.toContain("Showing");
+  });
+
+  it("doesn't speak of the list while it's still loading", () => {
+    const text = rendered({ loading: true, finishedTotal: 312, dialog: dialogState("done") });
+    expect(text).not.toContain("Showing");
+    expect(text).not.toContain("older");
+  });
+
+  it("has a heading focus can land on when its action leaves nothing else", () => {
+    const html = render({ jobs: own, dialog: dialogState("done") });
+    expect(html).toMatch(
+      /<div[^>]*data-queue-heading=""[^>]*tabindex="-1"[^>]*>|<div[^>]*tabindex="-1"[^>]*data-queue-heading=""/,
+    );
+    expect(render({ dialog: dialogState("done") })).toContain("data-queue-heading");
+  });
+
   it("turns an action off when it has nothing to act on, but keeps it", () => {
     const html = render({ jobs: [testJob({ type: "ZIP", status: "RUNNING" })], dialog: dialogState("run") });
     expect(html).toMatch(/<button[^>]*disabled[^>]*>(?:(?!<\/button>).)*Pause all/s);
@@ -233,6 +298,12 @@ describe("ImportQueueDialog's panels", () => {
     const shown = rendered({ dialog: dialogState(section) });
     expect(shown).toContain(title);
     expect(shown).toContain(text);
+  });
+
+  it("doesn't tell someone whose Grab links start by themselves that they stay on hold", () => {
+    const text = rendered({ startGrabLinks: true, dialog: dialogState("wait") });
+    expect(text).toContain("New imports wait here for their turn.");
+    expect(text).not.toContain("stay on hold");
   });
 
   it("says when someone else's import is what's holding things up", () => {

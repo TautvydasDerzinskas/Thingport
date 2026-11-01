@@ -267,6 +267,8 @@ describe("when a read fails", () => {
     expect(toasts).toEqual([]);
     expect(state().failed).toBe(false);
     expect(state().supported).toBe(true);
+    // Nothing's known yet, so a link into the dialog waits to see whether the session is alive.
+    expect(state().loading).toBe(true);
     server.reads();
     await vi.advanceTimersByTimeAsync(8000);
     expect(server.reads()).toBe(1);
@@ -596,6 +598,55 @@ describe("everyone's list", () => {
     store.stop();
   });
 
+  it("reads how many finished in all, and leaves it at nothing on a backend that doesn't say", async () => {
+    const { server, store, state } = setup({ isAdmin: true });
+    server.routes.set(ADMIN_LIST, () => json({ jobs: [], finished_total: 12, finished_by_owner: { u1: 7 } }));
+    store.start();
+    store.actions.open("done", "everyone");
+    await settle();
+    expect(state().everyone).toMatchObject({ finishedTotal: 12, finishedByOwner: { u1: 7 } });
+
+    server.routes.set(ADMIN_LIST, () => json({ jobs: [] }));
+    await vi.advanceTimersByTimeAsync(8000);
+    expect(state().everyone).toMatchObject({ finishedTotal: 0, finishedByOwner: {} });
+    store.stop();
+  });
+
+  it("clears for the person it was clicked for, who may have gone from the list by the confirmation", async () => {
+    const { server, store } = setup({ isAdmin: true });
+    server.routes.set(ADMIN_LIST, () => json({ jobs: [] }));
+    server.routes.set("POST /api/admin/import-queue/clear-finished?queue=1&user_id=u1", () => json({ deleted: 1 }));
+    store.start();
+    store.actions.open("done", "everyone");
+    store.actions.setPerson("u1");
+    await settle();
+    server.calls.length = 0;
+
+    store.actions.setPerson(null);
+    await store.actions.clearFinished("u1");
+    expect(server.calls.filter((call) => !call.startsWith("GET"))).toEqual([
+      "POST /api/admin/import-queue/clear-finished?queue=1&user_id=u1",
+    ]);
+    store.stop();
+  });
+
+  it("clears everyone's when told so, with someone picked or not", async () => {
+    const { server, store } = setup({ isAdmin: true });
+    server.routes.set(ADMIN_LIST, () => json({ jobs: [] }));
+    server.routes.set("POST /api/admin/import-queue/clear-finished?queue=1", () => json({ deleted: 1 }));
+    store.start();
+    store.actions.open("done", "everyone");
+    store.actions.setPerson("u1");
+    await settle();
+    server.calls.length = 0;
+
+    await store.actions.clearFinished(null);
+    expect(server.calls.filter((call) => !call.startsWith("GET"))).toEqual([
+      "POST /api/admin/import-queue/clear-finished?queue=1",
+    ]);
+    store.stop();
+  });
+
   it("loads a job's links from wherever it's listed", async () => {
     const { server, store } = setup({ isAdmin: true });
     server.routes.set(ADMIN_LIST, () => json({ jobs: [] }));
@@ -795,6 +846,88 @@ describe("the setting", () => {
     await vi.advanceTimersByTimeAsync(8000);
     expect(state().startGrabLinks).toBe(true);
     store.stop();
+  });
+
+  describe("and a read that overlaps a save", () => {
+    /** A store with a read of the queue on its way, whose answer `answerRead` gives. */
+    async function readOnItsWay() {
+      const context = setup();
+      let answerRead: (body: Record<string, unknown>) => void = () => undefined;
+      const { server, store } = context;
+      store.start();
+      await settle();
+      server.setQueue(() => new Promise((resolve) => (answerRead = (body) => resolve(json(body)))));
+      store.actions.refresh();
+      await settle();
+      return { ...context, answerRead: (body: Record<string, unknown>) => answerRead(body) };
+    }
+    const off = queueBody([], { settings: { start_grab_links: false } });
+    const on = queueBody([], { settings: { start_grab_links: true } });
+
+    it("doesn't snap back to what a read from before the save says, when the save answers first", async () => {
+      const { server, store, state, answerRead } = await readOnItsWay();
+      server.routes.set(SAVE, () => json({ start_grab_links: true }));
+      await store.actions.setStartGrabLinks(true);
+
+      answerRead(off);
+      await settle();
+      expect(state().startGrabLinks).toBe(true);
+
+      // The next read began after the save, and has the last word.
+      server.answerQueue([], { settings: { start_grab_links: false } });
+      await vi.advanceTimersByTimeAsync(8000);
+      expect(state().startGrabLinks).toBe(false);
+      store.stop();
+    });
+
+    it("doesn't take a read begun during the save for one after it, even when it answers after it", async () => {
+      const { server, store, state, answerRead } = await readOnItsWay();
+      let answerSave: (response: Response) => void = () => undefined;
+      server.routes.set(SAVE, () => new Promise((resolve) => (answerSave = resolve)));
+      answerRead(off);
+      await settle();
+
+      const saving = store.actions.setStartGrabLinks(true);
+      await settle();
+      let answerNext: (body: Record<string, unknown>) => void = () => undefined;
+      server.setQueue(() => new Promise((resolve) => (answerNext = (body) => resolve(json(body)))));
+      store.actions.refresh();
+      await settle();
+
+      answerSave(json({ start_grab_links: true }));
+      await saving;
+      answerNext(off);
+      await settle();
+      expect(state().startGrabLinks).toBe(true);
+      store.stop();
+    });
+
+    it("goes back to the value of the last read it could trust, when the save then fails", async () => {
+      const { server, store, state, answerRead, toasts } = await readOnItsWay();
+      server.routes.set(SAVE, () => json({ detail: "No" }, 500));
+      await store.actions.setStartGrabLinks(true);
+      expect(state().startGrabLinks).toBe(false);
+      expect(toasts).toHaveLength(1);
+
+      // It began before the save too, and says what's now been shown to be stale anyway.
+      answerRead(on);
+      await settle();
+      expect(state().startGrabLinks).toBe(false);
+      store.stop();
+    });
+
+    it("trusts a read begun once the save was over", async () => {
+      const { server, store, state, answerRead } = await readOnItsWay();
+      server.routes.set(SAVE, () => json({ start_grab_links: true }));
+      answerRead(off);
+      await settle();
+      await store.actions.setStartGrabLinks(true);
+
+      server.answerQueue([], { settings: { start_grab_links: false } });
+      await store.actions.refresh();
+      expect(state().startGrabLinks).toBe(false);
+      store.stop();
+    });
   });
 
   it("goes back and says why when the save fails", async () => {

@@ -28,6 +28,16 @@ export const focusRingSx = {
   "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 1 },
 };
 
+/** Read by screen readers, not shown. */
+export const visuallyHiddenSx = {
+  position: "absolute",
+  width: "1px",
+  height: "1px",
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap",
+} as const;
+
 /** Big enough to tap on a phone, as `dialogIconButtonSx` is for icon buttons. */
 export const tapTargetSx = { minHeight: { xs: 44, md: 0 } };
 

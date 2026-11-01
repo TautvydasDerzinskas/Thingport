@@ -7,6 +7,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useSe
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import AppLayout from "./components/Layout/AppLayout";
+import { useImportQueue } from "./components/importQueue/ImportQueueContext";
 import { QUEUE_PARAM, queueLinkPath } from "./components/importQueue/queueView";
 import DashboardPage, { HOMEPAGE_PATH } from "./pages/DashboardPage";
 import HomepageView from "./pages/DashboardPage/HomepageView";
@@ -58,7 +59,6 @@ import {
   storeUser,
   tokenLifetime,
 } from "./utils/auth";
-import { type AppSettings, type MakerWorldSettings, loadSettings, saveSettings } from "./utils/settings";
 import { useResolvedTheme } from "./hooks/useResolvedTheme";
 import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./hooks/useAccentColor";
 import { resetCardPreview } from "./hooks/useCardPreview";
@@ -93,7 +93,6 @@ type AppShellProps = {
   isAdmin: boolean;
   user: AuthUser | null;
   apiUp: boolean | null;
-  setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
   previewMode: PreviewMode;
   setPreviewMode: (mode: PreviewMode) => void;
   themeSelection: ThemeSelection;
@@ -107,7 +106,9 @@ type AppShellProps = {
 
 function ImportQueueLink() {
   const [params] = useSearchParams();
-  return <Navigate to={queueLinkPath(params.get(QUEUE_PARAM))} replace />;
+  // Stays until the session is known to be alive: signing back in, single sign-on too, returns to this address.
+  const { loading } = useImportQueue();
+  return loading ? null : <Navigate to={queueLinkPath(params.get(QUEUE_PARAM))} replace />;
 }
 
 /** Split out so App can stay outside <BrowserRouter>. */
@@ -115,7 +116,6 @@ function AppShell({
   isAdmin,
   user,
   apiUp,
-  setSettings,
   previewMode,
   setPreviewMode,
   themeSelection,
@@ -149,12 +149,6 @@ function AppShell({
     setNonce((n) => n + 1);
   }, []);
 
-  const updateMakerWorld = React.useCallback(
-    (patch: Partial<MakerWorldSettings>) =>
-      setSettings((prev) => ({ ...prev, makerworld: { ...prev.makerworld, ...patch } })),
-    [setSettings],
-  );
-
   // The homepage view: the dashboard alone, without the app's side menu and top bar.
   if (location.pathname === HOMEPAGE_PATH)
     return (
@@ -181,7 +175,6 @@ function AppShell({
       isAdmin={isAdmin}
       onOpenProfile={() => navigate("/profile")}
       onLogout={onLogout}
-      onUpdateMakerWorld={updateMakerWorld}
       user={user}
       onThemeChange={onThemeChange}
     >
@@ -375,7 +368,6 @@ export default function App() {
   const [showExpiredToast, setShowExpiredToast] = React.useState(false);
   // A ref so concurrent 401s see the guard synchronously and only one alert shows.
   const sessionExpiredRef = React.useRef(false);
-  const [settings, setSettings] = React.useState<AppSettings>(() => loadSettings());
   const [previewMode, setPreviewMode] = React.useState<PreviewMode>("automatic");
   // Server-persisted so it follows the account across devices.
   const [themeSelection, setThemeSelection] = React.useState<ThemeSelection>("light");
@@ -428,9 +420,6 @@ export default function App() {
       active = false;
     };
   }, [token]);
-  React.useEffect(() => {
-    saveSettings(settings);
-  }, [settings]);
   const apiUp = health?.ok ?? null;
   const authRequired = health?.auth_required ?? true;
 
@@ -678,7 +667,6 @@ export default function App() {
           isAdmin={isAdmin}
           user={user}
           apiUp={apiUp}
-          setSettings={setSettings}
           previewMode={previewMode}
           setPreviewMode={setPreviewMode}
           themeSelection={themeSelection}

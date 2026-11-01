@@ -58,13 +58,18 @@ async function askImportQueue(instanceUrl: string): Promise<boolean | null> {
   }
 }
 
+let latestLearning = 0;
+
 /** Learns whether the instance gives everyone an import queue. An answer without the flag means an older instance.
- *  No answer keeps what's known, unless `knownFor` says that was about another instance. Never throws: a sign-in
- *  can't fail over this. */
+ *  No answer keeps what's known, unless `knownFor` says that was about another instance. Only the latest call writes,
+ *  so a late answer from an instance since left can't overwrite this one's; the stored URL can't tell, as a sign-in
+ *  gets here before it's saved. Never throws: a sign-in can't fail over this. */
 export async function learnImportQueue(instanceUrl: string, knownFor: string | undefined): Promise<void> {
+  const learning = ++latestLearning;
   const answer = await askImportQueue(instanceUrl);
   try {
     const { importQueue: stored } = await getStoredConfig();
+    if (learning !== latestLearning) return;
     const importQueue = answer ?? (knownFor === instanceUrl ? stored : undefined);
     // A config key, like isAdmin: rewriting it re-initializes every open provider tab.
     if (importQueue === stored) return;

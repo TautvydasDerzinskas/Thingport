@@ -33,6 +33,7 @@ import {
   listQueueJobs,
   pauseAll,
   pauseQueueJob,
+  readEveryonesQueue,
   removeQueueItem,
   retryAllFailed,
   startAllPaused,
@@ -242,8 +243,13 @@ router.get(
   "/import-queue",
   asyncHandler(async (req, res) => {
     if (req.query.queue === "1") {
-      const jobs = await listQueueJobs({ line: true });
-      res.json({ jobs: jobs.map(toAdminQueueJobOut), bulk: await bulkRunState() });
+      const queue = await readEveryonesQueue();
+      res.json({
+        jobs: queue.jobs.map(toAdminQueueJobOut),
+        bulk: await bulkRunState(),
+        finished_total: queue.finishedTotal,
+        finished_by_owner: queue.finishedByOwner,
+      });
       return;
     }
     const jobs = await listQueueJobs();

@@ -21,6 +21,7 @@ import {
   submittedText,
   toEveryoneQueue,
   toQueueSnapshot,
+  type EveryoneQueue,
   type QueueJob,
   type QueueLocation,
   type QueueScope,
@@ -51,7 +52,7 @@ export type QueueState = {
   finishedVersion: number;
   dialog: { open: boolean; section: QueueSection; scope: QueueScope; person: string | null };
   /** Everyone's imports, read only while on screen. */
-  everyone: { jobs: QueueJob[]; olderBackend: boolean; loading: boolean; failed: boolean };
+  everyone: EveryoneQueue & { loading: boolean; failed: boolean };
   /** Job and link ids, and bulk action names, with a request on its way. */
   busy: ReadonlySet<string>;
 };
@@ -69,7 +70,7 @@ export function initialQueueState(viewerId: string | null = null): QueueState {
     flash: false,
     finishedVersion: 0,
     dialog: { open: false, section: "run", scope: "mine", person: null },
-    everyone: { jobs: [], olderBackend: false, loading: true, failed: false },
+    everyone: { ...toEveryoneQueue(null), loading: true, failed: false },
     busy: new Set(),
   };
 }
@@ -186,12 +187,15 @@ export function createQueueStore(deps: QueueStoreDeps) {
     );
   };
 
-  // A setting being saved is newer than what a poll read before the save got there.
+  // A read that overlaps a save may hold the value from before it, whichever of the two answers first. `saveEdges` moves
+  // as a save starts and as it ends, so a read can tell.
   let saves = 0;
+  let saveEdges = 0;
   let savedStartGrabLinks = false;
 
   const loadOwn = async () => {
     const asked = session;
+    const edgesAsked = saveEdges;
     try {
       const body = await importQueueApi.get();
       if (asked !== session) return;
@@ -205,7 +209,8 @@ export function createQueueStore(deps: QueueStoreDeps) {
       const { finished, flash } = diffSnapshots(previous, snapshot.jobs);
       const beyondList = finishedBeyondList(finished, state.finishedTotal, snapshot.finishedTotal);
       previous = snapshot.jobs;
-      if (!saves) savedStartGrabLinks = snapshot.startGrabLinks;
+      const settingIsCurrent = !saves && edgesAsked === saveEdges;
+      if (settingIsCurrent) savedStartGrabLinks = snapshot.startGrabLinks;
       set({
         supported: true,
         loading: false,
@@ -213,7 +218,7 @@ export function createQueueStore(deps: QueueStoreDeps) {
         jobs: snapshot.jobs,
         line: snapshot.line,
         finishedTotal: snapshot.finishedTotal,
-        startGrabLinks: saves ? state.startGrabLinks : snapshot.startGrabLinks,
+        startGrabLinks: settingIsCurrent ? snapshot.startGrabLinks : state.startGrabLinks,
       });
       if (finished.length) announce(finished, flash, beyondList);
     } catch (err) {
@@ -251,6 +256,8 @@ export function createQueueStore(deps: QueueStoreDeps) {
   );
 
   const showingEveryone = () => deps.isAdmin && state.dialog.scope === "everyone";
+  /** The routes for the list on screen. */
+  const api = () => (showingEveryone() ? adminQueueApi : importQueueApi);
 
   const watchEveryone = () => {
     if (started && state.dialog.open && showingEveryone()) void everyone.start();
@@ -313,7 +320,6 @@ export function createQueueStore(deps: QueueStoreDeps) {
     return answer;
   };
 
-  let latestSave = 0;
   // Saves go one at a time, so the last pick is the one that sticks.
   let saving: Promise<unknown> = Promise.resolve();
 
@@ -343,17 +349,12 @@ export function createQueueStore(deps: QueueStoreDeps) {
     submitProfiles: (provider: ProviderId, payload: Parameters<typeof importQueueApi.submitProfiles>[1]) =>
       importQueueApi.submitProfiles(provider, payload).then(submitted),
 
-    startJob: (jobId: string) =>
-      perform<unknown>(jobId, () => (showingEveryone() ? adminQueueApi.start(jobId) : importQueueApi.start(jobId))),
-    retryJob: (jobId: string) =>
-      perform<unknown>(jobId, () => (showingEveryone() ? adminQueueApi.retry(jobId) : importQueueApi.retry(jobId))),
+    startJob: (jobId: string) => perform<unknown>(jobId, () => api().start(jobId)),
+    retryJob: (jobId: string) => perform<unknown>(jobId, () => api().retry(jobId)),
     /** Hold when it's waiting, Pause when it's running. */
-    pauseJob: (jobId: string) =>
-      perform(jobId, () => (showingEveryone() ? adminQueueApi.pause(jobId) : importQueueApi.pause(jobId))),
-    deleteJob: (jobId: string) =>
-      perform(jobId, () => (showingEveryone() ? adminQueueApi.remove(jobId) : importQueueApi.remove(jobId))),
-    removeLink: (itemId: string) =>
-      perform(itemId, () => (showingEveryone() ? adminQueueApi.removeLink(itemId) : importQueueApi.removeLink(itemId))),
+    pauseJob: (jobId: string) => perform(jobId, () => api().pause(jobId)),
+    deleteJob: (jobId: string) => perform(jobId, () => api().remove(jobId)),
+    removeLink: (itemId: string) => perform(itemId, () => api().removeLink(itemId)),
     /** A job's links, whichever list it's on. Rejects to the card showing them. */
     loadLinks: async (jobId: string): Promise<ImportJobItem[]> => {
       try {
@@ -367,30 +368,28 @@ export function createQueueStore(deps: QueueStoreDeps) {
     startAll: () =>
       perform(
         "startAll",
-        () => (showingEveryone() ? adminQueueApi.startAll(state.dialog.person) : importQueueApi.startAll()),
+        () => api().startAll(state.dialog.person),
         ({ queued }) => countToast("importQueue.toast.startedAll", queued),
       ),
     retryAll: () =>
       perform(
         "retryAll",
-        () => (showingEveryone() ? adminQueueApi.retryFailed(state.dialog.person) : importQueueApi.retryFailed()),
+        () => api().retryFailed(state.dialog.person),
         ({ queued }) => countToast("importQueue.toast.retriedAll", queued),
       ),
-    pauseAll: () =>
-      perform("pauseAll", () =>
-        showingEveryone() ? adminQueueApi.pauseAll(state.dialog.person) : importQueueApi.pauseAll(),
-      ),
-    clearFinished: () =>
+    pauseAll: () => perform("pauseAll", () => api().pauseAll(state.dialog.person)),
+    /** `person`: who it was clicked for, who may have left the list by the time it's confirmed. */
+    clearFinished: (person: string | null = state.dialog.person) =>
       perform(
         "clearFinished",
-        () => (showingEveryone() ? adminQueueApi.clearFinished(state.dialog.person) : importQueueApi.clearFinished()),
+        () => api().clearFinished(person),
         ({ deleted }) => countToast("importQueue.toast.cleared", deleted),
       ),
 
     /** Shows straight away, and goes back with an error toast if the latest save fails. */
     setStartGrabLinks: async (value: boolean) => {
-      const save = ++latestSave;
       saves += 1;
+      saveEdges += 1;
       set({ startGrabLinks: value });
       const request = saving.then(() => importQueueApi.saveSettings({ start_grab_links: value }));
       saving = request.catch(() => undefined);
@@ -398,12 +397,14 @@ export function createQueueStore(deps: QueueStoreDeps) {
         await request;
         savedStartGrabLinks = value;
       } catch (err) {
-        if (save !== latestSave) return;
+        // A later pick is on its way, and has the last word.
+        if (saves > 1) return;
         set({ startGrabLinks: savedStartGrabLinks });
         if (err instanceof UnauthorizedError) links.onUnauthorized();
         else links.toast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
       } finally {
         saves -= 1;
+        saveEdges += 1;
       }
     },
   };

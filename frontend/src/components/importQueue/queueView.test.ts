@@ -7,6 +7,7 @@ import lt from "../../i18n/locales/lt.json";
 import type { AdminQueueJobOut, ImportJobStatus, LineOut } from "../../api/imports";
 import {
   canRemoveLink,
+  clearFinishedConfirmText,
   deepLinkTarget,
   handsOnQueueParam,
   deleteConfirmText,
@@ -15,7 +16,9 @@ import {
   EMPTY_LINE,
   emptyState,
   everyoneDelay,
+  everyoneFinished,
   finishedBeyondList,
+  finishedListNote,
   finishToastOf,
   hasLinkList,
   indicatorLabel,
@@ -28,10 +31,12 @@ import {
   jobLabel,
   jobOpenTarget,
   jobProvider,
+  jobState,
   ladderRows,
   linkScopeText,
   linkStatusText,
   nowRowText,
+  opensQueueLink,
   panelAction,
   panelSubtitle,
   peopleOf,
@@ -218,9 +223,11 @@ describe("toQueueJob", () => {
     expect(toQueueJob({ id: "x", error_message: "Nope", failure_reason: "Why" }, NOW).failure_reason).toBe("Why");
   });
 
-  function jobState(row: QueueJob) {
-    return jobChip(row, t).state;
-  }
+  it("reads a link's title, which an older backend doesn't send", () => {
+    expect(toQueueJob({ id: "x", link_title: "Benchy" }, NOW).link_title).toBe("Benchy");
+    expect(toQueueJob({ id: "x", link_title: "" }, NOW).link_title).toBeNull();
+    expect(toQueueJob({ id: "x" }, NOW).link_title).toBeNull();
+  });
 });
 
 describe("toQueueSnapshot and toEveryoneQueue", () => {
@@ -257,7 +264,23 @@ describe("toQueueSnapshot and toEveryoneQueue", () => {
   it("tells an older backend's admin list by its rows", () => {
     expect(toEveryoneQueue({ jobs: [{ id: "a", status: "PAUSED" } as AdminQueueJobOut] }, NOW).olderBackend).toBe(true);
     expect(toEveryoneQueue({ jobs: [{ id: "a", can_start: true } as AdminQueueJobOut] }, NOW).olderBackend).toBe(false);
-    expect(toEveryoneQueue({}, NOW)).toEqual({ jobs: [], olderBackend: false });
+    expect(toEveryoneQueue({}, NOW)).toEqual({ jobs: [], olderBackend: false, finishedTotal: 0, finishedByOwner: {} });
+  });
+
+  it("reads how many finished, all told and per person, from a backend that says", () => {
+    const queue = toEveryoneQueue({ jobs: [], finished_total: 1400, finished_by_owner: { u1: 1100, u2: 300 } }, NOW);
+    expect(queue).toMatchObject({ finishedTotal: 1400, finishedByOwner: { u1: 1100, u2: 300 } });
+    expect(everyoneFinished(queue, null)).toBe(1400);
+    expect(everyoneFinished(queue, "u2")).toBe(300);
+    expect(everyoneFinished(queue, "u3")).toBe(0);
+  });
+
+  it("counts on nothing from one that doesn't, or sends something else", () => {
+    expect(everyoneFinished(toEveryoneQueue({ jobs: [] }, NOW), null)).toBe(0);
+    expect(everyoneFinished(toEveryoneQueue({ jobs: [] }, NOW), "u1")).toBe(0);
+    const odd = toEveryoneQueue({ finished_total: "many", finished_by_owner: "lots" } as never, NOW);
+    expect(odd).toMatchObject({ finishedTotal: 0, finishedByOwner: {} });
+    expect(everyoneFinished({ finishedTotal: 0, finishedByOwner: { u1: "x" as never } }, "u1")).toBe(0);
   });
 });
 
@@ -660,6 +683,77 @@ describe("panelAction", () => {
   });
 });
 
+describe("clearFinishedConfirmText", () => {
+  it("is the same as ever for one's own", () => {
+    expect(clearFinishedConfirmText(t)).toEqual({
+      title: "Clear finished imports?",
+      message:
+        "They leave this list, along with any failed links in them, which can't be retried afterwards. Models already imported stay in the library.",
+      confirmLabel: "Clear",
+    });
+  });
+
+  it("says how many on everyone's list, and that they're other people's too", () => {
+    const { title, message } = clearFinishedConfirmText(t, { count: 1400, person: null });
+    expect(title).toBe("Clear finished imports?");
+    expect(message).toContain("This clears 1400 finished imports, other people's too");
+  });
+
+  it("doesn't claim one is someone else's", () => {
+    const { message } = clearFinishedConfirmText(t, { count: 1, person: null });
+    expect(message).toContain("This clears 1 finished import, whoever it belongs to");
+    expect(message).toContain("any failed links in it");
+    expect(message).not.toContain("other people's");
+  });
+
+  it("names the person picked, and no one else", () => {
+    const many = clearFinishedConfirmText(t, { count: 3, person: "Sam Okafor" }).message;
+    expect(many).toContain("This clears 3 finished imports of Sam Okafor");
+    expect(many).not.toContain("other people's");
+    expect(clearFinishedConfirmText(t, { count: 1, person: "Sam Okafor" }).message).toContain(
+      "This clears 1 finished import of Sam Okafor",
+    );
+  });
+
+  it("has a form for every number in Lithuanian", async () => {
+    const instance = i18next.createInstance();
+    await instance.init({ lng: "lt", defaultNS: "app", resources: { lt: { app: lt.app } } });
+    const inLithuanian = instance.getFixedT("lt", "app");
+    const message = (count: number, person: string | null = null) =>
+      clearFinishedConfirmText(inLithuanian, { count, person }).message;
+    expect(message(1)).toContain("Bus išvalytas 1 baigtas importas, kad ir kieno jis būtų");
+    expect(message(3)).toContain("Bus išvalyti 3 baigti importai, taip pat ir kitų žmonių");
+    expect(message(12)).toContain("Bus išvalyta 12 baigtų importų, taip pat ir kitų žmonių");
+    expect(message(3, "Jonas")).toContain("Bus išvalyti 3 baigti importai (Jonas)");
+  });
+});
+
+describe("finishedListNote", () => {
+  const finished = (count: number, fields: Partial<QueueJob> = {}) =>
+    Array.from({ length: count }, (_, n) => job({ id: `d${n}`, status: "DONE", ...fields }));
+  const note = (list: QueueJob[], total: number) => finishedListNote(list, sectionCounts(list, total), t);
+
+  it("says nothing when every finished job is listed", () => {
+    expect(note(finished(3), 3)).toBeNull();
+    expect(note(finished(3), 0)).toBeNull();
+    expect(note([], 0)).toBeNull();
+  });
+
+  it("says how many the list stops at, and of how many", () => {
+    expect(note(finished(50), 312)).toBe("Showing the newest 50 of 312");
+  });
+
+  it("counts only what's listed under Finished", () => {
+    const failed = job({ id: "f", status: "ERROR", attention: true });
+    expect(note([...finished(50), failed], 312)).toBe("Showing the newest 50 of 312");
+  });
+
+  it("says so when all of someone's are older than the newest of the whole server", () => {
+    expect(note([job({ id: "q", status: "QUEUED" })], 3)).toBe("3 older imports aren't listed here");
+    expect(note([], 1)).toBe("1 older import isn't listed here");
+  });
+});
+
 describe("emptyState", () => {
   const busy: LineOut = { now: { mine: false, person: "p", job_id: null }, rows: [], length: 1 };
 
@@ -671,6 +765,7 @@ describe("emptyState", () => {
           scope: "mine",
           line: busy,
           own: [job({ id: "a", status: "QUEUED", position: 5 }), job({ status: "QUEUED", position: 3 })],
+          autoStart: false,
         },
         t,
       ),
@@ -682,23 +777,32 @@ describe("emptyState", () => {
   });
 
   it("says imports wait their turn, to someone with none in line", () => {
-    expect(emptyState("run", { scope: "mine", line: busy, own: [] }, t).text).toBe(
+    expect(emptyState("run", { scope: "mine", line: busy, own: [], autoStart: false }, t).text).toBe(
       "Imports run one at a time. Yours start by themselves when their turn comes.",
     );
   });
 
   it("is plain when nothing runs, or when looking at everyone's", () => {
     const plain = { icon: "run", title: "Nothing importing", text: "Imports show their progress here while they run." };
-    expect(emptyState("run", { scope: "mine", line: EMPTY_LINE, own: [] }, t)).toEqual(plain);
-    expect(emptyState("run", { scope: "everyone", line: busy, own: [] }, t)).toEqual(plain);
+    expect(emptyState("run", { scope: "mine", line: EMPTY_LINE, own: [], autoStart: false }, t)).toEqual(plain);
+    expect(emptyState("run", { scope: "everyone", line: busy, own: [], autoStart: false }, t)).toEqual(plain);
   });
 
   it("has a message for each other section", () => {
-    const facts = { scope: "mine" as const, line: EMPTY_LINE, own: [] };
+    const facts = { scope: "mine" as const, line: EMPTY_LINE, own: [], autoStart: false };
     expect(emptyState("att", facts, t).title).toBe("All clear");
     expect(emptyState("wait", facts, t).title).toBe("Nothing waiting");
     expect(emptyState("wait", facts, t).text).toContain('"Add to the queue"');
     expect(emptyState("done", facts, t).title).toBe("Nothing finished yet");
+  });
+
+  it("doesn't promise a hold to someone whose Grab links start by themselves", () => {
+    const facts = { scope: "mine" as const, line: EMPTY_LINE, own: [], autoStart: true };
+    expect(emptyState("wait", facts, t)).toEqual({
+      icon: "wait",
+      title: "Nothing waiting",
+      text: "New imports wait here for their turn.",
+    });
   });
 });
 
@@ -787,12 +891,6 @@ describe("ladderRows", () => {
     expect(shape(ladderRows(line, [sync]))).toEqual(["card:s"]);
   });
 
-  it("doesn't lose a job the line doesn't list yet", () => {
-    const line: LineOut = { now: null, rows: [place(1, "me", "a")], length: 1 };
-    expect(shape(ladderRows(line, [mine("a", 1), mine("b", 2)]))).toEqual(["card:a", "card:b"]);
-    expect(shape(ladderRows(EMPTY_LINE, [mine("c", 3)]))).toEqual(["card:c"]);
-  });
-
   it("treats a place marked as the viewer's, with no such job, as a private one", () => {
     const line: LineOut = { now: null, rows: [place(1, "me", "gone"), place(2, "me", "a")], length: 2 };
     expect(shape(ladderRows(line, [mine("a", 2)]))).toEqual(["private:me:1-1", "card:a"]);
@@ -867,6 +965,15 @@ describe("queueGroups", () => {
     expect(group.ladder).toBe(false);
     expect(group.rows.map((row) => `${row.kind}:${row.key}`)).toEqual(["card:first", "card:third", "card:sync"]);
   });
+
+  it("promises a number going down only to someone who has one, not for a sync on its own", () => {
+    const sync = job({ id: "s", status: "PAUSED", sync_waiting: true, collection_sync_id: "c" });
+    const [group] = queueGroups("wait", { ...facts, list: [sync] }, t);
+    expect(group.hint).toBe("Start by themselves");
+    expect(group.ladder).toBe(false);
+    const numbered = job({ id: "q", status: "QUEUED", position: 2 });
+    expect(queueGroups("wait", { ...facts, list: [sync, numbered] }, t)[0].hint).toBe("Your number only goes down");
+  });
 });
 
 describe("jobChip", () => {
@@ -910,7 +1017,23 @@ describe("jobChip", () => {
       "This version of Thingport doesn't know this state.",
     ],
   ])("%j", (fields, state, label, tone, live, hint) => {
-    expect(jobChip(job(fields), t)).toEqual({ state, label, tone, live, hint });
+    expect(jobState(job(fields))).toBe(state);
+    expect(jobChip(job(fields), t)).toEqual({ label, tone, live, hint });
+  });
+
+  it.each(["ZIP", "COLLECTION", "PROFILES"] as const)("speaks of models on a %s, which has no links", (type) => {
+    expect(jobChip(job({ type, status: "DONE" }), t).hint).toBe("Every model imported.");
+    expect(jobChip(job({ type, status: "DONE", failed_count: 2 }), t).hint).toBe("Finished, but some models failed.");
+  });
+
+  it("still speaks of links on a list of them, and of the one on a single link", () => {
+    expect(jobChip(job({ status: "DONE", single: true }), t).hint).toBe("Every link imported.");
+    expect(jobChip(job({ status: "DONE", failed_count: 1 }), t).hint).toBe("Finished, but some links failed.");
+  });
+
+  it("has words for the other states whatever the job is", () => {
+    expect(jobChip(job({ type: "ZIP", status: "RUNNING" }), t).hint).toBe("Importing now.");
+    expect(jobChip(job({ type: "ZIP", status: "ERROR" }), t).hint).toBe("The import failed.");
   });
 });
 
@@ -1069,6 +1192,25 @@ describe("jobLabel", () => {
     const translated = ((key: string) => (key === "importQueue.sentFromGrab" ? "Iš Grab" : key)) as typeof t;
     expect(jobLabel(job({ source_label: "Sent from Thingport Grab" }), translated)).toBe("Iš Grab");
   });
+
+  it("names Grab's one link by its page's title, when there is one", () => {
+    const grab = { source_label: "Sent from Thingport Grab" };
+    expect(jobLabel(job({ ...grab, link_title: "Benchy" }), t)).toBe("Benchy");
+    expect(jobLabel(job({ ...grab, link_title: "  " }), t)).toBe("Sent from Thingport Grab");
+    // An older backend sends none, and neither does this one for several links.
+    expect(jobLabel(job({ ...grab, link_title: null }), t)).toBe("Sent from Thingport Grab");
+  });
+
+  it("leaves any other name alone", () => {
+    expect(jobLabel(job({ source_label: "Props", link_title: "Benchy" }), t)).toBe("Props");
+    expect(jobLabel(job({ source_label: null, link_title: "Benchy" }), t)).toBe("https://example.com/a");
+  });
+
+  it("gives the whole name, however long, for the delete confirmation", () => {
+    const url = "https://makerworld.com/en/models/1234567-a-model-with-a-very-long-name-indeed#profileId-987654";
+    expect(jobLabel(job({ source_label: null, source_url: url }), t)).toBe(url);
+    expect(deleteConfirmText(job({ source_label: null, source_url: url }), t).message).toContain(url);
+  });
 });
 
 describe("a job that's pausing", () => {
@@ -1105,14 +1247,14 @@ describe("a job that's pausing", () => {
   it("isn't what a sync waiting for its lane is, even with its runner still ending", () => {
     const waiting = { ...pausing, sync_waiting: true, collection_sync_id: "c" };
     expect(sectionOf(waiting)).toBe("wait");
-    expect(jobChip(waiting, t).state).toBe("queued");
+    expect(jobState(waiting)).toBe("queued");
     expect(whenText(waiting, context)).toBe("Waiting");
     expect(runningNow([waiting])).toBe(0);
   });
 
   it("isn't mistaken for someone else holding things up", () => {
     const line: LineOut = { now: { mine: false, person: "p", job_id: null }, rows: [], length: 0 };
-    expect(emptyState("run", { scope: "mine", line, own: [pausing] }, t).icon).toBe("run");
+    expect(emptyState("run", { scope: "mine", line, own: [pausing], autoStart: false }, t).icon).toBe("run");
   });
 
   it("keeps the poll fast, unless it's a sync's", () => {
@@ -1334,6 +1476,42 @@ describe("whyText", () => {
     );
   });
 
+  describe("on someone else's job", () => {
+    const failure_reason = "Interrupted by server restart";
+    const owner = { id: "u2", display_name: "Milo", email: "milo@example.com" };
+
+    it("says it's their library that may need fixing", () => {
+      expect(whyText(job({ status: "ERROR", failure_reason, can_retry: true, owner }), t, "u1")).toBe(
+        "Cut off by a server restart. A model may be incomplete in their library: it should be deleted before retrying.",
+      );
+      expect(whyText(job({ status: "ERROR", type: "COLLECTION", failure_reason, owner }), t, "u1")).toBe(
+        "Cut off by a server restart. Some files may already be in their library.",
+      );
+    });
+
+    it("says yours for your own, on either list", () => {
+      const own = { status: "ERROR", failure_reason, can_retry: true } as const;
+      const yours =
+        "Cut off by a server restart. A model may be incomplete in your library: delete it before retrying.";
+      expect(whyText(job({ ...own, owner }), t, "u2")).toBe(yours);
+      expect(whyText(job(own), t, "u2")).toBe(yours);
+    });
+
+    it("has nothing of anyone's to say about a ZIP", () => {
+      expect(whyText(job({ status: "ERROR", type: "ZIP", failure_reason, owner }), t, "u1")).toBe(
+        "Cut off by a server restart. Some models are already in. Start a new import with only the missing files.",
+      );
+    });
+  });
+
+  it("leaves nothing on a job done with no failures, whatever the server still has saved", () => {
+    const failure_reason = "The rest not downloaded — Thangs's daily download limit was reached.";
+    expect(whyText(job({ status: "DONE", failure_reason }), t)).toBeNull();
+    expect(whyText(job({ status: "DONE", failure_reason, failed_count: 1 }), t)).toBe(failure_reason);
+    expect(whyText(job({ status: "DONE", failure_reason, failed_items_count: 1 }), t)).toBe(failure_reason);
+    expect(whyText(job({ status: "ERROR", failure_reason }), t)).toBe(failure_reason);
+  });
+
   it("translates the watchdog's words and an old row's", () => {
     const stalled = "This import stopped responding, so the line moved on. If Retry isn't offered, restart the server.";
     expect(whyText(job({ status: "ERROR", failure_reason: stalled }), t)).toBe(stalled);
@@ -1539,6 +1717,14 @@ describe("finishToastOf", () => {
     expect(finishToastOf([batch({ already_in_library: 3 })], t)?.message).toBe("3 already in your library.");
   });
 
+  it("doesn't claim an import when a batch went on to wait for Grab", () => {
+    expect(finishToastOf([batch({ total: 2, processed: 2 })], t)).toEqual({
+      message: '"Bits" finished',
+      severity: "success",
+      open: null,
+    });
+  });
+
   it("says an errored batch failed", () => {
     expect(finishToastOf([batch({ status: "ERROR", attention: true })], t)).toEqual({
       message: 'Couldn\'t import "Bits"',
@@ -1591,22 +1777,19 @@ describe("how many finished beyond the list", () => {
 });
 
 describe("submittedText", () => {
-  const answer = (position: number | null, status: ImportJobStatus | null = "QUEUED") =>
-    ({ kind: "job", job_id: "j", status, position }) as const;
+  const answer = (position: number | null) => ({ kind: "job", position }) as const;
 
   it("says where a job landed", () => {
     expect(submittedText(answer(1), t)).toBe("Added to the queue. It's next up.");
     expect(submittedText(answer(4), t)).toBe("Added to the queue. It's #4 in line.");
-    expect(submittedText(answer(null), t)).toBe("Added to the queue.");
   });
 
   it("says it started when it runs without waiting", () => {
-    expect(submittedText(answer(null, null), t)).toBe("Import started.");
-    expect(submittedText(answer(null, "RUNNING"), t)).toBe("Import started.");
+    expect(submittedText(answer(null), t)).toBe("Import started.");
   });
 
   it("leaves the other answers to the caller", () => {
-    expect(submittedText({ kind: "grab", queued: 2, collection_id: null }, t)).toBeNull();
+    expect(submittedText({ kind: "grab", queued: 2 }, t)).toBeNull();
     expect(submittedText({ kind: "print", print: {} as never }, t)).toBeNull();
   });
 });
@@ -1678,6 +1861,20 @@ describe("handsOnQueueParam", () => {
   });
 });
 
+describe("opensQueueLink", () => {
+  it("waits for the first read, as the session may turn out to have ended", () => {
+    expect(opensQueueLink("/", true)).toBe(false);
+    expect(opensQueueLink("/models", true)).toBe(false);
+    expect(opensQueueLink("/", false)).toBe(true);
+    expect(opensQueueLink("/models", false)).toBe(true);
+  });
+
+  it("leaves the two addresses that redirect to do that", () => {
+    expect(opensQueueLink("/admin-queue", false)).toBe(false);
+    expect(opensQueueLink("/import-queue", false)).toBe(false);
+  });
+});
+
 describe("deepLinkTarget", () => {
   it("opens the viewer's own imports on a named section", () => {
     for (const section of ["run", "att", "wait", "done"] as const) {
@@ -1728,6 +1925,36 @@ describe("translations", () => {
     for (const [key, text] of valuesOf(locale.app.importQueue)) {
       expect([key, placeholders(text)]).toEqual([key, placeholders(english.get(key.replace(PLURAL, "")) ?? "")]);
     }
+  });
+
+  it("reads right in French, Spanish and Lithuanian where it first didn't", async () => {
+    const fixedT = async (lng: string, app: object) => {
+      const instance = i18next.createInstance();
+      await instance.init({ lng, defaultNS: "app", resources: { [lng]: { app } } });
+      return instance.getFixedT(lng, "app");
+    };
+    const inFrench = await fixedT("fr", fr.app);
+    const held = job({ status: "PAUSED", can_start: true });
+    expect(jobChip(held, inFrench).label).toBe("En suspens");
+    expect(whenText({ ...held, queued_at: ago(MINUTE) }, { t: inFrench, locale: "fr", now: NOW })).toBe("En suspens");
+    expect(primaryAction(job({ status: "QUEUED", can_pause: true }), inFrench)?.label).toBe("Mettre en suspens");
+    expect(panelAction("wait", [held], sectionCounts([held]), inFrench)?.label).toBe(
+      "Lancer tout ce qui est en suspens (1)",
+    );
+    expect(inLineText(job({ status: "QUEUED", position: 4, total: 2 }), inFrench)).toBe(
+      "3 importations devant · 2 liens",
+    );
+    expect(inLineText(job({ status: "QUEUED", position: 2, total: 2 }), inFrench)).toBe(
+      "1 importation devant · 2 liens",
+    );
+    expect(fr.app.importQueue.autoStartOff).toContain("restent en suspens");
+    expect(fr.app.importQueue.empty.wait.text).toContain("restent en suspens");
+
+    const inSpanish = await fixedT("es", es.app);
+    const nothing = { scope: "mine" as const, line: EMPTY_LINE, own: [], autoStart: false };
+    expect(emptyState("run", nothing, inSpanish).title).toBe("No se está importando nada");
+
+    expect(lt.app.importQueue.syncTagHint).toMatch(/todėl eilės niekada nestabdo$/);
   });
 
   it("picks the right plural form in Lithuanian", async () => {

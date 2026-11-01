@@ -146,6 +146,9 @@ on it, restart the server.
   UPDATE "ImportJob" SET "status" = 'PAUSED' WHERE "status" = 'QUEUED';
   ```
 
+- Keep the frontend and backend images on the same version. An older frontend has no queue for members to open, so a
+  link they send with Grab's **Add to the queue** stays on hold, and only an admin on the old page can start it.
+
 ## Before you start
 
 MakerWorld needs your session cookie and Thingiverse an App Token set by an admin, while Printables, eufyMake, OwlCAD

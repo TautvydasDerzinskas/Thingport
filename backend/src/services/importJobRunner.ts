@@ -26,6 +26,8 @@ import {
   isImportingFrom,
   jobPayload,
   jobProgress,
+  jobTakenFromRunner,
+  linkTotals,
   listJobItems,
   QUEUE_ATTENTION_PATH,
   QUEUE_WAITING_PATH,
@@ -142,6 +144,8 @@ export type ProfileImportTotals = {
   failed: number;
   printId: string | null;
   stopReason: StopReason | null;
+  /** `shouldStop` said so: the profiles left weren't tried. */
+  stopped: boolean;
 };
 
 /** Imports each profile URL onto one print, in order. Once a CAPTCHA, download-limit or auth
@@ -151,6 +155,7 @@ export async function importProfileUrlsSequentially(
   profileUrls: string[],
   body: ImportRequestBody,
   onProgress?: (totals: ProfileImportTotals) => void,
+  shouldStop?: () => Promise<boolean>,
 ): Promise<ProfileImportTotals> {
   const totals: ProfileImportTotals = {
     processed: 0,
@@ -159,9 +164,14 @@ export async function importProfileUrlsSequentially(
     failed: 0,
     printId: null,
     stopReason: null,
+    stopped: false,
   };
   for (const profileUrl of profileUrls) {
     noteImportActivity();
+    if (await shouldStop?.()) {
+      totals.stopped = true;
+      break;
+    }
     if (totals.stopReason) {
       totals.failed++;
     } else {
@@ -200,18 +210,29 @@ async function runProfilesImportJob(
     await updateJob(jobId, { total: urls.length, sourceLabel: title });
     log.info(`${provider} profiles job started`, { job: jobId, url: body.url, profiles: urls.length });
     const progress = jobProgress(jobId);
-    const totals = await importProfileUrlsSequentially(userId, urls, body, (t) =>
-      progress.write({
-        processed: t.processed,
-        imported: t.imported,
-        alreadyInLibrary: t.alreadyInLibrary,
-        failedCount: t.failed,
-      }),
+    const totals = await importProfileUrlsSequentially(
+      userId,
+      urls,
+      body,
+      (t) =>
+        progress.write({
+          processed: t.processed,
+          imported: t.imported,
+          alreadyInLibrary: t.alreadyInLibrary,
+          failedCount: t.failed,
+        }),
+      () => jobTakenFromRunner(jobId),
     );
     await progress.settled();
+    if (totals.stopped) {
+      log.info(`${provider} profiles job stopped`, { job: jobId, processed: totals.processed });
+      return;
+    }
     const { imported, alreadyInLibrary, failed, stopReason, printId } = totals;
     await updateJob(jobId, {
       status: "DONE",
+      // A stalled job that got there after all: the watchdog's words are no longer true.
+      errorMessage: null,
       resultPrintId: printId,
       processed: totals.processed,
       imported,
@@ -278,9 +299,12 @@ export async function runListImportJob(
     let downloadLimited = 0;
     const failed: string[] = [];
     const successPrintIds: string[] = [];
+    let stopped = false;
     log.info(`${provider} job started`, { job: jobId, url: body.url, models: ids.length });
 
     await mapWithConcurrency(ids, COLLECTION_IMPORT_CONCURRENCY, async (modelId, index) => {
+      stopped ||= await jobTakenFromRunner(jobId);
+      if (stopped) return;
       const modelUrl = URLS[provider].modelUrl(modelId);
       if (downloadLimited) {
         // The limit is the account's for the day: every other download would meet it too.
@@ -318,6 +342,11 @@ export async function runListImportJob(
       }
       if (index < ids.length - 1 && !downloadLimited) await sleep(IMPORT_COLLECTION_DELAY_MS);
     });
+    // Whatever took it keeps it. Its retry runs the whole request, which files what already came in.
+    if (stopped) {
+      log.info("collection job stopped", { job: jobId, processed, models: ids.length });
+      return;
+    }
 
     let resultCollectionId: string | null = null;
     const collectionTitle = await batch.title();
@@ -337,6 +366,7 @@ export async function runListImportJob(
     });
     await updateJob(jobId, {
       status: "DONE",
+      errorMessage: null,
       sourceLabel: collectionTitle,
       resultCollectionId,
       resultPrintId: successPrintIds.length === 1 ? successPrintIds[0] : null,
@@ -429,6 +459,7 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
     log.info("zip job done", { job: jobId, file: filename, imported: prints.length, failed: failed.length });
     await updateJob(jobId, {
       status: "DONE",
+      errorMessage: null,
       processed: body.entries.length,
       imported: prints.length,
       failedCount: failed.length,
@@ -567,6 +598,7 @@ async function importOneLink(
     failed: 0,
     printId: result.print.id,
     stopReason: null,
+    stopped: false,
     profiles: false,
     outcome: result.alreadyImported ? "already_imported" : result.profileAdded ? "profile_added" : "created",
   };
@@ -830,6 +862,7 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     const singleTrail = single && !waitingForGrab && (failedCount > 0 || singlePrint !== null);
     await updateJob(jobId, {
       status: "DONE",
+      errorMessage: null,
       processed,
       imported: totalImported,
       alreadyInLibrary: job.alreadyInLibrary + alreadyInLibrary,
@@ -977,8 +1010,7 @@ async function pauseSyncJob(job: ImportJob, reason: StopReason, newPrintIds: str
   await updateJob(job.id, {
     status: "PAUSED",
     errorMessage: stopText.charAt(0).toUpperCase() + stopText.slice(1),
-    processed: (await countJobItems(job.id, "DONE")) + (await countJobItems(job.id, "FAILED")),
-    failedCount: await countJobItems(job.id, "FAILED"),
+    ...(await linkTotals(job.id)),
   });
   syncLog.warn("job paused", { job: job.id, reason: stopText, waiting });
   const name = sync?.collection.name ?? job.sourceLabel ?? "a synced collection";

@@ -1,4 +1,4 @@
-import { jobInProgress, type ImportJob, type Print, type QueueImportResult } from "../shared/api";
+import type { ImportJob, Print, QueueImportResult } from "../shared/api";
 import { IMPORT_PAUSED, type ImportSinglePayload, type QueueImportPayload } from "../shared/messages";
 import { apiCall } from "./api";
 import { recordRecentImport } from "./recentImports";
@@ -8,7 +8,7 @@ const JOB_POLL_INTERVAL_MS = 1000;
 export async function pollJobToCompletion(jobId: string): Promise<ImportJob> {
   for (;;) {
     const job = await apiCall<ImportJob>("GET", `/import/jobs/${jobId}`);
-    if (!jobInProgress(job)) return job;
+    if (job.status !== "RUNNING") return job;
     await new Promise((resolve) => setTimeout(resolve, JOB_POLL_INTERVAL_MS));
   }
 }

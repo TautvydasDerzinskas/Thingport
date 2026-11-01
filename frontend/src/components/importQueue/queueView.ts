@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import type {
-  AdminQueueJobOut,
+  AdminQueueOut,
   ImportJobItem,
   ImportJobStatus,
   ImportJobType,
@@ -69,6 +69,7 @@ function toQueueJobFields(raw: RawQueueJob) {
     sync_waiting: raw.sync_waiting === true,
     failure_reason: textOrNull(raw.failure_reason) ?? textOrNull(raw.error_message),
     outcome: raw.outcome ?? null,
+    link_title: textOrNull(raw.link_title),
   };
 }
 
@@ -153,14 +154,32 @@ export type EveryoneQueue = {
   jobs: QueueJob[];
   /** Rows from a backend older than the line, whose bulk routes ignore who they're asked to act for. */
   olderBackend: boolean;
+  /** How many finished, all told and per user id, which `jobs` holds only the newest of. Zero and empty from a backend
+   *  that doesn't say. */
+  finishedTotal: number;
+  finishedByOwner: Record<string, number>;
 };
 
 export function toEveryoneQueue(
-  raw: { jobs?: AdminQueueJobOut[] } | null | undefined,
+  raw: Partial<AdminQueueOut> | null | undefined,
   now: number = Date.now(),
 ): EveryoneQueue {
   const rows = Array.isArray(raw?.jobs) ? raw.jobs : [];
-  return { jobs: toQueueJobs(rows, now), olderBackend: rows.some((row) => typeof row?.can_start !== "boolean") };
+  const byOwner = raw?.finished_by_owner;
+  return {
+    jobs: toQueueJobs(rows, now),
+    olderBackend: rows.some((row) => typeof row?.can_start !== "boolean"),
+    finishedTotal: numberOr0(raw?.finished_total),
+    finishedByOwner: byOwner && typeof byOwner === "object" ? byOwner : {},
+  };
+}
+
+/** What Clear finished would reach on everyone's list, as far as the server has said. */
+export function everyoneFinished(
+  { finishedTotal, finishedByOwner }: Pick<EveryoneQueue, "finishedTotal" | "finishedByOwner">,
+  person: string | null,
+): number {
+  return person === null ? finishedTotal : numberOr0(finishedByOwner[person]);
 }
 
 // ---- What a job is
@@ -236,11 +255,12 @@ const CHIPS: Record<JobState, { tone: ChipTone; live: boolean }> = {
 /** The status chip: `live` pulses, while something is still happening. */
 export function jobChip(job: QueueJob, t: TFunction) {
   const state = jobState(job);
+  // Only link lists have links to speak of, and a single link is one.
+  const inModels = (state === "partial" || state === "done") && !hasLinkList(job) && !job.single;
   return {
     ...CHIPS[state],
-    state,
     label: t(`importQueue.status.${state}`),
-    hint: t(`importQueue.statusHint.${state}`),
+    hint: t(`importQueue.statusHint.${state}${inModels ? "Models" : ""}`),
   };
 }
 
@@ -317,10 +337,12 @@ export function webLink(url: string): string | null {
 
 export type JobOpenTarget = { kind: "model" | "collection"; path: string } | { kind: "source"; url: string };
 
+/** One's own list comes without owners. */
+const isViewers = (job: QueueJob, viewerId: string | null) => !job.owner || job.owner.id === viewerId;
+
 /** What "Open" leads to in the menu. Someone else's model isn't in the viewer's library, so that's its source. */
 export function jobOpenTarget(job: QueueJob, viewerId: string | null): JobOpenTarget | null {
-  const mine = !job.owner || job.owner.id === viewerId;
-  if (mine && job.status === "DONE") {
+  if (isViewers(job, viewerId) && job.status === "DONE") {
     if (job.single && job.result_print_id) return { kind: "model", path: `/models/${job.result_print_id}` };
     if (job.result_collection_id)
       return { kind: "collection", path: `/models/collections/${job.result_collection_id}` };
@@ -349,7 +371,7 @@ function zipFileName(url: string): string | null {
 /** The server writes these two in English. A job with neither label nor URL still needs a name. */
 export function jobLabel(job: QueueJob, t: TFunction): string {
   const label = job.source_label?.trim() ?? "";
-  if (label === GRAB_LABEL) return t("importQueue.sentFromGrab");
+  if (label === GRAB_LABEL) return job.link_title?.trim() || t("importQueue.sentFromGrab");
   const shown = isSyncJob(job) && label.startsWith(SYNC_LABEL_PREFIX) ? label.slice(SYNC_LABEL_PREFIX.length) : label;
   if (shown.trim()) return shown.trim();
   const zipName = job.type === "ZIP" && job.source_url ? zipFileName(job.source_url) : null;
@@ -484,15 +506,17 @@ const NO_REQUEST_REASON = "This older import has no saved request";
 // they already are, and goes stale when a link is removed.
 const BARE_FAILURE_COUNT = /^\d+ failed — retry them from the import queue\.?$/;
 
-/** Why a job stopped or failed. Nothing while it's on its way again: a Start or Retry leaves that behind. */
-export function whyText(job: QueueJob, t: TFunction): string | null {
-  if (isImporting(job) || isInLine(job)) return null;
+/** Why a job stopped or failed. Nothing while it's on its way again, as a Start or Retry leaves that behind, or once it
+ *  finished with nothing failed, as removing the failed links does. */
+export function whyText(job: QueueJob, t: TFunction, viewerId: string | null = null): string | null {
+  if (isImporting(job) || isInLine(job) || (job.status === "DONE" && !hasFailures(job))) return null;
   const reason = job.failure_reason;
   if (reason && !BARE_FAILURE_COUNT.test(reason)) {
     if (INTERRUPTED_REASONS.has(reason)) {
       if (job.type === "ZIP") return t("importQueue.why.interruptedZip");
       // An older collection or profiles import saved nothing to retry with, so don't talk about retrying.
-      return t(job.can_retry || job.can_start ? "importQueue.why.interrupted" : "importQueue.why.interruptedNoRetry");
+      const key = job.can_retry || job.can_start ? "interrupted" : "interruptedNoRetry";
+      return t(`importQueue.why.${key}${isViewers(job, viewerId) ? "" : "Owner"}`);
     }
     if (reason === STALLED_REASON) return t("importQueue.why.stalled");
     if (reason === NO_REQUEST_REASON) return t("importQueue.why.noRequest");
@@ -513,11 +537,19 @@ export function deleteConfirmText(job: QueueJob, t: TFunction) {
   };
 }
 
-/** What Clear finished asks first: Finished also holds old failures, whose links can't be retried once they're gone. */
-export function clearFinishedConfirmText(t: TFunction) {
+/** What Clear finished asks first: Finished also holds old failures, whose links can't be retried once they're gone. On
+ *  everyone's list, how many and whose as well, since it reaches further than the list shows. `person` is who's picked. */
+export function clearFinishedConfirmText(t: TFunction, everyone?: { count: number; person: string | null }) {
+  const message = () => {
+    if (!everyone) return t("importQueue.clear.message");
+    const { count, person } = everyone;
+    return person === null
+      ? t("importQueue.clear.messageEveryone", { count })
+      : t("importQueue.clear.messagePerson", { count, name: person });
+  };
   return {
     title: t("importQueue.clear.title"),
-    message: t("importQueue.clear.message"),
+    message: message(),
     confirmLabel: t("importQueue.clear.confirm"),
   };
 }
@@ -767,9 +799,19 @@ export function panelAction(
         kind: "clearFinished",
         label: t("importQueue.action.clearFinished", { count: counts.done }),
         primary: false,
-        disabled: counts.done === 0,
+        disabled: false,
       };
   }
+}
+
+/** Under Finished, which lists only the newest: how many that leaves out, when it leaves out any. */
+export function finishedListNote(list: QueueJob[], counts: SectionCounts, t: TFunction): string | null {
+  const shown = list.filter((job) => sectionOf(job) === "done").length;
+  if (counts.done <= shown) return null;
+  // On everyone's list, one person's can all be older than the newest of the whole server.
+  return shown
+    ? t("importQueue.finishedList.newest", { shown, total: counts.done })
+    : t("importQueue.finishedList.older", { count: counts.done });
 }
 
 export type QueueEmptyState = { icon: "run" | "wait" | "check"; title: string; text: string };
@@ -777,7 +819,7 @@ export type QueueEmptyState = { icon: "run" | "wait" | "check"; title: string; t
 /** What an empty section says. Importing tells you when someone else is what you're waiting on. */
 export function emptyState(
   section: QueueSection,
-  { scope, line, own }: { scope: QueueScope; line: LineOut; own: QueueJob[] },
+  { scope, line, own, autoStart }: { scope: QueueScope; line: LineOut; own: QueueJob[]; autoStart: boolean },
   t: TFunction,
 ): QueueEmptyState {
   switch (section) {
@@ -798,7 +840,11 @@ export function emptyState(
     case "att":
       return { icon: "check", title: t("importQueue.empty.att.title"), text: t("importQueue.empty.att.text") };
     case "wait":
-      return { icon: "wait", title: t("importQueue.empty.wait.title"), text: t("importQueue.empty.wait.text") };
+      return {
+        icon: "wait",
+        title: t("importQueue.empty.wait.title"),
+        text: t(autoStart ? "importQueue.empty.wait.textAuto" : "importQueue.empty.wait.text"),
+      };
     default:
       return { icon: "check", title: t("importQueue.empty.done.title"), text: t("importQueue.empty.done.text") };
   }
@@ -818,9 +864,8 @@ const byPlace = (a: QueueJob, b: QueueJob) => (a.position ?? Infinity) - (b.posi
 /** Waiting's In line group for one viewer: what's on now, then every place up to their last job, theirs in full and
  *  anyone else's as a private row, one person's run of jobs merged into one. Sync jobs have no place, so they go last. */
 export function ladderRows(line: LineOut, own: QueueJob[]): QueueRow[] {
-  const queued = own.filter((job) => job.status === "QUEUED").toSorted(byPlace);
   const syncWaiting = own.filter((job) => job.sync_waiting).map(card);
-  if (!queued.length) return syncWaiting;
+  if (!own.some((job) => job.status === "QUEUED")) return syncWaiting;
 
   const mine = new Map(own.map((job) => [job.id, job]));
   const rows: QueueRow[] = [];
@@ -828,14 +873,12 @@ export function ladderRows(line: LineOut, own: QueueJob[]): QueueRow[] {
     const { mine: isMine, person, job_id: jobId } = line.now;
     rows.push({ kind: "now", key: "now", mine: isMine, person, job: (jobId && mine.get(jobId)) || null });
   }
-  const placed = new Set<string>();
   const last = line.rows.findLastIndex((row) => row.mine);
   for (let n = 0; n <= last; n += 1) {
     const row = line.rows[n];
     const job = row.mine && row.job_id ? mine.get(row.job_id) : undefined;
     if (job) {
       rows.push(card(job));
-      placed.add(job.id);
       continue;
     }
     let end = n;
@@ -856,8 +899,6 @@ export function ladderRows(line: LineOut, own: QueueJob[]): QueueRow[] {
     });
     n = end;
   }
-  // The two lists are read one after the other, so a job can be in one and not yet in the other.
-  rows.push(...queued.filter((job) => !placed.has(job.id)).map(card));
   rows.push(...syncWaiting);
   return rows;
 }
@@ -914,7 +955,8 @@ export function queueGroups(
     groups.push({
       id: "inLine",
       label: `${t("importQueue.group.inLine")} · ${inLine.length}`,
-      hint: t(mine ? "importQueue.group.inLineHintMine" : "importQueue.group.inLineHintAll"),
+      // A sync on its own has no number to go down.
+      hint: t(mine && numbered.length > 0 ? "importQueue.group.inLineHintMine" : "importQueue.group.inLineHintAll"),
       ladder: mine && numbered.length > 0,
       rows,
     });
@@ -1053,6 +1095,10 @@ export function finishToastOf(finished: QueueJob[], t: TFunction, beyondList = 0
   if (troubled) {
     return { message: failuresText(counts, t), severity: "warning", open: { section: sectionOf(job) } };
   }
+  // Nothing came in and nothing failed: its links went on to wait for Thingport Grab.
+  if (!job.imported && !job.already_in_library) {
+    return { message: t("importQueue.toast.finishedPlain", { name }), severity: "success", open: null };
+  }
   return {
     message: job.already_in_library
       ? t(job.imported ? "importQueue.toast.finishedWithExisting" : "importQueue.toast.finishedOnlyExisting", counts)
@@ -1070,7 +1116,7 @@ export function submittedText(answer: QueueSubmitAnswer, t: TFunction): string |
       ? t("importQueue.toast.added")
       : t("importQueue.toast.addedPlace", { n: answer.position });
   }
-  return answer.status === "QUEUED" ? t("importQueue.toast.addedPlain") : t("importQueue.toast.started");
+  return t("importQueue.toast.started");
 }
 
 // ---- Polling
@@ -1121,6 +1167,10 @@ export function queueLinkPath(value: string | null): string {
 
 /** These addresses hand the param on to the home page themselves. Read here too, taking it off the URL would undo that. */
 export const handsOnQueueParam = (pathname: string) => pathname === "/admin-queue" || pathname === "/import-queue";
+
+/** Whether to act on the param, which takes it off the URL. Not before the first read has answered: a stored token's
+ *  session may have ended, which only shows now, and the link has to outlast the sign-in that follows. */
+export const opensQueueLink = (pathname: string, loading: boolean) => !handsOnQueueParam(pathname) && !loading;
 
 /** A section opens the viewer's own imports there. A bare link is what the old admin page's address becomes: an admin
  *  had everyone's list there, and everyone else has only their own. */

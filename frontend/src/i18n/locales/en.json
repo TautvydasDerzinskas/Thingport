@@ -660,7 +660,8 @@
         },
         "wait": {
           "title": "Nothing waiting",
-          "text": "New imports wait here for their turn. Links you send with \"Add to the queue\" in Thingport Grab stay on hold until you start them."
+          "text": "New imports wait here for their turn. Links you send with \"Add to the queue\" in Thingport Grab stay on hold until you start them.",
+          "textAuto": "New imports wait here for their turn."
         },
         "done": {
           "title": "Nothing finished yet",
@@ -714,7 +715,16 @@
       "clear": {
         "title": "Clear finished imports?",
         "message": "They leave this list, along with any failed links in them, which can't be retried afterwards. Models already imported stay in the library.",
+        "messageEveryone_one": "This clears {{count}} finished import, whoever it belongs to, along with any failed links in it, which can't be retried afterwards. Models already imported stay in their libraries.",
+        "messageEveryone_other": "This clears {{count}} finished imports, other people's too, along with any failed links in them, which can't be retried afterwards. Models already imported stay in their libraries.",
+        "messagePerson_one": "This clears {{count}} finished import of {{name}}, along with any failed links in it, which can't be retried afterwards. Models already imported stay in their library.",
+        "messagePerson_other": "This clears {{count}} finished imports of {{name}}, along with any failed links in them, which can't be retried afterwards. Models already imported stay in their library.",
         "confirm": "Clear"
+      },
+      "finishedList": {
+        "newest": "Showing the newest {{shown}} of {{total}}",
+        "older_one": "{{count}} older import isn't listed here",
+        "older_other": "{{count}} older imports aren't listed here"
       },
       "delete": {
         "title": "Delete this import?",
@@ -769,7 +779,9 @@
         "pausing": "Finishing the link it's on, then it stops.",
         "error": "The import failed.",
         "partial": "Finished, but some links failed.",
+        "partialModels": "Finished, but some models failed.",
         "done": "Every link imported.",
+        "doneModels": "Every model imported.",
         "unknown": "This version of Thingport doesn't know this state."
       },
       "progress": "{{processed}} of {{total}}",
@@ -780,7 +792,9 @@
         "modelsFailed_one": "{{count}} model failed.",
         "modelsFailed_other": "{{count}} models failed.",
         "interruptedNoRetry": "Cut off by a server restart. Some files may already be in your library.",
+        "interruptedNoRetryOwner": "Cut off by a server restart. Some files may already be in their library.",
         "interrupted": "Cut off by a server restart. A model may be incomplete in your library: delete it before retrying.",
+        "interruptedOwner": "Cut off by a server restart. A model may be incomplete in their library: it should be deleted before retrying.",
         "interruptedZip": "Cut off by a server restart. Some models are already in. Start a new import with only the missing files.",
         "stalled": "This import stopped responding, so the line moved on. If Retry isn't offered, restart the server.",
         "noRequest": "This older import has no saved request."
@@ -813,7 +827,6 @@
       "toast": {
         "added": "Added to the queue. It's next up.",
         "addedPlace": "Added to the queue. It's #{{n}} in line.",
-        "addedPlain": "Added to the queue.",
         "started": "Import started.",
         "open": "Open",
         "tryAgain": "Try again",

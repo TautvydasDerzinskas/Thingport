@@ -54,7 +54,7 @@ export function testQueue(overrides: Partial<ImportQueueValue> = {}): ImportQueu
     ...initialQueueState("me"),
     ...createQueueStore({ viewerId: "me", isAdmin: true, isHidden: () => true }).actions,
     loading: false,
-    everyone: { jobs: [], olderBackend: false, loading: false, failed: false },
+    everyone: { jobs: [], olderBackend: false, finishedTotal: 0, finishedByOwner: {}, loading: false, failed: false },
     dialog: { open: true, section: "run", scope: "mine", person: null },
     indicator: indicatorState([], false),
     ...overrides,

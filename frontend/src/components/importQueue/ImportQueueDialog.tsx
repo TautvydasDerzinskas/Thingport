@@ -16,7 +16,6 @@ import PauseIcon from "@mui/icons-material/Pause";
 import PeopleIcon from "@mui/icons-material/People";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ReplayIcon from "@mui/icons-material/Replay";
-import visuallyHidden from "@mui/utils/visuallyHidden";
 import Segmented from "../controls/Segmented";
 import { PanelHeader, SectionLabel } from "../Layout/ConfigurationDialog/parts";
 import { useConfirm } from "../ConfirmProvider";
@@ -25,12 +24,24 @@ import { useCurrentToast } from "../ToastProvider";
 import { useImportQueue } from "./ImportQueueContext";
 import JobCard, { JobCardSkeletons } from "./JobCard";
 import LineRow from "./LineRow";
-import { InitialsAvatar, LiveDot, popInSx, quietButtonSx, tapTargetSx } from "./queueParts";
+import { headingMark, keepingPanelFocus } from "./queueFocus";
+import {
+  focusRingSx,
+  InitialsAvatar,
+  LiveDot,
+  popInSx,
+  quietButtonSx,
+  tapTargetSx,
+  visuallyHiddenSx,
+} from "./queueParts";
 import QueueSettingsPopover from "./QueueSettingsPopover";
 import {
   clearFinishedConfirmText,
   dialogTitle,
   emptyState,
+  everyoneFinished,
+  finishedListNote,
+  ownerName,
   panelAction,
   panelSubtitle,
   peopleOf,
@@ -135,33 +146,42 @@ function QueuePanel({ list, counts }: { list: QueueJob[]; counts: SectionCounts 
     actsOnAll: everyone && queue.everyone.olderBackend && person !== null,
   });
   const confirm = useConfirm();
+  const finishedNote = section === "done" ? finishedListNote(list, counts, t) : null;
 
-  const runAction = async (kind: PanelAction["kind"]) => {
-    if (kind === "clearFinished" && !(await confirm({ ...clearFinishedConfirmText(t), destructive: true }))) return;
-    await queue[kind]();
+  const clearFinished = async () => {
+    const owner = list.find((job) => job.owner?.id === person)?.owner;
+    const text = clearFinishedConfirmText(
+      t,
+      everyone ? { count: counts.done, person: person && (owner ? ownerName(owner) : person) } : undefined,
+    );
+    if (await confirm({ ...text, destructive: true })) await queue.clearFinished(person);
   };
+
+  const runAction = (kind: PanelAction["kind"]) => (kind === "clearFinished" ? clearFinished() : queue[kind]());
 
   return (
     <>
-      <PanelHeader
-        title={t(`importQueue.sections.${section}`)}
-        subtitle={panelSubtitle(section, scope, t)}
-        action={
-          action && (
-            <Button
-              size="small"
-              variant={action.primary ? "contained" : "outlined"}
-              color={action.primary ? "primary" : "inherit"}
-              startIcon={ACTION_ICONS[action.kind]}
-              disabled={action.disabled || queue.busy.has(action.kind)}
-              onClick={() => void runAction(action.kind)}
-              sx={action.primary ? tapTargetSx : quietButtonSx}
-            >
-              {action.label}
-            </Button>
-          )
-        }
-      />
+      <Box {...headingMark} sx={focusRingSx}>
+        <PanelHeader
+          title={t(`importQueue.sections.${section}`)}
+          subtitle={panelSubtitle(section, scope, t)}
+          action={
+            action && (
+              <Button
+                size="small"
+                variant={action.primary ? "contained" : "outlined"}
+                color={action.primary ? "primary" : "inherit"}
+                startIcon={ACTION_ICONS[action.kind]}
+                disabled={action.disabled || queue.busy.has(action.kind)}
+                onClick={(event) => void keepingPanelFocus(event, () => runAction(action.kind))}
+                sx={action.primary ? tapTargetSx : quietButtonSx}
+              >
+                {action.label}
+              </Button>
+            )
+          }
+        />
+      </Box>
       {failed && (
         <Alert
           severity="error"
@@ -185,19 +205,42 @@ function QueuePanel({ list, counts }: { list: QueueJob[]; counts: SectionCounts 
         </Stack>
       ) : (
         // An unread list says nothing about what's in it, so no "Nothing waiting" under the error.
-        !failed && <EmptyPanel state={emptyState(section, { scope, line: queue.line, own: queue.jobs }, t)} />
+        !failed &&
+        !finishedNote && (
+          <EmptyPanel
+            state={emptyState(
+              section,
+              { scope, line: queue.line, own: queue.jobs, autoStart: queue.startGrabLinks },
+              t,
+            )}
+          />
+        )
+      )}
+      {!loading && finishedNote && (
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1.5, textAlign: "center" }}>
+          {finishedNote}
+        </Typography>
       )}
     </>
   );
 }
 
+// Longer than a confirmation takes to close: until then it hides this dialog from screen readers too, and words that
+// come meanwhile aren't said.
+const ECHO_DELAY_MS = 250;
+
 /** A modal dialog hides what's beside it from screen readers, and that takes in the toast. Here, it goes when the
  *  dialog does, so nothing is said twice. A new element each time, so the same words are said again. */
 function ToastEcho() {
   const toast = useCurrentToast();
+  const [said, setSaid] = React.useState(toast);
+  React.useEffect(() => {
+    const timer = setTimeout(() => setSaid(toast), ECHO_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [toast]);
   return (
-    <Box component="output" aria-live="polite" sx={visuallyHidden}>
-      {toast && <span key={toast.key}>{toast.message}</span>}
+    <Box component="output" aria-live="polite" sx={visuallyHiddenSx}>
+      {said && <span key={said.key}>{said.message}</span>}
     </Box>
   );
 }
@@ -289,7 +332,7 @@ export default function ImportQueueDialog({ isAdmin }: Props) {
   }, [personGone, setPerson]);
 
   const list = visibleJobs(scope, queue.jobs, everyone.jobs, person);
-  const counts = sectionCounts(list, scope === "mine" ? queue.finishedTotal : 0);
+  const counts = sectionCounts(list, scope === "mine" ? queue.finishedTotal : everyoneFinished(everyone, person));
   const importingNow = runningNow(list);
 
   const sections: DialogSection<QueueSection>[] = QUEUE_SECTIONS.map((id) => ({

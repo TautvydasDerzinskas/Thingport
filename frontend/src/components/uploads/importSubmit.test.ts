@@ -14,7 +14,7 @@ const PRINTABLES_LIST = "https://www.printables.com/@username/collections/12345-
 const MAKERONLINE_MODEL = "https://www.makeronline.com/en/model/Example-Model/123456.html";
 const FILE_LINK = "https://files.example.com/parts";
 
-const JOB: QueueSubmitAnswer = { kind: "job", job_id: "j1", status: "QUEUED", position: 2 };
+const JOB: QueueSubmitAnswer = { kind: "job", position: 2 };
 const CAPTCHA = { captcha_id: "c1", captcha_answer: "abc" };
 const PRINT = { id: "p1", title: "A model", name: "a" };
 
@@ -149,7 +149,7 @@ describe("submitImport", () => {
 
   it("says when what was asked for waits for Thingport Grab", async () => {
     const { deps, submitImport } = setup();
-    deps.queue.submitLink.mockResolvedValue({ kind: "grab", queued: 3, collection_id: null });
+    deps.queue.submitLink.mockResolvedValue({ kind: "grab", queued: 3 });
     await submitImport(PRINTABLES_MODEL);
     expect(toasts(deps)).toEqual([{ message: 'uploadBar.makeronlineListWaiting {"count":3}' }]);
   });
@@ -192,7 +192,7 @@ describe("a list", () => {
 
   it("says how many wait for Thingport Grab, when its provider's lists do", async () => {
     const { deps, config } = await shownList();
-    deps.queue.submitList.mockResolvedValue({ kind: "grab", queued: 4, collection_id: "c1" });
+    deps.queue.submitList.mockResolvedValue({ kind: "grab", queued: 4 });
     await config.onImportSelected(["a"]);
     expect(toasts(deps)).toEqual([{ message: 'uploadBar.makeronlineListWaiting {"count":4}' }]);
   });

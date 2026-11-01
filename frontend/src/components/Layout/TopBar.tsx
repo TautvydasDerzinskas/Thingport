@@ -9,7 +9,6 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MenuIcon from "@mui/icons-material/Menu";
 import type { AuthUser } from "../../api/auth";
 import type { ThemeSelection } from "../../constants/settingsOptions";
-import type { MakerWorldSettings } from "../../utils/settings";
 import {
   notifyConfigurationClosed,
   onOpenConfiguration,
@@ -31,7 +30,6 @@ type Props = {
   onBack?: () => void;
   actions?: React.ReactNode;
   categoryId: string | null;
-  onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   onUploaded: () => void;
   onUnauthorized?: () => void;
   user: AuthUser | null;
@@ -50,7 +48,6 @@ export default function TopBar({
   onBack,
   actions,
   categoryId,
-  onUpdateMakerWorld,
   onUploaded,
   onUnauthorized,
   user,
@@ -170,7 +167,6 @@ export default function TopBar({
         theme={theme}
         onThemeChange={onThemeChange}
         isAdmin={user?.role === "ADMIN"}
-        onUpdateMakerWorld={onUpdateMakerWorld}
         onUnauthorized={onUnauthorized}
       />
     </Box>

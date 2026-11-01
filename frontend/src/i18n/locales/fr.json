@@ -614,7 +614,7 @@
       "sectionsLabel": "Sections de la file d’attente",
       "autoStart": "Lancer automatiquement les liens de Grab",
       "autoStartOn": "Les nouveaux liens entrent directement dans la file.",
-      "autoStartOff": "Les nouveaux liens restent retenus jusqu’à ce que vous les lanciez.",
+      "autoStartOff": "Les nouveaux liens restent en suspens jusqu’à ce que vous les lanciez.",
       "scope": {
         "label": "À qui sont les importations",
         "mine": "Les miennes",
@@ -660,7 +660,8 @@
         },
         "wait": {
           "title": "Rien en attente",
-          "text": "Les nouvelles importations attendent ici leur tour. Les liens envoyés avec « Ajouter à la file d’attente » dans Thingport Grab restent retenus jusqu’à ce que vous les lanciez."
+          "text": "Les nouvelles importations attendent ici leur tour. Les liens envoyés avec « Ajouter à la file d’attente » dans Thingport Grab restent en suspens jusqu’à ce que vous les lanciez.",
+          "textAuto": "Les nouvelles importations attendent ici leur tour."
         },
         "done": {
           "title": "Rien de terminé pour l’instant",
@@ -669,7 +670,7 @@
       },
       "group": {
         "inLine": "Dans la file",
-        "onHold": "Retenues",
+        "onHold": "En suspens",
         "inLineHintMine": "Votre numéro ne fait que baisser",
         "inLineHintAll": "Démarrent toutes seules",
         "onHoldHint": "Ne s’exécutent pas tant qu’elles ne sont pas lancées",
@@ -684,9 +685,9 @@
         "privateMany_other": "{{count}} importations privées",
         "nextUp": "Prochaine",
         "place": "#{{n}} dans la file",
-        "ahead_one": "{{count}} importation avant",
-        "ahead_many": "{{count}} importations avant",
-        "ahead_other": "{{count}} importations avant"
+        "ahead_one": "{{count}} importation devant",
+        "ahead_many": "{{count}} importations devant",
+        "ahead_other": "{{count}} importations devant"
       },
       "unit": {
         "link_one": "{{count}} lien",
@@ -697,7 +698,7 @@
         "model_other": "{{count}} modèles"
       },
       "action": {
-        "hold": "Retenir",
+        "hold": "Mettre en suspens",
         "pause": "Suspendre",
         "pauseHint": "Suspendre après le lien en cours",
         "start": "Lancer",
@@ -705,7 +706,7 @@
         "retryMany": "Réessayer {{count}}",
         "pauseAll": "Tout suspendre",
         "retryAll": "Tout réessayer ({{count}})",
-        "startAll": "Lancer toutes les retenues ({{count}})",
+        "startAll": "Lancer tout ce qui est en suspens ({{count}})",
         "clearFinished": "Effacer les terminées ({{count}})"
       },
       "menu": {
@@ -718,7 +719,19 @@
       "clear": {
         "title": "Effacer les importations terminées ?",
         "message": "Elles quittent cette liste avec leurs liens en échec, qui ne pourront plus être réessayés. Les modèles déjà importés restent dans la bibliothèque.",
+        "messageEveryone_one": "Cela efface {{count}} importation terminée, quelle que soit la personne à qui elle appartient, avec ses liens en échec, qui ne pourront plus être réessayés. Les modèles déjà importés restent dans les bibliothèques.",
+        "messageEveryone_many": "Cela efface {{count}} importations terminées, y compris celles d’autres personnes, avec leurs liens en échec, qui ne pourront plus être réessayés. Les modèles déjà importés restent dans les bibliothèques.",
+        "messageEveryone_other": "Cela efface {{count}} importations terminées, y compris celles d’autres personnes, avec leurs liens en échec, qui ne pourront plus être réessayés. Les modèles déjà importés restent dans les bibliothèques.",
+        "messagePerson_one": "Cela efface {{count}} importation terminée ({{name}}), avec ses liens en échec, qui ne pourront plus être réessayés. Les modèles déjà importés restent dans la bibliothèque.",
+        "messagePerson_many": "Cela efface {{count}} importations terminées ({{name}}), avec leurs liens en échec, qui ne pourront plus être réessayés. Les modèles déjà importés restent dans la bibliothèque.",
+        "messagePerson_other": "Cela efface {{count}} importations terminées ({{name}}), avec leurs liens en échec, qui ne pourront plus être réessayés. Les modèles déjà importés restent dans la bibliothèque.",
         "confirm": "Effacer"
+      },
+      "finishedList": {
+        "newest": "Affichage des {{shown}} plus récentes sur {{total}}",
+        "older_one": "{{count}} importation plus ancienne n’est pas listée ici",
+        "older_many": "{{count}} importations plus anciennes ne sont pas listées ici",
+        "older_other": "{{count}} importations plus anciennes ne sont pas listées ici"
       },
       "delete": {
         "title": "Supprimer cette importation ?",
@@ -761,7 +774,7 @@
       "status": {
         "running": "Importation",
         "queued": "Dans la file",
-        "paused": "Retenue",
+        "paused": "En suspens",
         "pausing": "Mise en pause",
         "error": "Erreur",
         "partial": "Échecs partiels",
@@ -775,7 +788,9 @@
         "pausing": "Fin du lien en cours, puis arrêt.",
         "error": "L’importation a échoué.",
         "partial": "Terminée, mais certains liens ont échoué.",
+        "partialModels": "Terminée, mais certains modèles ont échoué.",
         "done": "Tous les liens ont été importés.",
+        "doneModels": "Tous les modèles ont été importés.",
         "unknown": "Cette version de Thingport ne connaît pas cet état."
       },
       "progress": "{{processed}} sur {{total}}",
@@ -788,7 +803,9 @@
         "modelsFailed_many": "{{count}} modèles ont échoué.",
         "modelsFailed_other": "{{count}} modèles ont échoué.",
         "interruptedNoRetry": "Interrompue par un redémarrage du serveur. Certains fichiers sont peut-être déjà dans votre bibliothèque.",
+        "interruptedNoRetryOwner": "Interrompue par un redémarrage du serveur. Certains fichiers sont peut-être déjà dans la bibliothèque de cette personne.",
         "interrupted": "Interrompue par un redémarrage du serveur. Un modèle est peut-être incomplet dans votre bibliothèque : supprimez-le avant de réessayer.",
+        "interruptedOwner": "Interrompue par un redémarrage du serveur. Un modèle est peut-être incomplet dans la bibliothèque de cette personne : il faudrait le supprimer avant de réessayer.",
         "interruptedZip": "Interrompue par un redémarrage du serveur. Certains modèles sont déjà importés. Lancez une nouvelle importation avec seulement les fichiers manquants.",
         "stalled": "Cette importation ne répondait plus, la file a donc continué. Si Réessayer n’est pas proposé, redémarrez le serveur.",
         "noRequest": "Cette ancienne importation n’a pas de requête enregistrée."
@@ -799,7 +816,7 @@
         "added": "Ajoutée {{time}}",
         "addedJustNow": "Ajoutée à l’instant",
         "waiting": "En attente",
-        "onHold": "Retenue",
+        "onHold": "En suspens",
         "justNow": "À l’instant",
         "today": "Aujourd’hui, {{time}}",
         "yesterday": "Hier"
@@ -815,14 +832,13 @@
         "nextUp": "Votre importation est la prochaine",
         "nextPlace": "Votre prochaine importation est #{{n}} dans la file",
         "finished": "Toutes les importations sont terminées",
-        "onHold": "Retenues : {{count}}",
+        "onHold": "En suspens : {{count}}",
         "syncing": "Une collection synchronisée est en cours de mise à jour",
         "empty": "La file d’attente d’importation est vide"
       },
       "toast": {
         "added": "Ajoutée à la file d’attente. C’est la prochaine.",
         "addedPlace": "Ajoutée à la file d’attente. Elle est #{{n}} dans la file.",
-        "addedPlain": "Ajoutée à la file d’attente.",
         "started": "Importation lancée.",
         "open": "Ouvrir",
         "tryAgain": "Réessayer",

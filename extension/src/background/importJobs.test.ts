@@ -174,17 +174,6 @@ describe("importing against an instance of any age", () => {
 
       await expect(importZip()).rejects.toThrow(IMPORT_PAUSED);
     });
-
-    it("is still going when QUEUED, should that ever reach it", async () => {
-      answers["GET /import/jobs/job1"] = [
-        { body: { status: "QUEUED" } },
-        { body: { status: "QUEUED" } },
-        { body: { status: "DONE", result_print_id: "print1" } },
-      ];
-
-      expect(await importZip()).toEqual({ id: "print1" });
-      expect(routes().filter((route) => route === "GET /import/jobs/job1")).toHaveLength(3);
-    });
   });
 
   describe("Add to the queue", () => {

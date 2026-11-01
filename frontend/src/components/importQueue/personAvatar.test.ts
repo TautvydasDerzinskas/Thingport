@@ -20,8 +20,8 @@ describe("personAvatar", () => {
   it("tells people apart by both colour and shape", () => {
     const looks = keys.map(personAvatar);
     expect(new Set(looks.map((look) => look.background)).size).toBeGreaterThan(3);
-    expect(new Set(looks.map((look) => look.shape)).size).toBeGreaterThan(3);
-    expect(new Set(looks.map((look) => `${look.background} ${look.shape}`)).size).toBeGreaterThan(15);
+    expect(new Set(looks.map((look) => look.path)).size).toBeGreaterThan(3);
+    expect(new Set(looks.map((look) => `${look.background} ${look.path}`)).size).toBeGreaterThan(15);
   });
 
   it("copes with a key that isn't one", () => {

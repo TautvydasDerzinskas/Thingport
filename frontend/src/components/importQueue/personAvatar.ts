@@ -3,19 +3,19 @@ import { accentSwatch, type AccentColor } from "../../theme";
 // Graphite is left out: it nearly disappears on the dark theme's panels.
 const COLORS: AccentColor[] = ["blue", "orange", "amber", "teal", "purple", "green"];
 
+// A hexagon, a diamond, a triangle, a square and a circle.
 const SHAPES = [
-  { id: "hexagon", path: "M12 2l8.66 5v10L12 22l-8.66-5V7z" },
-  { id: "diamond", path: "M12 3l9 9-9 9-9-9z" },
-  { id: "triangle", path: "M12 3.5 21.5 20h-19z" },
-  { id: "square", path: "M5 5h14v14H5z" },
-  { id: "circle", path: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" },
-] as const;
+  "M12 2l8.66 5v10L12 22l-8.66-5V7z",
+  "M12 3l9 9-9 9-9-9z",
+  "M12 3.5 21.5 20h-19z",
+  "M5 5h14v14H5z",
+  "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
+];
 
 export type PersonAvatar = {
   background: string;
   /** Reads on `background`, in both themes. */
   foreground: string;
-  shape: (typeof SHAPES)[number]["id"];
   /** The shape, for a 24 by 24 viewBox. */
   path: string;
 };
@@ -35,6 +35,5 @@ export function personAvatar(person: string): PersonAvatar {
   const value = hash(person);
   const { color, contrast } = accentSwatch(COLORS[value % COLORS.length]);
   // Other bits than the colour's, so two people of one colour don't always share a shape too.
-  const { id, path } = SHAPES[(value >>> 8) % SHAPES.length];
-  return { background: color, foreground: contrast, shape: id, path };
+  return { background: color, foreground: contrast, path: SHAPES[(value >>> 8) % SHAPES.length] };
 }

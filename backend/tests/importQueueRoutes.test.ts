@@ -546,6 +546,38 @@ describe("the import queue's routes", () => {
       expect(job.payload).toBeNull();
     });
 
+    it("names a list running by itself as soon as it starts, if it came with a name, answering as ever", async () => {
+      const release = gate(base + 30);
+      const res = await post(alice, "/import/makerworld/list", {
+        url: LIST_URL,
+        model_ids: [String(base + 30)],
+        collection_title: " Named by Grab ",
+      });
+      expect(res.status).toBe(202);
+      expect(res.body).toEqual({ job_id: expect.any(String) });
+      await until(() => fetched.some((url) => url.includes(String(base + 30))));
+      const running = await get(alice, `/import/jobs/${res.body.job_id}`);
+      expect(running.body).toMatchObject({ status: "RUNNING", source_label: "Named by Grab", source_url: LIST_URL });
+      expect(await reload(res.body.job_id)).toMatchObject({ queuedAt: null, payload: null });
+
+      release();
+      await until(async () => (await reload(res.body.job_id)).status === "DONE");
+      expect((await reload(res.body.job_id)).sourceLabel).toBe("Flock");
+    });
+
+    it("leaves a list running by itself unnamed when it came with no name", async () => {
+      const release = gate(base + 31);
+      const res = await post(alice, "/import/makerworld/list", {
+        url: LIST_URL,
+        model_ids: [String(base + 31)],
+        collection_title: "  ",
+      });
+      await until(() => fetched.some((url) => url.includes(String(base + 31))));
+      expect((await reload(res.body.job_id)).sourceLabel).toBeNull();
+      release();
+      await until(async () => (await reload(res.body.job_id)).status === "DONE");
+    });
+
     it("runs a signed zip right away, past the line, with no number", async () => {
       await post(bob, "/import?queue=1", { url: modelUrl(base) });
       const res = await post(alice, "/import/zip?queue=1", { url: SIGNED_ZIP_URL, entries: ["hull.stl"] });
@@ -810,6 +842,7 @@ describe("the import queue's routes", () => {
       "failure_reason",
       "id",
       "imported",
+      "link_title",
       "outcome",
       "pending_count",
       "position",
@@ -876,6 +909,37 @@ describe("the import queue's routes", () => {
         done_count: 1,
       });
       expect(byId(finished.id)).toMatchObject({ attention: false, can_retry: false, can_delete: true });
+    });
+
+    it("gives the page title of a link list's only link, and nothing for any other job", async () => {
+      const grabbed = await post(alice, "/import/queue", { url: modelUrl(base), title: "A page" });
+      expect(await ownJob(alice, grabbed.body.job_id)).toMatchObject({ total: 1, link_title: "A page" });
+
+      await post(alice, "/import/queue", { url: modelUrl(base + 1), title: "Another page" });
+      expect((await ownJob(alice, grabbed.body.job_id)).link_title).toBeNull();
+
+      const untitled = await post(alice, "/import?queue=1", { url: modelUrl(base + 2) });
+      expect((await ownJob(alice, untitled.body.job_id)).link_title).toBeNull();
+      const named = await post(alice, "/import?queue=1", { url: modelUrl(base + 3), title: "Called this" });
+      expect(await ownJob(alice, named.body.job_id)).toMatchObject({ source_label: "Called this", link_title: null });
+
+      const zip = await post(alice, "/import/zip?queue=1", { url: ZIP_URL, entries: ["hull.stl"] });
+      expect((await ownJob(alice, zip.body.job_id)).link_title).toBeNull();
+    });
+
+    it("keeps a link's page title to its owner: it's nowhere in anyone else's line", async () => {
+      await post(bob, "/import/queue", { url: modelUrl(base), title: "Private page" });
+      await request(app).put("/api/import/queue/settings").set(auth(bob)).send({ start_grab_links: true });
+      const theirs = await post(bob, "/import/queue", { url: modelUrl(base + 1), title: "Private page" });
+      expect((await ownJob(bob, theirs.body.job_id)).link_title).toBe("Private page");
+      const mine = await post(alice, "/import?queue=1", { url: modelUrl(base + 2) });
+
+      const { line } = await ownQueue(alice);
+      expect(line.rows).toHaveLength(2);
+      expect(line.rows[1].job_id).toBe(mine.body.job_id);
+      for (const seat of line.rows)
+        expect(Object.keys(seat).toSorted()).toEqual(["job_id", "mine", "person", "position"]);
+      expect(JSON.stringify(await ownQueue(alice))).not.toContain("Private page");
     });
 
     it("shows other people as places in the line and nothing more", async () => {
@@ -1316,7 +1380,7 @@ describe("the import queue's routes", () => {
       expect(masked).not.toHaveProperty("single");
 
       const asked = (await get(admin, "/admin/import-queue?queue=1")).body;
-      expect(Object.keys(asked).toSorted()).toEqual(["bulk", "jobs"]);
+      expect(Object.keys(asked).toSorted()).toEqual(["bulk", "finished_by_owner", "finished_total", "jobs"]);
       expect(Object.keys(asked.bulk).toSorted()).toEqual(["currentJobId", "remaining", "running"]);
       expect(adminRow(asked, body.job_id)).toMatchObject({
         status: "QUEUED",
@@ -1349,6 +1413,54 @@ describe("the import queue's routes", () => {
       expect(adminRow(asked, held.id)).toMatchObject({ status: "PAUSED", can_start: true });
       expect(adminRow(asked, failed.id)).toMatchObject({ status: "ERROR", attention: true });
       expect(adminRow(asked, finished.id)).toBeUndefined();
+    });
+
+    it("counts everything in Finished, by the same rule as Clear finished, far past what it lists", async () => {
+      const longAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      await row(alice, { status: "DONE" }, []);
+      await row(alice, { status: "ERROR", errorMessage: "Old", updatedAt: longAgo }, []);
+      // Asking for attention, or not finished.
+      await row(alice, { status: "ERROR", errorMessage: "Recent" }, []);
+      await row(alice, { status: "DONE", failedCount: 1 }, ["FAILED"]);
+      await row(alice);
+      await prisma.importJob.createMany({
+        data: Array.from({ length: 205 }, () => ({
+          userId: alice.id,
+          type: "LINKS" as const,
+          status: "DONE" as const,
+          sourceUrl: ZIP_URL,
+        })),
+      });
+      await row(bob, { status: "DONE" }, []);
+      await row(bob, { status: "ERROR", errorMessage: "Recent" }, []);
+
+      const { jobs, finished_total, finished_by_owner } = (await get(admin, "/admin/import-queue?queue=1")).body;
+      expect(finished_by_owner[alice.id]).toBe(207);
+      expect(finished_by_owner[bob.id]).toBe(1);
+      // Nobody with nothing finished is listed, and everyone with something is counted.
+      expect(finished_by_owner).not.toHaveProperty(admin.id);
+      const counts = Object.values(finished_by_owner) as number[];
+      expect(finished_total).toBe(counts.reduce((sum, count) => sum + count, 0));
+      expect(jobs.length).toBeLessThan(finished_total);
+
+      const old = (await get(admin, "/admin/import-queue")).body;
+      expect(old).not.toHaveProperty("finished_total");
+      expect(old).not.toHaveProperty("finished_by_owner");
+
+      const cleared = await post(admin, `/admin/import-queue/clear-finished?queue=1&user_id=${alice.id}`);
+      expect(cleared.body).toEqual({ deleted: 207 });
+      const after = (await get(admin, "/admin/import-queue?queue=1")).body;
+      expect(after.finished_by_owner).not.toHaveProperty(alice.id);
+      expect(after.finished_by_owner[bob.id]).toBe(1);
+      expect(after.finished_total).toBe(finished_total - 207);
+    });
+
+    it("gives a lone link's page title on its row, and only when asked", async () => {
+      const { body } = await post(alice, "/import/queue", { url: modelUrl(base), title: "A page" });
+      const asked = (await get(admin, "/admin/import-queue?queue=1")).body;
+      expect(adminRow(asked, body.job_id)).toMatchObject({ link_title: "A page", owner: { id: alice.id } });
+      const old = (await get(admin, "/admin/import-queue")).body;
+      expect(adminRow(old, body.job_id)).not.toHaveProperty("link_title");
     });
 
     it("starts, retries and pauses any type, answering as it always has", async () => {

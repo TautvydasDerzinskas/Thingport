@@ -4,7 +4,6 @@ import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import type { ThemeSelection } from "../../../constants/settingsOptions";
-import type { MakerWorldSettings } from "../../../utils/settings";
 import AppearancePanel from "./AppearancePanel";
 import ProvidersPanel from "./ProvidersPanel";
 import SlicerPanel from "./SlicerPanel";
@@ -26,20 +25,11 @@ type Props = {
   theme: ThemeSelection;
   onThemeChange: (theme: ThemeSelection) => Promise<boolean>;
   isAdmin: boolean;
-  onUpdateMakerWorld: (patch: Partial<MakerWorldSettings>) => void;
   onUnauthorized?: () => void;
 };
 
 /** Settings by section: the sections on the left, the chosen one on the right. */
-export default function ConfigurationDialog({
-  open,
-  onClose,
-  theme,
-  onThemeChange,
-  isAdmin,
-  onUpdateMakerWorld,
-  onUnauthorized,
-}: Props) {
+export default function ConfigurationDialog({ open, onClose, theme, onThemeChange, isAdmin, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const [tab, setTab] = React.useState<ConfigurationTab>("appearance");
 
@@ -69,9 +59,7 @@ export default function ConfigurationDialog({
       {shown === "appearance" && (
         <AppearancePanel theme={theme} onThemeChange={onThemeChange} onUnauthorized={onUnauthorized} />
       )}
-      {shown === "providers" && (
-        <ProvidersPanel isAdmin={isAdmin} onUpdateMakerWorld={onUpdateMakerWorld} onUnauthorized={onUnauthorized} />
-      )}
+      {shown === "providers" && <ProvidersPanel isAdmin={isAdmin} onUnauthorized={onUnauthorized} />}
       {shown === "slicer" && <SlicerPanel onNavigate={onClose} onUnauthorized={onUnauthorized} />}
     </SectionedDialog>
   );

@@ -1,4 +1,4 @@
-/** URL-shape detection shared by useUploadImport, AddMenu and LinkSourceDialog so they can't drift apart. The parsing itself is the
+/** URL-shape detection shared by importSubmit, AddMenu and LinkSourceDialog so they can't drift apart. The parsing itself is the
  *  providers' own (providers/<id>/urls.ts), the same the backend and Grab use; this only adds what the import box
  *  needs, such as taking a link pasted without its scheme. */
 

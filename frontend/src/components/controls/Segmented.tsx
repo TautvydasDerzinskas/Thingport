@@ -79,7 +79,8 @@ export default function Segmented<T extends string>({
                 filter: chosen ? "none" : "grayscale(1)",
                 transition: "opacity 150ms, filter 150ms",
               },
-              "&:hover": { color: "text.primary" },
+              // Not the chosen one, whose colour is brighter than this in the dark theme.
+              ...(!chosen && { "&:hover": { color: "text.primary" } }),
               "&:hover > svg": { opacity: 1, filter: "none" },
               "@media (prefers-reduced-motion: reduce)": { transition: "none", "& > svg": { transition: "none" } },
               "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 1 },

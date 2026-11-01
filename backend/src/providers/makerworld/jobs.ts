@@ -6,7 +6,7 @@ import { createLogger } from "../../logger";
 import { createLog } from "../../services/auditLog";
 import { addPrintsToCollection, findOrCreateCollectionByName } from "../../services/collectionService";
 import { syncedCollectionFor } from "../../services/collectionSyncService";
-import { jobProgress, QUEUE_ATTENTION_PATH, updateJob } from "../../services/importJobService";
+import { jobProgress, jobTakenFromRunner, QUEUE_ATTENTION_PATH, updateJob } from "../../services/importJobService";
 import {
   classifyImportFailure,
   importProfileUrlsSequentially,
@@ -62,15 +62,24 @@ async function runMakerworldProfilesImportJob(
     log.info("makerworld profiles job started", { job: jobId, url: body.url, profiles: profileUrls.length });
 
     const progress = jobProgress(jobId);
-    const totals = await importProfileUrlsSequentially(userId, profileUrls, body, (t) =>
-      progress.write({
-        processed: t.processed,
-        imported: t.imported,
-        alreadyInLibrary: t.alreadyInLibrary,
-        failedCount: t.failed,
-      }),
+    const totals = await importProfileUrlsSequentially(
+      userId,
+      profileUrls,
+      body,
+      (t) =>
+        progress.write({
+          processed: t.processed,
+          imported: t.imported,
+          alreadyInLibrary: t.alreadyInLibrary,
+          failedCount: t.failed,
+        }),
+      () => jobTakenFromRunner(jobId),
     );
     await progress.settled();
+    if (totals.stopped) {
+      log.info("makerworld profiles job stopped", { job: jobId, processed: totals.processed });
+      return;
+    }
     const { imported, alreadyInLibrary, failed, stopReason } = totals;
     const printId = totals.printId;
     log.info("makerworld profiles job done", {
@@ -83,6 +92,8 @@ async function runMakerworldProfilesImportJob(
 
     await updateJob(jobId, {
       status: "DONE",
+      // A stalled job that got there after all: the watchdog's words are no longer true.
+      errorMessage: null,
       resultPrintId: printId,
       processed: totals.processed,
       imported,
@@ -147,9 +158,12 @@ export async function runCollectionImportJob(
     let authFailed = 0;
     const failed: string[] = [];
     const successPrintIds: string[] = [];
+    let stopped = false;
     log.info("makerworld collection job started", { job: jobId, url: body.url, models: body.design_ids.length });
 
     await mapWithConcurrency(body.design_ids, COLLECTION_IMPORT_CONCURRENCY, async (designId) => {
+      stopped ||= await jobTakenFromRunner(jobId);
+      if (stopped) return;
       const modelUrl = makerworldModelUrl(designId);
       const itemBody: ImportRequestBody = {
         url: modelUrl,
@@ -185,6 +199,11 @@ export async function runCollectionImportJob(
         );
       }
     });
+    // Whatever took it keeps it. Its retry runs the whole request, which files what already came in.
+    if (stopped) {
+      log.info("makerworld collection job stopped", { job: jobId, processed, models: body.design_ids.length });
+      return;
+    }
 
     let resultCollectionId: string | null = null;
     let collectionTitle: string | null = null;
@@ -220,6 +239,7 @@ export async function runCollectionImportJob(
     });
     await updateJob(jobId, {
       status: "DONE",
+      errorMessage: null,
       // Nothing came in to name it by: a job from the line keeps the title it was added with.
       sourceLabel: collectionTitle ?? undefined,
       resultCollectionId,

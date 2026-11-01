@@ -275,6 +275,30 @@ test("the Add dialog closes on submit, and a refused link comes back with Try ag
   await expect(dialog).toBeHidden();
 });
 
+test("double-clicking Import sends the links once", async ({ page }) => {
+  await holdTheLine(admin);
+  const sent: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.startsWith("/api/import")) {
+      sent.push(request.url());
+    }
+  });
+
+  await page.goto("/models");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Import", exact: true }).click();
+  const dialog = importDialog(page);
+  const links = [modelId(), modelId()].map(linkTo);
+  await linkField(dialog).fill(links.join("\n"));
+  await dialog.getByRole("button", { name: "Import", exact: true }).dblclick();
+  await expect(dialog).toBeHidden();
+
+  await expect(toast(page, "Added to the queue.")).toBeVisible();
+  expect(sent).toHaveLength(1);
+  // The one holding the line, and these.
+  expect((await admin.queue()).jobs).toHaveLength(2);
+});
+
 test("a link goes through the line to Finished, without leaving the page, and the toast opens it", async ({
   page,
   api,
@@ -409,14 +433,65 @@ test("Clear finished asks first: Cancel leaves them, and confirming clears them"
   await expect(jobCard(dialog, id)).toBeVisible();
   expect((await admin.queue()).jobs).toHaveLength(1);
 
+  const status = dialog.getByRole("status");
+  await status.evaluate((region: HTMLElement) => {
+    new MutationObserver(() => {
+      if (region.textContent?.startsWith("Cleared")) {
+        region.dataset.saidHidden ??= String(Boolean(region.closest('[aria-hidden="true"]')));
+      }
+    }).observe(region, { childList: true });
+  });
+
   await clear.click();
   await confirm.getByRole("button", { name: "Clear", exact: true }).click();
   await expect(confirm).toBeHidden();
   await expect(jobCard(dialog, id)).toBeHidden();
   await expect(dialog.getByText("Nothing finished yet")).toBeVisible();
   expect((await admin.queue()).jobs).toEqual([]);
-  // The toast is behind the dialog, for a screen reader, so the dialog says it too.
-  await expect(dialog.getByRole("status")).toHaveText("Cleared 1 finished import.");
+  // The toast is behind the dialog, for a screen reader, so the dialog says it instead, and it's said once.
+  await expect(status).toHaveText("Cleared 1 finished import.");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  // Not while the closing confirmation still hid the dialog: inside that, it wouldn't be heard.
+  await expect(status).toHaveAttribute("data-said-hidden", "false");
+});
+
+test("Everyone's Clear finished says how many and whose, and clears as far as it says", async ({
+  page,
+  browser,
+  request,
+}) => {
+  const displayName = "Queue Clear Member";
+  const member = await signUp(browser, request, displayName);
+  const [mine, theirs, theirsToo] = [modelId(), modelId(), modelId()];
+  await admin.enqueue(linkTo(mine));
+  await member.account.enqueue(linkTo(theirs));
+  await member.account.enqueue(linkTo(theirsToo));
+
+  await page.goto("/admin-queue");
+  const dialog = queueDialog(page, "Server import queue");
+  await section(dialog, "Finished").click();
+  for (const id of [mine, theirs, theirsToo]) {
+    await expect(jobCard(dialog, id).getByText("Done", { exact: true })).toBeVisible({ timeout: IMPORT_TIMEOUT });
+  }
+  const confirm = page.getByRole("dialog", { name: "Clear finished imports?" });
+
+  await dialog.getByRole("button", { name: "Clear finished (3)" }).click();
+  await expect(confirm).toContainText("This clears 3 finished imports, other people's too");
+  await confirm.getByRole("button", { name: "Cancel" }).click();
+  await expect(confirm).toBeHidden();
+
+  // With someone picked it's only theirs, and it says so.
+  await dialog.getByRole("button", { name: new RegExp(`^${displayName}`) }).click();
+  await dialog.getByRole("button", { name: "Clear finished (2)" }).click();
+  await expect(confirm).toContainText(`This clears 2 finished imports of ${displayName}`);
+  await expect(confirm).not.toContainText("other people's");
+  await confirm.getByRole("button", { name: "Clear", exact: true }).click();
+  await expect(confirm).toBeHidden();
+
+  await expect(dialog.getByRole("status")).toHaveText("Cleared 2 finished imports.");
+  expect((await member.account.queue()).jobs).toEqual([]);
+  expect((await admin.queue()).jobs).toHaveLength(1);
+  await member.context.close();
 });
 
 test("Remove link takes out one link, and Delete asks first", async ({ page }) => {
@@ -447,6 +522,101 @@ test("Remove link takes out one link, and Delete asks first", async ({ page }) =
   await expect(card).toBeHidden();
   await expect(dialog.getByText("Nothing waiting")).toBeVisible();
   expect((await admin.queue()).jobs).toEqual([]);
+});
+
+test("Remove link and Delete leave the keyboard on the next card, and then on the heading", async ({ page }) => {
+  await holdTheLine(admin);
+  const [kept, gone] = [modelId(), modelId()];
+  await admin.enqueue(linkTo(gone));
+  await admin.addToHold(linkTo(kept));
+  await admin.addToHold(linkTo(modelId()));
+
+  await page.goto("/?import-queue=wait");
+  const dialog = queueDialog(page);
+  const held = dialog.getByRole("article", { name: "Sent from Thingport Grab" });
+  await held.getByRole("button", { name: "Show 2 links" }).click();
+
+  await held.getByRole("button", { name: "Remove link" }).first().focus();
+  await page.keyboard.press("Enter");
+  await expect(held.getByRole("button", { name: "Start" })).toBeFocused();
+
+  const waiting = jobCard(dialog, gone);
+  await waiting.getByRole("button", { name: /^More actions for/ }).focus();
+  await page.keyboard.press("Enter");
+  const confirm = await deleteFromMenu(page);
+  await confirm.getByRole("button", { name: "Delete" }).click();
+  await expect(waiting).toBeHidden();
+  await expect(held.getByRole("button", { name: "Start" })).toBeFocused();
+
+  await held.getByRole("button", { name: /^More actions for/ }).focus();
+  await page.keyboard.press("Enter");
+  const confirmAgain = await deleteFromMenu(page);
+  await confirmAgain.getByRole("button", { name: "Delete" }).click();
+  await expect(held).toBeHidden();
+  await expect(dialog.getByText("Nothing waiting")).toBeVisible();
+  await expect(dialog.locator("[data-queue-heading]")).toBeFocused();
+});
+
+test("Clear finished leaves the keyboard on the heading once its button has gone", async ({ page }) => {
+  const id = modelId();
+  await admin.enqueue(linkTo(id));
+
+  await page.goto("/?import-queue=done");
+  const dialog = queueDialog(page);
+  await expect(jobCard(dialog, id).getByText("Done", { exact: true })).toBeVisible({ timeout: IMPORT_TIMEOUT });
+  await dialog.getByRole("button", { name: "Clear finished (1)" }).focus();
+  await page.keyboard.press("Enter");
+  const confirm = page.getByRole("dialog", { name: "Clear finished imports?" });
+  await confirm.getByRole("button", { name: "Clear", exact: true }).click();
+  await expect(dialog.getByText("Nothing finished yet")).toBeVisible();
+  await expect(dialog.locator("[data-queue-heading]")).toBeFocused();
+});
+
+test("a tag's page and search results pick up a model that finishes while they're open", async ({ page }) => {
+  /** The queue's first read only takes note of what's there, so what finishes has to come after it. */
+  const open = async (path: string) => {
+    const firstRead = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/import/queue");
+    await page.goto(path);
+    await firstRead;
+  };
+
+  // The fake provider's models all carry this tag.
+  await open("/models/tags/regression");
+  const first = modelId();
+  await admin.enqueue(linkTo(first));
+  await expect(page.getByRole("main").getByText(modelName(first))).toBeVisible({ timeout: IMPORT_TIMEOUT });
+
+  const second = modelId();
+  await open(`/search-results?q=${encodeURIComponent(modelName(second))}`);
+  await expect(page.getByRole("main").getByText(modelName(second))).toHaveCount(0);
+  await admin.enqueue(linkTo(second));
+  await expect(page.getByRole("main").getByRole("link", { name: new RegExp(second) })).toBeVisible({
+    timeout: IMPORT_TIMEOUT,
+  });
+});
+
+test("a queue link outlasts a session that has ended, and opens after signing back in", async ({
+  browser,
+  request,
+}) => {
+  const member = await signUp(browser, request, "Queue Ended Session");
+  const token = await authToken(member.page);
+  // Off the app first, or its next read would find out and forget the token.
+  await member.page.goto("about:blank");
+  const ended = await member.context.request.post("/api/logout", { headers: { Authorization: `Bearer ${token}` } });
+  expect(ended.ok()).toBe(true);
+
+  // Still a stored token that looks good, which only the first requests find out about.
+  await member.page.goto("/admin-queue?import-queue=att");
+  await member.page.getByLabel("Email").fill(member.email);
+  await member.page.getByLabel("Password").fill(PASSWORD);
+  await member.page.getByRole("button", { name: "Sign in" }).click();
+
+  const dialog = queueDialog(member.page);
+  await expect(dialog).toBeVisible();
+  await expectChosen(section(dialog, "Needs attention"));
+  await expect(member.page).toHaveURL(/\/$/);
+  await member.context.close();
 });
 
 test("another person's waiting import is a private row, and only an admin sees whose", async ({

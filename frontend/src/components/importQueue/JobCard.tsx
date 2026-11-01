@@ -42,7 +42,7 @@ import { reopenContextMenuBelow, useCardContextMenu } from "../Layout/Configurat
 import { ListRowSkeletons } from "../ListSkeleton";
 import { dialogIconButtonSx } from "../SectionedDialog";
 import { useImportQueue } from "./ImportQueueContext";
-import { cardMark, keepingFocus, primaryMark } from "./queueFocus";
+import { cardMark, focusingCardAfter, keepingFocus, primaryMark } from "./queueFocus";
 import {
   focusRingSx,
   InitialsAvatar,
@@ -90,6 +90,17 @@ const sweep = keyframes`
 const cardFrameSx = { border: 1, borderColor: "divider", borderRadius: "10px", px: 1.5, py: 1.25 };
 
 const captionLineSx = { lineHeight: "16px" };
+
+// A link is often all a job is called, and one site's links differ only past where a phone's line ends.
+const jobTitleSx = {
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: { md: "nowrap" },
+  display: { xs: "-webkit-box", md: "block" },
+  WebkitBoxOrient: "vertical",
+  WebkitLineClamp: { xs: 2, md: "none" },
+  overflowWrap: { xs: "anywhere", md: "normal" },
+};
 
 /** What the list of cards looks like before there's anything to put in it. */
 export function JobCardSkeletons() {
@@ -349,7 +360,10 @@ export function LinkRow({ job, item }: { job: QueueJob; item: ImportJobItem }) {
               size="small"
               aria-label={removeLabel}
               disabled={busy.has(item.id)}
-              onClick={() => void removeLink(item.id)}
+              // By mouse, moving focus would scroll a long list back up to the card's button.
+              onClick={(event) =>
+                void (event.detail === 0 ? keepingFocus(event, job.id, () => removeLink(item.id)) : removeLink(item.id))
+              }
               sx={dialogIconButtonSx}
             >
               <CloseIcon fontSize="small" />
@@ -512,6 +526,7 @@ export default function JobCard({ job }: { job: QueueJob }) {
   const [linksOpen, setLinksOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const contextMenu = useCardContextMenu();
+  const cardRef = React.useRef<HTMLElement | null>(null);
 
   const everyone = queue.dialog.scope === "everyone";
   const inMyLine = !everyone && isInLine(job);
@@ -522,7 +537,7 @@ export default function JobCard({ job }: { job: QueueJob }) {
   const primary = primaryAction(job, t);
   const bar = jobBar(job, t);
   const inLine = inLineText(job, t);
-  const why = whyText(job, t);
+  const why = whyText(job, t, queue.viewerId);
   const target = jobOpenTarget(job, queue.viewerId);
   const hasMenu = Boolean(target || job.can_delete);
   const moreLabel = t("importQueue.menu.more", { label });
@@ -536,7 +551,7 @@ export default function JobCard({ job }: { job: QueueJob }) {
 
   const askToDelete = async () => {
     const ok = await confirm({ ...deleteConfirmText(job, t), destructive: true });
-    if (ok) await queue.deleteJob(job.id);
+    if (ok) await focusingCardAfter(cardRef.current, () => queue.deleteJob(job.id));
   };
 
   const primaryButton = primary && (
@@ -556,6 +571,7 @@ export default function JobCard({ job }: { job: QueueJob }) {
 
   return (
     <Box
+      ref={cardRef}
       component="article"
       aria-label={label}
       // Where focus lands when an action leaves the card nothing to press.
@@ -591,9 +607,8 @@ export default function JobCard({ job }: { job: QueueJob }) {
           <Typography
             variant="body2"
             fontWeight={600}
-            noWrap
             title={label}
-            sx={{ color: (theme) => theme.thingport.headingText }}
+            sx={{ color: (theme) => theme.thingport.headingText, ...jobTitleSx }}
           >
             {label}
           </Typography>

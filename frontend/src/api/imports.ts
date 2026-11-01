@@ -105,6 +105,8 @@ export type QueueJobOut = ImportJob & {
   attention: boolean;
   failure_reason: string | null;
   outcome: ImportOutcome | null;
+  /** The page title of a links job's only link, when it has just the one. */
+  link_title: string | null;
   can_start: boolean;
   can_pause: boolean;
   can_retry: boolean;
@@ -133,56 +135,50 @@ export type QueueOut = {
 /** The admin list of every user's jobs. A backend older than the line sends the rows without the queue's fields. */
 export type AdminQueueJobOut = Partial<QueueJobOut> & AdminImportJob;
 
+export type AdminQueueOut = {
+  jobs: AdminQueueJobOut[];
+  /** Every finished job not needing attention, whoever's it is, which `jobs` holds only the newest of. A backend older
+   *  than these sends neither. */
+  finished_total?: number;
+  /** The same, per user id. */
+  finished_by_owner?: Record<string, number>;
+};
+
 /** Where a job stands after joining the line again. */
 export type QueuePlace = { job_id: string; status: ImportJobStatus; position: number | null; sync_waiting: boolean };
 
 /** What submitting an import can answer. */
 export type QueueSubmitAnswer =
-  /** A job: in line with its `position`, or with neither `position` nor a known `status` when it runs at once, as on
-   *  a backend older than the line. */
-  | { kind: "job"; job_id: string | null; status: ImportJobStatus | null; position: number | null }
+  /** A job: in line at `position`, or with none when it runs at once, as on a backend older than the line. */
+  | { kind: "job"; position: number | null }
   /** A provider whose files come through Thingport Grab: no job, these models wait for it. */
-  | { kind: "grab"; queued: number; collection_id: string | null }
+  | { kind: "grab"; queued: number }
   /** Imported before answering: a request that has to run now, or a backend older than the line. */
   | { kind: "print"; print: Print & { import_outcome?: ImportOutcome } };
 
 export function toSubmitAnswer(body: Record<string, unknown> | null): QueueSubmitAnswer {
-  if (typeof body?.queued === "number") {
-    const collection = body.collection_id;
-    return { kind: "grab", queued: body.queued, collection_id: typeof collection === "string" ? collection : null };
-  }
+  if (typeof body?.queued === "number") return { kind: "grab", queued: body.queued };
   if (typeof body?.id === "string" && !("job_id" in body)) {
     return { kind: "print", print: body as unknown as Print & { import_outcome?: ImportOutcome } };
   }
   // Accepted, whatever else it says: reporting a failure here would have the link submitted twice.
-  return {
-    kind: "job",
-    job_id: typeof body?.job_id === "string" ? body.job_id : null,
-    status: typeof body?.status === "string" ? (body.status as ImportJobStatus) : null,
-    position: typeof body?.position === "number" ? body.position : null,
-  };
+  return { kind: "job", position: typeof body?.position === "number" ? body.position : null };
 }
 
-async function submitToQueue(path: string, payload: unknown, fallback: string): Promise<QueueSubmitAnswer> {
-  const res = await fetch(`${apiBase()}${path}?queue=1`, {
-    method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(payload),
-  });
-  if (res.status === 401) throw new UnauthorizedError();
-  if (!res.ok) throw new Error(await readErrorMessage(res, fallback));
-  return toSubmitAnswer(await res.json());
-}
-
-async function queueCall<T>(method: "POST" | "PUT" | "DELETE", path: string, fallback: string, body?: unknown) {
+async function queueCall<T>(method: "GET" | "POST" | "PUT" | "DELETE", path: string, fallback: string, body?: unknown) {
   const res = await fetch(`${apiBase()}${path}`, {
     method,
     headers: authHeaders(body === undefined ? {} : { "Content-Type": "application/json" }),
-    body: body === undefined ? undefined : JSON.stringify(body),
+    // fetch refuses a GET with a body.
+    ...(method === "GET" ? {} : { body: JSON.stringify(body ?? {}) }),
   });
   if (res.status === 401) throw new UnauthorizedError();
   if (!res.ok) throw new Error(await readErrorMessage(res, fallback));
   return res.json() as Promise<T>;
+}
+
+async function submitToQueue(path: string, payload: unknown, fallback: string): Promise<QueueSubmitAnswer> {
+  return toSubmitAnswer(await queueCall<Record<string, unknown>>("POST", `${path}?queue=1`, fallback, payload));
 }
 
 const ownJob = (jobId: string) => `/import/queue/jobs/${encodeURIComponent(jobId)}`;
@@ -246,19 +242,10 @@ function bulkPath(action: string, userId?: string | null): string {
 
 /** Every user's imports, for admins. */
 export const adminQueueApi = {
-  get: async (): Promise<{ jobs: AdminQueueJobOut[] }> => {
-    const res = await fetch(`${apiBase()}/admin/import-queue?queue=1`, { headers: authHeaders() });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load the import queue"));
-    return res.json();
-  },
+  get: () => queueCall<AdminQueueOut>("GET", "/admin/import-queue?queue=1", "Failed to load the import queue"),
 
-  links: async (jobId: string): Promise<ImportJobItem[]> => {
-    const res = await fetch(`${apiBase()}${anyJob(jobId)}/items`, { headers: authHeaders() });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load the import's links"));
-    return res.json();
-  },
+  links: (jobId: string) =>
+    queueCall<ImportJobItem[]>("GET", `${anyJob(jobId)}/items`, "Failed to load the import's links"),
 
   start: (jobId: string) => queueCall<{ ok: true }>("POST", `${anyJob(jobId)}/start`, "Failed to start"),
   retry: (jobId: string) => queueCall<{ ok: true }>("POST", `${anyJob(jobId)}/retry`, "Failed to retry"),

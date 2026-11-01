@@ -651,7 +651,7 @@
           "busyTitle": "Hay otra importación en curso",
           "busyNext": "Tu próxima importación es la #{{n}} de la fila y empezará sola.",
           "busyNone": "Las importaciones se ejecutan de una en una. Las tuyas empezarán solas cuando les toque.",
-          "title": "Nada importándose",
+          "title": "No se está importando nada",
           "text": "Aquí se muestra el progreso de las importaciones mientras se ejecutan."
         },
         "att": {
@@ -660,7 +660,8 @@
         },
         "wait": {
           "title": "Nada en espera",
-          "text": "Las importaciones nuevas esperan aquí su turno. Los enlaces que envías con «Añadir a la cola» en Thingport Grab quedan retenidos hasta que los inicies."
+          "text": "Las importaciones nuevas esperan aquí su turno. Los enlaces que envías con «Añadir a la cola» en Thingport Grab quedan retenidos hasta que los inicies.",
+          "textAuto": "Las importaciones nuevas esperan aquí su turno."
         },
         "done": {
           "title": "Aún no ha terminado nada",
@@ -718,7 +719,19 @@
       "clear": {
         "title": "¿Borrar las importaciones terminadas?",
         "message": "Salen de esta lista junto con sus enlaces fallidos, que ya no se podrán reintentar. Los modelos ya importados se mantienen en la biblioteca.",
+        "messageEveryone_one": "Esto borra {{count}} importación terminada, sea de quien sea, junto con sus enlaces fallidos, que ya no se podrán reintentar. Los modelos ya importados se mantienen en las bibliotecas.",
+        "messageEveryone_many": "Esto borra {{count}} importaciones terminadas, también las de otras personas, junto con sus enlaces fallidos, que ya no se podrán reintentar. Los modelos ya importados se mantienen en las bibliotecas.",
+        "messageEveryone_other": "Esto borra {{count}} importaciones terminadas, también las de otras personas, junto con sus enlaces fallidos, que ya no se podrán reintentar. Los modelos ya importados se mantienen en las bibliotecas.",
+        "messagePerson_one": "Esto borra {{count}} importación terminada de {{name}}, junto con sus enlaces fallidos, que ya no se podrán reintentar. Los modelos ya importados se mantienen en su biblioteca.",
+        "messagePerson_many": "Esto borra {{count}} importaciones terminadas de {{name}}, junto con sus enlaces fallidos, que ya no se podrán reintentar. Los modelos ya importados se mantienen en su biblioteca.",
+        "messagePerson_other": "Esto borra {{count}} importaciones terminadas de {{name}}, junto con sus enlaces fallidos, que ya no se podrán reintentar. Los modelos ya importados se mantienen en su biblioteca.",
         "confirm": "Borrar"
+      },
+      "finishedList": {
+        "newest": "Mostrando las {{shown}} más recientes de {{total}}",
+        "older_one": "{{count}} importación más antigua no aparece aquí",
+        "older_many": "{{count}} importaciones más antiguas no aparecen aquí",
+        "older_other": "{{count}} importaciones más antiguas no aparecen aquí"
       },
       "delete": {
         "title": "¿Eliminar esta importación?",
@@ -775,7 +788,9 @@
         "pausing": "Terminando el enlace en curso y después se detiene.",
         "error": "La importación ha fallado.",
         "partial": "Terminada, pero algunos enlaces han fallado.",
+        "partialModels": "Terminada, pero algunos modelos han fallado.",
         "done": "Todos los enlaces importados.",
+        "doneModels": "Todos los modelos importados.",
         "unknown": "Esta versión de Thingport no conoce este estado."
       },
       "progress": "{{processed}} de {{total}}",
@@ -788,7 +803,9 @@
         "modelsFailed_many": "{{count}} modelos han fallado.",
         "modelsFailed_other": "{{count}} modelos han fallado.",
         "interruptedNoRetry": "Interrumpida por un reinicio del servidor. Puede que algunos archivos ya estén en tu biblioteca.",
+        "interruptedNoRetryOwner": "Interrumpida por un reinicio del servidor. Puede que algunos archivos ya estén en la biblioteca de esa persona.",
         "interrupted": "Interrumpida por un reinicio del servidor. Puede que un modelo esté incompleto en tu biblioteca: bórralo antes de reintentar.",
+        "interruptedOwner": "Interrumpida por un reinicio del servidor. Puede que un modelo esté incompleto en la biblioteca de esa persona: conviene borrarlo antes de reintentar.",
         "interruptedZip": "Interrumpida por un reinicio del servidor. Algunos modelos ya están dentro. Empieza una nueva importación solo con los archivos que faltan.",
         "stalled": "Esta importación dejó de responder, así que la fila siguió adelante. Si no se ofrece Reintentar, reinicia el servidor.",
         "noRequest": "Esta importación antigua no tiene una solicitud guardada."
@@ -822,7 +839,6 @@
       "toast": {
         "added": "Añadida a la cola. Es la siguiente.",
         "addedPlace": "Añadida a la cola. Es la #{{n}} de la fila.",
-        "addedPlain": "Añadida a la cola.",
         "started": "Importación iniciada.",
         "open": "Abrir",
         "tryAgain": "Reintentar",

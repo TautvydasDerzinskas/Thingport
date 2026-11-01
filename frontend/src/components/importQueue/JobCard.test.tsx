@@ -178,6 +178,48 @@ describe("JobCard, by state", () => {
     expect(text).toContain("Done");
     expect(text).not.toMatch(/Retry|Start|Hold|Pause/);
   });
+
+  it("done with its failed links removed: no red block left behind", () => {
+    const html = card({
+      status: "DONE",
+      total: 1,
+      processed: 1,
+      failure_reason: "The rest not downloaded — the daily download limit was reached.",
+    });
+    expect(textOf(html)).toContain("Done");
+    expect(textOf(html)).not.toContain("daily download limit");
+    expect(html).not.toContain('data-testid="ErrorIcon"');
+  });
+});
+
+describe("JobCard, its title", () => {
+  const link = "https://makerworld.com/en/models/1234567-a-model-with-a-very-long-name#profileId-987654";
+
+  it("wraps to two lines on a phone, rather than cutting off what tells links apart", () => {
+    const html = card({ source_label: null, source_url: link });
+    expect(html).toMatch(/-webkit-line-clamp:\s*2/);
+    expect(html).toMatch(/overflow-wrap:\s*anywhere/);
+  });
+
+  it("stays on one line above that", () => {
+    const html = card({ source_label: null, source_url: link });
+    expect(html).toMatch(/@media \(min-width:900px\)\{[^}]*white-space:nowrap/);
+  });
+
+  it("keeps the whole name for screen readers, the tooltip and the menu", () => {
+    const html = card({ source_label: null, source_url: link, can_delete: true });
+    expect(html).toContain(`aria-label="${link}"`);
+    expect(html).toContain(`title="${link}"`);
+    expect(html).toContain(`aria-label="More actions for ${link}"`);
+  });
+
+  it("shows the page's title for Grab's one link, and the words for Grab's several or an older backend", () => {
+    const grab = { source_label: "Sent from Thingport Grab" };
+    expect(textOfCard({ ...grab, link_title: "Benchy" })).toContain("Benchy");
+    expect(textOfCard({ ...grab, link_title: "Benchy" })).not.toContain("Sent from Thingport Grab");
+    expect(textOfCard({ ...grab, link_title: null })).toContain("Sent from Thingport Grab");
+    expect(textOfCard(grab)).toContain("Sent from Thingport Grab");
+  });
 });
 
 describe("JobCard, by kind", () => {
@@ -233,6 +275,18 @@ describe("JobCard, whose it is", () => {
 
   it("not in one's own", () => {
     expect(textOfCard({ owner })).not.toContain("Sam Okafor");
+  });
+
+  it("says whose library a cut-off import may have left a mess in", () => {
+    const cut = {
+      status: "ERROR",
+      attention: true,
+      can_retry: true,
+      failure_reason: "Interrupted by server restart",
+    } as const;
+    expect(textOfCard({ ...cut, owner }, everyone)).toContain("incomplete in their library");
+    expect(textOfCard({ ...cut, owner: { ...owner, id: "me" } }, everyone)).toContain("incomplete in your library");
+    expect(textOfCard(cut)).toContain("incomplete in your library");
   });
 
   it("stands out in one's own line, not in everyone's", () => {

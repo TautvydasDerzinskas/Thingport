@@ -348,6 +348,22 @@ describe("the import worker", () => {
       expect((await reload(first.job.id)).status).toBe("DONE");
       expect((await reload(second.job.id)).status).toBe("DONE");
     });
+
+    it("doesn't lose a wake that comes between its last look at the line and its stopping", async () => {
+      const read = prisma.importJob.findFirst.bind(prisma.importJob);
+      let late: Promise<{ job: ImportJob }> | undefined;
+      vi.spyOn(prisma.importJob, "findFirst").mockImplementationOnce((async (args: Prisma.ImportJobFindFirstArgs) => {
+        const nothing = await read(args);
+        late = enqueueSingleImport(alice, modelUrl(base + 23), {});
+        await late;
+        return nothing;
+      }) as never);
+      wakeImportWorker();
+      await importWorkerIdle();
+      const { job } = await late!;
+      expect((await reload(job.id)).status).toBe("DONE");
+      expect(started).toEqual([String(base + 23)]);
+    });
   });
 
   describe("claiming", () => {
@@ -663,11 +679,73 @@ describe("the import worker", () => {
       }
       expect((await itemsOf(rows.failed.id))[0].status).toBe("RUNNING");
 
-      // Again changes nothing, and it said nothing to anyone.
+      // Only the batches, which have nothing left to run to its end and say so: never one from before the line.
+      const told = await prisma.notification.findMany({ where: { userId: alice } });
+      expect(told).toHaveLength(2);
+      for (const notification of told) {
+        expect(notification).toMatchObject({
+          type: "import",
+          title: "Couldn't finish an import",
+          body: batchInterrupted.errorMessage,
+          internalPath: "/admin-queue?import-queue=att",
+        });
+      }
+      expect(told.map((notification) => notification.externalUrl).toSorted()).toEqual(
+        [rows.zip.sourceUrl, rows.list.sourceUrl].toSorted(),
+      );
+
+      // Again changes nothing, and tells nobody twice.
       const after = await prisma.importJob.findMany({ where: { userId: alice }, orderBy: { id: "asc" } });
       await recoverImportJobs(before);
       expect(await prisma.importJob.findMany({ where: { userId: alice }, orderBy: { id: "asc" } })).toEqual(after);
+      expect(await prisma.notification.count({ where: { userId: alice } })).toBe(2);
+    });
+
+    it("names a batch it cut off, when it has a name", async () => {
+      holdImportWorker();
+      const queuedAt = new Date(Date.now() - 60_000);
+      await lineJob(
+        alice,
+        base + 84,
+        { status: "RUNNING", type: "ZIP", queuedAt, sourceLabel: "Boat", payload: { entries: ["a"] } },
+        [],
+      );
+      await recoverImportJobs();
+      const told = await prisma.notification.findFirstOrThrow({ where: { userId: alice } });
+      expect(told.title).toBe('Couldn\'t finish importing "Boat"');
+    });
+
+    it("tells nobody about a batch that left RUNNING just as it was read", async () => {
+      holdImportWorker();
+      const queuedAt = new Date(Date.now() - 60_000);
+      const job = await lineJob(
+        alice,
+        base + 87,
+        { status: "RUNNING", type: "ZIP", queuedAt, payload: { entries: ["a"] } },
+        [],
+      );
+      const read = prisma.importJob.findMany.bind(prisma.importJob);
+      vi.spyOn(prisma.importJob, "findMany").mockImplementation((async (args: Prisma.ImportJobFindManyArgs) => {
+        const rows = await read(args);
+        if (!args.where?.type) await prisma.importJob.update({ where: { id: job.id }, data: { status: "DONE" } });
+        return rows;
+      }) as never);
+      await recoverImportJobs();
+      expect((await reload(job.id)).status).toBe("DONE");
       expect(await prisma.notification.count({ where: { userId: alice } })).toBe(0);
+    });
+
+    it("settles a batch whose notification can't be written, and rejects nothing, or the gate would stay shut", async () => {
+      holdImportWorker();
+      const queuedAt = new Date(Date.now() - 60_000);
+      const data = { status: "RUNNING" as const, type: "ZIP" as const, queuedAt, payload: { entries: ["a"] } };
+      const first = await lineJob(alice, base + 85, data, []);
+      const second = await lineJob(alice, base + 86, data, []);
+      vi.spyOn(prisma.notification, "create").mockRejectedValueOnce(new Error("database blip"));
+      await expect(recoverImportJobs()).resolves.toBeUndefined();
+      expect((await reload(first.id)).status).toBe("ERROR");
+      expect((await reload(second.id)).status).toBe("ERROR");
+      expect(await prisma.notification.count({ where: { userId: alice } })).toBe(1);
     });
 
     it("can't touch work started since when it tries again, however late", async () => {
@@ -738,6 +816,8 @@ describe("the import worker", () => {
   });
 
   describe("a job that stops responding", () => {
+    const STALLED = "This import stopped responding, so the line moved on. If Retry isn't offered, restart the server.";
+
     it("moves the line on and says so, though its runner may still be stuck", async () => {
       Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
       const release = gate(base + 90);
@@ -823,6 +903,105 @@ describe("the import worker", () => {
       await until(() => !isRunnerLive(stuck.job.id));
       expect(started).toEqual([String(base + 98)]);
       expect((await reload(stuck.job.id)).status).toBe("ERROR");
+    });
+
+    it("stops a collection the watchdog gave up on at its next model, leaving it to be retried", async () => {
+      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      const [first, second] = [base + 120, base + 121];
+      const release = gate(first);
+      const { job } = await enqueueListImport(alice, "makerworld", "https://makerworld.com/en/collections/987-flock", {
+        model_ids: [String(first), String(second)],
+      });
+      await importWorkerIdle();
+      expect(await reload(job.id)).toMatchObject({ status: "ERROR", errorMessage: STALLED });
+      release();
+      await until(() => !isRunnerLive(job.id));
+
+      expect(started).toEqual([String(first)]);
+      const stopped = await reload(job.id);
+      expect(stopped).toMatchObject({ status: "ERROR", errorMessage: STALLED, processed: 1, imported: 1 });
+      expect(stopped.resultCollectionId).toBeNull();
+      const told = await prisma.notification.findMany({ where: { userId: alice } });
+      expect(told.map((notification) => notification.title)).toEqual(["Couldn't finish an import"]);
+
+      // The whole request again: what came in is filed with the rest.
+      Object.assign(importWorkerTuning, tuning);
+      await startQueueJob(stopped, { retryFailed: true, manual: true });
+      await importWorkerIdle();
+      const retried = await reload(job.id);
+      expect(retried).toMatchObject({ status: "DONE", errorMessage: null, imported: 1, alreadyInLibrary: 1 });
+      const filed = await prisma.collectionItem.findMany({
+        where: { collectionId: retried.resultCollectionId! },
+        select: { print: { select: { sourceExternalId: true } } },
+      });
+      expect(filed.map((item) => item.print.sourceExternalId)).toEqual(
+        expect.arrayContaining([String(first), String(second)]),
+      );
+    });
+
+    it("stops print profiles the watchdog gave up on before the next one", async () => {
+      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      const id = base + 122;
+      const release = gate(id);
+      const { job } = await enqueueProfilesImport(alice, "makerworld", modelUrl(id), { scope: "all" });
+      await importWorkerIdle();
+      release();
+      await until(() => !isRunnerLive(job.id));
+
+      expect(await reload(job.id)).toMatchObject({ status: "ERROR", errorMessage: STALLED, processed: 0, imported: 0 });
+      expect(await prisma.print.count({ where: { userId: alice, sourceExternalId: String(id) } })).toBe(0);
+      const told = await prisma.notification.findMany({ where: { userId: alice } });
+      expect(told.map((notification) => notification.title)).toEqual(["Couldn't finish an import"]);
+    });
+
+    it("reads as done, with nothing about stopping, when it finishes after all", async () => {
+      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      const release = gate(base + 123);
+      const { job } = await enqueueSingleImport(alice, modelUrl(base + 123), {});
+      await importWorkerIdle();
+      expect(await reload(job.id)).toMatchObject({ status: "ERROR", errorMessage: STALLED });
+      release();
+      await until(() => !isRunnerLive(job.id));
+      expect(await reload(job.id)).toMatchObject({ status: "DONE", errorMessage: null, imported: 1 });
+    });
+
+    describe("given up on just as its last step lands", () => {
+      const LIST_URL = "https://makerworld.com/en/collections/987-flock";
+      const OTHER_LIST_URL = "https://www.printables.com/@someone/collections/123";
+
+      it.each([
+        ["a link list", 1, () => enqueueLinksImport(alice, [modelUrl(base + 130)], {})],
+        [
+          "a MakerWorld list",
+          1,
+          () => enqueueListImport(alice, "makerworld", LIST_URL, { model_ids: [String(base + 131)] }),
+        ],
+        [
+          "another site's list",
+          1,
+          () =>
+            enqueueListImport(alice, "printables", OTHER_LIST_URL, { model_ids: ["555"], collection_title: "Named" }),
+        ],
+        ["print profiles", 2, () => enqueueProfilesImport(alice, "makerworld", modelUrl(base + 132), { scope: "all" })],
+        ["a zip", 1, () => enqueueZipImport(alice, "https://example.com/pack.zip", { entries: ["hull.stl"] })],
+      ] as const)("%s still ends with no stall message", async (_label, steps, enqueue) => {
+        holdImportWorker();
+        const { job } = await enqueue();
+        const update = prisma.importJob.update.bind(prisma.importJob);
+        vi.spyOn(prisma.importJob, "update").mockImplementation((async (args: Prisma.ImportJobUpdateArgs) => {
+          const written = await update(args);
+          if (args.where.id === job.id && args.data.processed === steps && !args.data.status) {
+            await prisma.importJob.updateMany({
+              where: { id: job.id, status: "RUNNING" },
+              data: { status: "ERROR", errorMessage: STALLED },
+            });
+          }
+          return written;
+        }) as never);
+        resumeImportWorker();
+        await importWorkerIdle();
+        expect(await reload(job.id)).toMatchObject({ status: "DONE", errorMessage: null });
+      });
     });
   });
 

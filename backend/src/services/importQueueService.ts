@@ -16,15 +16,18 @@ import {
   isRunnerLive,
   isWaitingSyncJob,
   liveRunnerIds,
+  parseQueuedLinkOptions,
   type QueuedLinkOptions,
   runnerSettled,
   SYNC_JOB_WAITING,
   SYNC_RESUME_MARKS,
 } from "./importJobRunner";
 import {
+  countJobItems,
   createJobItems,
   hasSavedRequest,
   jobPayload,
+  linkTotals,
   listJobItems,
   QUEUE_WAITING_PATH,
   resetFailedItems,
@@ -273,14 +276,11 @@ async function prepareLinks(job: ImportJob, retry: boolean): Promise<void> {
   if (retry) {
     const failed = await resetFailedItems(job.id);
     // Links an interrupted run never reached are rerun too, so a retry alone can finish it.
-    const waiting = await prisma.importJobItem.count({
-      where: { jobId: job.id, status: { in: ["PENDING", "RUNNING"] } },
-    });
+    const waiting = await countJobItems(job.id, { in: ["PENDING", "RUNNING"] });
     if (!failed && !waiting) throw new HttpError(400, "This import has no failed links to retry");
   }
   await prisma.importJobItem.updateMany({ where: { jobId: job.id, status: "RUNNING" }, data: { status: "PENDING" } });
-  const pending = await prisma.importJobItem.count({ where: { jobId: job.id, status: "PENDING" } });
-  if (!pending) throw new HttpError(400, "This import has no links waiting to import");
+  if (!(await countJobItems(job.id, "PENDING"))) throw new HttpError(400, "This import has no links waiting to import");
 }
 
 /** What a run says about itself goes when the next one is asked for. What a sync brought in so far stays through a
@@ -338,12 +338,7 @@ export async function startQueueJob(
     }
     const isLinks = fresh.type === "LINKS";
     if (isLinks) await prepareLinks(fresh, retry);
-    const failedCount = isLinks
-      ? await prisma.importJobItem.count({ where: { jobId: fresh.id, status: "FAILED" } })
-      : 0;
-    const processed = isLinks
-      ? failedCount + (await prisma.importJobItem.count({ where: { jobId: fresh.id, status: "DONE" } }))
-      : 0;
+    const totals = isLinks ? await linkTotals(fresh.id) : { processed: 0, failedCount: 0 };
     const place: Pick<ImportJob, "status" | "errorMessage"> & { queuedAt?: Date } = fresh.collectionSyncId
       ? { status: "PAUSED", errorMessage: SYNC_JOB_WAITING }
       : { status: "QUEUED", errorMessage: null, queuedAt: nextTicket() };
@@ -353,8 +348,7 @@ export async function startQueueJob(
         ...place,
         startedAt: null,
         payload: restartedPayload(fresh),
-        processed,
-        failedCount,
+        ...totals,
         // Everything else a LINKS job counted stays: only the links it hasn't got yet run again.
         ...(isLinks ? {} : { imported: 0, alreadyInLibrary: 0, resultPrintId: null, resultCollectionId: null }),
       },
@@ -497,7 +491,7 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
         data: { status: "QUEUED", queuedAt: nextTicket() },
       });
     }
-    const waiting = await prisma.importJobItem.count({ where: { jobId: job.id, status: "PENDING" } });
+    const waiting = await countJobItems(job.id, "PENDING");
     return { job, itemId, duplicate: Boolean(existing), waiting, started };
   });
   const position = result.started ? await positionOf(result.job.id) : null;
@@ -534,8 +528,8 @@ function finishedWhere(now: Date): Prisma.ImportJobWhereInput {
   return { status: { in: ["DONE", "ERROR"] }, NOT: attentionWhere(now) };
 }
 
-export type JobCounts = { pending: number; running: number; done: number; failed: number };
-export type JobActions = { canStart: boolean; canPause: boolean; canRetry: boolean; canDelete: boolean };
+type JobCounts = { pending: number; running: number; done: number; failed: number };
+type JobActions = { canStart: boolean; canPause: boolean; canRetry: boolean; canDelete: boolean };
 
 /** What can be done to a job right now. Nothing is possible while its runner is alive, but Pause on a running job. */
 export function jobActions(
@@ -571,6 +565,8 @@ export type QueueJobView = ImportJob & {
   syncWaiting: boolean;
   attention: boolean;
   firstFailure: string | null;
+  /** The page title of a link list's only link. */
+  linkTitle: string | null;
   actions: JobActions;
 };
 
@@ -598,6 +594,16 @@ async function describeJobs<T extends ImportJob>(
     : [[], [], []];
   const places = new Map(line.map((job, index) => [job.id, index + 1]));
   const firstFailures = new Map(failures.map((item) => [item.jobId, item.errorMessage]));
+  const linkCounts = new Map<string, number>();
+  for (const g of grouped) linkCounts.set(g.jobId, (linkCounts.get(g.jobId) ?? 0) + g._count.status);
+  const onlyLinks = jobs.filter((job) => job.type === "LINKS" && linkCounts.get(job.id) === 1).map((job) => job.id);
+  const titled = onlyLinks.length
+    ? await db.importJobItem.findMany({
+        where: { jobId: { in: onlyLinks } },
+        select: { jobId: true, payload: true },
+      })
+    : [];
+  const linkTitles = new Map(titled.map((item) => [item.jobId, parseQueuedLinkOptions(item.payload).title ?? null]));
   return jobs.map((job) => {
     const counts: JobCounts = { pending: 0, running: 0, done: 0, failed: 0 };
     for (const g of grouped) {
@@ -611,6 +617,7 @@ async function describeJobs<T extends ImportJob>(
       syncWaiting: isWaitingSyncJob(job),
       attention: isAttention(job, now),
       firstFailure: firstFailures.get(job.id) ?? null,
+      linkTitle: linkTitles.get(job.id) ?? null,
       actions: jobActions(job, counts, runnerLive),
     });
   });
@@ -666,15 +673,27 @@ const LIST_LIMIT = 200;
 
 const withUser = { user: { select: { id: true, displayName: true, email: true } } };
 
-/** Every user's imports, newest first, up to a limit. For the new queue also everything unfinished or asking for
- *  attention beyond it, in one snapshot. */
-export async function listQueueJobs(opts: { line?: boolean } = {}): Promise<QueueJobRow[]> {
+const NEWEST_JOBS = { orderBy: { createdAt: "desc" }, take: LIST_LIMIT, include: withUser } as const;
+
+/** Every user's imports, newest first, up to a limit. */
+export async function listQueueJobs(): Promise<QueueJobRow[]> {
+  return describeJobs(prisma, await prisma.importJob.findMany(NEWEST_JOBS), new Date());
+}
+
+type EveryonesQueue = {
+  jobs: QueueJobRow[];
+  /** What Clear finished acts on, which can be far more than `jobs` lists. */
+  finishedTotal: number;
+  finishedByOwner: Record<string, number>;
+};
+
+/** Every user's imports for the new queue: also everything unfinished or asking for attention beyond the limit, and
+ *  how many have finished. In one snapshot. */
+export async function readEveryonesQueue(): Promise<EveryonesQueue> {
   const now = new Date();
-  const newest = { orderBy: { createdAt: "desc" }, take: LIST_LIMIT, include: withUser } as const;
-  if (!opts.line) return describeJobs(prisma, await prisma.importJob.findMany(newest), now);
   return prisma.$transaction(
     async (tx) => {
-      const jobs = await tx.importJob.findMany(newest);
+      const jobs = await tx.importJob.findMany(NEWEST_JOBS);
       const beyond = await tx.importJob.findMany({
         where: {
           id: { notIn: jobs.map((job) => job.id) },
@@ -682,7 +701,16 @@ export async function listQueueJobs(opts: { line?: boolean } = {}): Promise<Queu
         },
         include: withUser,
       });
-      return describeJobs(tx, [...jobs, ...beyond].toSorted(newestFirst), now);
+      const finished = await tx.importJob.groupBy({
+        by: ["userId"],
+        where: finishedWhere(now),
+        _count: { id: true },
+      });
+      return {
+        jobs: await describeJobs(tx, [...jobs, ...beyond].toSorted(newestFirst), now),
+        finishedTotal: finished.reduce((total, owner) => total + owner._count.id, 0),
+        finishedByOwner: Object.fromEntries(finished.map((owner) => [owner.userId, owner._count.id])),
+      };
     },
     { isolationLevel: "RepeatableRead" },
   );
@@ -707,10 +735,14 @@ async function deleteJob(job: ImportJob): Promise<void> {
   forgetManualStart(job.id);
 }
 
+/** Under the owner's lock, or it could land between queueLink finding the job and adding a link to it. */
 export async function deleteQueueJob(jobId: string, ownerId?: string): Promise<void> {
-  const job = await getQueueJob(jobId, ownerId);
-  assertIdle(job);
-  await deleteJob(job);
+  const { userId } = await getQueueJob(jobId, ownerId);
+  await withImportUserLock(userId, async () => {
+    const job = await getQueueJob(jobId, ownerId);
+    assertIdle(job);
+    await deleteJob(job);
+  });
 }
 
 /** Drops one link from an idle job. A job left without links is deleted with it. */
@@ -734,15 +766,19 @@ export async function removeQueueItem(itemId: string, ownerId?: string): Promise
     }
     // The job goes by its first link until it has a name, and opens at it.
     const [next] = job.sourceUrl === item.url ? await listJobItems(job.id) : [];
+    const totals = await linkTotals(job.id);
     await prisma.importJob.updateMany({
       where: { id: job.id },
-      data: {
-        ...(next ? { sourceUrl: next.url } : {}),
-        total: left,
-        processed: await prisma.importJobItem.count({ where: { jobId: job.id, status: { in: ["DONE", "FAILED"] } } }),
-        failedCount: await prisma.importJobItem.count({ where: { jobId: job.id, status: "FAILED" } }),
-      },
+      data: { ...(next ? { sourceUrl: next.url } : {}), total: left, ...totals },
     });
+    // On hold with every link done, there's nothing to start or retry, so it has finished. Not a sync's: only its own
+    // end says what it brought in.
+    if (job.status === "PAUSED" && !job.collectionSyncId && !totals.failedCount && totals.processed === left) {
+      await prisma.importJob.updateMany({
+        where: { id: job.id, status: "PAUSED" },
+        data: { status: "DONE", errorMessage: null },
+      });
+    }
     return { jobDeleted: false };
   });
 }
@@ -755,7 +791,8 @@ export type BulkScope = { ownerId?: string; line?: boolean };
 
 const ownerOf = (scope: BulkScope): Prisma.ImportJobWhereInput => (scope.ownerId ? { userId: scope.ownerId } : {});
 
-/** Cleared by hand only. Jobs with failed links stay, so a retry is still possible. */
+/** Cleared by hand only. With `line`, exactly the Finished section, old failures included. Otherwise only jobs with
+ *  nothing to retry, as the old page meant. */
 export async function clearFinishedJobs(scope: BulkScope = {}): Promise<number> {
   const finished: Prisma.ImportJobWhereInput = scope.line
     ? finishedWhere(new Date())

@@ -43,13 +43,22 @@ vi.stubGlobal("chrome", {
   },
 });
 
-const { disconnect, loginAndStoreToken, storeApprovedConnection } = await import("./api");
+const { disconnect, learnImportQueue, loginAndStoreToken, storeApprovedConnection } = await import("./api");
 const { getState, saveConfig } = await import("./config");
 
 const healthCalls = () => fetches.filter(({ url }) => url.endsWith("/api/health"));
 const flagWrites = () => writes.filter((values) => "importQueue" in values);
 const credentials = { instanceUrl: INSTANCE, email: "me@example.com", password: "secret" };
 const memberLogin: LoginResult = { token: "new", expires_in: 3600, user: { role: "MEMBER", email: "me@example.com" } };
+
+/** The next ask finds the instance holding its answer back; what it then says, by the function. */
+function holdNextAnswer(): (answer: Response | "unreachable") => void {
+  let settle!: (answer: Response | PromiseLike<Response>) => void;
+  health = new Promise<Response>((resolve) => (settle = resolve));
+  return (answer) => settle(answer === "unreachable" ? Promise.reject(new TypeError("Failed to fetch")) : answer);
+}
+
+const allSettled = () => new Promise((resolve) => setTimeout(resolve));
 
 function reset(values: Record<string, unknown> = {}): void {
   for (const key of Object.keys(store)) delete store[key];
@@ -169,6 +178,58 @@ describe("learning the flag at sign-in", () => {
     store.token = "old";
     await disconnect();
     expect("importQueue" in store).toBe(false);
+  });
+
+  describe("when a late answer comes from an instance since left", () => {
+    it("doesn't take the button from members of the instance signed in to since", async () => {
+      const answerOld = holdNextAnswer();
+      await getState();
+
+      health = answered({ ok: true, import_queue: true });
+      await saveConfig({ ...credentials, instanceUrl: OTHER_INSTANCE });
+      expect(store.instanceUrl).toBe(OTHER_INSTANCE);
+      expect(store.importQueue).toBe(true);
+
+      answerOld(answered({ ok: true }));
+      await allSettled();
+      expect(store.importQueue).toBe(true);
+      expect(await getState()).toMatchObject({ canQueue: true, importQueue: true });
+      expect(flagWrites()).toEqual([{ importQueue: true }]);
+    });
+
+    it("doesn't give the button to members of an older instance signed in to since", async () => {
+      const answerOld = holdNextAnswer();
+      const old = learnImportQueue(INSTANCE, INSTANCE);
+
+      health = answered({ ok: true });
+      await learnImportQueue(OTHER_INSTANCE, INSTANCE);
+      expect(store.importQueue).toBe(false);
+
+      answerOld(answered({ ok: true, import_queue: true }));
+      await old;
+      expect(store.importQueue).toBe(false);
+    });
+
+    it("doesn't forget what's known either, when that instance doesn't answer", async () => {
+      const answerOld = holdNextAnswer();
+      const old = learnImportQueue(OTHER_INSTANCE, INSTANCE);
+
+      health = answered({ ok: true, import_queue: true });
+      await learnImportQueue(INSTANCE, INSTANCE);
+      expect(store.importQueue).toBe(true);
+
+      answerOld("unreachable");
+      await old;
+      expect(store.importQueue).toBe(true);
+    });
+
+    it("still takes a slow answer when nothing was asked after it", async () => {
+      const answer = holdNextAnswer();
+      const only = learnImportQueue(INSTANCE, INSTANCE);
+      answer(answered({ ok: true, import_queue: true }));
+      await only;
+      expect(store.importQueue).toBe(true);
+    });
   });
 });
 

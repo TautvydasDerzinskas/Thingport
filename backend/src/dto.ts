@@ -643,9 +643,11 @@ export function toAdminImportJobOut(row: QueueJobRow): AdminImportJobOut {
 }
 
 /** A job as the import queue shows it, with its real status. */
-export type QueueJobOut = ImportJobOut & {
+type QueueJobOut = ImportJobOut & {
   /** One link: no bar, no link list, no Pause. */
   single: boolean;
+  /** The page title of a link list's only link; null with any other number of links. */
+  link_title: string | null;
   /** Its place in the line, 1 being next up; null unless QUEUED. */
   position: number | null;
   queued_at: string | null;
@@ -680,6 +682,7 @@ export function toQueueJobOut(row: QueueJobView): QueueJobOut {
     ...toImportJobOut(row),
     error_message: message,
     single: payload.single === true,
+    link_title: row.linkTitle,
     position: row.position,
     queued_at: row.queuedAt?.toISOString() ?? null,
     started_at: row.startedAt?.toISOString() ?? null,
@@ -706,15 +709,13 @@ export function toQueueJobOut(row: QueueJobView): QueueJobOut {
 }
 
 /** A row of the admin list for whoever asked for the real status: all the queue shows, and whose it is. */
-export type AdminQueueJobOut = QueueJobOut & Pick<AdminImportJobOut, "owner">;
+type AdminQueueJobOut = QueueJobOut & Pick<AdminImportJobOut, "owner">;
 
 export function toAdminQueueJobOut(row: QueueJobRow): AdminQueueJobOut {
   return { ...toQueueJobOut(row), owner: jobOwnerOut(row) };
 }
 
-export type { LineOut };
-
-export type QueueSettingsOut = { start_grab_links: boolean };
+type QueueSettingsOut = { start_grab_links: boolean };
 
 /** Someone's own imports. */
 export type QueueOut = {

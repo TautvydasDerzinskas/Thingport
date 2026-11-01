@@ -287,7 +287,12 @@ async function importList(
     res.status(202).json({ queued, collection_id: collectionId });
     return;
   }
-  const job = await createJob(userId, "COLLECTION", { sourceUrl: url, provider, total: body.model_ids.length });
+  const job = await createJob(userId, "COLLECTION", {
+    sourceUrl: url,
+    sourceLabel: body.collection_title?.trim() || null,
+    provider,
+    total: body.model_ids.length,
+  });
   void ("run" in start ? start.run(job.id) : runListImportJob(job.id, userId, provider, start.batch, { ...body, url }));
   res.status(202).json({ job_id: job.id });
 }
