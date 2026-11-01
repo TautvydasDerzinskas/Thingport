@@ -60,7 +60,7 @@ export default function SlicerFileMenu({
       </ListSubheader>
       {targets.map((target) => {
         const text = target.plate
-          ? fileRowText(t, target.filename, target.index)
+          ? fileRowText(t, target.filename, target.index, target.plate.profile)
           : { primary: t("models:detail.preparedPrintFile"), secondary: target.filename };
         const state = normalized?.stateOf(target) ?? "idle";
         if (state === "preparing") text.secondary = t("models:detail.normalizePreparingShort");

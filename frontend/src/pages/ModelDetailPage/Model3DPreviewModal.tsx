@@ -154,7 +154,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                     <PlateThumbnail plate={plate} />
                   </ListItemIcon>
                   <ListItemText
-                    {...fileRowText(t, plate.filename, idx)}
+                    {...fileRowText(t, plate.filename, idx, plate.profile)}
                     primaryTypographyProps={{ variant: "body2", noWrap: true }}
                     secondaryTypographyProps={{ variant: "caption", noWrap: true }}
                   />

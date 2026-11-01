@@ -35,7 +35,7 @@ export default function ModelFileSelect({ files, selected, onSelect }: Props) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const textOf = (file: ModelFile) =>
     file.plate
-      ? fileRowText(t, file.filename, file.index)
+      ? fileRowText(t, file.filename, file.index, file.plate.profile)
       : { primary: t("models:detail.preparedPrintFile"), secondary: file.filename };
   const current = textOf(selected);
 

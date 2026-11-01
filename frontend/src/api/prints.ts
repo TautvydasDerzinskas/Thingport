@@ -11,6 +11,18 @@ export type PreparedPrint = {
   removable: boolean;
 };
 
+/** Slicer settings read from a 3MF; every field is null when the file does not carry it. */
+export type PlateProfile = {
+  title: string | null;
+  printer: string | null;
+  nozzle_mm: number | null;
+  layer_height_mm: number | null;
+  materials: string[];
+  plates: number | null;
+  estimated_seconds: number | null;
+  weight_g: number | null;
+};
+
 export type Plate = {
   id: string;
   print_id: string;
@@ -24,6 +36,7 @@ export type Plate = {
   preview_glb_url?: string | null; // /plate/{plateId}/preview.glb?v=... once background pre-render finishes
   render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
   own_colors?: boolean; // the file carries colours of its own, so our picture of it is a colour render
+  profile?: PlateProfile | null; // slicer profile of a 3MF; null for other formats or when unreadable
 };
 
 export type PrintFile = {

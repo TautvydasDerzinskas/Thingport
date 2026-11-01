@@ -61,7 +61,7 @@ export default function DownloadPickerDialog({
                   <PlateThumbnail plate={plate} size={48} />
                 </ListItemIcon>
                 <ListItemText
-                  {...fileRowText(t, plate.filename, idx)}
+                  {...fileRowText(t, plate.filename, idx, plate.profile)}
                   primaryTypographyProps={{ noWrap: true }}
                   secondaryTypographyProps={{ noWrap: true }}
                 />
