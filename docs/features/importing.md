@@ -9,8 +9,8 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
 ## Ways to import
 
 - **Paste a link.** Click **Add → Import** and paste a model link from any of them, or any direct link to a model file.
-  Paste several links, one per line, and they're imported one after another as a background job. You can also paste a
-  link straight into the search bar.
+  Paste several links, one per line, and they join the [import queue](#the-import-queue) as one import. You can also
+  paste a link straight into the search bar.
 - **Use Thingport Grab.** The [browser extension](../../extension/README.md) adds a Thingport button to model pages on
   all 17 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
   click in its popup), so you can import without leaving the page, file the model into a collection or a new one, and
@@ -66,12 +66,89 @@ A linked model counts as imported from then on, so importing the same link later
 with print profiles, importing a link to one of its profiles still adds that profile. A page can only be linked to one
 model.
 
-## Big imports
+## The import queue
 
-Collections and lists of links run as background jobs. A progress bar shows how far along they are, and a notification
-says what came in when they finish. A model you already have is never imported twice, so importing the same collection
-again only brings in what's new. Failed links can be retried once the cause is fixed, and imports sent to the queue
-from Thingport Grab wait in **Administration → Import queue** until they're started.
+Imports run one at a time for the whole server, in the order they were added. Whatever you add in Thingport joins this
+line: the **Add** dialog closes straight away and tells you your place, and a notification says what came in when it's
+done. A model you already have is never imported twice, so importing the same collection again only brings in what's
+new.
+
+Everyone has their own queue, under **Add** in the top bar, which opens onto your imports at a glance: how many are in
+each section below, what's running or needs you, and **Open** for the queue itself. **Add** also shows imports you
+started: a ring while one runs, your place while one waits, with the details in its tooltip, a tick when they've
+finished, and a badge when one needs attention or all that's left is on hold. Other people's imports never move it, and
+your [synced collections](../guides/synced-collections.md#how-it-works) only reach it through that badge. **Import** at
+the top of the queue starts another without leaving it.
+
+- **Importing** is what's running. **Pause** stops a list of links after the link it's on. Anything else that's running
+  goes on to its end.
+- **Needs attention** is what failed or was cut off, with the reason.
+- **Waiting** is what's **In line**, which starts by itself, and what's **On hold**, which doesn't until you start it.
+  **Hold** takes an import out of the line.
+- **Finished** keeps what's done until you clear it.
+
+**Start** and **Retry** put an import at the back of the line, so nobody's number ever goes up. Each section also has a
+button for all of its imports at once.
+
+Other people's imports show in your line as **Private import** rows, which say nothing about whose or what they are.
+Admins can switch the dialog from **Mine** to **Everyone** to see everyone's imports by person and act on them.
+
+### What's outside the line
+
+**Add to the queue** in Thingport Grab sends a link to your queue, where it stays on hold until you start it. To have
+those links go straight into the line, turn on **Start links from Grab automatically** under the dialog's cog. It's your
+own setting, and links already on hold stay there.
+
+Grab's **Import** button and [MCP](../guides/mcp.md) imports start at once, beside the line: they don't wait for it, and
+it doesn't wait for them. A single model brought in that way isn't listed in the queue. Longer ones from Grab, such as a
+collection on most sites, show under **Importing**, and can't start while one of your imports is running, a synced
+collection included. API clients start at once too, unless they
+[ask for the line](../PROVIDER_DEVELOPMENT.md#what-never-changes).
+
+[Synced collections](../guides/synced-collections.md#how-it-works) run in a lane of their own, beside the line too.
+
+### What can be retried
+
+Fix the cause first, such as a sign-in. What **Retry** does then depends on the import:
+
+| Import                              | Retry                                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------- |
+| A link or a list of links           | Runs the links that failed, and any it never reached.                                               |
+| A collection, likes, print profiles | Runs the whole request again, skipping what's already in your library.                              |
+| A ZIP                               | Isn't offered: nothing records which files came in. Delete it and start a new import with the rest. |
+
+A collection or print profiles started with Grab's **Import** button, or before Thingport had this queue, saved no
+request, so it can't be retried either. Import it again instead: what you already have is skipped.
+
+### After a restart
+
+Imports in line keep their place, and imports on hold stay on hold. What was running when the server stopped:
+
+- **A link or a list of links:** the link it was on is marked failed, as its model may be incomplete in your library,
+  and the rest carry on from the same place in the line. Delete that model before retrying the link.
+- **A collection, likes, a ZIP or print profiles:** it goes to **Needs attention**, as some of it may already be in your
+  library. Check before retrying.
+- **A synced collection:** it [carries on by itself](../guides/synced-collections.md#how-it-works).
+- **Anything started outside the line:** it isn't picked up again.
+
+An import that shows no activity for an hour also stops with an error, so the line moves on. If **Retry** isn't offered
+on it, restart the server.
+
+### For admins
+
+- `IMPORT_STALL_LIMIT_MINUTES`, added to the `backend` service's `environment` in `docker-compose.yml`, sets how long an
+  import may show no activity before that happens. The default is `60`.
+- Switching the database under **Administration → Connections** is refused while anything is importing, in the line or
+  outside it. Pause it or let it finish, then try again.
+- Going back to an older version: imports in line never run there, and its import queue page can fail to load while
+  there are any. Before you pin the older image, run this on the database, and they show there as paused:
+
+  ```sql
+  UPDATE "ImportJob" SET "status" = 'PAUSED' WHERE "status" = 'QUEUED';
+  ```
+
+- Keep the frontend and backend images on the same version. An older frontend has no queue for members to open, so a
+  link they send with Grab's **Add to the queue** stays on hold, and only an admin on the old page can start it.
 
 ## Before you start
 

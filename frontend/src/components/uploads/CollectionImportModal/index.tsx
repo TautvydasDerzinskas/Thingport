@@ -14,7 +14,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import type { ImportCollectionEntry } from "../../../api/imports";
 import CollectionEntryList from "./CollectionEntryList";
 
-type CollectionPromptConfig = {
+export type CollectionPromptConfig = {
   label: string;
   loadEntries: () => Promise<{
     title: string | null;
@@ -85,7 +85,8 @@ export function useCollectionImportPrompt() {
   };
 
   const prompt = (config: CollectionPromptConfig) => {
-    if (state) {
+    // Not `state`: a prompt that waited its turn is from an older render.
+    if (resolveRef.current) {
       return Promise.resolve();
     }
     reset();
@@ -162,7 +163,7 @@ export function useCollectionImportPrompt() {
   return { prompt, modal, isOpen: Boolean(state) };
 }
 
-function CollectionImportModalView({
+export function CollectionImportModalView({
   label,
   stage,
   collectionTitle,
@@ -199,8 +200,14 @@ function CollectionImportModalView({
 }) {
   const { t } = useTranslation("app");
 
+  const dismiss = (_event: unknown, reason: "backdropClick" | "escapeKeyDown") => {
+    // The double click that sent the link can land its second half out here, as this comes up over the import dialog.
+    if (reason === "backdropClick" && stage === "loading") return;
+    onClose();
+  };
+
   return (
-    <Dialog open onClose={busy ? undefined : onClose} maxWidth="md" fullWidth>
+    <Dialog open onClose={busy ? undefined : dismiss} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
         <Box>
           <Typography variant="h6" component="div">

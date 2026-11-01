@@ -36,6 +36,8 @@ import SelectionToolbar, { SelectionAction } from "../../components/selection/Se
 import { useSelection } from "../../hooks/useSelection";
 import { useDashboardConfig } from "../../hooks/useDashboardConfig";
 import { useCustomWidgets } from "../../hooks/useCustomWidgets";
+import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
+import { useBackgroundReload } from "../../hooks/useBackgroundReload";
 import { MissingCustomWidget } from "./CustomWidgetCard";
 import DashboardCustomizeDialog, { type CustomizeSection } from "./DashboardCustomizeDialog";
 import DashboardGrid from "./DashboardGrid";
@@ -153,8 +155,13 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
     requestFit(panelId);
   };
 
+  // The homepage view has no queue, so it reads the summary once.
+  const finishedVersion = useFinishedVersion();
+  const isBackgroundReload = useBackgroundReload(finishedVersion);
+
   React.useEffect(() => {
     let active = true;
+    const background = isBackgroundReload();
     void (async () => {
       try {
         const data = await dashboardApi.getSummary();
@@ -162,13 +169,14 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
       } catch (err) {
         if (!active) return;
         if (err instanceof UnauthorizedError) onUnauthorized?.();
-        else setError(t("dashboard.loadError"));
+        else if (!background) setError(t("dashboard.loadError"));
       }
     })();
     return () => {
       active = false;
     };
-  }, [onUnauthorized, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onUnauthorized, t, finishedVersion]);
 
   const widgetSettings = dashboard?.template.settings;
   // Until the summary arrives, widgets that need it show their placeholder; the rest render already.

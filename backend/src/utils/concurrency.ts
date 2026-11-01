@@ -32,9 +32,11 @@ export function createKeyedLock() {
   return function withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
     const next = (tails.get(key) ?? Promise.resolve()).catch(() => undefined).then(fn);
     tails.set(key, next);
-    void next.finally(() => {
+    // Both ways, not `finally`: that hands on a rejection nobody holds, and an unhandled one ends the process.
+    const cleanup = () => {
       if (tails.get(key) === next) tails.delete(key);
-    });
+    };
+    next.then(cleanup, cleanup);
     return next;
   };
 }

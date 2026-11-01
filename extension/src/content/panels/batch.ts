@@ -10,7 +10,7 @@ import { parseSnapmakerListUrl, snapmakerListUrl, type SnapmakerList } from "../
 import { request } from "../../shared/messages";
 import { api, escapeHtml, sleep } from "../runtime";
 import { isPanelMounted, onPanelAction, panelQueryAll, renderPanel } from "../shell";
-import { errorHtml, statusHtml, successHtml } from "./results";
+import { errorHtml, pausedHtml, statusHtml, successHtml } from "./results";
 import { loadingModelsPhrases, renderFunStatus } from "./funStatus";
 import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
 import { printablesToken, readCollectionForPanel } from "../../providers/printables/content";
@@ -220,6 +220,12 @@ async function runBatchImport(result: PanelEntries, sync: SyncLookup | null): Pr
   }
 }
 
+/** A finished job isn't always a success: its links can all have failed. Undefined leaves the usual heading. */
+function doneTitle(job: ImportJob): string | undefined {
+  if (!job.imported && !job.already_in_library) return "Nothing imported";
+  return job.failed_count ? "Partly imported" : undefined;
+}
+
 async function pollJobWithProgress(jobId: string, instanceUrl: string, note: string | null = null): Promise<void> {
   for (;;) {
     // The panel is gone; the job keeps running server-side.
@@ -235,8 +241,14 @@ async function pollJobWithProgress(jobId: string, instanceUrl: string, note: str
       renderPanel(errorHtml(new Error(job.error_message || "Import failed")));
       return;
     }
+    if (job.status !== "DONE") {
+      renderPanel(pausedHtml(instanceUrl, job.total ? `Imported ${job.imported} of ${job.total} so far.` : null, note));
+      return;
+    }
     const link = job.result_print_id ? `${instanceUrl}/models/${job.result_print_id}` : `${instanceUrl}/models`;
-    renderPanel(successHtml(link, `Imported ${job.imported} of ${job.total}.${note ? ` ${note}` : ""}`));
+    renderPanel(
+      successHtml(link, `Imported ${job.imported} of ${job.total}.${note ? ` ${note}` : ""}`, doneTitle(job)),
+    );
     return;
   }
 }

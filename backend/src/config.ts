@@ -142,6 +142,8 @@ export const IMPORT_DOWNLOAD_RETRY_DELAY_MS = envInt("IMPORT_DOWNLOAD_RETRY_DELA
 // MakerWorld request (listing pages, each resolution step, each image), not just each model.
 // MakerWorld's pacing against its CAPTCHA, here with the other settings an admin can set by environment variable.
 export const IMPORT_MAKERWORLD_CALL_DELAY_MS = envInt("IMPORT_MAKERWORLD_CALL_DELAY_MS", 5000);
+// How long a job in the import queue may show no sign of life before the line moves on without it.
+export const IMPORT_STALL_LIMIT_MINUTES = Math.max(1, envInt("IMPORT_STALL_LIMIT_MINUTES", 60));
 // Synced collections are checked on each one's own interval; "false" turns the scheduled sync off
 // ("Sync now" still works).
 export const COLLECTION_SYNC_ENABLED = (process.env.COLLECTION_SYNC_ENABLED ?? "").trim().toLowerCase() !== "false";

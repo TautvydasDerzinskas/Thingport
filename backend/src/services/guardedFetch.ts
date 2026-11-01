@@ -4,6 +4,7 @@
 import { IMPORT_TIMEOUT_SECONDS } from "../config";
 import { browserFetch, needsBrowserFetch } from "../utils/browserFetch";
 import { HttpError } from "../utils/fileUtils";
+import { noteImportActivity } from "./importActivity";
 import {
   CLOUDFLARE_BLOCKED_CODE,
   fetchViaFlaresolverr,
@@ -12,6 +13,7 @@ import {
 } from "./flaresolverr";
 
 export async function rawFetch(url: string, headers: Record<string, string>): Promise<Response> {
+  noteImportActivity();
   if (needsBrowserFetch(url)) return browserFetch(url, { headers, timeoutMs: IMPORT_TIMEOUT_SECONDS * 1000 });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), IMPORT_TIMEOUT_SECONDS * 1000);

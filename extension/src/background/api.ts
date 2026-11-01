@@ -43,6 +43,42 @@ function setConnectionBadge(connected: boolean): void {
   if (!connected) void chrome.action.setBadgeBackgroundColor({ color: "#d32f2f" }).catch(() => undefined);
 }
 
+const HEALTH_TIMEOUT_MS = 4000;
+
+/** What the instance's public health check says. Null when there's nothing to go by: no answer, or not one from a
+ *  running Thingport (an error, a proxy's page), which is no sign of what the instance can do. */
+async function askImportQueue(instanceUrl: string): Promise<boolean | null> {
+  try {
+    const res = await fetch(apiUrl(instanceUrl, "/health"), { signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS) });
+    if (!res.ok) return null;
+    const health = (await res.json()) as { import_queue?: boolean } | null;
+    return health ? health.import_queue === true : null;
+  } catch {
+    return null;
+  }
+}
+
+let latestLearning = 0;
+
+/** Learns whether the instance gives everyone an import queue. An answer without the flag means an older instance.
+ *  No answer keeps what's known, unless `knownFor` says that was about another instance. Only the latest call writes,
+ *  so a late answer from an instance since left can't overwrite this one's; the stored URL can't tell, as a sign-in
+ *  gets here before it's saved. Never throws: a sign-in can't fail over this. */
+export async function learnImportQueue(instanceUrl: string, knownFor: string | undefined): Promise<void> {
+  const learning = ++latestLearning;
+  const answer = await askImportQueue(instanceUrl);
+  try {
+    const { importQueue: stored } = await getStoredConfig();
+    if (learning !== latestLearning) return;
+    const importQueue = answer ?? (knownFor === instanceUrl ? stored : undefined);
+    // A config key, like isAdmin: rewriting it re-initializes every open provider tab.
+    if (importQueue === stored) return;
+    await (importQueue === undefined
+      ? chrome.storage.local.remove(STORAGE_KEYS.importQueue)
+      : chrome.storage.local.set({ importQueue }));
+  } catch {}
+}
+
 /** Also called once on a 401, so a password change doesn't require reopening the popup. A connection made by
  *  approval trades its token for a session instead. */
 export async function loginAndStoreToken(credentials: Credentials): Promise<string> {
@@ -71,6 +107,7 @@ export async function loginAndStoreToken(credentials: Credentials): Promise<stri
     ...(stored.isAdmin === isAdmin ? {} : { isAdmin }),
   });
   setConnectionBadge(true);
+  await learnImportQueue(credentials.instanceUrl, stored.instanceUrl);
   return data.token;
 }
 
@@ -80,6 +117,7 @@ export async function storeApprovedConnection(
   connectionToken: string,
   data: LoginResult,
 ): Promise<void> {
+  const { instanceUrl: knownFor } = await getStoredConfig();
   await chrome.storage.local.set({
     instanceUrl,
     email: data.user?.email ?? "",
@@ -92,6 +130,7 @@ export async function storeApprovedConnection(
   });
   await chrome.storage.local.remove([STORAGE_KEYS.password, STORAGE_KEYS.pendingPairing]);
   setConnectionBadge(true);
+  await learnImportQueue(instanceUrl, knownFor);
 }
 
 // Shared, so a burst of calls with an expired token signs in once rather than once per call.
@@ -215,6 +254,7 @@ const CONNECTION_KEYS = [
   STORAGE_KEYS.pendingPairing,
   STORAGE_KEYS.disabled,
   STORAGE_KEYS.isAdmin,
+  STORAGE_KEYS.importQueue,
   STORAGE_KEYS.token,
   STORAGE_KEYS.tokenExpiresAt,
   STORAGE_KEYS.loginVerifiedAt,

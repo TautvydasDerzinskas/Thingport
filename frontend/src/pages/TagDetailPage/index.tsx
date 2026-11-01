@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -13,6 +13,8 @@ import { tagsApi } from "../../api/tags";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
+import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
+import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import ModelCard from "../ModelsPage/ModelCard";
@@ -49,6 +51,10 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   const [loadingMore, setLoadingMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const finishedVersion = useFinishedVersion();
+  const isBackgroundReload = useBackgroundReload(finishedVersion);
+  // A page on its way when the list reloads belongs to the old list, and is dropped.
+  const listRun = useRef(0);
   const selection = useModelSelection(items);
   const [searchParams, setSearchParams] = useSearchParams();
   const sortModeParam = searchParams.get("orderBy");
@@ -105,7 +111,9 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   useEffect(() => {
     if (!tag) return;
     let cancelled = false;
-    setLoading(true);
+    listRun.current += 1;
+    const background = isBackgroundReload();
+    if (!background) setLoading(true);
     (async () => {
       try {
         const result = await printsApi.list({
@@ -113,7 +121,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
           generative: generative || undefined,
           hide_providers: hiddenProviders,
           order_by: sortMode,
-          limit: PAGE_SIZE,
+          limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
           offset: 0,
         });
         if (cancelled) return;
@@ -122,7 +130,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
         setHasMore(result.hasMore);
       } catch (err) {
         if (cancelled) return;
-        handleError(err, t("models:errors.loadFailed"));
+        handleError(err, background ? undefined : t("models:errors.loadFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -131,7 +139,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tag, sortMode, generative, hiddenProviders]);
+  }, [tag, sortMode, generative, hiddenProviders, finishedVersion]);
 
   useEffect(() => {
     if (!tag) return;
@@ -173,6 +181,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !tag) return;
+    const run = listRun.current;
     setLoadingMore(true);
     try {
       const result = await printsApi.list({
@@ -183,6 +192,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
         limit: PAGE_SIZE,
         offset,
       });
+      if (run !== listRun.current) return;
       setItems((prev) => [...prev, ...result.items]);
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);

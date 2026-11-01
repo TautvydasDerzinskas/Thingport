@@ -24,6 +24,8 @@ router.get(
       oidc_providers: await enabledProvidersForSignIn(),
       // Thingport Grab can connect by approval here instead of with a password.
       grab_pairing: true,
+      // Everyone has an import queue here, and imports can join its line with ?queue=1.
+      import_queue: true,
     });
   }),
 );

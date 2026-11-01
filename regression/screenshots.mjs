@@ -21,7 +21,8 @@
 //
 // The account's theme and Categories/Folders choice are switched for the shots and restored afterwards. Nothing is
 // changed in the library: the merge and download dialogs are only opened, and System Health's full test only checks
-// connections. Email addresses on the page are blurred.
+// connections. Email addresses on the page are blurred. The import queue's rows are made up and answered in the browser,
+// so nothing is queued on the instance.
 //
 // The guide_* cut-outs replace the images in docs/guides/images, light only, and run only when named with --only;
 // guide_consume_settings needs the consume folder mounted.
@@ -141,6 +142,101 @@ async function blurLocation(page) {
       if (name instanceof HTMLElement) name.style.filter = "blur(5px)";
     }
   });
+}
+
+// What the import queue shot shows. An empty queue says nothing, and a real one would have to run on the instance.
+function queueAnswers(displayName) {
+  const ago = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
+  const you = { id: "you", display_name: displayName, email: "" };
+  const alex = { id: "alex", display_name: "Alex Morgan", email: "" };
+  const sam = { id: "sam", display_name: "Sam Rivera", email: "" };
+  const job = (id, owner, source_label, fields) => ({
+    id,
+    owner,
+    source_label,
+    source_url: `https://example.com/${id}`,
+    type: "LINKS",
+    total: 1,
+    created_at: ago(12),
+    updated_at: ago(2),
+    can_delete: true,
+    ...fields,
+  });
+  const inLine = (position, fields) => ({
+    status: "QUEUED",
+    position,
+    can_pause: true,
+    created_at: ago(position),
+    ...fields,
+  });
+  const onHold = (fields) => ({ status: "PAUSED", can_start: true, ...fields });
+  const running = job("wall-mounts", you, "Workshop wall mounts", {
+    status: "RUNNING",
+    provider: "makerworld",
+    total: 12,
+    processed: 5,
+    imported: 5,
+    pending_count: 7,
+    done_count: 5,
+    started_at: ago(6),
+    can_pause: true,
+    can_delete: false,
+  });
+  const planters = job(
+    "planters",
+    you,
+    "Favourite planters",
+    inLine(3, { type: "COLLECTION", provider: "makerworld", total: 24 }),
+  );
+  return {
+    own: {
+      jobs: [running, planters],
+      finished_total: 0,
+      line: {
+        now: { mine: true, person: "you", job_id: running.id },
+        rows: [
+          { position: 1, mine: false, person: "alex", job_id: null },
+          { position: 2, mine: false, person: "sam", job_id: null },
+          { position: 3, mine: true, person: "you", job_id: planters.id },
+        ],
+        length: 3,
+      },
+      settings: { start_grab_links: false },
+    },
+    everyone: {
+      jobs: [
+        running,
+        job("dragon", alex, "Articulated dragon", inLine(1, { single: true, provider: "printables" })),
+        job("organiser", sam, "Desk organiser set", inLine(2, { provider: "thingiverse", total: 8, pending_count: 8 })),
+        planters,
+        job(
+          "grab-links",
+          alex,
+          "Sent from Thingport Grab",
+          onHold({ provider: "makerworld", total: 3, pending_count: 3 }),
+        ),
+        job("tool-holders", sam, "Tool holders", onHold({ single: true, provider: "printables", queued_at: ago(30) })),
+        job("gearbox", sam, "Planetary gearbox", {
+          status: "DONE",
+          single: true,
+          provider: "thingiverse",
+          failed_count: 1,
+          attention: true,
+          can_retry: true,
+          failure_reason: "The model's page answered 404.",
+        }),
+        job("cable-clips", alex, "Cable clips", { status: "DONE", provider: "makerworld", imported: 1, processed: 1 }),
+        job("hooks", you, "Pegboard hooks", {
+          status: "DONE",
+          provider: "printables",
+          total: 9,
+          processed: 9,
+          imported: 9,
+          updated_at: ago(90),
+        }),
+      ],
+    },
+  };
 }
 
 const SHOTS = [
@@ -274,7 +370,29 @@ const SHOTS = [
   // The rest of Administration, for the website's page about it.
   { name: "22_admin_auth", run: (page) => open(page, "/admin-auth") },
   { name: "23_admin_users", run: (page) => open(page, "/admin-users") },
-  { name: "24_admin_queue", run: (page) => open(page, "/admin-queue") },
+  {
+    name: "24_admin_queue",
+    run: async (page, ctx) => {
+      const { own, everyone } = queueAnswers(ctx.displayName);
+      await page.route(/\/api\/import\/queue$/, (route) => route.fulfill({ json: own }));
+      await page.route(/\/api\/admin\/import-queue\?queue=1$/, (route) => route.fulfill({ json: everyone }));
+      await open(page, "/admin");
+      // From the top bar, which leaves this page behind the dialog, where the /admin-queue address has the dashboard.
+      await page.getByRole("button", { name: "Add", exact: true }).click();
+      await page.getByRole("dialog", { name: "Add" }).getByRole("button", { name: "Open", exact: true }).click();
+      await page
+        .getByRole("dialog")
+        .getByRole("group", { name: "Whose imports" })
+        .getByRole("button", { name: "Everyone" })
+        .click();
+      const dialog = page.getByRole("dialog", { name: "Server import queue" });
+      await dialog
+        .getByRole("button", { name: /^Waiting/ })
+        .first()
+        .click();
+      await dialog.getByRole("article").first().waitFor();
+    },
+  },
   { name: "25_admin_logs", run: (page) => open(page, "/admin-logs") },
   { name: "26_admin_triggers", run: (page) => open(page, "/admin-triggers") },
   { name: "27_admin_connections", run: (page) => open(page, "/admin-connections") },
@@ -428,7 +546,7 @@ const SHOTS = [
       // Measured first: the open menu hides the rest of the page from role queries.
       const button = await add.boundingBox();
       await add.click();
-      const menu = page.getByRole("menu");
+      const menu = page.getByRole("dialog", { name: "Add" });
       await menu.waitFor();
       await page.waitForTimeout(400);
       const box = await menu.boundingBox();
@@ -545,6 +663,7 @@ try {
       // Twice: a dialog can open over another one.
       await page.keyboard.press("Escape").catch(() => undefined);
       await page.keyboard.press("Escape").catch(() => undefined);
+      await page.unrouteAll({ behavior: "ignoreErrors" });
     }
   }
   console.log(`Saved to ${outDir}${failed ? `; ${failed} failed` : ""}`);

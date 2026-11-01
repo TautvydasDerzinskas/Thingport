@@ -34,9 +34,11 @@ export type BatchEntry = { design_id: string; title?: string | null; already_imp
 export type BatchEntriesResult = { title?: string | null; entries: BatchEntry[]; truncated?: boolean };
 
 export type ImportJob = {
-  status: "RUNNING" | "DONE" | "ERROR" | string;
+  status: "RUNNING" | "PAUSED" | "DONE" | "ERROR" | string;
   processed: number;
   imported: number;
+  already_in_library?: number;
+  failed_count?: number;
   total: number;
   result_print_id?: string | null;
   error_message?: string | null;
@@ -52,8 +54,17 @@ export type SyncLink = {
 /** GET /collection-sync: `supported` is false on pages a sync can't follow, e.g. Thingiverse Likes. */
 export type SyncLookup = { supported: boolean; sync: SyncLink | null };
 
-/** POST /import/queue: the link waits, paused, in the user's queue on the instance. */
-export type QueueImportResult = { job_id: string; item_id: string; duplicate: boolean; waiting: number };
+/** POST /import/queue: the link waits in the user's queue on the instance, on hold unless `started` says otherwise. */
+export type QueueImportResult = {
+  job_id: string;
+  item_id: string;
+  duplicate: boolean;
+  waiting: number;
+  /** Missing from instances without a queue of one's own. True: it's in line, as the user's setting there says. */
+  started?: boolean;
+  /** Its place in line, 1 being next up. Missing likewise, and null while on hold. */
+  position?: number | null;
+};
 
 export type LoginResult = {
   token: string;

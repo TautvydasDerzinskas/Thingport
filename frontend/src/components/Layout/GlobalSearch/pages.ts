@@ -10,6 +10,7 @@ export type PageId =
   | "tags"
   | "downloads"
   | "tools"
+  | "importQueue"
   | "myModels"
   | "profile"
   | "admin"
@@ -20,7 +21,6 @@ export type PageId =
   | "adminTools"
   | "adminAi"
   | "adminUsers"
-  | "adminQueue"
   | "adminLogs"
   | "adminTriggers"
   | "adminConnections"
@@ -59,6 +59,12 @@ export const SEARCH_PAGES: SearchPage[] = [
     terms: ["downloads", "bridge", "extension", "browser extension", "install"],
   },
   { id: "tools", path: "/tools", labelKey: "app:sidebar.tools", terms: ["tools", "apps", "planner", "multiboard"] },
+  {
+    id: "importQueue",
+    path: "/import-queue",
+    labelKey: "app:importQueue.title",
+    terms: ["import queue", "queue", "imports", "jobs"],
+  },
   {
     id: "myModels",
     path: `/authors/${SELF_AUTHOR_ID}`,
@@ -138,12 +144,6 @@ export const SEARCH_PAGES: SearchPage[] = [
     "roles",
     "accounts",
     "invite",
-  ]),
-  adminPage("adminQueue", "/admin-queue", "app:adminSettings.importQueue.heading", [
-    "import queue",
-    "queue",
-    "imports",
-    "jobs",
   ]),
   adminPage("adminLogs", "/admin-logs", "app:adminSettings.logs.heading", ["logs", "audit", "events"]),
   adminPage("adminTriggers", "/admin-triggers", "app:adminSettings.triggers.heading", [

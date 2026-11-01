@@ -140,6 +140,22 @@ describe("API token", () => {
     expect((await request(app).get("/api/dashboard/summary").set(auth(session))).status).toBe(200);
   });
 
+  it("reads the import queue under the imports scope", async () => {
+    const { body } = await request(app).post("/api/profile/api-token").set(auth(session));
+    const scoped = (rest_scopes: string[]) =>
+      request(app).put("/api/profile/api-token/rest-scopes").set(auth(session)).send({ rest_scopes });
+
+    await scoped(["imports"]);
+    const allowed = await request(app).get("/api/import/queue").set(auth(body.token));
+    expect(allowed.status).toBe(200);
+    expect(allowed.body.jobs).toEqual([]);
+
+    await scoped(["search"]);
+    const denied = await request(app).get("/api/import/queue").set(auth(body.token));
+    expect(denied.status).toBe(403);
+    expect(denied.body.scope).toBe("imports");
+  });
+
   it("refuses an unknown REST scope, and a change made with the token itself", async () => {
     const { body } = await request(app).post("/api/profile/api-token").set(auth(session));
     const unknown = await request(app)
@@ -169,6 +185,8 @@ describe("scopeForPath", () => {
     expect(scopeForPath("/plate/p1/preview.glb")).toBe("files");
     expect(scopeForPath("/tags/summary")).toBe("tags");
     expect(scopeForPath("/tags/benchy/mosaic.webp")).toBe("images");
+    expect(scopeForPath("/import/queue")).toBe("imports");
+    expect(scopeForPath("/import/jobs/j1/items")).toBe("imports");
   });
 
   it("puts anything unlisted under other", () => {

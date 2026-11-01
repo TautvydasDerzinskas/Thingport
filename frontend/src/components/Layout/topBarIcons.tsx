@@ -51,6 +51,15 @@ export function AddModelIcon(props: SvgIconProps) {
   );
 }
 
+/** The same cube with room for a ring around it or a badge in place of the plus. */
+export function ModelCubeIcon(props: SvgIconProps) {
+  return (
+    <TwoToneIcon viewBox="1 1 20 21.5" {...props}>
+      <path className="line" d="M11 2.5 3 7v9.5l8 4.5 8-4.5V7l-8-4.5zM3.2 7.1 11 11.6l7.8-4.5M11 11.6V21" />
+    </TwoToneIcon>
+  );
+}
+
 export function NotificationsTwoToneIcon(props: SvgIconProps) {
   return (
     <TwoToneIcon {...props}>

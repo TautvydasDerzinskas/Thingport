@@ -11,6 +11,9 @@ export type SlotState = { status: ConnectionStatus; account: string | null };
 /** Whether an admin left a provider on, and how the user is connected to it, by the slots its manifest lists. */
 export type ProviderState = { id: ProviderId; enabled: boolean; slots: Partial<Record<SlotName, SlotState>> };
 
+/** The server looked at a credential and turned it down, rather than failing to answer. */
+export class ConnectionRefusedError extends Error {}
+
 export const providersApi = {
   /** Only the providers this frontend has manifests for: the backend may be older or newer. */
   list: async (): Promise<ProviderState[]> => {
@@ -33,6 +36,10 @@ export const providersApi = {
       body: JSON.stringify({ ...values, verify: true }),
     });
     if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the connection"));
+    if (!res.ok) {
+      const message = await readErrorMessage(res, "Failed to update the connection");
+      // 422 is the provider's own no. A proxy's 403, or a 503 when it couldn't be asked, says nothing of the credential.
+      throw res.status === 422 ? new ConnectionRefusedError(message) : new Error(message);
+    }
   },
 };
