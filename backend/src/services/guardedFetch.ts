@@ -8,6 +8,7 @@ import { remoteRequest } from "../utils/remoteRequest";
 import { noteImportActivity } from "./importActivity";
 import {
   CLOUDFLARE_BLOCKED_CODE,
+  cloudflareBlockedMessage,
   fetchViaFlaresolverr,
   looksLikeCloudflareBlock,
   shouldProxyHost,
@@ -69,11 +70,7 @@ export async function fetchWithGuard(url: string, headers: Record<string, string
     }
 
     if (res.status === 403 && looksLikeCloudflareBlock(res.headers)) {
-      throw new HttpError(
-        403,
-        "Cloudflare blocked the request and FlareSolverr didn't get past it",
-        CLOUDFLARE_BLOCKED_CODE,
-      );
+      throw new HttpError(403, await cloudflareBlockedMessage(url), CLOUDFLARE_BLOCKED_CODE);
     }
     if (!res.ok) {
       throw new HttpError(res.status || 400, `Failed to fetch URL: ${res.statusText || res.status}`);

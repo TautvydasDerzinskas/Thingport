@@ -7,6 +7,7 @@ import { fetchViaFlaresolverr, shouldProxyHost } from "../src/services/flaresolv
 // These tests exercise the real redirect and URL/DNS guards without opening a database or solver connection.
 vi.mock("../src/services/flaresolverr", () => ({
   CLOUDFLARE_BLOCKED_CODE: "CLOUDFLARE_BLOCKED",
+  cloudflareBlockedMessage: async () => "why it stands",
   fetchViaFlaresolverr: vi.fn<typeof fetchViaFlaresolverr>().mockResolvedValue(null),
   shouldProxyHost: vi.fn<typeof shouldProxyHost>().mockReturnValue(false),
   looksLikeCloudflareBlock: (headers: Headers) => headers.has("cf-mitigated"),
@@ -176,6 +177,15 @@ describe("shared link import solver fallback", () => {
     vi.mocked(fetchViaFlaresolverr).mockResolvedValue({ status: 200, body: "solved public content" });
     expect(await (await fetchWithGuard(url, savedHeaders)).text()).toBe("solved public content");
     expect(fetchViaFlaresolverr).toHaveBeenCalledWith(url, null);
+  });
+
+  it("says why a Cloudflare block stands, in the error it throws", async () => {
+    captureRequests(new Response(null, { status: 403, headers: { "cf-mitigated": "challenge" } }));
+    await expect(fetchWithGuard("https://example.com/page", {})).rejects.toMatchObject({
+      status: 403,
+      code: "CLOUDFLARE_BLOCKED",
+      message: "why it stands",
+    });
   });
 
   it("preserves the allowed MakerWorld solver sign-in regardless of header casing", async () => {

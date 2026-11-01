@@ -21,7 +21,12 @@ vi.mock("../src/utils/urlUtils", async (original) => ({
   validateRemoteUrl: async (url: string) => url,
 }));
 
-import { cookiesViaFlaresolverr, fetchViaFlaresolverr, shouldProxyHost } from "../src/services/flaresolverr";
+import {
+  cloudflareBlockedMessage,
+  cookiesViaFlaresolverr,
+  fetchViaFlaresolverr,
+  shouldProxyHost,
+} from "../src/services/flaresolverr";
 import { openImportResponse } from "../src/services/importService";
 import { fetchJsonFromUrl } from "../src/services/importResolvers";
 
@@ -29,6 +34,27 @@ afterEach(() => {
   vi.restoreAllMocks();
   config.url = "https://solver.example/v1";
   config.requireHttps = true;
+});
+
+describe("why a Cloudflare block stands", () => {
+  const COVERED = "https://www.printables.com/model/123-example";
+
+  it("doesn't claim a try on a link the solver doesn't cover, set up or not", async () => {
+    await expect(cloudflareBlockedMessage("https://example.com/page")).resolves.toMatch(/doesn't cover this link/);
+    config.url = null;
+    await expect(cloudflareBlockedMessage("https://example.com/page")).resolves.toMatch(/doesn't cover this link/);
+  });
+
+  it("says so when no solver is set up, or the one set up is refused", async () => {
+    config.url = null;
+    await expect(cloudflareBlockedMessage(COVERED)).resolves.toMatch(/isn't set up/);
+    config.url = "http://192.168.1.20:8191/v1";
+    await expect(cloudflareBlockedMessage(COVERED)).resolves.toMatch(/isn't set up/);
+  });
+
+  it("only says it didn't get past when the solver could have tried", async () => {
+    await expect(cloudflareBlockedMessage(COVERED)).resolves.toMatch(/didn't get past it/);
+  });
 });
 
 describe("FlareSolverr credential boundary", () => {

@@ -134,6 +134,13 @@ function solverDestination(url: string) {
   return { parsed, rule };
 }
 
+/** Why a Cloudflare block on `url` stands. Most links never reach the solver, so this doesn't claim it tried. */
+export async function cloudflareBlockedMessage(url: string): Promise<string> {
+  if (!solverDestination(url)) return "Cloudflare blocked the request, and FlareSolverr doesn't cover this link";
+  if (!(await isFlaresolverrEnabled())) return "Cloudflare blocked the request and FlareSolverr isn't set up";
+  return "Cloudflare blocked the request and FlareSolverr didn't get past it";
+}
+
 /** GET only: FlareSolverr's POST submits a browser form, not a raw body. */
 export async function fetchViaFlaresolverr(
   url: string,
