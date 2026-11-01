@@ -2384,6 +2384,8 @@
           "outdated_few": "{{count}} senesnės versijos",
           "outdated_many": "{{count}} senesnės versijos",
           "outdated_other": "{{count}} senesnės versijos",
+          "fromFolder": "Siūloma iš aplanko {{location}}",
+          "fromRepository": "Siūloma iš {{location}}",
           "source": "Žiūrėti kodą",
           "off": "Bendruomenės valdikliai išjungti: naudotojai negali jų įdiegti, o įdiegti nekraunami.",
           "empty": "Bendruomenės saugykloje dar nėra valdiklių.",

@@ -4,6 +4,8 @@
 // widgets off for the instance.
 
 import { createHash } from "node:crypto";
+import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import nodePath from "node:path";
 import { lookup as dnsLookup } from "node:dns";
 import { BlockList, isIP, type LookupFunction } from "node:net";
@@ -200,11 +202,28 @@ export async function deleteCustomWidget(userId: string, id: string): Promise<vo
 
 // --- The community repository ---------------------------------------------------------------------------------------
 
-// The repository's community-widgets folder, as GitHub serves its files, on develop for the :dev image. A fork can
-// point its instances at its own.
+// Where community widgets come from, as with tools. A Thingport run from a checkout of the repository (npm run dev, or
+// the local docker-compose.yml, which mounts it as COMMUNITY_WIDGETS_DIR) reads the checkout's own folder, so a widget
+// being worked on is what's offered. A published image has none and reads the repository's as GitHub serves it, on
+// develop for the :dev image; COMMUNITY_WIDGETS_URL points it at a fork's, and COMMUNITY_WIDGETS_DIR at any folder.
 const COMMUNITY_BASE =
   process.env.COMMUNITY_WIDGETS_URL?.replace(/\/+$/, "") ??
   `https://raw.githubusercontent.com/${GITHUB_REPO}/${releaseBranch()}/community-widgets`;
+// backend/src/services here, backend/dist/services built: the checkout's root is three up either way.
+const CHECKOUT_WIDGETS = nodePath.resolve(__dirname, "../../../community-widgets");
+
+function defaultCommunityDir(): string | null {
+  if (process.env.COMMUNITY_WIDGETS_DIR) return nodePath.resolve(process.env.COMMUNITY_WIDGETS_DIR);
+  if (process.env.COMMUNITY_WIDGETS_URL) return null;
+  return fsSync.existsSync(nodePath.join(CHECKOUT_WIDGETS, "index.json")) ? CHECKOUT_WIDGETS : null;
+}
+
+let communityDir: string | null = defaultCommunityDir();
+
+/** Where the community widgets offered come from, for the admin page to say. */
+export function communityWidgetsSource(): { kind: "folder" | "repository"; location: string } {
+  return communityDir ? { kind: "folder", location: communityDir } : { kind: "repository", location: COMMUNITY_BASE };
+}
 const COMMUNITY_TTL_MS = 60 * 60 * 1000;
 const FILE_MAX_BYTES = 1024 * 1024;
 
@@ -222,11 +241,28 @@ let fetchImpl: typeof fetch = (...args) => fetch(...args);
 /** Lets tests answer for GitHub and for the hosts widgets reach. */
 export function setCustomWidgetsFetchForTest(impl?: typeof fetch): void {
   fetchImpl = impl ?? ((...args) => fetch(...args));
+  communityDir = impl ? null : defaultCommunityDir();
   communityCache.clear();
   screenshotCache.clear();
 }
 
+/** Lets tests stand a folder on disk in for the repository. */
+export function setCommunityWidgetsDirForTest(dir: string): void {
+  communityDir = dir;
+  communityCache.clear();
+  screenshotCache.clear();
+}
+
+/** A file of the repository's community-widgets folder; null when it has none. */
 async function fetchFile(path: string, maxBytes = FILE_MAX_BYTES): Promise<Buffer | null> {
+  if (communityDir) {
+    const full = nodePath.resolve(communityDir, path);
+    if (!full.startsWith(communityDir + nodePath.sep)) return null;
+    const stat = await fs.stat(full).catch(() => null);
+    if (!stat?.isFile()) return null;
+    if (stat.size > maxBytes) throw new HttpError(502, `${path} is larger than ${Math.round(maxBytes / 1048576)} MB`);
+    return fs.readFile(full);
+  }
   const url = `${COMMUNITY_BASE}/${path.split("/").map(encodeURIComponent).join("/")}`;
   const res = await fetchImpl(url, { signal: AbortSignal.timeout(15_000) });
   if (res.status === 404) return null;
@@ -258,7 +294,8 @@ async function fetchCommunityLocales(slug: string, manifest: WidgetManifest): Pr
 }
 
 async function fetchCommunityWidget(slug: string): Promise<CommunityFiles & { slug: string }> {
-  const cached = communityCache.get(`widget:${slug}`);
+  // A folder on disk is read afresh each time, so a widget being worked on shows its changes at once.
+  const cached = communityDir ? undefined : communityCache.get(`widget:${slug}`);
   if (cached && !Array.isArray(cached)) return cached;
   const metadata = (await fetchText(`${slug}/widget.json`)) ?? (await fetchText(`${slug}/widget.yml`));
   const script = await fetchText(`${slug}/widget.js`);
@@ -284,7 +321,7 @@ export async function communityWidgetScreenshot(slug: string, index: number): Pr
   const shot = widget.manifest.screenshots[index];
   if (!shot) throw new HttpError(404, "No such screenshot");
   const key = `${slug}/${widget.sha}/${shot.file}`;
-  const cached = screenshotCache.get(key);
+  const cached = communityDir ? undefined : screenshotCache.get(key);
   if (cached) return cached;
   const body = await fetchFile(`${slug}/${shot.file}`, SCREENSHOT_MAX_BYTES);
   if (!body) throw new HttpError(404, "The community repository has no such screenshot");

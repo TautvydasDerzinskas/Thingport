@@ -151,5 +151,19 @@ Once merged, it shows up under **Community** on every Thingport. Raise its `vers
 who installed it are offered the update.
 
 To try the folder before opening the pull request, run `npx tsx scripts/validateCommunityWidgets.ts` from `backend/`.
-A Thingport reads the community widgets from GitHub's `main` branch, or `develop` on the `:dev` image; set
-`COMMUNITY_WIDGETS_URL` to read them from somewhere else, such as your fork.
+
+### Where the community widgets come from
+
+The **Community** tab under **Administration → Dashboard** says which of these it's reading:
+
+| Thingport running                                                 | Offers the community widgets from                                                        |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| From a checkout: `npm run dev` ([development](../DEVELOPMENT.md)) | The checkout's own `community-widgets` folder, read afresh each time: edit, then refresh |
+| The local `docker-compose.yml`, which builds from the checkout    | The checkout's `community-widgets` folder, mounted into the backend                      |
+| The `:dev` image                                                  | The repository's `develop` branch on GitHub                                              |
+| The `:latest` image, or a version's                               | The repository's `main` branch on GitHub                                                 |
+
+`COMMUNITY_WIDGETS_DIR` points the backend at any folder instead, and `COMMUNITY_WIDGETS_URL` at another repository's
+`community-widgets` folder as raw files, such as a fork's
+(`https://raw.githubusercontent.com/<you>/Thingport/<branch>/community-widgets`). From GitHub, a widget's files are read
+again at most hourly.

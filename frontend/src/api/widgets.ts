@@ -63,6 +63,12 @@ export type WidgetInUse = {
 /** A community repository widget with how many users installed it, and how many of those copies are behind. */
 export type CommunityWidgetUsage = { slug: string; manifest: WidgetManifest; installs: number; outdated: number };
 
+/** Where the offered community widgets come from: a folder on disk (a checkout of Thingport, or COMMUNITY_WIDGETS_DIR),
+ *  or the repository's community-widgets folder on GitHub, on the branch the image follows. */
+export type CommunityWidgetsSource = { kind: "folder" | "repository"; location: string };
+
+export type CommunityUsage = { widgets: CommunityWidgetUsage[]; source: CommunityWidgetsSource };
+
 export type CommunityWidget = {
   slug: string;
   manifest: WidgetManifest;
@@ -182,9 +188,9 @@ export const widgetsApi = {
   },
 
   /** For admins: the community repository's widgets with their installs. */
-  communityUsage: async (): Promise<CommunityWidgetUsage[]> => {
+  communityUsage: async (): Promise<CommunityUsage> => {
     const res = await fetch(`${apiBase()}/admin/widgets/community`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to load the community widgets");
-    return (await res.json()).widgets;
+    return res.json();
   },
 };

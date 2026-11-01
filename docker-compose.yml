@@ -49,6 +49,8 @@ services:
       - FLARESOLVERR_REQUIRE_HTTPS=${FLARESOLVERR_REQUIRE_HTTPS:-false}
       # Tools are offered from this checkout's tools folder (mounted below), not the repository on GitHub.
       - TOOLS_DIR=/app/tools
+      # Likewise community widgets, from this checkout's community-widgets folder.
+      - COMMUNITY_WIDGETS_DIR=/app/community-widgets
     depends_on:
       db:
         condition: service_healthy
@@ -57,6 +59,7 @@ services:
     volumes:
       - ./data/storage:/app/storage
       - ./tools:/app/tools:ro
+      - ./community-widgets:/app/community-widgets:ro
       # Optional consume folder: files and folders dropped in it are imported automatically
       # (Administration -> Storage -> Consume Folder). Uncomment and point it at a host folder.
       # - ./data/consume:/app/consume

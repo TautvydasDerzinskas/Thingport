@@ -29,7 +29,13 @@ import ExtensionOutlinedIcon from "@mui/icons-material/ExtensionOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import { UnauthorizedError } from "../../api/client";
-import { widgetsApi, type CommunityWidgetUsage, type WidgetInUse, type WidgetManifest } from "../../api/widgets";
+import {
+  widgetsApi,
+  type CommunityUsage,
+  type CommunityWidgetUsage,
+  type WidgetInUse,
+  type WidgetManifest,
+} from "../../api/widgets";
 import Segmented from "../../components/controls/Segmented";
 import RollingNumber from "../../components/RollingNumber";
 import { WidgetIcon } from "../DashboardPage/CustomWidgetCard";
@@ -341,7 +347,7 @@ export default function WidgetUsage({ communityOn, onUnauthorized }: Props) {
   const [tab, setTab] = React.useState<Tab>("inUse");
   const [inUse, setInUse] = React.useState<WidgetInUse[] | null>(null);
   const [inUseError, setInUseError] = React.useState(false);
-  const [community, setCommunity] = React.useState<CommunityWidgetUsage[] | null>(null);
+  const [community, setCommunity] = React.useState<CommunityUsage | null>(null);
   const [communityError, setCommunityError] = React.useState(false);
   const [open, setOpen] = React.useState<WidgetInUse | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -441,19 +447,33 @@ export default function WidgetUsage({ communityOn, onUnauthorized }: Props) {
       {tab === "community" && (
         <Stack spacing={1.5}>
           {!communityOn && <Alert severity="info">{t("adminSettings.dashboard.community.off")}</Alert>}
+          {community && !communityError && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                wordBreak: "break-all",
+                fontFamily: community.source.kind === "folder" ? "monospace" : undefined,
+              }}
+            >
+              {community.source.kind === "folder"
+                ? t("adminSettings.dashboard.community.fromFolder", { location: community.source.location })
+                : t("adminSettings.dashboard.community.fromRepository", { location: community.source.location })}
+            </Typography>
+          )}
           {communityError ? (
             <Alert severity="warning" action={<Button onClick={loadCommunity}>{t("common:retry")}</Button>}>
               {t("adminSettings.dashboard.community.error")}
             </Alert>
           ) : community === null ? (
             <SkeletonGrid height={124} />
-          ) : community.length === 0 ? (
+          ) : community.widgets.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
               {t("adminSettings.dashboard.community.empty")}
             </Typography>
           ) : (
             <Box sx={{ ...GRID, opacity: communityOn ? 1 : 0.6, transition: "opacity 200ms" }}>
-              {community.map((widget, index) => (
+              {community.widgets.map((widget, index) => (
                 <CommunityTile key={widget.slug} widget={widget} index={index} />
               ))}
             </Box>
