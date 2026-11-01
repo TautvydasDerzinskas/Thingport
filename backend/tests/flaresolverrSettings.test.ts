@@ -1,4 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
@@ -177,7 +179,26 @@ describe("FlareSolverr URL setting", () => {
       .expect(200);
     expect(saved.body).toEqual({ url: `${url}/v1` });
     expect(calls).toEqual([`${url}/v1`]);
-    expect(global.fetch).toHaveBeenCalledWith(`${url}/v1`, expect.objectContaining({ redirect: "error" }));
+    expect(global.fetch).toHaveBeenCalledWith(`${url}/v1`, expect.objectContaining({ redirect: "manual" }));
+  });
+
+  it.each([307, 308])("says a %i from the endpoint is a redirect, without following it", async (status) => {
+    const hits: (string | undefined)[] = [];
+    const server = http.createServer((req, res) => {
+      hits.push(req.url);
+      res.writeHead(status, { Location: "/v1/" }).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    try {
+      const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+      expect(await testFlaresolverr(url)).toEqual({
+        ok: false,
+        error: `That URL redirects (HTTP ${status}): it has to answer at /v1 itself`,
+      });
+      expect(hits).toEqual(["/v1"]);
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
   });
 
   it.each(["http://remote.example:8191", "http://192.168.1.10:8191"])(

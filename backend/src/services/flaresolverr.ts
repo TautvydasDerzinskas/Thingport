@@ -30,9 +30,13 @@ export async function testFlaresolverr(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cmd: "sessions.list" }),
-      redirect: "error",
+      // Not "error" as the solver calls below: this sends nothing secret, and "fetch failed" wouldn't say why.
+      redirect: "manual",
       signal: controller.signal,
     });
+    if (res.status >= 300 && res.status < 400) {
+      return { ok: false, error: `That URL redirects (HTTP ${res.status}): it has to answer at /v1 itself` };
+    }
     if (!res.ok) return { ok: false, error: `FlareSolverr answered HTTP ${res.status}` };
     const data = (await res.json().catch(() => null)) as { status?: string; version?: string } | null;
     if (data?.status !== "ok") return { ok: false, error: "That URL didn't answer like FlareSolverr" };
