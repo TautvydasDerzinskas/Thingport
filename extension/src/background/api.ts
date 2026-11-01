@@ -43,7 +43,8 @@ const isRedirect = (res: Response) => res.type === "opaqueredirect" || [301, 302
 const httpsUpgrades = new Map<string, string>();
 
 /** Where an http:// URL ends up, asked without anything secret; the https:// origin when that's all the redirect does.
- *  A browser only shows a redirect's target by following it, so this may pass other hosts, sending and reading nothing. */
+ *  A browser only shows a redirect's target by following it, so this may GET other hosts too, without credentials,
+ *  using nothing but the final URL. */
 async function httpsUpgradeOf(url: URL, signal: RequestInit["signal"]): Promise<string | null> {
   if (url.protocol !== "http:") return null;
   const probe = await fetch(url.href, { method: "GET", redirect: "follow", credentials: "omit", signal }).catch(

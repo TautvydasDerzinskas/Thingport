@@ -200,6 +200,19 @@ describe("connection-time DNS policy", () => {
     expect(native).not.toHaveBeenCalled();
   });
 
+  it("checks the address again on each browser-served hop", async () => {
+    vi.spyOn(dnsPromises, "resolve4")
+      .mockResolvedValueOnce(["8.8.8.8"] as never)
+      .mockResolvedValueOnce(["127.0.0.1"] as never);
+    vi.spyOn(dnsPromises, "resolve6").mockResolvedValue([] as never);
+    vi.mocked(browserFetch).mockResolvedValueOnce(new Response(null, { status: 302, headers: { location: "/end" } }));
+    const native = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", native);
+    await expect(remoteRequest("https://www.thingiverse.com/start", {}, true)).rejects.toThrow("Local addresses");
+    expect(browserFetch).toHaveBeenCalledOnce();
+    expect(native).not.toHaveBeenCalled();
+  });
+
   it("caps redirect loops on browser-served hops", async () => {
     vi.spyOn(dnsPromises, "resolve4").mockResolvedValue(["8.8.8.8"] as never);
     vi.spyOn(dnsPromises, "resolve6").mockResolvedValue([] as never);
