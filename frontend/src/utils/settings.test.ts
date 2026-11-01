@@ -49,6 +49,17 @@ describe("settleRetiredSettings", () => {
     expect(stored.has("thingport_settings")).toBe(false);
   });
 
+  it("saves nothing, and keeps it to ask again, when another account signed in while the question was open", async () => {
+    const save = makerworldIs("disconnected");
+    stored.set("thingport_auth_user", JSON.stringify({ id: "a" }));
+    await settleRetiredSettings(() => {
+      stored.set("thingport_auth_user", JSON.stringify({ id: "b" }));
+      return Promise.resolve(true);
+    });
+    expect(save).not.toHaveBeenCalled();
+    expect(stored.get("thingport_settings")).toBe(OLD_COPY);
+  });
+
   it("keeps it, to ask again, when the question is dismissed without an answer", async () => {
     const save = makerworldIs("disconnected");
     await settleRetiredSettings(() => Promise.resolve(null));

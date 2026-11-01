@@ -193,7 +193,7 @@ function Row({ row, onOpen }: { row: HubRow; onOpen: (section: QueueSection) => 
           color="inherit"
           disabled={busy.has(row.job.id)}
           onClick={() => void retryJob(row.job.id)}
-          sx={[{ flexShrink: 0 }, quietButtonSx as object]}
+          sx={[{ flexShrink: 0 }, quietButtonSx]}
         >
           {t("importQueue.action.retry")}
         </Button>

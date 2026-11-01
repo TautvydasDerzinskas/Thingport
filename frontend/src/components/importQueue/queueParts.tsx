@@ -42,15 +42,15 @@ export const visuallyHiddenSx = {
 export const tapTargetSx = { minHeight: { xs: 44, md: 0 } };
 
 /** An outlined button that doesn't compete with the one primary action in view. */
-export const quietButtonSx: SxProps<Theme> = {
+export const quietButtonSx = {
   ...tapTargetSx,
   px: "12px",
   py: "5px",
   lineHeight: "19px",
   borderColor: "divider",
-  color: (theme) => theme.thingport.headingText,
+  color: (theme: Theme) => theme.thingport.headingText,
   "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
-};
+} satisfies SxProps<Theme>;
 
 /** A small dot, pulsing while something is happening. */
 export function LiveDot({ live = false, color = "currentColor" }: { live?: boolean; color?: string }) {

@@ -139,7 +139,7 @@ function EmptyPanel({ state, onImport }: { state: QueueEmptyState; onImport?: ()
           color="inherit"
           startIcon={<ImportLinkIcon />}
           onClick={onImport}
-          sx={[{ mt: 0.5 }, quietButtonSx as object, tapTargetSx]}
+          sx={[{ mt: 0.5 }, quietButtonSx, tapTargetSx]}
         >
           {t("import")}
         </Button>

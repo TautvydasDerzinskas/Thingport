@@ -1,4 +1,5 @@
 import { ConnectionRefusedError, providersApi } from "../api/providers";
+import { readUser } from "./auth";
 
 // Older versions kept a copy of the MakerWorld cookie in this browser and sent it with imports. Nothing reads it now, as
 // the server fills in the saved sign-in itself, so it goes. It may be the only copy, though: the server's began later and
@@ -35,8 +36,10 @@ export async function settleRetiredSettings(isTheirs: () => Promise<boolean | nu
       const providers = await providersApi.list();
       const makerworld = providers.find((provider) => provider.id === "makerworld");
       if (makerworld?.slots.default?.status === "disconnected") {
+        const askedOf = readUser()?.id;
         const answer = await isTheirs();
-        if (answer === null) return;
+        // A save goes by who's signed in when it's sent, and another tab may have changed that since they were asked.
+        if (answer === null || readUser()?.id !== askedOf) return;
         if (answer) await providersApi.saveConnection("makerworld", "default", { cookie });
       }
     }
