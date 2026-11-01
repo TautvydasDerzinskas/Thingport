@@ -30,6 +30,8 @@ function formatDuration(seconds: number, locale: string): string {
   const total = Math.max(0, Math.round(seconds / 60));
   const unit = (value: number, u: "hour" | "minute") =>
     new Intl.NumberFormat(locale, { style: "unit", unit: u, unitDisplay: "narrow" }).format(value);
+  // Under half a minute rounds to 0, which would read as "never sliced".
+  if (!total) return `<${unit(1, "minute")}`;
   const h = Math.floor(total / 60);
   const m = total % 60;
   if (!h) return unit(m, "minute");
@@ -37,12 +39,15 @@ function formatDuration(seconds: number, locale: string): string {
 }
 
 function formatWeight(grams: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
-    style: "unit",
-    unit: "gram",
-    unitDisplay: "narrow",
-    maximumFractionDigits: grams < 10 ? 1 : 0,
-  }).format(grams);
+  const gram = (value: number) =>
+    new Intl.NumberFormat(locale, {
+      style: "unit",
+      unit: "gram",
+      unitDisplay: "narrow",
+      maximumFractionDigits: value < 10 ? 1 : 0,
+    }).format(value);
+  // Under 0.05 g rounds to 0.
+  return grams < 0.05 ? `<${gram(0.1)}` : gram(grams);
 }
 
 /** The values a badge is shown for; a time or weight of 0 means the file was never sliced, so it counts as unknown. */

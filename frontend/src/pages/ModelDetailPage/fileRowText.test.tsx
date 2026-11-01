@@ -4,6 +4,7 @@ import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import type { PlateProfile } from "../../api/prints";
 import en from "../../i18n/locales/en.json";
+import fr from "../../i18n/locales/fr.json";
 import lt from "../../i18n/locales/lt.json";
 import { fileRowText } from "./fileRowText";
 
@@ -25,6 +26,9 @@ const empty: PlateProfile = {
   plate_stats: [],
   weight_g: null,
 };
+
+const i18nFr = i18next.createInstance();
+await i18nFr.init({ lng: "fr", defaultNS: "models", resources: { fr: { models: fr.models } } });
 
 /** The row's second line as rendered markup. */
 function secondaryHtml(profile?: PlateProfile | null, filename = "part.3mf"): string {
@@ -114,5 +118,27 @@ describe("fileRowText", () => {
       primary: "Draft",
       secondary: "part · File 1 · 3MF",
     });
+  });
+
+  it("shows a tiny time and weight as a lower bound, not zero", () => {
+    const text = secondaryText({ ...empty, estimated_seconds: 20, weight_g: 0.02 });
+    expect(text).toContain("&lt;1m");
+    expect(text).toContain("&lt;0.1g");
+  });
+
+  it.each([
+    ["lt", i18nLt, "1 h 23 min.", "2,5 g"],
+    ["fr", i18nFr, "1h 23min", "2,5g"],
+  ])("formats time and weight in %s", (_lng, instance, time, weight) => {
+    const { secondary } = fileRowText(instance.t.bind(instance), "part.3mf", 0, {
+      ...empty,
+      estimated_seconds: 4980,
+      weight_g: 2.5,
+    });
+    const html = renderToStaticMarkup(<I18nextProvider i18n={instance}>{secondary}</I18nextProvider>);
+    // Intl separates number and unit with a no-break space in some languages.
+    const text = html.replace(/\s/g, " ");
+    expect(text).toContain(`>${time}<`);
+    expect(text).toContain(`>${weight}<`);
   });
 });
