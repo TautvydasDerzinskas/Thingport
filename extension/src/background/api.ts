@@ -42,7 +42,8 @@ const isRedirect = (res: Response) => res.type === "opaqueredirect" || [301, 302
 // http:// origins a reverse proxy was seen upgrading to https:// on the same host, so later requests go there directly.
 const httpsUpgrades = new Map<string, string>();
 
-/** Where an http:// URL ends up, asked without anything secret; the https:// origin when that's all the redirect does. */
+/** Where an http:// URL ends up, asked without anything secret; the https:// origin when that's all the redirect does.
+ *  A browser only shows a redirect's target by following it, so this may pass other hosts, sending and reading nothing. */
 async function httpsUpgradeOf(url: URL, signal: RequestInit["signal"]): Promise<string | null> {
   if (url.protocol !== "http:") return null;
   const probe = await fetch(url.href, { method: "GET", redirect: "follow", credentials: "omit", signal }).catch(
@@ -81,6 +82,8 @@ function fetchUpgraded(target: URL, origin: string, init: RequestInit): Promise<
   upgraded.search = target.search;
   return fetchInstanceOnce(upgraded.href, init).catch((err: unknown) => {
     init.signal?.throwIfAborted();
+    // The next request asks the configured address again, in case the upgrade is gone.
+    httpsUpgrades.delete(target.origin);
     // Typically a connection made before Grab asked for the https:// origin as well: it may not reach it yet.
     if (err instanceof TypeError) {
       throw new Error(`Thingport redirects to ${origin}: connect Grab again so it may reach that address`);

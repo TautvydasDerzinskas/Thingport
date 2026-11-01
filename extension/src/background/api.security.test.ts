@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
-import { fetchInstance } from "./api";
+import { test, vi } from "vitest";
+import { apiCall, fetchInstance } from "./api";
 import { apiUrl, normalizeInstanceUrl } from "../shared/storage";
 
 test("instance redirects cannot replay a provider session", async () => {
@@ -31,6 +31,47 @@ test("instance redirects cannot replay a provider session", async () => {
     assert.equal(cancelled, true);
   } finally {
     globalThis.fetch = originalFetch;
+  }
+});
+
+test("apiCall sends a redirected request once, without replaying its token", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  let cancelled = false;
+  vi.stubGlobal("chrome", {
+    storage: {
+      local: {
+        get: async () => ({
+          instanceUrl: "https://thingport.example",
+          email: "user@example.test",
+          password: "secret",
+          token: "valid-token",
+          tokenExpiresAt: Date.now() + 60 * 60 * 1000,
+        }),
+      },
+    },
+  });
+  globalThis.fetch = async () => {
+    calls++;
+    return new Response(
+      new ReadableStream({
+        cancel() {
+          cancelled = true;
+        },
+      }),
+      { status: 307, headers: { Location: "https://other.example/receive" } },
+    );
+  };
+  try {
+    await assert.rejects(
+      apiCall("PATCH", "/settings/snapmaker-session", { token: "secret" }),
+      /redirected a credential-bearing request/,
+    );
+    assert.equal(calls, 1);
+    assert.equal(cancelled, true);
+  } finally {
+    globalThis.fetch = originalFetch;
+    vi.unstubAllGlobals();
   }
 });
 
@@ -90,6 +131,70 @@ test("follows a reverse proxy's http to https upgrade on the same host, found ou
       calls.map((c) => c.url),
       ["https://lan-upgrade.example/api/me"],
     );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+function fakeUpgradingInstance(upgrades: () => boolean, https: () => Promise<Response>) {
+  const sent: string[] = [];
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    if (init?.redirect === "follow") {
+      const probe = new Response(null, { status: 404 });
+      Object.defineProperties(probe, {
+        redirected: { value: true },
+        url: { value: url.replace("http://", "https://") },
+      });
+      return probe;
+    }
+    sent.push(url);
+    if (url.startsWith("https://")) return https();
+    return upgrades() ? ({ type: "opaqueredirect", status: 0 } as Response) : new Response("{}", { status: 200 });
+  };
+  return sent;
+}
+
+test("a failed upgraded request forgets the upgrade, so the next one asks the configured address again", async () => {
+  const originalFetch = globalThis.fetch;
+  let upgrades = true;
+  const sent = fakeUpgradingInstance(
+    () => upgrades,
+    () => Promise.reject(new TypeError("Failed to fetch")),
+  );
+  try {
+    await assert.rejects(fetchInstance("http://gone-upgrade.example/api/me", {}), /connect Grab again/);
+    upgrades = false;
+    sent.length = 0;
+    const res = await fetchInstance("http://gone-upgrade.example/api/me", {});
+    assert.equal(res.status, 200);
+    assert.deepEqual(sent, ["http://gone-upgrade.example/api/me"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("an aborted upgraded request keeps the upgrade: it says nothing about the https:// origin", async () => {
+  const originalFetch = globalThis.fetch;
+  const controller = new AbortController();
+  const reason = new DOMException("Request aborted", "AbortError");
+  let attempts = 0;
+  const sent = fakeUpgradingInstance(
+    () => true,
+    () => {
+      if (++attempts > 1) return Promise.resolve(new Response("{}", { status: 200 }));
+      controller.abort(reason);
+      return Promise.reject(reason);
+    },
+  );
+  try {
+    await assert.rejects(
+      fetchInstance("http://abort-keeps-upgrade.example/api/me", { signal: controller.signal }),
+      (err) => err === reason,
+    );
+    sent.length = 0;
+    await fetchInstance("http://abort-keeps-upgrade.example/api/me", {});
+    assert.deepEqual(sent, ["https://abort-keeps-upgrade.example/api/me"]);
   } finally {
     globalThis.fetch = originalFetch;
   }
