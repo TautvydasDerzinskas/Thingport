@@ -7,7 +7,7 @@ import { createLogger } from "../logger";
 import { HttpError } from "../utils/fileUtils";
 import { withStorageLock } from "../utils/storageLock";
 import { normalizeTags } from "../utils/tagNormalization";
-import { forgetAiDescription } from "./aiDescriptionService";
+import { FORGOTTEN_AI_DESCRIPTION } from "./aiDescriptionService";
 import { pruneDescriptionImages } from "./descriptionImageService";
 import { assetKindOf, assetPath, galleryImageFile, ownedAssetFiles, plateThumbFile, removeAsset } from "./modelAssets";
 import { pruneWhatModelsLeft } from "./printEditService";
@@ -140,7 +140,6 @@ export async function mergeModels(
     .flatMap((print) => print.previewImages)
     .toSorted((a, b) => Number(a.generated) - Number(b.generated));
 
-  let descriptionChanged = false;
   await withPicturesCopied(pictureCopies, () =>
     prisma.$transaction(
       async (tx) => {
@@ -166,7 +165,6 @@ export async function mergeModels(
         }
         const [keptNow, ...othersNow] = current;
         const notes = mergedNotes(keptNow, othersNow);
-        descriptionChanged = notes !== keptNow.notes;
         // A model whose first plate is a sliced print already has what a prepared file would be.
         const adoptedPrepared =
           keptNow.preparedFileId || keptNow.preparedMetadata !== null
@@ -175,10 +173,19 @@ export async function mergeModels(
 
         await tx.print.updateMany({ where: { id: { in: otherIds } }, data: { preparedFileId: null } });
 
-        let position = (primary.plates.at(-1)?.position ?? -1) + 1;
-        const names = new Set(primary.plates.map((plate) => plate.filename.toLowerCase()));
-        const instances = new Set(primary.plates.flatMap((plate) => plate.sourceInstanceId ?? []));
-        for (const plate of others.flatMap((other) => other.plates)) {
+        // Locked and read again too: renaming a file doesn't touch its model's row, and would otherwise be overwritten.
+        await tx.$queryRaw`SELECT id FROM "Plate" WHERE "printId" IN (${Prisma.join(everyoneIds)}) ORDER BY id FOR UPDATE`;
+        const plates = await tx.plate.findMany({
+          where: { printId: { in: everyoneIds } },
+          orderBy: { position: "asc" },
+        });
+        const platesOf = (printId: string) => plates.filter((plate) => plate.printId === printId);
+
+        const keptPlates = platesOf(primary.id);
+        let position = (keptPlates.at(-1)?.position ?? -1) + 1;
+        const names = new Set(keptPlates.map((plate) => plate.filename.toLowerCase()));
+        const instances = new Set(keptPlates.flatMap((plate) => plate.sourceInstanceId ?? []));
+        for (const plate of otherIds.flatMap((id) => platesOf(id))) {
           const filename = freePlateFilename(plate.filename, names);
           names.add(filename.toLowerCase());
           const instance =
@@ -240,6 +247,8 @@ export async function mergeModels(
             viewCount: current.reduce((sum, print) => sum + print.viewCount, 0),
             printCount: current.reduce((sum, print) => sum + print.printCount, 0),
             ...(adoptedPrepared ? { preparedFileId: adoptedPrepared } : {}),
+            // With the change itself, so a suggestion written from the old description can't outlive it.
+            ...(notes === keptNow.notes ? {} : FORGOTTEN_AI_DESCRIPTION),
           },
         });
         await tx.print.deleteMany({ where: { id: { in: otherIds } } });
@@ -259,11 +268,10 @@ export async function mergeModels(
     .findUnique({ where: { id: primary.id }, include: { plates: { orderBy: { position: "asc" } } } })
     .catch(didNot("read it back"));
   if (kept) {
-    // Before anything else can move the pictures it reads.
+    // Before the move below takes the pictures it reads.
     await leadWithAdoptedCover(primary, home, kept.plates[0], gallery[0]).catch(didNot("take on its new cover"));
     await relocatePrint(kept, kept.plates).catch(didNot("move its files where the storage structure puts them"));
   }
-  if (descriptionChanged) await forgetAiDescription(primary.id).catch(didNot("forget its AI description"));
   await pruneDescriptionImages(primary.id).catch(didNot("remove description images nothing uses"));
   await pruneWhatModelsLeft(userId, others).catch(didNot("tidy what the merged models left"));
   return { primary, merged: others };

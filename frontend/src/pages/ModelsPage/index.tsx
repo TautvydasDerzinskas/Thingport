@@ -71,7 +71,6 @@ export default function ModelsPage({
   const [items, setItems] = useState<Print[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const selection = useModelSelection(items);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -94,13 +93,9 @@ export default function ModelsPage({
 
   // Bumped when models leave the list here: a page asked for before that counted from where they were.
   const listDrops = useRef(0);
-  // Models gone from the list here move later ones up, so the next page starts that much earlier: it would skip them.
-  // Only those it holds, as a reload may already have taken them out.
   const dropFromList = (ids: string[]) => {
-    const gone = items.filter((item) => ids.includes(item.id)).length;
     listDrops.current += 1;
     setItems((prev) => prev.filter((item) => !ids.includes(item.id)));
-    setOffset((prev) => Math.max(0, prev - gone));
   };
 
   // Linking a model can bring a site into the sources it's filtered by, and one given another category or folder
@@ -222,13 +217,12 @@ export default function ModelsPage({
             generative: generative || undefined,
             hide_providers: hiddenProviders,
             order_by: sortMode,
-            limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
+            limit: background ? keepLoaded(PAGE_SIZE, items.length) : PAGE_SIZE,
             offset: 0,
           });
           if (run !== listRun.current) return;
         } while (drops !== listDrops.current);
         setItems(result.items);
-        setOffset(result.items.length);
         setHasMore(result.hasMore);
       } catch (err) {
         if (run !== listRun.current) return;
@@ -252,13 +246,13 @@ export default function ModelsPage({
         hide_providers: hiddenProviders,
         order_by: sortMode,
         limit: PAGE_SIZE,
-        offset,
+        // What's on screen, so models that left the list here don't make the next page skip any.
+        offset: items.length,
       });
       // A filter changed while this page was on its way: appending it would mix two lists together. Models leaving the
       // list shift it too, so that page is asked for again from the new place.
       if (run !== listRun.current || drops !== listDrops.current) return;
       setItems((prev) => [...prev, ...result.items]);
-      setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
       if (run !== listRun.current) return;

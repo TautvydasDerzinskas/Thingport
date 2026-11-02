@@ -435,13 +435,19 @@ export async function pruneEmptyStorageDirs(start: string): Promise<void> {
   }
 }
 
-/** Moves one file of a model; `save` records the new place, and the file goes back if that fails. */
-async function moveStored(oldPath: string, newPath: string, save: () => Promise<unknown>): Promise<boolean> {
-  return (await moveAllStored(async () => [[oldPath, newPath]], save)) > 0;
+/** Moves one file of a model; `save` records the new place, and the file goes back if that fails. `stored` is where its
+ *  record finds it now, read under the lock. */
+async function moveStored(
+  stored: () => Promise<string>,
+  newPath: string,
+  save: () => Promise<unknown>,
+): Promise<boolean> {
+  return (await moveAllStored(async () => [[await stored(), newPath]], save)) > 0;
 }
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. They're listed under the
- *  lock, so a list can't miss what a merge holding it is adding. */
+ *  lock, so a list can't miss what a merge holding it is adding, nor where a move ahead of it left them: the record
+ *  saved afterwards would then point at a place they never reached. */
 async function moveAllStored(
   listMoves: () => Promise<[string, string][]>,
   save: () => Promise<unknown>,
@@ -486,8 +492,13 @@ async function relocatePrintFiles(
     const rendered = renderModelPath(print, template, printValues, file.filename, null);
     const newRelative = samePath(file.storagePath, rendered) ? rendered : await freePrintFilePath(rendered, file.id);
     if (samePath(file.storagePath, newRelative)) continue;
-    const didMove = await moveStored(path.join(STORAGE, file.storagePath), path.join(STORAGE, newRelative), () =>
-      prisma.printFile.update({ where: { id: file.id }, data: { storagePath: newRelative } }),
+    const didMove = await moveStored(
+      async () => {
+        const { storagePath } = (await prisma.printFile.findUnique({ where: { id: file.id } })) ?? file;
+        return path.join(STORAGE, storagePath);
+      },
+      path.join(STORAGE, newRelative),
+      () => prisma.printFile.update({ where: { id: file.id }, data: { storagePath: newRelative } }),
     );
     if (didMove) moved += 1;
   }
@@ -539,11 +550,14 @@ async function relocateAssets(
     await prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } });
   } else if (!samePath(current, home)) {
     moved += await moveAllStored(
-      async () =>
-        (await ownedAssetFiles(current, await assetOwnerIds(print.id))).map((file): [string, string] => [
-          path.join(STORAGE, current, file),
+      async () => {
+        const now = await prisma.print.findUnique({ where: { id: print.id }, select: { assetsPath: true } });
+        const from = now?.assetsPath ?? current;
+        return (await ownedAssetFiles(from, await assetOwnerIds(print.id))).map((file): [string, string] => [
+          path.join(STORAGE, from, file),
           path.join(STORAGE, home, file),
-        ]),
+        ]);
+      },
       () => prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } }),
     );
   } else if (current !== home) {
@@ -583,8 +597,10 @@ export async function relocatePrint(
       }
       continue;
     }
-    const didMove = await moveStored(oldPath, newPath, () =>
-      prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),
+    const didMove = await moveStored(
+      async () => managedPlatePath((await prisma.plate.findUnique({ where: { id: plate.id } })) ?? plate),
+      newPath,
+      () => prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),
     );
     if (didMove) moved += 1;
   }

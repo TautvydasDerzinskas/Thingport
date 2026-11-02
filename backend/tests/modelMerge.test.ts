@@ -64,7 +64,12 @@ import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { assetTarget, galleryImageFile, plateRenderFile, plateThumbFile } from "../src/services/modelAssets";
 import { addPreviewImage } from "../src/services/previewImageService";
-import { ensureAssetHome, renderPlateStoragePath, saveThumbFromBytes } from "../src/services/printService";
+import {
+  ensureAssetHome,
+  relocatePrint,
+  renderPlateStoragePath,
+  saveThumbFromBytes,
+} from "../src/services/printService";
 import { withStorageLock } from "../src/utils/storageLock";
 
 const app = createApp();
@@ -273,17 +278,31 @@ describe("merging models", () => {
     expect((await prisma.print.findUniqueOrThrow({ where: { id: kept.id } })).notes).toBe("Only this one.");
   });
 
-  it("forgets an AI rewrite of the kept description once the description changes", async () => {
+  it("forgets an AI rewrite and suggestion of the kept description once the description changes", async () => {
     const kept = await makeModel({ notes: "Rewritten." });
     await prisma.print.update({
       where: { id: kept.id },
-      data: { aiDescriptionOriginal: "Original.", aiDescriptionAppliedAt: new Date() },
+      data: {
+        aiDescriptionOriginal: "Original.",
+        aiDescriptionAppliedAt: new Date(),
+        aiDescriptionSuggestion: { suggested: "Written from the old description." },
+      },
     });
     const other = await makeModel({ notes: "More." });
     await merge(kept.id, [other.id]);
     const after = await prisma.print.findUniqueOrThrow({ where: { id: kept.id } });
     expect(after.aiDescriptionOriginal).toBeNull();
     expect(after.aiDescriptionAppliedAt).toBeNull();
+    expect(after.aiDescriptionSuggestion).toBeNull();
+  });
+
+  it("keeps an AI rewrite of the kept description when the description stays as it was", async () => {
+    const kept = await makeModel({ notes: "Rewritten." });
+    await prisma.print.update({ where: { id: kept.id }, data: { aiDescriptionOriginal: "Original." } });
+    const other = await makeModel();
+    await merge(kept.id, [other.id]);
+    const after = await prisma.print.findUniqueOrThrow({ where: { id: kept.id } });
+    expect(after.aiDescriptionOriginal).toBe("Original.");
   });
 
   it("combines tags, collections, favourite and counts, and keeps the kept model's name and category", async () => {
@@ -485,6 +504,45 @@ describe("merging models", () => {
     expect(after.notes).toContain("Late.");
   });
 
+  it("keeps a rename made after it read them, and does without a file deleted since", async () => {
+    const kept = await makeModel({ files: ["kept.stl"] });
+    const other = await makeModel({ files: ["part.stl", "gone.stl"] });
+    stage.afterRead = async () => {
+      stage.afterRead = null;
+      await prisma.plate.update({ where: { id: other.plates[0].id }, data: { filename: "renamed.stl" } });
+      await prisma.plate.update({ where: { id: kept.plates[0].id }, data: { filename: "renamed.stl" } });
+      await prisma.plate.delete({ where: { id: other.plates[1].id } });
+    };
+
+    expect((await merge(kept.id, [other.id])).status).toBe(200);
+
+    const plates = await prisma.plate.findMany({ where: { printId: kept.id }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => plate.filename)).toEqual(["renamed.stl", "renamed (2).stl"]);
+  });
+
+  it("waits for a rename under way rather than overwriting it", async () => {
+    const kept = await makeModel();
+    const other = await makeModel({ files: ["part.stl"] });
+    let release = () => {};
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let holding = () => {};
+    const held = new Promise<void>((resolve) => (holding = resolve));
+    const renaming = prisma.$transaction(async (tx) => {
+      await tx.plate.update({ where: { id: other.plates[0].id }, data: { filename: "renamed.stl" } });
+      holding();
+      await released;
+    });
+    await held;
+    const merging = merge(kept.id, [other.id]).then((res) => res);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    release();
+    await renaming;
+
+    expect((await merging).status).toBe(200);
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: other.plates[0].id } })).filename).toBe("renamed.stl");
+  });
+
   it("refuses a model linked to a site after it read them, and leaves it", async () => {
     const kept = await makeModel();
     const other = await makeModel();
@@ -538,6 +596,37 @@ describe("merging models", () => {
     expect(fs.existsSync(assetTarget(assetsPath!, galleryImageFile(image!.id)))).toBe(true);
   });
 
+  it("leaves every file where its record finds it when two moves of one model overlap", async () => {
+    const [first, second] = [await makeCategory("category"), await makeCategory("category")];
+    const model = await makeModel();
+    const image = await addPreviewImage(model.id, ONE_PIXEL_PNG);
+    const storagePath = `merge-${stamp}-${modelNumber++}/notes.pdf`;
+    fs.mkdirSync(path.dirname(stored(storagePath)), { recursive: true });
+    fs.writeFileSync(stored(storagePath), "notes");
+    await prisma.printFile.create({
+      data: { printId: model.id, role: "SUPPORTING", filename: "notes.pdf", mime: "application/pdf", storagePath },
+    });
+    const read = await prisma.print.findUniqueOrThrow({ where: { id: model.id }, include: { plates: true } });
+    let release = () => {};
+    const released = new Promise<void>((resolve) => (release = resolve));
+    const holding = withStorageLock(() => released);
+    // Both read the model before either has moved anything, and both wait their turn at the lock.
+    const moves = [first, second].map((category) => relocatePrint({ ...read, categoryId: category.id }, read.plates));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    release();
+    await holding;
+    await Promise.all(moves);
+
+    const after = await prisma.print.findUniqueOrThrow({
+      where: { id: model.id },
+      include: { plates: true, files: true },
+    });
+    expect(fs.existsSync(stored(after.plates[0].storagePath))).toBe(true);
+    expect(fs.existsSync(stored(after.files[0].storagePath))).toBe(true);
+    expect(fs.existsSync(assetTarget(after.assetsPath!, galleryImageFile(image!.id)))).toBe(true);
+  });
+
   it("refuses a file added to the kept model after it read them", async () => {
     const kept = await makeModel();
     const other = await makeModel();
@@ -552,13 +641,14 @@ describe("merging models", () => {
   it("makes what's added during its transaction wait and fail, rather than be deleted having succeeded", async () => {
     const kept = await makeModel();
     const other = await makeModel();
-    // Holding one of its plates parks the merge at its first write, for as long as this takes.
+    const picture = await addPreviewImage(other.id, ONE_PIXEL_PNG);
+    // Holding one of its pictures parks the merge at its first write of one, for as long as this takes.
     let release = () => {};
     const released = new Promise<void>((resolve) => (release = resolve));
     let holding = () => {};
     const held = new Promise<void>((resolve) => (holding = resolve));
     const holder = prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "Plate" WHERE id = ${other.plates[0].id} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "PreviewImage" WHERE id = ${picture!.id} FOR UPDATE`;
       holding();
       await released;
     });

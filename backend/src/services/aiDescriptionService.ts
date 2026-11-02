@@ -385,11 +385,14 @@ export async function revertAiDescription(userId: string, printId: string): Prom
 }
 
 /** A description edited by hand makes a pending suggestion stale, and the kept original no longer the one to revert to. */
+export const FORGOTTEN_AI_DESCRIPTION = {
+  aiDescriptionSuggestion: Prisma.DbNull,
+  aiDescriptionOriginal: null,
+  aiDescriptionAppliedAt: null,
+} satisfies Prisma.PrintUpdateInput;
+
 export async function forgetAiDescription(printId: string): Promise<void> {
-  await prisma.print.update({
-    where: { id: printId },
-    data: { aiDescriptionSuggestion: Prisma.DbNull, aiDescriptionOriginal: null, aiDescriptionAppliedAt: null },
-  });
+  await prisma.print.update({ where: { id: printId }, data: FORGOTTEN_AI_DESCRIPTION });
 }
 
 export type DescriptionSuggestionOut = {
