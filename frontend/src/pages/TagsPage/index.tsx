@@ -87,6 +87,8 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   const [minCountChoice, setMinCountChoice] = useState(readMinCount);
   // Each change empties the grid and loads it again, so typing 10 shouldn't load the tags for 1 on the way.
   const minCount = useDebouncedValue(minCountChoice, 300);
+  // The number the tags in hand were loaded for.
+  const [loadedMinCount, setLoadedMinCount] = useState(minCountChoice);
   const [pageSize] = useState(pageSizeForScreen);
   // Bumped whenever the sort or filter changes, so a page still on its way for the old one is dropped.
   const generation = useRef(0);
@@ -131,7 +133,10 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
       } catch (err) {
         if (current === generation.current) handleError(err, t("models:errors.loadFailed"));
       } finally {
-        if (current === generation.current) setLoading(false);
+        if (current === generation.current) {
+          setLoading(false);
+          setLoadedMinCount(minCount);
+        }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,6 +266,8 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   ];
   const disabled = count === 0 || busy !== null;
   const bookmarkLabel = allBookmarked ? t("models:tags.unbookmarkTag") : t("models:tags.bookmarkTag");
+  // From the first keystroke, not the reload: tags for another number would break the filter just set.
+  const showSkeletons = loading || loadedMinCount !== minCountChoice;
 
   return (
     <Stack spacing={2}>
@@ -331,7 +338,7 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
         </Box>
       </Box>
 
-      {loading ? (
+      {showSkeletons ? (
         <Box sx={TILE_GRID}>
           <TagTileSkeletons count={12} />
         </Box>

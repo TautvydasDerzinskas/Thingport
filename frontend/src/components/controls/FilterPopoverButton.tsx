@@ -38,7 +38,9 @@ export default function FilterPopoverButton({ label, active, children }: Props) 
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { mt: 1, px: 2, py: 1.5, maxWidth: "calc(100vw - 32px)" } } }}
+        slotProps={{
+          paper: { role: "dialog", "aria-label": label, sx: { mt: 1, px: 2, py: 1.5, maxWidth: "calc(100vw - 32px)" } },
+        }}
       >
         {children}
       </Popover>
