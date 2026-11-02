@@ -42,6 +42,7 @@ function pageSizeForScreen(): number {
 }
 
 const tagKey = (tag: TagSummary) => tag.name;
+const NO_TAGS: TagSummary[] = [];
 
 type Busy = "bookmark" | "delete" | null;
 
@@ -96,7 +97,11 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   const [reloadKey, setReloadKey] = useState(0);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
-  const selection = useSelection(tags, tagKey);
+  // From the first keystroke, not the reload: tags for another number would break the filter just set.
+  const showSkeletons = loading || loadedMinCount !== minCountChoice;
+  // The hidden tags stay in hand until the reload, but nothing should act on them meanwhile.
+  const shownTags = showSkeletons ? NO_TAGS : tags;
+  const selection = useSelection(shownTags, tagKey);
   const { selected } = selection;
   const count = selected.length;
   const allBookmarked = count > 0 && selected.every((tag) => tag.bookmarked);
@@ -266,8 +271,6 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   ];
   const disabled = count === 0 || busy !== null;
   const bookmarkLabel = allBookmarked ? t("models:tags.unbookmarkTag") : t("models:tags.bookmarkTag");
-  // From the first keystroke, not the reload: tags for another number would break the filter just set.
-  const showSkeletons = loading || loadedMinCount !== minCountChoice;
 
   return (
     <Stack spacing={2}>
@@ -275,7 +278,7 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
         {anyTags && (
           <SelectionToolbar
             selection={selection}
-            total={tags.length}
+            total={shownTags.length}
             hasMore={hasMore}
             busy={busy !== null}
             labels={{
