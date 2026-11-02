@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
@@ -26,8 +27,10 @@ import { useSelection } from "../../hooks/useSelection";
 import { collectionDisplayName } from "../../utils/collectionDisplay";
 import { importProviderInfo } from "../../constants/importProviders";
 import CollectionCard from "./CollectionCard";
+import CollectionFiltersButton from "./CollectionFiltersButton";
 import CollectionFormModal from "./CollectionFormModal";
 import CollectionsActionsMenu from "./CollectionsActionsMenu";
+import { type CollectionType, collectionType, readHiddenTypes, saveHiddenTypes } from "./collectionTypes";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
@@ -55,12 +58,18 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
   const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("newest");
+  const [hiddenTypes, setHiddenTypes] = useState(readHiddenTypes);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
 
   usePageHeader({
     actions: <CollectionsActionsMenu onAddCollection={() => setFormOpen(true)} />,
   });
+
+  const changeHiddenTypes = (next: CollectionType[]) => {
+    setHiddenTypes(next);
+    saveHiddenTypes(next);
+  };
 
   const handleError = (err: unknown, message: string) => {
     if (err instanceof UnauthorizedError) {
@@ -93,13 +102,14 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
 
   // The built-in ones stay first; the server sends the rest newest first.
   const sorted = useMemo(() => {
-    const system = collections.filter((c) => c.system_key);
-    const own = collections.filter(isOwn);
+    const shown = collections.filter((c) => !hiddenTypes.includes(collectionType(c)));
+    const system = shown.filter((c) => c.system_key);
+    const own = shown.filter(isOwn);
     const byName = (a: Collection, b: Collection) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
     if (sortMode === "name") own.sort(byName);
     if (sortMode === "models") own.sort((a, b) => b.item_count - a.item_count || byName(a, b));
     return [...system, ...own];
-  }, [collections, sortMode]);
+  }, [collections, sortMode, hiddenTypes]);
 
   const selection = useSelection(sorted, collectionKey, isOwn);
   const { selected } = selection;
@@ -109,6 +119,8 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
   const createCollection = async (input: CollectionInput) => {
     await collectionsApi.create(input);
     await load();
+    // Making one is asking to see it, so the filters don't leave it hidden.
+    if (hiddenTypes.includes("user")) changeHiddenTypes(hiddenTypes.filter((type) => type !== "user"));
   };
 
   const handleCollectionUpdated = (updated: Collection) => {
@@ -204,7 +216,7 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
     { value: "name", label: t("models:tags.sortByName") },
     { value: "models", label: t("models:collections.sortByModels") },
   ];
-  const ownCount = collections.filter(isOwn).length;
+  const ownCount = sorted.filter(isOwn).length;
   const disabled = count === 0 || busy !== null;
   const bookmarkLabel = allBookmarked
     ? t("models:collections.unbookmarkCollection")
@@ -213,7 +225,8 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
   return (
     <Stack spacing={2}>
       <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, rowGap: 1 }}>
-        {ownCount > 0 && (
+        {/* While selecting, it stays when the filters hide what's selectable: it's the way out of select mode. */}
+        {(ownCount > 0 || selection.active) && (
           <SelectionToolbar
             selection={selection}
             total={ownCount}
@@ -271,8 +284,10 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
             />
           </SelectionToolbar>
         )}
-        <Box sx={{ ml: "auto" }}>
+        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
           <SortTabs value={sortMode} options={sortOptions} onChange={setSortMode} />
+          <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+          <CollectionFiltersButton hidden={hiddenTypes} onChange={changeHiddenTypes} />
         </Box>
       </Box>
 
@@ -280,7 +295,7 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
         <Box sx={cardGridSx(6)}>
           <CardSkeletons count={12} variant="collection" />
         </Box>
-      ) : collections.length ? (
+      ) : sorted.length ? (
         <Box sx={cardGridSx(6)}>
           {sorted.map((collection) => (
             <CollectionCard
@@ -298,6 +313,13 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
             />
           ))}
         </Box>
+      ) : collections.length ? (
+        <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
+          <Typography variant="body2">{t("models:collections.noneShown")}</Typography>
+          <Button size="small" onClick={() => changeHiddenTypes([])}>
+            {t("models:filters.clear")}
+          </Button>
+        </Stack>
       ) : (
         <Stack alignItems="center" spacing={1.5} sx={{ py: 8, color: "text.secondary" }}>
           <Typography variant="body2">{t("models:collections.empty")}</Typography>

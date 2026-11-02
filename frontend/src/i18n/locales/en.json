@@ -2050,7 +2050,10 @@
           "mcp_access_changed": "Changed the MCP access",
           "file_reuse_changed": "Changed how identical files are stored",
           "file_reuse_backfill_started": "Started checking stored files for identical content",
-          "custom_widgets_changed": "Changed which custom widgets are allowed"
+          "custom_widgets_changed": "Changed which custom widgets are allowed",
+          "tool_installed": "Tool installed",
+          "tool_uninstalled": "Tool uninstalled",
+          "tools_access_changed": "Changed access to tools"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -4076,6 +4079,12 @@
       "pageTitle": "Collections",
       "newCollection": "New Collection",
       "empty": "No collections yet.",
+      "noneShown": "No collections match the filters.",
+      "types": {
+        "system": "System collections",
+        "user": "User collections",
+        "tool": "Tools collections"
+      },
       "bookmarkCollection": "Bookmark collection",
       "unbookmarkCollection": "Remove bookmark",
       "bookmarkFailed": "Failed to update bookmark. Please try again.",
@@ -4219,8 +4228,9 @@
       "pageTitle": "Tags",
       "sortByName": "Name",
       "empty": "No tags yet.",
-      "hideRarelyUsed": "Hide tags used once",
-      "allHidden": "No tags with 2+ models. Turn off the filter above to see all tags.",
+      "minCount": "Hide tags with fewer models than",
+      "allHidden": "No tags with {{min}}+ models.",
+      "showAll": "Show all tags",
       "bookmarkTag": "Bookmark tag",
       "unbookmarkTag": "Remove bookmark",
       "deleteTag": "Delete tag",

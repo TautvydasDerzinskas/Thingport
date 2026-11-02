@@ -2077,7 +2077,10 @@
           "api_token_rest_scopes_changed": "Cambió los permisos de su token de API",
           "file_reuse_changed": "Cambió cómo se guardan los archivos idénticos",
           "file_reuse_backfill_started": "Empezó a comprobar si hay archivos guardados con contenido idéntico",
-          "custom_widgets_changed": "Cambió qué widgets personalizados se permiten"
+          "custom_widgets_changed": "Cambió qué widgets personalizados se permiten",
+          "tool_installed": "Herramienta instalada",
+          "tool_uninstalled": "Herramienta desinstalada",
+          "tools_access_changed": "Cambió el acceso a las herramientas"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -4112,6 +4115,12 @@
       "pageTitle": "Colecciones",
       "newCollection": "Nueva colección",
       "empty": "Aún no hay colecciones.",
+      "noneShown": "Ninguna colección coincide con los filtros.",
+      "types": {
+        "system": "Colecciones del sistema",
+        "user": "Colecciones del usuario",
+        "tool": "Colecciones de herramientas"
+      },
       "bookmarkCollection": "Marcar colección",
       "unbookmarkCollection": "Quitar marcador",
       "bookmarkFailed": "No se pudo actualizar el marcador. Inténtalo de nuevo.",
@@ -4255,8 +4264,9 @@
       "pageTitle": "Etiquetas",
       "sortByName": "Nombre",
       "empty": "Aún no hay etiquetas.",
-      "hideRarelyUsed": "Ocultar etiquetas usadas una sola vez",
-      "allHidden": "No hay etiquetas con 2 o más modelos. Desactiva el filtro de arriba para ver todas las etiquetas.",
+      "minCount": "Ocultar etiquetas con menos modelos que",
+      "allHidden": "No hay etiquetas con {{min}} o más modelos.",
+      "showAll": "Mostrar todas las etiquetas",
       "bookmarkTag": "Marcar etiqueta",
       "unbookmarkTag": "Quitar marcador",
       "deleteTag": "Eliminar etiqueta",

@@ -2077,7 +2077,10 @@
           "api_token_rest_scopes_changed": "A modifié les autorisations de son jeton d'API",
           "file_reuse_changed": "A modifié le stockage des fichiers identiques",
           "file_reuse_backfill_started": "A commencé à vérifier les fichiers stockés au contenu identique",
-          "custom_widgets_changed": "A modifié les widgets personnalisés autorisés"
+          "custom_widgets_changed": "A modifié les widgets personnalisés autorisés",
+          "tool_installed": "Outil installé",
+          "tool_uninstalled": "Outil désinstallé",
+          "tools_access_changed": "A modifié l’accès aux outils"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -4125,6 +4128,12 @@
       "pageTitle": "Collections",
       "newCollection": "Nouvelle collection",
       "empty": "Aucune collection pour le moment.",
+      "noneShown": "Aucune collection ne correspond aux filtres.",
+      "types": {
+        "system": "Collections système",
+        "user": "Collections de l’utilisateur",
+        "tool": "Collections des outils"
+      },
       "bookmarkCollection": "Ajouter la collection aux favoris",
       "unbookmarkCollection": "Retirer des favoris",
       "bookmarkFailed": "Impossible de mettre à jour le favori. Veuillez réessayer.",
@@ -4268,8 +4277,9 @@
       "pageTitle": "Étiquettes",
       "sortByName": "Nom",
       "empty": "Aucune étiquette pour le moment.",
-      "hideRarelyUsed": "Masquer les étiquettes utilisées une seule fois",
-      "allHidden": "Aucune étiquette avec 2 modèles ou plus. Désactivez le filtre ci-dessus pour afficher toutes les étiquettes.",
+      "minCount": "Masquer les étiquettes ayant moins de modèles que",
+      "allHidden": "Aucune étiquette avec {{min}} modèles ou plus.",
+      "showAll": "Afficher toutes les étiquettes",
       "bookmarkTag": "Ajouter l’étiquette aux favoris",
       "unbookmarkTag": "Retirer des favoris",
       "deleteTag": "Supprimer l’étiquette",

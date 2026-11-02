@@ -42,6 +42,10 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   file_reuse_changed: "info",
   file_reuse_backfill_started: "info",
   custom_widgets_changed: "warning",
+  tool_installed: "info",
+  // Takes the data it kept for everyone with it.
+  tool_uninstalled: "error",
+  tools_access_changed: "warning",
   user_invited: "info",
   authors_linked: "success",
   descriptions_refetched: "warning",
