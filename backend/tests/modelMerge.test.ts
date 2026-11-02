@@ -31,8 +31,9 @@ vi.mock("../src/services/printService", async (original) => {
   return {
     ...actual,
     ensureAssetHome: async (printId: string) => {
+      const home = await actual.ensureAssetHome(printId);
       await stage.afterRead?.();
-      return actual.ensureAssetHome(printId);
+      return home;
     },
     freePlateFilename: (...args: Parameters<typeof actual.freePlateFilename>) => {
       stage.movingPlates?.();
@@ -64,6 +65,7 @@ import { prisma } from "../src/db";
 import { assetTarget, galleryImageFile, plateRenderFile, plateThumbFile } from "../src/services/modelAssets";
 import { addPreviewImage } from "../src/services/previewImageService";
 import { ensureAssetHome, renderPlateStoragePath, saveThumbFromBytes } from "../src/services/printService";
+import { withStorageLock } from "../src/utils/storageLock";
 
 const app = createApp();
 const stamp = Date.now();
@@ -458,6 +460,82 @@ describe("merging models", () => {
 
     expect((await merge(kept.id, [other.id])).status).toBe(200);
     expect(await prisma.print.count({ where: { id: other.id } })).toBe(0);
+  });
+
+  it("counts what changed after it read them, rather than overwriting it", async () => {
+    const kept = await makeModel({ tags: ["own"], notes: "Mine." });
+    const other = await makeModel();
+    const favoritedAt = new Date("2026-02-03T00:00:00Z");
+    stage.afterRead = async () => {
+      stage.afterRead = null;
+      await prisma.print.update({
+        where: { id: other.id },
+        data: { viewCount: 5, printCount: 2, favoritedAt, tags: ["late"], notes: "Late." },
+      });
+      await prisma.print.update({ where: { id: kept.id }, data: { viewCount: 1, tags: ["own", "edited"] } });
+    };
+
+    expect((await merge(kept.id, [other.id])).status).toBe(200);
+
+    const after = await prisma.print.findUniqueOrThrow({ where: { id: kept.id } });
+    expect(after.viewCount).toBe(6);
+    expect(after.printCount).toBe(2);
+    expect(after.favoritedAt).toEqual(favoritedAt);
+    expect(after.tags.toSorted()).toEqual(["Edited", "Late", "Own"]);
+    expect(after.notes).toContain("Late.");
+  });
+
+  it("refuses a model linked to a site after it read them, and leaves it", async () => {
+    const kept = await makeModel();
+    const other = await makeModel();
+    stage.afterRead = async () => {
+      stage.afterRead = null;
+      await prisma.print.update({
+        where: { id: other.id },
+        data: { sourceProvider: "makerworld", sourceExternalId: `linked-${stamp}` },
+      });
+    };
+    expect((await merge(kept.id, [other.id])).status).toBe(409);
+    expect(await prisma.print.count({ where: { id: other.id } })).toBe(1);
+    expect(await prisma.plate.count({ where: { id: other.plates[0].id, printId: other.id } })).toBe(1);
+  });
+
+  it("refuses when the kept model's pictures moved after it chose where to copy to, and removes the copies", async () => {
+    const kept = await makeModel();
+    const other = await makeModel();
+    const image = await addPreviewImage(other.id, ONE_PIXEL_PNG);
+    const picture = assetTarget(other.assetsPath, galleryImageFile(image!.id));
+    const copy = assetTarget(kept.assetsPath, galleryImageFile(image!.id));
+    stage.afterRead = async () => {
+      stage.afterRead = null;
+      await prisma.print.update({ where: { id: kept.id }, data: { assetsPath: `moved-${stamp}/${kept.id}` } });
+    };
+
+    expect((await merge(kept.id, [other.id])).status).toBe(409);
+
+    expect(fs.existsSync(picture)).toBe(true);
+    expect(fs.existsSync(copy)).toBe(false);
+    expect(await prisma.previewImage.count({ where: { id: image!.id, printId: other.id } })).toBe(1);
+  });
+
+  it("takes along a picture that arrived while its pictures were waiting to move", async () => {
+    const category = await makeCategory("category");
+    const model = await makeModel({ files: [] });
+    let release = () => {};
+    const released = new Promise<void>((resolve) => (release = resolve));
+    // As a merge copying into this folder holds it.
+    const holding = withStorageLock(() => released);
+    const assigning = assign([model.id], category.id).then((res) => res);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const image = await addPreviewImage(model.id, ONE_PIXEL_PNG);
+
+    release();
+    await holding;
+
+    expect((await assigning).status).toBe(200);
+    const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: model.id } });
+    expect(assetsPath).not.toBe(model.assetsPath);
+    expect(fs.existsSync(assetTarget(assetsPath!, galleryImageFile(image!.id)))).toBe(true);
   });
 
   it("refuses a file added to the kept model after it read them", async () => {

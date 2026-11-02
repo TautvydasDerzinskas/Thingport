@@ -437,14 +437,18 @@ export async function pruneEmptyStorageDirs(start: string): Promise<void> {
 
 /** Moves one file of a model; `save` records the new place, and the file goes back if that fails. */
 async function moveStored(oldPath: string, newPath: string, save: () => Promise<unknown>): Promise<boolean> {
-  return (await moveAllStored([[oldPath, newPath]], save)) > 0;
+  return (await moveAllStored(async () => [[oldPath, newPath]], save)) > 0;
 }
 
-/** Moves files that one record finds, as moveStored; returns how many were there to move. */
-async function moveAllStored(moves: [string, string][], save: () => Promise<unknown>): Promise<number> {
+/** Moves files that one record finds, as moveStored; returns how many were there to move. They're listed under the
+ *  lock, so a list can't miss what a merge holding it is adding. */
+async function moveAllStored(
+  listMoves: () => Promise<[string, string][]>,
+  save: () => Promise<unknown>,
+): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
-    const present = moves.filter(([oldPath]) => fsSync.existsSync(oldPath));
+    const present = (await listMoves()).filter(([oldPath]) => fsSync.existsSync(oldPath));
     const done: [string, string][] = [];
     try {
       for (const [oldPath, newPath] of present) {
@@ -534,9 +538,12 @@ async function relocateAssets(
     // Saved before anything moves, so a picture moved below is found even if the move stops part-way.
     await prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } });
   } else if (!samePath(current, home)) {
-    const owned = await ownedAssetFiles(current, await assetOwnerIds(print.id));
     moved += await moveAllStored(
-      owned.map((file) => [path.join(STORAGE, current, file), path.join(STORAGE, home, file)]),
+      async () =>
+        (await ownedAssetFiles(current, await assetOwnerIds(print.id))).map((file): [string, string] => [
+          path.join(STORAGE, current, file),
+          path.join(STORAGE, home, file),
+        ]),
       () => prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } }),
     );
   } else if (current !== home) {

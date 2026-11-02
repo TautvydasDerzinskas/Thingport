@@ -4,7 +4,7 @@ import { BULK_LIMIT, printsApi } from "./prints";
 
 /** Answers each batch in turn; a model in `prints` went through, a status is that batch failing. */
 function answerBatches(...answers: (number | { prints: { id: string }[]; skipped?: number; failed?: number })[]) {
-  const answer = vi.fn<() => Promise<Response>>(() => {
+  const answer = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(() => {
     const next = answers.shift();
     return Promise.resolve(
       typeof next === "number"
@@ -32,7 +32,8 @@ describe("printsApi.bulkAssignCategory", () => {
   it("adds up its batches", async () => {
     const fetched = answerBatches({ prints: [{ id: "a" }], skipped: 1 }, { prints: [{ id: "b" }], failed: 1 });
     const result = await printsApi.bulkAssignCategory(ids, "category");
-    expect(fetched).toHaveBeenCalledTimes(2);
+    const sent = fetched.mock.calls.map(([, init]) => JSON.parse(String(init.body)).print_ids);
+    expect(sent).toEqual([ids.slice(0, BULK_LIMIT), ids.slice(BULK_LIMIT)]);
     expect(result.prints.map((print) => print.id)).toEqual(["a", "b"]);
     expect(result.skipped).toBe(1);
     expect(result.failed).toBe(1);

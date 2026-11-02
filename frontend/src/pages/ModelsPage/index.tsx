@@ -212,15 +212,21 @@ export default function ModelsPage({
     if (!background) setLoading(true);
     (async () => {
       try {
-        const result = await printsApi.list({
-          category_id: categoryIdFilter,
-          generative: generative || undefined,
-          hide_providers: hiddenProviders,
-          order_by: sortMode,
-          limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
-          offset: 0,
-        });
-        if (run !== listRun.current) return;
+        let result: Awaited<ReturnType<typeof printsApi.list>>;
+        let drops: number;
+        // Asked again if models left the list while this was on its way, as it may still hold them.
+        do {
+          drops = listDrops.current;
+          result = await printsApi.list({
+            category_id: categoryIdFilter,
+            generative: generative || undefined,
+            hide_providers: hiddenProviders,
+            order_by: sortMode,
+            limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
+            offset: 0,
+          });
+          if (run !== listRun.current) return;
+        } while (drops !== listDrops.current);
         setItems(result.items);
         setOffset(result.items.length);
         setHasMore(result.hasMore);
@@ -448,7 +454,7 @@ export default function ModelsPage({
             <Box sx={cardGridSx(5)}>
               <CardSkeletons count={10} />
             </Box>
-          ) : items.length ? (
+          ) : items.length || hasMore ? (
             <Stack spacing={2}>
               <Box sx={cardGridSx(5)}>
                 {items.map((item) => (
@@ -458,7 +464,7 @@ export default function ModelsPage({
                     theme={theme}
                     previewMode={previewMode}
                     onDeleted={(deletedId) => {
-                      setItems((prev) => prev.filter((i) => i.id !== deletedId));
+                      dropFromList([deletedId]);
                       refreshSources();
                     }}
                     onFavoriteChange={(updated) =>

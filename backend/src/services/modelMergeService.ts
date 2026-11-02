@@ -135,17 +135,12 @@ export async function mergeModels(
     }
   }
 
-  const notes = mergedNotes(primary, others);
-  // A model whose first plate is a sliced print already has what a prepared file would be.
-  const adoptedPrepared =
-    primary.preparedFileId || primary.preparedMetadata !== null
-      ? null
-      : (others.find((other) => other.preparedFileId)?.preparedFileId ?? null);
   // Stable: each model's own order stays within the real pictures, and within the renders.
   const gallery = everyone
     .flatMap((print) => print.previewImages)
     .toSorted((a, b) => Number(a.generated) - Number(b.generated));
 
+  let descriptionChanged = false;
   await withPicturesCopied(pictureCopies, () =>
     prisma.$transaction(
       async (tx) => {
@@ -157,7 +152,26 @@ export async function mergeModels(
           (await tx.plate.count({ where: unread })) +
           (await tx.previewImage.count({ where: unread })) +
           (await tx.descriptionImage.count({ where: unread }));
-        if (added) throw new HttpError(409, "These models changed while they were being merged. Please try again.");
+        // Read again, as what's written below would overwrite any change since. A model that's no longer an upload
+        // can't be merged, and one whose pictures moved has them somewhere other than where they were copied.
+        const rows = await tx.print.findMany({ where: { id: { in: everyoneIds } } });
+        const current = everyone.flatMap((print) => rows.find((row) => row.id === print.id) ?? []);
+        const changed =
+          current.length !== everyone.length ||
+          current.some(
+            (row, index) => !isOwnUpload(row) || row.assetsPath !== (index ? everyone[index].assetsPath : home),
+          );
+        if (added || changed) {
+          throw new HttpError(409, "These models changed while they were being merged. Please try again.");
+        }
+        const [keptNow, ...othersNow] = current;
+        const notes = mergedNotes(keptNow, othersNow);
+        descriptionChanged = notes !== keptNow.notes;
+        // A model whose first plate is a sliced print already has what a prepared file would be.
+        const adoptedPrepared =
+          keptNow.preparedFileId || keptNow.preparedMetadata !== null
+            ? null
+            : (othersNow.find((other) => other.preparedFileId)?.preparedFileId ?? null);
 
         await tx.print.updateMany({ where: { id: { in: otherIds } }, data: { preparedFileId: null } });
 
@@ -183,7 +197,7 @@ export async function mergeModels(
         }
 
         await tx.printFile.updateMany({ where: { printId: { in: otherIds } }, data: { printId: primary.id } });
-        const demoted = others.flatMap((other) =>
+        const demoted = othersNow.flatMap((other) =>
           other.preparedFileId && other.preparedFileId !== adoptedPrepared ? [other.preparedFileId] : [],
         );
         await tx.printFile.updateMany({ where: { id: { in: demoted } }, data: { role: "SUPPORTING" } });
@@ -214,17 +228,17 @@ export async function mergeModels(
           skipDuplicates: true,
         });
 
-        const viewed = everyone.flatMap((print) => print.lastViewedAt ?? []);
+        const viewed = current.flatMap((print) => print.lastViewedAt ?? []);
         await tx.print.update({
           where: { id: primary.id },
           data: {
             notes,
-            tags: normalizeTags(everyone.flatMap((print) => print.tags)),
-            creator: everyone.find((print) => print.creator)?.creator ?? null,
-            favoritedAt: everyone.find((print) => print.favoritedAt)?.favoritedAt ?? null,
+            tags: normalizeTags(current.flatMap((print) => print.tags)),
+            creator: current.find((print) => print.creator)?.creator ?? null,
+            favoritedAt: current.find((print) => print.favoritedAt)?.favoritedAt ?? null,
             lastViewedAt: viewed.length ? new Date(Math.max(...viewed.map((date) => date.getTime()))) : null,
-            viewCount: everyone.reduce((sum, print) => sum + print.viewCount, 0),
-            printCount: everyone.reduce((sum, print) => sum + print.printCount, 0),
+            viewCount: current.reduce((sum, print) => sum + print.viewCount, 0),
+            printCount: current.reduce((sum, print) => sum + print.printCount, 0),
             ...(adoptedPrepared ? { preparedFileId: adoptedPrepared } : {}),
           },
         });
@@ -249,7 +263,7 @@ export async function mergeModels(
     await leadWithAdoptedCover(primary, home, kept.plates[0], gallery[0]).catch(didNot("take on its new cover"));
     await relocatePrint(kept, kept.plates).catch(didNot("move its files where the storage structure puts them"));
   }
-  if (notes !== primary.notes) await forgetAiDescription(primary.id).catch(didNot("forget its AI description"));
+  if (descriptionChanged) await forgetAiDescription(primary.id).catch(didNot("forget its AI description"));
   await pruneDescriptionImages(primary.id).catch(didNot("remove description images nothing uses"));
   await pruneWhatModelsLeft(userId, others).catch(didNot("tidy what the merged models left"));
   return { primary, merged: others };
