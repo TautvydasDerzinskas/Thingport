@@ -149,10 +149,14 @@ function parseJsonSettings(text: string): Settings {
 function parseIniSettings(text: string): Settings {
   const settings: Settings = new Map();
   for (const line of text.split(/\r?\n/)) {
-    const match = /^\s*;?\s*([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
-    if (!match) continue;
-    const key = match[1].toLowerCase();
-    if (!settings.has(key)) settings.set(key, match[2]);
+    // Split at the first `=` instead of one regex over the whole line, so a long line costs one scan.
+    const eq = line.indexOf("=");
+    if (eq < 0) continue;
+    let key = line.slice(0, eq).trim();
+    if (key.startsWith(";")) key = key.slice(1).trim();
+    if (!/^[A-Za-z0-9_]+$/.test(key)) continue;
+    key = key.toLowerCase();
+    if (!settings.has(key)) settings.set(key, line.slice(eq + 1).trim());
   }
   return settings;
 }
@@ -160,10 +164,43 @@ function parseIniSettings(text: string): Settings {
 function parseAttributes(tag: string): Map<string, string> {
   const attributes = new Map<string, string>();
   // The name must follow whitespace, so a long tag without `=` is scanned in linear time.
-  for (const m of tag.matchAll(/\s([A-Za-z_:][\w:.-]*)\s*=\s*"([^"]*)"/g)) {
-    attributes.set(m[1].toLowerCase(), decodeEntities(m[2]));
+  for (const m of tag.matchAll(/\s([A-Za-z_:][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+    attributes.set(m[1].toLowerCase(), decodeEntities(m[2] ?? m[3]));
   }
   return attributes;
+}
+
+/** The start tags `<tag ..>` of a text. `[^<>]` keeps a tag that never ends from being rescanned from every `<`. */
+function startTags(text: string, tag: string): IterableIterator<RegExpMatchArray> {
+  return text.matchAll(new RegExp(`<${tag}\\b[^<>]{0,4096}>`, "gi"));
+}
+
+/** The text between each `<tag ..>` and its `</tag>`. Stops at the first tag without an end: none after it has one. */
+function elementBodies(text: string, tag: string): string[] {
+  const open = new RegExp(`<${tag}\\b[^<>]{0,4096}>`, "gi");
+  const close = new RegExp(`</${tag}\\s*>`, "gi");
+  const bodies: string[] = [];
+  for (let start = open.exec(text); start; start = open.exec(text)) {
+    close.lastIndex = open.lastIndex;
+    const end = close.exec(text);
+    if (!end) break;
+    bodies.push(text.slice(open.lastIndex, end.index));
+    open.lastIndex = close.lastIndex;
+  }
+  return bodies;
+}
+
+/** `<metadata name="ProfileTitle">..</metadata>`, whatever the attribute order or quotes. */
+function findProfileTitle(modelText: string): string | null {
+  const close = /<\/metadata\s*>/gi;
+  for (const start of startTags(modelText, "metadata")) {
+    if (start[0].endsWith("/>") || parseAttributes(start[0]).get("name")?.toLowerCase() !== "profiletitle") continue;
+    const bodyStart = (start.index ?? 0) + start[0].length;
+    close.lastIndex = bodyStart;
+    const end = close.exec(modelText);
+    return end ? cleanString(decodeEntities(modelText.slice(bodyStart, end.index))) : null;
+  }
+  return null;
 }
 
 type SliceInfo = {
@@ -180,7 +217,7 @@ function parseSliceInfo(text: string): SliceInfo {
   let seconds = 0;
   let weight = 0;
   const other = new Map<string, string>();
-  for (const m of text.matchAll(/<metadata\b[^>]{0,4096}>/gi)) {
+  for (const m of startTags(text, "metadata")) {
     const attributes = parseAttributes(m[0]);
     const key = attributes.get("key")?.toLowerCase();
     const value = attributes.get("value");
@@ -191,10 +228,10 @@ function parseSliceInfo(text: string): SliceInfo {
   }
   const plateStats: PlateStat[] = [];
   let position = 0;
-  for (const block of text.matchAll(/<plate\b[^>]{0,4096}>([\s\S]*?)<\/plate>/gi)) {
+  for (const block of elementBodies(text, "plate")) {
     position += 1;
     const values = new Map<string, string>();
-    for (const m of block[1].matchAll(/<metadata\b[^>]{0,4096}>/gi)) {
+    for (const m of startTags(block, "metadata")) {
       const attributes = parseAttributes(m[0]);
       const key = attributes.get("key")?.toLowerCase();
       const value = attributes.get("value");
@@ -210,7 +247,7 @@ function parseSliceInfo(text: string): SliceInfo {
     });
   }
   const materials: string[] = [];
-  for (const m of text.matchAll(/<filament\b[^>]{0,4096}>/gi)) {
+  for (const m of startTags(text, "filament")) {
     const type = cleanString(parseAttributes(m[0]).get("type"));
     if (type) materials.push(type);
   }
@@ -266,8 +303,7 @@ export async function readPlateProfile(filePath: string): Promise<PlateProfile> 
 
   const modelText = await readText(MODEL_ENTRY, true);
   if (modelText) {
-    const match = /<metadata\s+name="ProfileTitle"[^>]*>([\s\S]*?)<\/metadata>/i.exec(modelText);
-    if (match) profile.title = cleanString(decodeEntities(match[1]));
+    profile.title = findProfileTitle(modelText);
   }
 
   const sources: Settings[] = [];

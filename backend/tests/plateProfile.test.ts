@@ -178,6 +178,46 @@ describe("readPlateProfile", () => {
     expect(profile.weight_g).toBe(3);
   });
 
+  it("finds ProfileTitle whatever the attribute order or quotes", async () => {
+    const file = await write3mf({
+      "3D/3dmodel.model": `<model><metadata type="x" name='ProfileTitle'>Single quoted</metadata></model>`,
+    });
+    expect((await readPlateProfile(file)).title).toBe("Single quoted");
+  });
+
+  describe("hostile input stays fast", () => {
+    // A 3MF comes from the internet; each shape below made one regex rescan the rest of the file from every start.
+    const BIG = 900_000;
+    const timed = async (files: Record<string, string>) => {
+      const file = await write3mf(files);
+      const start = Date.now();
+      const profile = await readPlateProfile(file);
+      expect(Date.now() - start).toBeLessThan(100);
+      return profile;
+    };
+
+    it("a settings line with endless whitespace", async () => {
+      const profile = await timed({
+        "Metadata/Slic3r_PE.config": `printer_model = X\nk =${" ".repeat(BIG)}x`,
+      });
+      expect(profile.printer).toBe("X");
+    });
+
+    it("<plate> tags that never end", async () => {
+      const profile = await timed({
+        "Metadata/slice_info.config": `<config>${"<plate>".repeat(BIG / 7)}</config>`,
+      });
+      expect(profile.plate_stats).toEqual([]);
+    });
+
+    it("a ProfileTitle that never ends", async () => {
+      const profile = await timed({
+        "3D/3dmodel.model": `<model>${'<metadata name="ProfileTitle">'.repeat(BIG / 60)}</model>`,
+      });
+      expect(profile.title).toBeNull();
+    });
+  });
+
   it("prefers the filaments used in slice_info over the project's slots", async () => {
     const file = await write3mf({
       "Metadata/project_settings.config": JSON.stringify({ filament_type: ["PLA", "PETG", "ABS", "TPU"] }),
