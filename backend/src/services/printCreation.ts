@@ -210,6 +210,8 @@ async function createPlateAtPosition(
   }
 
   await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
+  // Reloaded: reading the 3MF profile stored it on the row after it was created.
+  record = (await prisma.plate.findUnique({ where: { id: record.id } })) ?? record;
   return { record, effectivePath };
 }
 
@@ -401,12 +403,21 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
 }
 
 /** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
+function isThreeMf(filename: string): boolean {
+  return path.extname(filename).toLowerCase() === ".3mf";
+}
+
 export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
   const plate = await prisma.plate.findUnique({ where: { id: plateId } });
   if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
   const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id);
   if (nextFilename !== plate.filename) {
-    await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
+    // A file that is no longer a .3mf keeps no slicer profile read from the old one.
+    const dropsProfile = isThreeMf(plate.filename) && !isThreeMf(nextFilename);
+    await prisma.plate.update({
+      where: { id: plate.id },
+      data: { filename: nextFilename, ...(dropsProfile && { profileMeta: Prisma.DbNull }) },
+    });
     await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
     if (plate.position === 0) await refreshAutoPreparedMetadata(print.id);
   }
