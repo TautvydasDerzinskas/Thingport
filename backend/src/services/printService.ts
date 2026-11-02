@@ -338,6 +338,11 @@ function normalizeName(name: string): string {
   return name.trim().toLowerCase();
 }
 
+/** Neither imported nor a tool's: what merging and bulk assigning a category work on. */
+export function isOwnUpload(print: Pick<Print, "sourceProvider" | "toolId">): boolean {
+  return !print.sourceProvider && !print.toolId;
+}
+
 /** Throws 409 if `requested` is already taken in this category (for this user). Used for
  * explicit renames. */
 export async function uniqueModelName(
@@ -397,7 +402,11 @@ export async function availablePlateFilename(
     where: { printId, ...(excludePlateId ? { id: { not: excludePlateId } } : {}) },
     select: { filename: true },
   });
-  const taken = new Set(siblings.map((p) => p.filename.toLowerCase()));
+  return freePlateFilename(desiredFilename, new Set(siblings.map((p) => p.filename.toLowerCase())));
+}
+
+/** `desiredFilename`, or "name (2).ext" and on where it's in `taken`, which holds lowercased names. */
+export function freePlateFilename(desiredFilename: string, taken: ReadonlySet<string>): string {
   if (!taken.has(desiredFilename.toLowerCase())) return desiredFilename;
   const ext = path.extname(desiredFilename);
   const stem = path.basename(desiredFilename, ext);
@@ -426,16 +435,35 @@ export async function pruneEmptyStorageDirs(start: string): Promise<void> {
   }
 }
 
-/** Moves one file of a model; `save` records the new place, and the file goes back if that fails. */
-async function moveStored(oldPath: string, newPath: string, save: () => Promise<unknown>): Promise<boolean> {
-  return (await moveAllStored([[oldPath, newPath]], save)) > 0;
+/** Moves one file of a model; `save` records the new place, and the file goes back if that fails. `stored` is where its
+ *  record finds it now, read under the lock. */
+async function moveStored(
+  stored: () => Promise<string>,
+  newPath: string,
+  save: () => Promise<unknown>,
+): Promise<boolean> {
+  const listMove = async (): Promise<[string, string][]> => {
+    const oldPath = await stored();
+    // The place was free when it was picked, so only another move can have filled it since: renaming now would destroy
+    // that file. Asked again, this one sees the place is taken and goes elsewhere.
+    if (oldPath !== newPath && fsSync.existsSync(newPath)) {
+      throw new HttpError(409, `Storage path already exists: ${path.relative(STORAGE, newPath)}`);
+    }
+    return [[oldPath, newPath]];
+  };
+  return (await moveAllStored(listMove, save)) > 0;
 }
 
-/** Moves files that one record finds, as moveStored; returns how many were there to move. */
-async function moveAllStored(moves: [string, string][], save: () => Promise<unknown>): Promise<number> {
+/** Moves files that one record finds, as moveStored; returns how many were there to move. They're listed under the
+ *  lock, so a list can't miss what a merge holding it is adding, nor where a move ahead of it left them: the record
+ *  saved afterwards would then point at a place they never reached. */
+async function moveAllStored(
+  listMoves: () => Promise<[string, string][]>,
+  save: () => Promise<unknown>,
+): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
-    const present = moves.filter(([oldPath]) => fsSync.existsSync(oldPath));
+    const present = (await listMoves()).filter(([oldPath]) => fsSync.existsSync(oldPath));
     const done: [string, string][] = [];
     try {
       for (const [oldPath, newPath] of present) {
@@ -473,8 +501,13 @@ async function relocatePrintFiles(
     const rendered = renderModelPath(print, template, printValues, file.filename, null);
     const newRelative = samePath(file.storagePath, rendered) ? rendered : await freePrintFilePath(rendered, file.id);
     if (samePath(file.storagePath, newRelative)) continue;
-    const didMove = await moveStored(path.join(STORAGE, file.storagePath), path.join(STORAGE, newRelative), () =>
-      prisma.printFile.update({ where: { id: file.id }, data: { storagePath: newRelative } }),
+    const didMove = await moveStored(
+      async () => {
+        const { storagePath } = (await prisma.printFile.findUnique({ where: { id: file.id } })) ?? file;
+        return path.join(STORAGE, storagePath);
+      },
+      path.join(STORAGE, newRelative),
+      () => prisma.printFile.update({ where: { id: file.id }, data: { storagePath: newRelative } }),
     );
     if (didMove) moved += 1;
   }
@@ -525,9 +558,15 @@ async function relocateAssets(
     // Saved before anything moves, so a picture moved below is found even if the move stops part-way.
     await prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } });
   } else if (!samePath(current, home)) {
-    const owned = await ownedAssetFiles(current, await assetOwnerIds(print.id));
     moved += await moveAllStored(
-      owned.map((file) => [path.join(STORAGE, current, file), path.join(STORAGE, home, file)]),
+      async () => {
+        const now = await prisma.print.findUnique({ where: { id: print.id }, select: { assetsPath: true } });
+        const from = now?.assetsPath ?? current;
+        return (await ownedAssetFiles(from, await assetOwnerIds(print.id))).map((file): [string, string] => [
+          path.join(STORAGE, from, file),
+          path.join(STORAGE, home, file),
+        ]);
+      },
       () => prisma.print.update({ where: { id: print.id }, data: { assetsPath: home } }),
     );
   } else if (current !== home) {
@@ -567,8 +606,10 @@ export async function relocatePrint(
       }
       continue;
     }
-    const didMove = await moveStored(oldPath, newPath, () =>
-      prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),
+    const didMove = await moveStored(
+      async () => managedPlatePath((await prisma.plate.findUnique({ where: { id: plate.id } })) ?? plate),
+      newPath,
+      () => prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),
     );
     if (didMove) moved += 1;
   }

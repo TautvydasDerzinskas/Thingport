@@ -50,6 +50,28 @@ export function ancestorPath(tree: CategoryTree, id: string): string[] {
   return path;
 }
 
+/** Lowercase and without accents, so typing "zaislai" finds "Žaislai". */
+export function foldForSearch(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+
+/** What a search keeps: the categories whose name has `query`, the way down to them, and everything under them, as a
+ *  match on a heading is a search for what's in it. */
+export function categorySearchIds(
+  tree: CategoryTree,
+  query: string,
+  nameOf: (category: Category) => string,
+): Set<string> {
+  const needle = foldForSearch(query.trim());
+  const kept = new Set<string>();
+  for (const category of tree.byId.values()) {
+    if (!foldForSearch(nameOf(category)).includes(needle)) continue;
+    for (const id of ancestorPath(tree, category.id)) kept.add(id);
+    for (const id of subtreeIds(tree, category.id)) kept.add(id);
+  }
+  return kept;
+}
+
 export type FlatCategory = { category: Category; depth: number };
 
 /** Depth-first display order. Children of ids in `skipChildrenOf` are left out. */

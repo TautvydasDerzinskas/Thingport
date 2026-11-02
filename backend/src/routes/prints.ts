@@ -12,7 +12,8 @@ import { modelUpload } from "../uploadMiddleware";
 import { resolvePlateFilePath } from "../services/printCreation";
 import { createUploadedModel } from "../services/uploadService";
 import { plateThumbPath, relocatePrintsForToken } from "../services/printService";
-import { setPrintCategory } from "../services/printCategoryService";
+import { assignCategory, setPrintCategory } from "../services/printCategoryService";
+import { mergeModels } from "../services/modelMergeService";
 import { previewImagePath } from "../services/previewImageService";
 import { descriptionImagePath } from "../services/descriptionImageService";
 import { deleteAuthorIfOrphaned } from "../services/authorService";
@@ -580,6 +581,50 @@ router.post(
         details: { field: "tags", name: print.name },
       });
     }
+  }),
+);
+
+const bulkCategorySchema = bulkPrintIdsSchema.extend({ category_id: z.string() });
+router.post(
+  "/prints/category",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(bulkCategorySchema, req.body);
+    const { assigned, skipped, failed } = await assignCategory(req.userId!, body.print_ids, body.category_id);
+    for (const print of assigned) {
+      void createLog({
+        userId: req.userId!,
+        action: "model_edited",
+        targetId: print.id,
+        details: { field: "category", name: print.name },
+      });
+    }
+    const out = await printOutsByIds(
+      req.userId!,
+      assigned.map((print) => print.id),
+    );
+    res.json({ prints: assigned.flatMap((print) => out.get(print.id) ?? []), skipped, failed });
+  }),
+);
+
+// `ids` are merged into `primary_id` and deleted; it may list `primary_id` too.
+const mergeModelsSchema = z.object({ primary_id: z.string(), ids: z.array(z.string()).min(1).max(500) });
+router.post(
+  "/prints/merge",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(mergeModelsSchema, req.body);
+    const { primary, merged } = await mergeModels(req.userId!, body.primary_id, body.ids);
+    void createLog({
+      userId: req.userId!,
+      action: "models_merged",
+      targetId: primary.id,
+      details: { name: primary.name, merged: merged.map((print) => print.name) },
+    });
+    // The others are gone by now, so an error here would offer a retry that can only answer 404.
+    const print = await printOutById(req.userId!, primary.id).catch((error: unknown) => {
+      console.error(`Couldn't read back merged model ${primary.id}:`, error);
+      return null;
+    });
+    res.json({ print, merged_ids: merged.map((other) => other.id) });
   }),
 );
 
