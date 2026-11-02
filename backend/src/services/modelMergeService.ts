@@ -1,22 +1,22 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { Plate, PreviewImage, Print } from "@prisma/client";
+import { Prisma, type Plate, type PreviewImage, type Print } from "@prisma/client";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { HttpError } from "../utils/fileUtils";
+import { withStorageLock } from "../utils/storageLock";
 import { normalizeTags } from "../utils/tagNormalization";
 import { forgetAiDescription } from "./aiDescriptionService";
 import { pruneDescriptionImages } from "./descriptionImageService";
 import { assetKindOf, assetPath, galleryImageFile, ownedAssetFiles, plateThumbFile, removeAsset } from "./modelAssets";
 import { pruneWhatModelsLeft } from "./printEditService";
 import {
-  assetOwnerIds,
   ensureAssetHome,
   freePlateFilename,
   isOwnUpload,
-  moveAllStored,
   plateThumbReplaceable,
+  pruneEmptyStorageDirs,
   relocatePrint,
   removeAssetHome,
   saveThumbFromBytes,
@@ -35,7 +35,7 @@ async function mergeableModels(userId: string, ids: string[]) {
     include: {
       plates: { orderBy: { position: "asc" } },
       previewImages: { orderBy: { position: "asc" } },
-      collectionItems: true,
+      descriptionImages: { select: { id: true } },
     },
   });
   if (rows.length !== unique.length) throw new HttpError(404, "Print not found");
@@ -80,14 +80,37 @@ async function leadWithAdoptedCover(primary: Pick<Print, "id">, home: string, pl
   await saveThumbFromBytes(plate.id, await fs.readFile(assetPath(home, galleryImageFile(cover.id))));
 }
 
+/** Copies the pictures to where they're going around `save`, removing the copies if it fails. `Print.assetsPath` is the
+ *  only thing that finds a picture, so copying rather than moving keeps every one of them findable on either side of the
+ *  commit, whatever stops the process in between. The originals are for the caller to remove once it stands. */
+function withPicturesCopied(copies: [string, string][], save: () => Promise<unknown>): Promise<void> {
+  // Under the storage lock, as moveAllStored: nothing moves or swaps these between the listing and the commit.
+  return withStorageLock(async () => {
+    const made: string[] = [];
+    try {
+      for (const [from, to] of copies) {
+        await fs.mkdir(path.dirname(to), { recursive: true });
+        await fs.copyFile(from, to);
+        made.push(to);
+      }
+      await save();
+    } catch (err) {
+      for (const to of made) {
+        await fs.rm(to, { force: true }).catch(() => undefined);
+        await pruneEmptyStorageDirs(path.dirname(to));
+      }
+      throw err;
+    }
+  });
+}
+
 /**
  * Moves everything of `ids` into `primaryId` and deletes them: files after its files, pictures after its pictures with
  * our own renders behind every real one, and descriptions, tags and collections combined. It keeps its name and its
  * category or folder. The merged models' plate thumbnails go rather than move; a file list draws a new one if asked.
  *
- * The pictures move with the rows: `Print.assetsPath` is the only thing that finds them, so a transaction that fails
- * has to find them back where they were. Plates and supporting files are found by their own stored paths, so they can
- * follow afterwards, and a move that fails then leaves them working where they were.
+ * The pictures are in place before the rows change (withPicturesCopied). Plates and supporting files are found by their
+ * own stored paths, so they can follow afterwards, and a move that fails then leaves them working where they were.
  */
 export async function mergeModels(
   userId: string,
@@ -99,17 +122,19 @@ export async function mergeModels(
   const otherIds = others.map((other) => other.id);
   const home = await ensureAssetHome(primary.id);
 
-  const owners = new Map(await Promise.all(otherIds.map(async (id) => [id, await assetOwnerIds(id)] as const)));
-  const pictureMoves: [string, string][] = [];
+  const everyone = [primary, ...others];
+  const everyoneIds = everyone.map((print) => print.id);
+  const ownerIds = (print: (typeof everyone)[number]) =>
+    [...print.plates, ...print.previewImages, ...print.descriptionImages].map((row) => row.id);
+  const pictureCopies: [string, string][] = [];
   for (const other of others) {
     if (!other.assetsPath) continue;
-    const pictures = await ownedAssetFiles(other.assetsPath, owners.get(other.id)!);
+    const pictures = await ownedAssetFiles(other.assetsPath, ownerIds(other));
     for (const file of pictures.filter((picture) => assetKindOf(picture) !== "thumb")) {
-      pictureMoves.push([path.join(STORAGE, other.assetsPath, file), path.join(STORAGE, home, file)]);
+      pictureCopies.push([path.join(STORAGE, other.assetsPath, file), path.join(STORAGE, home, file)]);
     }
   }
 
-  const everyone = [primary, ...others];
   const notes = mergedNotes(primary, others);
   // A model whose first plate is a sliced print already has what a prepared file would be.
   const adoptedPrepared =
@@ -121,9 +146,19 @@ export async function mergeModels(
     .flatMap((print) => print.previewImages)
     .toSorted((a, b) => Number(a.generated) - Number(b.generated));
 
-  await moveAllStored(pictureMoves, () =>
+  await withPicturesCopied(pictureCopies, () =>
     prisma.$transaction(
       async (tx) => {
+        // Locked, nothing more can be added to them: a row referring to one waits, and fails once it's gone. What came
+        // before the lock has files nothing copied, and would otherwise be deleted with its model.
+        await tx.$queryRaw`SELECT id FROM "Print" WHERE id IN (${Prisma.join(everyoneIds)}) ORDER BY id FOR UPDATE`;
+        const unread = { printId: { in: everyoneIds }, id: { notIn: everyone.flatMap(ownerIds) } };
+        const added =
+          (await tx.plate.count({ where: unread })) +
+          (await tx.previewImage.count({ where: unread })) +
+          (await tx.descriptionImage.count({ where: unread }));
+        if (added) throw new HttpError(409, "These models changed while they were being merged. Please try again.");
+
         await tx.print.updateMany({ where: { id: { in: otherIds } }, data: { preparedFileId: null } });
 
         let position = (primary.plates.at(-1)?.position ?? -1) + 1;
@@ -166,10 +201,16 @@ export async function mergeModels(
 
         await tx.descriptionImage.updateMany({ where: { printId: { in: otherIds } }, data: { printId: primary.id } });
 
+        const memberships = await tx.collectionItem.findMany({
+          where: { printId: { in: otherIds } },
+          orderBy: { position: "asc" },
+        });
         await tx.collectionItem.createMany({
-          data: others
-            .flatMap((other) => other.collectionItems)
-            .map(({ collectionId, position: at }) => ({ collectionId, printId: primary.id, position: at })),
+          data: memberships.map(({ collectionId, position: at }) => ({
+            collectionId,
+            printId: primary.id,
+            position: at,
+          })),
           skipDuplicates: true,
         });
 
@@ -198,17 +239,18 @@ export async function mergeModels(
   const didNot = (step: string) => (error: unknown) => log.warn(`couldn't ${step}`, { print: primary.id, error });
   for (const other of others) {
     for (const plate of other.plates) await removeAsset(other.assetsPath, plateThumbFile(plate.id));
-    await removeAssetHome(other.assetsPath, owners.get(other.id)!).catch(didNot("clear a merged model's pictures"));
+    await removeAssetHome(other.assetsPath, ownerIds(other)).catch(didNot("clear a merged model's pictures"));
   }
-  const kept = await prisma.print.findUniqueOrThrow({
-    where: { id: primary.id },
-    include: { plates: { orderBy: { position: "asc" } } },
-  });
-  // Before anything else can move the pictures it reads.
-  await leadWithAdoptedCover(primary, home, kept.plates[0], gallery[0]).catch(didNot("take on its new cover"));
-  await relocatePrint(kept, kept.plates).catch(didNot("move its files where the storage structure puts them"));
+  const kept = await prisma.print
+    .findUnique({ where: { id: primary.id }, include: { plates: { orderBy: { position: "asc" } } } })
+    .catch(didNot("read it back"));
+  if (kept) {
+    // Before anything else can move the pictures it reads.
+    await leadWithAdoptedCover(primary, home, kept.plates[0], gallery[0]).catch(didNot("take on its new cover"));
+    await relocatePrint(kept, kept.plates).catch(didNot("move its files where the storage structure puts them"));
+  }
   if (notes !== primary.notes) await forgetAiDescription(primary.id).catch(didNot("forget its AI description"));
   await pruneDescriptionImages(primary.id).catch(didNot("remove description images nothing uses"));
   await pruneWhatModelsLeft(userId, others).catch(didNot("tidy what the merged models left"));
-  return { primary: kept, merged: others };
+  return { primary, merged: others };
 }

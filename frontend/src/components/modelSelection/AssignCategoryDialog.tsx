@@ -68,6 +68,8 @@ export default function AssignCategoryDialog({ open, onClose, prints, skipped, o
       .catch((err: unknown) => {
         if (!live) return;
         setCategories([]);
+        // Also after a 401, which shows nothing itself: if the session can't be renewed, the dialog is still up.
+        setError(t("models:assignCategory.loadFailed"));
         failed(err, t("models:assignCategory.loadFailed"));
       });
     return () => {
@@ -97,7 +99,7 @@ export default function AssignCategoryDialog({ open, onClose, prints, skipped, o
         left ? t("models:selection.skipped", { count: left }) : null,
         result.failed ? t("models:assignCategory.partlyFailed", { count: result.failed }) : null,
       ].filter(Boolean);
-      showToast({ message: parts.join(" "), severity: result.failed ? "warning" : "success" });
+      showToast({ message: parts.join(" "), severity: result.failed || !result.prints.length ? "warning" : "success" });
       onClose();
     } catch (err) {
       failed(err, t("models:assignCategory.failed"));

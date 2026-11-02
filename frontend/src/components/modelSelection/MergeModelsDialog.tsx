@@ -14,7 +14,7 @@ type Props = {
   prints: Print[];
   /** Selected models left out because they can't be merged. */
   skipped: number;
-  onMerged: (primary: Print, mergedIds: string[]) => void;
+  onMerged: (primary: Print | null, mergedIds: string[]) => void;
   onUnauthorized?: () => void;
 };
 
@@ -26,7 +26,8 @@ export default function MergeModelsDialog({ open, onClose, prints, skipped, onMe
 
   const items: MergeItem[] = prints.map((print) => {
     const picture = print.preview_images[0]?.url ?? print.thumb_url;
-    const files = print.plates.length + print.supporting_file_count;
+    // A prepared file isn't among the supporting ones, and one that's a plate is counted already.
+    const files = print.plates.length + print.supporting_file_count + (print.prepared_print?.removable ? 1 : 0);
     return {
       key: print.id,
       name: print.title || print.name,

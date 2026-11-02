@@ -4718,6 +4718,7 @@
       "models": {
         "action": "Sujungti modelius",
         "needTwo": "Pasirinkite bent 2 neimportuotus modelius",
+        "tooMany": "Sujungimui pažymėkite ne daugiau kaip {{max}} modelių",
         "title_one": "Sujungti {{count}} modelį",
         "title_few": "Sujungti {{count}} modelius",
         "title_many": "Sujungti {{count}} modelio",

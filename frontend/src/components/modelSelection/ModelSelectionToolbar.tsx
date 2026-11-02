@@ -348,7 +348,7 @@ export default function ModelSelectionToolbar({
             skipped={skipped}
             onMerged={(primary, mergedIds) => {
               onDeleted(mergedIds);
-              onUpdated([primary]);
+              if (primary) onUpdated([primary]);
               selection.setActive(false);
             }}
             onUnauthorized={onUnauthorized}
@@ -395,7 +395,11 @@ export default function ModelSelectionToolbar({
           t("models:merge.models.action"),
           <CallMergeIcon fontSize="small" />,
           () => setMergeOpen(true),
-          uploads.length < 2 ? t("models:merge.models.needTwo") : undefined,
+          uploads.length < 2
+            ? t("models:merge.models.needTwo")
+            : uploads.length > BULK_LIMIT
+              ? t("models:merge.models.tooMany", { max: BULK_LIMIT })
+              : undefined,
         )}
       {foldersView &&
         !toolOwned &&

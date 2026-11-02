@@ -82,9 +82,9 @@ export default function CategoryPicker({ categories, value, onChange, label, dis
     }
     const closed = new Set([...tree.byId.keys()].filter((id) => !opened.has(id)));
     return flattenCategoryTree(tree, closed);
-    // `nameOf` only changes with the language, which rebuilds everything anyway.
+    // `nameOf` only changes with the language.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tree, query, searching, opened]);
+  }, [tree, query, searching, opened, i18n.language]);
 
   const open = (event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>) => {
     if (disabled) return;
@@ -110,9 +110,15 @@ export default function CategoryPicker({ categories, value, onChange, label, dis
     } else if (!searching) toggle(category.id);
   };
 
-  // The best match is one Enter away: a name that has what was typed, over one only kept for what's above it.
+  // The best match is one Enter away: a name that has what was typed, over one only kept for what's above it. With the
+  // search cleared, that row may be gone from the tree, so it's back to the pick, as on opening.
   useEffect(() => {
-    if (!searching) return;
+    if (!searching) {
+      const shown = rows.some(({ category }) => category.id === value);
+      scrollToActive.current = shown;
+      setActiveId(shown ? value : null);
+      return;
+    }
     const needle = foldForSearch(query.trim());
     const pickable = rows.filter(({ category, depth }) => canPick(category, depth));
     const best = pickable.find(({ category }) => foldForSearch(nameOf(category)).includes(needle)) ?? pickable[0];
@@ -162,12 +168,10 @@ export default function CategoryPicker({ categories, value, onChange, label, dis
     }
   };
 
-  const shownValue =
-    value && tree.byId.has(value)
-      ? ancestorPath(tree, value)
-          .map((id) => nameOf(tree.byId.get(id)!))
-          .join(" › ")
-      : "";
+  const shownValue = ancestorPath(tree, value)
+    .flatMap((id) => tree.byId.get(id) ?? [])
+    .map(nameOf)
+    .join(" › ");
   const listId = `${baseId}-list`;
 
   return (
@@ -247,6 +251,7 @@ export default function CategoryPicker({ categories, value, onChange, label, dis
               },
               htmlInput: {
                 role: "combobox",
+                "aria-haspopup": "tree",
                 "aria-label": t("models:categoryPicker.filter"),
                 "aria-expanded": true,
                 "aria-controls": listId,

@@ -586,8 +586,9 @@ export const printsApi = {
     return result;
   },
 
-  /** Moves the others' files, pictures and descriptions into `primaryId` and deletes them. */
-  merge: async (primaryId: string, ids: string[]): Promise<{ print: Print; merged_ids: string[] }> => {
+  /** Moves the others' files, pictures and descriptions into `primaryId` and deletes them. `print` is null when the
+   *  merge went through but the model couldn't be read back. */
+  merge: async (primaryId: string, ids: string[]): Promise<{ print: Print | null; merged_ids: string[] }> => {
     const res = await fetch(`${apiBase()}/prints/merge`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
@@ -598,24 +599,33 @@ export const printsApi = {
     return res.json();
   },
 
-  /** Each model on its own: imported ones are skipped, ones that fail are counted, the rest still get the category. */
+  /** Each model on its own: imported ones are skipped, ones that fail are counted, the rest still get the category. A
+   *  batch failing after an earlier one went through counts what's left as failed, so the grid isn't left stale. */
   bulkAssignCategory: async (
     ids: string[],
     categoryId: string,
   ): Promise<{ prints: Print[]; skipped: number; failed: number }> => {
     const result = { prints: [] as Print[], skipped: 0, failed: 0 };
+    let left = ids.length;
     for (const chunk of bulkChunks(ids)) {
-      const res = await fetch(`${apiBase()}/prints/category`, {
-        method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ print_ids: chunk, category_id: categoryId }),
-      });
-      if (res.status === 401) throw new UnauthorizedError();
-      if (!res.ok) throw new Error(await readErrorMessage(res, "Category update failed"));
-      const part = (await res.json()) as { prints: Print[]; skipped: number; failed: number };
-      result.prints.push(...part.prints);
-      result.skipped += part.skipped;
-      result.failed += part.failed;
+      try {
+        const res = await fetch(`${apiBase()}/prints/category`, {
+          method: "POST",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ print_ids: chunk, category_id: categoryId }),
+        });
+        if (res.status === 401) throw new UnauthorizedError();
+        if (!res.ok) throw new Error(await readErrorMessage(res, "Category update failed"));
+        const part = (await res.json()) as { prints: Print[]; skipped: number; failed: number };
+        result.prints.push(...part.prints);
+        result.skipped += part.skipped;
+        result.failed += part.failed;
+        left -= chunk.length;
+      } catch (err) {
+        if (!result.prints.length || err instanceof UnauthorizedError) throw err;
+        console.error(err);
+        return { ...result, failed: result.failed + left };
+      }
     }
     return result;
   },

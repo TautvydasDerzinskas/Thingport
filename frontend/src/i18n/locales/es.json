@@ -4529,6 +4529,7 @@
       "models": {
         "action": "Fusionar modelos",
         "needTwo": "Selecciona al menos 2 modelos que no se hayan importado",
+        "tooMany": "Selecciona hasta {{max}} modelos para fusionar",
         "title_one": "Fusionar {{count}} modelo",
         "title_other": "Fusionar {{count}} modelos",
         "keepHelp": "Elige el modelo principal. Los archivos, imágenes y descripciones de los demás pasan a él y luego los demás se eliminan.",

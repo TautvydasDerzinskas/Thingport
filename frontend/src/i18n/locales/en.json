@@ -4491,6 +4491,7 @@
       "models": {
         "action": "Merge models",
         "needTwo": "Select at least 2 models that weren't imported",
+        "tooMany": "Select up to {{max}} models to merge",
         "title_one": "Merge {{count}} model",
         "title_other": "Merge {{count}} models",
         "keepHelp": "Pick the main model. The others' files, pictures and descriptions move into it, then the others are deleted.",

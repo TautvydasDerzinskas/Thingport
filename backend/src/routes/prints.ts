@@ -590,11 +590,6 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = parseBody(bulkCategorySchema, req.body);
     const { assigned, skipped, failed } = await assignCategory(req.userId!, body.print_ids, body.category_id);
-    const out = await printOutsByIds(
-      req.userId!,
-      assigned.map((print) => print.id),
-    );
-    res.json({ prints: assigned.flatMap((print) => out.get(print.id) ?? []), skipped, failed });
     for (const print of assigned) {
       void createLog({
         userId: req.userId!,
@@ -603,6 +598,11 @@ router.post(
         details: { field: "category", name: print.name },
       });
     }
+    const out = await printOutsByIds(
+      req.userId!,
+      assigned.map((print) => print.id),
+    );
+    res.json({ prints: assigned.flatMap((print) => out.get(print.id) ?? []), skipped, failed });
   }),
 );
 
@@ -613,13 +613,18 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = parseBody(mergeModelsSchema, req.body);
     const { primary, merged } = await mergeModels(req.userId!, body.primary_id, body.ids);
-    res.json({ print: await printOutById(req.userId!, primary.id), merged_ids: merged.map((print) => print.id) });
     void createLog({
       userId: req.userId!,
       action: "models_merged",
       targetId: primary.id,
       details: { name: primary.name, merged: merged.map((print) => print.name) },
     });
+    // The others are gone by now, so an error here would offer a retry that can only answer 404.
+    const print = await printOutById(req.userId!, primary.id).catch((error: unknown) => {
+      console.error(`Couldn't read back merged model ${primary.id}:`, error);
+      return null;
+    });
+    res.json({ print, merged_ids: merged.map((other) => other.id) });
   }),
 );
 

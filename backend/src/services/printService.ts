@@ -441,7 +441,7 @@ async function moveStored(oldPath: string, newPath: string, save: () => Promise<
 }
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. */
-export async function moveAllStored(moves: [string, string][], save: () => Promise<unknown>): Promise<number> {
+async function moveAllStored(moves: [string, string][], save: () => Promise<unknown>): Promise<number> {
   // Under the storage lock, so the file reuse backfill never swaps one of these files for a clone in the middle of it.
   return withStorageLock(async () => {
     const present = moves.filter(([oldPath]) => fsSync.existsSync(oldPath));

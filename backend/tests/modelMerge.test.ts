@@ -2,16 +2,59 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
-// Throws from inside the merge's transaction when asked, after its plates have already been moved over.
-const tagFailure = vi.hoisted(() => ({ on: false }));
+import sharp from "sharp";
+// The moments these tests step into: what happens there is what a slow disk or another request would do.
+const stage = vi.hoisted(() => ({
+  // From inside the merge's transaction, after its plates have already been moved over.
+  inTransaction: null as (() => void) | null,
+  // From inside it too, before it has moved any: the models are locked, and all of its writes are still to come.
+  movingPlates: null as (() => void) | null,
+  // After the merge has read the models, before its transaction.
+  afterRead: null as (() => Promise<unknown>) | null,
+  relocationFails: false,
+  readBackFails: false,
+  // What the first name check answers: a name free then, and taken by the time it's written.
+  staleName: null as string | null,
+}));
 vi.mock("../src/utils/tagNormalization", async (original) => {
   const actual = await original<typeof import("../src/utils/tagNormalization")>();
   return {
     ...actual,
     normalizeTags: (tags: string[]) => {
-      if (tagFailure.on) throw new Error("database went away");
+      stage.inTransaction?.();
       return actual.normalizeTags(tags);
     },
+  };
+});
+vi.mock("../src/services/printService", async (original) => {
+  const actual = await original<typeof import("../src/services/printService")>();
+  return {
+    ...actual,
+    ensureAssetHome: async (printId: string) => {
+      await stage.afterRead?.();
+      return actual.ensureAssetHome(printId);
+    },
+    freePlateFilename: (...args: Parameters<typeof actual.freePlateFilename>) => {
+      stage.movingPlates?.();
+      return actual.freePlateFilename(...args);
+    },
+    relocatePrint: (...args: Parameters<typeof actual.relocatePrint>) =>
+      stage.relocationFails ? Promise.reject(new Error("disk full")) : actual.relocatePrint(...args),
+    availableModelName: (...args: Parameters<typeof actual.availableModelName>) => {
+      const stale = stage.staleName;
+      stage.staleName = null;
+      return stale === null ? actual.availableModelName(...args) : Promise.resolve(stale);
+    },
+  };
+});
+vi.mock("../src/services/printLoader", async (original) => {
+  const actual = await original<typeof import("../src/services/printLoader")>();
+  return {
+    ...actual,
+    printOutById: (...args: Parameters<typeof actual.printOutById>) =>
+      stage.readBackFails ? Promise.reject(new Error("database went away")) : actual.printOutById(...args),
+    printOutsByIds: (...args: Parameters<typeof actual.printOutsByIds>) =>
+      stage.readBackFails ? Promise.reject(new Error("database went away")) : actual.printOutsByIds(...args),
   };
 });
 
@@ -45,8 +88,19 @@ beforeAll(async () => {
 });
 
 afterEach(() => {
-  tagFailure.on = false;
+  stage.inTransaction = null;
+  stage.movingPlates = null;
+  stage.afterRead = null;
+  stage.relocationFails = false;
+  stage.readBackFails = false;
+  stage.staleName = null;
 });
+
+const failInTransaction = () => {
+  stage.inTransaction = () => {
+    throw new Error("database went away");
+  };
+};
 
 type Spec = {
   name?: string;
@@ -86,6 +140,14 @@ async function makeModel(spec: Spec = {}) {
   const assetsPath = await ensureAssetHome(print.id);
   return { ...print, assetsPath, plates };
 }
+
+type Model = Awaited<ReturnType<typeof makeModel>>;
+
+/** A file row turning up from another request. */
+const addLatePlate = (printId: string) =>
+  prisma.plate.create({
+    data: { printId, position: 5000, filename: "late.stl", mime: "model/stl", storagePath: `late-${printId}.stl` },
+  });
 
 const stored = (relative: string) => path.join(STORAGE, relative);
 const merge = (primaryId: string, ids: string[]) =>
@@ -156,16 +218,24 @@ describe("merging models", () => {
   });
 
   it("gives the first plate an adopted real cover as its thumbnail, in place of our render", async () => {
+    const solid = (background: { r: number; g: number; b: number }) =>
+      sharp({ create: { width: 8, height: 8, channels: 3, background } })
+        .png()
+        .toBuffer();
     const kept = await makeModel();
     const other = await makeModel();
-    await saveThumbFromBytes(kept.plates[0].id, ONE_PIXEL_PNG);
+    await saveThumbFromBytes(kept.plates[0].id, await solid({ r: 0, g: 0, b: 255 }));
     await prisma.plate.update({ where: { id: kept.plates[0].id }, data: { thumbGenerated: true } });
-    await addPreviewImage(other.id, ONE_PIXEL_PNG);
+    await addPreviewImage(other.id, await solid({ r: 255, g: 0, b: 0 }));
 
     const res = await merge(kept.id, [other.id]);
 
     expect(res.status).toBe(200);
     expect(res.body.print.plates[0].thumb_generated).toBe(false);
+    const { assetsPath: home } = await prisma.print.findUniqueOrThrow({ where: { id: kept.id } });
+    const { channels } = await sharp(assetTarget(home!, plateThumbFile(kept.plates[0].id))).stats();
+    // The adopted cover's red, not our render's blue.
+    expect(channels[0].mean).toBeGreaterThan(channels[2].mean);
   });
 
   it("combines descriptions under the merged models' names, once each, keeping their images", async () => {
@@ -332,21 +402,141 @@ describe("merging models", () => {
     const other = await makeModel();
     const image = await addPreviewImage(other.id, ONE_PIXEL_PNG);
     const picture = assetTarget(other.assetsPath, galleryImageFile(image!.id));
+    const copy = assetTarget(kept.assetsPath, galleryImageFile(image!.id));
     expect(fs.existsSync(picture)).toBe(true);
-    tagFailure.on = true;
+    failInTransaction();
 
     expect((await merge(kept.id, [other.id])).status).toBe(500);
 
     expect(fs.existsSync(picture)).toBe(true);
+    expect(fs.existsSync(copy)).toBe(false);
     expect(await prisma.print.count({ where: { id: other.id } })).toBe(1);
     expect(await prisma.previewImage.count({ where: { id: image!.id, printId: other.id } })).toBe(1);
     expect(await prisma.plate.count({ where: { id: other.plates[0].id, printId: other.id } })).toBe(1);
     expect(fs.existsSync(stored(other.plates[0].storagePath))).toBe(true);
 
     // Nothing was left half done: the same merge goes through once the database is back.
-    tagFailure.on = false;
+    stage.inTransaction = null;
     expect((await merge(kept.id, [other.id])).status).toBe(200);
     expect(await prisma.previewImage.count({ where: { id: image!.id, printId: kept.id } })).toBe(1);
+  });
+
+  it("has the pictures in both places until it commits, so a crash at any moment leaves them found", async () => {
+    const kept = await makeModel();
+    const other = await makeModel();
+    const image = await addPreviewImage(other.id, ONE_PIXEL_PNG);
+    const picture = assetTarget(other.assetsPath, galleryImageFile(image!.id));
+    const copy = assetTarget(kept.assetsPath, galleryImageFile(image!.id));
+    const seen: boolean[] = [];
+    stage.inTransaction = () => seen.push(fs.existsSync(picture), fs.existsSync(copy));
+
+    expect((await merge(kept.id, [other.id])).status).toBe(200);
+
+    expect(seen).toEqual([true, true]);
+    expect(fs.existsSync(picture)).toBe(false);
+    expect(fs.existsSync(copy)).toBe(true);
+    expect(fs.readFileSync(copy).length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    ["a file on a merged model", (other: Model) => addLatePlate(other.id)],
+    ["a picture on a merged model", (other: Model) => addPreviewImage(other.id, ONE_PIXEL_PNG)],
+    [
+      "a description image on a merged model",
+      (other: Model) => prisma.descriptionImage.create({ data: { printId: other.id, mime: "image/png", size: 1 } }),
+    ],
+  ])("refuses to delete %s added after it read them, and goes through once asked again", async (_what, add) => {
+    const kept = await makeModel();
+    const other = await makeModel();
+    stage.afterRead = async () => {
+      stage.afterRead = null;
+      await add(other);
+    };
+
+    expect((await merge(kept.id, [other.id])).status).toBe(409);
+    expect(await prisma.print.count({ where: { id: other.id } })).toBe(1);
+
+    expect((await merge(kept.id, [other.id])).status).toBe(200);
+    expect(await prisma.print.count({ where: { id: other.id } })).toBe(0);
+  });
+
+  it("refuses a file added to the kept model after it read them", async () => {
+    const kept = await makeModel();
+    const other = await makeModel();
+    stage.afterRead = async () => {
+      stage.afterRead = null;
+      await addLatePlate(kept.id);
+    };
+    expect((await merge(kept.id, [other.id])).status).toBe(409);
+    expect(await prisma.print.count({ where: { id: other.id } })).toBe(1);
+  });
+
+  it("makes what's added during its transaction wait and fail, rather than be deleted having succeeded", async () => {
+    const kept = await makeModel();
+    const other = await makeModel();
+    // Holding one of its plates parks the merge at its first write, for as long as this takes.
+    let release = () => {};
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let holding = () => {};
+    const held = new Promise<void>((resolve) => (holding = resolve));
+    const holder = prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Plate" WHERE id = ${other.plates[0].id} FOR UPDATE`;
+      holding();
+      await released;
+    });
+    await held;
+    const reached = new Promise<void>((resolve) => (stage.movingPlates = resolve));
+    const merging = merge(kept.id, [other.id]).then((res) => res);
+    await reached;
+
+    const late = addLatePlate(other.id);
+    const lateSoFar = await Promise.race([
+      late.then(
+        () => "added",
+        () => "refused",
+      ),
+      new Promise((resolve) => setTimeout(() => resolve("waiting"), 300)),
+    ]);
+    release();
+    await holder;
+
+    expect(lateSoFar).toBe("waiting");
+    expect((await merging).status).toBe(200);
+    await expect(late).rejects.toMatchObject({ code: "P2003" });
+    expect(await prisma.plate.count({ where: { filename: "late.stl", printId: { in: [kept.id, other.id] } } })).toBe(0);
+  });
+
+  it("answers a merge that went through even if it can't read the model back, and logs it", async () => {
+    const kept = await makeModel();
+    const other = await makeModel();
+    stage.readBackFails = true;
+
+    const res = await merge(kept.id, [other.id]);
+
+    expect(res.status).toBe(200);
+    expect(res.body.print).toBeNull();
+    expect(res.body.merged_ids).toEqual([other.id]);
+    expect(await prisma.print.count({ where: { id: other.id } })).toBe(0);
+    await vi.waitFor(async () =>
+      expect(await prisma.log.count({ where: { action: "models_merged", targetId: kept.id } })).toBe(1),
+    );
+  });
+
+  it("stands when the files can't then be moved where the storage structure puts them", async () => {
+    const category = await makeCategory("category");
+    const kept = await makeModel({ categoryId: category.id });
+    const other = await makeModel();
+    const file = other.plates[0].storagePath;
+    stage.relocationFails = true;
+
+    const res = await merge(kept.id, [other.id]);
+
+    expect(res.status).toBe(200);
+    expect(res.body.print.plates).toHaveLength(2);
+    const moved = await prisma.plate.findUniqueOrThrow({ where: { id: other.plates[0].id } });
+    expect(moved.printId).toBe(kept.id);
+    expect(moved.storagePath).toBe(file);
+    expect(fs.existsSync(stored(file))).toBe(true);
   });
 });
 
@@ -388,10 +578,16 @@ describe("assigning a category to several models", () => {
     const category = await makeCategory("category");
     const upload = await makeModel();
     const imported = await makeModel({ sourceProvider: "makerworld" });
-    const res = await assign([upload.id, imported.id, "no-such-model"], category.id);
+    const tool = await prisma.tool.create({
+      data: { source: "own", scope: userId, slug: `assign-${stamp}`, userId, manifest: {}, script: "", sha: "x" },
+    });
+    const toolOwned = await makeModel();
+    await prisma.print.update({ where: { id: toolOwned.id }, data: { toolId: tool.id } });
+    const res = await assign([upload.id, imported.id, toolOwned.id, "no-such-model"], category.id);
     expect(res.body.prints.map((print: { id: string }) => print.id)).toEqual([upload.id]);
-    expect(res.body.skipped).toBe(2);
+    expect(res.body.skipped).toBe(3);
     expect((await prisma.print.findUniqueOrThrow({ where: { id: imported.id } })).categoryId).toBeNull();
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: toolOwned.id } })).categoryId).toBeNull();
   });
 
   it("renames a model whose name the category already has, rather than failing it", async () => {
@@ -402,6 +598,54 @@ describe("assigning a category to several models", () => {
     const res = await assign([incoming.id], category.id);
     expect(res.body.failed).toBe(0);
     expect(res.body.prints[0].name).toBe(`${name} (2)`);
+  });
+
+  it("renames a model whose name was taken after the check, rather than failing it", async () => {
+    const category = await makeCategory("category");
+    const name = `Raced name ${stamp}`;
+    await makeModel({ name, categoryId: category.id });
+    const incoming = await makeModel({ name });
+    stage.staleName = name;
+    const res = await assign([incoming.id], category.id);
+    expect(res.body.failed).toBe(0);
+    expect(res.body.prints[0].name).toBe(`${name} (2)`);
+  });
+
+  it("reports a model as assigned when only its files couldn't follow, as they still work where they are", async () => {
+    const category = await makeCategory("category");
+    const model = await makeModel();
+    const file = model.plates[0].storagePath;
+    stage.relocationFails = true;
+
+    const res = await assign([model.id], category.id);
+
+    expect(res.body.failed).toBe(0);
+    expect(res.body.prints.map((print: { id: string }) => print.id)).toEqual([model.id]);
+    expect(res.body.prints[0].category_id).toBe(category.id);
+    const plate = await prisma.plate.findUniqueOrThrow({ where: { id: model.plates[0].id } });
+    expect(plate.storagePath).toBe(file);
+    expect(fs.existsSync(stored(file))).toBe(true);
+  });
+
+  it("logs the change even if it can't read the models back, and asking again answers them", async () => {
+    const category = await makeCategory("category");
+    const model = await makeModel();
+    stage.readBackFails = true;
+
+    expect((await assign([model.id], category.id)).status).toBe(500);
+
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: model.id } })).categoryId).toBe(category.id);
+    await vi.waitFor(async () =>
+      expect(await prisma.log.count({ where: { action: "model_edited", targetId: model.id } })).toBe(1),
+    );
+
+    stage.readBackFails = false;
+    const again = await assign([model.id], category.id);
+    expect(again.status).toBe(200);
+    expect(again.body.failed).toBe(0);
+    expect(again.body.prints[0].id).toBe(model.id);
+    expect(again.body.prints[0].category_id).toBe(category.id);
+    expect(again.body.prints[0].name).toBe(model.name);
   });
 
   it("refuses a folder as the category", async () => {

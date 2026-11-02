@@ -16,6 +16,8 @@ type SetPrintCategoryOptions = {
   clearSuggestion?: boolean;
   /** Suffix the model's name when the category has one like it, rather than refuse the move. */
   renameIfTaken?: boolean;
+  /** Keep the change when its files can't follow: they still work where they are, as their rows say where that is. */
+  keepIfFilesStay?: boolean;
 };
 
 /**
@@ -60,20 +62,32 @@ export async function setPrintCategory(
         categorySource: options.expected.categorySource,
       }
     : { id: print.id };
-  const updated = await prisma.print.updateMany({
-    where,
-    data: {
-      categoryId,
-      categorySource: source,
-      ...(options.clearSuggestion ? { aiSuggestion: Prisma.DbNull } : {}),
-      ...(name !== print.name ? { name, nameNormalized: name.trim().toLowerCase(), title: name } : {}),
-    },
+  const save = (newName: string) =>
+    prisma.print.updateMany({
+      where,
+      data: {
+        categoryId,
+        categorySource: source,
+        ...(options.clearSuggestion ? { aiSuggestion: Prisma.DbNull } : {}),
+        ...(newName !== print.name
+          ? { name: newName, nameNormalized: newName.trim().toLowerCase(), title: newName }
+          : {}),
+      },
+    });
+  const updated = await save(name).catch(async (err: unknown) => {
+    const nameTaken = err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
+    if (!nameTaken || !options.renameIfTaken) throw err;
+    // Another request took the name after the check above.
+    return save(await availableModelName(userId, print.name, categoryId, print.id));
   });
   if (!updated.count) return null;
 
   const next = await prisma.print.findUniqueOrThrow({ where: { id: print.id } });
   const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-  await relocatePrint(next, plates);
+  await relocatePrint(next, plates).catch((error: unknown) => {
+    if (!options.keepIfFilesStay) throw error;
+    log.warn("couldn't move a model's files to its category", { print: print.id, error });
+  });
   return next;
 }
 
@@ -107,6 +121,7 @@ export async function assignCategory(
       const updated = await setPrintCategory(userId, id, categoryId, "MANUAL", {
         clearSuggestion: true,
         renameIfTaken: true,
+        keepIfFilesStay: true,
       });
       if (updated) assigned.push(updated);
       else failed++;

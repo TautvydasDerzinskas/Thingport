@@ -4542,6 +4542,7 @@
       "models": {
         "action": "Fusionner les modèles",
         "needTwo": "Sélectionnez au moins 2 modèles non importés",
+        "tooMany": "Sélectionnez jusqu’à {{max}} modèles à fusionner",
         "title_one": "Fusionner {{count}} modèle",
         "title_other": "Fusionner {{count}} modèles",
         "keepHelp": "Choisissez le modèle principal. Les fichiers, images et descriptions des autres y sont déplacés, puis les autres sont supprimés.",
