@@ -82,8 +82,15 @@ async function leadWithAdoptedCover(primary: Pick<Print, "id">, home: string, pl
 
 /** Copies the pictures to where they're going around `save`, removing the copies if it fails. `Print.assetsPath` is the
  *  only thing that finds a picture, so copying rather than moving keeps every one of them findable on either side of the
- *  commit, whatever stops the process in between. The originals are for the caller to remove once it stands. */
-function withPicturesCopied<T>(copies: [string, string][], save: () => Promise<T>): Promise<T> {
+ *  commit, whatever stops the process in between. The originals are for the caller to remove once it stands.
+ *
+ *  A commit whose answer was lost rejects too, and the rows then find only the copies, so they go only if `notSaved` is
+ *  sure: one left behind is just a stray file. */
+function withPicturesCopied<T>(
+  copies: [string, string][],
+  notSaved: () => Promise<boolean>,
+  save: () => Promise<T>,
+): Promise<T> {
   // Under the storage lock, as moveAllStored: nothing moves or swaps these between the listing and the commit.
   return withStorageLock(async () => {
     const made: string[] = [];
@@ -95,9 +102,11 @@ function withPicturesCopied<T>(copies: [string, string][], save: () => Promise<T
       }
       return await save();
     } catch (err) {
-      for (const to of made) {
-        await fs.rm(to, { force: true }).catch(() => undefined);
-        await pruneEmptyStorageDirs(path.dirname(to));
+      if (await notSaved().catch(() => false)) {
+        for (const to of made) {
+          await fs.rm(to, { force: true }).catch(() => undefined);
+          await pruneEmptyStorageDirs(path.dirname(to));
+        }
       }
       throw err;
     }
@@ -135,7 +144,9 @@ export async function mergeModels(
     }
   }
 
-  const cover = await withPicturesCopied(pictureCopies, () =>
+  // The commit deletes them.
+  const notMerged = async () => (await prisma.print.count({ where: { id: { in: otherIds } } })) > 0;
+  const cover = await withPicturesCopied(pictureCopies, notMerged, () =>
     prisma.$transaction(
       async (tx) => {
         // Locked, nothing more can be added to them: a row referring to one waits, and fails once it's gone. What came
