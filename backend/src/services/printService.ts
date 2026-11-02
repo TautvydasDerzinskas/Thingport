@@ -442,7 +442,16 @@ async function moveStored(
   newPath: string,
   save: () => Promise<unknown>,
 ): Promise<boolean> {
-  return (await moveAllStored(async () => [[await stored(), newPath]], save)) > 0;
+  const listMove = async (): Promise<[string, string][]> => {
+    const oldPath = await stored();
+    // The place was free when it was picked, so only another move can have filled it since: renaming now would destroy
+    // that file. Asked again, this one sees the place is taken and goes elsewhere.
+    if (oldPath !== newPath && fsSync.existsSync(newPath)) {
+      throw new HttpError(409, `Storage path already exists: ${path.relative(STORAGE, newPath)}`);
+    }
+    return [[oldPath, newPath]];
+  };
+  return (await moveAllStored(listMove, save)) > 0;
 }
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. They're listed under the

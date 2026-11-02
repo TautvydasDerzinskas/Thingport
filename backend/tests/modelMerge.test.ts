@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { Prisma } from "@prisma/client";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
@@ -63,7 +64,7 @@ import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { assetTarget, galleryImageFile, plateRenderFile, plateThumbFile } from "../src/services/modelAssets";
-import { addPreviewImage } from "../src/services/previewImageService";
+import { addPreviewImage, reorderPreviewImages } from "../src/services/previewImageService";
 import {
   ensureAssetHome,
   relocatePrint,
@@ -162,6 +163,38 @@ const merge = (primaryId: string, ids: string[]) =>
 const assign = (printIds: string[], categoryId: string) =>
   request(app).post("/api/prints/category").set(auth()).send({ print_ids: printIds, category_id: categoryId });
 
+const solid = (background: { r: number; g: number; b: number }) =>
+  sharp({ create: { width: 8, height: 8, channels: 3, background } })
+    .png()
+    .toBuffer();
+
+/** What `write` did, uncommitted until `commit` is called: another request part-way through a change. */
+async function underWay(write: (tx: Prisma.TransactionClient) => Promise<unknown>) {
+  let commit = () => {};
+  const committing = new Promise<void>((resolve) => (commit = resolve));
+  let holding = () => {};
+  const held = new Promise<void>((resolve) => (holding = resolve));
+  const done = prisma.$transaction(async (tx) => {
+    await write(tx);
+    holding();
+    await committing;
+  });
+  await held;
+  return { commit, done };
+}
+
+/** Until a session is parked at its lock on `table`'s rows: a pause could pass with it never having got that far. */
+const parkedAtLockOn = (table: string) =>
+  vi.waitFor(
+    async () => {
+      const parked = await prisma.$queryRaw<unknown[]>`
+        SELECT pid FROM pg_stat_activity
+        WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE ${`%"${table}"%FOR UPDATE%`}`;
+      expect(parked.length).toBeGreaterThan(0);
+    },
+    { timeout: 4000, interval: 20 },
+  );
+
 async function makeCategory(kind: "category" | "folder", name = `${kind}-${stamp}-${modelNumber++}`) {
   return prisma.category.create({ data: { userId, name, kind } });
 }
@@ -225,10 +258,6 @@ describe("merging models", () => {
   });
 
   it("gives the first plate an adopted real cover as its thumbnail, in place of our render", async () => {
-    const solid = (background: { r: number; g: number; b: number }) =>
-      sharp({ create: { width: 8, height: 8, channels: 3, background } })
-        .png()
-        .toBuffer();
     const kept = await makeModel();
     const other = await makeModel();
     await saveThumbFromBytes(kept.plates[0].id, await solid({ r: 0, g: 0, b: 255 }));
@@ -300,7 +329,7 @@ describe("merging models", () => {
     const kept = await makeModel({ notes: "Rewritten." });
     await prisma.print.update({ where: { id: kept.id }, data: { aiDescriptionOriginal: "Original." } });
     const other = await makeModel();
-    await merge(kept.id, [other.id]);
+    expect((await merge(kept.id, [other.id])).status).toBe(200);
     const after = await prisma.print.findUniqueOrThrow({ where: { id: kept.id } });
     expect(after.aiDescriptionOriginal).toBe("Original.");
   });
@@ -523,24 +552,73 @@ describe("merging models", () => {
   it("waits for a rename under way rather than overwriting it", async () => {
     const kept = await makeModel();
     const other = await makeModel({ files: ["part.stl"] });
-    let release = () => {};
-    const released = new Promise<void>((resolve) => (release = resolve));
-    let holding = () => {};
-    const held = new Promise<void>((resolve) => (holding = resolve));
-    const renaming = prisma.$transaction(async (tx) => {
-      await tx.plate.update({ where: { id: other.plates[0].id }, data: { filename: "renamed.stl" } });
-      holding();
-      await released;
-    });
-    await held;
+    const renaming = await underWay((tx) =>
+      tx.plate.update({ where: { id: other.plates[0].id }, data: { filename: "renamed.stl" } }),
+    );
     const merging = merge(kept.id, [other.id]).then((res) => res);
-    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    release();
-    await renaming;
+    await parkedAtLockOn("Plate").finally(renaming.commit);
+    await renaming.done;
 
     expect((await merging).status).toBe(200);
     expect((await prisma.plate.findUniqueOrThrow({ where: { id: other.plates[0].id } })).filename).toBe("renamed.stl");
+  });
+
+  it("keeps an order of pictures changed after it read them, and does without one deleted since", async () => {
+    const kept = await makeModel();
+    const first = await addPreviewImage(kept.id, ONE_PIXEL_PNG);
+    const second = await addPreviewImage(kept.id, ONE_PIXEL_PNG);
+    const gone = await addPreviewImage(kept.id, ONE_PIXEL_PNG);
+    const other = await makeModel();
+    stage.afterRead = async () => {
+      stage.afterRead = null;
+      await reorderPreviewImages(kept.id, [second!.id, first!.id, gone!.id]);
+      await prisma.previewImage.delete({ where: { id: gone!.id } });
+    };
+
+    expect((await merge(kept.id, [other.id])).status).toBe(200);
+
+    const images = await prisma.previewImage.findMany({ where: { printId: kept.id }, orderBy: { position: "asc" } });
+    expect(images.map((image) => image.id)).toEqual([second!.id, first!.id]);
+  });
+
+  it("waits for a change of order under way rather than overwriting it", async () => {
+    const kept = await makeModel();
+    const first = await addPreviewImage(kept.id, ONE_PIXEL_PNG);
+    const second = await addPreviewImage(kept.id, ONE_PIXEL_PNG);
+    const other = await makeModel();
+    // One write to the row, as each of a real reorder's transactions: a second would have Postgres check its foreign key
+    // again, locking the model too and parking the merge before it reads anything.
+    const reordering = await underWay((tx) =>
+      tx.previewImage.update({ where: { id: second!.id }, data: { position: -1 } }),
+    );
+    const merging = merge(kept.id, [other.id]).then((res) => res);
+
+    await parkedAtLockOn("PreviewImage").finally(reordering.commit);
+    await reordering.done;
+
+    expect((await merging).status).toBe(200);
+    const images = await prisma.previewImage.findMany({ where: { printId: kept.id }, orderBy: { position: "asc" } });
+    expect(images.map((image) => image.id)).toEqual([second!.id, first!.id]);
+  });
+
+  it("adopts as its cover the picture that's first once it has them locked", async () => {
+    const kept = await makeModel();
+    const other = await makeModel();
+    await saveThumbFromBytes(kept.plates[0].id, await solid({ r: 0, g: 0, b: 255 }));
+    await prisma.plate.update({ where: { id: kept.plates[0].id }, data: { thumbGenerated: true } });
+    const green = await addPreviewImage(other.id, await solid({ r: 0, g: 255, b: 0 }));
+    const red = await addPreviewImage(other.id, await solid({ r: 255, g: 0, b: 0 }));
+    stage.afterRead = async () => {
+      stage.afterRead = null;
+      await reorderPreviewImages(other.id, [red!.id, green!.id]);
+    };
+
+    expect((await merge(kept.id, [other.id])).status).toBe(200);
+
+    const { assetsPath: home } = await prisma.print.findUniqueOrThrow({ where: { id: kept.id } });
+    const { channels } = await sharp(assetTarget(home!, plateThumbFile(kept.plates[0].id))).stats();
+    expect(channels[0].mean).toBeGreaterThan(channels[1].mean);
   });
 
   it("refuses a model linked to a site after it read them, and leaves it", async () => {
@@ -627,6 +705,34 @@ describe("merging models", () => {
     expect(fs.existsSync(assetTarget(after.assetsPath!, galleryImageFile(image!.id)))).toBe(true);
   });
 
+  it("leaves a file where it is rather than overwrite one another move just put at its destination", async () => {
+    const category = await makeCategory("category");
+    // Names that differ only in characters a path can't hold render the same place, and neither has moved yet.
+    const models = [
+      await makeModel({ name: `same?${stamp}`, files: ["part.stl"] }),
+      await makeModel({ name: `same*${stamp}`, files: ["part.stl"] }),
+    ];
+    let release = () => {};
+    const released = new Promise<void>((resolve) => (release = resolve));
+    const holding = withStorageLock(() => released);
+    const move = (model: Model) => relocatePrint({ ...model, categoryId: category.id }, model.plates);
+    const moves = models.map(move);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    release();
+    await holding;
+    const settled = await Promise.allSettled(moves);
+
+    const refused = models.filter((_, index) => settled[index].status === "rejected");
+    expect(refused).toHaveLength(1);
+    // Asked again, it sees the place is taken, and goes beside it.
+    await move(refused[0]);
+    for (const model of models) {
+      const { storagePath } = await prisma.plate.findUniqueOrThrow({ where: { id: model.plates[0].id } });
+      expect(fs.readFileSync(stored(storagePath), "utf8")).toBe(`solid ${model.name} part.stl`);
+    }
+  });
+
   it("refuses a file added to the kept model after it read them", async () => {
     const kept = await makeModel();
     const other = await makeModel();
@@ -642,17 +748,10 @@ describe("merging models", () => {
     const kept = await makeModel();
     const other = await makeModel();
     const picture = await addPreviewImage(other.id, ONE_PIXEL_PNG);
-    // Holding one of its pictures parks the merge at its first write of one, for as long as this takes.
-    let release = () => {};
-    const released = new Promise<void>((resolve) => (release = resolve));
-    let holding = () => {};
-    const held = new Promise<void>((resolve) => (holding = resolve));
-    const holder = prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "PreviewImage" WHERE id = ${picture!.id} FOR UPDATE`;
-      holding();
-      await released;
-    });
-    await held;
+    // Holding one of its pictures parks the merge once it reaches them, for as long as this takes.
+    const holder = await underWay(
+      (tx) => tx.$queryRaw`SELECT id FROM "PreviewImage" WHERE id = ${picture!.id} FOR UPDATE`,
+    );
     const reached = new Promise<void>((resolve) => (stage.movingPlates = resolve));
     const merging = merge(kept.id, [other.id]).then((res) => res);
     await reached;
@@ -665,8 +764,8 @@ describe("merging models", () => {
       ),
       new Promise((resolve) => setTimeout(() => resolve("waiting"), 300)),
     ]);
-    release();
-    await holder;
+    holder.commit();
+    await holder.done;
 
     expect(lateSoFar).toBe("waiting");
     expect((await merging).status).toBe(200);

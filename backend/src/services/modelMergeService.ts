@@ -83,7 +83,7 @@ async function leadWithAdoptedCover(primary: Pick<Print, "id">, home: string, pl
 /** Copies the pictures to where they're going around `save`, removing the copies if it fails. `Print.assetsPath` is the
  *  only thing that finds a picture, so copying rather than moving keeps every one of them findable on either side of the
  *  commit, whatever stops the process in between. The originals are for the caller to remove once it stands. */
-function withPicturesCopied(copies: [string, string][], save: () => Promise<unknown>): Promise<void> {
+function withPicturesCopied<T>(copies: [string, string][], save: () => Promise<T>): Promise<T> {
   // Under the storage lock, as moveAllStored: nothing moves or swaps these between the listing and the commit.
   return withStorageLock(async () => {
     const made: string[] = [];
@@ -93,7 +93,7 @@ function withPicturesCopied(copies: [string, string][], save: () => Promise<unkn
         await fs.copyFile(from, to);
         made.push(to);
       }
-      await save();
+      return await save();
     } catch (err) {
       for (const to of made) {
         await fs.rm(to, { force: true }).catch(() => undefined);
@@ -135,12 +135,7 @@ export async function mergeModels(
     }
   }
 
-  // Stable: each model's own order stays within the real pictures, and within the renders.
-  const gallery = everyone
-    .flatMap((print) => print.previewImages)
-    .toSorted((a, b) => Number(a.generated) - Number(b.generated));
-
-  await withPicturesCopied(pictureCopies, () =>
+  const cover = await withPicturesCopied(pictureCopies, () =>
     prisma.$transaction(
       async (tx) => {
         // Locked, nothing more can be added to them: a row referring to one waits, and fails once it's gone. What came
@@ -209,6 +204,17 @@ export async function mergeModels(
         );
         await tx.printFile.updateMany({ where: { id: { in: demoted } }, data: { role: "SUPPORTING" } });
 
+        // Locked and read again as the plates are, for a change of order. Stable: each model's own order stays within the
+        // real pictures, and within the renders.
+        await tx.$queryRaw`SELECT id FROM "PreviewImage" WHERE "printId" IN (${Prisma.join(everyoneIds)}) ORDER BY id FOR UPDATE`;
+        const images = await tx.previewImage.findMany({
+          where: { printId: { in: everyoneIds } },
+          orderBy: { position: "asc" },
+        });
+        const gallery = everyoneIds
+          .flatMap((id) => images.filter((image) => image.printId === id))
+          .toSorted((a, b) => Number(a.generated) - Number(b.generated));
+
         // Two phases, as in previewImageService, to avoid (printId, position) collisions.
         for (const [index, image] of gallery.entries()) {
           await tx.previewImage.update({
@@ -252,6 +258,7 @@ export async function mergeModels(
           },
         });
         await tx.print.deleteMany({ where: { id: { in: otherIds } } });
+        return gallery.at(0);
       },
       // Sequential writes, per plate and picture of every model.
       { timeout: 60_000 },
@@ -269,7 +276,7 @@ export async function mergeModels(
     .catch(didNot("read it back"));
   if (kept) {
     // Before the move below takes the pictures it reads.
-    await leadWithAdoptedCover(primary, home, kept.plates[0], gallery[0]).catch(didNot("take on its new cover"));
+    await leadWithAdoptedCover(primary, home, kept.plates[0], cover).catch(didNot("take on its new cover"));
     await relocatePrint(kept, kept.plates).catch(didNot("move its files where the storage structure puts them"));
   }
   await pruneDescriptionImages(primary.id).catch(didNot("remove description images nothing uses"));
