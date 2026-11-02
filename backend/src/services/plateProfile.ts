@@ -1,8 +1,9 @@
+import fs from "node:fs/promises";
 import path from "node:path";
 import type { Plate, Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { resolvePlateFilePath } from "./printCreation";
-import { listZipEntries, readZipEntry, readZipEntryPrefix } from "../utils/zipReader";
+import { walkZipEntries } from "../utils/zipReader";
 
 /** Bump when the parser learns new fields, so stored results can be told apart from older ones. */
 export const PLATE_PROFILE_VERSION = 2;
@@ -29,7 +30,11 @@ export type PlateStat = {
   weight_g: number | null;
 };
 
-export type StoredPlateProfile = PlateProfile & { version: number };
+/** Size and modification time of the file when its profile was read, to notice that it was edited since. */
+type FileStamp = { size: number; mtime_ms: number };
+
+/** `file` is missing on a profile stored before it was recorded; such a profile is never re-read for a changed file. */
+export type StoredPlateProfile = PlateProfile & { version: number; file?: FileStamp };
 
 const MODEL_ENTRY = "3D/3dmodel.model";
 const MODEL_PREFIX_BYTES = 512 * 1024;
@@ -214,16 +219,16 @@ type SliceInfo = {
 
 /** slice_info.config: `<metadata key=".." value=".."/>` per plate, `<filament type=".."/>` per used filament. */
 function parseSliceInfo(text: string): SliceInfo {
-  let seconds = 0;
-  let weight = 0;
+  let looseSeconds = 0;
+  let looseWeight = 0;
   const other = new Map<string, string>();
   for (const m of startTags(text, "metadata")) {
     const attributes = parseAttributes(m[0]);
     const key = attributes.get("key")?.toLowerCase();
     const value = attributes.get("value");
     if (!key || value === undefined) continue;
-    if (key === "prediction") seconds += toPositive(value) ?? 0;
-    else if (key === "weight") weight += toPositive(value) ?? 0;
+    if (key === "prediction") looseSeconds += toPositive(value) ?? 0;
+    else if (key === "weight") looseWeight += toPositive(value) ?? 0;
     else if (!other.has(key)) other.set(key, value);
   }
   const plateStats: PlateStat[] = [];
@@ -246,6 +251,9 @@ function parseSliceInfo(text: string): SliceInfo {
       weight_g: plateWeight !== null ? Math.round(plateWeight * 100) / 100 : null,
     });
   }
+  // The plates' own values make the total; a file without plates adds up every such tag instead.
+  const seconds = plateStats.length > 0 ? sumOf(plateStats.map((p) => p.estimated_seconds)) : looseSeconds;
+  const weight = plateStats.length > 0 ? sumOf(plateStats.map((p) => p.weight_g)) : looseWeight;
   const materials: string[] = [];
   for (const m of startTags(text, "filament")) {
     const type = cleanString(parseAttributes(m[0]).get("type"));
@@ -261,6 +269,10 @@ function parseSliceInfo(text: string): SliceInfo {
   };
 }
 
+function sumOf(values: (number | null)[]): number {
+  return values.reduce<number>((sum, v) => sum + (v ?? 0), 0);
+}
+
 function uniqueUpperCase(values: string[]): string[] {
   const seen = new Set<string>();
   const result: string[] = [];
@@ -274,40 +286,98 @@ function uniqueUpperCase(values: string[]): string[] {
   return result;
 }
 
+/** The entries read from a 3MF, found whatever the case of their names. */
+const WANTED_ENTRIES = new Map(
+  [
+    MODEL_ENTRY,
+    "Metadata/project_settings.config",
+    "Metadata/Slic3r_PE.config",
+    "Metadata/PrusaSlicer.config",
+    "Metadata/slice_info.config",
+  ].map((name) => [name.toLowerCase(), name]),
+);
+
+type ReadResult = {
+  profile: PlateProfile;
+  /** False when the file or one of the entries couldn't be read as a whole, so the profile may miss values. */
+  complete: boolean;
+};
+
+/** At most maxBytes of a stream, and whether it had more. Stops reading (and closes the stream) at the cap. */
+async function readUpTo(
+  stream: NodeJS.ReadableStream,
+  maxBytes: number,
+): Promise<{ data: Buffer; truncated: boolean }> {
+  const chunks: Buffer[] = [];
+  let total = 0;
+  for await (const chunk of stream) {
+    const buffer = Buffer.from(chunk);
+    chunks.push(buffer);
+    total += buffer.length;
+    if (total > maxBytes) break;
+  }
+  return { data: Buffer.concat(chunks).subarray(0, maxBytes), truncated: total > maxBytes };
+}
+
+/** The names of all entries and the text of the wanted ones, in one pass over the file. */
+async function readEntries(
+  filePath: string,
+): Promise<{ names: string[]; texts: Map<string, string>; complete: boolean }> {
+  const names: string[] = [];
+  const texts = new Map<string, string>();
+  let complete = true;
+  const isModel = (key: string) => key === MODEL_ENTRY.toLowerCase();
+  await walkZipEntries(
+    filePath,
+    (entry) => {
+      names.push(entry.name);
+      const key = entry.name.toLowerCase();
+      if (!WANTED_ENTRIES.has(key)) return false;
+      if (!isModel(key) && entry.size > SMALL_ENTRY_BYTES) {
+        complete = false;
+        return false;
+      }
+      return true;
+    },
+    async (entry, stream) => {
+      const key = entry.name.toLowerCase();
+      try {
+        // Only the start of the model file is wanted; any other entry over the cap isn't read.
+        const { data, truncated } = await readUpTo(stream, isModel(key) ? MODEL_PREFIX_BYTES : SMALL_ENTRY_BYTES);
+        if (truncated && !isModel(key)) complete = false;
+        else texts.set(key, data.toString("utf8"));
+      } catch {
+        complete = false;
+      }
+    },
+  );
+  return { names, texts, complete };
+}
+
 /**
  * What a 3MF says about how it was sliced, for the file list. Reads only a few small entries, never geometry.
  * 3MF isn't unified across slicers, so every field is looked up under several names and is null when none matches;
- * a broken or foreign file gives a partial or empty result, never an error.
+ * a broken or foreign file gives a partial or empty result, never an error. `complete` tells a result that is
+ * partial because the file couldn't be read from one that is simply empty.
  */
-export async function readPlateProfile(filePath: string): Promise<PlateProfile> {
+export async function readPlateProfileChecked(filePath: string): Promise<ReadResult> {
   const profile = emptyProfile();
-  let entryNames: string[];
+  let entries: Awaited<ReturnType<typeof readEntries>>;
   try {
-    entryNames = (await listZipEntries(filePath)).filter((e) => !e.isDirectory).map((e) => e.name);
+    entries = await readEntries(filePath);
   } catch {
-    return profile;
+    return { profile, complete: false };
   }
-  const byLowerName = new Map(entryNames.map((name) => [name.toLowerCase(), name]));
-  const readText = async (name: string, prefix = false): Promise<string | null> => {
-    const actual = byLowerName.get(name.toLowerCase());
-    if (!actual) return null;
-    try {
-      const buffer = prefix
-        ? await readZipEntryPrefix(filePath, actual, MODEL_PREFIX_BYTES)
-        : await readZipEntry(filePath, actual, SMALL_ENTRY_BYTES);
-      return buffer ? buffer.toString("utf8") : null;
-    } catch {
-      return null;
-    }
-  };
+  const { names: entryNames, texts } = entries;
+  const readText = (name: string) => texts.get(name.toLowerCase()) ?? null;
 
-  const modelText = await readText(MODEL_ENTRY, true);
+  const modelText = readText(MODEL_ENTRY);
   if (modelText) {
     profile.title = findProfileTitle(modelText);
   }
 
   const sources: Settings[] = [];
-  const projectText = await readText("Metadata/project_settings.config");
+  const projectText = readText("Metadata/project_settings.config");
   if (projectText) {
     try {
       sources.push(parseJsonSettings(projectText));
@@ -316,11 +386,11 @@ export async function readPlateProfile(filePath: string): Promise<PlateProfile> 
     }
   }
   for (const name of ["Metadata/Slic3r_PE.config", "Metadata/PrusaSlicer.config"]) {
-    const text = await readText(name);
+    const text = readText(name);
     if (text) sources.push(parseIniSettings(text));
   }
 
-  const sliceText = await readText("Metadata/slice_info.config");
+  const sliceText = readText("Metadata/slice_info.config");
   const slice = sliceText ? parseSliceInfo(sliceText) : null;
 
   profile.printer = lookup(sources, PRINTER_KEYS).flatMap(toStrings)[0] ?? null;
@@ -345,16 +415,33 @@ export async function readPlateProfile(filePath: string): Promise<PlateProfile> 
   profile.estimated_seconds = slice?.seconds ?? null;
   profile.weight_g = slice?.weight ?? null;
   profile.plate_stats = slice?.plateStats ?? [];
-  return profile;
+  return { profile, complete: entries.complete };
+}
+
+/** See readPlateProfileChecked: whatever could be read, never an error. */
+export async function readPlateProfile(filePath: string): Promise<PlateProfile> {
+  return (await readPlateProfileChecked(filePath)).profile;
 }
 
 function is3mf(filename: string): boolean {
   return path.extname(filename).toLowerCase() === ".3mf";
 }
 
-/** Reads the file's profile and saves it on the plate. */
-export async function storePlateProfile(plateId: string, filePath: string): Promise<StoredPlateProfile> {
-  const stored: StoredPlateProfile = { ...(await readPlateProfile(filePath)), version: PLATE_PROFILE_VERSION };
+async function fileStamp(filePath: string): Promise<FileStamp> {
+  const stat = await fs.stat(filePath);
+  return { size: stat.size, mtime_ms: Math.trunc(stat.mtimeMs) };
+}
+
+/**
+ * Reads the file's profile and saves it on the plate. Null, and nothing saved, when the file couldn't be read as a
+ * whole: a profile that missed values for that reason would be taken for the file's real one and never read again.
+ */
+export async function storePlateProfile(plateId: string, filePath: string): Promise<StoredPlateProfile | null> {
+  // Taken before reading, so a change while reading shows up as a difference next time.
+  const file = await fileStamp(filePath);
+  const { profile, complete } = await readPlateProfileChecked(filePath);
+  if (!complete) return null;
+  const stored: StoredPlateProfile = { ...profile, version: PLATE_PROFILE_VERSION, file };
   await prisma.plate.update({
     where: { id: plateId },
     data: { profileMeta: stored as unknown as Prisma.InputJsonValue },
@@ -362,23 +449,39 @@ export async function storePlateProfile(plateId: string, filePath: string): Prom
   return stored;
 }
 
-function isCurrent(value: Prisma.JsonValue | null): boolean {
+function isCurrentVersion(value: Prisma.JsonValue | null): value is Prisma.JsonObject {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const version = (value as { version?: unknown }).version;
   return typeof version === "number" && version >= PLATE_PROFILE_VERSION;
 }
 
-/** Reads the missing or outdated profiles of 3MF plates, saves them and sets them on the given objects. A plate whose
- *  file is gone is skipped and stays unread, so it is tried again once the file is back. */
+function storedStamp(value: Prisma.JsonObject): FileStamp | null {
+  const file = value.file;
+  if (!file || typeof file !== "object" || Array.isArray(file)) return null;
+  const { size, mtime_ms } = file;
+  return typeof size === "number" && typeof mtime_ms === "number" ? { size, mtime_ms } : null;
+}
+
+/** Reads the missing or outdated profiles of 3MF plates, and those of files changed since, saves them and sets them on
+ *  the given objects. A plate whose file is gone or unreadable is skipped and stays as it was, so it is tried again. */
 export async function ensurePlateProfiles<
   T extends Pick<Plate, "id" | "filename" | "storagePath" | "sourcePath" | "profileMeta">,
 >(plates: T[]): Promise<void> {
   for (const plate of plates) {
-    if (!is3mf(plate.filename) || isCurrent(plate.profileMeta)) continue;
+    if (!is3mf(plate.filename)) continue;
+    const current = isCurrentVersion(plate.profileMeta);
+    const stamp = current ? storedStamp(plate.profileMeta as Prisma.JsonObject) : null;
+    // Stored before the stamp existed: left as it is, so an upgrade doesn't re-read every file.
+    if (current && !stamp) continue;
     try {
       const filePath = resolvePlateFilePath(plate);
       if (!filePath) continue;
-      plate.profileMeta = (await storePlateProfile(plate.id, filePath)) as unknown as Prisma.JsonValue;
+      if (stamp) {
+        const now = await fileStamp(filePath);
+        if (now.size === stamp.size && now.mtime_ms === stamp.mtime_ms) continue;
+      }
+      const stored = await storePlateProfile(plate.id, filePath);
+      if (stored) plate.profileMeta = stored as unknown as Prisma.JsonValue;
     } catch (err) {
       console.error(`Reading the 3MF profile of plate ${plate.id} failed:`, err);
     }

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import JSZip from "jszip";
 import { readZipEntryPrefix } from "../src/utils/zipReader";
-import { hasAnyProfileValue, readPlateProfile } from "../src/services/plateProfile";
+import { hasAnyProfileValue, readPlateProfile, readPlateProfileChecked } from "../src/services/plateProfile";
 
 let dir: string;
 let counter = 0;
@@ -183,6 +183,28 @@ describe("readPlateProfile", () => {
       "3D/3dmodel.model": `<model><metadata type="x" name='ProfileTitle'>Single quoted</metadata></model>`,
     });
     expect((await readPlateProfile(file)).title).toBe("Single quoted");
+  });
+
+  it("sums the plates only, not header metadata", async () => {
+    const file = await write3mf({
+      "Metadata/slice_info.config": `<config><header><metadata key="weight" value="999"/></header><plate><metadata key="index" value="1"/><metadata key="weight" value="5"/></plate></config>`,
+    });
+    expect(await readPlateProfile(file)).toMatchObject({ weight_g: 5 });
+  });
+
+  it("reports an oversized slice_info as incomplete", async () => {
+    const file = await write3mf({
+      "Metadata/slice_info.config": `<config>${" ".repeat(1024 * 1024 + 10)}</config>`,
+    });
+    expect((await readPlateProfileChecked(file)).complete).toBe(false);
+    const ok = await write3mf({ "Metadata/slice_info.config": "<config/>" });
+    expect((await readPlateProfileChecked(ok)).complete).toBe(true);
+  });
+
+  it("reports a non-zip file as incomplete", async () => {
+    const text = path.join(dir, "broken.3mf");
+    fs.writeFileSync(text, "not a zip");
+    expect((await readPlateProfileChecked(text)).complete).toBe(false);
   });
 
   describe("hostile input stays fast", () => {
