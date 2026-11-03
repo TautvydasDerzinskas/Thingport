@@ -131,7 +131,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     return (
       <Box sx={{ maxWidth: "1390px", mx: "auto" }} aria-hidden>
         <Box
-          sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "2fr 1fr" }, gap: "24px", alignItems: "start" }}
+          sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" }, gap: "24px", alignItems: "start" }}
         >
           <Box sx={{ minWidth: 0 }}>
             <Skeleton
@@ -200,7 +200,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "2fr 1fr" },
+          gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
           gap: "24px",
           alignItems: "start",
         }}

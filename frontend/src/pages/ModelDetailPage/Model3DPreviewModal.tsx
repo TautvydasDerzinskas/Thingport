@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import Dialog from "@mui/material/Dialog";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -18,7 +19,7 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { type Print, printsApi } from "../../api/prints";
 import { MODEL_EXTS } from "../../constants/fileTypes";
-import { extOf } from "../../utils/fileExtensions";
+import { extOf, stemOf } from "../../utils/fileExtensions";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
 import ProfileDetails, { plateStatText, statForPlate } from "../../components/ProfileDetails";
 import ModelViewer, {
@@ -31,7 +32,6 @@ import PreviewToolbar from "./PreviewToolbar";
 import type { RenderColor } from "../../constants/settingsOptions";
 import { useRenderColor } from "../../hooks/useAccentColor";
 import { renderSwatch } from "../../theme";
-import { fileRowText } from "./fileRowText";
 
 // Light mode keeps a product-shot style grey; dark mode uses the page background so it doesn't glare.
 const LIGHT_PREVIEW_BG = "#e7e7ea";
@@ -43,6 +43,19 @@ const overlayButtonSx = {
   color: "#fff",
   "&:hover": { bgcolor: "rgba(0, 0, 0, 0.65)" },
 };
+
+// The profile of the active file sits below in ProfileDetails, so a row only needs to tell the files apart.
+function compactFileText(t: TFunction, filename: string, index: number, title?: string | null) {
+  const stem = stemOf(filename);
+  const type = extOf(filename).toUpperCase();
+  const plain = type
+    ? t("models:detail.fileMeta", { n: index + 1, type })
+    : t("models:detail.fileLabel", { n: index + 1 });
+  return { primary: title || stem, secondary: title ? stem : plain };
+}
+
+// A few rows are visible, the rest scrolls inside the panel.
+const scrollListSx = { overflowY: "auto", minHeight: 0, maxHeight: 240 } as const;
 
 type Props = {
   print: Print;
@@ -133,16 +146,19 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
             top: 16,
             left: 16,
             zIndex: 2,
-            width: 240,
-            maxHeight: "calc(100% - 32px)",
-            overflow: "auto",
+            width: 280,
+            // Leaves the bottom toolbar free; the lists scroll, the profile details stay in view.
+            maxHeight: "calc(100% - 104px)",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
             p: 1,
             borderRadius: "12px",
             ...(themeMode === "dark" && { "& .MuiListItemText-primary": { color: "#FFFFFF" } }),
           }}
         >
           {showFileRows && (
-            <List disablePadding>
+            <List disablePadding sx={{ ...scrollListSx, flex: "0 1 auto" }}>
               {sortedPlates.map((plate, idx) => (
                 // Named by file: "plate" is kept for the build plates inside a 3MF.
                 <ListItemButton
@@ -150,13 +166,13 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                   selected={plate.id === activePlate?.id}
                   onClick={() => selectPlate(plate.id)}
                   title={plate.filename}
-                  sx={{ borderRadius: 1, mb: 0.5 }}
+                  sx={{ borderRadius: 1, mb: 0.25, py: 0.5 }}
                 >
                   <ListItemIcon sx={{ minWidth: 40 }}>
                     <PlateThumbnail plate={plate} />
                   </ListItemIcon>
                   <ListItemText
-                    {...fileRowText(t, plate.filename, idx, plate.profile)}
+                    {...compactFileText(t, plate.filename, idx, plate.profile?.title)}
                     primaryTypographyProps={{ variant: "body2", noWrap: true }}
                     secondaryTypographyProps={{ variant: "caption", noWrap: true }}
                   />
@@ -174,13 +190,13 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                   </Typography>
                 </Divider>
               )}
-              <List disablePadding>
+              <List disablePadding sx={{ ...scrollListSx, maxHeight: 168, flex: "0 1 auto" }}>
                 {internalPlates.map((plate) => (
                   <ListItemButton
                     key={plate.index}
                     selected={plate.index === selectedInternalPlateId}
                     onClick={() => setSelectedInternalPlateId(plate.index)}
-                    sx={{ borderRadius: 1, mb: 0.5 }}
+                    sx={{ borderRadius: 1, mb: 0.25, py: 0.5 }}
                   >
                     <ListItemIcon sx={{ minWidth: 40 }}>
                       {internalThumbnails[plate.index] ? (
@@ -228,10 +244,10 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
           )}
 
           {activePlate && (
-            <>
+            <Box sx={{ flexShrink: 0 }}>
               <Divider sx={{ my: 1 }} />
               <ProfileDetails filename={activePlate.filename} profile={activePlate.profile} />
-            </>
+            </Box>
           )}
         </Paper>
 

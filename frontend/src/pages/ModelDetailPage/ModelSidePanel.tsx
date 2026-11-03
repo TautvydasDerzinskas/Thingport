@@ -137,7 +137,7 @@ export default function ModelSidePanel({
         p: 2.5,
         borderRadius: "12px",
         borderColor: dividerBorderColor,
-        position: { xs: "static", md: "sticky" },
+        position: { xs: "static", lg: "sticky" },
         // Stick just below the sticky TopBar, which can wrap taller.
         top: "var(--topbar-height, 80px)",
       }}
