@@ -28,5 +28,7 @@ jobs:
         run: npm run providers:check
       - name: SDK reference matches frontend/src/sdk/types.ts, and the examples type-check
         run: npm run sdk:check
+      - name: Studio's backend copies match frontend/src/studio
+        run: npm run studio:check
       - name: gofmt
         run: test -z "$(gofmt -l bridge)" || { gofmt -l bridge; exit 1; }

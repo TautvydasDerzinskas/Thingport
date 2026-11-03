@@ -95,7 +95,8 @@
       "tags": "Etiquetas",
       "downloads": "Descargas",
       "bookmarks": "Marcadores",
-      "tools": "Herramientas"
+      "tools": "Herramientas",
+      "studio": "Estudio"
     },
     "uploadBar": {
       "uploading": "Subiendo…",
@@ -354,7 +355,13 @@
           "writeConfirmTitle": "¿Dejar que el asistente use «{{tool}}»?",
           "writeConfirmMessage": "Esta herramienta cambia tu biblioteca. Un asistente conectado con este token podrá usarla sin preguntarte cada vez. Nada de lo que haga elimina modelos.",
           "writeConfirm": "Activar",
-          "reads": "Lee tu biblioteca"
+          "reads": "Lee tu biblioteca",
+          "studio": {
+            "heading": "Estudio",
+            "title": "Diseños de Estudio",
+            "description": "Leer, crear y cambiar tus diseños de Estudio, paso a paso, como puedes hacerlo en la página.",
+            "confirm": "Un asistente conectado con este token podrá crear, cambiar y eliminar tus diseños de Estudio sin preguntarte cada vez. No puede cambiar tus modelos."
+          }
         },
         "rest": {
           "heading": "Permisos",
@@ -3125,6 +3132,155 @@
           "Quitando el polvo del estante vacío…",
           "Despidiendo a los fantasmas…"
         ]
+      }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Herramientas de Estudio"
+      },
+      "emptyDesign": "Añade una forma desde la barra de herramientas o empieza un boceto",
+      "types": {
+        "box": "Caja",
+        "cylinder": "Cilindro",
+        "cone": "Cono",
+        "sphere": "Esfera",
+        "torus": "Toro",
+        "extrude": "Extrusión",
+        "boolean": "Combinación",
+        "sketch": "Boceto"
+      },
+      "tree": {
+        "heading": "Elementos",
+        "empty": "Aún no hay nada",
+        "expand": "Expandir",
+        "collapse": "Contraer"
+      },
+      "actions": {
+        "sketch": "Boceto",
+        "extrude": "Extruir",
+        "editSketch": "Editar boceto",
+        "drawOnSketch": "Dibujar en el boceto",
+        "union": "Unir",
+        "subtract": "Restar",
+        "intersect": "Intersecar",
+        "undo": "Deshacer",
+        "redo": "Rehacer",
+        "rename": "Cambiar nombre",
+        "duplicate": "Duplicar",
+        "delete": "Eliminar",
+        "hide": "Ocultar",
+        "show": "Mostrar",
+        "add": {
+          "box": "Añadir caja",
+          "cylinder": "Añadir cilindro",
+          "cone": "Añadir cono",
+          "sphere": "Añadir esfera",
+          "torus": "Añadir toro"
+        }
+      },
+      "shapes": {
+        "rectangle": "Rectángulo",
+        "circle": "Círculo",
+        "polygon": "Polígono"
+      },
+      "planes": {
+        "XY": "Superior",
+        "XZ": "Frontal",
+        "YZ": "Derecho"
+      },
+      "sketch": {
+        "on": "Boceto en el plano {{plane}}",
+        "tool": "Herramienta de dibujo",
+        "finish": "Terminar",
+        "hint": {
+          "rectangle": "Arrastra para dibujar un rectángulo",
+          "circle": "Arrastra desde el centro para dibujar un círculo",
+          "polygon": "Haz clic para añadir vértices; un doble clic, Intro o el primer vértice lo cierran"
+        }
+      },
+      "transform": {
+        "label": "Manipulador",
+        "translate": "Mover",
+        "rotate": "Rotar",
+        "scale": "Escalar"
+      },
+      "view": {
+        "label": "Vistas",
+        "iso": "Isométrica",
+        "top": "Superior",
+        "front": "Frontal",
+        "right": "Derecha",
+        "fit": "Ajustar a la vista"
+      },
+      "properties": {
+        "heading": "Propiedades",
+        "none": "Selecciona un elemento para editarlo.",
+        "selectedCount_one": "{{count}} seleccionado",
+        "selectedCount_many": "{{count}} seleccionados",
+        "selectedCount_other": "{{count}} seleccionados",
+        "partOf": "Parte de",
+        "name": "Nombre",
+        "size": "Tamaño",
+        "extrude": "Extrusión",
+        "extrudeHelp": "Cuánto se extruye el boceto, en mm. Una distancia negativa va en sentido contrario.",
+        "operation": "Operación",
+        "position": "Posición",
+        "rotation": "Rotación",
+        "scale": "Escala",
+        "plane": "Plano",
+        "planeHelp": "Superior (XY) extruye hacia arriba, Frontal (XZ) hacia delante, Derecho (YZ) hacia la derecha. El desplazamiento mueve el plano en ese sentido.",
+        "shapes": "Formas",
+        "noShapes": "Aún ninguna: dibuja en el boceto.",
+        "removeShape": "Quitar forma",
+        "hole": "Agujero",
+        "points_one": "{{count}} punto",
+        "points_many": "{{count}} puntos",
+        "points_other": "{{count}} puntos",
+        "fields": {
+          "width": "Ancho",
+          "depth": "Profundidad",
+          "height": "Alto",
+          "radius": "Radio",
+          "segments": "Segmentos",
+          "radius_bottom": "Radio inferior",
+          "radius_top": "Radio superior",
+          "major_radius": "Radio del anillo",
+          "minor_radius": "Radio del tubo",
+          "distance": "Distancia",
+          "offset": "Desplazamiento"
+        }
+      },
+      "design": {
+        "none": "Sin diseño",
+        "new": "Nuevo diseño",
+        "open": "Abrir…",
+        "openTitle": "Abrir un diseño",
+        "rename": "Cambiar nombre del diseño",
+        "export": "Exportar STL",
+        "delete": "Eliminar diseño",
+        "deleteTitle": "¿Eliminar «{{name}}»?",
+        "deleteMessage": "El diseño y su historial se eliminan para siempre.",
+        "empty": "Aún no hay diseños.",
+        "emptyTitle": "Aún no hay diseños",
+        "emptyHint": "Empieza uno y constrúyelo con formas y bocetos.",
+        "untitled": "Diseño sin título",
+        "nothingToExport": "No hay nada visible que exportar",
+        "features_one": "{{count}} elemento",
+        "features_many": "{{count}} elementos",
+        "features_other": "{{count}} elementos"
+      },
+      "prompt": {
+        "title": "Preguntar a la IA",
+        "open": "Abrir Preguntar a la IA",
+        "soon": "Pronto",
+        "help": "Una IA creará y cambiará el diseño por ti, paso a paso, con las mismas herramientas que la barra. Elige aquí qué IA; un administrador las añade en Administración > IA.",
+        "model": "Modelo de IA",
+        "addModel": "Añadir una IA",
+        "noModels": "Aún no se ha añadido ninguna IA",
+        "minimize": "Minimizar",
+        "placeholder": "Describe una pieza o un cambio en esta",
+        "send": "Enviar",
+        "sendSoon": "El envío a la IA llegará en una próxima actualización"
       }
     }
   },

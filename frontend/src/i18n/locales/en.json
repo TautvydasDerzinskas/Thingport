@@ -95,7 +95,8 @@
       "tags": "Tags",
       "downloads": "Downloads",
       "bookmarks": "Bookmarks",
-      "tools": "Tools"
+      "tools": "Tools",
+      "studio": "Studio"
     },
     "uploadBar": {
       "uploading": "Uploading…",
@@ -354,7 +355,13 @@
           "adminOff": "An admin has turned MCP off on this Thingport.",
           "adminReadOnly": "An admin allows only the tools that read.",
           "copyCommand": "Copy command",
-          "reads": "Reads your library"
+          "reads": "Reads your library",
+          "studio": {
+            "heading": "Studio",
+            "title": "Studio designs",
+            "description": "Read, make and change your Studio designs, step by step, as you can on the page.",
+            "confirm": "An assistant connected with this token will be able to create, change and delete your Studio designs without asking you each time. It can't change your models."
+          }
         },
         "rest": {
           "heading": "Permissions",
@@ -3089,6 +3096,152 @@
           "Dusting the empty shelf…",
           "Saying goodbye to the ghosts…"
         ]
+      }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Studio tools"
+      },
+      "emptyDesign": "Add a shape from the toolbar, or start a sketch",
+      "types": {
+        "box": "Box",
+        "cylinder": "Cylinder",
+        "cone": "Cone",
+        "sphere": "Sphere",
+        "torus": "Torus",
+        "extrude": "Extrude",
+        "boolean": "Combine",
+        "sketch": "Sketch"
+      },
+      "tree": {
+        "heading": "Features",
+        "empty": "Nothing here yet",
+        "expand": "Expand",
+        "collapse": "Collapse"
+      },
+      "actions": {
+        "sketch": "Sketch",
+        "extrude": "Extrude",
+        "editSketch": "Edit sketch",
+        "drawOnSketch": "Draw on sketch",
+        "union": "Union",
+        "subtract": "Subtract",
+        "intersect": "Intersect",
+        "undo": "Undo",
+        "redo": "Redo",
+        "rename": "Rename",
+        "duplicate": "Duplicate",
+        "delete": "Delete",
+        "hide": "Hide",
+        "show": "Show",
+        "add": {
+          "box": "Add box",
+          "cylinder": "Add cylinder",
+          "cone": "Add cone",
+          "sphere": "Add sphere",
+          "torus": "Add torus"
+        }
+      },
+      "shapes": {
+        "rectangle": "Rectangle",
+        "circle": "Circle",
+        "polygon": "Polygon"
+      },
+      "planes": {
+        "XY": "Top",
+        "XZ": "Front",
+        "YZ": "Right"
+      },
+      "sketch": {
+        "on": "Sketch on {{plane}}",
+        "tool": "Drawing tool",
+        "finish": "Finish",
+        "hint": {
+          "rectangle": "Drag to draw a rectangle",
+          "circle": "Drag from the centre to draw a circle",
+          "polygon": "Click to add corners; double-click, Enter or the first corner closes it"
+        }
+      },
+      "transform": {
+        "label": "Gizmo",
+        "translate": "Move",
+        "rotate": "Rotate",
+        "scale": "Scale"
+      },
+      "view": {
+        "label": "Views",
+        "iso": "Isometric",
+        "top": "Top",
+        "front": "Front",
+        "right": "Right",
+        "fit": "Fit to view"
+      },
+      "properties": {
+        "heading": "Properties",
+        "none": "Select a feature to edit it.",
+        "selectedCount_one": "{{count}} selected",
+        "selectedCount_other": "{{count}} selected",
+        "partOf": "Part of",
+        "name": "Name",
+        "size": "Size",
+        "extrude": "Extrude",
+        "extrudeHelp": "How far the sketch is pulled, in mm. A negative distance goes the other way.",
+        "operation": "Operation",
+        "position": "Position",
+        "rotation": "Rotation",
+        "scale": "Scale",
+        "plane": "Plane",
+        "planeHelp": "Top (XY) extrudes up, Front (XZ) towards the front, Right (YZ) to the right. Offset moves the plane that way.",
+        "shapes": "Shapes",
+        "noShapes": "None yet: draw on the sketch.",
+        "removeShape": "Remove shape",
+        "hole": "Hole",
+        "points_one": "{{count}} point",
+        "points_other": "{{count}} points",
+        "fields": {
+          "width": "Width",
+          "depth": "Depth",
+          "height": "Height",
+          "radius": "Radius",
+          "segments": "Segments",
+          "radius_bottom": "Bottom radius",
+          "radius_top": "Top radius",
+          "major_radius": "Ring radius",
+          "minor_radius": "Tube radius",
+          "distance": "Distance",
+          "offset": "Offset"
+        }
+      },
+      "design": {
+        "none": "No design",
+        "new": "New design",
+        "open": "Open…",
+        "openTitle": "Open a design",
+        "rename": "Rename design",
+        "export": "Export STL",
+        "delete": "Delete design",
+        "deleteTitle": "Delete “{{name}}”?",
+        "deleteMessage": "The design and its history are deleted for good.",
+        "empty": "No designs yet.",
+        "emptyTitle": "No designs yet",
+        "emptyHint": "Start one, then build it from shapes and sketches.",
+        "untitled": "Untitled design",
+        "nothingToExport": "Nothing visible to export",
+        "features_one": "{{count}} feature",
+        "features_other": "{{count}} features"
+      },
+      "prompt": {
+        "title": "Ask AI",
+        "open": "Open Ask AI",
+        "soon": "Soon",
+        "help": "An AI will build and change the design for you, step by step, with the same tools as the toolbar. Choose which AI here; an admin adds them in Administration > AI.",
+        "model": "AI model",
+        "addModel": "Add an AI",
+        "noModels": "No AI added yet",
+        "minimize": "Minimise",
+        "placeholder": "Describe a part, or a change to this one",
+        "send": "Send",
+        "sendSoon": "Sending to the AI comes in a later update"
       }
     }
   },

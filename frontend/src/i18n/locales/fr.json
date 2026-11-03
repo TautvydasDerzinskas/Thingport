@@ -95,7 +95,8 @@
       "tags": "Étiquettes",
       "downloads": "Téléchargements",
       "bookmarks": "Favoris",
-      "tools": "Outils"
+      "tools": "Outils",
+      "studio": "Studio"
     },
     "uploadBar": {
       "uploading": "Téléversement…",
@@ -354,7 +355,13 @@
           "writeConfirmTitle": "Laisser l'assistant utiliser « {{tool}} » ?",
           "writeConfirmMessage": "Cet outil modifie votre bibliothèque. Un assistant connecté avec ce jeton pourra l'utiliser sans vous demander à chaque fois. Rien de ce qu'il fait ne supprime de modèles.",
           "writeConfirm": "Activer",
-          "reads": "Lit votre bibliothèque"
+          "reads": "Lit votre bibliothèque",
+          "studio": {
+            "heading": "Studio",
+            "title": "Conceptions du Studio",
+            "description": "Lire, créer et modifier vos conceptions du Studio, étape par étape, comme vous le pouvez sur la page.",
+            "confirm": "Un assistant connecté avec ce jeton pourra créer, modifier et supprimer vos conceptions du Studio sans vous demander à chaque fois. Il ne peut pas modifier vos modèles."
+          }
         },
         "rest": {
           "heading": "Autorisations",
@@ -3138,6 +3145,155 @@
           "On dépoussière l'étagère vide…",
           "On dit au revoir aux fantômes…"
         ]
+      }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Outils du Studio"
+      },
+      "emptyDesign": "Ajoutez une forme depuis la barre d’outils ou commencez une esquisse",
+      "types": {
+        "box": "Boîte",
+        "cylinder": "Cylindre",
+        "cone": "Cône",
+        "sphere": "Sphère",
+        "torus": "Tore",
+        "extrude": "Extrusion",
+        "boolean": "Combinaison",
+        "sketch": "Esquisse"
+      },
+      "tree": {
+        "heading": "Éléments",
+        "empty": "Rien pour l’instant",
+        "expand": "Déplier",
+        "collapse": "Replier"
+      },
+      "actions": {
+        "sketch": "Esquisse",
+        "extrude": "Extruder",
+        "editSketch": "Modifier l’esquisse",
+        "drawOnSketch": "Dessiner sur l’esquisse",
+        "union": "Unir",
+        "subtract": "Soustraire",
+        "intersect": "Intersecter",
+        "undo": "Annuler",
+        "redo": "Rétablir",
+        "rename": "Renommer",
+        "duplicate": "Dupliquer",
+        "delete": "Supprimer",
+        "hide": "Masquer",
+        "show": "Afficher",
+        "add": {
+          "box": "Ajouter une boîte",
+          "cylinder": "Ajouter un cylindre",
+          "cone": "Ajouter un cône",
+          "sphere": "Ajouter une sphère",
+          "torus": "Ajouter un tore"
+        }
+      },
+      "shapes": {
+        "rectangle": "Rectangle",
+        "circle": "Cercle",
+        "polygon": "Polygone"
+      },
+      "planes": {
+        "XY": "Dessus",
+        "XZ": "Face",
+        "YZ": "Droite"
+      },
+      "sketch": {
+        "on": "Esquisse sur le plan {{plane}}",
+        "tool": "Outil de dessin",
+        "finish": "Terminer",
+        "hint": {
+          "rectangle": "Faites glisser pour dessiner un rectangle",
+          "circle": "Faites glisser depuis le centre pour dessiner un cercle",
+          "polygon": "Cliquez pour ajouter des sommets ; un double-clic, Entrée ou le premier sommet le ferme"
+        }
+      },
+      "transform": {
+        "label": "Manipulateur",
+        "translate": "Déplacer",
+        "rotate": "Pivoter",
+        "scale": "Mettre à l’échelle"
+      },
+      "view": {
+        "label": "Vues",
+        "iso": "Isométrique",
+        "top": "Dessus",
+        "front": "Face",
+        "right": "Droite",
+        "fit": "Ajuster à la vue"
+      },
+      "properties": {
+        "heading": "Propriétés",
+        "none": "Sélectionnez un élément pour le modifier.",
+        "selectedCount_one": "{{count}} sélectionné",
+        "selectedCount_many": "{{count}} sélectionnés",
+        "selectedCount_other": "{{count}} sélectionnés",
+        "partOf": "Fait partie de",
+        "name": "Nom",
+        "size": "Taille",
+        "extrude": "Extrusion",
+        "extrudeHelp": "Distance d’extrusion de l’esquisse, en mm. Une distance négative va dans l’autre sens.",
+        "operation": "Opération",
+        "position": "Position",
+        "rotation": "Rotation",
+        "scale": "Échelle",
+        "plane": "Plan",
+        "planeHelp": "Dessus (XY) extrude vers le haut, Face (XZ) vers l’avant, Droite (YZ) vers la droite. Le décalage déplace le plan dans ce sens.",
+        "shapes": "Formes",
+        "noShapes": "Aucune pour l’instant : dessinez sur l’esquisse.",
+        "removeShape": "Retirer la forme",
+        "hole": "Trou",
+        "points_one": "{{count}} point",
+        "points_many": "{{count}} points",
+        "points_other": "{{count}} points",
+        "fields": {
+          "width": "Largeur",
+          "depth": "Profondeur",
+          "height": "Hauteur",
+          "radius": "Rayon",
+          "segments": "Segments",
+          "radius_bottom": "Rayon du bas",
+          "radius_top": "Rayon du haut",
+          "major_radius": "Rayon de l’anneau",
+          "minor_radius": "Rayon du tube",
+          "distance": "Distance",
+          "offset": "Décalage"
+        }
+      },
+      "design": {
+        "none": "Aucune conception",
+        "new": "Nouvelle conception",
+        "open": "Ouvrir…",
+        "openTitle": "Ouvrir une conception",
+        "rename": "Renommer la conception",
+        "export": "Exporter en STL",
+        "delete": "Supprimer la conception",
+        "deleteTitle": "Supprimer « {{name}} » ?",
+        "deleteMessage": "La conception et son historique sont supprimés définitivement.",
+        "empty": "Aucune conception pour l’instant.",
+        "emptyTitle": "Aucune conception pour l’instant",
+        "emptyHint": "Commencez-en une, puis construisez-la avec des formes et des esquisses.",
+        "untitled": "Conception sans titre",
+        "nothingToExport": "Rien de visible à exporter",
+        "features_one": "{{count}} élément",
+        "features_many": "{{count}} éléments",
+        "features_other": "{{count}} éléments"
+      },
+      "prompt": {
+        "title": "Demander à l’IA",
+        "open": "Ouvrir Demander à l’IA",
+        "soon": "Bientôt",
+        "help": "Une IA construira et modifiera la conception pour vous, étape par étape, avec les mêmes outils que la barre. Choisissez ici quelle IA ; un administrateur les ajoute dans Administration > IA.",
+        "model": "Modèle d’IA",
+        "addModel": "Ajouter une IA",
+        "noModels": "Aucune IA ajoutée pour l’instant",
+        "minimize": "Réduire",
+        "placeholder": "Décrivez une pièce, ou une modification de celle-ci",
+        "send": "Envoyer",
+        "sendSoon": "L’envoi à l’IA arrive dans une prochaine mise à jour"
       }
     }
   },

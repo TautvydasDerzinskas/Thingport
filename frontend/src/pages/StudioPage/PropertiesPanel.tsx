@@ -1,0 +1,473 @@
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import PentagonOutlinedIcon from "@mui/icons-material/PentagonOutlined";
+import RectangleOutlinedIcon from "@mui/icons-material/RectangleOutlined";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
+import HelpTip from "../../components/HelpTip";
+import Segmented from "../../components/controls/Segmented";
+import {
+  consumerOf,
+  featureById,
+  isBody,
+  type BodyFeature,
+  type SketchFeature,
+  type SketchShape,
+  type StudioDocument,
+  type Vec3,
+} from "../../studio/document";
+import type { RunCommand } from "./useStudioDesign";
+import { featureLabel } from "./labels";
+import { FeatureIcon } from "./studioIcons";
+
+type Props = {
+  document: StudioDocument;
+  selected: readonly string[];
+  errors: Record<string, string>;
+  run: RunCommand;
+  onSelect: (id: string) => void;
+  onEditSketch: (id: string) => void;
+};
+
+const show = (value: number) => String(Number(value.toFixed(3)));
+
+/** A number typed in and kept on Enter or on leaving the field; Escape, or something that isn't a number, puts it back. */
+function NumberField({
+  label,
+  value,
+  unit,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  unit?: string;
+  onCommit: (value: number) => void;
+}) {
+  const [text, setText] = useState(show(value));
+  useEffect(() => setText(show(value)), [value]);
+  const commit = () => {
+    const next = Number(text.replace(",", "."));
+    if (text.trim() === "" || !Number.isFinite(next) || next === value) return setText(show(value));
+    onCommit(next);
+  };
+  return (
+    <TextField
+      size="small"
+      label={label}
+      value={text}
+      onChange={(event) => setText(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") (event.target as HTMLInputElement).blur();
+        if (event.key === "Escape") {
+          setText(show(value));
+          event.stopPropagation();
+        }
+      }}
+      slotProps={{
+        htmlInput: { inputMode: "decimal", "aria-label": unit ? `${label} (${unit})` : label },
+        input: unit
+          ? { endAdornment: <InputAdornment position="end">{unit}</InputAdornment>, sx: { pr: 1 } }
+          : undefined,
+        inputLabel: { shrink: true },
+      }}
+      sx={{ "& input": { py: 0.75, fontSize: "0.85rem" } }}
+    />
+  );
+}
+
+function TextCommitField({
+  label,
+  value,
+  placeholder,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  onCommit: (value: string) => void;
+}) {
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+  return (
+    <TextField
+      size="small"
+      label={label}
+      value={text}
+      placeholder={placeholder}
+      onChange={(event) => setText(event.target.value)}
+      onBlur={() => text.trim() !== value && onCommit(text.trim())}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") (event.target as HTMLInputElement).blur();
+        if (event.key === "Escape") {
+          setText(value);
+          event.stopPropagation();
+        }
+      }}
+      slotProps={{ inputLabel: { shrink: true }, htmlInput: { maxLength: 80 } }}
+      sx={{ "& input": { py: 0.75, fontSize: "0.85rem" } }}
+      fullWidth
+    />
+  );
+}
+
+function Section({ title, help, children }: { title: string; help?: string; children: React.ReactNode }) {
+  return (
+    <Box sx={{ mt: 2 }}>
+      <Typography
+        variant="caption"
+        sx={{ display: "block", mb: 1, fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}
+      >
+        {title}
+        {help && <HelpTip text={help} />}
+      </Typography>
+      {children}
+    </Box>
+  );
+}
+
+const triple = { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 1 } as const;
+const pair = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 1 } as const;
+
+/** The selected feature's dimensions, place and parts, each field one command. */
+export default function PropertiesPanel({ document, selected, errors, run, onSelect, onEditSketch }: Props) {
+  const { t } = useTranslation("app");
+  const feature = selected.length === 1 ? featureById(document, selected[0]) : undefined;
+
+  if (!feature) {
+    return (
+      <Box sx={{ p: 1.5 }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
+          {t("studio.properties.heading")}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          {selected.length > 1
+            ? t("studio.properties.selectedCount", { count: selected.length })
+            : t("studio.properties.none")}
+        </Typography>
+      </Box>
+    );
+  }
+
+  const id = feature.id;
+  const update = (changes: Record<string, number | string>) =>
+    void run("update_feature", { feature_id: id, ...changes });
+  const dimension = (key: string, value: number, unit = "mm") => (
+    <NumberField
+      key={key}
+      label={t(`studio.properties.fields.${key}`)}
+      value={value}
+      unit={unit}
+      onCommit={(v) => update({ [key]: v })}
+    />
+  );
+  const partOf = consumerOf(document, id);
+
+  return (
+    <Box sx={{ p: 1.5, overflow: "auto", height: "100%" }}>
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <FeatureIcon type={feature.type} sx={{ fontSize: 20, color: "primary.main" }} />
+        <Typography variant="subtitle2" noWrap sx={{ flex: 1, minWidth: 0 }}>
+          {featureLabel(feature, t)}
+        </Typography>
+        <Chip
+          size="small"
+          label={id}
+          variant="outlined"
+          sx={{ fontFamily: "monospace", fontSize: "0.7rem", height: 20 }}
+        />
+      </Stack>
+      {errors[id] && (
+        <Stack direction="row" spacing={0.75} sx={{ mt: 1, color: "warning.main" }}>
+          <WarningAmberRoundedIcon sx={{ fontSize: 16, mt: "2px" }} />
+          <Typography variant="caption">{errors[id]}</Typography>
+        </Stack>
+      )}
+      {partOf && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>
+          {t("studio.properties.partOf")}{" "}
+          <Box
+            component="button"
+            type="button"
+            onClick={() => onSelect(partOf.id)}
+            sx={{ font: "inherit", color: "primary.main", bgcolor: "transparent", border: 0, p: 0, cursor: "pointer" }}
+          >
+            {featureLabel(partOf, t)}
+          </Box>
+        </Typography>
+      )}
+      <Box sx={{ mt: 1.5 }}>
+        <TextCommitField
+          label={t("studio.properties.name")}
+          value={feature.name}
+          placeholder={featureLabel({ ...feature, name: "" }, t)}
+          onCommit={(name) => void run("rename_feature", { feature_id: id, name })}
+        />
+      </Box>
+
+      {feature.type === "box" && (
+        <Section title={t("studio.properties.size")}>
+          <Box sx={triple}>
+            {dimension("width", feature.width)}
+            {dimension("depth", feature.depth)}
+            {dimension("height", feature.height)}
+          </Box>
+        </Section>
+      )}
+      {feature.type === "cylinder" && (
+        <Section title={t("studio.properties.size")}>
+          <Box sx={triple}>
+            {dimension("radius", feature.radius)}
+            {dimension("height", feature.height)}
+            {dimension("segments", feature.segments, "")}
+          </Box>
+        </Section>
+      )}
+      {feature.type === "cone" && (
+        <Section title={t("studio.properties.size")}>
+          <Box sx={pair}>
+            {dimension("radius_bottom", feature.radius_bottom)}
+            {dimension("radius_top", feature.radius_top)}
+            {dimension("height", feature.height)}
+            {dimension("segments", feature.segments, "")}
+          </Box>
+        </Section>
+      )}
+      {feature.type === "sphere" && (
+        <Section title={t("studio.properties.size")}>
+          <Box sx={pair}>
+            {dimension("radius", feature.radius)}
+            {dimension("segments", feature.segments, "")}
+          </Box>
+        </Section>
+      )}
+      {feature.type === "torus" && (
+        <Section title={t("studio.properties.size")}>
+          <Box sx={triple}>
+            {dimension("major_radius", feature.major_radius)}
+            {dimension("minor_radius", feature.minor_radius)}
+            {dimension("segments", feature.segments, "")}
+          </Box>
+        </Section>
+      )}
+      {feature.type === "extrude" && (
+        <Section title={t("studio.properties.extrude")} help={t("studio.properties.extrudeHelp")}>
+          <Stack spacing={1}>
+            {dimension("distance", feature.distance)}
+            <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEditSketch(feature.sketch_id)}>
+              {t("studio.actions.editSketch")}
+            </Button>
+          </Stack>
+        </Section>
+      )}
+      {feature.type === "boolean" && (
+        <Section title={t("studio.properties.operation")}>
+          <Segmented
+            fullWidth
+            label={t("studio.properties.operation")}
+            value={feature.operation}
+            options={(["union", "subtract", "intersect"] as const).map((operation) => ({
+              value: operation,
+              label: t(`studio.actions.${operation}`),
+            }))}
+            onChange={(operation) => update({ operation })}
+          />
+          <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ mt: 1.25 }}>
+            {[feature.target_id, ...feature.tool_ids].map((part, index) => {
+              const input = featureById(document, part);
+              return (
+                input && (
+                  <Chip
+                    key={part}
+                    size="small"
+                    variant={index === 0 ? "filled" : "outlined"}
+                    icon={<FeatureIcon type={input.type} sx={{ fontSize: 16 }} />}
+                    label={featureLabel(input, t)}
+                    onClick={() => onSelect(part)}
+                  />
+                )
+              );
+            })}
+          </Stack>
+        </Section>
+      )}
+      {feature.type === "sketch" && <SketchProperties sketch={feature} run={run} onEditSketch={onEditSketch} />}
+      {isBody(feature) && <TransformFields feature={feature} run={run} />}
+    </Box>
+  );
+}
+
+function TransformFields({ feature, run }: { feature: BodyFeature; run: RunCommand }) {
+  const { t } = useTranslation("app");
+  const { position, rotation, scale } = feature.transform;
+  const set = (key: "position" | "rotation" | "scale", vector: Vec3, axis: number, value: number) => {
+    const next = [...vector] as Vec3;
+    next[axis] = value;
+    void run("set_transform", { feature_id: feature.id, [key]: next });
+  };
+  const row = (key: "position" | "rotation" | "scale", vector: Vec3, unit: string) => (
+    <Section title={t(`studio.properties.${key}`)}>
+      <Box sx={triple}>
+        {(["X", "Y", "Z"] as const).map((axis, index) => (
+          <NumberField
+            key={axis}
+            label={axis}
+            value={vector[index]}
+            unit={unit}
+            onCommit={(v) => set(key, vector, index, v)}
+          />
+        ))}
+      </Box>
+    </Section>
+  );
+  return (
+    <>
+      {row("position", position, "mm")}
+      {row("rotation", rotation, "°")}
+      {row("scale", scale, "×")}
+    </>
+  );
+}
+
+const SHAPE_ICONS = { rectangle: RectangleOutlinedIcon, circle: CircleOutlinedIcon, polygon: PentagonOutlinedIcon };
+
+function SketchProperties({
+  sketch,
+  run,
+  onEditSketch,
+}: {
+  sketch: SketchFeature;
+  run: RunCommand;
+  onEditSketch: (id: string) => void;
+}) {
+  const { t } = useTranslation("app");
+  const change = (index: number, shape: SketchShape) =>
+    void run("update_sketch_shape", { sketch_id: sketch.id, index, shape });
+  return (
+    <>
+      <Section title={t("studio.properties.plane")} help={t("studio.properties.planeHelp")}>
+        <Stack spacing={1}>
+          <Segmented
+            fullWidth
+            label={t("studio.properties.plane")}
+            value={sketch.plane}
+            options={(["XY", "XZ", "YZ"] as const).map((plane) => ({ value: plane, label: plane }))}
+            onChange={(plane) => void run("update_feature", { feature_id: sketch.id, plane })}
+          />
+          <NumberField
+            label={t("studio.properties.fields.offset")}
+            value={sketch.offset}
+            unit="mm"
+            onCommit={(offset) => void run("update_feature", { feature_id: sketch.id, offset })}
+          />
+          <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEditSketch(sketch.id)}>
+            {t("studio.actions.drawOnSketch")}
+          </Button>
+        </Stack>
+      </Section>
+      <Section title={t("studio.properties.shapes")}>
+        {sketch.shapes.length === 0 && (
+          <Typography variant="body2" color="text.secondary">
+            {t("studio.properties.noShapes")}
+          </Typography>
+        )}
+        <Stack spacing={1.25}>
+          {sketch.shapes.map((shape, index) => {
+            const ShapeIcon = SHAPE_ICONS[shape.type];
+            return (
+              // A shape has no id: the commands address it by its index too.
+              // oxlint-disable-next-line react/no-array-index-key
+              <Box key={index} sx={{ border: 1, borderColor: "divider", borderRadius: 1.5, p: 1 }}>
+                <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1 }}>
+                  <ShapeIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                  <Typography variant="body2" sx={{ flex: 1 }}>
+                    {t(`studio.shapes.${shape.type}`)}
+                    {shape.type === "polygon" && (
+                      <Typography component="span" variant="caption" color="text.secondary">
+                        {" "}
+                        · {t("studio.properties.points", { count: shape.points.length })}
+                      </Typography>
+                    )}
+                  </Typography>
+                  <Tooltip title={t("studio.properties.removeShape")}>
+                    <IconButton
+                      size="small"
+                      aria-label={t("studio.properties.removeShape")}
+                      onClick={() => void run("remove_sketch_shape", { sketch_id: sketch.id, index })}
+                      sx={{ p: 0.25 }}
+                    >
+                      <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+                {shape.type !== "polygon" && (
+                  <Box sx={pair}>
+                    <NumberField
+                      label="U"
+                      value={shape.center[0]}
+                      unit="mm"
+                      onCommit={(u) => change(index, { ...shape, center: [u, shape.center[1]] })}
+                    />
+                    <NumberField
+                      label="V"
+                      value={shape.center[1]}
+                      unit="mm"
+                      onCommit={(v) => change(index, { ...shape, center: [shape.center[0], v] })}
+                    />
+                    {shape.type === "rectangle" ? (
+                      <>
+                        <NumberField
+                          label={t("studio.properties.fields.width")}
+                          value={shape.width}
+                          unit="mm"
+                          onCommit={(width) => change(index, { ...shape, width })}
+                        />
+                        <NumberField
+                          label={t("studio.properties.fields.height")}
+                          value={shape.height}
+                          unit="mm"
+                          onCommit={(height) => change(index, { ...shape, height })}
+                        />
+                      </>
+                    ) : (
+                      <NumberField
+                        label={t("studio.properties.fields.radius")}
+                        value={shape.radius}
+                        unit="mm"
+                        onCommit={(radius) => change(index, { ...shape, radius })}
+                      />
+                    )}
+                  </Box>
+                )}
+                <FormControlLabel
+                  sx={{ mt: 0.5, ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+                  control={
+                    <Switch
+                      size="small"
+                      checked={Boolean(shape.hole)}
+                      onChange={(event) => change(index, { ...shape, hole: event.target.checked })}
+                    />
+                  }
+                  label={t("studio.properties.hole")}
+                />
+              </Box>
+            );
+          })}
+        </Stack>
+      </Section>
+    </>
+  );
+}

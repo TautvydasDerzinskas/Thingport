@@ -15,6 +15,11 @@ module.exports = {
     "npm run sdk:sync",
     "git add -- docs/developers/*.md docs/developers/examples/thingport.d.ts backend/src/services/sdkReference.generated.ts",
   ],
+  // Studio's core, copied into the backend (scripts/sync-studio.mjs), is committed with it.
+  "{frontend/src/studio/**,scripts/sync-studio.mjs}": () => [
+    "npm run studio:sync",
+    "git add --all -- backend/src/studio/*.generated.ts",
+  ],
   "bridge/**/*.go": "gofmt -w",
   "backend/prisma/schema.prisma": () =>
     "npm --prefix backend exec -- prisma format --schema backend/prisma/schema.prisma",

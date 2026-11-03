@@ -16,6 +16,16 @@ Read [CONTRIBUTING.md](../CONTRIBUTING.md) for the workflow, commit style and co
 Before adding or changing a provider (a model site Thingport imports from), read
 [docs/PROVIDER_DEVELOPMENT.md](../docs/PROVIDER_DEVELOPMENT.md) and follow its checklist.
 
+## Studio
+
+Studio (`/studio`, behind `STUDIO_ENABLED`) is a CAD page that an AI must be able to drive completely. **Every change a
+person can make to a design must be a command in `frontend/src/studio/commands.ts`**, run through `run()` from
+`useStudioDesign`: that one list is what the toolbar, the REST endpoint and the `studio_*` MCP tools are all made from,
+so an action added any other way is one an AI can't take. Never change a design's document directly in a component,
+and don't add a second way to. A command's description is all an AI knows about it: say the units, axes, origin, ids
+and what happens to what's already there. After changing anything in `frontend/src/studio/`, run `npm run studio:sync`
+for the backend's copies. Read [docs/STUDIO_DEVELOPMENT.md](../docs/STUDIO_DEVELOPMENT.md) before working on Studio.
+
 ## Plain HTTP instances
 
 Thingport is self-hosted, and many instances run on a LAN or locally over plain HTTP with no TLS certificate. That is

@@ -90,6 +90,12 @@ good, `add_model_files` replaces a model's sliced print, `edit_model` and `renam
 `remove_from_collection` takes models out of a collection (not your library), and `save_widget` and `save_tool` replace
 a widget or a tool with the same folder name.
 
+**Studio designs**, when an admin has turned [Studio](studio.md) on, is one permission for all of Studio's tools:
+`studio_list_designs`, `studio_get_design` and `studio_view_design` to read and look at a design, `studio_create_design`
+and `studio_delete_design`, and one tool for each step you can take on the page, from `studio_add_box` and
+`studio_extrude` to `studio_boolean` and `studio_undo`. It's off for a new token. They change only your Studio designs,
+never your models.
+
 An import runs the same checks as **Add > Import** (a provider an admin turned off stays off, and a model already in
 your library isn't imported twice) and shows up in your notifications and the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
 assistant has nowhere to show one. Most imports finish within the call; a long one carries on in the background, and the

@@ -48,6 +48,8 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS:-}
       - FLARESOLVERR_URL=${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
       - FLARESOLVERR_REQUIRE_HTTPS=${FLARESOLVERR_REQUIRE_HTTPS:-false}
+      # Studio, the CAD page under Tools, is new and off unless this is true (docs/guides/studio.md).
+      - STUDIO_ENABLED=${STUDIO_ENABLED:-false}
     depends_on:
       db:
         condition: service_healthy

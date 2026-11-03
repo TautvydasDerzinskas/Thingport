@@ -35,6 +35,7 @@ import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
 import widgetRoutes from "./routes/widgets";
 import toolRoutes from "./routes/tools";
+import studioRoutes from "./routes/studio";
 import { toolLocks } from "./routes/toolLocks";
 import activityRoutes from "./routes/activity";
 import aiCategorizationRoutes from "./routes/aiCategorization";
@@ -104,6 +105,7 @@ export function createApp(): Express {
   app.use("/api", dashboardRoutes);
   app.use("/api", widgetRoutes);
   app.use("/api", toolRoutes);
+  app.use("/api", studioRoutes);
   app.use("/api", activityRoutes);
 
   app.use((_req: Request, res: Response) => {

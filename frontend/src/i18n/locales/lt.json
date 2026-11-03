@@ -95,7 +95,8 @@
       "tags": "Žymos",
       "downloads": "Atsisiuntimai",
       "bookmarks": "Įsimintos",
-      "tools": "Įrankiai"
+      "tools": "Įrankiai",
+      "studio": "Studija"
     },
     "uploadBar": {
       "uploading": "Įkeliama…",
@@ -355,7 +356,13 @@
           "adminOff": "Administratorius šiame Thingport išjungė MCP.",
           "adminReadOnly": "Administratorius leidžia tik skaitančius įrankius.",
           "copyCommand": "Kopijuoti komandą",
-          "reads": "Skaito biblioteką"
+          "reads": "Skaito biblioteką",
+          "studio": {
+            "heading": "Studija",
+            "title": "Studijos projektai",
+            "description": "Skaityti, kurti ir keisti jūsų Studijos projektus žingsnis po žingsnio, kaip galite puslapyje.",
+            "confirm": "Su šiuo raktu prijungtas asistentas galės kurti, keisti ir trinti jūsų Studijos projektus kiekvieną kartą jūsų neklausdamas. Jūsų modelių jis keisti negali."
+          }
         },
         "rest": {
           "heading": "Leidimai",
@@ -3212,6 +3219,155 @@
           "Nušluostoma tuščia lentyna…",
           "Atsisveikinama su šmėklomis…"
         ]
+      }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Studijos įrankiai"
+      },
+      "emptyDesign": "Pridėkite formą iš įrankių juostos arba pradėkite eskizą",
+      "types": {
+        "box": "Dėžė",
+        "cylinder": "Cilindras",
+        "cone": "Kūgis",
+        "sphere": "Sfera",
+        "torus": "Toras",
+        "extrude": "Išstūmimas",
+        "boolean": "Derinys",
+        "sketch": "Eskizas"
+      },
+      "tree": {
+        "heading": "Elementai",
+        "empty": "Kol kas nieko nėra",
+        "expand": "Išskleisti",
+        "collapse": "Suskleisti"
+      },
+      "actions": {
+        "sketch": "Eskizas",
+        "extrude": "Išstumti",
+        "editSketch": "Redaguoti eskizą",
+        "drawOnSketch": "Piešti eskize",
+        "union": "Sujungti",
+        "subtract": "Atimti",
+        "intersect": "Sankirta",
+        "undo": "Atšaukti",
+        "redo": "Grąžinti",
+        "rename": "Pervadinti",
+        "duplicate": "Dubliuoti",
+        "delete": "Ištrinti",
+        "hide": "Slėpti",
+        "show": "Rodyti",
+        "add": {
+          "box": "Pridėti dėžę",
+          "cylinder": "Pridėti cilindrą",
+          "cone": "Pridėti kūgį",
+          "sphere": "Pridėti sferą",
+          "torus": "Pridėti torą"
+        }
+      },
+      "shapes": {
+        "rectangle": "Stačiakampis",
+        "circle": "Apskritimas",
+        "polygon": "Daugiakampis"
+      },
+      "planes": {
+        "XY": "Viršus",
+        "XZ": "Priekis",
+        "YZ": "Dešinė"
+      },
+      "sketch": {
+        "on": "Eskizas: {{plane}}",
+        "tool": "Piešimo įrankis",
+        "finish": "Baigti",
+        "hint": {
+          "rectangle": "Vilkite, kad nupieštumėte stačiakampį",
+          "circle": "Vilkite nuo centro, kad nupieštumėte apskritimą",
+          "polygon": "Spustelėkite, kad pridėtumėte kampų; dvigubas spustelėjimas, Enter arba pirmasis kampas jį uždaro"
+        }
+      },
+      "transform": {
+        "label": "Valdiklis",
+        "translate": "Perkelti",
+        "rotate": "Pasukti",
+        "scale": "Keisti mastelį"
+      },
+      "view": {
+        "label": "Vaizdai",
+        "iso": "Izometrinis",
+        "top": "Iš viršaus",
+        "front": "Iš priekio",
+        "right": "Iš dešinės",
+        "fit": "Talpinti į vaizdą"
+      },
+      "properties": {
+        "heading": "Savybės",
+        "none": "Pasirinkite elementą, kad jį redaguotumėte.",
+        "selectedCount_one": "Pasirinktas {{count}}",
+        "selectedCount_few": "Pasirinkti {{count}}",
+        "selectedCount_other": "Pasirinkta {{count}}",
+        "partOf": "Dalis:",
+        "name": "Pavadinimas",
+        "size": "Dydis",
+        "extrude": "Išstūmimas",
+        "extrudeHelp": "Kiek toli eskizas ištraukiamas, mm. Neigiamas atstumas – į kitą pusę.",
+        "operation": "Veiksmas",
+        "position": "Padėtis",
+        "rotation": "Pasukimas",
+        "scale": "Mastelis",
+        "plane": "Plokštuma",
+        "planeHelp": "Viršus (XY) išstumia aukštyn, priekis (XZ) – į priekį, dešinė (YZ) – į dešinę. Poslinkis perkelia plokštumą ta kryptimi.",
+        "shapes": "Formos",
+        "noShapes": "Kol kas nėra: pieškite eskize.",
+        "removeShape": "Pašalinti formą",
+        "hole": "Skylė",
+        "points_one": "{{count}} taškas",
+        "points_few": "{{count}} taškai",
+        "points_other": "{{count}} taškų",
+        "fields": {
+          "width": "Plotis",
+          "depth": "Gylis",
+          "height": "Aukštis",
+          "radius": "Spindulys",
+          "segments": "Segmentai",
+          "radius_bottom": "Apatinis spindulys",
+          "radius_top": "Viršutinis spindulys",
+          "major_radius": "Žiedo spindulys",
+          "minor_radius": "Vamzdžio spindulys",
+          "distance": "Atstumas",
+          "offset": "Poslinkis"
+        }
+      },
+      "design": {
+        "none": "Nėra projekto",
+        "new": "Naujas projektas",
+        "open": "Atidaryti…",
+        "openTitle": "Atidaryti projektą",
+        "rename": "Pervadinti projektą",
+        "export": "Eksportuoti STL",
+        "delete": "Ištrinti projektą",
+        "deleteTitle": "Ištrinti „{{name}}“?",
+        "deleteMessage": "Projektas ir jo istorija bus ištrinti visam laikui.",
+        "empty": "Kol kas nėra projektų.",
+        "emptyTitle": "Kol kas nėra projektų",
+        "emptyHint": "Pradėkite naują ir kurkite jį iš formų bei eskizų.",
+        "untitled": "Projektas be pavadinimo",
+        "nothingToExport": "Nėra matomų elementų eksportuoti",
+        "features_one": "{{count}} elementas",
+        "features_few": "{{count}} elementai",
+        "features_other": "{{count}} elementų"
+      },
+      "prompt": {
+        "title": "Klausti DI",
+        "open": "Atverti „Klausti DI“",
+        "soon": "Netrukus",
+        "help": "DI kurs ir keis projektą už jus žingsnis po žingsnio tais pačiais įrankiais kaip įrankių juosta. Čia pasirinkite, kurį DI naudoti; administratorius juos prideda skiltyje Administravimas > DI.",
+        "model": "DI modelis",
+        "addModel": "Pridėti DI",
+        "noModels": "Kol kas nepridėtas joks DI",
+        "minimize": "Sumažinti",
+        "placeholder": "Aprašykite detalę arba šios detalės pakeitimą",
+        "send": "Siųsti",
+        "sendSoon": "Siuntimas DI bus įdiegtas vėlesniame atnaujinime"
       }
     }
   },

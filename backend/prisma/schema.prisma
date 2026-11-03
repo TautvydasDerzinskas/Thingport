@@ -105,6 +105,7 @@ model User {
   tools                    Tool[]
   toolData                 ToolData[]
   icons                    UserIcon[]
+  studioDesigns            StudioDesign[]
   collectionSyncs          CollectionSync[]
   providerListings         ProviderListing[]
   importJobs               ImportJob[]
@@ -699,6 +700,42 @@ model Tool {
 
   @@unique([scope, slug])
   @@index([userId])
+}
+
+/// A design made in Studio: a parametric feature tree, as frontend/src/studio/document.ts describes it.
+model StudioDesign {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  document  Json
+  /// Goes up with every change, undo and redo too, so an open page can tell the design changed under it.
+  version   Int              @default(0)
+  /// Which revision `document` is: undo moves it back one, redo forward.
+  position  Int              @default(0)
+  revisions StudioRevision[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+/// A design as one command left it, for undo and redo, and a record of who changed what.
+model StudioRevision {
+  id        String       @id @default(cuid())
+  designId  String
+  design    StudioDesign @relation(fields: [designId], references: [id], onDelete: Cascade)
+  position  Int
+  document  Json
+  /// The command that made it, null for the design's start.
+  command   String?
+  args      Json?
+  summary   String?
+  /// "user" from the page, "mcp" from an assistant connected with an API token.
+  actor     String
+  createdAt DateTime     @default(now())
+
+  @@unique([designId, position])
 }
 
 /// What a tool keeps for a user through `thingport.storage`: JSON values by key.
