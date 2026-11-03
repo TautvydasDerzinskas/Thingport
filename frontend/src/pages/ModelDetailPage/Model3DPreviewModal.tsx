@@ -20,6 +20,7 @@ import { type Print, printsApi } from "../../api/prints";
 import { MODEL_EXTS } from "../../constants/fileTypes";
 import { extOf } from "../../utils/fileExtensions";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import ProfileDetails, { plateStatText, statForPlate } from "../../components/ProfileDetails";
 import ModelViewer, {
   type CameraView,
   type ModelViewerHandle,
@@ -50,7 +51,8 @@ type Props = {
 
 /** The plate list is always shown, even for one plate, so the layout doesn't jump. */
 export default function Model3DPreviewModal({ print, onClose }: Props) {
-  const { t } = useTranslation(["models", "library", "common"]);
+  const { t, i18n } = useTranslation(["models", "library", "common"]);
+  const locale = i18n.resolvedLanguage ?? i18n.language;
   const muiTheme = useTheme();
   const themeMode = muiTheme.palette.mode;
   const previewBg = themeMode === "dark" ? muiTheme.thingport.pageBackground : LIGHT_PREVIEW_BG;
@@ -210,13 +212,25 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                           ? t("models:detail.plateLabel", { n: plate.index }) + ` — ${plate.name}`
                           : t("models:detail.plateLabel", { n: plate.index })
                       }
-                      secondary={t("models:detail.internalPlateObjectCount", { count: plate.objectCount })}
+                      secondary={[
+                        t("models:detail.internalPlateObjectCount", { count: plate.objectCount }),
+                        plateStatText(statForPlate(activePlate?.profile, plate.index), locale),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                       primaryTypographyProps={{ variant: "body2", noWrap: true }}
-                      secondaryTypographyProps={{ variant: "caption" }}
+                      secondaryTypographyProps={{ variant: "caption", noWrap: true }}
                     />
                   </ListItemButton>
                 ))}
               </List>
+            </>
+          )}
+
+          {activePlate && (
+            <>
+              <Divider sx={{ my: 1 }} />
+              <ProfileDetails filename={activePlate.filename} profile={activePlate.profile} />
             </>
           )}
         </Paper>

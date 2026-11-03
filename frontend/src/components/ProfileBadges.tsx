@@ -12,7 +12,8 @@ import ScheduleOutlined from "@mui/icons-material/ScheduleOutlined";
 import type { PlateProfile } from "../api/prints";
 
 /** 0.40 -> "0.4" (or "0,4"): no trailing zeros, decimal mark of the user's language. */
-const formatMm = (n: number, locale: string) => new Intl.NumberFormat(locale, { maximumFractionDigits: 3 }).format(n);
+export const formatMm = (n: number, locale: string) =>
+  new Intl.NumberFormat(locale, { maximumFractionDigits: 3 }).format(n);
 
 /** Material Design has no nozzle, so this is a hot-end tip: block, taper, orifice. */
 function NozzleIcon() {
@@ -26,7 +27,7 @@ function NozzleIcon() {
 type Item = { key: string; icon: ReactNode; text: string; label: string };
 
 /** Whole seconds as "1h 23m" in the user's language, without translation keys. */
-function formatDuration(seconds: number, locale: string): string {
+export function formatDuration(seconds: number, locale: string): string {
   const total = Math.max(0, Math.round(seconds / 60));
   const unit = (value: number, u: "hour" | "minute") =>
     new Intl.NumberFormat(locale, { style: "unit", unit: u, unitDisplay: "narrow" }).format(value);
@@ -38,7 +39,7 @@ function formatDuration(seconds: number, locale: string): string {
   return m ? `${unit(h, "hour")} ${unit(m, "minute")}` : unit(h, "hour");
 }
 
-function formatWeight(grams: number, locale: string): string {
+export function formatWeight(grams: number, locale: string): string {
   const gram = (value: number) =>
     new Intl.NumberFormat(locale, {
       style: "unit",
@@ -51,7 +52,7 @@ function formatWeight(grams: number, locale: string): string {
 }
 
 /** The values a badge is shown for; a time or weight of 0 means the file was never sliced, so it counts as unknown. */
-function shownValues(p: PlateProfile) {
+export function shownValues(p: PlateProfile) {
   return {
     nozzle: p.nozzle_mm ?? null,
     layer: p.layer_height_mm ?? null,
