@@ -1,7 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import * as THREE from "three";
-import type { ManifoldToplevel } from "manifold-3d";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -11,13 +10,12 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { alpha, useTheme } from "@mui/material/styles";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import { library } from "../../sdk/libraries";
 import { paletteForTheme } from "../../utils/modelLoaders";
 import {
   featureById,
   inputsOf,
   isBody,
-  planeAxes,
+  sketchFrame,
   shapeOutline,
   sketchPointToWorld,
   topLevel,
@@ -27,9 +25,9 @@ import {
   type StudioDocument,
   type Transform,
   type Vec2,
+  type Vec3,
 } from "../../studio/document";
-import { evaluateDesign } from "../../studio/geometry";
-import { designMeshes } from "./meshAssets";
+import { evaluateInWorker, type WorkerBody } from "./geometryClient";
 import { createViewCube, type ViewCube, type ViewCubeStyle } from "./viewCube";
 
 // The design in 3D: Z up, on a bed of 10 mm squares. It only shows the document and reports what the pointer did; the
@@ -42,6 +40,22 @@ import { createViewCube, type ViewCube, type ViewCubeStyle } from "./viewCube";
 export type StudioMode = "select" | "translate" | "rotate" | "scale";
 export type SketchTool = "rectangle" | "circle" | "polygon";
 export type CameraView = "iso" | "top" | "front" | "right";
+
+/** A face, by a point on it and its outward normal; an edge by its ends; all in the world. */
+export type FacePick = { point: Vec3; normal: Vec3 };
+export type EdgePick = { a: Vec3; b: Vec3 };
+/** What a tool wants picked in the view, from which bodies (null for any), and what it has so far, to show. */
+export type PickRequest = {
+  kind: "face" | "edge" | "point" | "body";
+  bodies: string[] | null;
+  chosen: { faces: FacePick[]; edges: EdgePick[]; points: FacePick[] };
+};
+export type Picked = { body: string } & (
+  | { kind: "face"; face: FacePick }
+  | { kind: "edge"; edge: EdgePick }
+  | { kind: "point"; point: FacePick }
+  | { kind: "body" }
+);
 
 export type StudioViewportHandle = {
   fit: () => void;
@@ -65,6 +79,11 @@ type Props = {
   onContextMenu: (id: string, at: { top: number; left: number }) => void;
   /** The bodies that couldn't be made, by id, each time that changes. */
   onErrors: (errors: Record<string, string>) => void;
+  /** While a tool wants something picked: clicks pick it instead of selecting. */
+  pick: PickRequest | null;
+  onPick: (picked: Picked) => void;
+  /** Whether bodies are being made, for a note while a slow one is. */
+  onBusy: (busy: boolean) => void;
 };
 
 const BED = 300;
@@ -86,9 +105,6 @@ const DIRECTIONS: Record<CameraView, THREE.Vector3> = {
   front: new THREE.Vector3(0, -1, 0),
   right: new THREE.Vector3(1, 0, 0),
 };
-
-let manifold: Promise<ManifoldToplevel> | null = null;
-const loadManifold = () => (manifold ??= library("manifold") as unknown as Promise<ManifoldToplevel>);
 
 const reducedMotion = () =>
   typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -118,7 +134,18 @@ function applyTransform(object: THREE.Object3D, { position, rotation, scale }: T
 const round = (value: number, step: number) => Math.round(value / step) * step;
 const tidy = (value: number) => Number(value.toFixed(3)) + 0;
 
-type BodyObject = { key: string; group: THREE.Group; mesh: THREE.Mesh; edges: THREE.LineSegments };
+type BodyObject = {
+  key: string;
+  group: THREE.Group;
+  mesh: THREE.Mesh;
+  edges: THREE.LineSegments;
+  /** Its flat faces and straight edges, for picking. */
+  picking: WorkerBody["picking"];
+  /** Its triangles as made, before creasing, which a face's highlight is drawn from. */
+  local: { positions: Float32Array; indices: Uint32Array };
+  /** The straight edges a fillet or chamfer can take, shown while picking edges. */
+  edgeLines: THREE.LineSegments;
+};
 type Drawing =
   { tool: "rectangle" | "circle"; start: Vec2; end: Vec2 } | { tool: "polygon"; points: Vec2[]; hover: Vec2 | null };
 type Pointer = { x: number; y: number; button: number; boxing: boolean };
@@ -149,12 +176,17 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     bed: THREE.Group;
     sketchGrid: THREE.Group;
     preview: THREE.Group;
+    /** What picking shows: what's under the pointer, and what's been picked. */
+    hoverLayer: THREE.Group;
+    chosenLayer: THREE.Group;
     drawing: Drawing | null;
     pointer: Pointer | null;
     hovered: string | null;
     render: () => void;
     /** Moves the camera there, gliding unless motion is to be kept down. */
     moveCamera: (position: THREE.Vector3, target: THREE.Vector3) => void;
+    /** Puts the camera where it's gliding to at once, so what's pressed on is where it's going to be. */
+    settleCamera: () => void;
     generation: number;
   } | null>(null);
 
@@ -225,18 +257,22 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     orbit.addEventListener("change", render);
 
     let glide = 0;
+    let settle = () => {};
     const moveCamera = (position: THREE.Vector3, target: THREE.Vector3) => {
       cancelAnimationFrame(glide);
       const fromTarget = orbit.target.clone();
       const fromOffset = camera.position.clone().sub(fromTarget);
       const toOffset = position.clone().sub(target);
       const finish = () => {
+        cancelAnimationFrame(glide);
+        settle = () => {};
         orbit.target.copy(target);
         camera.position.copy(position);
         orbit.update();
         render();
       };
       if (reducedMotion()) return finish();
+      settle = finish;
       // Round the design, not through it: the direction turns, the distance and the centre slide.
       const turn = new THREE.Quaternion().setFromUnitVectors(
         fromOffset.clone().normalize(),
@@ -308,7 +344,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const sketches = new THREE.Group();
     const sketchGrid = new THREE.Group();
     const preview = new THREE.Group();
-    scene.add(bed, sketches, sketchGrid, preview);
+    const hoverLayer = new THREE.Group();
+    const chosenLayer = new THREE.Group();
+    scene.add(bed, sketches, sketchGrid, preview, hoverLayer, chosenLayer);
 
     const resize = () => {
       const { clientWidth: width, clientHeight: height } = container;
@@ -335,11 +373,18 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       bed,
       sketchGrid,
       preview,
+      hoverLayer,
+      chosenLayer,
       drawing: null,
       pointer: null,
       hovered: null,
       render,
       moveCamera,
+      settleCamera: () => {
+        settle();
+        // A render comes on the next frame; what's pressed now is worked out from the camera now.
+        camera.updateMatrixWorld();
+      },
       generation: 0,
     };
     return () => {
@@ -398,15 +443,20 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const generation = ++s.generation;
     const bodies = topLevel(doc).filter(isBody);
     const wanted = new Map(bodies.map((feature) => [feature.id, shapeKey(doc, feature)]));
-    for (const [id, body] of s.bodies) {
-      if (wanted.get(id) === body.key) continue;
-      // Gone, or changed shape: it's made again below, if it's still there.
-      if (s.gizmo.object === body.group) s.gizmo.detach();
-      s.scene.remove(body.group);
-      body.mesh.geometry.dispose();
-      body.edges.geometry.dispose();
-      s.bodies.delete(id);
-    }
+    // Gone, or changed shape: made again below if it's still there. What's on screen stays until what replaces it is
+    // ready, so the view doesn't blink, and a tool can still be pointed at it meanwhile.
+    const outgoing = [...s.bodies].filter(([id, body]) => wanted.get(id) !== body.key);
+    const drop = () => {
+      for (const [id, body] of outgoing) {
+        if (s.bodies.get(id) !== body) continue;
+        if (s.gizmo.object === body.group) s.gizmo.detach();
+        s.scene.remove(body.group);
+        body.mesh.geometry.dispose();
+        body.edges.geometry.dispose();
+        body.edgeLines.geometry.dispose();
+        s.bodies.delete(id);
+      }
+    };
     for (const id of s.errors.keys()) if (!wanted.has(id)) s.errors.delete(id);
     const place = () => {
       for (const feature of bodies) {
@@ -419,17 +469,23 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       attachGizmo();
       s.render();
     };
-    const stale = bodies.filter((feature) => !s.bodies.has(feature.id)).map((feature) => feature.id);
+    const stale = bodies
+      .filter((feature) => !s.bodies.has(feature.id) || outgoing.some(([id]) => id === feature.id))
+      .map((feature) => feature.id);
     if (!stale.length) {
+      drop();
       place();
       return;
     }
-    void Promise.all([loadManifold(), designMeshes(props.designId, doc)]).then(([wasm, meshes]) => {
+    latest.current.onBusy(true);
+    void evaluateInWorker(props.designId, doc, stale).then((answer) => {
       if (generation !== s.generation || !stage.current) return;
-      const { bodies: made, errors } = evaluateDesign(wasm, doc, stale, meshes);
+      latest.current.onBusy(false);
+      drop();
       for (const id of stale) s.errors.delete(id);
-      for (const error of errors) s.errors.set(error.id, error.message);
-      for (const body of made) {
+      for (const error of answer.errors) s.errors.set(error.id, error.message);
+      if (answer.failure) for (const id of stale) s.errors.set(id, answer.failure);
+      for (const body of answer.bodies) {
         const indexed = new THREE.BufferGeometry();
         indexed.setAttribute("position", new THREE.BufferAttribute(body.mesh.positions, 3));
         indexed.setIndex(new THREE.BufferAttribute(body.mesh.indices, 1));
@@ -451,12 +507,29 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
           new THREE.EdgesGeometry(geometry, 30),
           new THREE.LineBasicMaterial({ transparent: true }),
         );
+        const edgeLines = new THREE.LineSegments(
+          new THREE.BufferGeometry().setFromPoints(
+            body.picking.edges.flatMap((edge) => [new THREE.Vector3(...edge.a), new THREE.Vector3(...edge.b)]),
+          ),
+          new THREE.LineBasicMaterial({ color: colors.accent, transparent: true, opacity: 0.55, depthTest: false }),
+        );
+        edgeLines.visible = false;
+        edgeLines.renderOrder = 2;
+        edgeLines.userData.featureId = body.id;
         const group = new THREE.Group();
         group.userData.featureId = body.id;
         mesh.userData.featureId = body.id;
-        group.add(mesh, edges);
+        group.add(mesh, edges, edgeLines);
         s.scene.add(group);
-        s.bodies.set(body.id, { key: wanted.get(body.id)!, group, mesh, edges });
+        s.bodies.set(body.id, {
+          key: wanted.get(body.id)!,
+          group,
+          mesh,
+          edges,
+          picking: body.picking,
+          local: body.mesh,
+          edgeLines,
+        });
       }
       latest.current.onErrors(Object.fromEntries(s.errors));
       place();
@@ -477,7 +550,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     );
     for (const sketch of shown) {
       const lit = sketch.id === activeSketch || props.selected.includes(sketch.id);
-      const { n } = planeAxes(sketch.plane);
+      const { n } = sketchFrame(sketch);
       for (const shape of sketch.shapes) {
         const points = shapeOutline(shape).map((point) => {
           const [x, y, z] = sketchPointToWorld(sketch, point);
@@ -537,6 +610,46 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     attachGizmo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.selected, props.mode, activeSketch, colorKey]);
+
+  // --- Picking: the edges there are to pick, and what's been picked ---
+  const pickKey = props.pick ? JSON.stringify(props.pick) : "";
+  useEffect(() => {
+    const s = stage.current;
+    if (!s) return;
+    const request = latest.current.pick;
+    for (const [id, body] of s.bodies)
+      body.edgeLines.visible = request?.kind === "edge" && (!request.bodies || request.bodies.includes(id));
+    clear(s.chosenLayer);
+    if (!request) clear(s.hoverLayer);
+    // The gizmo would take the clicks a tool wants.
+    if (request && s.gizmo.object) s.gizmo.detach();
+    else attachGizmo();
+    if (request) {
+      const box = new THREE.Box3();
+      for (const body of s.bodies.values()) if (body.group.visible) box.expandByObject(body.group);
+      const mark = Math.max(0.5, (box.isEmpty() ? 50 : box.getBoundingSphere(new THREE.Sphere()).radius) * 0.025);
+      for (const edge of request.chosen.edges) {
+        const line = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...edge.a), new THREE.Vector3(...edge.b)]),
+          new THREE.LineBasicMaterial({ color: colors.accent, depthTest: false }),
+        );
+        line.renderOrder = 3;
+        s.chosenLayer.add(line);
+      }
+      for (const at of [...request.chosen.faces, ...request.chosen.points]) {
+        const disc = new THREE.Mesh(
+          new THREE.CircleGeometry(mark, 24),
+          new THREE.MeshBasicMaterial({ color: colors.accent, side: THREE.DoubleSide, depthTest: false }),
+        );
+        disc.position.set(...at.point);
+        disc.lookAt(new THREE.Vector3(...at.point).add(new THREE.Vector3(...at.normal)));
+        disc.renderOrder = 3;
+        s.chosenLayer.add(disc);
+      }
+    }
+    s.render();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickKey, props.document, colorKey]);
 
   // --- Camera ---
   const frame = (direction: THREE.Vector3, box?: THREE.Box3) => {
@@ -599,7 +712,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       s.render();
       return;
     }
-    const { u, v, n } = planeAxes(sketch.plane);
+    const { u, v, n } = sketchFrame(sketch);
     const grid = new THREE.GridHelper(BED, BED / 5, colors.accent, colors.accent);
     (grid.material as THREE.LineBasicMaterial).transparent = true;
     (grid.material as THREE.LineBasicMaterial).opacity = 0.16;
@@ -610,9 +723,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       .makeBasis(new THREE.Vector3(...u), new THREE.Vector3(...n), new THREE.Vector3(...v))
       .setPosition(origin);
     s.sketchGrid.add(grid);
-    const facing: Record<SketchFeature["plane"], CameraView> = { XY: "top", XZ: "front", YZ: "right" };
+    // Square on to the sketch, from the side it extrudes towards.
     frame(
-      DIRECTIONS[facing[sketch.plane]],
+      off(new THREE.Vector3(...n)),
       new THREE.Box3().setFromCenterAndSize(origin, new THREE.Vector3(160, 160, 160)),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -704,7 +817,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
 
     /** Where the pointer is on the sketch's plane, in its own [u, v] mm, snapped to the millimetre. */
     const onPlane = (event: PointerEvent | MouseEvent, sketch: SketchFeature): Vec2 | null => {
-      const { u, v, n } = planeAxes(sketch.plane);
+      const { u, v, n } = sketchFrame(sketch);
       const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
         new THREE.Vector3(...n),
         new THREE.Vector3(...sketchPointToWorld(sketch, [0, 0])),
@@ -763,6 +876,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     };
 
     const onPointerDown = (event: PointerEvent) => {
+      s.settleCamera();
       s.pointer = { x: event.clientX, y: event.clientY, button: event.button, boxing: false };
       const sketch = activeSketchFeature();
       const tool = latest.current.sketch?.tool;
@@ -788,10 +902,107 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       drawPreview();
     };
 
+    // --- Picking a face, an edge, a point or a body for a tool ---
+    const pickAt = (event: MouseEvent): { picked: Picked; show: THREE.Object3D | null } | null => {
+      const request = latest.current.pick;
+      if (!request) return null;
+      const allowed = [...s.bodies.entries()].filter(
+        ([id, body]) => body.group.visible && (!request.bodies || request.bodies.includes(id)),
+      );
+      raycaster.setFromCamera(ndc(event), s.camera);
+      // Six pixels, in the world at the distance looked at.
+      const rect = canvas.getBoundingClientRect();
+      const pixel =
+        (2 * s.camera.position.distanceTo(s.orbit.target) * Math.tan(THREE.MathUtils.degToRad(s.camera.fov) / 2)) /
+        rect.height;
+      if (request.kind === "edge") {
+        raycaster.params.Line = { threshold: pixel * 6 };
+        const hit = raycaster.intersectObjects(
+          allowed.map(([, body]) => body.edgeLines),
+          false,
+        )[0];
+        raycaster.params.Line = { threshold: 1.5 };
+        if (!hit) return null;
+        const id = hit.object.userData.featureId as string;
+        const body = s.bodies.get(id)!;
+        const edge = body.picking.edges[Math.floor((hit.index ?? 0) / 2)];
+        const a = new THREE.Vector3(...edge.a).applyMatrix4(body.group.matrixWorld);
+        const b = new THREE.Vector3(...edge.b).applyMatrix4(body.group.matrixWorld);
+        const show = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([a, b]),
+          new THREE.LineBasicMaterial({ color: colors.accent, depthTest: false }),
+        );
+        show.renderOrder = 3;
+        return { picked: { kind: "edge", body: id, edge: { a: a.toArray(), b: b.toArray() } }, show };
+      }
+      const hit = raycaster.intersectObjects(
+        allowed.map(([, body]) => body.mesh),
+        false,
+      )[0];
+      if (!hit || hit.faceIndex === undefined) return null;
+      const id = hit.object.userData.featureId as string;
+      const body = s.bodies.get(id)!;
+      if (request.kind === "body") return { picked: { kind: "body", body: id }, show: null };
+      const faceIndex = body.picking.faceOf[hit.faceIndex as number];
+      const normal = new THREE.Vector3(...body.picking.faces[faceIndex].normal)
+        .applyMatrix3(new THREE.Matrix3().getNormalMatrix(body.group.matrixWorld))
+        .normalize();
+      const at: FacePick = { point: hit.point.toArray(), normal: normal.toArray() };
+      if (request.kind === "point") {
+        const dot = new THREE.Mesh(
+          new THREE.SphereGeometry(pixel * 5, 12, 8),
+          new THREE.MeshBasicMaterial({ color: colors.accent, depthTest: false }),
+        );
+        dot.position.copy(hit.point);
+        dot.renderOrder = 3;
+        return { picked: { kind: "point", body: id, point: at }, show: dot };
+      }
+      // The face lit up: its triangles, as made, where the body is.
+      const corners: number[] = [];
+      body.picking.faceOf.forEach((face, triangle) => {
+        if (face !== faceIndex) return;
+        for (let k = 0; k < 3; k++) {
+          const v = body.local.indices[triangle * 3 + k] * 3;
+          corners.push(body.local.positions[v], body.local.positions[v + 1], body.local.positions[v + 2]);
+        }
+      });
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.Float32BufferAttribute(corners, 3));
+      const show = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          color: colors.accent,
+          transparent: true,
+          opacity: 0.4,
+          side: THREE.DoubleSide,
+          polygonOffset: true,
+          polygonOffsetFactor: -2,
+          polygonOffsetUnits: -2,
+        }),
+      );
+      show.matrixAutoUpdate = false;
+      show.matrix.copy(body.group.matrixWorld);
+      return { picked: { kind: "face", body: id, face: at }, show };
+    };
+
+    const pickHover = (event: PointerEvent) => {
+      const found = pickAt(event);
+      clear(s.hoverLayer);
+      if (found?.show) s.hoverLayer.add(found.show);
+      const id = found?.picked.kind === "body" ? found.picked.body : null;
+      canvas.style.cursor = found ? "pointer" : "crosshair";
+      if (id !== s.hovered) {
+        s.hovered = id;
+        paint();
+      }
+      s.render();
+    };
+
     const hover = (event: PointerEvent) => {
       if (hoverFrame) return;
       hoverFrame = requestAnimationFrame(() => {
         hoverFrame = 0;
+        if (latest.current.pick) return pickHover(event);
         const id = latest.current.sketch || s.gizmo.dragging ? null : pick(event);
         if (id === s.hovered) return;
         s.hovered = id;
@@ -811,7 +1022,14 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       }
       const pointer = s.pointer;
       // A left drag that didn't start on a gizmo handle draws a selection box.
-      if (pointer && pointer.button === 0 && !sketch && event.pointerType !== "touch" && !s.gizmo.dragging) {
+      if (
+        pointer &&
+        pointer.button === 0 &&
+        !sketch &&
+        !latest.current.pick &&
+        event.pointerType !== "touch" &&
+        !s.gizmo.dragging
+      ) {
         if (
           !pointer.boxing &&
           Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y) > CLICK_PX &&
@@ -853,12 +1071,21 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         return;
       }
       if (start.button !== 0) return;
+      if (latest.current.pick) {
+        const found = pickAt(event);
+        if (found) latest.current.onPick(found.picked);
+        return;
+      }
       // A click on the gizmo's handles is the gizmo's.
       if (s.gizmo.axis) return;
       latest.current.onSelect(pick(event), event.shiftKey || event.metaKey || event.ctrlKey);
     };
 
     const onPointerLeave = () => {
+      if (s.hoverLayer.children.length) {
+        clear(s.hoverLayer);
+        s.render();
+      }
       if (s.hovered === null) return;
       s.hovered = null;
       paint();
@@ -905,7 +1132,12 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     <Box ref={host} sx={{ position: "absolute", inset: 0 }}>
       <Box
         ref={canvasHost}
-        sx={{ position: "absolute", inset: 0, cursor: props.sketch ? "crosshair" : "default", touchAction: "none" }}
+        sx={{
+          position: "absolute",
+          inset: 0,
+          cursor: props.sketch || props.pick ? "crosshair" : "default",
+          touchAction: "none",
+        }}
       />
       <Box
         ref={boxRef}

@@ -164,6 +164,60 @@ describe("Studio", () => {
     expect(page.body.document.features.map((f: { id: string }) => f.id)).toEqual(["box-1", "cylinder-2", "boolean-3"]);
   });
 
+  it("lets an assistant read the guide, name edges from inspect_body, and round, drill and split with them", async () => {
+    const res = await request(app)
+      .post("/api/profile/api-token")
+      .set(auth(alice))
+      .send({ mcp_tools: [...DEFAULT_MCP_TOOL_NAMES, ...STUDIO_TOOLS] });
+    const token = res.body.token as string;
+    expect((await callTool(token, "studio_guide")).data.guide).toMatch(/Naming faces and edges/);
+
+    const id = (await callTool(token, "studio_create_design", {})).data.design_id as string;
+    await callTool(token, "studio_add_box", { design_id: id, width: 40, depth: 30, height: 12 });
+    const box = (await callTool(token, "studio_inspect_body", { design_id: id, feature_id: "box-1" })).data;
+    expect(box.faces).toHaveLength(6);
+    expect(box.edges).toHaveLength(12);
+    const vertical = box.edges.filter((edge: { a: number[]; b: number[] }) => edge.a[2] !== edge.b[2]);
+    const rounded = await callTool(token, "studio_fillet", {
+      design_id: id,
+      feature_id: "box-1",
+      edges: vertical.map(({ a, b }: { a: number[]; b: number[] }) => ({ a, b })),
+      radius: 4,
+    });
+    expect(rounded.data).toMatchObject({ created: ["fillet-2"], problems: [] });
+
+    const drilled = await callTool(token, "studio_hole", {
+      design_id: id,
+      feature_id: "fillet-2",
+      point: [0, 0, 12],
+      normal: [0, 0, 1],
+      diameter: 5,
+      counterbore: { diameter: 10, depth: 4 },
+    });
+    expect(drilled.data).toMatchObject({ created: ["hole-3"], problems: [] });
+    const read = await callTool(token, "studio_get_design", { design_id: id });
+    const volume = read.data.bodies[0].volume_mm3 as number;
+    const corners = 4 * (16 - 4 * Math.PI) * 12;
+    const hole = Math.PI * 6.25 * 12 + Math.PI * (25 - 6.25) * 4;
+    expect(Math.abs(volume - (40 * 30 * 12 - corners - hole)) / volume).toBeLessThan(0.01);
+
+    // Too big a radius isn't refused outright: the reply says what's wrong, and undo takes it back.
+    const tooBig = await callTool(token, "studio_update_feature", {
+      design_id: id,
+      feature_id: "fillet-2",
+      radius: 20,
+    });
+    expect(tooBig.data.problems[0].message).toMatch(/too big/);
+    await callTool(token, "studio_undo", { design_id: id });
+
+    const split = await callTool(token, "studio_split", {
+      design_id: id,
+      feature_id: "hole-3",
+      plane: { point: [0, 0, 6], normal: [0, 0, 1] },
+    });
+    expect(split.data).toMatchObject({ created: ["split-4", "split-5"], problems: [] });
+  });
+
   describe("importing library models", () => {
     /** An ASCII STL of a w x d x h box from the origin, Z up; `open` leaves its top off. */
     function boxStl(w: number, d: number, h: number, open = false): string {

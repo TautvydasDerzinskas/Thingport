@@ -10,21 +10,32 @@
 
 export const DOCUMENT_VERSION = 1;
 
-export type Vec2 = [number, number];
-export type Vec3 = [number, number, number];
+export type { Vec2, Vec3 } from "./vec.generated";
+import { applyMatrix, cross, frameMatrix, normalize, type Vec2, type Vec3 } from "./vec.generated";
+import { treatCorners } from "./shapes2d.generated";
+export { applyMatrix };
 
 /** Scale first, then rotation (degrees about the world X, then Y, then Z axis), then position. */
 export type Transform = { position: Vec3; rotation: Vec3; scale: Vec3 };
 
-/** XY is the bed seen from above, XZ the front, YZ the right side. */
-export type SketchPlane = "XY" | "XZ" | "YZ";
+/** XY is the bed seen from above, XZ the front, YZ the right side; FACE is a body's flat face, kept in `frame`. */
+export type SketchPlane = "XY" | "XZ" | "YZ" | "FACE";
 
 export type SketchShape =
-  | { type: "rectangle"; center: Vec2; width: number; height: number; hole?: boolean }
+  | { type: "rectangle"; center: Vec2; width: number; height: number; corner_radius?: number; hole?: boolean }
   | { type: "circle"; center: Vec2; radius: number; hole?: boolean }
-  | { type: "polygon"; points: Vec2[]; hole?: boolean };
+  | { type: "polygon"; points: Vec2[]; corner_radius?: number; hole?: boolean };
 
 export type BooleanOperation = "union" | "subtract" | "intersect";
+
+/** A rounded or bevelled edge: the radius of a fillet, or how far a chamfer cuts back along both faces, in mm. */
+export type EdgeTreatment = { type: "fillet" | "chamfer"; size: number };
+
+/** A flat face of a body: a point on it and the way it faces out, in the body's own frame (before its transform), so
+ *  the reference moves with the body. */
+export type FaceRef = { point: Vec3; normal: Vec3 };
+/** A straight edge of a body, by two points on it, in the body's own frame. Found again on the body as it is now. */
+export type EdgeRef = { a: Vec3; b: Vec3 };
 
 type Common = {
   id: string;
@@ -35,24 +46,93 @@ type Common = {
 type Body = Common & { transform: Transform };
 
 export type BoxFeature = Body & { type: "box"; width: number; depth: number; height: number };
-export type CylinderFeature = Body & { type: "cylinder"; radius: number; height: number; segments: number };
+export type CylinderFeature = Body & {
+  type: "cylinder";
+  radius: number;
+  height: number;
+  segments: number;
+  top_edge?: EdgeTreatment | null;
+  bottom_edge?: EdgeTreatment | null;
+};
 export type ConeFeature = Body & {
   type: "cone";
   radius_bottom: number;
   radius_top: number;
   height: number;
   segments: number;
+  top_edge?: EdgeTreatment | null;
+  bottom_edge?: EdgeTreatment | null;
 };
 export type SphereFeature = Body & { type: "sphere"; radius: number; segments: number };
 export type TorusFeature = Body & { type: "torus"; major_radius: number; minor_radius: number; segments: number };
-export type ExtrudeFeature = Body & { type: "extrude"; sketch_id: string; distance: number };
+export type ExtrudeFeature = Body & {
+  type: "extrude";
+  sketch_id: string;
+  distance: number;
+  /** Half the distance each way from the sketch. */
+  symmetric?: boolean;
+  /** Where it starts, along the way it goes, from the sketch's plane. */
+  start_offset?: number;
+  /** Degrees the sides lean in towards the far end: a draft. Negative leans them out. */
+  taper?: number;
+  /** The far end's edges, and the near end's. */
+  top_edge?: EdgeTreatment | null;
+  bottom_edge?: EdgeTreatment | null;
+};
+export type RevolveFeature = Body & {
+  type: "revolve";
+  sketch_id: string;
+  /** The sketch's own u or v axis, through its origin. */
+  axis: "u" | "v";
+  angle: number;
+  segments: number;
+};
 export type BooleanFeature = Body & {
   type: "boolean";
   operation: BooleanOperation;
   target_id: string;
   tool_ids: string[];
 };
-export type SketchFeature = Common & { type: "sketch"; plane: SketchPlane; offset: number; shapes: SketchShape[] };
+export type PressPullFeature = Body & { type: "press_pull"; target_id: string; face: FaceRef; distance: number };
+export type FilletFeature = Body & {
+  type: "fillet";
+  target_id: string;
+  edges: EdgeRef[];
+  radius: number;
+  segments: number;
+};
+export type ChamferFeature = Body & { type: "chamfer"; target_id: string; edges: EdgeRef[]; distance: number };
+export type HoleFeature = Body & {
+  type: "hole";
+  target_id: string;
+  /** Where it's drilled, and the face's outward normal there: it goes in against it. */
+  face: FaceRef;
+  diameter: number;
+  /** Null goes right through. */
+  depth: number | null;
+  counterbore?: { diameter: number; depth: number } | null;
+  countersink?: { diameter: number; angle: number } | null;
+  segments: number;
+};
+export type ShellFeature = Body & { type: "shell"; target_id: string; thickness: number; open_faces: FaceRef[] };
+/** One of the two parts a split makes; the split makes both. */
+export type SplitFeature = Body & {
+  type: "split";
+  source_id: string;
+  /** A plane in the source's own frame, or another body to cut with. */
+  plane: { point: Vec3; normal: Vec3 } | null;
+  tool_id: string | null;
+  /** By a plane: the side its normal points to (front) or the other (back). By a body: inside it or outside it. */
+  keep: "front" | "back" | "inside" | "outside";
+};
+export type SketchFeature = Common & {
+  type: "sketch";
+  plane: SketchPlane;
+  offset: number;
+  /** For a sketch on a face: the face's plane as it was, with u along it; v is normal × u. */
+  frame?: { origin: Vec3; u: Vec3; normal: Vec3 } | null;
+  shapes: SketchShape[];
+};
 /** A model brought in from the library. Its triangles are the design's own copy, `asset_id`, kept beside the design:
  *  a later change to the library model doesn't reach it. */
 export type MeshFeature = Body & {
@@ -68,7 +148,10 @@ export type MeshFeature = Body & {
 };
 
 export type PrimitiveFeature = BoxFeature | CylinderFeature | ConeFeature | SphereFeature | TorusFeature;
-export type BodyFeature = PrimitiveFeature | MeshFeature | ExtrudeFeature | BooleanFeature;
+/** Features that change one body, which they then belong to. */
+export type ModifyFeature = PressPullFeature | FilletFeature | ChamferFeature | HoleFeature | ShellFeature;
+export type BodyFeature =
+  PrimitiveFeature | MeshFeature | ExtrudeFeature | RevolveFeature | BooleanFeature | ModifyFeature | SplitFeature;
 export type Feature = BodyFeature | SketchFeature;
 export type FeatureType = Feature["type"];
 
@@ -91,6 +174,10 @@ export const LIMITS = {
   segmentsMax: 256,
   /** An imported mesh's triangles. */
   meshTriangles: 1_000_000,
+  /** The edges one fillet or chamfer rounds. */
+  edgesPerFeature: 100,
+  /** A shell builds walls under every face, which takes time with every triangle: past this it's refused. */
+  shellTriangles: 20_000,
 } as const;
 
 /** A mesh as a design keeps it: corners shared between triangles, centred on X and Y, standing on Z = 0, in mm. */
@@ -113,12 +200,27 @@ export function isBody(feature: Feature): feature is BodyFeature {
 
 /** The features this one is built from. */
 export function inputsOf(feature: Feature): string[] {
-  if (feature.type === "extrude") return [feature.sketch_id];
-  if (feature.type === "boolean") return [feature.target_id, ...feature.tool_ids];
-  return [];
+  switch (feature.type) {
+    case "extrude":
+    case "revolve":
+      return [feature.sketch_id];
+    case "boolean":
+      return [feature.target_id, ...feature.tool_ids];
+    case "press_pull":
+    case "fillet":
+    case "chamfer":
+    case "hole":
+    case "shell":
+      return [feature.target_id];
+    case "split":
+      return feature.tool_id ? [feature.source_id, feature.tool_id] : [feature.source_id];
+    default:
+      return [];
+  }
 }
 
-/** The feature built from this one, which it then belongs to: a boolean, or the extrude of a sketch. */
+/** The feature built from this one, which it then belongs to: a boolean, a change to it, or the extrude of a sketch.
+ *  A split's two parts both are; this is the first. */
 export function consumerOf(doc: StudioDocument, id: string): Feature | undefined {
   return doc.features.find((feature) => inputsOf(feature).includes(id));
 }
@@ -140,42 +242,69 @@ export function featureNumber(id: string): number {
 }
 
 /** The plane's axes in the world: u and v span it, n is the way an extrude goes. Right-handed, so nothing mirrors. */
-export function planeAxes(plane: SketchPlane): { u: Vec3; v: Vec3; n: Vec3; offsetAxis: 0 | 1 | 2 } {
+export function planeAxes(plane: Exclude<SketchPlane, "FACE">): { u: Vec3; v: Vec3; n: Vec3; offsetAxis: 0 | 1 | 2 } {
   if (plane === "XZ") return { u: [1, 0, 0], v: [0, 0, 1], n: [0, -1, 0], offsetAxis: 1 };
   if (plane === "YZ") return { u: [0, 1, 0], v: [0, 0, 1], n: [1, 0, 0], offsetAxis: 0 };
   return { u: [1, 0, 0], v: [0, 1, 0], n: [0, 0, 1], offsetAxis: 2 };
 }
 
-/** A point on a sketch in world coordinates. */
-export function sketchPointToWorld(sketch: Pick<SketchFeature, "plane" | "offset">, point: Vec2): Vec3 {
-  const { u, v, offsetAxis } = planeAxes(sketch.plane);
-  const world: Vec3 = [
-    u[0] * point[0] + v[0] * point[1],
-    u[1] * point[0] + v[1] * point[1],
-    u[2] * point[0] + v[2] * point[1],
-  ];
-  world[offsetAxis] += sketch.offset;
-  return world;
+/** Where a sketch lies in the world: its origin, its u and v axes, and n, the way an extrude of it goes. */
+export type SketchFrame = { origin: Vec3; u: Vec3; v: Vec3; n: Vec3 };
+
+export function sketchFrame(sketch: Pick<SketchFeature, "plane" | "offset" | "frame">): SketchFrame {
+  if (sketch.plane === "FACE" && sketch.frame) {
+    const n = normalize(sketch.frame.normal);
+    const u = normalize(sketch.frame.u);
+    const origin = sketch.frame.origin;
+    return {
+      origin: [origin[0] + n[0] * sketch.offset, origin[1] + n[1] * sketch.offset, origin[2] + n[2] * sketch.offset],
+      u,
+      v: cross(n, u),
+      n,
+    };
+  }
+  const { u, v, n, offsetAxis } = planeAxes(sketch.plane === "FACE" ? "XY" : sketch.plane);
+  const origin: Vec3 = [0, 0, 0];
+  origin[offsetAxis] = sketch.offset;
+  return { origin, u, v, n };
 }
 
-/** A shape's outline as a closed loop of points on its plane, as it's drawn and as it's extruded. */
+/** The matrix taking a sketch's (u, v, n) coordinates into the world. */
+export function sketchMatrix(sketch: Pick<SketchFeature, "plane" | "offset" | "frame">): number[] {
+  const { origin, u, v, n } = sketchFrame(sketch);
+  return frameMatrix(u, v, n, origin);
+}
+
+/** A point on a sketch in world coordinates. */
+export function sketchPointToWorld(sketch: Pick<SketchFeature, "plane" | "offset" | "frame">, point: Vec2): Vec3 {
+  return applyMatrix(sketchMatrix(sketch), [point[0], point[1], 0]);
+}
+
+/** A shape's outline as a closed loop of points on its plane, as it's drawn and as it's extruded. Throws when a corner
+ *  radius doesn't fit. */
 export function shapeOutline(shape: SketchShape, segments = DEFAULT_SEGMENTS): Vec2[] {
-  if (shape.type === "polygon") return shape.points;
-  const [cx, cy] = shape.center;
-  if (shape.type === "rectangle") {
+  if (shape.type === "circle") {
+    const [cx, cy] = shape.center;
+    return Array.from({ length: segments }, (_, i): Vec2 => {
+      const angle = (i / segments) * Math.PI * 2;
+      return [cx + Math.cos(angle) * shape.radius, cy + Math.sin(angle) * shape.radius];
+    });
+  }
+  let points: Vec2[];
+  if (shape.type === "polygon") points = shape.points;
+  else {
+    const [cx, cy] = shape.center;
     const w = shape.width / 2;
     const h = shape.height / 2;
-    return [
+    points = [
       [cx - w, cy - h],
       [cx + w, cy - h],
       [cx + w, cy + h],
       [cx - w, cy + h],
     ];
   }
-  return Array.from({ length: segments }, (_, i): Vec2 => {
-    const angle = (i / segments) * Math.PI * 2;
-    return [cx + Math.cos(angle) * shape.radius, cy + Math.sin(angle) * shape.radius];
-  });
+  const radius = shape.corner_radius ?? 0;
+  return radius > 0 ? treatCorners(points, () => ({ type: "fillet", size: radius })) : points;
 }
 
 /**
@@ -208,13 +337,5 @@ export function transformMatrix({ position, rotation, scale }: Transform): numbe
     position[1],
     position[2],
     1,
-  ];
-}
-
-export function applyMatrix(m: number[], [x, y, z]: Vec3): Vec3 {
-  return [
-    m[0] * x + m[4] * y + m[8] * z + m[12],
-    m[1] * x + m[5] * y + m[9] * z + m[13],
-    m[2] * x + m[6] * y + m[10] * z + m[14],
   ];
 }

@@ -65,6 +65,72 @@ export function MeshIcon(props: SvgIconProps) {
   );
 }
 
+export function RevolveIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M12 3v18" strokeDasharray="1.6 2" />
+      <path
+        {...line}
+        d="M18.5 9.5C17.8 7.5 15.2 6 12 6S6.2 7.5 5.5 9.5M5.5 14.5C6.2 16.5 8.8 18 12 18c2 0 3.8-.6 5-1.5"
+      />
+      <path {...line} d="m15.8 15.2 1.6 1.4-1.4 1.6" />
+    </SvgIcon>
+  );
+}
+
+export function HoleIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <rect {...line} x="4" y="4" width="16" height="16" rx="2" />
+      <circle {...line} cx="12" cy="12" r="3.5" />
+    </SvgIcon>
+  );
+}
+
+export function PressPullIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M4 20h16M6 20v-6h12v6" />
+      <path {...line} d="M12 11V3M9 6l3-3 3 3" />
+    </SvgIcon>
+  );
+}
+
+export function FilletIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M5 20v-8a7 7 0 0 1 7-7h8" />
+      <path {...line} d="M5 12V5h7" strokeDasharray="1.6 2" />
+    </SvgIcon>
+  );
+}
+
+export function ChamferIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M5 20v-9l6-6h9" />
+      <path {...line} d="M5 11V5h6" strokeDasharray="1.6 2" />
+    </SvgIcon>
+  );
+}
+
+export function ShellIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M4 5h16v14H4zM8 5v10h8V5" />
+    </SvgIcon>
+  );
+}
+
+export function SplitIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M4 4h16v6H4zM4 14h16v6H4z" />
+      <path {...line} d="M2 12h20" strokeDasharray="1.6 2" />
+    </SvgIcon>
+  );
+}
+
 export function ExtrudeIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props}>
@@ -126,6 +192,13 @@ export function FeatureIcon({ type, ...props }: SvgIconProps & { type: FeatureTy
   if (type === "torus") return <TorusIcon {...props} />;
   if (type === "extrude") return <ExtrudeIcon {...props} />;
   if (type === "mesh") return <MeshIcon {...props} />;
+  if (type === "revolve") return <RevolveIcon {...props} />;
+  if (type === "press_pull") return <PressPullIcon {...props} />;
+  if (type === "fillet") return <FilletIcon {...props} />;
+  if (type === "chamfer") return <ChamferIcon {...props} />;
+  if (type === "hole") return <HoleIcon {...props} />;
+  if (type === "shell") return <ShellIcon {...props} />;
+  if (type === "split") return <SplitIcon {...props} />;
   if (type === "sketch") return <SketchIcon {...props} />;
   return <UnionIcon {...props} />;
 }

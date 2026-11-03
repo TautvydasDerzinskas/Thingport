@@ -11,6 +11,8 @@ import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import { keyframes, type Theme } from "@mui/material/styles";
 import AddBoxOutlinedIcon from "@mui/icons-material/AddBoxOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
@@ -44,6 +46,9 @@ import StudioToolbar, { type BooleanKind, type Primitive, type StudioPanel } fro
 import StudioViewport, { type SketchTool, type StudioMode, type StudioViewportHandle } from "./StudioViewport";
 import { BoxIcon, ExtrudeIcon } from "./studioIcons";
 import { openModelAsDesign } from "./openModel";
+import OperationPanel from "./OperationPanel";
+import { commandOf, pickOf, startOperation, withPick, type Operation, type OperationKind } from "./operations";
+import { applyCommand, CommandError } from "../../studio/commands";
 import { useStudioDesign } from "./useStudioDesign";
 
 // Studio: a small parametric CAD. Everything that changes a design here is a command (frontend/src/studio/commands.ts)
@@ -54,8 +59,6 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-// What a new body or sketch extrude starts at, in mm; the properties panel takes it from there.
-const EXTRUDE_MM = 10;
 // How far a copy lands from the original, so it isn't hidden inside it.
 const COPY_OFFSET: [number, number, number] = [10, 10, 0];
 const PANELS_KEY = "thingport_studio_panels";
@@ -173,6 +176,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [menu, setMenu] = useState<{ id: string; at: { top: number; left: number } } | null>(null);
   const [designsOpen, setDesignsOpen] = useState(false);
   const [renaming, setRenaming] = useState<{ kind: "design" } | { kind: "feature"; id: string } | null>(null);
+  // A tool that takes more than a click, while its panel is open, and what making its preview said.
+  const [operation, setOperation] = useState<Operation | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [previewFailure, setPreviewFailure] = useState<{ key: string; message: string } | null>(null);
 
   // Another design starts with nothing selected; a feature that's gone is let go of.
   const [shownDesign, setShownDesign] = useState(designId);
@@ -181,6 +188,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setSelected([]);
     setSketch(null);
     setErrors({});
+    setOperation(null);
   }
   useEffect(() => {
     if (!doc) return;
@@ -281,25 +289,83 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     selectCreated(created);
   };
 
-  const startSketch = async (plane: SketchPlane) => {
+  const startSketch = async (plane: Exclude<SketchPlane, "FACE">) => {
     const created = await run("add_sketch", { plane });
     if (!created?.[0]) return;
     setSelected([created[0]]);
     setSketch({ id: created[0], tool: "rectangle" });
   };
 
-  const extrude = async (sketchId = extrudable?.id) => {
-    if (!sketchId) return;
-    const created = await run("extrude", { sketch_id: sketchId, distance: EXTRUDE_MM });
-    if (!created) return;
+  // --- Tools with a panel: a preview of what they'd make, and OK makes it ---
+  /** The one top-level body selected, which a tool starts on. */
+  const selectedBody = selectedBodies.length === 1 ? selectedBodies[0] : null;
+  const begin = (kind: OperationKind, sketchId = extrudable?.id) => {
+    if (kind === "extrude" || kind === "revolve") {
+      if (sketchId) setOperation(startOperation(kind, sketchId));
+      return;
+    }
     setSketch(null);
+    setOperation(startOperation(kind, selectedBody));
+  };
+  const draft = operation ? commandOf(operation) : null;
+  const draftKey = draft ? JSON.stringify(draft) : "";
+  // The design as the tool would leave it, shown while its panel is open; or why the command refuses it.
+  const preview = useMemo(() => {
+    if (!draft || !doc || draft.name === "add_sketch") return null;
+    try {
+      const outcome = applyCommand(doc, draft.name, draft.args);
+      return { document: outcome.document, created: outcome.created, error: null };
+    } catch (error) {
+      return { document: null, created: [], error: error instanceof CommandError ? error.message : String(error) };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey, doc]);
+  const own = preview?.created ?? [];
+  // A preview that couldn't be made shows the design as it is instead, so what the tool needs can still be picked.
+  const previewFailed = previewFailure?.key === draftKey;
+  const shown = (preview?.document && !previewFailed ? preview.document : null) ?? doc;
+  const onViewErrors = (next: Record<string, string>) => {
+    setErrors(next);
+    const failed = own.find((id) => next[id]);
+    if (operation && failed) setPreviewFailure({ key: draftKey, message: next[failed] });
+  };
+  const operationError = preview?.error ?? (previewFailed ? previewFailure.message : null);
+
+  const finishOperation = async () => {
+    if (!operation || !draft) return;
+    const created = await run(draft.name, draft.args as never);
+    if (!created) return;
+    setOperation(null);
+    setPreviewFailure(null);
+    if (operation.kind === "sketch_face" && created[0]) {
+      setSelected([created[0]]);
+      setSketch({ id: created[0], tool: "rectangle" });
+      return;
+    }
+    if (operation.kind === "extrude" || operation.kind === "revolve") setSketch(null);
     selectCreated(created);
   };
 
-  const combine = async (operation: BooleanKind) => {
+  const onPick = (picked: Parameters<typeof withPick>[1]) => {
+    if (!operation) return;
+    const next = withPick(operation, picked, own);
+    setOperation(next);
+    // A face to sketch on is all that tool needs.
+    if (next.kind === "sketch_face" && next.face) {
+      const command = commandOf(next)!;
+      void run(command.name, command.args as never).then((created) => {
+        setOperation(null);
+        if (!created?.[0]) return;
+        setSelected([created[0]]);
+        setSketch({ id: created[0], tool: "rectangle" });
+      });
+    }
+  };
+
+  const combine = async (kind: BooleanKind) => {
     const [target, ...tools] = selectedBodies;
     if (!target || !tools.length) return;
-    selectCreated(await run("boolean", { operation, target_id: target, tool_ids: tools }));
+    selectCreated(await run("boolean", { operation: kind, target_id: target, tool_ids: tools }));
   };
 
   const deleteSelected = async () => {
@@ -357,6 +423,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     } else if (mod) {
       return;
     } else if (event.key === "Escape") {
+      if (operation) return setOperation(null);
       if (viewport.current?.cancelDrawing()) return;
       if (sketch) setSketch(null);
       else setSelected([]);
@@ -438,7 +505,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         <StudioViewport
           ref={viewport}
           designId={design!.id}
-          document={doc}
+          document={shown ?? doc}
           selected={selected}
           mode={mode}
           sketch={sketch}
@@ -454,8 +521,34 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             setSelected((prev) => (prev.includes(id) ? prev : [id]));
             setMenu({ id, at });
           }}
-          onErrors={setErrors}
+          onErrors={onViewErrors}
+          pick={operation ? pickOf(operation, own) : null}
+          onPick={onPick}
+          onBusy={setBusy}
         />
+        {operation && (
+          <OperationPanel
+            op={operation}
+            onChange={setOperation}
+            error={operationError}
+            ready={Boolean(draft)}
+            busy={busy}
+            label={(id) => {
+              const feature = featureById(doc, id);
+              return feature ? featureLabel(feature, t) : id;
+            }}
+            onOk={() => void finishOperation()}
+            onCancel={() => setOperation(null)}
+          />
+        )}
+        {busy && !operation && (
+          <Chip
+            size="small"
+            icon={<CircularProgress size={12} />}
+            label={t("studio.working")}
+            sx={{ position: "absolute", bottom: 88, left: "50%", transform: "translateX(-50%)", zIndex: 1 }}
+          />
+        )}
         {topLevel(doc).length === 0 && !sketch && (
           <Typography
             variant="body2"
@@ -510,7 +603,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         onStartSketch={(plane) => void startSketch(plane)}
         onSketchTool={(tool) => setSketch((prev) => (prev ? { ...prev, tool } : prev))}
         onFinishSketch={() => setSketch(null)}
-        onExtrude={() => void extrude()}
+        onExtrude={() => begin("extrude")}
+        onOperation={(kind) => begin(kind)}
         onCombine={(kind) => void combine(kind)}
         onMode={setMode}
         onTogglePanel={togglePanel}
@@ -603,7 +697,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             <MenuItem
               key="extrude"
               disabled={!menuFeature.shapes.some((shape) => !shape.hole)}
-              onClick={menuAction(() => void extrude(menuFeature.id))}
+              onClick={menuAction(() => begin("extrude", menuFeature.id))}
             >
               <ListItemIcon>
                 <ExtrudeIcon fontSize="small" />

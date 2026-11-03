@@ -4,7 +4,14 @@ import { parentPort, workerData } from "node:worker_threads";
 import sharp from "sharp";
 import type { ManifoldToplevel } from "manifold-3d";
 import { LIMITS, type MeshData, type StudioDocument, type Vec3 } from "../studio/document.generated";
-import { estimateTriangles, evaluateDesign, prepareMesh, worldTriangles } from "../studio/geometry.generated";
+import {
+  describeBody,
+  estimateTriangles,
+  evaluateDesign,
+  prepareMesh,
+  worldTriangles,
+  type BodyDescription,
+} from "../studio/geometry.generated";
 import { decodeMesh, encodeMesh } from "../studio/meshAsset.generated";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
 
@@ -36,7 +43,8 @@ export type StudioWorkerInput =
       assetDir: string;
       render: { views: StudioView[]; size: number; color: string } | null;
     }
-  | { kind: "import"; srcPath: string; ext: string; destPath: string };
+  | { kind: "import"; srcPath: string; ext: string; destPath: string }
+  | { kind: "describe"; document: StudioDocument; assetDir: string; featureId: string };
 
 export type StudioBodyStats = { id: string; bounds: { min: Vec3; max: Vec3 }; volume: number; triangles: number };
 
@@ -49,6 +57,7 @@ export type StudioWorkerResult =
       images: { view: StudioView; png: string }[];
     }
   | { status: "imported"; solid: boolean; triangles: number; size: Vec3 }
+  | { status: "described"; body: BodyDescription }
   /** A file that can't come in, and why, in words for whoever asked. */
   | { status: "refused"; reason: string }
   | { status: "too-complex"; triangles: number }
@@ -61,22 +70,39 @@ async function manifold(): Promise<ManifoldToplevel> {
   return wasm;
 }
 
-async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): Promise<StudioWorkerResult> {
-  const estimate = estimateTriangles(input.document);
-  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
-  const wasm = await manifold();
+/** The design's imported meshes, read from its folder as they're asked for. */
+function meshesIn(assetDir: string) {
   const meshes = new Map<string, MeshData | null>();
-  const meshOf = (assetId: string) => {
+  return (assetId: string) => {
     if (!meshes.has(assetId)) {
       try {
-        meshes.set(assetId, decodeMesh(fs.readFileSync(path.join(input.assetDir, `${assetId}.tpsm`))));
+        meshes.set(assetId, decodeMesh(fs.readFileSync(path.join(assetDir, `${assetId}.tpsm`))));
       } catch {
         meshes.set(assetId, null);
       }
     }
     return meshes.get(assetId) ?? undefined;
   };
-  const { bodies, errors } = evaluateDesign(wasm, input.document, undefined, meshOf);
+}
+
+async function describe(input: Extract<StudioWorkerInput, { kind: "describe" }>): Promise<StudioWorkerResult> {
+  const estimate = estimateTriangles(input.document);
+  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  try {
+    return {
+      status: "described",
+      body: describeBody(await manifold(), input.document, input.featureId, meshesIn(input.assetDir)),
+    };
+  } catch (error) {
+    return { status: "refused", reason: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): Promise<StudioWorkerResult> {
+  const estimate = estimateTriangles(input.document);
+  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  const wasm = await manifold();
+  const { bodies, errors } = evaluateDesign(wasm, input.document, undefined, meshesIn(input.assetDir));
   const visible = new Set(input.document.features.filter((feature) => feature.visible).map((feature) => feature.id));
   const images: { view: StudioView; png: string }[] = [];
   if (input.render) {
@@ -139,7 +165,9 @@ if (parentPort) {
   const reply = (result: StudioWorkerResult) =>
     // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker_threads port, not window.postMessage.
     parentPort!.postMessage(result);
-  (input.kind === "import" ? importMesh(input) : inspect(input)).then(reply, (error: unknown) =>
+  const job =
+    input.kind === "import" ? importMesh(input) : input.kind === "describe" ? describe(input) : inspect(input);
+  job.then(reply, (error: unknown) =>
     reply({ status: "error", error: error instanceof Error ? (error.stack ?? error.message) : String(error) }),
   );
 }

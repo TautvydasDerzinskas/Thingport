@@ -66,6 +66,25 @@ export function inspectStudioDesign(
   });
 }
 
+/** One body's flat faces and straight edges, in the world, for an assistant to name them by. */
+export function describeStudioBody(
+  key: string,
+  document: StudioDocument,
+  assetDir: string,
+  featureId: string,
+): Promise<StudioWorkerResult> {
+  const cacheKey = `${key}:describe:${featureId}`;
+  const known = cache.get(cacheKey);
+  if (known) return Promise.resolve(known);
+  return queued({ kind: "describe", document, assetDir, featureId }, INSPECT_TIMEOUT_MS).then((outcome) => {
+    if (outcome.status !== "error") {
+      cache.set(cacheKey, outcome);
+      if (cache.size > CACHE_SIZE) cache.delete(cache.keys().next().value!);
+    }
+    return outcome;
+  });
+}
+
 /** Reads a library model's file into `destPath`, the design's own copy of its mesh. */
 export function importStudioMesh(srcPath: string, ext: string, destPath: string): Promise<StudioWorkerResult> {
   return queued({ kind: "import", srcPath, ext, destPath }, IMPORT_TIMEOUT_MS);

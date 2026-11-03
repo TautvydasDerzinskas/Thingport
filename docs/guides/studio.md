@@ -24,8 +24,11 @@ A design is a list of features, built in order:
 
 - **Shapes**: box, cylinder, cone, sphere and torus, from the toolbar. Each starts at the middle of the bed, standing on
   it.
-- **Sketches**: pick **Sketch** and a plane (top, front or right), then draw rectangles, circles and polygons on it.
-  **Extrude** pulls the sketch up into a solid. A shape marked as a **hole** is cut out of the others.
+- **Sketches**: pick **Sketch** and a plane (top, front or right) or **On a face** of a body, then draw rectangles,
+  circles and polygons on it; a rectangle or polygon can have rounded corners. A shape marked as a **hole** is cut out
+  of the others. **Extrude** pulls the sketch into a solid: a distance, both ways or from an offset, with sides that
+  taper and ends rounded or bevelled. **Revolve** turns it round one of the sketch's axes, all the way or part of it.
+  Either can make a new body, or join, cut or intersect one you click.
 - **Library models**: **Open…** in the design's menu has a **Library** tab with your models' STL, 3MF, STEP, OBJ and
   GLB files. **Open** makes a new design from one; **Insert** brings it into the design that's open. It comes in at its
   own size, centred on the bed, and the design keeps its own copy, so changing the model later doesn't change the
@@ -35,6 +38,23 @@ A design is a list of features, built in order:
 
 Designs stay editable: change a box's width, or a sketch's circle, and everything built from it follows. The bodies a
 boolean was made from are folded under it in the feature list, and deleting the boolean gives them back.
+
+## Changing a body
+
+**Hole** and the **Modify** menu work on a body you have. Each opens a small panel over the view: click what it works
+on, set its numbers, watch the preview, then **OK** (or <kbd>Esc</kbd> to cancel). If it can't be done, the panel says
+why, and OK waits until it can.
+
+- **Press/pull**: click a flat face and move it out or in, the body growing or shrinking with it.
+- **Fillet** and **Chamfer**: click straight edges to round or bevel; click one again to let it go. Two edges meeting at
+  a corner meet in a mitre, three at a square corner (as on a box) in a ball. A rounding too big for its faces, or a
+  corner it can't blend, is refused rather than made wrong. A cylinder's or an extrude's own rim has its own setting in
+  the properties panel.
+- **Hole**: click where to drill, into the surface: a depth or right through, plain, counterbored or countersunk.
+- **Shell**: hollows the body with walls of a thickness, and clicked flat faces are left open, as a tray's top. Flat
+  walls come out exactly that thick. Bodies over 20,000 triangles are refused, so shell parts before combining them.
+- **Split**: cuts a body in two by a plane, a flat face or another body; both parts stay editable.
+- **Scale**: makes a body bigger or smaller about its own middle.
 
 The mouse works as in most CAD:
 

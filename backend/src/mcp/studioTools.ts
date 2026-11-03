@@ -10,7 +10,8 @@ import {
   studioDesignHistory,
   type StudioDesignOut,
 } from "../services/studioService";
-import { inspectStudioDesign } from "../services/studioInspect";
+import { describeStudioBody, inspectStudioDesign } from "../services/studioInspect";
+import { STUDIO_GUIDE } from "../services/studioGuide";
 import { STUDIO_VIEWS } from "../services/studioWorker";
 import { HttpError } from "../utils/fileUtils";
 import { WithImages, type McpToolContext, type McpToolDefinition } from "./toolTypes";
@@ -160,6 +161,50 @@ const viewDesign: McpToolDefinition = {
   },
 };
 
+const guide: McpToolDefinition = {
+  name: "studio_guide",
+  title: "How to design in Studio",
+  description:
+    "Read this before designing in Studio: the coordinates, how a design is built, how to name faces and edges, what " +
+    "each step can and can't do, and recipes.",
+  readOnly: true,
+  group: "studio",
+  inputSchema: {},
+  async run() {
+    return { guide: STUDIO_GUIDE };
+  },
+};
+
+const inspectBody: McpToolDefinition = {
+  name: "studio_inspect_body",
+  title: "List a body's faces and edges",
+  description:
+    "Lists a body's flat faces (a point on each and its outward normal, largest first, with its area) and its straight " +
+    "sharp edges (both ends, whether it's an outside (convex) or inside edge, and the angle between its faces), in the " +
+    "world, in mm. These are the face and edge references that press_pull, fillet, chamfer, hole, shell, split and " +
+    "add_sketch take: copy them as they are.",
+  readOnly: true,
+  group: "studio",
+  inputSchema: {
+    design_id: designId,
+    feature_id: z.string().min(1).describe("The body, e.g. box-1; usually a top-level one."),
+  },
+  async run(ctx, args) {
+    const design = await getStudioDesign(ctx.userId, args.design_id as string);
+    const outcome = await describeStudioBody(
+      `${design.id}:${design.version}`,
+      design.document,
+      studioAssetDir(ctx.userId, design.id),
+      args.feature_id as string,
+    );
+    if (outcome.status === "refused") throw new HttpError(400, outcome.reason);
+    if (outcome.status === "too-complex")
+      throw new HttpError(422, `The design is too heavy to look at here (about ${outcome.triangles} triangles).`);
+    if (outcome.status !== "described") throw new Error(`studio_inspect_body failed: ${JSON.stringify(outcome)}`);
+    return { ...outcome.body, faces_listed: outcome.body.faces.length, edges_listed: outcome.body.edges.length };
+  },
+};
+
 const createDesign: McpToolDefinition = {
   name: "studio_create_design",
   title: "Create a Studio design",
@@ -203,12 +248,26 @@ const commandTools: McpToolDefinition[] = STUDIO_COMMAND_LIST.map((command) => (
       rest,
       "mcp",
     );
-    return { done: summary, created, ...brief(ctx, design) };
+    // What couldn't be made, said straight away: a fillet too big for its edge, a shell too detailed.
+    const inspected = await inspectStudioDesign(
+      `${design.id}:${design.version}`,
+      design.document,
+      studioAssetDir(ctx.userId, design.id),
+      null,
+    );
+    return {
+      done: summary,
+      created,
+      problems: inspected.status === "ok" ? inspected.errors : [],
+      ...brief(ctx, design),
+    };
   },
 }));
 
 export const STUDIO_MCP_TOOLS: readonly McpToolDefinition[] = [
+  guide,
   listDesigns,
+  inspectBody,
   getDesign,
   viewDesign,
   createDesign,

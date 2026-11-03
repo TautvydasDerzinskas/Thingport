@@ -3136,7 +3136,9 @@
     },
     "studio": {
       "toolbar": {
-        "label": "Herramientas de Estudio"
+        "label": "Herramientas de Estudio",
+        "shapes": "Formas",
+        "modify": "Modificar"
       },
       "emptyDesign": "Añade una forma desde la barra de herramientas o empieza un boceto",
       "types": {
@@ -3148,7 +3150,14 @@
         "extrude": "Extrusión",
         "boolean": "Combinación",
         "sketch": "Boceto",
-        "mesh": "Malla"
+        "mesh": "Malla",
+        "revolve": "Revolución",
+        "press_pull": "Empujar/tirar",
+        "fillet": "Redondeo",
+        "chamfer": "Chaflán",
+        "hole": "Agujero",
+        "shell": "Vaciado",
+        "split": "División"
       },
       "tree": {
         "heading": "Elementos",
@@ -3177,7 +3186,8 @@
           "cone": "Añadir cono",
           "sphere": "Añadir esfera",
           "torus": "Añadir toro"
-        }
+        },
+        "revolve": "Revolucionar"
       },
       "shapes": {
         "rectangle": "Rectángulo",
@@ -3187,7 +3197,9 @@
       "planes": {
         "XY": "Superior",
         "XZ": "Frontal",
-        "YZ": "Derecho"
+        "YZ": "Derecho",
+        "FACE": "Sobre una cara",
+        "faceHint": "Elige una cara plana"
       },
       "sketch": {
         "on": "Boceto en el plano {{plane}}",
@@ -3250,7 +3262,10 @@
           "major_radius": "Radio del anillo",
           "minor_radius": "Radio del tubo",
           "distance": "Distancia",
-          "offset": "Desplazamiento"
+          "offset": "Desplazamiento",
+          "angle": "Ángulo",
+          "diameter": "Diámetro",
+          "thickness": "Grosor"
         },
         "mesh": {
           "source": "Origen",
@@ -3261,7 +3276,8 @@
           "solid": "Sólido cerrado",
           "open": "No es un sólido cerrado",
           "openHelp": "Tiene huecos, así que se puede mover, escalar y exportar, pero no combinar con otros cuerpos."
-        }
+        },
+        "cornerRadius": "Radio de las esquinas"
       },
       "design": {
         "none": "Sin diseño",
@@ -3322,6 +3338,114 @@
         "noMatches": "Ningún modelo con un archivo 3D coincide",
         "emptyLibrary": "Tu biblioteca aún no tiene archivos STL, 3MF, STEP, OBJ ni GLB",
         "loadMore": "Cargar más"
+      },
+      "working": "Calculando…",
+      "edges": {
+        "none": "Viva",
+        "fillet": "Redondeo",
+        "chamfer": "Chaflán",
+        "radius": "Radio",
+        "distance": "Distancia"
+      },
+      "ops": {
+        "cancel": "Cancelar",
+        "ok": "Aceptar",
+        "pickBody": "Haz clic en un cuerpo",
+        "combine": {
+          "label": "Resultado",
+          "new": "Nuevo",
+          "join": "Unir",
+          "cut": "Cortar",
+          "intersect": "Intersecar"
+        },
+        "extrude": {
+          "title": "Extrusión",
+          "help": "Convierte el boceto en un sólido. La conicidad inclina los lados hacia el extremo (un desmoldeo); las aristas de los extremos se pueden redondear o achaflanar. Unir, cortar o intersecar lo combina con otro cuerpo.",
+          "taper": "Conicidad",
+          "startOffset": "Desfase inicial",
+          "symmetric": "En ambos sentidos",
+          "topEdge": "Extremo lejano",
+          "bottomEdge": "Extremo cercano",
+          "topRim": "Borde superior",
+          "bottomRim": "Borde inferior"
+        },
+        "revolve": {
+          "title": "Revolución",
+          "help": "Gira el boceto alrededor de uno de sus ejes. Todas sus formas deben estar a un lado del eje.",
+          "axis": "Eje",
+          "axisU": "Horizontal (u)",
+          "axisV": "Vertical (v)",
+          "angle": "Ángulo"
+        },
+        "press_pull": {
+          "title": "Empujar/tirar",
+          "help": "Mueve una cara plana hacia fuera (añade) o hacia dentro (corta), manteniendo su contorno.",
+          "pick": "Haz clic en una cara plana"
+        },
+        "fillet": {
+          "title": "Redondeo",
+          "help": "Redondea aristas rectas entre caras planas. Las exteriores se redondean, las interiores se rellenan. Haz clic en aristas para añadirlas o quitarlas.",
+          "pick": "Haz clic en las aristas a redondear"
+        },
+        "chamfer": {
+          "title": "Chaflán",
+          "help": "Achaflana aristas rectas entre caras planas, recortando la misma distancia en ambas. Haz clic en aristas para añadirlas o quitarlas.",
+          "pick": "Haz clic en las aristas a achaflanar"
+        },
+        "hole": {
+          "title": "Agujero",
+          "help": "Taladra un agujero redondo donde haces clic, hacia dentro de la superficie. El avellanado y el escariado dejan sitio a la cabeza del tornillo.",
+          "pick": "Haz clic donde taladrar",
+          "diameter": "Diámetro",
+          "depth": "Profundidad",
+          "through": "Pasante",
+          "style": "Tipo",
+          "simple": "Simple",
+          "counterbore": "Escariado",
+          "countersink": "Avellanado",
+          "angle": "Ángulo",
+          "boreDiameter": "Diámetro del escariado",
+          "boreDepth": "Profundidad del escariado",
+          "sinkDiameter": "Diámetro del avellanado"
+        },
+        "shell": {
+          "title": "Vaciado",
+          "help": "Vacía el cuerpo, con paredes de este grosor. Haz clic en caras planas para dejarlas abiertas, como la parte de arriba de una bandeja.",
+          "thickness": "Grosor de pared",
+          "pick": "Haz clic en las caras a dejar abiertas",
+          "open_one": "{{count}} cara abierta",
+          "open_many": "{{count}} caras abiertas",
+          "open_other": "{{count}} caras abiertas"
+        },
+        "split": {
+          "title": "División",
+          "help": "Divide el cuerpo en dos: por un plano, el plano de una cara plana u otro cuerpo. Ambas partes siguen siendo editables.",
+          "by": "Dividir por",
+          "plane": "Plano",
+          "face": "Cara",
+          "body": "Cuerpo",
+          "pickFace": "Haz clic en una cara plana",
+          "facePicked": "Cara elegida",
+          "pickTool": "Haz clic en el cuerpo con el que dividir",
+          "keep": "Parte",
+          "front": "Delantera",
+          "back": "Trasera",
+          "inside": "Interior",
+          "outside": "Exterior"
+        },
+        "scale": {
+          "title": "Escala",
+          "help": "Escala el cuerpo respecto a su propio origen.",
+          "factor": "Factor"
+        },
+        "sketch_face": {
+          "title": "Boceto sobre una cara",
+          "help": "Empieza un boceto sobre la cara plana en la que haces clic.",
+          "pick": "Haz clic en una cara plana para el boceto"
+        },
+        "edges_one": "{{count}} arista",
+        "edges_many": "{{count}} aristas",
+        "edges_other": "{{count}} aristas"
       }
     }
   },

@@ -6,22 +6,29 @@ import {
   inputsOf,
   isBody,
   LIMITS,
+  shapeOutline,
+  transformMatrix,
   type BodyFeature,
-  type MeshFeature,
+  type BooleanOperation,
+  type EdgeRef,
+  type FaceRef,
   type Feature,
   type FeatureType,
+  type MeshFeature,
   type SketchFeature,
   type SketchShape,
   type StudioDocument,
   type Transform,
   type Vec3,
 } from "./document";
+import { applyMatrix, applyNormal, cross, invertAffine, normalize, perpendicular } from "./vec";
 
 // Every change to a Studio design, as a command: the toolbar, the panels and the viewport run these and nothing else,
 // and each one is also an MCP tool (backend/src/mcp/studioTools.ts) and, later, a tool for Studio's own AI. So whatever a
 // person can do to a design, an assistant can do the same way. A new action in the UI is a new command here first.
 //
-// Descriptions are written for an AI that has only them to go on: units, axes, where a shape's origin is, what an id is.
+// Descriptions are written for an AI that has only them to go on: units, axes, where a shape's origin is, what an id is,
+// how a face or an edge is named, and what happens to the bodies a command works on.
 //
 // `apply` is pure: it gets its own copy of the document and returns the next one, the same in the browser (which applies
 // it at once) and on the server (which keeps the result). Commands without one, undo and redo and the design's name,
@@ -55,10 +62,20 @@ type CommandDefinition<S extends z.ZodRawShape> = {
 
 const command = <S extends z.ZodRawShape>(definition: CommandDefinition<S>) => definition;
 
+// --- Arguments, shared ---
+
 const coordinate = z.number().finite().min(-LIMITS.size).max(LIMITS.size);
 const vec2 = z.tuple([coordinate, coordinate]);
 const vec3 = z.tuple([coordinate, coordinate, coordinate]);
 const length = (description: string) => z.number().positive().max(LIMITS.size).describe(description);
+const signedLength = (description: string) =>
+  z
+    .number()
+    .finite()
+    .min(-LIMITS.size)
+    .max(LIMITS.size)
+    .refine((value) => value !== 0, "must not be 0")
+    .describe(description);
 const segments = z
   .number()
   .int()
@@ -73,6 +90,10 @@ const featureName = z
   .optional()
   .describe("A name for the feature list. Leave it out to show its type and number, e.g. Box 3.");
 const featureId = z.string().min(1).describe("The feature's id, as studio_get_design lists it, e.g. box-1.");
+const bodyId = z
+  .string()
+  .min(1)
+  .describe("The body to work on: a top-level body's id from studio_get_design, e.g. box-1 or boolean-4.");
 const sketchId = z.string().min(1).describe("The sketch's id, e.g. sketch-2.");
 
 const placement = {
@@ -83,8 +104,43 @@ const placement = {
   name: featureName,
 };
 
+const edgeTreatment = z
+  .object({
+    type: z.enum(["fillet", "chamfer"]).describe("fillet rounds the edge; chamfer bevels it flat."),
+    size: length("A fillet's radius, or how far a chamfer cuts back along both faces, in mm."),
+  })
+  .strict();
+const rimArgs = {
+  top_edge: edgeTreatment
+    .nullable()
+    .optional()
+    .describe("Round or bevel the top rim. Null or left out keeps it sharp."),
+  bottom_edge: edgeTreatment
+    .nullable()
+    .optional()
+    .describe("Round or bevel the bottom rim. Null or left out keeps it sharp."),
+};
+
+/** A face, as a point on it and the way it faces, in the world: what studio_inspect_body lists under faces. */
+const faceArg = z
+  .object({
+    point: vec3.describe("A point on the face, in mm, in the world."),
+    normal: vec3.describe("The way the face faces, out of the body, e.g. [0, 0, 1] for a top face."),
+  })
+  .strict();
+/** An edge, as two points on it, in the world: what studio_inspect_body lists under edges. */
+const edgeArg = z
+  .object({ a: vec3.describe("One end of the edge, in mm, in the world."), b: vec3.describe("Its other end.") })
+  .strict();
+
 const hole = z.boolean().optional().describe("Cut it out of the sketch's other shapes instead of adding to them.");
 const shapeCenter = vec2.describe("Its centre on the plane, as [u, v] in mm.");
+const cornerRadius = z
+  .number()
+  .min(0)
+  .max(LIMITS.size)
+  .optional()
+  .describe("Rounds every corner with this radius, in mm. Default 0, sharp.");
 const shape = z
   .discriminatedUnion("type", [
     z
@@ -93,6 +149,7 @@ const shape = z
         center: shapeCenter,
         width: length("Along the plane's u axis, in mm."),
         height: length("Along the plane's v axis, in mm."),
+        corner_radius: cornerRadius,
         hole,
       })
       .strict(),
@@ -107,13 +164,14 @@ const shape = z
           .describe(
             "Its corners in order, as [u, v] in mm; the last joins back to the first. It mustn't cross itself.",
           ),
+        corner_radius: cornerRadius,
         hole,
       })
       .strict(),
   ])
   .describe(
     "A closed shape on the sketch's plane, in the plane's own [u, v] coordinates: on XY u is X and v is Y, on XZ u is X " +
-      "and v is Z, on YZ u is Y and v is Z.",
+      "and v is Z, on YZ u is Y and v is Z; on a face, u and v are as add_sketch reported them.",
   );
 const plane = z
   .enum(["XY", "XZ", "YZ"])
@@ -123,10 +181,28 @@ const plane = z
   );
 const planeOffset = coordinate
   .optional()
-  .describe("How far the plane sits along the axis it faces, in mm: z for XY, y for XZ, x for YZ. Default 0.");
+  .describe(
+    "How far the plane sits along the way it faces, in mm: z for XY, -y for XZ, x for YZ, out of the face for a face. " +
+      "Default 0.",
+  );
+const operation = z
+  .enum(["new", "join", "cut", "intersect"])
+  .optional()
+  .describe(
+    "new (default) makes a body of its own. join adds it to target_id, cut takes it away from target_id, intersect keeps " +
+      "only where they overlap; the result is one body, made as a boolean.",
+  );
+const operationTarget = z
+  .string()
+  .min(1)
+  .optional()
+  .describe("The body to join to, cut from or intersect with; needed unless operation is new.");
+
+// --- Helpers ---
 
 const fmt = (n: number) => String(Number(n.toFixed(3)));
 const size3 = (a: number, b: number, c: number) => `${fmt(a)} × ${fmt(b)} × ${fmt(c)} mm`;
+const v3 = (v: Vec3) => `[${v.map(fmt).join(", ")}]`;
 
 function nextId(doc: StudioDocument, type: FeatureType): string {
   const id = `${type}-${doc.next_id}`;
@@ -164,7 +240,22 @@ function findSketch(doc: StudioDocument, id: string): SketchFeature {
 
 function assertFree(doc: StudioDocument, id: string): void {
   const user = consumerOf(doc, id);
-  if (user) throw new CommandError(`${id} is already part of ${user.id}.`);
+  if (user) throw new CommandError(`${id} is already part of ${user.id}: work on ${user.id} instead.`);
+}
+
+/** A top-level body to change, free to be built on. */
+function freeBody(doc: StudioDocument, id: string): BodyFeature {
+  const body = findBody(doc, id);
+  assertFree(doc, id);
+  return body;
+}
+
+/** Whether a body is a closed solid, as booleans need; an open imported mesh isn't. */
+function assertSolid(body: BodyFeature): void {
+  if (body.type === "mesh" && !body.solid)
+    throw new CommandError(
+      `${body.id} isn't a closed solid, so it can't be combined or changed. It can still be moved, scaled and exported.`,
+    );
 }
 
 function shapeAt(sketch: SketchFeature, index: number): SketchShape {
@@ -173,46 +264,145 @@ function shapeAt(sketch: SketchFeature, index: number): SketchShape {
   return found;
 }
 
+/** Checks a shape's corner radius fits. */
+function checkShape(value: SketchShape): SketchShape {
+  try {
+    shapeOutline(value);
+  } catch (error) {
+    throw new CommandError(error instanceof Error ? error.message : String(error));
+  }
+  return value;
+}
+
 function checkTorus(major: number, minor: number): void {
   if (minor >= major)
     throw new CommandError("A torus's minor_radius must be smaller than its major_radius, or the ring closes up.");
 }
 
+/** World references into the body's own frame, so they move with it. */
+function intoFrame(body: BodyFeature) {
+  const inverse = invertAffine(transformMatrix(body.transform));
+  return {
+    face: (face: { point: Vec3; normal: Vec3 }): FaceRef => ({
+      point: applyMatrix(inverse, face.point),
+      normal: applyNormal(inverse, normalize(face.normal)),
+    }),
+    edge: (edge: { a: Vec3; b: Vec3 }): EdgeRef => ({
+      a: applyMatrix(inverse, edge.a),
+      b: applyMatrix(inverse, edge.b),
+    }),
+  };
+}
+
+const BOOLEAN_OF: Record<"join" | "cut" | "intersect", BooleanOperation> = {
+  join: "union",
+  cut: "subtract",
+  intersect: "intersect",
+};
+
+/** After a new body: for join, cut or intersect, the boolean of it with the target. */
+function combineWith(
+  doc: StudioDocument,
+  made: string,
+  how: "new" | "join" | "cut" | "intersect" | undefined,
+  targetId: string | undefined,
+): { created: string[]; summary: string } {
+  if (!how || how === "new") {
+    if (targetId) throw new CommandError("target_id is only for join, cut or intersect.");
+    return { created: [made], summary: `into ${made}` };
+  }
+  if (!targetId) throw new CommandError(`${how} needs target_id, the body to work on.`);
+  const target = freeBody(doc, targetId);
+  assertSolid(target);
+  const id = nextId(doc, "boolean");
+  addFeature(doc, {
+    id,
+    type: "boolean",
+    name: "",
+    visible: true,
+    transform: placed({}),
+    operation: BOOLEAN_OF[how],
+    target_id: targetId,
+    tool_ids: [made],
+  });
+  const verb = how === "join" ? "joined to" : how === "cut" ? "cut from" : "intersected with";
+  return { created: [id], summary: `as ${made}, ${verb} ${targetId} into ${id}` };
+}
+
 // What update_feature may change on each type of feature.
 const EDITABLE: Record<FeatureType, string[]> = {
   box: ["width", "depth", "height"],
-  cylinder: ["radius", "height", "segments"],
-  cone: ["radius_bottom", "radius_top", "height", "segments"],
+  cylinder: ["radius", "height", "segments", "top_edge", "bottom_edge"],
+  cone: ["radius_bottom", "radius_top", "height", "segments", "top_edge", "bottom_edge"],
   sphere: ["radius", "segments"],
   torus: ["major_radius", "minor_radius", "segments"],
-  extrude: ["distance"],
+  extrude: ["distance", "symmetric", "start_offset", "taper", "top_edge", "bottom_edge"],
+  revolve: ["axis", "angle", "segments"],
   boolean: ["operation"],
+  press_pull: ["distance"],
+  fillet: ["radius", "segments"],
+  chamfer: ["distance"],
+  hole: ["diameter", "depth", "counterbore", "countersink", "segments"],
+  shell: ["thickness"],
+  split: ["keep"],
   sketch: ["plane", "offset"],
   mesh: [],
 };
 
 /** Copies a feature and everything it's built from, inputs first so the order still holds. Returns the copy's id. */
 function copyTree(doc: StudioDocument, id: string, copies: Map<string, string>): string {
+  const known = copies.get(id);
+  if (known) return known;
   const source = find(doc, id);
   for (const input of inputsOf(source)) copyTree(doc, input, copies);
   const copy = structuredClone(source);
   copy.id = nextId(doc, source.type);
   copies.set(source.id, copy.id);
-  if (copy.type === "extrude") copy.sketch_id = copies.get(copy.sketch_id)!;
-  if (copy.type === "boolean") {
-    copy.target_id = copies.get(copy.target_id)!;
-    copy.tool_ids = copy.tool_ids.map((tool) => copies.get(tool)!);
+  const map = (ref: string) => copies.get(ref) ?? ref;
+  switch (copy.type) {
+    case "extrude":
+    case "revolve":
+      copy.sketch_id = map(copy.sketch_id);
+      break;
+    case "boolean":
+      copy.target_id = map(copy.target_id);
+      copy.tool_ids = copy.tool_ids.map(map);
+      break;
+    case "press_pull":
+    case "fillet":
+    case "chamfer":
+    case "hole":
+    case "shell":
+      copy.target_id = map(copy.target_id);
+      break;
+    case "split":
+      copy.source_id = map(copy.source_id);
+      if (copy.tool_id) copy.tool_id = map(copy.tool_id);
+      break;
   }
   addFeature(doc, copy);
   return copy.id;
 }
 
+/** The sketch's frame on a face of the world: u along the world's X as laid on the face, v = normal × u. */
+function faceFrame(face: { point: Vec3; normal: Vec3 }) {
+  const normal = normalize(face.normal);
+  if (Math.hypot(...normal) === 0) throw new CommandError("The face's normal can't be [0, 0, 0].");
+  const u = perpendicular(normal);
+  return { origin: face.point, u, normal, v: cross(normal, u) };
+}
+
+const BODY_REF_HELP =
+  "Faces and edges are named in the world as studio_inspect_body lists them, and follow the body if it moves later.";
+
 export const STUDIO_COMMANDS = {
+  // --- Shapes ---
+
   add_box: command({
     title: "Add a box",
     description:
       "Adds a box: width along X, depth along Y, height along Z, in mm. Its origin is the centre of its base, so at " +
-      "position z=0 it stands on the bed.",
+      "position z=0 it stands on the bed. Round its edges afterwards with fillet.",
     args: {
       width: length("Along X, in mm."),
       depth: length("Along Y, in mm."),
@@ -238,8 +428,9 @@ export const STUDIO_COMMANDS = {
   add_cylinder: command({
     title: "Add a cylinder",
     description:
-      "Adds an upright cylinder along Z. Its origin is the centre of its base, so at position z=0 it stands on the bed.",
-    args: { radius: length("In mm."), height: length("Along Z, in mm."), segments, ...placement },
+      "Adds an upright cylinder along Z. Its origin is the centre of its base, so at position z=0 it stands on the bed. " +
+      "Its top and bottom rims can be rounded or bevelled.",
+    args: { radius: length("In mm."), height: length("Along Z, in mm."), segments, ...rimArgs, ...placement },
     apply(doc, args) {
       const id = nextId(doc, "cylinder");
       addFeature(doc, {
@@ -251,6 +442,8 @@ export const STUDIO_COMMANDS = {
         radius: args.radius,
         height: args.height,
         segments: args.segments ?? DEFAULT_SEGMENTS,
+        top_edge: args.top_edge ?? null,
+        bottom_edge: args.bottom_edge ?? null,
       });
       return {
         document: doc,
@@ -264,15 +457,19 @@ export const STUDIO_COMMANDS = {
     title: "Add a cone",
     description:
       "Adds an upright cone or truncated cone along Z, narrowing from radius_bottom to radius_top (0 for a point). Its " +
-      "origin is the centre of its base, so at position z=0 it stands on the bed.",
+      "origin is the centre of its base, so at position z=0 it stands on the bed. Its rims can be rounded or bevelled " +
+      "(not the top of one that comes to a point).",
     args: {
       radius_bottom: length("At the base, in mm."),
       radius_top: z.number().min(0).max(LIMITS.size).describe("At the top, in mm: 0 makes a point."),
       height: length("Along Z, in mm."),
       segments,
+      ...rimArgs,
       ...placement,
     },
     apply(doc, args) {
+      if (args.top_edge && args.radius_top === 0)
+        throw new CommandError("A cone that comes to a point has no top rim to round.");
       const id = nextId(doc, "cone");
       addFeature(doc, {
         id,
@@ -284,6 +481,8 @@ export const STUDIO_COMMANDS = {
         radius_top: args.radius_top,
         height: args.height,
         segments: args.segments ?? DEFAULT_SEGMENTS,
+        top_edge: args.top_edge ?? null,
+        bottom_edge: args.bottom_edge ?? null,
       });
       return { document: doc, created: [id], summary: `Added ${id}, height ${fmt(args.height)} mm` };
     },
@@ -336,29 +535,49 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  // --- Sketches, and the solids made from them ---
+
   add_sketch: command({
     title: "Start a sketch",
     description:
-      "Starts a 2D sketch on a plane: rectangles, circles and polygons that an extrude then pulls into a solid. Shapes " +
-      "that overlap join; a shape marked as a hole is cut out of the others.",
+      "Starts a 2D sketch, on one of the three main planes or on a flat face of a body: rectangles, circles and polygons " +
+      "that extrude or revolve then make solid. Shapes that overlap join; a shape marked as a hole is cut out of the " +
+      "others. On a face, the sketch takes the face's plane as it is now, with its origin at the given point; the reply " +
+      "says which way u and v point in the world. Give plane or face, not both.",
     args: {
-      plane,
+      plane: plane.optional(),
+      face: faceArg
+        .optional()
+        .describe(
+          "A flat face to sketch on, from studio_inspect_body's faces: a point on it and its normal, in the world.",
+        ),
       offset: planeOffset,
       shapes: z.array(shape).max(LIMITS.shapesPerSketch).optional().describe("Its shapes; more can be added later."),
       name: featureName,
     },
     apply(doc, args) {
+      if (Boolean(args.plane) === Boolean(args.face))
+        throw new CommandError("Give a plane or a face to sketch on, one of them.");
+      const shapes = (args.shapes ?? []).map(checkShape);
       const id = nextId(doc, "sketch");
+      const frame = args.face ? faceFrame(args.face) : null;
       addFeature(doc, {
         id,
         type: "sketch",
         name: args.name ?? "",
         visible: true,
-        plane: args.plane,
+        plane: frame ? "FACE" : args.plane!,
         offset: args.offset ?? 0,
-        shapes: args.shapes ?? [],
+        frame: frame ? { origin: frame.origin, u: frame.u, normal: frame.normal } : null,
+        shapes,
       });
-      return { document: doc, created: [id], summary: `Started ${id} on the ${args.plane} plane` };
+      return {
+        document: doc,
+        created: [id],
+        summary: frame
+          ? `Started ${id} on a face at ${v3(frame.origin)}: u points ${v3(frame.u)}, v points ${v3(frame.v)}, extrudes go ${v3(frame.normal)}`
+          : `Started ${id} on the ${args.plane} plane`,
+      };
     },
   }),
 
@@ -370,7 +589,7 @@ export const STUDIO_COMMANDS = {
       const sketch = findSketch(doc, args.sketch_id);
       if (sketch.shapes.length >= LIMITS.shapesPerSketch)
         throw new CommandError(`A sketch holds up to ${LIMITS.shapesPerSketch} shapes.`);
-      sketch.shapes.push(args.shape);
+      sketch.shapes.push(checkShape(args.shape));
       return { document: doc, created: [], summary: `Drew a ${args.shape.type} on ${sketch.id}` };
     },
   }),
@@ -383,7 +602,7 @@ export const STUDIO_COMMANDS = {
     apply(doc, args) {
       const sketch = findSketch(doc, args.sketch_id);
       shapeAt(sketch, args.index);
-      sketch.shapes[args.index] = args.shape;
+      sketch.shapes[args.index] = checkShape(args.shape);
       return { document: doc, created: [], summary: `Changed shape ${args.index} of ${sketch.id}` };
     },
   }),
@@ -404,17 +623,28 @@ export const STUDIO_COMMANDS = {
   extrude: command({
     title: "Extrude a sketch",
     description:
-      "Pulls a sketch's shapes into a solid body, along the way its plane faces (see add_sketch); a negative distance " +
-      "goes the other way. The sketch then belongs to the body and stays editable: changing it changes the body.",
+      "Pulls a sketch's shapes into a solid, along the way its plane faces (see add_sketch); a negative distance goes the " +
+      "other way. It can be a body of its own, or join, cut or intersect another body. Options: symmetric (half each way), " +
+      "a start offset, a taper (a draft, degrees the sides lean in towards the far end), and rounded or bevelled edges " +
+      "where it ends (top_edge, at the far end) and starts (bottom_edge). A taper or rounding too big for the shape is " +
+      "refused. The sketch then belongs to the solid and stays editable: changing it changes the solid.",
     args: {
       sketch_id: sketchId,
-      distance: z
+      distance: signedLength("How far, in mm."),
+      symmetric: z.boolean().optional().describe("Half the distance each way from the sketch. Default false."),
+      start_offset: coordinate
+        .optional()
+        .describe("Starts this far from the sketch along the way it goes, in mm. Default 0."),
+      taper: z
         .number()
-        .finite()
-        .min(-LIMITS.size)
-        .max(LIMITS.size)
-        .refine((value) => value !== 0, "must not be 0")
-        .describe("How far, in mm."),
+        .min(-60)
+        .max(60)
+        .optional()
+        .describe("Degrees the sides lean in towards the far end, a draft; negative leans them out. Default 0."),
+      top_edge: edgeTreatment.nullable().optional().describe("Round or bevel the edges at the far end."),
+      bottom_edge: edgeTreatment.nullable().optional().describe("Round or bevel the edges where it starts."),
+      operation,
+      target_id: operationTarget,
       name: featureName,
     },
     apply(doc, args) {
@@ -431,8 +661,337 @@ export const STUDIO_COMMANDS = {
         transform: placed({}),
         sketch_id: sketch.id,
         distance: args.distance,
+        symmetric: args.symmetric ?? false,
+        start_offset: args.start_offset ?? 0,
+        taper: args.taper ?? 0,
+        top_edge: args.top_edge ?? null,
+        bottom_edge: args.bottom_edge ?? null,
       });
-      return { document: doc, created: [id], summary: `Extruded ${sketch.id} by ${fmt(args.distance)} mm into ${id}` };
+      const combined = combineWith(doc, id, args.operation, args.target_id);
+      return {
+        document: doc,
+        created: combined.created,
+        summary: `Extruded ${sketch.id} by ${fmt(args.distance)} mm ${combined.summary}`,
+      };
+    },
+  }),
+
+  revolve: command({
+    title: "Revolve a sketch",
+    description:
+      "Turns a sketch's shapes about one of its own axes, through its origin: v (up the sketch) or u (along it), by an " +
+      "angle up to 360°. The shapes must all be on one side of the axis. Like extrude, it can be a body of its own or " +
+      "join, cut or intersect another body. The sketch then belongs to the solid and stays editable.",
+    args: {
+      sketch_id: sketchId,
+      axis: z.enum(["u", "v"]).describe("The sketch's axis to turn about."),
+      angle: z.number().min(1).max(360).optional().describe("Degrees to turn, starting at the sketch. Default 360."),
+      segments,
+      operation,
+      target_id: operationTarget,
+      name: featureName,
+    },
+    apply(doc, args) {
+      const sketch = findSketch(doc, args.sketch_id);
+      assertFree(doc, sketch.id);
+      if (!sketch.shapes.some((each) => !each.hole))
+        throw new CommandError(`${sketch.id} has nothing to revolve: draw a shape that isn't a hole on it first.`);
+      const id = nextId(doc, "revolve");
+      addFeature(doc, {
+        id,
+        type: "revolve",
+        name: args.name ?? "",
+        visible: true,
+        transform: placed({}),
+        sketch_id: sketch.id,
+        axis: args.axis,
+        angle: args.angle ?? 360,
+        segments: args.segments ?? DEFAULT_SEGMENTS,
+      });
+      const combined = combineWith(doc, id, args.operation, args.target_id);
+      return {
+        document: doc,
+        created: combined.created,
+        summary: `Revolved ${sketch.id} ${fmt(args.angle ?? 360)}° about its ${args.axis} axis ${combined.summary}`,
+      };
+    },
+  }),
+
+  // --- Changing a body ---
+
+  press_pull: command({
+    title: "Push or pull a face",
+    description:
+      "Moves a flat face of a body straight out (a positive distance adds material) or in (a negative distance cuts it " +
+      "away), keeping its outline: a box's top pulled up 5 mm makes it 5 mm taller. The face is named by a point on it and " +
+      `its normal. ${BODY_REF_HELP}`,
+    args: {
+      feature_id: bodyId,
+      face: faceArg.describe("The flat face to move, from studio_inspect_body's faces."),
+      distance: signedLength("How far out (positive) or in (negative), in mm."),
+      name: featureName,
+    },
+    apply(doc, args) {
+      const body = freeBody(doc, args.feature_id);
+      assertSolid(body);
+      const id = nextId(doc, "press_pull");
+      addFeature(doc, {
+        id,
+        type: "press_pull",
+        name: args.name ?? "",
+        visible: true,
+        transform: placed({}),
+        target_id: body.id,
+        face: intoFrame(body).face(args.face),
+        distance: args.distance,
+      });
+      return {
+        document: doc,
+        created: [id],
+        summary: `${args.distance > 0 ? "Pulled" : "Pushed"} a face of ${body.id} ${fmt(Math.abs(args.distance))} mm into ${id}`,
+      };
+    },
+  }),
+
+  fillet: command({
+    title: "Round edges",
+    description:
+      "Rounds straight edges between flat faces of a body with one radius: an outside edge is rounded off, an inside edge " +
+      "(where faces meet in a hollow) is filled with a rounded fillet. Edges are named by their two ends. Two rounded " +
+      "edges meeting at a corner meet in a mitre; three meeting at a square corner (as on a box) get a ball-shaped " +
+      "corner. Refused, with the reason, when the radius is bigger than the faces beside an edge allow, or for corners " +
+      "it can't blend (three edges at a corner that isn't square, or an outside and an inside edge at the same corner). " +
+      `Curved edges can't be chosen: round a cylinder's rims with its own top_edge and bottom_edge. ${BODY_REF_HELP}`,
+    args: {
+      feature_id: bodyId,
+      edges: z.array(edgeArg).min(1).max(LIMITS.edgesPerFeature).describe("The edges, from studio_inspect_body."),
+      radius: length("In mm."),
+      segments: z
+        .number()
+        .int()
+        .min(8)
+        .max(LIMITS.segmentsMax)
+        .optional()
+        .describe("Facets in a full turn of the rounding. Default 32."),
+      name: featureName,
+    },
+    apply(doc, args) {
+      const body = freeBody(doc, args.feature_id);
+      assertSolid(body);
+      const frame = intoFrame(body);
+      const id = nextId(doc, "fillet");
+      addFeature(doc, {
+        id,
+        type: "fillet",
+        name: args.name ?? "",
+        visible: true,
+        transform: placed({}),
+        target_id: body.id,
+        edges: args.edges.map(frame.edge),
+        radius: args.radius,
+        segments: args.segments ?? 32,
+      });
+      const count = args.edges.length;
+      return {
+        document: doc,
+        created: [id],
+        summary: `Rounded ${count} edge${count === 1 ? "" : "s"} of ${body.id} to ${fmt(args.radius)} mm into ${id}`,
+      };
+    },
+  }),
+
+  chamfer: command({
+    title: "Bevel edges",
+    description:
+      "Bevels straight edges between flat faces of a body, cutting back the same distance along both faces: an outside " +
+      "edge is cut off flat, an inside edge is filled with a flat bevel. Edges meeting at a corner meet in a mitre. " +
+      "Refused, with the reason, when the distance is bigger than the faces allow, or where an outside and an inside edge " +
+      `meet at a corner. ${BODY_REF_HELP}`,
+    args: {
+      feature_id: bodyId,
+      edges: z.array(edgeArg).min(1).max(LIMITS.edgesPerFeature).describe("The edges, from studio_inspect_body."),
+      distance: length("How far back along each face, in mm."),
+      name: featureName,
+    },
+    apply(doc, args) {
+      const body = freeBody(doc, args.feature_id);
+      assertSolid(body);
+      const frame = intoFrame(body);
+      const id = nextId(doc, "chamfer");
+      addFeature(doc, {
+        id,
+        type: "chamfer",
+        name: args.name ?? "",
+        visible: true,
+        transform: placed({}),
+        target_id: body.id,
+        edges: args.edges.map(frame.edge),
+        distance: args.distance,
+      });
+      const count = args.edges.length;
+      return {
+        document: doc,
+        created: [id],
+        summary: `Bevelled ${count} edge${count === 1 ? "" : "s"} of ${body.id} by ${fmt(args.distance)} mm into ${id}`,
+      };
+    },
+  }),
+
+  hole: command({
+    title: "Drill a hole",
+    description:
+      "Drills a round hole into a body at a point on its surface, going in against the surface's normal there: a depth in " +
+      "mm, or right through (leave depth out). Optionally counterbored (a wider, shallow bore at the top, for a screw " +
+      "head) or countersunk (a cone at the top, for a flat-head screw); not both. The bottom is flat. " +
+      BODY_REF_HELP,
+    args: {
+      feature_id: bodyId,
+      point: vec3.describe("Where the hole starts, on the body's surface, in mm, in the world."),
+      normal: vec3.describe(
+        "The surface's outward normal there, e.g. [0, 0, 1] on a top face; the hole goes the other way.",
+      ),
+      diameter: length("The hole's diameter, in mm."),
+      depth: length("How deep, in mm. Leave it out to go right through.").optional(),
+      counterbore: z
+        .object({ diameter: length("Wider than the hole, in mm."), depth: length("In mm.") })
+        .strict()
+        .optional()
+        .describe("A wider bore at the top."),
+      countersink: z
+        .object({
+          diameter: length("At the surface, wider than the hole, in mm."),
+          angle: z
+            .number()
+            .min(30)
+            .max(150)
+            .describe("The cone's included angle, in degrees: 90 for most metric screws."),
+        })
+        .strict()
+        .optional()
+        .describe("A cone at the top."),
+      segments,
+      name: featureName,
+    },
+    apply(doc, args) {
+      const body = freeBody(doc, args.feature_id);
+      assertSolid(body);
+      if (args.counterbore && args.countersink)
+        throw new CommandError("A hole is counterbored or countersunk, not both.");
+      if (args.counterbore && args.counterbore.diameter <= args.diameter)
+        throw new CommandError("A counterbore has to be wider than the hole.");
+      if (args.countersink && args.countersink.diameter <= args.diameter)
+        throw new CommandError("A countersink has to be wider than the hole.");
+      const id = nextId(doc, "hole");
+      addFeature(doc, {
+        id,
+        type: "hole",
+        name: args.name ?? "",
+        visible: true,
+        transform: placed({}),
+        target_id: body.id,
+        face: intoFrame(body).face({ point: args.point, normal: args.normal }),
+        diameter: args.diameter,
+        depth: args.depth ?? null,
+        counterbore: args.counterbore ?? null,
+        countersink: args.countersink ?? null,
+        segments: args.segments ?? DEFAULT_SEGMENTS,
+      });
+      return {
+        document: doc,
+        created: [id],
+        summary: `Drilled a ${fmt(args.diameter)} mm hole ${args.depth ? `${fmt(args.depth)} mm deep` : "right through"} ${body.id} into ${id}`,
+      };
+    },
+  }),
+
+  shell: command({
+    title: "Hollow a body",
+    description:
+      "Hollows a body out, leaving walls of the given thickness under every face: flat walls exactly that thick, the " +
+      "hollow rounded round inside edges and corners as far from them as from the faces (never thinner, at most 2.5% " +
+      "thicker there). Optionally leaves flat faces open, like a box's top for a tray: that face gets no wall, so the " +
+      "hollow runs out through it; it's refused if the walls beside it would close it, or if the walls fill the body. " +
+      `Bodies over ${LIMITS.shellTriangles} triangles are refused, as hollowing them takes too long: shell the parts ` +
+      `before combining them. ${BODY_REF_HELP}`,
+    args: {
+      feature_id: bodyId,
+      thickness: length("The walls' thickness, in mm."),
+      open_faces: z.array(faceArg).max(6).optional().describe("Flat faces to leave open, from studio_inspect_body."),
+      name: featureName,
+    },
+    apply(doc, args) {
+      const body = freeBody(doc, args.feature_id);
+      assertSolid(body);
+      const frame = intoFrame(body);
+      const id = nextId(doc, "shell");
+      addFeature(doc, {
+        id,
+        type: "shell",
+        name: args.name ?? "",
+        visible: true,
+        transform: placed({}),
+        target_id: body.id,
+        thickness: args.thickness,
+        open_faces: (args.open_faces ?? []).map(frame.face),
+      });
+      return {
+        document: doc,
+        created: [id],
+        summary: `Hollowed ${body.id} to ${fmt(args.thickness)} mm walls into ${id}`,
+      };
+    },
+  }),
+
+  split: command({
+    title: "Split a body",
+    description:
+      "Splits a body in two, by a plane or by another body, making two bodies that stay editable: by a plane, the part on " +
+      "the side its normal points to and the part on the other side; by a body, the part inside it and the part outside " +
+      "it (the cutting body stays as it is). Handy for cutting a model into printable pieces. " +
+      BODY_REF_HELP,
+    args: {
+      feature_id: bodyId,
+      plane: z
+        .object({
+          point: vec3.describe("A point on the plane, in mm, in the world."),
+          normal: vec3.describe("The plane's normal: [0, 0, 1] splits into a top part and a bottom part."),
+        })
+        .strict()
+        .optional()
+        .describe("A plane to split by."),
+      tool_id: z.string().min(1).optional().describe("A body to split by, instead of a plane."),
+    },
+    apply(doc, args) {
+      if (Boolean(args.plane) === Boolean(args.tool_id))
+        throw new CommandError("Give a plane or a tool_id to split by, one of them.");
+      const body = freeBody(doc, args.feature_id);
+      assertSolid(body);
+      let toolCopy: string | null = null;
+      let planeRef: FaceRef | null = null;
+      if (args.tool_id) {
+        if (args.tool_id === body.id) throw new CommandError("A body can't split itself.");
+        assertSolid(findBody(doc, args.tool_id));
+        // The cutting body stays as it is: the split uses a copy of it.
+        toolCopy = copyTree(doc, args.tool_id, new Map());
+      } else {
+        planeRef = intoFrame(body).face(args.plane!);
+      }
+      const parts = (toolCopy ? (["inside", "outside"] as const) : (["front", "back"] as const)).map((keep) => {
+        const id = nextId(doc, "split");
+        addFeature(doc, {
+          id,
+          type: "split",
+          name: "",
+          visible: true,
+          transform: placed({}),
+          source_id: body.id,
+          plane: planeRef,
+          tool_id: toolCopy,
+          keep,
+        });
+        return id;
+      });
+      return { document: doc, created: parts, summary: `Split ${body.id} into ${parts.join(" and ")}` };
     },
   }),
 
@@ -441,24 +1000,22 @@ export const STUDIO_COMMANDS = {
     description:
       "Combines bodies into one: union joins them, subtract cuts the tools out of the target, intersect keeps only " +
       "where they all overlap. The bodies then belong to the result and stay editable: moving or resizing one changes " +
-      "it. Deleting the result gives them back.",
+      "it. Deleting the result gives them back. With keep_tools, the tools stay as they are and copies are used.",
     args: {
       operation: z.enum(["union", "subtract", "intersect"]),
       target_id: z.string().min(1).describe("The body the others are joined to, cut from or overlapped with."),
       tool_ids: z.array(z.string().min(1)).min(1).max(LIMITS.features).describe("The other bodies."),
+      keep_tools: z.boolean().optional().describe("Leave the tools as they are and use copies of them. Default false."),
       name: featureName,
     },
     apply(doc, args) {
       const ids = [args.target_id, ...args.tool_ids];
       if (new Set(ids).size !== ids.length) throw new CommandError("Each body can only be in a boolean once.");
-      for (const id of ids) {
-        const body = findBody(doc, id);
-        if (body.type === "mesh" && !body.solid)
-          throw new CommandError(
-            `${id} isn't a closed solid, so it can't be combined. It can still be moved, scaled and exported.`,
-          );
-        assertFree(doc, id);
+      for (const each of ids) {
+        const body = args.keep_tools && each !== args.target_id ? findBody(doc, each) : freeBody(doc, each);
+        assertSolid(body);
       }
+      const tools = args.keep_tools ? args.tool_ids.map((tool) => copyTree(doc, tool, new Map())) : args.tool_ids;
       const id = nextId(doc, "boolean");
       addFeature(doc, {
         id,
@@ -468,16 +1025,18 @@ export const STUDIO_COMMANDS = {
         transform: placed({}),
         operation: args.operation,
         target_id: args.target_id,
-        tool_ids: args.tool_ids,
+        tool_ids: tools,
       });
-      const tools = args.tool_ids.join(", ");
+      const list = args.tool_ids.join(", ");
       const summary =
         args.operation === "subtract"
-          ? `Cut ${tools} out of ${args.target_id} into ${id}`
-          : `${args.operation === "union" ? "Joined" : "Intersected"} ${args.target_id} with ${tools} into ${id}`;
-      return { document: doc, created: [id], summary };
+          ? `Cut ${list} out of ${args.target_id} into ${id}`
+          : `${args.operation === "union" ? "Joined" : "Intersected"} ${args.target_id} with ${list} into ${id}`;
+      return { document: doc, created: [id], summary: args.keep_tools ? `${summary}, keeping ${list}` : summary };
     },
   }),
+
+  // --- Place and size ---
 
   set_transform: command({
     title: "Move, rotate or scale a body",
@@ -507,18 +1066,57 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  scale_feature: command({
+    title: "Scale a body",
+    description:
+      "Scales a body by a factor about its own origin (a shape's base centre), on top of the scale it has: 2 doubles it, " +
+      "0.5 halves it, or [x, y, z] for each axis.",
+    destructive: true,
+    args: {
+      feature_id: featureId,
+      factor: z
+        .union([
+          z.number().positive().max(100),
+          z.tuple([z.number().positive().max(100), z.number().positive().max(100), z.number().positive().max(100)]),
+        ])
+        .describe("One factor for all three axes, or [x, y, z]."),
+    },
+    apply(doc, args) {
+      const body = findBody(doc, args.feature_id);
+      const factor: Vec3 = typeof args.factor === "number" ? [args.factor, args.factor, args.factor] : args.factor;
+      const next = body.transform.scale.map((s, axis) => s * factor[axis]) as Vec3;
+      if (next.some((s) => s > 1000 || s < 0.001))
+        throw new CommandError("That would scale it past 1000× or below 0.001×.");
+      body.transform = { ...body.transform, scale: next };
+      return {
+        document: doc,
+        created: [],
+        summary: `Scaled ${body.id} by ${typeof args.factor === "number" ? fmt(args.factor) : v3(factor)}`,
+      };
+    },
+  }),
+
   update_feature: command({
-    title: "Change a feature's dimensions",
+    title: "Change a feature",
     description:
       "Changes what a feature was made with, keeping its place and the rest. Which fields it takes depends on the type: " +
-      "box width, depth, height; cylinder radius, height, segments; cone radius_bottom, radius_top, height, segments; " +
-      "sphere radius, segments; torus major_radius, minor_radius, segments; extrude distance; boolean operation; " +
-      "sketch plane, offset.",
+      "box width, depth, height; cylinder radius, height, segments, top_edge, bottom_edge; cone radius_bottom, " +
+      "radius_top, height, segments, top_edge, bottom_edge; sphere radius, segments; torus major_radius, minor_radius, " +
+      "segments; extrude distance, symmetric, start_offset, taper, top_edge, bottom_edge; revolve axis, angle, segments; " +
+      "boolean operation; press_pull distance; fillet radius, segments; chamfer distance; hole diameter, depth (null " +
+      "goes right through), counterbore, countersink, segments; shell thickness; split keep; sketch plane (XY, XZ or " +
+      "YZ), offset.",
     destructive: true,
     args: {
       feature_id: featureId,
       width: length("In mm.").optional(),
-      depth: length("In mm.").optional(),
+      depth: z
+        .number()
+        .positive()
+        .max(LIMITS.size)
+        .nullable()
+        .optional()
+        .describe("In mm; for a hole, null goes right through."),
       height: length("In mm.").optional(),
       radius: length("In mm.").optional(),
       radius_bottom: length("In mm.").optional(),
@@ -534,6 +1132,28 @@ export const STUDIO_COMMANDS = {
         .refine((value) => value !== 0, "must not be 0")
         .optional()
         .describe("In mm."),
+      symmetric: z.boolean().optional().describe("For an extrude."),
+      start_offset: coordinate.optional().describe("For an extrude, in mm."),
+      taper: z.number().min(-60).max(60).optional().describe("For an extrude, in degrees."),
+      top_edge: edgeTreatment.nullable().optional().describe("Null makes it sharp."),
+      bottom_edge: edgeTreatment.nullable().optional().describe("Null makes it sharp."),
+      axis: z.enum(["u", "v"]).optional().describe("For a revolve."),
+      angle: z.number().min(1).max(360).optional().describe("For a revolve, in degrees."),
+      diameter: length("For a hole, in mm.").optional(),
+      counterbore: z
+        .object({ diameter: length("In mm."), depth: length("In mm.") })
+        .strict()
+        .nullable()
+        .optional()
+        .describe("For a hole; null removes it."),
+      countersink: z
+        .object({ diameter: length("In mm."), angle: z.number().min(30).max(150).describe("Degrees.") })
+        .strict()
+        .nullable()
+        .optional()
+        .describe("For a hole; null removes it."),
+      thickness: length("For a shell, in mm.").optional(),
+      keep: z.enum(["front", "back", "inside", "outside"]).optional().describe("For a split part."),
       operation: z.enum(["union", "subtract", "intersect"]).optional(),
       plane: plane.optional(),
       offset: planeOffset,
@@ -545,12 +1165,31 @@ export const STUDIO_COMMANDS = {
       const allowed = EDITABLE[feature.type];
       const wrong = given.filter((key) => !allowed.includes(key));
       if (wrong.length)
-        throw new CommandError(`A ${feature.type} has no ${wrong.join(" or ")}. It takes: ${allowed.join(", ")}.`);
+        throw new CommandError(
+          `A ${feature.type} has no ${wrong.join(" or ")}. ${allowed.length ? `It takes: ${allowed.join(", ")}.` : "It has nothing to change."}`,
+        );
+      if (feature.type === "sketch" && feature.plane === "FACE" && changes.plane)
+        throw new CommandError("A sketch on a face keeps the face's plane; draw a new sketch for another plane.");
+      if (feature.type === "chamfer" && changes.distance !== undefined && changes.distance <= 0)
+        throw new CommandError("A chamfer's distance must be more than 0.");
+      if (feature.type === "split" && changes.keep) {
+        const byTool = Boolean(feature.tool_id);
+        if (byTool !== (changes.keep === "inside" || changes.keep === "outside"))
+          throw new CommandError(
+            byTool ? "A part split by a body keeps inside or outside." : "A part split by a plane keeps front or back.",
+          );
+      }
       Object.assign(feature, Object.fromEntries(given.map((key) => [key, changes[key as keyof typeof changes]])));
       if (feature.type === "torus") checkTorus(feature.major_radius, feature.minor_radius);
+      if (feature.type === "cone" && feature.top_edge && feature.radius_top === 0)
+        throw new CommandError("A cone that comes to a point has no top rim to round.");
+      if (feature.type === "hole" && feature.counterbore && feature.countersink)
+        throw new CommandError("A hole is counterbored or countersunk, not both.");
       return { document: doc, created: [], summary: `Changed ${given.join(", ")} of ${feature.id}` };
     },
   }),
+
+  // --- The feature list ---
 
   rename_feature: command({
     title: "Rename a feature",
@@ -607,8 +1246,9 @@ export const STUDIO_COMMANDS = {
   delete_feature: command({
     title: "Delete a feature",
     description:
-      "Deletes a feature. Deleting a boolean or an extrude gives back the bodies or the sketch it was made from. A " +
-      "feature that's part of another one can't be deleted until that one is.",
+      "Deletes a feature. Deleting one made from others (a boolean, an extrude or revolve, a fillet, a hole, a shell, a " +
+      "split part...) gives back what it was made from. A feature that's part of another can't be deleted until that " +
+      "one is.",
     destructive: true,
     args: { feature_id: featureId },
     apply(doc, args) {
@@ -619,10 +1259,10 @@ export const STUDIO_COMMANDS = {
           `${feature.id} is part of ${user.id}. Delete ${user.id} first, which gives its parts back, then ${feature.id}.`,
         );
       doc.features = doc.features.filter((each) => each.id !== feature.id);
-      // What it was built from shows on its own again.
+      // What it was built from shows on its own again, unless something else still holds it.
       for (const input of inputsOf(feature)) {
         const freed = featureById(doc, input);
-        if (freed) freed.visible = true;
+        if (freed && !consumerOf(doc, input)) freed.visible = true;
       }
       return { document: doc, created: [], summary: `Deleted ${feature.id}` };
     },
@@ -633,9 +1273,10 @@ export const STUDIO_COMMANDS = {
     description:
       "Brings one of the user's library models into the design as a mesh body: an STL, 3MF, STEP, OBJ or GLB file. " +
       "Find the model with search_models or list_models, and its files with list_model_files. It comes in at its own " +
-      "size in mm, centred and standing on the bed, before position and rotation apply. A closed mesh can be combined " +
-      `with booleans like any body; one with gaps can only be moved, scaled and exported. A 3MF brings its first plate as ` +
-      `one body. Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its own copy.`,
+      "size in mm, centred and standing on the bed, before position and rotation apply. A closed mesh can be combined, " +
+      "rounded, drilled and hollowed like any body; one with gaps can only be moved, scaled and exported. A 3MF brings " +
+      `its first plate as one body. Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its ` +
+      "own copy.",
     kind: "import",
     args: {
       model_id: z.string().min(1).describe("The library model's id."),

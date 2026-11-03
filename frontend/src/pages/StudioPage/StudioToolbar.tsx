@@ -33,7 +33,16 @@ import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import type { SketchPlane } from "../../studio/document";
 import type { CameraView, SketchTool, StudioMode } from "./StudioViewport";
+import type { SvgIconProps } from "@mui/material/SvgIcon";
+import type { OperationKind } from "./operations";
 import {
+  ChamferIcon,
+  FilletIcon,
+  HoleIcon,
+  PressPullIcon,
+  RevolveIcon,
+  ShellIcon,
+  SplitIcon,
   BoxIcon,
   ConeIcon,
   CylinderIcon,
@@ -69,10 +78,12 @@ type Props = {
   onExport: () => void;
   onDeleteDesign: () => void;
   onAdd: (primitive: Primitive) => void;
-  onStartSketch: (plane: SketchPlane) => void;
+  onStartSketch: (plane: Exclude<SketchPlane, "FACE">) => void;
   onSketchTool: (tool: SketchTool) => void;
   onFinishSketch: () => void;
   onExtrude: () => void;
+  /** Opens a tool's panel. */
+  onOperation: (kind: OperationKind) => void;
   onCombine: (kind: BooleanKind) => void;
   onMode: (mode: StudioMode) => void;
   onTogglePanel: (panel: StudioPanel) => void;
@@ -88,6 +99,15 @@ const PRIMITIVES: { kind: Primitive; Icon: typeof BoxIcon }[] = [
   { kind: "cone", Icon: ConeIcon },
   { kind: "sphere", Icon: SphereIcon },
   { kind: "torus", Icon: TorusIcon },
+];
+
+const MODIFY: { kind: OperationKind; Icon: React.ComponentType<SvgIconProps> }[] = [
+  { kind: "press_pull", Icon: PressPullIcon },
+  { kind: "fillet", Icon: FilletIcon },
+  { kind: "chamfer", Icon: ChamferIcon },
+  { kind: "shell", Icon: ShellIcon },
+  { kind: "split", Icon: SplitIcon },
+  { kind: "scale", Icon: AspectRatioIcon },
 ];
 
 const BOOLEANS: { kind: BooleanKind; Icon: typeof BoxIcon }[] = [
@@ -132,6 +152,8 @@ export default function StudioToolbar(props: Props) {
   const [sketchMenu, setSketchMenu] = useState<HTMLElement | null>(null);
   const [viewMenu, setViewMenu] = useState<HTMLElement | null>(null);
   const [panelMenu, setPanelMenu] = useState<HTMLElement | null>(null);
+  const [shapesMenu, setShapesMenu] = useState<HTMLElement | null>(null);
+  const [modifyMenu, setModifyMenu] = useState<HTMLElement | null>(null);
   const noDesign = props.designName === null;
 
   const menuItem = (icon: React.ReactNode, label: string, onClick: () => void, close: () => void) => (
@@ -266,21 +288,82 @@ export default function StudioToolbar(props: Props) {
                 <ListItemText primary={t(`studio.planes.${plane}`)} secondary={plane} />
               </MenuItem>
             ))}
+            <Divider />
+            <MenuItem
+              onClick={() => {
+                setSketchMenu(null);
+                props.onOperation("sketch_face");
+              }}
+            >
+              <ListItemText primary={t("studio.planes.FACE")} secondary={t("studio.planes.faceHint")} />
+            </MenuItem>
           </Menu>
           <Tool label={t("studio.actions.extrude")} disabled={!props.canExtrude} onClick={props.onExtrude}>
             <ExtrudeIcon />
           </Tool>
+          <Tool
+            label={t("studio.actions.revolve")}
+            disabled={!props.canExtrude}
+            onClick={() => props.onOperation("revolve")}
+          >
+            <RevolveIcon />
+          </Tool>
+          <Tool
+            label={t("studio.ops.hole.title")}
+            disabled={noDesign || props.busy}
+            onClick={() => props.onOperation("hole")}
+          >
+            <HoleIcon />
+          </Tool>
           <Gap />
-          {PRIMITIVES.map(({ kind, Icon }) => (
-            <Tool
-              key={kind}
-              label={t(`studio.actions.add.${kind}`)}
-              disabled={noDesign || props.busy}
-              onClick={() => props.onAdd(kind)}
-            >
-              <Icon />
-            </Tool>
-          ))}
+          <Tool
+            label={t("studio.toolbar.shapes")}
+            disabled={noDesign || props.busy}
+            onClick={(event) => setShapesMenu(event.currentTarget)}
+          >
+            <BoxIcon />
+            <KeyboardArrowDownIcon sx={{ fontSize: "14px !important", ml: -0.25 }} />
+          </Tool>
+          <Menu anchorEl={shapesMenu} open={Boolean(shapesMenu)} onClose={() => setShapesMenu(null)}>
+            {PRIMITIVES.map(({ kind, Icon }) => (
+              <MenuItem
+                key={kind}
+                onClick={() => {
+                  setShapesMenu(null);
+                  props.onAdd(kind);
+                }}
+              >
+                <ListItemIcon>
+                  <Icon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t(`studio.types.${kind}`)}</ListItemText>
+              </MenuItem>
+            ))}
+          </Menu>
+          <Tool
+            label={t("studio.toolbar.modify")}
+            disabled={noDesign || props.busy}
+            onClick={(event) => setModifyMenu(event.currentTarget)}
+          >
+            <FilletIcon />
+            <KeyboardArrowDownIcon sx={{ fontSize: "14px !important", ml: -0.25 }} />
+          </Tool>
+          <Menu anchorEl={modifyMenu} open={Boolean(modifyMenu)} onClose={() => setModifyMenu(null)}>
+            {MODIFY.map(({ kind, Icon }) => (
+              <MenuItem
+                key={kind}
+                onClick={() => {
+                  setModifyMenu(null);
+                  props.onOperation(kind);
+                }}
+              >
+                <ListItemIcon>
+                  <Icon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t(`studio.ops.${kind}.title`)}</ListItemText>
+              </MenuItem>
+            ))}
+          </Menu>
           <Gap />
           {BOOLEANS.map(({ kind, Icon }) => (
             <Tool

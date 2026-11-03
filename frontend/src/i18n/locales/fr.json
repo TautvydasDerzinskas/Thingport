@@ -3149,7 +3149,9 @@
     },
     "studio": {
       "toolbar": {
-        "label": "Outils du Studio"
+        "label": "Outils du Studio",
+        "shapes": "Formes",
+        "modify": "Modifier"
       },
       "emptyDesign": "Ajoutez une forme depuis la barre d’outils ou commencez une esquisse",
       "types": {
@@ -3161,7 +3163,14 @@
         "extrude": "Extrusion",
         "boolean": "Combinaison",
         "sketch": "Esquisse",
-        "mesh": "Maillage"
+        "mesh": "Maillage",
+        "revolve": "Révolution",
+        "press_pull": "Pousser/tirer",
+        "fillet": "Congé",
+        "chamfer": "Chanfrein",
+        "hole": "Trou",
+        "shell": "Coque",
+        "split": "Division"
       },
       "tree": {
         "heading": "Éléments",
@@ -3190,7 +3199,8 @@
           "cone": "Ajouter un cône",
           "sphere": "Ajouter une sphère",
           "torus": "Ajouter un tore"
-        }
+        },
+        "revolve": "Révolution"
       },
       "shapes": {
         "rectangle": "Rectangle",
@@ -3200,7 +3210,9 @@
       "planes": {
         "XY": "Dessus",
         "XZ": "Face",
-        "YZ": "Droite"
+        "YZ": "Droite",
+        "FACE": "Sur une face",
+        "faceHint": "Choisissez une face plane"
       },
       "sketch": {
         "on": "Esquisse sur le plan {{plane}}",
@@ -3263,7 +3275,10 @@
           "major_radius": "Rayon de l’anneau",
           "minor_radius": "Rayon du tube",
           "distance": "Distance",
-          "offset": "Décalage"
+          "offset": "Décalage",
+          "angle": "Angle",
+          "diameter": "Diamètre",
+          "thickness": "Épaisseur"
         },
         "mesh": {
           "source": "Source",
@@ -3274,7 +3289,8 @@
           "solid": "Solide fermé",
           "open": "Pas un solide fermé",
           "openHelp": "Il a des trous : il peut être déplacé, mis à l’échelle et exporté, mais pas combiné avec d’autres corps."
-        }
+        },
+        "cornerRadius": "Rayon des coins"
       },
       "design": {
         "none": "Aucune conception",
@@ -3335,6 +3351,114 @@
         "noMatches": "Aucun modèle avec un fichier 3D ne correspond",
         "emptyLibrary": "Votre bibliothèque n’a pas encore de fichier STL, 3MF, STEP, OBJ ou GLB",
         "loadMore": "Charger plus"
+      },
+      "working": "Calcul…",
+      "edges": {
+        "none": "Vive",
+        "fillet": "Congé",
+        "chamfer": "Chanfrein",
+        "radius": "Rayon",
+        "distance": "Distance"
+      },
+      "ops": {
+        "cancel": "Annuler",
+        "ok": "OK",
+        "pickBody": "Cliquez sur un corps",
+        "combine": {
+          "label": "Résultat",
+          "new": "Nouveau",
+          "join": "Joindre",
+          "cut": "Couper",
+          "intersect": "Intersecter"
+        },
+        "extrude": {
+          "title": "Extrusion",
+          "help": "Tire l’esquisse en un solide. La dépouille incline les côtés vers l’extrémité ; les arêtes des extrémités peuvent être arrondies ou chanfreinées. Joindre, couper ou intersecter le combine à un autre corps.",
+          "taper": "Dépouille",
+          "startOffset": "Décalage de départ",
+          "symmetric": "Des deux côtés",
+          "topEdge": "Extrémité",
+          "bottomEdge": "Départ",
+          "topRim": "Bord supérieur",
+          "bottomRim": "Bord inférieur"
+        },
+        "revolve": {
+          "title": "Révolution",
+          "help": "Fait tourner l’esquisse autour d’un de ses axes. Toutes ses formes doivent être d’un même côté de l’axe.",
+          "axis": "Axe",
+          "axisU": "En travers (u)",
+          "axisV": "Vers le haut (v)",
+          "angle": "Angle"
+        },
+        "press_pull": {
+          "title": "Pousser/tirer",
+          "help": "Déplace une face plane tout droit vers l’extérieur (ajoute) ou l’intérieur (enlève), en gardant son contour.",
+          "pick": "Cliquez sur une face plane"
+        },
+        "fillet": {
+          "title": "Congé",
+          "help": "Arrondit les arêtes droites entre faces planes. Les arêtes extérieures sont arrondies, les intérieures comblées. Cliquez sur des arêtes pour les ajouter ou les retirer.",
+          "pick": "Cliquez sur les arêtes à arrondir"
+        },
+        "chamfer": {
+          "title": "Chanfrein",
+          "help": "Chanfreine les arêtes droites entre faces planes, en reculant de la même distance sur les deux. Cliquez sur des arêtes pour les ajouter ou les retirer.",
+          "pick": "Cliquez sur les arêtes à chanfreiner"
+        },
+        "hole": {
+          "title": "Trou",
+          "help": "Perce un trou rond là où vous cliquez, dans la surface. Le lamage et la fraisure font de la place à la tête de vis.",
+          "pick": "Cliquez où percer",
+          "diameter": "Diamètre",
+          "depth": "Profondeur",
+          "through": "Débouchant",
+          "style": "Type",
+          "simple": "Simple",
+          "counterbore": "Lamage",
+          "countersink": "Fraisure",
+          "angle": "Angle",
+          "boreDiameter": "Diamètre du lamage",
+          "boreDepth": "Profondeur du lamage",
+          "sinkDiameter": "Diamètre de la fraisure"
+        },
+        "shell": {
+          "title": "Coque",
+          "help": "Évide le corps, avec des parois de cette épaisseur. Cliquez sur des faces planes pour les laisser ouvertes, comme le dessus d’un bac.",
+          "thickness": "Épaisseur des parois",
+          "pick": "Cliquez sur les faces à laisser ouvertes",
+          "open_one": "{{count}} face ouverte",
+          "open_many": "{{count}} faces ouvertes",
+          "open_other": "{{count}} faces ouvertes"
+        },
+        "split": {
+          "title": "Division",
+          "help": "Divise le corps en deux : par un plan, le plan d’une face plane ou un autre corps. Les deux parties restent modifiables.",
+          "by": "Diviser par",
+          "plane": "Plan",
+          "face": "Face",
+          "body": "Corps",
+          "pickFace": "Cliquez sur une face plane",
+          "facePicked": "Face choisie",
+          "pickTool": "Cliquez sur le corps avec lequel diviser",
+          "keep": "Partie",
+          "front": "Avant",
+          "back": "Arrière",
+          "inside": "Intérieur",
+          "outside": "Extérieur"
+        },
+        "scale": {
+          "title": "Échelle",
+          "help": "Met le corps à l’échelle autour de sa propre origine.",
+          "factor": "Facteur"
+        },
+        "sketch_face": {
+          "title": "Esquisse sur une face",
+          "help": "Commence une esquisse sur la face plane cliquée.",
+          "pick": "Cliquez sur une face plane pour l’esquisse"
+        },
+        "edges_one": "{{count}} arête",
+        "edges_many": "{{count}} arêtes",
+        "edges_other": "{{count}} arêtes"
       }
     }
   },

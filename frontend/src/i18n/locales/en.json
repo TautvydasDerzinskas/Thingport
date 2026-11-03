@@ -3100,7 +3100,9 @@
     },
     "studio": {
       "toolbar": {
-        "label": "Studio tools"
+        "label": "Studio tools",
+        "shapes": "Shapes",
+        "modify": "Modify"
       },
       "emptyDesign": "Add a shape from the toolbar, or start a sketch",
       "types": {
@@ -3112,7 +3114,14 @@
         "extrude": "Extrude",
         "boolean": "Combine",
         "sketch": "Sketch",
-        "mesh": "Mesh"
+        "mesh": "Mesh",
+        "revolve": "Revolve",
+        "press_pull": "Press/pull",
+        "fillet": "Fillet",
+        "chamfer": "Chamfer",
+        "hole": "Hole",
+        "shell": "Shell",
+        "split": "Split"
       },
       "tree": {
         "heading": "Features",
@@ -3141,7 +3150,8 @@
           "cone": "Add cone",
           "sphere": "Add sphere",
           "torus": "Add torus"
-        }
+        },
+        "revolve": "Revolve"
       },
       "shapes": {
         "rectangle": "Rectangle",
@@ -3151,7 +3161,9 @@
       "planes": {
         "XY": "Top",
         "XZ": "Front",
-        "YZ": "Right"
+        "YZ": "Right",
+        "FACE": "On a face",
+        "faceHint": "Pick a flat face"
       },
       "sketch": {
         "on": "Sketch on {{plane}}",
@@ -3212,7 +3224,10 @@
           "major_radius": "Ring radius",
           "minor_radius": "Tube radius",
           "distance": "Distance",
-          "offset": "Offset"
+          "offset": "Offset",
+          "angle": "Angle",
+          "diameter": "Diameter",
+          "thickness": "Thickness"
         },
         "mesh": {
           "source": "Source",
@@ -3222,7 +3237,8 @@
           "solid": "Closed solid",
           "open": "Not a closed solid",
           "openHelp": "It has gaps, so it can be moved, scaled and exported, but not combined with other bodies."
-        }
+        },
+        "cornerRadius": "Corner radius"
       },
       "design": {
         "none": "No design",
@@ -3282,6 +3298,112 @@
         "noMatches": "No models with a 3D file match",
         "emptyLibrary": "Your library has no STL, 3MF, STEP, OBJ or GLB files yet",
         "loadMore": "Load more"
+      },
+      "working": "Working…",
+      "edges": {
+        "none": "Sharp",
+        "fillet": "Round",
+        "chamfer": "Bevel",
+        "radius": "Radius",
+        "distance": "Distance"
+      },
+      "ops": {
+        "cancel": "Cancel",
+        "ok": "OK",
+        "pickBody": "Click a body",
+        "combine": {
+          "label": "Result",
+          "new": "New",
+          "join": "Join",
+          "cut": "Cut",
+          "intersect": "Intersect"
+        },
+        "extrude": {
+          "title": "Extrude",
+          "help": "Pulls the sketch into a solid. Taper leans the sides in towards the far end (a draft); the ends' edges can be rounded or bevelled. Join, cut or intersect works it into another body.",
+          "taper": "Taper",
+          "startOffset": "Start offset",
+          "symmetric": "Both ways",
+          "topEdge": "Far end",
+          "bottomEdge": "Near end",
+          "topRim": "Top rim",
+          "bottomRim": "Bottom rim"
+        },
+        "revolve": {
+          "title": "Revolve",
+          "help": "Turns the sketch about one of its axes. Its shapes must all be on one side of the axis.",
+          "axis": "Axis",
+          "axisU": "Across (u)",
+          "axisV": "Up (v)",
+          "angle": "Angle"
+        },
+        "press_pull": {
+          "title": "Press/pull",
+          "help": "Moves a flat face straight out (adds) or in (cuts), keeping its outline.",
+          "pick": "Click a flat face"
+        },
+        "fillet": {
+          "title": "Fillet",
+          "help": "Rounds straight edges between flat faces. Outside edges are rounded off, inside edges filled. Click edges to add or remove them.",
+          "pick": "Click edges to round"
+        },
+        "chamfer": {
+          "title": "Chamfer",
+          "help": "Bevels straight edges between flat faces, cutting back the same distance on both. Click edges to add or remove them.",
+          "pick": "Click edges to bevel"
+        },
+        "hole": {
+          "title": "Hole",
+          "help": "Drills a round hole where you click, into the surface. Counterbore and countersink make room for a screw head.",
+          "pick": "Click where to drill",
+          "diameter": "Diameter",
+          "depth": "Depth",
+          "through": "Through all",
+          "style": "Type",
+          "simple": "Simple",
+          "counterbore": "Counterbore",
+          "countersink": "Countersink",
+          "angle": "Angle",
+          "boreDiameter": "Bore diameter",
+          "boreDepth": "Bore depth",
+          "sinkDiameter": "Sink diameter"
+        },
+        "shell": {
+          "title": "Shell",
+          "help": "Hollows the body, with walls of this thickness. Click flat faces to leave them open, like a tray's top.",
+          "thickness": "Wall thickness",
+          "pick": "Click faces to leave open",
+          "open_one": "{{count}} face open",
+          "open_other": "{{count}} faces open"
+        },
+        "split": {
+          "title": "Split",
+          "help": "Splits the body in two: by a plane, a flat face's plane, or another body. Both parts stay editable.",
+          "by": "Split by",
+          "plane": "Plane",
+          "face": "Face",
+          "body": "Body",
+          "pickFace": "Click a flat face",
+          "facePicked": "Face picked",
+          "pickTool": "Click the body to split by",
+          "keep": "Part",
+          "front": "Front",
+          "back": "Back",
+          "inside": "Inside",
+          "outside": "Outside"
+        },
+        "scale": {
+          "title": "Scale",
+          "help": "Scales the body about its own origin.",
+          "factor": "Factor"
+        },
+        "sketch_face": {
+          "title": "Sketch on a face",
+          "help": "Starts a sketch on the flat face you click.",
+          "pick": "Click a flat face to sketch on"
+        },
+        "edges_one": "{{count}} edge",
+        "edges_other": "{{count}} edges"
       }
     }
   },

@@ -3223,7 +3223,9 @@
     },
     "studio": {
       "toolbar": {
-        "label": "Studijos įrankiai"
+        "label": "Studijos įrankiai",
+        "shapes": "Formos",
+        "modify": "Keisti"
       },
       "emptyDesign": "Pridėkite formą iš įrankių juostos arba pradėkite eskizą",
       "types": {
@@ -3235,7 +3237,14 @@
         "extrude": "Išstūmimas",
         "boolean": "Derinys",
         "sketch": "Eskizas",
-        "mesh": "Tinklelis"
+        "mesh": "Tinklelis",
+        "revolve": "Sukimas",
+        "press_pull": "Stūmimas/traukimas",
+        "fillet": "Užapvalinimas",
+        "chamfer": "Nuožula",
+        "hole": "Skylė",
+        "shell": "Apvalkalas",
+        "split": "Padalijimas"
       },
       "tree": {
         "heading": "Elementai",
@@ -3264,7 +3273,8 @@
           "cone": "Pridėti kūgį",
           "sphere": "Pridėti sferą",
           "torus": "Pridėti torą"
-        }
+        },
+        "revolve": "Sukti"
       },
       "shapes": {
         "rectangle": "Stačiakampis",
@@ -3274,7 +3284,9 @@
       "planes": {
         "XY": "Viršus",
         "XZ": "Priekis",
-        "YZ": "Dešinė"
+        "YZ": "Dešinė",
+        "FACE": "Ant sienos",
+        "faceHint": "Pasirinkite plokščią sieną"
       },
       "sketch": {
         "on": "Eskizas: {{plane}}",
@@ -3337,7 +3349,10 @@
           "major_radius": "Žiedo spindulys",
           "minor_radius": "Vamzdžio spindulys",
           "distance": "Atstumas",
-          "offset": "Poslinkis"
+          "offset": "Poslinkis",
+          "angle": "Kampas",
+          "diameter": "Skersmuo",
+          "thickness": "Storis"
         },
         "mesh": {
           "source": "Šaltinis",
@@ -3348,7 +3363,8 @@
           "solid": "Uždaras kūnas",
           "open": "Ne uždaras kūnas",
           "openHelp": "Jame yra tarpų, todėl jį galima perkelti, keisti mastelį ir eksportuoti, bet ne sujungti su kitais kūnais."
-        }
+        },
+        "cornerRadius": "Kampų spindulys"
       },
       "design": {
         "none": "Nėra projekto",
@@ -3409,6 +3425,114 @@
         "noMatches": "Nėra atitinkančių modelių su 3D failu",
         "emptyLibrary": "Jūsų bibliotekoje dar nėra STL, 3MF, STEP, OBJ ar GLB failų",
         "loadMore": "Įkelti daugiau"
+      },
+      "working": "Skaičiuojama…",
+      "edges": {
+        "none": "Aštri",
+        "fillet": "Apvali",
+        "chamfer": "Nuožula",
+        "radius": "Spindulys",
+        "distance": "Atstumas"
+      },
+      "ops": {
+        "cancel": "Atšaukti",
+        "ok": "Gerai",
+        "pickBody": "Spustelėkite kūną",
+        "combine": {
+          "label": "Rezultatas",
+          "new": "Naujas",
+          "join": "Sujungti",
+          "cut": "Išpjauti",
+          "intersect": "Sankirta"
+        },
+        "extrude": {
+          "title": "Išstūmimas",
+          "help": "Ištraukia eskizą į kūną. Nuolydis palenkia šonus į tolimąjį galą; galų briaunas galima užapvalinti ar nusklembti. Sujungimas, išpjovimas ar sankirta įdeda jį į kitą kūną.",
+          "taper": "Nuolydis",
+          "startOffset": "Pradžios poslinkis",
+          "symmetric": "Į abi puses",
+          "topEdge": "Tolimasis galas",
+          "bottomEdge": "Artimasis galas",
+          "topRim": "Viršutinis kraštas",
+          "bottomRim": "Apatinis kraštas"
+        },
+        "revolve": {
+          "title": "Sukimas",
+          "help": "Pasuka eskizą apie vieną jo ašį. Visos jo formos turi būti vienoje ašies pusėje.",
+          "axis": "Ašis",
+          "axisU": "Skersai (u)",
+          "axisV": "Aukštyn (v)",
+          "angle": "Kampas"
+        },
+        "press_pull": {
+          "title": "Stūmimas/traukimas",
+          "help": "Pastumia plokščią sieną tiesiai į išorę (prideda) ar į vidų (išpjauna), išlaikydamas jos kontūrą.",
+          "pick": "Spustelėkite plokščią sieną"
+        },
+        "fillet": {
+          "title": "Užapvalinimas",
+          "help": "Užapvalina tiesias briaunas tarp plokščių sienų. Išorinės briaunos nuapvalinamos, vidinės užpildomos. Spustelėkite briaunas, kad jas pridėtumėte ar pašalintumėte.",
+          "pick": "Spustelėkite briaunas užapvalinti"
+        },
+        "chamfer": {
+          "title": "Nuožula",
+          "help": "Nusklembia tiesias briaunas tarp plokščių sienų, nupjaudama vienodą atstumą abiejose. Spustelėkite briaunas, kad jas pridėtumėte ar pašalintumėte.",
+          "pick": "Spustelėkite briaunas nusklembti"
+        },
+        "hole": {
+          "title": "Skylė",
+          "help": "Išgręžia apvalią skylę ten, kur spustelite, į paviršių. Įleidimas ir paplatinimas palieka vietos varžto galvutei.",
+          "pick": "Spustelėkite, kur gręžti",
+          "diameter": "Skersmuo",
+          "depth": "Gylis",
+          "through": "Kiaurai",
+          "style": "Tipas",
+          "simple": "Paprasta",
+          "counterbore": "Įleidimas",
+          "countersink": "Paplatinimas",
+          "angle": "Kampas",
+          "boreDiameter": "Įleidimo skersmuo",
+          "boreDepth": "Įleidimo gylis",
+          "sinkDiameter": "Paplatinimo skersmuo"
+        },
+        "shell": {
+          "title": "Apvalkalas",
+          "help": "Išskaptuoja kūną, palikdamas tokio storio sieneles. Spustelėkite plokščias sienas, kad jos liktų atviros, kaip dėžutės viršus.",
+          "thickness": "Sienelių storis",
+          "pick": "Spustelėkite sienas, kurias palikti atviras",
+          "open_one": "{{count}} siena atvira",
+          "open_few": "{{count}} sienos atviros",
+          "open_other": "{{count}} sienų atvira"
+        },
+        "split": {
+          "title": "Padalijimas",
+          "help": "Padalija kūną į dvi dalis: plokštuma, plokščios sienos plokštuma ar kitu kūnu. Abi dalys lieka redaguojamos.",
+          "by": "Dalyti pagal",
+          "plane": "Plokštumą",
+          "face": "Sieną",
+          "body": "Kūną",
+          "pickFace": "Spustelėkite plokščią sieną",
+          "facePicked": "Siena pasirinkta",
+          "pickTool": "Spustelėkite kūną, pagal kurį dalyti",
+          "keep": "Dalis",
+          "front": "Priekinė",
+          "back": "Galinė",
+          "inside": "Vidinė",
+          "outside": "Išorinė"
+        },
+        "scale": {
+          "title": "Mastelis",
+          "help": "Keičia kūno mastelį apie jo paties pradžios tašką.",
+          "factor": "Koeficientas"
+        },
+        "sketch_face": {
+          "title": "Eskizas ant sienos",
+          "help": "Pradeda eskizą ant spustelėtos plokščios sienos.",
+          "pick": "Spustelėkite plokščią sieną eskizui"
+        },
+        "edges_one": "{{count}} briauna",
+        "edges_few": "{{count}} briaunos",
+        "edges_other": "{{count}} briaunų"
       }
     }
   },

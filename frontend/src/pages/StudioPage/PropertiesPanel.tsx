@@ -7,7 +7,6 @@ import Chip from "@mui/material/Chip";
 import Link from "@mui/material/Link";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
@@ -32,6 +31,7 @@ import {
   type Vec3,
 } from "../../studio/document";
 import type { RunCommand } from "./useStudioDesign";
+import { EdgeTreatmentField, NumberField } from "./fields";
 import { featureLabel } from "./labels";
 import { FeatureIcon } from "./studioIcons";
 
@@ -45,51 +45,6 @@ type Props = {
 };
 
 const show = (value: number) => String(Number(value.toFixed(3)));
-
-/** A number typed in and kept on Enter or on leaving the field; Escape, or something that isn't a number, puts it back. */
-function NumberField({
-  label,
-  value,
-  unit,
-  onCommit,
-}: {
-  label: string;
-  value: number;
-  unit?: string;
-  onCommit: (value: number) => void;
-}) {
-  const [text, setText] = useState(show(value));
-  useEffect(() => setText(show(value)), [value]);
-  const commit = () => {
-    const next = Number(text.replace(",", "."));
-    if (text.trim() === "" || !Number.isFinite(next) || next === value) return setText(show(value));
-    onCommit(next);
-  };
-  return (
-    <TextField
-      size="small"
-      label={label}
-      value={text}
-      onChange={(event) => setText(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") (event.target as HTMLInputElement).blur();
-        if (event.key === "Escape") {
-          setText(show(value));
-          event.stopPropagation();
-        }
-      }}
-      slotProps={{
-        htmlInput: { inputMode: "decimal", "aria-label": unit ? `${label} (${unit})` : label },
-        input: unit
-          ? { endAdornment: <InputAdornment position="end">{unit}</InputAdornment>, sx: { pr: 1 } }
-          : undefined,
-        inputLabel: { shrink: true },
-      }}
-      sx={{ "& input": { py: 0.75, fontSize: "0.85rem" } }}
-    />
-  );
-}
 
 function TextCommitField({
   label,
@@ -266,6 +221,18 @@ export default function PropertiesPanel({ document, selected, errors, run, onSel
             {dimension("height", feature.height)}
             {dimension("segments", feature.segments, "")}
           </Box>
+          <Stack spacing={1} sx={{ mt: 1.25 }}>
+            <EdgeTreatmentField
+              label={t("studio.ops.extrude.topRim")}
+              value={feature.top_edge}
+              onChange={(top_edge) => void run("update_feature", { feature_id: id, top_edge })}
+            />
+            <EdgeTreatmentField
+              label={t("studio.ops.extrude.bottomRim")}
+              value={feature.bottom_edge}
+              onChange={(bottom_edge) => void run("update_feature", { feature_id: id, bottom_edge })}
+            />
+          </Stack>
         </Section>
       )}
       {feature.type === "cone" && (
@@ -276,6 +243,18 @@ export default function PropertiesPanel({ document, selected, errors, run, onSel
             {dimension("height", feature.height)}
             {dimension("segments", feature.segments, "")}
           </Box>
+          <Stack spacing={1} sx={{ mt: 1.25 }}>
+            <EdgeTreatmentField
+              label={t("studio.ops.extrude.topRim")}
+              value={feature.top_edge}
+              onChange={(top_edge) => void run("update_feature", { feature_id: id, top_edge })}
+            />
+            <EdgeTreatmentField
+              label={t("studio.ops.extrude.bottomRim")}
+              value={feature.bottom_edge}
+              onChange={(bottom_edge) => void run("update_feature", { feature_id: id, bottom_edge })}
+            />
+          </Stack>
         </Section>
       )}
       {feature.type === "sphere" && (
@@ -298,11 +277,178 @@ export default function PropertiesPanel({ document, selected, errors, run, onSel
       {feature.type === "extrude" && (
         <Section title={t("studio.properties.extrude")} help={t("studio.properties.extrudeHelp")}>
           <Stack spacing={1}>
-            {dimension("distance", feature.distance)}
+            <Box sx={pair}>
+              {dimension("distance", feature.distance)}
+              <NumberField
+                label={t("studio.ops.extrude.taper")}
+                value={feature.taper ?? 0}
+                unit="°"
+                onCommit={(taper) => Math.abs(taper) <= 60 && update({ taper })}
+              />
+              <NumberField
+                label={t("studio.ops.extrude.startOffset")}
+                value={feature.start_offset ?? 0}
+                unit="mm"
+                onCommit={(start_offset) => update({ start_offset })}
+              />
+            </Box>
+            <FormControlLabel
+              sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+              control={
+                <Switch
+                  size="small"
+                  checked={Boolean(feature.symmetric)}
+                  onChange={(event) => void run("update_feature", { feature_id: id, symmetric: event.target.checked })}
+                />
+              }
+              label={t("studio.ops.extrude.symmetric")}
+            />
+            <EdgeTreatmentField
+              label={t("studio.ops.extrude.topEdge")}
+              value={feature.top_edge}
+              onChange={(top_edge) => void run("update_feature", { feature_id: id, top_edge })}
+            />
+            <EdgeTreatmentField
+              label={t("studio.ops.extrude.bottomEdge")}
+              value={feature.bottom_edge}
+              onChange={(bottom_edge) => void run("update_feature", { feature_id: id, bottom_edge })}
+            />
             <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEditSketch(feature.sketch_id)}>
               {t("studio.actions.editSketch")}
             </Button>
           </Stack>
+        </Section>
+      )}
+      {feature.type === "revolve" && (
+        <Section title={t("studio.ops.revolve.title")}>
+          <Stack spacing={1}>
+            <Box sx={pair}>
+              <Segmented
+                fullWidth
+                label={t("studio.ops.revolve.axis")}
+                value={feature.axis}
+                options={[
+                  { value: "v", label: t("studio.ops.revolve.axisV") },
+                  { value: "u", label: t("studio.ops.revolve.axisU") },
+                ]}
+                onChange={(axis) => void run("update_feature", { feature_id: id, axis })}
+              />
+              {dimension("angle", feature.angle, "°")}
+            </Box>
+            {dimension("segments", feature.segments, "")}
+            <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEditSketch(feature.sketch_id)}>
+              {t("studio.actions.editSketch")}
+            </Button>
+          </Stack>
+        </Section>
+      )}
+      {feature.type === "press_pull" && (
+        <Section title={t("studio.ops.press_pull.title")}>{dimension("distance", feature.distance)}</Section>
+      )}
+      {(feature.type === "fillet" || feature.type === "chamfer") && (
+        <Section title={t(`studio.ops.${feature.type}.title`)}>
+          <Stack spacing={1}>
+            {feature.type === "fillet" ? dimension("radius", feature.radius) : dimension("distance", feature.distance)}
+            <Typography variant="caption" color="text.secondary">
+              {t("studio.ops.edges", { count: feature.edges.length })}
+            </Typography>
+          </Stack>
+        </Section>
+      )}
+      {feature.type === "hole" && (
+        <Section title={t("studio.ops.hole.title")}>
+          <Stack spacing={1}>
+            <Box sx={pair}>
+              {dimension("diameter", feature.diameter)}
+              {feature.depth !== null && dimension("depth", feature.depth)}
+            </Box>
+            <FormControlLabel
+              sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+              control={
+                <Switch
+                  size="small"
+                  checked={feature.depth === null}
+                  onChange={(event) =>
+                    void run("update_feature", { feature_id: id, depth: event.target.checked ? null : 10 })
+                  }
+                />
+              }
+              label={t("studio.ops.hole.through")}
+            />
+            {feature.counterbore && (
+              <Box sx={pair}>
+                <NumberField
+                  label={t("studio.ops.hole.boreDiameter")}
+                  value={feature.counterbore.diameter}
+                  unit="mm"
+                  onCommit={(diameter) =>
+                    diameter > 0 &&
+                    void run("update_feature", { feature_id: id, counterbore: { ...feature.counterbore!, diameter } })
+                  }
+                />
+                <NumberField
+                  label={t("studio.ops.hole.boreDepth")}
+                  value={feature.counterbore.depth}
+                  unit="mm"
+                  onCommit={(depth) =>
+                    depth > 0 &&
+                    void run("update_feature", { feature_id: id, counterbore: { ...feature.counterbore!, depth } })
+                  }
+                />
+              </Box>
+            )}
+            {feature.countersink && (
+              <Box sx={pair}>
+                <NumberField
+                  label={t("studio.ops.hole.sinkDiameter")}
+                  value={feature.countersink.diameter}
+                  unit="mm"
+                  onCommit={(diameter) =>
+                    diameter > 0 &&
+                    void run("update_feature", { feature_id: id, countersink: { ...feature.countersink!, diameter } })
+                  }
+                />
+                <NumberField
+                  label={t("studio.ops.hole.angle")}
+                  value={feature.countersink.angle}
+                  unit="°"
+                  onCommit={(angle) =>
+                    angle >= 30 &&
+                    angle <= 150 &&
+                    void run("update_feature", { feature_id: id, countersink: { ...feature.countersink!, angle } })
+                  }
+                />
+              </Box>
+            )}
+          </Stack>
+        </Section>
+      )}
+      {feature.type === "shell" && (
+        <Section title={t("studio.ops.shell.title")}>
+          <Stack spacing={1}>
+            {dimension("thickness", feature.thickness)}
+            {feature.open_faces.length > 0 && (
+              <Typography variant="caption" color="text.secondary">
+                {t("studio.ops.shell.open", { count: feature.open_faces.length })}
+              </Typography>
+            )}
+          </Stack>
+        </Section>
+      )}
+      {feature.type === "split" && (
+        <Section title={t("studio.ops.split.title")}>
+          <Segmented
+            fullWidth
+            label={t("studio.ops.split.keep")}
+            value={feature.keep}
+            options={(feature.tool_id ? (["inside", "outside"] as const) : (["front", "back"] as const)).map(
+              (keep) => ({
+                value: keep,
+                label: t(`studio.ops.split.${keep}`),
+              }),
+            )}
+            onChange={(keep) => void run("update_feature", { feature_id: id, keep })}
+          />
         </Section>
       )}
       {feature.type === "boolean" && (
@@ -392,13 +538,17 @@ function SketchProperties({
     <>
       <Section title={t("studio.properties.plane")} help={t("studio.properties.planeHelp")}>
         <Stack spacing={1}>
-          <Segmented
-            fullWidth
-            label={t("studio.properties.plane")}
-            value={sketch.plane}
-            options={(["XY", "XZ", "YZ"] as const).map((plane) => ({ value: plane, label: plane }))}
-            onChange={(plane) => void run("update_feature", { feature_id: sketch.id, plane })}
-          />
+          {sketch.plane === "FACE" ? (
+            <Typography variant="body2">{t("studio.planes.FACE")}</Typography>
+          ) : (
+            <Segmented
+              fullWidth
+              label={t("studio.properties.plane")}
+              value={sketch.plane}
+              options={(["XY", "XZ", "YZ"] as const).map((plane) => ({ value: plane, label: plane }))}
+              onChange={(plane) => void run("update_feature", { feature_id: sketch.id, plane })}
+            />
+          )}
           <NumberField
             label={t("studio.properties.fields.offset")}
             value={sketch.offset}
@@ -482,6 +632,16 @@ function SketchProperties({
                         onCommit={(radius) => change(index, { ...shape, radius })}
                       />
                     )}
+                  </Box>
+                )}
+                {shape.type !== "circle" && (
+                  <Box sx={{ mt: 1 }}>
+                    <NumberField
+                      label={t("studio.properties.cornerRadius")}
+                      value={shape.corner_radius ?? 0}
+                      unit="mm"
+                      onCommit={(corner_radius) => corner_radius >= 0 && change(index, { ...shape, corner_radius })}
+                    />
                   </Box>
                 )}
                 <FormControlLabel
