@@ -175,12 +175,6 @@ export default function FeatureTree({ document, selected, errors, onSelect, onMe
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: 0, height: "100%" }}>
-      <Typography
-        variant="caption"
-        sx={{ px: 1.5, pt: 1.25, pb: 0.5, fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}
-      >
-        {t("studio.tree.heading")}
-      </Typography>
       <Box role="tree" aria-label={t("studio.tree.heading")} sx={{ flex: 1, overflow: "auto", px: 0.75, pb: 1 }}>
         {roots.length ? (
           roots.map((feature) => row(feature, 0))

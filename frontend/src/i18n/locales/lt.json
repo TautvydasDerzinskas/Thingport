@@ -3450,7 +3450,9 @@
       "panels": {
         "label": "Skydeliai",
         "features": "Elementai",
-        "properties": "Savybės"
+        "properties": "Savybės",
+        "hide": "Slėpti: {{panel}}",
+        "show": "Rodyti: {{panel}}"
       },
       "viewCube": {
         "label": "Vaizdo kubas: spustelėkite sieną, briauną ar kampą, kad žiūrėtumėte iš ten, vilkite jį, kad pasuktumėte vaizdą",
@@ -3654,7 +3656,12 @@
         "solid": "Kūną",
         "sketch": "Tik eskizą",
         "ok": "Apvesti"
-      }
+      },
+      "edit": {
+        "start": "Redaguoti dizainą",
+        "done": "Baigti redaguoti"
+      },
+      "emptyView": "Paprašykite DI apačioje ką nors sukurti arba spustelėkite Redaguoti ir kurkite patys"
     }
   },
   "common": {

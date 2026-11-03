@@ -24,6 +24,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { studioApi, type StudioAiModels } from "../../api/studio";
 import { useConfirm } from "../../components/ConfirmProvider";
+import PanelTab from "../../components/PanelTab";
 import { useToast } from "../../components/ToastProvider";
 import {
   consumerOf,
@@ -45,6 +46,7 @@ import { AssistantPanel } from "./AssistantThread";
 import PromptOverlay from "./PromptOverlay";
 import PropertiesPanel from "./PropertiesPanel";
 import RenameDialog from "./RenameDialog";
+import SidePanel from "./SidePanel";
 import StudioToolbar, { type BooleanKind, type Primitive, type StudioPanel } from "./StudioToolbar";
 import StudioViewport, { type SketchTool, type StudioMode, type StudioViewportHandle } from "./StudioViewport";
 import { BoxIcon, ExtrudeIcon, SeparateIcon } from "./studioIcons";
@@ -178,6 +180,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [promptInset, setPromptInset] = useState(0);
 
   const [selected, setSelected] = useState<string[]>([]);
+  // The page opens on the design and the prompt alone; Edit brings in the toolbar and the side panels.
+  const [editing, setEditing] = useState(false);
   const assistant = useStudioAssistant({
     designId: design?.id ?? null,
     offered: aiModels,
@@ -371,6 +375,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setOperation(startOperation(kind, selectedBody));
   };
   const separateBody = (id: string) => {
+    setEditing(true);
     setSketch(null);
     setSelected([id]);
     setOperation(startOperation("separate", id));
@@ -531,6 +536,17 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     }
   };
 
+  /** Leaving edit mode lets go of what was being made: a tool's panel, a sketch being drawn, the gizmo. */
+  const toggleEditing = () => {
+    if (editing) {
+      setOperation(null);
+      setSketch(null);
+      setMode("select");
+      setMenu(null);
+    }
+    setEditing(!editing);
+  };
+
   // --- Keys ---
   const keys = useRef<(event: KeyboardEvent) => void>(() => undefined);
   const onKey = (event: KeyboardEvent) => {
@@ -550,6 +566,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       if (viewport.current?.cancelDrawing()) return;
       if (sketch) setSketch(null);
       else setSelected([]);
+    } else if (!editing) {
+      // Out of edit mode, the keys only undo and redo (above), fit the view and let go of the selection.
+      if (key === "f") viewport.current?.fit();
+      else if (event.key === "Escape") setSelected([]);
     } else if ((event.key === "Delete" || event.key === "Backspace") && !sketch && selected.length) {
       event.preventDefault();
       void deleteSelected();
@@ -647,6 +667,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             void run("add_sketch_shape", { sketch_id: sketchId, shape })
           }
           onContextMenu={(id, at) => {
+            if (!editing) return;
             setSelected((prev) => (prev.includes(id) ? prev : [id]));
             setMenu({ id, at });
           }}
@@ -678,7 +699,14 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             size="small"
             icon={<CircularProgress size={12} />}
             label={t("studio.working")}
-            sx={{ position: "absolute", bottom: 88, left: "50%", transform: "translateX(-50%)", zIndex: 1 }}
+            // Above the prompt, however tall it is.
+            sx={{
+              position: "absolute",
+              bottom: promptInset + 8,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 1,
+            }}
           />
         )}
         {topLevel(doc).length === 0 && !sketch && (
@@ -687,7 +715,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             color="text.secondary"
             sx={{ position: "absolute", top: 16, left: 0, right: 0, textAlign: "center", pointerEvents: "none", px: 2 }}
           >
-            {t("studio.emptyDesign")}
+            {editing ? t("studio.emptyDesign") : t("studio.emptyView")}
           </Typography>
         )}
         {sketch && (
@@ -708,15 +736,21 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     <Paper
       ref={root}
       variant="outlined"
-      sx={{
+      sx={(theme) => ({
         height: { xs: "auto", md: height ?? "calc(100vh - 120px)" },
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
         borderRadius: 2,
-      }}
+        transition: "border-color 200ms, background-color 200ms",
+        "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+        // Out of edit mode the frame is the view's own: no border, and the Edit button on the view's background.
+        ...(editing ? {} : { borderColor: "transparent", bgcolor: theme.thingport.pageBackground }),
+      })}
     >
       <StudioToolbar
+        editing={editing}
+        onToggleEditing={toggleEditing}
         designName={design?.name ?? null}
         canUndo={Boolean(design?.can_undo)}
         canRedo={Boolean(design?.can_redo)}
@@ -760,25 +794,47 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           display: "grid",
           gridTemplateColumns: {
             xs: "minmax(0, 1fr)",
-            md: [panels.features && "220px", "minmax(0, 1fr)", panels.properties && "270px", assistantPanel && "300px"]
+            // A hidden panel leaves a strip with its tab, while editing.
+            md: [
+              editing && (panels.features ? "220px" : "36px"),
+              "minmax(0, 1fr)",
+              editing && (panels.properties ? "270px" : "36px"),
+              assistantPanel && "300px",
+            ]
               .filter(Boolean)
               .join(" "),
           },
           gridTemplateRows: { xs: "minmax(360px, 60vh) auto auto auto", md: "minmax(0, 1fr)" },
         }}
       >
-        {panels.features && (
+        {editing && (
           <Box sx={(theme) => ({ ...panelSx(theme, "right", 2), ...slideIn(fromLeft) })}>
-            {doc && (
-              <FeatureTree
-                document={doc}
-                selected={selected}
-                errors={errors}
-                onSelect={select}
-                onMenu={(id, at) => setMenu({ id, at })}
-                onToggleVisible={(feature) =>
-                  void run("set_visibility", { feature_id: feature.id, visible: !feature.visible })
-                }
+            {panels.features ? (
+              <SidePanel
+                title={t("studio.panels.features")}
+                side="left"
+                hideLabel={t("studio.panels.hide", { panel: t("studio.panels.features") })}
+                onHide={() => togglePanel("features")}
+              >
+                {doc && (
+                  <FeatureTree
+                    document={doc}
+                    selected={selected}
+                    errors={errors}
+                    onSelect={select}
+                    onMenu={(id, at) => setMenu({ id, at })}
+                    onToggleVisible={(feature) =>
+                      void run("set_visibility", { feature_id: feature.id, visible: !feature.visible })
+                    }
+                  />
+                )}
+              </SidePanel>
+            ) : (
+              <PanelTab
+                side="left"
+                label={t("studio.panels.features")}
+                ariaLabel={t("studio.panels.show", { panel: t("studio.panels.features") })}
+                onOpen={() => togglePanel("features")}
               />
             )}
           </Box>
@@ -794,21 +850,37 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         >
           {viewportArea}
         </Box>
-        {panels.properties && (
+        {editing && (
           <Box sx={(theme) => ({ ...panelSx(theme, "left", 3), ...slideIn(fromRight) })}>
-            {doc && (
-              <PropertiesPanel
-                designId={design!.id}
-                document={doc}
-                selected={selected}
-                errors={errors}
-                run={run}
-                onSelect={(id) => setSelected([id])}
-                onSeparate={separateBody}
-                onEditSketch={(id) => {
-                  setSelected([id]);
-                  setSketch({ id, tool: "rectangle" });
-                }}
+            {panels.properties ? (
+              <SidePanel
+                title={t("studio.panels.properties")}
+                side="right"
+                hideLabel={t("studio.panels.hide", { panel: t("studio.panels.properties") })}
+                onHide={() => togglePanel("properties")}
+              >
+                {doc && (
+                  <PropertiesPanel
+                    designId={design!.id}
+                    document={doc}
+                    selected={selected}
+                    errors={errors}
+                    run={run}
+                    onSelect={(id) => setSelected([id])}
+                    onSeparate={separateBody}
+                    onEditSketch={(id) => {
+                      setSelected([id]);
+                      setSketch({ id, tool: "rectangle" });
+                    }}
+                  />
+                )}
+              </SidePanel>
+            ) : (
+              <PanelTab
+                side="right"
+                label={t("studio.panels.properties")}
+                ariaLabel={t("studio.panels.show", { panel: t("studio.panels.properties") })}
+                onOpen={() => togglePanel("properties")}
               />
             )}
           </Box>

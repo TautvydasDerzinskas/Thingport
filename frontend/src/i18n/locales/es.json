@@ -3363,7 +3363,9 @@
       "panels": {
         "label": "Paneles",
         "features": "Elementos",
-        "properties": "Propiedades"
+        "properties": "Propiedades",
+        "hide": "Ocultar {{panel}}",
+        "show": "Mostrar {{panel}}"
       },
       "viewCube": {
         "label": "Cubo de vista: haz clic en una cara, arista o esquina para mirar desde ahí, arrástralo para girar la vista",
@@ -3567,7 +3569,12 @@
         "solid": "Sólido",
         "sketch": "Solo boceto",
         "ok": "Calcar"
-      }
+      },
+      "edit": {
+        "start": "Editar diseño",
+        "done": "Terminar de editar"
+      },
+      "emptyView": "Pide a la IA abajo que haga algo, o haz clic en Editar para crearlo tú"
     }
   },
   "common": {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { keyframes } from "@mui/material/styles";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -8,6 +9,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import ToggleButton from "@mui/material/ToggleButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import AddBoxOutlinedIcon from "@mui/icons-material/AddBoxOutlined";
@@ -17,6 +19,7 @@ import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRenameOutlineOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -63,6 +66,9 @@ export type StudioPanel = "features" | "properties";
 export type BooleanKind = "union" | "subtract" | "intersect";
 
 type Props = {
+  /** Edit mode: the tools show, after the Edit button that turns it on and off. */
+  editing: boolean;
+  onToggleEditing: () => void;
   designName: string | null;
   canUndo: boolean;
   canRedo: boolean;
@@ -154,6 +160,8 @@ function Tool({
 
 const Gap = () => <Divider orientation="vertical" flexItem sx={{ mx: 0.75, my: 0.5 }} />;
 
+const slideIn = keyframes`from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; }`;
+
 export default function StudioToolbar(props: Props) {
   const { t } = useTranslation("app");
   const [designMenu, setDesignMenu] = useState<HTMLElement | null>(null);
@@ -189,276 +197,306 @@ export default function StudioToolbar(props: Props) {
         py: 0.5,
         minHeight: 48,
         borderBottom: 1,
-        borderColor: "divider",
+        // Only a toolbar while editing; otherwise the Edit button sits on the view.
+        borderColor: props.editing ? "divider" : "transparent",
+        transition: "border-color 200ms",
+        "@media (prefers-reduced-motion: reduce)": { transition: "none" },
         overflowX: "auto",
         "& svg": { fontSize: 20 },
       }}
     >
-      <Button
-        size="small"
-        color="inherit"
-        endIcon={<KeyboardArrowDownIcon />}
-        onClick={(event) => setDesignMenu(event.currentTarget)}
-        aria-haspopup="menu"
-        sx={{ textTransform: "none", fontWeight: 600, maxWidth: 220, flexShrink: 0 }}
-      >
-        <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
-          {props.designName ?? t("studio.design.none")}
-        </Typography>
-      </Button>
-      <Menu anchorEl={designMenu} open={Boolean(designMenu)} onClose={closeDesign}>
-        {menuItem(<AddBoxOutlinedIcon fontSize="small" />, t("studio.design.new"), props.onNewDesign, closeDesign)}
-        {menuItem(
-          <FolderOpenOutlinedIcon fontSize="small" />,
-          t("studio.design.open"),
-          props.onOpenDesign,
-          closeDesign,
-        )}
-        {!noDesign &&
-          menuItem(
-            <DriveFileRenameOutlineOutlinedIcon fontSize="small" />,
-            t("studio.design.rename"),
-            props.onRenameDesign,
-            closeDesign,
-          )}
-        {!noDesign &&
-          menuItem(
-            <FileDownloadOutlinedIcon fontSize="small" />,
-            t("studio.design.export"),
-            props.onExport,
-            closeDesign,
-          )}
-        {!noDesign && <Divider />}
-        {!noDesign && (
-          <MenuItem
-            onClick={() => {
-              closeDesign();
-              props.onDeleteDesign();
-            }}
-            sx={{ color: "error.main" }}
-          >
-            <ListItemIcon sx={{ color: "inherit" }}>
-              <DeleteOutlineIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t("studio.design.delete")}</ListItemText>
-          </MenuItem>
-        )}
-      </Menu>
-      <Gap />
-
-      {props.sketch ? (
-        <>
-          <Typography variant="caption" color="text.secondary" sx={{ px: 0.5, whiteSpace: "nowrap" }}>
-            {t("studio.sketch.on", { plane: t(`studio.planes.${props.sketch.plane}`) })}
-          </Typography>
-          <Segmented
-            label={t("studio.sketch.tool")}
-            value={props.sketch.tool}
-            options={[
-              { value: "rectangle", label: t("studio.shapes.rectangle"), icon: <RectangleOutlinedIcon /> },
-              { value: "circle", label: t("studio.shapes.circle"), icon: <CircleOutlinedIcon /> },
-              { value: "polygon", label: t("studio.shapes.polygon"), icon: <PentagonOutlinedIcon /> },
-            ]}
-            onChange={props.onSketchTool}
-          />
-          <Tool label={t("studio.text.add")} onClick={props.onSketchText}>
-            <TextFieldsIcon />
-          </Tool>
-          <Tool label={t("studio.actions.extrude")} disabled={!props.canExtrude} onClick={props.onExtrude}>
-            <ExtrudeIcon />
-          </Tool>
+      <Tooltip title={props.editing ? t("studio.edit.done") : t("studio.edit.start")}>
+        <ToggleButton
+          value="edit"
+          size="small"
+          selected={props.editing}
+          onChange={props.onToggleEditing}
+          aria-label={props.editing ? t("studio.edit.done") : t("studio.edit.start")}
+          sx={{ px: 1, flexShrink: 0 }}
+        >
+          <EditOutlinedIcon />
+        </ToggleButton>
+      </Tooltip>
+      {props.editing && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.25,
+            // As wide as its tools, so a narrow screen scrolls the toolbar rather than squeezing them.
+            flex: "1 0 auto",
+            ml: 0.75,
+            animation: `${slideIn} 200ms ease-out`,
+            "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+          }}
+        >
           <Button
             size="small"
-            variant="contained"
-            disableElevation
-            startIcon={<CheckRoundedIcon />}
-            onClick={props.onFinishSketch}
-            sx={{ ml: 0.5, flexShrink: 0 }}
+            color="inherit"
+            endIcon={<KeyboardArrowDownIcon />}
+            onClick={(event) => setDesignMenu(event.currentTarget)}
+            aria-haspopup="menu"
+            sx={{ textTransform: "none", fontWeight: 600, maxWidth: 220, flexShrink: 0 }}
           >
-            {t("studio.sketch.finish")}
+            <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+              {props.designName ?? t("studio.design.none")}
+            </Typography>
           </Button>
-        </>
-      ) : (
-        <>
-          <Tool
-            label={t("studio.actions.sketch")}
-            disabled={noDesign || props.busy}
-            onClick={(event) => setSketchMenu(event.currentTarget)}
-          >
-            <SketchIcon />
-          </Tool>
-          <Menu anchorEl={sketchMenu} open={Boolean(sketchMenu)} onClose={() => setSketchMenu(null)}>
-            {(["XY", "XZ", "YZ"] as const).map((plane) => (
+          <Menu anchorEl={designMenu} open={Boolean(designMenu)} onClose={closeDesign}>
+            {menuItem(<AddBoxOutlinedIcon fontSize="small" />, t("studio.design.new"), props.onNewDesign, closeDesign)}
+            {menuItem(
+              <FolderOpenOutlinedIcon fontSize="small" />,
+              t("studio.design.open"),
+              props.onOpenDesign,
+              closeDesign,
+            )}
+            {!noDesign &&
+              menuItem(
+                <DriveFileRenameOutlineOutlinedIcon fontSize="small" />,
+                t("studio.design.rename"),
+                props.onRenameDesign,
+                closeDesign,
+              )}
+            {!noDesign &&
+              menuItem(
+                <FileDownloadOutlinedIcon fontSize="small" />,
+                t("studio.design.export"),
+                props.onExport,
+                closeDesign,
+              )}
+            {!noDesign && <Divider />}
+            {!noDesign && (
               <MenuItem
-                key={plane}
                 onClick={() => {
-                  setSketchMenu(null);
-                  props.onStartSketch(plane);
+                  closeDesign();
+                  props.onDeleteDesign();
                 }}
+                sx={{ color: "error.main" }}
               >
-                <ListItemText primary={t(`studio.planes.${plane}`)} secondary={plane} />
-              </MenuItem>
-            ))}
-            <Divider />
-            <MenuItem
-              onClick={() => {
-                setSketchMenu(null);
-                props.onOperation("sketch_face");
-              }}
-            >
-              <ListItemText primary={t("studio.planes.FACE")} secondary={t("studio.planes.faceHint")} />
-            </MenuItem>
-          </Menu>
-          <Tool label={t("studio.actions.extrude")} disabled={!props.canExtrude} onClick={props.onExtrude}>
-            <ExtrudeIcon />
-          </Tool>
-          <Tool
-            label={t("studio.actions.revolve")}
-            disabled={!props.canExtrude}
-            onClick={() => props.onOperation("revolve")}
-          >
-            <RevolveIcon />
-          </Tool>
-          <Tool
-            label={t("studio.ops.hole.title")}
-            disabled={noDesign || props.busy}
-            onClick={() => props.onOperation("hole")}
-          >
-            <HoleIcon />
-          </Tool>
-          <Tool
-            label={t("studio.ops.text.title")}
-            disabled={noDesign || props.busy}
-            onClick={() => props.onOperation("text")}
-          >
-            <TextFieldsIcon />
-          </Tool>
-          <Tool label={t("studio.trace.title")} disabled={noDesign || props.busy} onClick={props.onTrace}>
-            <WallpaperOutlinedIcon />
-          </Tool>
-          <Gap />
-          <Tool
-            label={t("studio.toolbar.shapes")}
-            disabled={noDesign || props.busy}
-            onClick={(event) => setShapesMenu(event.currentTarget)}
-          >
-            <BoxIcon />
-            <KeyboardArrowDownIcon sx={{ fontSize: "14px !important", ml: -0.25 }} />
-          </Tool>
-          <Menu anchorEl={shapesMenu} open={Boolean(shapesMenu)} onClose={() => setShapesMenu(null)}>
-            {PRIMITIVES.map(({ kind, Icon }) => (
-              <MenuItem
-                key={kind}
-                onClick={() => {
-                  setShapesMenu(null);
-                  props.onAdd(kind);
-                }}
-              >
-                <ListItemIcon>
-                  <Icon fontSize="small" />
+                <ListItemIcon sx={{ color: "inherit" }}>
+                  <DeleteOutlineIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText>{t(`studio.types.${kind}`)}</ListItemText>
+                <ListItemText>{t("studio.design.delete")}</ListItemText>
+              </MenuItem>
+            )}
+          </Menu>
+          <Gap />
+
+          {props.sketch ? (
+            <>
+              <Typography variant="caption" color="text.secondary" sx={{ px: 0.5, whiteSpace: "nowrap" }}>
+                {t("studio.sketch.on", { plane: t(`studio.planes.${props.sketch.plane}`) })}
+              </Typography>
+              <Segmented
+                label={t("studio.sketch.tool")}
+                value={props.sketch.tool}
+                options={[
+                  { value: "rectangle", label: t("studio.shapes.rectangle"), icon: <RectangleOutlinedIcon /> },
+                  { value: "circle", label: t("studio.shapes.circle"), icon: <CircleOutlinedIcon /> },
+                  { value: "polygon", label: t("studio.shapes.polygon"), icon: <PentagonOutlinedIcon /> },
+                ]}
+                onChange={props.onSketchTool}
+              />
+              <Tool label={t("studio.text.add")} onClick={props.onSketchText}>
+                <TextFieldsIcon />
+              </Tool>
+              <Tool label={t("studio.actions.extrude")} disabled={!props.canExtrude} onClick={props.onExtrude}>
+                <ExtrudeIcon />
+              </Tool>
+              <Button
+                size="small"
+                variant="contained"
+                disableElevation
+                startIcon={<CheckRoundedIcon />}
+                onClick={props.onFinishSketch}
+                sx={{ ml: 0.5, flexShrink: 0 }}
+              >
+                {t("studio.sketch.finish")}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Tool
+                label={t("studio.actions.sketch")}
+                disabled={noDesign || props.busy}
+                onClick={(event) => setSketchMenu(event.currentTarget)}
+              >
+                <SketchIcon />
+              </Tool>
+              <Menu anchorEl={sketchMenu} open={Boolean(sketchMenu)} onClose={() => setSketchMenu(null)}>
+                {(["XY", "XZ", "YZ"] as const).map((plane) => (
+                  <MenuItem
+                    key={plane}
+                    onClick={() => {
+                      setSketchMenu(null);
+                      props.onStartSketch(plane);
+                    }}
+                  >
+                    <ListItemText primary={t(`studio.planes.${plane}`)} secondary={plane} />
+                  </MenuItem>
+                ))}
+                <Divider />
+                <MenuItem
+                  onClick={() => {
+                    setSketchMenu(null);
+                    props.onOperation("sketch_face");
+                  }}
+                >
+                  <ListItemText primary={t("studio.planes.FACE")} secondary={t("studio.planes.faceHint")} />
+                </MenuItem>
+              </Menu>
+              <Tool label={t("studio.actions.extrude")} disabled={!props.canExtrude} onClick={props.onExtrude}>
+                <ExtrudeIcon />
+              </Tool>
+              <Tool
+                label={t("studio.actions.revolve")}
+                disabled={!props.canExtrude}
+                onClick={() => props.onOperation("revolve")}
+              >
+                <RevolveIcon />
+              </Tool>
+              <Tool
+                label={t("studio.ops.hole.title")}
+                disabled={noDesign || props.busy}
+                onClick={() => props.onOperation("hole")}
+              >
+                <HoleIcon />
+              </Tool>
+              <Tool
+                label={t("studio.ops.text.title")}
+                disabled={noDesign || props.busy}
+                onClick={() => props.onOperation("text")}
+              >
+                <TextFieldsIcon />
+              </Tool>
+              <Tool label={t("studio.trace.title")} disabled={noDesign || props.busy} onClick={props.onTrace}>
+                <WallpaperOutlinedIcon />
+              </Tool>
+              <Gap />
+              <Tool
+                label={t("studio.toolbar.shapes")}
+                disabled={noDesign || props.busy}
+                onClick={(event) => setShapesMenu(event.currentTarget)}
+              >
+                <BoxIcon />
+                <KeyboardArrowDownIcon sx={{ fontSize: "14px !important", ml: -0.25 }} />
+              </Tool>
+              <Menu anchorEl={shapesMenu} open={Boolean(shapesMenu)} onClose={() => setShapesMenu(null)}>
+                {PRIMITIVES.map(({ kind, Icon }) => (
+                  <MenuItem
+                    key={kind}
+                    onClick={() => {
+                      setShapesMenu(null);
+                      props.onAdd(kind);
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Icon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>{t(`studio.types.${kind}`)}</ListItemText>
+                  </MenuItem>
+                ))}
+              </Menu>
+              <Tool
+                label={t("studio.toolbar.modify")}
+                disabled={noDesign || props.busy}
+                onClick={(event) => setModifyMenu(event.currentTarget)}
+              >
+                <FilletIcon />
+                <KeyboardArrowDownIcon sx={{ fontSize: "14px !important", ml: -0.25 }} />
+              </Tool>
+              <Menu anchorEl={modifyMenu} open={Boolean(modifyMenu)} onClose={() => setModifyMenu(null)}>
+                {MODIFY.map(({ kind, Icon }) => (
+                  <MenuItem
+                    key={kind}
+                    onClick={() => {
+                      setModifyMenu(null);
+                      props.onOperation(kind);
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Icon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>{t(`studio.ops.${kind}.title`)}</ListItemText>
+                  </MenuItem>
+                ))}
+              </Menu>
+              <Gap />
+              {BOOLEANS.map(({ kind, Icon }) => (
+                <Tool
+                  key={kind}
+                  label={t(`studio.actions.${kind}`)}
+                  disabled={!props.canCombine}
+                  onClick={() => props.onCombine(kind)}
+                >
+                  <Icon />
+                </Tool>
+              ))}
+              <Gap />
+              <Segmented
+                label={t("studio.transform.label")}
+                value={props.mode}
+                options={[
+                  { value: "select", label: `${t("studio.transform.select")} (Q)`, icon: <HighlightAltOutlinedIcon /> },
+                  { value: "translate", label: `${t("studio.transform.translate")} (W)`, icon: <OpenWithIcon /> },
+                  { value: "rotate", label: `${t("studio.transform.rotate")} (E)`, icon: <ThreeSixtyIcon /> },
+                  { value: "scale", label: `${t("studio.transform.scale")} (R)`, icon: <AspectRatioIcon /> },
+                ]}
+                onChange={props.onMode}
+              />
+            </>
+          )}
+          <Gap />
+          <Tool label={t("studio.actions.undo")} shortcut={`${mod}Z`} disabled={!props.canUndo} onClick={props.onUndo}>
+            <UndoIcon />
+          </Tool>
+          <Tool
+            label={t("studio.actions.redo")}
+            shortcut={isMac ? "⇧⌘Z" : "Ctrl+Y"}
+            disabled={!props.canRedo}
+            onClick={props.onRedo}
+          >
+            <RedoIcon />
+          </Tool>
+          <Box sx={{ flex: 1 }} />
+          <HelpTip text={t("studio.view.navigation")} />
+          <Tool label={t("studio.panels.label")} onClick={(event) => setPanelMenu(event.currentTarget)}>
+            <ViewSidebarOutlinedIcon />
+          </Tool>
+          <Menu anchorEl={panelMenu} open={Boolean(panelMenu)} onClose={() => setPanelMenu(null)}>
+            {(["features", "properties"] as const).map((panel) => (
+              <MenuItem
+                key={panel}
+                role="menuitemcheckbox"
+                aria-checked={props.panels[panel]}
+                onClick={() => props.onTogglePanel(panel)}
+              >
+                <ListItemIcon>{props.panels[panel] && <CheckRoundedIcon fontSize="small" />}</ListItemIcon>
+                <ListItemText>{t(`studio.panels.${panel}`)}</ListItemText>
               </MenuItem>
             ))}
           </Menu>
-          <Tool
-            label={t("studio.toolbar.modify")}
-            disabled={noDesign || props.busy}
-            onClick={(event) => setModifyMenu(event.currentTarget)}
-          >
-            <FilletIcon />
-            <KeyboardArrowDownIcon sx={{ fontSize: "14px !important", ml: -0.25 }} />
+          <Tool label={t("studio.view.label")} onClick={(event) => setViewMenu(event.currentTarget)}>
+            <VideocamOutlinedIcon />
           </Tool>
-          <Menu anchorEl={modifyMenu} open={Boolean(modifyMenu)} onClose={() => setModifyMenu(null)}>
-            {MODIFY.map(({ kind, Icon }) => (
+          <Menu anchorEl={viewMenu} open={Boolean(viewMenu)} onClose={() => setViewMenu(null)}>
+            {(["iso", "top", "front", "right"] as const).map((view) => (
               <MenuItem
-                key={kind}
+                key={view}
                 onClick={() => {
-                  setModifyMenu(null);
-                  props.onOperation(kind);
+                  setViewMenu(null);
+                  props.onView(view);
                 }}
               >
-                <ListItemIcon>
-                  <Icon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>{t(`studio.ops.${kind}.title`)}</ListItemText>
+                {t(`studio.view.${view}`)}
               </MenuItem>
             ))}
           </Menu>
-          <Gap />
-          {BOOLEANS.map(({ kind, Icon }) => (
-            <Tool
-              key={kind}
-              label={t(`studio.actions.${kind}`)}
-              disabled={!props.canCombine}
-              onClick={() => props.onCombine(kind)}
-            >
-              <Icon />
-            </Tool>
-          ))}
-          <Gap />
-          <Segmented
-            label={t("studio.transform.label")}
-            value={props.mode}
-            options={[
-              { value: "select", label: `${t("studio.transform.select")} (Q)`, icon: <HighlightAltOutlinedIcon /> },
-              { value: "translate", label: `${t("studio.transform.translate")} (W)`, icon: <OpenWithIcon /> },
-              { value: "rotate", label: `${t("studio.transform.rotate")} (E)`, icon: <ThreeSixtyIcon /> },
-              { value: "scale", label: `${t("studio.transform.scale")} (R)`, icon: <AspectRatioIcon /> },
-            ]}
-            onChange={props.onMode}
-          />
-        </>
+          <Tool label={t("studio.view.fit")} shortcut="F" onClick={props.onFit}>
+            <CenterFocusStrongOutlinedIcon />
+          </Tool>
+        </Box>
       )}
-      <Gap />
-      <Tool label={t("studio.actions.undo")} shortcut={`${mod}Z`} disabled={!props.canUndo} onClick={props.onUndo}>
-        <UndoIcon />
-      </Tool>
-      <Tool
-        label={t("studio.actions.redo")}
-        shortcut={isMac ? "⇧⌘Z" : "Ctrl+Y"}
-        disabled={!props.canRedo}
-        onClick={props.onRedo}
-      >
-        <RedoIcon />
-      </Tool>
-      <Box sx={{ flex: 1 }} />
-      <HelpTip text={t("studio.view.navigation")} />
-      <Tool label={t("studio.panels.label")} onClick={(event) => setPanelMenu(event.currentTarget)}>
-        <ViewSidebarOutlinedIcon />
-      </Tool>
-      <Menu anchorEl={panelMenu} open={Boolean(panelMenu)} onClose={() => setPanelMenu(null)}>
-        {(["features", "properties"] as const).map((panel) => (
-          <MenuItem
-            key={panel}
-            role="menuitemcheckbox"
-            aria-checked={props.panels[panel]}
-            onClick={() => props.onTogglePanel(panel)}
-          >
-            <ListItemIcon>{props.panels[panel] && <CheckRoundedIcon fontSize="small" />}</ListItemIcon>
-            <ListItemText>{t(`studio.panels.${panel}`)}</ListItemText>
-          </MenuItem>
-        ))}
-      </Menu>
-      <Tool label={t("studio.view.label")} onClick={(event) => setViewMenu(event.currentTarget)}>
-        <VideocamOutlinedIcon />
-      </Tool>
-      <Menu anchorEl={viewMenu} open={Boolean(viewMenu)} onClose={() => setViewMenu(null)}>
-        {(["iso", "top", "front", "right"] as const).map((view) => (
-          <MenuItem
-            key={view}
-            onClick={() => {
-              setViewMenu(null);
-              props.onView(view);
-            }}
-          >
-            {t(`studio.view.${view}`)}
-          </MenuItem>
-        ))}
-      </Menu>
-      <Tool label={t("studio.view.fit")} shortcut="F" onClick={props.onFit}>
-        <CenterFocusStrongOutlinedIcon />
-      </Tool>
     </Box>
   );
 }

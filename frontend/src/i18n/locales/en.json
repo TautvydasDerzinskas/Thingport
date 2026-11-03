@@ -3321,7 +3321,9 @@
       "panels": {
         "label": "Panels",
         "features": "Features",
-        "properties": "Properties"
+        "properties": "Properties",
+        "hide": "Hide {{panel}}",
+        "show": "Show {{panel}}"
       },
       "viewCube": {
         "label": "View cube: click a face, edge or corner to look from there, drag it to turn the view",
@@ -3518,7 +3520,12 @@
         "solid": "Solid",
         "sketch": "Sketch only",
         "ok": "Trace"
-      }
+      },
+      "edit": {
+        "start": "Edit design",
+        "done": "Done editing"
+      },
+      "emptyView": "Ask AI below to make something, or click Edit to build it yourself"
     }
   },
   "common": {

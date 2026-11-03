@@ -3376,7 +3376,9 @@
       "panels": {
         "label": "Panneaux",
         "features": "Éléments",
-        "properties": "Propriétés"
+        "properties": "Propriétés",
+        "hide": "Masquer {{panel}}",
+        "show": "Afficher {{panel}}"
       },
       "viewCube": {
         "label": "Cube de vue : cliquez sur une face, une arête ou un coin pour regarder de là, faites-le glisser pour tourner la vue",
@@ -3580,7 +3582,12 @@
         "solid": "Solide",
         "sketch": "Esquisse seule",
         "ok": "Décalquer"
-      }
+      },
+      "edit": {
+        "start": "Modifier le design",
+        "done": "Terminer la modification"
+      },
+      "emptyView": "Demandez à l’IA ci-dessous de créer quelque chose, ou cliquez sur Modifier pour le faire vous-même"
     }
   },
   "common": {

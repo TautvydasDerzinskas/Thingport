@@ -20,6 +20,11 @@ for when it's back.
 
 ## Designing
 
+Studio opens on the design and the **Ask AI** box alone. The **Edit** button (the pencil) at the top brings in the
+toolbar and the side panels, and turns them off again. Out of edit mode you can still turn the view, select bodies for
+Ask AI, and undo or redo. The **Features** and **Properties** panels each fold away to their side with the arrow in
+their header, leaving a tab with their name there that opens them again; the panel button in the toolbar does the same.
+
 A design is a list of features, built in order:
 
 - **Shapes**: box, cylinder, cone, sphere and torus, from the toolbar. Each starts at the middle of the bed, standing on
@@ -83,8 +88,7 @@ The mouse works as in most CAD:
   house below it goes back to the starting view.
 
 **Select** only picks; **Move**, **Rotate** and **Scale** put a gizmo on the body selected. You can also type exact
-values in the panel on the right. The panel button in the toolbar hides the feature list or the properties, or both,
-to give the view more room. Units are millimetres, and Z is up, as on a printer's bed.
+values in the panel on the right. Units are millimetres, and Z is up, as on a printer's bed.
 
 | Key                                                             | Does                                                                               |
 | --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |

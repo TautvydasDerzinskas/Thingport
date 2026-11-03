@@ -134,11 +134,8 @@ export default function PropertiesPanel({
 
   if (!feature) {
     return (
-      <Box sx={{ p: 1.5 }}>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase" }}>
-          {t("studio.properties.heading")}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+      <Box sx={{ px: 1.5, pb: 1.5 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           {selected.length > 1
             ? t("studio.properties.selectedCount", { count: selected.length })
             : t("studio.properties.none")}
@@ -162,7 +159,7 @@ export default function PropertiesPanel({
   const partOf = consumerOf(document, id);
 
   return (
-    <Box sx={{ p: 1.5, overflow: "auto", height: "100%" }}>
+    <Box sx={{ px: 1.5, pb: 1.5, pt: 0.5, overflow: "auto", height: "100%" }}>
       <Stack direction="row" alignItems="center" spacing={1}>
         <FeatureIcon type={feature.type} sx={{ fontSize: 20, color: "primary.main" }} />
         <Typography variant="subtitle2" noWrap sx={{ flex: 1, minWidth: 0 }}>
