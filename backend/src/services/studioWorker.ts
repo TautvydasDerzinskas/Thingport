@@ -14,7 +14,9 @@ import {
   type BodyDescription,
 } from "../studio/geometry.generated";
 import { decodeMesh, encodeMesh } from "../studio/meshAsset.generated";
+import { bright, tracePicture, type Traced, type TraceSettings } from "../studio/trace.generated";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
+import { loadFontsFor } from "./studioFonts";
 
 // Studio's heavy work, off the main thread: measuring and picturing a design for an assistant, finding a body's loose
 // parts to separate them, and making the design's own copy of a library model it imports. Runs in a worker thread
@@ -46,6 +48,7 @@ export type StudioWorkerInput =
       render: { views: StudioView[]; size: number; color: string } | null;
     }
   | { kind: "import"; srcPath: string; ext: string; destPath: string }
+  | { kind: "trace"; picturePath: string; settings: TraceSettings }
   | { kind: "describe"; document: StudioDocument; assetDir: string; featureId: string }
   | { kind: "parts"; document: StudioDocument; assetDir: string; featureId: string };
 
@@ -62,6 +65,7 @@ export type StudioWorkerResult =
   | { status: "imported"; solid: boolean; triangles: number; size: Vec3; parts: number }
   | { status: "described"; body: BodyDescription }
   | { status: "measured"; parts: PartMeasure[] }
+  | { status: "traced"; traced: Traced }
   /** A file that can't come in, and why, in words for whoever asked. */
   | { status: "refused"; reason: string }
   | { status: "too-complex"; triangles: number }
@@ -177,19 +181,41 @@ async function importMesh(input: Extract<StudioWorkerInput, { kind: "import" }>)
   return { status: "imported", solid, triangles: mesh.indices.length / 3, size, parts };
 }
 
+async function trace(input: Extract<StudioWorkerInput, { kind: "trace" }>): Promise<StudioWorkerResult> {
+  const { data, info } = await sharp(input.picturePath).raw().toBuffer({ resolveWithObject: true });
+  // As red, green, blue and alpha, whether it's grey, grey with alpha, colour, or colour with alpha.
+  const { width, height, channels } = info;
+  const rgba = new Uint8Array(width * height * 4);
+  for (let i = 0; i < width * height; i++) {
+    const at = i * channels;
+    const grey = channels < 3;
+    rgba[i * 4] = data[at];
+    rgba[i * 4 + 1] = grey ? data[at] : data[at + 1];
+    rgba[i * 4 + 2] = grey ? data[at] : data[at + 2];
+    rgba[i * 4 + 3] = channels === 2 ? data[at + 1] : channels === 4 ? data[at + 3] : 255;
+  }
+  try {
+    return { status: "traced", traced: tracePicture(bright(rgba, width, height), input.settings) };
+  } catch (error) {
+    return { status: "refused", reason: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 if (parentPort) {
   const input = workerData as StudioWorkerInput;
   const reply = (result: StudioWorkerResult) =>
     // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker_threads port, not window.postMessage.
     parentPort!.postMessage(result);
-  const job =
-    input.kind === "import"
-      ? importMesh(input)
-      : input.kind === "describe"
-        ? describe(input)
-        : input.kind === "parts"
-          ? findParts(input)
-          : inspect(input);
+  const made = async (design: Exclude<StudioWorkerInput, { kind: "import" | "trace" }>) => {
+    // The design's text needs its fonts in this thread too.
+    await loadFontsFor(design.document);
+    return design.kind === "describe"
+      ? describe(design)
+      : design.kind === "parts"
+        ? findParts(design)
+        : inspect(design);
+  };
+  const job = input.kind === "import" ? importMesh(input) : input.kind === "trace" ? trace(input) : made(input);
   job.then(reply, (error: unknown) =>
     reply({ status: "error", error: error instanceof Error ? (error.stack ?? error.message) : String(error) }),
   );

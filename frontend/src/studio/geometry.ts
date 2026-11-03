@@ -4,7 +4,7 @@ import {
   featureById,
   isBody,
   LIMITS,
-  shapeOutline,
+  shapeContours,
   sketchFrame,
   sketchMatrix,
   topLevel,
@@ -117,7 +117,7 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
 
   const section = (sketch: SketchFeature): CrossSection => {
     const part = (shape: SketchFeature["shapes"][number]) =>
-      own(new CrossSection([shapeOutline(shape, DEFAULT_SEGMENTS)], "NonZero"));
+      own(new CrossSection(shapeContours(shape, DEFAULT_SEGMENTS), "NonZero"));
     const solids = sketch.shapes.filter((shape) => !shape.hole).map(part);
     const holes = sketch.shapes.filter((shape) => shape.hole).map(part);
     if (!solids.length) throw new Error(`${sketch.id} has no shape to extrude`);
@@ -688,7 +688,19 @@ export function estimateTriangles(doc: StudioDocument): number {
     else if (feature.type === "fillet") total += feature.edges.length * feature.segments * 4;
     else if (feature.type === "sketch")
       total += feature.shapes.reduce(
-        (sum, shape) => sum + 4 * (shape.type === "polygon" ? shape.points.length : shape.type === "circle" ? 64 : 4),
+        (sum, shape) =>
+          sum +
+          4 *
+            (shape.type === "polygon"
+              ? shape.points.length
+              : shape.type === "circle"
+                ? 64
+                : // A letter takes about this many points; a traced outline packs one in four bytes.
+                  shape.type === "text"
+                  ? shape.text.length * 60
+                  : shape.type === "trace"
+                    ? (shape.outline.length * 3) / 16
+                    : 4),
         0,
       );
   }

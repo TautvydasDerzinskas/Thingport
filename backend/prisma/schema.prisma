@@ -88,6 +88,8 @@ model User {
   dashboardTemplates       Json?
   // What model cards lead with, one of CARD_PREVIEWS; null means "images".
   cardPreview              String?
+  // Where Studio's assistant shows its conversation, one of STUDIO_PROMPT_LAYOUTS; null means "bar".
+  studioPromptLayout       String?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.
   weatherLocation          Json?
   authorPreviewEnabled     Boolean              @default(true)
@@ -755,6 +757,8 @@ model StudioMessage {
   error     String?
   /// The AI that answered, as it was named then.
   model     String?
+  /// A prompt's pictures, [{ id, width, height }], kept beside the design as <id>.png.
+  pictures  Json?
   createdAt DateTime     @default(now())
 
   @@index([designId, createdAt])
@@ -809,6 +813,8 @@ model AiConnection {
   concurrency     Int              @default(1)
   /// Sent as reasoning_effort. Null sends nothing, leaving it to the provider.
   reasoningEffort ReasoningEffort?
+  /// The model takes pictures in a prompt, which an admin says; features that send pictures only send them where it does.
+  vision          Boolean          @default(false)
   isDefault       Boolean          @default(false)
   position        Int              @default(0)
   createdAt       DateTime         @default(now())

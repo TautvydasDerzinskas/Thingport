@@ -127,6 +127,8 @@ export type DashboardLayout = "left" | "top" | "right" | "bottom" | "topTwo" | "
 /** What model pictures lead with, on cards, dashboard lists and tag tiles: the model's own pictures, or our render
  *  tinted with the render colour. */
 export type CardPreview = "images" | "renders";
+/** Where Studio's assistant shows its conversation: in the bar under the view, or in a panel beside it. */
+export type StudioPromptLayout = "bar" | "panel";
 /** Only the widgets the user has switched; the rest follow their default. */
 export type DashboardWidgetChoices = Partial<Record<DashboardWidgetId, boolean>>;
 // Kept in sync by hand with the backend's DASHBOARD_BREAKPOINTS.
@@ -783,6 +785,23 @@ export const settingsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the model card preview setting"));
+    return res.json();
+  },
+
+  getStudioPromptLayout: async (): Promise<{ layout: StudioPromptLayout }> => {
+    const res = await fetch(`${apiBase()}/settings/studio-prompt-layout`, { headers: authHeaders() });
+    assertOk(res, "Failed to load where Studio's assistant shows");
+    return res.json();
+  },
+
+  updateStudioPromptLayout: async (layout: StudioPromptLayout): Promise<{ layout: StudioPromptLayout }> => {
+    const res = await fetch(`${apiBase()}/settings/studio-prompt-layout`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ layout }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update where Studio's assistant shows"));
     return res.json();
   },
 

@@ -1,6 +1,7 @@
 import http from "node:http";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import sharp from "sharp";
 
 // config.ts reads STUDIO_ENABLED once, when it's first imported.
 vi.hoisted(() => {
@@ -443,13 +444,83 @@ describe("Studio's assistant", () => {
     const names = body.tools.map((tool) => tool.function.name);
     expect(names).toContain("studio_add_box");
     expect(names).not.toContain("studio_fillet");
-    expect(names.length).toBeLessThanOrEqual(12);
+    expect(names.length).toBeLessThanOrEqual(14);
     // Its arguments named, not described: the tool's own line says what they are.
     expect(JSON.stringify(body.tools)).not.toMatch(/"properties":\{[^}]*"description"/);
     expect(body.messages[0].content).toMatch(/^You build and change 3D-printable parts/);
     // About a fifth of the full prompt's size.
     const size = JSON.stringify(body.tools).length + body.messages[0].content.length;
     expect(size).toBeLessThan(12_000);
+  });
+
+  it("guesses which new AIs see pictures from their model's name", async () => {
+    const base = {
+      baseUrl: "http://127.0.0.1:9/v1",
+      apiKey: null,
+      timeoutMs: 2000,
+      concurrency: 1,
+      reasoningEffort: null,
+    };
+    expect((await createAiConnection({ ...base, model: "gpt-4o-mini" })).vision).toBe(true);
+    expect((await createAiConnection({ ...base, model: "qwen2.5vl:7b" })).vision).toBe(true);
+    expect((await createAiConnection({ ...base, model: "qwen3:8b" })).vision).toBe(false);
+    expect((await createAiConnection({ ...base, model: "qwen3:8b", vision: true })).vision).toBe(true);
+  });
+
+  it("sends a prompt's pictures to an AI that sees them, and only to one", async () => {
+    const connection = await offer("openai", await startAi());
+    const designId = await newDesign(person.token);
+    const png = await sharp({ create: { width: 120, height: 80, channels: 4, background: "#ffffff" } })
+      .composite([
+        {
+          input: await sharp({ create: { width: 60, height: 40, channels: 4, background: "#000000" } })
+            .png()
+            .toBuffer(),
+          left: 30,
+          top: 20,
+        },
+      ])
+      .png()
+      .toBuffer();
+    const picture = (
+      await request(app)
+        .post(`/api/studio/designs/${designId}/pictures`)
+        .set(auth(person.token))
+        .set("Content-Type", "image/png")
+        .send(png)
+    ).body as { id: string };
+    // "local" says nothing of pictures, so it's taken not to see them.
+    const refused = await request(app)
+      .post(`/api/studio/designs/${designId}/assistant`)
+      .set(auth(person.token))
+      .send({ prompt: "Make this", pictures: [picture.id] });
+    expect(refused.status).toBe(400);
+    expect(refused.body.code).toBe("studio_assistant_no_vision");
+
+    await prisma.aiConnection.update({ where: { id: connection.id }, data: { vision: true } });
+    script = (_body, index) =>
+      index === 0
+        ? openAi([
+            { name: "studio_trace_picture", args: { picture_id: picture.id, width: 30, height: 2, plane: "XY" } },
+          ])
+        : openAi([], "Traced the rectangle and made it 2 mm thick.");
+    const thread = await ask(person.token, designId, "Make this a plaque", { pictures: [picture.id] });
+    expect(thread.run).toMatchObject({ status: "done", steps: [{ tool: "studio_trace_picture", ok: true }] });
+    const sent = (seen[0].body as { messages: { role: string; content: unknown }[] }).messages.at(-1)!;
+    const parts = sent.content as { type: string; text?: string; image_url?: { url: string } }[];
+    expect(parts[0].type).toBe("image_url");
+    expect(parts[0].image_url!.url).toMatch(/^data:image\/jpeg;base64,/);
+    expect(parts.at(-1)!.text).toContain(picture.id);
+    expect(thread.messages[0]).toMatchObject({ role: "user", pictures: [{ id: picture.id, width: 120, height: 80 }] });
+    const doc = await documentOf(person.token, designId);
+    expect(doc.features.map((feature) => feature.type)).toEqual(["sketch", "extrude"]);
+
+    // The next prompt, with none of its own, still has the picture to look at.
+    script = () => openAi([], "Done.");
+    await ask(person.token, designId, "Make it look more like the picture");
+    const history = (seen.at(-1)!.body as { messages: { role: string; content: unknown }[] }).messages;
+    const earlier = history.find((message) => message.role === "user" && Array.isArray(message.content));
+    expect(earlier).toBeDefined();
   });
 
   it("tells the AI what went wrong with a step, and lets it carry on", async () => {

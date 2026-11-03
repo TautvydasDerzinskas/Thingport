@@ -13,6 +13,8 @@ export const DOCUMENT_VERSION = 1;
 export type { Vec2, Vec3 } from "./vec.generated";
 import { applyMatrix, cross, frameMatrix, normalize, type Vec2, type Vec3 } from "./vec.generated";
 import { treatCorners } from "./shapes2d.generated";
+import { textContours, type TextShape } from "./text.generated";
+import { traceContours, type TraceShape } from "./trace.generated";
 export { applyMatrix };
 
 /** Scale first, then rotation (degrees about the world X, then Y, then Z axis), then position. */
@@ -24,7 +26,11 @@ export type SketchPlane = "XY" | "XZ" | "YZ" | "FACE";
 export type SketchShape =
   | { type: "rectangle"; center: Vec2; width: number; height: number; corner_radius?: number; hole?: boolean }
   | { type: "circle"; center: Vec2; radius: number; hole?: boolean }
-  | { type: "polygon"; points: Vec2[]; corner_radius?: number; hole?: boolean };
+  | { type: "polygon"; points: Vec2[]; corner_radius?: number; hole?: boolean }
+  | TextShape
+  | TraceShape;
+/** The shapes drawn as one closed loop. */
+export type OutlineShape = Exclude<SketchShape, TextShape | TraceShape>;
 
 export type BooleanOperation = "union" | "subtract" | "intersect";
 
@@ -190,6 +196,8 @@ export const LIMITS = {
   features: 200,
   shapesPerSketch: 50,
   pointsPerPolygon: 500,
+  /** A text shape's characters. */
+  textLength: 200,
   /** The largest any length may be, in mm. */
   size: 10_000,
   segmentsMin: 3,
@@ -312,9 +320,17 @@ export function sketchPointToWorld(sketch: Pick<SketchFeature, "plane" | "offset
   return applyMatrix(sketchMatrix(sketch), [point[0], point[1], 0]);
 }
 
-/** A shape's outline as a closed loop of points on its plane, as it's drawn and as it's extruded. Throws when a corner
- *  radius doesn't fit. */
-export function shapeOutline(shape: SketchShape, segments = DEFAULT_SEGMENTS): Vec2[] {
+/** A shape's outlines on its plane, as it's drawn and as it's extruded: one closed loop, or a text's letters or a
+ *  traced picture's shapes, whose holes wind against their outsides (a nonzero fill makes them right). Throws when a
+ *  corner radius doesn't fit, or a text's font can't draw it. */
+export function shapeContours(shape: SketchShape, segments = DEFAULT_SEGMENTS): Vec2[][] {
+  if (shape.type === "text") return textContours(shape);
+  if (shape.type === "trace") return traceContours(shape);
+  return [shapeOutline(shape, segments)];
+}
+
+/** A one-loop shape's outline as a closed loop of points on its plane. Throws when a corner radius doesn't fit. */
+export function shapeOutline(shape: OutlineShape, segments = DEFAULT_SEGMENTS): Vec2[] {
   if (shape.type === "circle") {
     const [cx, cy] = shape.center;
     return Array.from({ length: segments }, (_, i): Vec2 => {

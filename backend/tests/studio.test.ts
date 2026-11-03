@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import sharp from "sharp";
 
 // config.ts reads STUDIO_ENABLED once, when it's first imported.
 vi.hoisted(() => {
@@ -37,6 +38,15 @@ async function register(label: string): Promise<string> {
 
 async function command(session: string, id: string, name: string, args: Record<string, unknown> = {}) {
   return request(app).post(`/api/studio/designs/${id}/commands`).set(auth(session)).send({ command: name, args });
+}
+
+/** An API token that may use Studio's MCP tools. */
+async function mcpToken(session: string): Promise<string> {
+  const res = await request(app)
+    .post("/api/profile/api-token")
+    .set(auth(session))
+    .send({ mcp_tools: [...DEFAULT_MCP_TOOL_NAMES, ...STUDIO_TOOLS] });
+  return res.body.token as string;
 }
 
 let nextRpc = 1;
@@ -111,6 +121,111 @@ describe("Studio", () => {
     expect(renamed.body.design.name).toBe("Shelf clip");
     const version = await request(app).get(`/api/studio/designs/${design.id}/version`).set(auth(alice));
     expect(version.body).toEqual({ version: renamed.body.design.version });
+  });
+
+  it("writes text in Thingport's fonts, and says which fonts have a letter one hasn't", async () => {
+    const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({});
+    const written = await command(alice, design.id, "add_text", { text: "Ąžuolas", size: 8, height: 1.5, plane: "XY" });
+    expect(written.status).toBe(200);
+    expect(written.body.created).toEqual(["sketch-1", "extrude-2"]);
+    expect(written.body.summary).toMatch(/^Wrote “Ąžuolas” in PT Sans, letters 8 mm tall and 1.5 mm high/);
+    const refused = await command(alice, design.id, "add_text", {
+      text: "Ąžuolas",
+      size: 8,
+      height: 1,
+      plane: "XY",
+      font: "arvo",
+    });
+    expect(refused.status).toBe(400);
+    expect(refused.body.detail).toMatch(/Arvo has no letter for “Ą”.*PT Sans/);
+    // The server makes it in the same fonts: a solid, as tall as asked.
+    const read = await callTool(await mcpToken(alice), "studio_get_design", { design_id: design.id });
+    expect(read.data.problems).toEqual([]);
+    const [body] = read.data.bodies as { bounds: { min: number[]; max: number[] } }[];
+    expect(body.bounds.max[2] - body.bounds.min[2]).toBeCloseTo(1.5);
+  });
+
+  it("keeps pictures with a design, traces one into a solid, and traces it again", async () => {
+    const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({});
+    // A black ring on white, 200 px across.
+    const size = 200;
+    const pixels = Buffer.alloc(size * size, 255);
+    for (let y = 0; y < size; y++)
+      for (let x = 0; x < size; x++) {
+        const r = Math.hypot(x + 0.5 - 100, y + 0.5 - 100);
+        if (r > 50 && r < 90) pixels[y * size + x] = 0;
+      }
+    const png = await sharp(pixels, { raw: { width: size, height: size, channels: 1 } })
+      .png()
+      .toBuffer();
+    const kept = await request(app)
+      .post(`/api/studio/designs/${design.id}/pictures`)
+      .set(auth(alice))
+      .set("Content-Type", "image/png")
+      .send(png);
+    expect(kept.status).toBe(201);
+    expect(kept.body).toMatchObject({ id: expect.stringMatching(/^[0-9a-f]{24}$/), width: 200, height: 200 });
+    expect(
+      (await request(app).get(`/api/studio/designs/${design.id}/pictures/${kept.body.id}`).set(auth(bob))).status,
+    ).toBe(404);
+    const shown = await request(app).get(`/api/studio/designs/${design.id}/pictures/${kept.body.id}`).set(auth(alice));
+    expect(shown.status).toBe(200);
+    expect(shown.headers["content-type"]).toMatch(/image\/png/);
+    const junk = await request(app)
+      .post(`/api/studio/designs/${design.id}/pictures`)
+      .set(auth(alice))
+      .set("Content-Type", "image/png")
+      .send(Buffer.from("not a picture"));
+    expect(junk.status).toBe(415);
+
+    const traced = await command(alice, design.id, "trace_picture", {
+      picture_id: kept.body.id,
+      width: 36,
+      plane: "XY",
+      height: 2,
+    });
+    expect(traced.status).toBe(200);
+    expect(traced.body.summary).toMatch(/^Traced the picture into sketch-1: 2 shapes \(1 of them holes\), 36 × 36 mm/);
+    const read = await callTool(await mcpToken(alice), "studio_get_design", { design_id: design.id });
+    expect(read.data.problems).toEqual([]);
+    // The outline is said in a line, not sent point by point.
+    expect(read.data.features[0].shapes[0].outline).toMatch(/^\(2 outlines, \d+ points\)$/);
+    // A ring 36 mm across with a hole 20 mm across, 2 mm high.
+    const volume = Math.PI * (18 ** 2 - 10 ** 2) * 2;
+    expect(read.data.bodies[0].volume_mm3).toBeGreaterThan(volume * 0.95);
+    expect(read.data.bodies[0].volume_mm3).toBeLessThan(volume * 1.05);
+
+    const again = await command(alice, design.id, "trace_picture", {
+      picture_id: kept.body.id,
+      width: 18,
+      sketch_id: "sketch-1",
+      index: 0,
+    });
+    expect(again.status).toBe(200);
+    expect(again.body.design.document.features[0].shapes[0]).toMatchObject({ type: "trace", width: 18, height: 18 });
+    const missing = await command(alice, design.id, "trace_picture", {
+      picture_id: "f".repeat(24),
+      width: 5,
+      plane: "XY",
+    });
+    expect(missing.status).toBe(400);
+  });
+
+  it("keeps where each person's assistant shows: the bar until they pick the side panel", async () => {
+    expect((await request(app).get("/api/settings/studio-prompt-layout").set(auth(bob))).body).toEqual({
+      layout: "bar",
+    });
+    const set = await request(app).patch("/api/settings/studio-prompt-layout").set(auth(bob)).send({ layout: "panel" });
+    expect(set.body).toEqual({ layout: "panel" });
+    expect((await request(app).get("/api/settings/studio-prompt-layout").set(auth(bob))).body).toEqual({
+      layout: "panel",
+    });
+    expect((await request(app).get("/api/settings/studio-prompt-layout").set(auth(alice))).body).toEqual({
+      layout: "bar",
+    });
+    expect(
+      (await request(app).patch("/api/settings/studio-prompt-layout").set(auth(bob)).send({ layout: "top" })).status,
+    ).toBe(400);
   });
 
   it("applies commands sent at once one after another, so none is lost", async () => {

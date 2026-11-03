@@ -1797,7 +1797,9 @@
           "modelsNeedKey": "Saisissez la clé d’API pour voir les modèles qu’elle peut utiliser.",
           "effortClaude": "Effort",
           "effortClaudeHint": "Combien Claude réfléchit avant de répondre. Moins, c’est plus rapide et moins cher, et ces tâches demandent rarement plus que Faible.",
-          "effortClaudeDefault": "Valeur par défaut du modèle (ne rien envoyer)"
+          "effortClaudeDefault": "Valeur par défaut du modèle (ne rien envoyer)",
+          "vision": "Voit les images",
+          "visionHelp": "Si ce modèle accepte des images dans une demande. L’assistant de Studio ne propose de joindre des images qu’à une IA qui les accepte. Une nouvelle IA commence selon ce que suggère le nom de son modèle (Claude, GPT-4o et suivants, Gemini, Qwen-VL, LLaVA, Gemma 3…) : changez-le pour qu’il corresponde au modèle."
         }
       },
       "aiFeatures": {
@@ -2621,6 +2623,13 @@
         "light": "Gris clair (sans teinte)",
         "failed": "Impossible d’enregistrer la couleur du rendu.",
         "help": "La couleur des rendus 3D générés et de l’aperçu 3D. Choisir une couleur d’accent la change aussi ; choisissez ici pour la modifier séparément."
+      },
+      "studioPrompt": {
+        "heading": "Assistant de Studio",
+        "help": "Où Demander à l’IA de Studio affiche sa conversation. Barre : sous la vue, une ligne pendant que l’IA travaille, le reste quand vous l'ouvrez. Panneau latéral : à côté de la vue, pour que rien ne cache le modèle.",
+        "bar": "Barre",
+        "panel": "Panneau latéral",
+        "failed": "Impossible d’enregistrer où s’affiche l'assistant de Studio."
       }
     },
     "configuration": {
@@ -3221,7 +3230,9 @@
       "shapes": {
         "rectangle": "Rectangle",
         "circle": "Cercle",
-        "polygon": "Polygone"
+        "polygon": "Polygone",
+        "text": "Texte",
+        "trace": "Image décalquée"
       },
       "planes": {
         "XY": "Dessus",
@@ -3333,7 +3344,7 @@
       "prompt": {
         "title": "Demander à l’IA",
         "open": "Ouvrir Demander à l’IA",
-        "help": "Décrivez une pièce, ou une modification de la conception ouverte, et l’IA la construit étape par étape avec les mêmes outils que la barre. Vous voyez chaque étape arriver, et Annuler les défait une à une. Un administrateur choisit les IA proposées.",
+        "help": "Décrivez une pièce, ou une modification de la conception ouverte, et l’IA la construit étape par étape avec les mêmes outils que la barre. Vous voyez chaque étape arriver, et Annuler les défait une à une. Un administrateur choisit les IA proposées. Une IA qui voit les images en accepte jusqu’à 4 : une photo ou un dessin dont partir, ou un logo à décalquer.",
         "model": "Modèle d’IA",
         "addModel": "Ajouter un modèle d’IA",
         "noModels": "Aucune IA n’est encore proposée pour Studio.",
@@ -3353,7 +3364,14 @@
         "steps_other": "{{count}} étapes",
         "stopped": "Arrêté.",
         "limit": "Arrêté après {{count}} étapes.",
-        "failed": "Impossible de terminer : {{error}}"
+        "failed": "Impossible de terminer : {{error}}",
+        "showConversation": "Afficher la conversation",
+        "hideConversation": "Masquer la conversation",
+        "live": "Étape {{number}} : {{step}}",
+        "attach": "Joindre des images",
+        "picture": "Image {{number}}",
+        "removePicture": "Retirer l’image {{number}}",
+        "noVision": "Cette IA ne voit pas les images. Choisissez-en une qui les voit, ou retirez-les."
       },
       "panels": {
         "label": "Panneaux",
@@ -3499,6 +3517,19 @@
           "open_one": "{{count}} a des trous : elle peut être déplacée et exportée, pas combinée",
           "open_many": "{{count}} ont des trous : elles peuvent être déplacées et exportées, pas combinées",
           "open_other": "{{count}} ont des trous : elles peuvent être déplacées et exportées, pas combinées"
+        },
+        "text": {
+          "title": "Texte",
+          "help": "Transforme des mots en solide : lettres en relief sur un plan, ou en relief ou gravées sur une face plane d’un corps. La hauteur des lettres est celle d’une majuscule ; 6 mm ou plus s’imprime bien. Les mots, la police et la taille restent modifiables dans son esquisse.",
+          "on": "Où",
+          "onPlane": "Sur un plan",
+          "onFace": "Sur une face",
+          "style": "Style",
+          "raised": "En relief",
+          "engraved": "Gravé",
+          "height": "Hauteur",
+          "depth": "Profondeur",
+          "pick": "Cliquez sur une face plane où écrire"
         }
       },
       "imported": {
@@ -3506,6 +3537,49 @@
         "parts_many": "Le modèle a été importé en un seul corps de {{count}} pièces séparées",
         "parts_other": "Le modèle a été importé en un seul corps de {{count}} pièces séparées",
         "separate": "Séparer"
+      },
+      "text": {
+        "words": "Texte",
+        "font": "Police",
+        "size": "Hauteur des lettres",
+        "spacing": "Espacement des lettres",
+        "align": "Alignement",
+        "aligns": {
+          "left": "Gauche",
+          "center": "Centre",
+          "right": "Droite"
+        },
+        "placeholder": "Texte",
+        "newLine": "Maj+Entrée commence une nouvelle ligne",
+        "add": "Ajouter du texte"
+      },
+      "trace": {
+        "title": "Décalquer une image",
+        "help": "Transforme les formes d’une image en contour à rendre solide : un logo, une silhouette, un lettrage, un dessin. Les formes sombres sur fond clair sont décalquées (Inverser pour du clair sur fond sombre ; le transparent compte comme clair), et les trous restent des trous. Une image nette et bien contrastée se décalque le mieux.",
+        "picture": "Image",
+        "drop": "Déposez une image ici, ou collez-la",
+        "choose": "Choisir une image",
+        "another": "Une autre image",
+        "resultEmpty": "Le contour décalqué s’affiche ici",
+        "threshold": "Seuil",
+        "auto": "Le trouver",
+        "invert": "Inverser",
+        "detail": "Détail",
+        "details": {
+          "low": "Faible",
+          "medium": "Moyen",
+          "high": "Élevé"
+        },
+        "found_one": "{{count}} forme",
+        "found_many": "{{count}} formes",
+        "found_other": "{{count}} formes",
+        "holes_one": "{{count}} trou",
+        "holes_many": "{{count}} trous",
+        "holes_other": "{{count}} trous",
+        "make": "Créer",
+        "solid": "Solide",
+        "sketch": "Esquisse seule",
+        "ok": "Décalquer"
       }
     }
   },

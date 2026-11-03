@@ -8,6 +8,7 @@ import {
   type StudioCommandArgs,
   type StudioCommandName,
 } from "../../studio/commands";
+import { fontsLoadedFor, loadFontsFor } from "./studioFonts";
 
 // The open design, and the one way the page changes it: run(), with the same commands an assistant's MCP tools run.
 // There's deliberately no setter for the document, so a button can't change a design in a way an AI couldn't.
@@ -45,6 +46,8 @@ export function useStudioDesign(
     async (id: string) => {
       try {
         const loaded = await studioApi.get(id);
+        // Its text shows in its fonts, so they come in first; one that won't load leaves its text undrawn.
+        await loadFontsFor(loaded.document).catch(() => undefined);
         if (current.current === null || current.current.id === id) setDesign(loaded);
         setLoadFailed(false);
       } catch (error) {
@@ -80,6 +83,15 @@ export function useStudioDesign(
 
   const run: RunCommand = useCallback(
     async (name, args) => {
+      // Text is drawn in its font, fetched the first time it's used.
+      if (!fontsLoadedFor(args)) {
+        try {
+          await loadFontsFor(args);
+        } catch (error) {
+          fail(error);
+          return null;
+        }
+      }
       const open = current.current;
       if (!open) return null;
       const send = async (): Promise<string[] | null> => {

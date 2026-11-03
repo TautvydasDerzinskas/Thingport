@@ -17,6 +17,8 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import PentagonOutlinedIcon from "@mui/icons-material/PentagonOutlined";
 import RectangleOutlinedIcon from "@mui/icons-material/RectangleOutlined";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import TextFieldsIcon from "@mui/icons-material/TextFields";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
@@ -24,6 +26,7 @@ import {
   consumerOf,
   featureById,
   isBody,
+  LIMITS,
   type BodyFeature,
   type SketchFeature,
   type SketchShape,
@@ -31,11 +34,15 @@ import {
   type Vec3,
 } from "../../studio/document";
 import type { RunCommand } from "./useStudioDesign";
-import { EdgeTreatmentField, NumberField } from "./fields";
+import { DEFAULT_FONT, type TextShape } from "../../studio/text";
+import type { TraceShape } from "../../studio/trace";
+import PictureThumb from "./PictureThumb";
+import { EdgeTreatmentField, NumberField, StudioFontField } from "./fields";
 import { featureLabel } from "./labels";
 import { FeatureIcon, SeparateIcon } from "./studioIcons";
 
 type Props = {
+  designId: string;
   document: StudioDocument;
   selected: readonly string[];
   errors: Record<string, string>;
@@ -53,11 +60,16 @@ function TextCommitField({
   value,
   placeholder,
   onCommit,
+  multiline = false,
+  maxLength = 80,
 }: {
   label: string;
   value: string;
   placeholder?: string;
   onCommit: (value: string) => void;
+  /** Shift+Enter starts a new line; Enter still commits. */
+  multiline?: boolean;
+  maxLength?: number;
 }) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
@@ -67,17 +79,22 @@ function TextCommitField({
       label={label}
       value={text}
       placeholder={placeholder}
+      multiline={multiline}
+      maxRows={multiline ? 4 : undefined}
       onChange={(event) => setText(event.target.value)}
       onBlur={() => text.trim() !== value && onCommit(text.trim())}
       onKeyDown={(event) => {
-        if (event.key === "Enter") (event.target as HTMLInputElement).blur();
+        if (event.key === "Enter" && !(multiline && event.shiftKey)) {
+          event.preventDefault();
+          (event.target as HTMLInputElement).blur();
+        }
         if (event.key === "Escape") {
           setText(value);
           event.stopPropagation();
         }
       }}
-      slotProps={{ inputLabel: { shrink: true }, htmlInput: { maxLength: 80 } }}
-      sx={{ "& input": { py: 0.75, fontSize: "0.85rem" } }}
+      slotProps={{ inputLabel: { shrink: true }, htmlInput: { maxLength } }}
+      sx={{ "& input, & textarea": { py: 0.75, fontSize: "0.85rem" } }}
       fullWidth
     />
   );
@@ -103,6 +120,7 @@ const pair = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))"
 
 /** The selected feature's dimensions, place and parts, each field one command. */
 export default function PropertiesPanel({
+  designId,
   document,
   selected,
   errors,
@@ -501,7 +519,9 @@ export default function PropertiesPanel({
           </Stack>
         </Section>
       )}
-      {feature.type === "sketch" && <SketchProperties sketch={feature} run={run} onEditSketch={onEditSketch} />}
+      {feature.type === "sketch" && (
+        <SketchProperties designId={designId} sketch={feature} run={run} onEditSketch={onEditSketch} />
+      )}
       {isBody(feature) && <TransformFields feature={feature} run={run} />}
     </Box>
   );
@@ -551,20 +571,174 @@ function TransformFields({ feature, run }: { feature: BodyFeature; run: RunComma
   );
 }
 
-const SHAPE_ICONS = { rectangle: RectangleOutlinedIcon, circle: CircleOutlinedIcon, polygon: PentagonOutlinedIcon };
+const SHAPE_ICONS = {
+  rectangle: RectangleOutlinedIcon,
+  circle: CircleOutlinedIcon,
+  polygon: PentagonOutlinedIcon,
+  text: TextFieldsIcon,
+  trace: ImageOutlinedIcon,
+};
+
+/** A traced picture's size, place and how it was traced: each change traces it again. */
+function TraceShapeFields({
+  designId,
+  shape,
+  onChange,
+}: {
+  designId: string;
+  shape: TraceShape;
+  onChange: (shape: TraceShape) => void;
+}) {
+  const { t } = useTranslation("app");
+  return (
+    <Stack spacing={1}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <PictureThumb source={{ designId, pictureId: shape.picture_id }} size={40} alt={t("studio.trace.picture")} />
+        <Typography variant="caption" color="text.secondary">
+          {show(shape.width)} × {show(shape.height)} mm
+        </Typography>
+      </Stack>
+      <Box sx={pair}>
+        <NumberField
+          label="U"
+          value={shape.center[0]}
+          unit="mm"
+          onCommit={(u) => onChange({ ...shape, center: [u, shape.center[1]] })}
+        />
+        <NumberField
+          label="V"
+          value={shape.center[1]}
+          unit="mm"
+          onCommit={(v) => onChange({ ...shape, center: [shape.center[0], v] })}
+        />
+        <NumberField
+          label={t("studio.properties.fields.width")}
+          value={shape.width}
+          unit="mm"
+          onCommit={(width) => width > 0 && onChange({ ...shape, width })}
+        />
+        <NumberField
+          label={t("studio.trace.threshold")}
+          value={shape.threshold ?? 0}
+          onCommit={(threshold) =>
+            threshold >= 0 &&
+            threshold <= 255 &&
+            onChange({ ...shape, threshold: threshold ? Math.round(threshold) : null })
+          }
+        />
+      </Box>
+      <Segmented
+        fullWidth
+        label={t("studio.trace.detail")}
+        value={shape.detail}
+        options={(["low", "medium", "high"] as const).map((detail) => ({
+          value: detail,
+          label: t(`studio.trace.details.${detail}`),
+        }))}
+        onChange={(detail) => onChange({ ...shape, detail })}
+      />
+      <Stack direction="row" spacing={1}>
+        <FormControlLabel
+          sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+          control={
+            <Switch
+              size="small"
+              checked={shape.invert}
+              onChange={(event) => onChange({ ...shape, invert: event.target.checked })}
+            />
+          }
+          label={t("studio.trace.invert")}
+        />
+        <FormControlLabel
+          sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+          control={
+            <Switch
+              size="small"
+              checked={Boolean(shape.hole)}
+              onChange={(event) => onChange({ ...shape, hole: event.target.checked })}
+            />
+          }
+          label={t("studio.properties.hole")}
+        />
+      </Stack>
+    </Stack>
+  );
+}
+
+/** A text shape's words, font, size and lining up. */
+function TextShapeFields({ shape, onChange }: { shape: TextShape; onChange: (shape: TextShape) => void }) {
+  const { t } = useTranslation("app");
+  return (
+    <Stack spacing={1} sx={{ mb: 1 }}>
+      <TextCommitField
+        label={t("studio.text.words")}
+        value={shape.text}
+        multiline
+        maxLength={LIMITS.textLength}
+        onCommit={(text) => text && onChange({ ...shape, text })}
+      />
+      <StudioFontField
+        label={t("studio.text.font")}
+        value={shape.font ?? DEFAULT_FONT}
+        onChange={(font) => onChange({ ...shape, font })}
+      />
+      <Box sx={pair}>
+        <NumberField
+          label={t("studio.text.size")}
+          value={shape.size}
+          unit="mm"
+          onCommit={(size) => size > 0 && onChange({ ...shape, size })}
+        />
+        <NumberField
+          label={t("studio.text.spacing")}
+          value={shape.spacing ?? 0}
+          unit="mm"
+          onCommit={(spacing) => onChange({ ...shape, spacing })}
+        />
+      </Box>
+      {shape.text.includes("\n") && (
+        <Segmented
+          fullWidth
+          label={t("studio.text.align")}
+          value={shape.align ?? "center"}
+          options={(["left", "center", "right"] as const).map((align) => ({
+            value: align,
+            label: t(`studio.text.aligns.${align}`),
+          }))}
+          onChange={(align) => onChange({ ...shape, align })}
+        />
+      )}
+    </Stack>
+  );
+}
 
 function SketchProperties({
+  designId,
   sketch,
   run,
   onEditSketch,
 }: {
+  designId: string;
   sketch: SketchFeature;
   run: RunCommand;
   onEditSketch: (id: string) => void;
 }) {
   const { t } = useTranslation("app");
-  const change = (index: number, shape: SketchShape) =>
+  const change = (index: number, shape: Exclude<SketchShape, TraceShape>) =>
     void run("update_sketch_shape", { sketch_id: sketch.id, index, shape });
+  // A traced shape changes by being traced again, on the server, from its picture.
+  const retrace = (index: number, shape: TraceShape) =>
+    void run("trace_picture", {
+      picture_id: shape.picture_id,
+      sketch_id: sketch.id,
+      index,
+      width: shape.width,
+      center: shape.center,
+      threshold: shape.threshold,
+      invert: shape.invert,
+      detail: shape.detail,
+      hole: Boolean(shape.hole),
+    });
   return (
     <>
       <Section title={t("studio.properties.plane")} help={t("studio.properties.planeHelp")}>
@@ -626,66 +800,73 @@ function SketchProperties({
                     </IconButton>
                   </Tooltip>
                 </Stack>
-                {shape.type !== "polygon" && (
-                  <Box sx={pair}>
-                    <NumberField
-                      label="U"
-                      value={shape.center[0]}
-                      unit="mm"
-                      onCommit={(u) => change(index, { ...shape, center: [u, shape.center[1]] })}
-                    />
-                    <NumberField
-                      label="V"
-                      value={shape.center[1]}
-                      unit="mm"
-                      onCommit={(v) => change(index, { ...shape, center: [shape.center[0], v] })}
-                    />
-                    {shape.type === "rectangle" ? (
-                      <>
+                {shape.type === "text" && <TextShapeFields shape={shape} onChange={(next) => change(index, next)} />}
+                {shape.type === "trace" ? (
+                  <TraceShapeFields designId={designId} shape={shape} onChange={(next) => retrace(index, next)} />
+                ) : (
+                  <>
+                    {shape.type !== "polygon" && (
+                      <Box sx={pair}>
                         <NumberField
-                          label={t("studio.properties.fields.width")}
-                          value={shape.width}
+                          label="U"
+                          value={shape.center[0]}
                           unit="mm"
-                          onCommit={(width) => change(index, { ...shape, width })}
+                          onCommit={(u) => change(index, { ...shape, center: [u, shape.center[1]] })}
                         />
                         <NumberField
-                          label={t("studio.properties.fields.height")}
-                          value={shape.height}
+                          label="V"
+                          value={shape.center[1]}
                           unit="mm"
-                          onCommit={(height) => change(index, { ...shape, height })}
+                          onCommit={(v) => change(index, { ...shape, center: [shape.center[0], v] })}
                         />
-                      </>
-                    ) : (
-                      <NumberField
-                        label={t("studio.properties.fields.radius")}
-                        value={shape.radius}
-                        unit="mm"
-                        onCommit={(radius) => change(index, { ...shape, radius })}
-                      />
+                        {shape.type === "rectangle" ? (
+                          <>
+                            <NumberField
+                              label={t("studio.properties.fields.width")}
+                              value={shape.width}
+                              unit="mm"
+                              onCommit={(width) => change(index, { ...shape, width })}
+                            />
+                            <NumberField
+                              label={t("studio.properties.fields.height")}
+                              value={shape.height}
+                              unit="mm"
+                              onCommit={(height) => change(index, { ...shape, height })}
+                            />
+                          </>
+                        ) : shape.type === "circle" ? (
+                          <NumberField
+                            label={t("studio.properties.fields.radius")}
+                            value={shape.radius}
+                            unit="mm"
+                            onCommit={(radius) => change(index, { ...shape, radius })}
+                          />
+                        ) : null}
+                      </Box>
                     )}
-                  </Box>
-                )}
-                {shape.type !== "circle" && (
-                  <Box sx={{ mt: 1 }}>
-                    <NumberField
-                      label={t("studio.properties.cornerRadius")}
-                      value={shape.corner_radius ?? 0}
-                      unit="mm"
-                      onCommit={(corner_radius) => corner_radius >= 0 && change(index, { ...shape, corner_radius })}
+                    {(shape.type === "rectangle" || shape.type === "polygon") && (
+                      <Box sx={{ mt: 1 }}>
+                        <NumberField
+                          label={t("studio.properties.cornerRadius")}
+                          value={shape.corner_radius ?? 0}
+                          unit="mm"
+                          onCommit={(corner_radius) => corner_radius >= 0 && change(index, { ...shape, corner_radius })}
+                        />
+                      </Box>
+                    )}
+                    <FormControlLabel
+                      sx={{ mt: 0.5, ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+                      control={
+                        <Switch
+                          size="small"
+                          checked={Boolean(shape.hole)}
+                          onChange={(event) => change(index, { ...shape, hole: event.target.checked })}
+                        />
+                      }
+                      label={t("studio.properties.hole")}
                     />
-                  </Box>
+                  </>
                 )}
-                <FormControlLabel
-                  sx={{ mt: 0.5, ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
-                  control={
-                    <Switch
-                      size="small"
-                      checked={Boolean(shape.hole)}
-                      onChange={(event) => change(index, { ...shape, hole: event.target.checked })}
-                    />
-                  }
-                  label={t("studio.properties.hole")}
-                />
               </Box>
             );
           })}

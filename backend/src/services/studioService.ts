@@ -2,23 +2,29 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Prisma, StudioDesign } from "@prisma/client";
+import sharp from "sharp";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS, STUDIO_ASSETS } from "../config";
 import { HttpError } from "../utils/fileUtils";
 import {
   addMesh,
   addParts,
+  addTrace,
   applyCommand,
   CommandError,
   parseCommandArgs,
   separableBody,
   studioCommand,
+  traceSettings,
+  traceTarget,
   type CommandOutcome,
 } from "../studio/commands.generated";
+import type { Traced } from "../studio/trace.generated";
 import { ASSET_ID, emptyDocument, topLevel, type StudioDocument, type Vec3 } from "../studio/document.generated";
 import { resolvePlateFilePath } from "./printCreation";
 import { listPrints } from "./printQuery";
-import { importStudioMesh, measureStudioParts } from "./studioInspect";
+import { loadFontsFor } from "./studioFonts";
+import { importStudioMesh, measureStudioParts, traceStudioPicture } from "./studioInspect";
 
 // Studio's designs: each user's own, changed only by the commands in frontend/src/studio/commands.ts, whether the page
 // or an assistant runs them. Every change to the feature tree is kept as a revision, which is what undo and redo move
@@ -155,6 +161,44 @@ export async function studioAssetPath(userId: string, designId: string, assetId:
   return (await fs.stat(file).catch(() => null))?.isFile() ? file : null;
 }
 
+/** A picture as a design keeps it: what the prompt sends an AI and what trace_picture reads. */
+export type StudioPicture = { id: string; width: number; height: number };
+
+// Kept no bigger than this along its longer side: more than an AI looks at, and plenty for tracing a shape.
+const PICTURE_PX = 2048;
+const PICTURE_FORMATS = new Set(["jpeg", "png", "webp", "gif", "avif", "heif", "tiff"]);
+
+/** Keeps a picture with a design, turned upright and no bigger than PICTURE_PX, as <id>.png beside its meshes. */
+export async function addStudioPicture(userId: string, designId: string, bytes: Buffer): Promise<StudioPicture> {
+  await owned(prisma, userId, designId);
+  const image = sharp(bytes, { limitInputPixels: 100_000_000 });
+  const meta = await image.metadata().catch(() => null);
+  if (!meta?.format || !PICTURE_FORMATS.has(meta.format))
+    throw new HttpError(
+      415,
+      "That isn't a picture Studio can read (PNG, JPEG, WebP, GIF or AVIF)",
+      "studio_bad_picture",
+    );
+  const { data, info } = await image
+    .autoOrient()
+    .resize(PICTURE_PX, PICTURE_PX, { fit: "inside", withoutEnlargement: true })
+    .png()
+    .toBuffer({ resolveWithObject: true });
+  const id = crypto.randomBytes(12).toString("hex");
+  const dir = studioAssetDir(userId, designId);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, `${id}.png`), data);
+  return { id, width: info.width, height: info.height };
+}
+
+/** One of a design's pictures; null when there's no such design or picture. */
+export async function studioPicturePath(userId: string, designId: string, pictureId: string): Promise<string | null> {
+  if (!ASSET_ID.test(pictureId)) return null;
+  await owned(prisma, userId, designId);
+  const file = path.join(studioAssetDir(userId, designId), `${pictureId}.png`);
+  return (await fs.stat(file).catch(() => null))?.isFile() ? file : null;
+}
+
 const extOf = (filename: string) => path.extname(filename).toLowerCase();
 
 /** The user's library models with a 3D file Studio can import, newest first or best match for `q`. */
@@ -225,6 +269,20 @@ async function importLibraryFile(userId: string, designId: string, modelId: stri
   };
 }
 
+/** trace_picture's picture, traced outside the design's lock; the command's own checks first, so nothing is traced for
+ *  a sketch it couldn't go in. */
+async function traceFor(userId: string, id: string, args: Record<string, unknown>): Promise<Traced> {
+  const design = await owned(prisma, userId, id);
+  traceTarget(documentOf(design), args);
+  const file = await studioPicturePath(userId, id, String(args.picture_id));
+  if (!file) throw new CommandError(`This design has no picture ${String(args.picture_id)}.`);
+  const outcome = await traceStudioPicture(file, traceSettings(args));
+  if (outcome.status === "traced") return outcome.traced;
+  if (outcome.status === "refused") throw new CommandError(outcome.reason);
+  console.error("[studio] tracing a picture failed", outcome);
+  throw new HttpError(500, "Couldn't trace the picture", "studio_trace_failed");
+}
+
 /** A body's loose parts for separate_parts, found as the design is now and outside its lock: a big mesh takes a while. */
 async function partsFor(userId: string, id: string, featureId: string) {
   const design = await owned(prisma, userId, id);
@@ -259,11 +317,17 @@ export async function runStudioCommand(
   // An import reads the file first, outside the design's lock: a big one takes a while, and the design may change
   // meanwhile. Its mesh is then added to the design as it is by then.
   let imported: Awaited<ReturnType<typeof importLibraryFile>> | null = null;
+  let traced: Traced | null = null;
   try {
+    // A text is checked against its font as it's drawn: the font is read first.
+    await loadFontsFor(args);
     if (definition.kind === "import") {
       const parsed = parseCommandArgs(definition, args);
-      await owned(prisma, userId, id);
-      imported = await importLibraryFile(userId, id, String(parsed.model_id), parsed.file_id as string | undefined);
+      if (name === "trace_picture") traced = await traceFor(userId, id, parsed);
+      else {
+        await owned(prisma, userId, id);
+        imported = await importLibraryFile(userId, id, String(parsed.model_id), parsed.file_id as string | undefined);
+      }
     }
     // separate_parts measures the body outside the lock too, and again if the design changed before the lock was had.
     for (let tries = 1; ; tries++) {
@@ -311,7 +375,9 @@ export async function runStudioCommand(
           ? addParts(documentOf(design), { feature_id: String(parsed.feature_id) }, measured.parts)
           : imported
             ? addMesh(documentOf(design), imported.mesh, parsed)
-            : applyCommand(documentOf(design), name, parsed);
+            : traced
+              ? addTrace(documentOf(design), parsed as Parameters<typeof addTrace>[1], traced)
+              : applyCommand(documentOf(design), name, parsed);
         const position = design.position + 1;
         // A change after an undo leaves nothing to redo; past the limit, the oldest are let go.
         await tx.studioRevision.deleteMany({

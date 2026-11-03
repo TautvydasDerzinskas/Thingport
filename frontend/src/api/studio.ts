@@ -29,7 +29,10 @@ export type StudioLibraryModel = {
 };
 
 /** An AI from Administration > AI, as the prompt's picker shows it. */
-export type StudioAiModel = { id: string; model: string; host: string; is_default: boolean };
+/** `vision`: it sees pictures, so a prompt to it can carry some. */
+export type StudioAiModel = { id: string; model: string; host: string; vision: boolean; is_default: boolean };
+/** A picture a design keeps, for a prompt or for tracing. */
+export type StudioPicture = { id: string; width: number; height: number };
 /** The AIs an admin offers for the assistant; none while it's off. */
 export type StudioAiModels = { enabled: boolean; models: StudioAiModel[] };
 
@@ -40,6 +43,8 @@ export type StudioAssistantMessage = {
   id: string;
   role: "user" | "assistant";
   text: string;
+  /** A prompt's pictures. */
+  pictures: StudioPicture[];
   steps: StudioAssistantStep[];
   outcome: StudioAssistantOutcome | null;
   error: string | null;
@@ -113,8 +118,36 @@ export const studioApi = {
   remove: (id: string) => request<void>(design(id), "DELETE"),
   assistant: (id: string) => request<StudioAssistantThread>(`${design(id)}/assistant`),
   /** Starts the assistant on a prompt; it works in the background, which `assistant` follows. */
-  ask: (id: string, body: { prompt: string; ai_connection_id: string | null; selected: string[] }) =>
-    request<{ run: StudioAssistantRun }>(`${design(id)}/assistant`, "POST", body),
+  ask: (
+    id: string,
+    body: { prompt: string; ai_connection_id: string | null; selected: string[]; pictures?: string[] },
+  ) => request<{ run: StudioAssistantRun }>(`${design(id)}/assistant`, "POST", body),
+  /** Keeps a picture with the design: the server turns it upright and makes it no bigger than it needs. */
+  addPicture: async (id: string, file: Blob): Promise<StudioPicture> => {
+    const res = await fetch(`${apiBase()}${design(id)}/pictures`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": file.type || "application/octet-stream" }),
+      body: file,
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) {
+      let message = `Upload failed (${res.status})`;
+      try {
+        const body = (await res.json()) as { detail?: unknown };
+        if (typeof body.detail === "string") message = body.detail;
+      } catch {}
+      throw new StudioError(message, res.status, null);
+    }
+    return res.json();
+  },
+  picture: async (id: string, pictureId: string): Promise<Blob> => {
+    const res = await fetch(`${apiBase()}${design(id)}/pictures/${encodeURIComponent(pictureId)}`, {
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new StudioError(`Picture not found (${res.status})`, res.status, null);
+    return res.blob();
+  },
   stopAssistant: (id: string) => request<{ run: StudioAssistantRun | null }>(`${design(id)}/assistant/stop`, "POST"),
   clearAssistant: (id: string) => request<void>(`${design(id)}/assistant`, "DELETE"),
   /** Every change to a design goes through here, as the same commands an assistant runs. */

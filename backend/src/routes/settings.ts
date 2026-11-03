@@ -118,6 +118,11 @@ import { getDisabledProviders, PROVIDERS, setProviderEnabled } from "../services
 import { type AuthSlot, MANIFESTS, type ProviderId } from "../providers/index.generated";
 import { PROVIDERS as PROVIDER_BACKENDS } from "../providers/registry";
 import { CARD_PREVIEWS, getCardPreview, setCardPreview } from "../services/cardPreviewService";
+import {
+  getStudioPromptLayout,
+  setStudioPromptLayout,
+  STUDIO_PROMPT_LAYOUTS,
+} from "../services/studioPromptLayoutService";
 import { createLog } from "../services/auditLog";
 import { testFlaresolverr } from "../services/flaresolverr";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "../services/meshQuality";
@@ -898,6 +903,22 @@ router.patch(
 );
 
 router.get(
+  "/settings/studio-prompt-layout",
+  asyncHandler(async (req, res) => {
+    res.json({ layout: await getStudioPromptLayout(req.userId!) });
+  }),
+);
+
+const studioPromptLayoutSchema = z.object({ layout: z.enum(STUDIO_PROMPT_LAYOUTS) });
+router.patch(
+  "/settings/studio-prompt-layout",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(studioPromptLayoutSchema, req.body);
+    res.json({ layout: await setStudioPromptLayout(req.userId!, body.layout) });
+  }),
+);
+
+router.get(
   "/settings/weather-location",
   asyncHandler(async (req, res) => {
     res.json({ location: await getWeatherLocation(req.userId!) });
@@ -1134,6 +1155,7 @@ function aiConnectionOut(connection: AiConnection) {
     timeout_ms: connection.timeoutMs,
     concurrency: connection.concurrency,
     reasoning_effort: connection.reasoningEffort,
+    vision: connection.vision,
     is_default: connection.isDefault,
   };
 }
@@ -1157,6 +1179,8 @@ const aiConnectionFields = {
   concurrency: z.number().int().min(1).max(4),
   // Null sends no reasoning_effort at all.
   reasoning_effort: z.enum(["none", "low", "medium", "high"]).nullable(),
+  // It takes pictures in a prompt; a new one left without it is guessed from its model.
+  vision: z.boolean(),
 };
 
 /** A saved AI (or the defaults, for a new one) with the form's values on top. */
@@ -1201,6 +1225,7 @@ const aiConnectionCreateSchema = z
     timeout_ms: aiConnectionFields.timeout_ms.optional(),
     concurrency: aiConnectionFields.concurrency.optional(),
     reasoning_effort: aiConnectionFields.reasoning_effort.optional(),
+    vision: aiConnectionFields.vision.optional(),
   })
   .strict();
 router.post(
@@ -1218,6 +1243,7 @@ router.post(
       timeoutMs: provider.timeoutMs,
       reasoningEffort: provider.reasoningEffort,
       concurrency: body.concurrency ?? DEFAULT_AI_PROVIDER.concurrency,
+      vision: body.vision,
     });
     res.status(201).json(aiConnectionOut(connection));
   }),
@@ -1230,7 +1256,7 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(aiConnectionUpdateSchema, req.body);
     const provider = await providerFrom(req.params.id, body);
-    // Concurrency and reasoning effort don't change whether it answers.
+    // Concurrency, reasoning effort and pictures don't change whether it answers.
     if (
       body.kind !== undefined ||
       body.base_url !== undefined ||
@@ -1248,6 +1274,7 @@ router.patch(
       ...(body.timeout_ms !== undefined ? { timeoutMs: body.timeout_ms } : {}),
       ...(body.concurrency !== undefined ? { concurrency: body.concurrency } : {}),
       ...(body.reasoning_effort !== undefined ? { reasoningEffort: body.reasoning_effort } : {}),
+      ...(body.vision !== undefined ? { vision: body.vision } : {}),
     });
     res.json(aiConnectionOut(connection));
   }),

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  ASSET_ID,
   consumerOf,
   DEFAULT_SEGMENTS,
   featureById,
@@ -7,11 +8,12 @@ import {
   isBody,
   isSolid,
   LIMITS,
-  shapeOutline,
+  shapeContours,
   transformMatrix,
   type BodyFeature,
   type BooleanOperation,
   type EdgeRef,
+  type EdgeTreatment,
   type FaceRef,
   type Feature,
   type FeatureType,
@@ -23,6 +25,8 @@ import {
   type Transform,
   type Vec3,
 } from "./document";
+import { DEFAULT_FONT, fontName, STUDIO_FONT_IDS, STUDIO_FONTS } from "./text";
+import type { TraceShape, Traced, TraceSettings } from "./trace";
 import { applyMatrix, applyNormal, cross, invertAffine, normalize, perpendicular } from "./vec";
 
 // Every change to a Studio design, as a command: the toolbar, the panels and the viewport run these and nothing else,
@@ -144,6 +148,29 @@ const cornerRadius = z
   .max(LIMITS.size)
   .optional()
   .describe("Rounds every corner with this radius, in mm. Default 0, sharp.");
+const textArgs = {
+  text: z
+    .string()
+    .min(1)
+    .max(LIMITS.textLength)
+    .refine((value) => /\S/.test(value), "The text needs a letter that isn't a space.")
+    .describe('The words. "\\n" starts a new line.'),
+  font: z
+    .enum(STUDIO_FONT_IDS)
+    .optional()
+    .describe(
+      `Default ${DEFAULT_FONT}. All are bold faces: ${STUDIO_FONTS.map((font) => font.id).join(", ")}. The reply says ` +
+        "when a font has no letter for a character, and which fonts do.",
+    ),
+  size: length("A capital letter's height, in mm. 6 or more prints well."),
+  align: z.enum(["left", "center", "right"]).optional().describe("How lines line up with each other. Default center."),
+  spacing: z
+    .number()
+    .min(-LIMITS.size)
+    .max(LIMITS.size)
+    .optional()
+    .describe("Added between letters, in mm; negative draws them closer. Default 0."),
+};
 const shape = z
   .discriminatedUnion("type", [
     z
@@ -171,10 +198,22 @@ const shape = z
         hole,
       })
       .strict(),
+    z
+      .object({
+        type: z.literal("text"),
+        ...textArgs,
+        center: vec2.describe(
+          "Its middle on the plane, as [u, v] in mm: halfway across its widest line, and halfway between the top line's " +
+            "capitals and the bottom line's baseline. It reads along +u, with v up.",
+        ),
+        hole,
+      })
+      .strict(),
   ])
   .describe(
     "A closed shape on the sketch's plane, in the plane's own [u, v] coordinates: on XY u is X and v is Y, on XZ u is X " +
-      "and v is Z, on YZ u is Y and v is Z; on a face, u and v are as add_sketch reported them.",
+      "and v is Z, on YZ u is Y and v is Z; on a face, u and v are as add_sketch reported them. A text is its letters' " +
+      "outlines, their holes kept.",
   );
 const plane = z
   .enum(["XY", "XZ", "YZ"])
@@ -267,10 +306,10 @@ function shapeAt(sketch: SketchFeature, index: number): SketchShape {
   return found;
 }
 
-/** Checks a shape's corner radius fits. */
+/** Checks a shape can be drawn: its corner radius fits, its text's font has every letter. */
 function checkShape(value: SketchShape): SketchShape {
   try {
-    shapeOutline(value);
+    shapeContours(value);
   } catch (error) {
     throw new CommandError(error instanceof Error ? error.message : String(error));
   }
@@ -391,12 +430,93 @@ function copyTree(doc: StudioDocument, id: string, copies: Map<string, string>):
   return copy.id;
 }
 
-/** The sketch's frame on a face of the world: u along the world's X as laid on the face, v = normal × u. */
+/** The sketch's frame on a face of the world, v = normal × u. On a wall, u runs level and v up it, so text on it reads
+ *  upright from outside whichever way it faces; on a floor or a ceiling, u is the world's X laid on it. */
 function faceFrame(face: { point: Vec3; normal: Vec3 }) {
   const normal = normalize(face.normal);
   if (Math.hypot(...normal) === 0) throw new CommandError("The face's normal can't be [0, 0, 0].");
-  const u = perpendicular(normal);
+  const u = Math.abs(normal[2]) < 0.9 ? normalize(cross([0, 0, 1], normal)) : perpendicular(normal);
   return { origin: face.point, u, normal, v: cross(normal, u) };
+}
+
+type Combination = "new" | "join" | "cut" | "intersect";
+
+/** add_sketch's change, which add_text starts with too. */
+function startSketch(
+  doc: StudioDocument,
+  args: {
+    plane?: "XY" | "XZ" | "YZ";
+    face?: { point: Vec3; normal: Vec3 };
+    offset?: number;
+    shapes?: SketchShape[];
+    name?: string;
+  },
+): CommandOutcome {
+  if (Boolean(args.plane) === Boolean(args.face))
+    throw new CommandError("Give a plane or a face to sketch on, one of them.");
+  const shapes = (args.shapes ?? []).map(checkShape);
+  const id = nextId(doc, "sketch");
+  const frame = args.face ? faceFrame(args.face) : null;
+  addFeature(doc, {
+    id,
+    type: "sketch",
+    name: args.name ?? "",
+    visible: true,
+    plane: frame ? "FACE" : args.plane!,
+    offset: args.offset ?? 0,
+    frame: frame ? { origin: frame.origin, u: frame.u, normal: frame.normal } : null,
+    shapes,
+  });
+  return {
+    document: doc,
+    created: [id],
+    summary: frame
+      ? `Started ${id} on a face at ${v3(frame.origin)}: u points ${v3(frame.u)}, v points ${v3(frame.v)}, extrudes go ${v3(frame.normal)}`
+      : `Started ${id} on the ${args.plane} plane`,
+  };
+}
+
+/** extrude's change, which add_text ends with too. */
+function extrudeSketch(
+  doc: StudioDocument,
+  args: {
+    sketch_id: string;
+    distance: number;
+    symmetric?: boolean;
+    start_offset?: number;
+    taper?: number;
+    top_edge?: EdgeTreatment | null;
+    bottom_edge?: EdgeTreatment | null;
+    operation?: Combination;
+    target_id?: string;
+    name?: string;
+  },
+): CommandOutcome {
+  const sketch = findSketch(doc, args.sketch_id);
+  assertFree(doc, sketch.id);
+  if (!sketch.shapes.some((each) => !each.hole))
+    throw new CommandError(`${sketch.id} has nothing to extrude: draw a shape that isn't a hole on it first.`);
+  const id = nextId(doc, "extrude");
+  addFeature(doc, {
+    id,
+    type: "extrude",
+    name: args.name ?? "",
+    visible: true,
+    transform: placed({}),
+    sketch_id: sketch.id,
+    distance: args.distance,
+    symmetric: args.symmetric ?? false,
+    start_offset: args.start_offset ?? 0,
+    taper: args.taper ?? 0,
+    top_edge: args.top_edge ?? null,
+    bottom_edge: args.bottom_edge ?? null,
+  });
+  const combined = combineWith(doc, id, args.operation, args.target_id);
+  return {
+    document: doc,
+    created: combined.created,
+    summary: `Extruded ${sketch.id} by ${fmt(args.distance)} mm ${combined.summary}`,
+  };
 }
 
 const BODY_REF_HELP =
@@ -562,30 +682,7 @@ export const STUDIO_COMMANDS = {
       shapes: z.array(shape).max(LIMITS.shapesPerSketch).optional().describe("Its shapes; more can be added later."),
       name: featureName,
     },
-    apply(doc, args) {
-      if (Boolean(args.plane) === Boolean(args.face))
-        throw new CommandError("Give a plane or a face to sketch on, one of them.");
-      const shapes = (args.shapes ?? []).map(checkShape);
-      const id = nextId(doc, "sketch");
-      const frame = args.face ? faceFrame(args.face) : null;
-      addFeature(doc, {
-        id,
-        type: "sketch",
-        name: args.name ?? "",
-        visible: true,
-        plane: frame ? "FACE" : args.plane!,
-        offset: args.offset ?? 0,
-        frame: frame ? { origin: frame.origin, u: frame.u, normal: frame.normal } : null,
-        shapes,
-      });
-      return {
-        document: doc,
-        created: [id],
-        summary: frame
-          ? `Started ${id} on a face at ${v3(frame.origin)}: u points ${v3(frame.u)}, v points ${v3(frame.v)}, extrudes go ${v3(frame.normal)}`
-          : `Started ${id} on the ${args.plane} plane`,
-      };
-    },
+    apply: startSketch,
   }),
 
   add_sketch_shape: command({
@@ -627,6 +724,75 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  add_text: command({
+    title: "Add 3D text",
+    description:
+      "Writes text as a solid in one step: a sketch holding a text shape, extruded. On a plane the letters stand up " +
+      "from it as a body of their own (on XY they lie on the bed, reading along +X, and rise up +Z). On a flat face of " +
+      "a body they're embossed, raised out of it and joined to it, or with operation cut, engraved into it; give the " +
+      "face and target_id, the body it's on. The text's middle is at center on the plane, or at the face's point. The " +
+      "reply names the sketch and the extrude: change the words, font or size later with update_sketch_shape on the " +
+      "sketch's shape 0, how far they stand out with update_feature on the extrude.",
+    args: {
+      ...textArgs,
+      height: length("How far the letters stand out, or are cut in, in mm."),
+      plane: plane.optional(),
+      face: faceArg
+        .optional()
+        .describe(
+          "A flat face to write on, from studio_inspect_body's faces: a point on it and its normal, in the world.",
+        ),
+      offset: planeOffset,
+      center: vec2
+        .optional()
+        .describe(
+          "Where its middle is on the plane, as [u, v] in mm. Default [0, 0], the plane's origin or the face's point.",
+        ),
+      operation: z
+        .enum(["new", "join", "cut"])
+        .optional()
+        .describe(
+          "new makes a body of its own (the default on a plane), join embosses it into target_id (the default on a face), cut engraves it.",
+        ),
+      target_id: operationTarget,
+      name: featureName,
+    },
+    apply(doc, args) {
+      const how = args.operation ?? (args.face ? "join" : "new");
+      const text: SketchShape = {
+        type: "text",
+        text: args.text,
+        font: args.font ?? DEFAULT_FONT,
+        size: args.size,
+        center: args.center ?? [0, 0],
+        ...(args.align ? { align: args.align } : {}),
+        ...(args.spacing ? { spacing: args.spacing } : {}),
+      };
+      const sketch = startSketch(doc, { plane: args.plane, face: args.face, offset: args.offset, shapes: [text] });
+      const madeSketch = sketch.created[0];
+      const solid = extrudeSketch(doc, {
+        sketch_id: madeSketch,
+        // A cut goes into the face, against the way it faces.
+        distance: how === "cut" ? -args.height : args.height,
+        operation: how,
+        target_id: args.target_id,
+        name: args.name,
+      });
+      const extrude = solid.document.features.find((each) => each.type === "extrude" && each.sketch_id === madeSketch)!;
+      const verb = how === "cut" ? "Engraved" : how === "join" ? "Embossed" : "Wrote";
+      return {
+        document: doc,
+        created: [madeSketch, ...solid.created],
+        summary:
+          `${verb} “${args.text.replace(/\n/g, " / ")}” in ${fontName(text.font!)}, letters ${fmt(args.size)} mm tall and ` +
+          `${fmt(args.height)} mm ${how === "cut" ? "deep" : "high"}: ${madeSketch} extruded as ${extrude.id}` +
+          (solid.created[0] !== extrude.id
+            ? `, ${how === "cut" ? "cut from" : "joined to"} ${args.target_id} into ${solid.created[0]}`
+            : ""),
+      };
+    },
+  }),
+
   extrude: command({
     title: "Extrude a sketch",
     description:
@@ -654,33 +820,7 @@ export const STUDIO_COMMANDS = {
       target_id: operationTarget,
       name: featureName,
     },
-    apply(doc, args) {
-      const sketch = findSketch(doc, args.sketch_id);
-      assertFree(doc, sketch.id);
-      if (!sketch.shapes.some((each) => !each.hole))
-        throw new CommandError(`${sketch.id} has nothing to extrude: draw a shape that isn't a hole on it first.`);
-      const id = nextId(doc, "extrude");
-      addFeature(doc, {
-        id,
-        type: "extrude",
-        name: args.name ?? "",
-        visible: true,
-        transform: placed({}),
-        sketch_id: sketch.id,
-        distance: args.distance,
-        symmetric: args.symmetric ?? false,
-        start_offset: args.start_offset ?? 0,
-        taper: args.taper ?? 0,
-        top_edge: args.top_edge ?? null,
-        bottom_edge: args.bottom_edge ?? null,
-      });
-      const combined = combineWith(doc, id, args.operation, args.target_id);
-      return {
-        document: doc,
-        created: combined.created,
-        summary: `Extruded ${sketch.id} by ${fmt(args.distance)} mm ${combined.summary}`,
-      };
-    },
+    apply: extrudeSketch,
   }),
 
   revolve: command({
@@ -1290,6 +1430,57 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  trace_picture: command({
+    title: "Trace a picture",
+    description:
+      "Turns the shapes in one of the design's pictures (one attached to a prompt, by its id) into a sketch outline that " +
+      "extrude makes solid: a logo, a silhouette, lettering, a drawn outline. Dark shapes on a light ground are traced, " +
+      "or with invert light ones on dark; see-through counts as light. Holes stay holes (the inside of an O or a ring), " +
+      "and islands in them stay solid. The outline is width mm wide, its height following the picture, centred on " +
+      "center. It goes in a new sketch on a plane or a flat face, like add_sketch; give height to extrude it at once " +
+      "into a body standing up from it. To trace again with other settings, give sketch_id and index, the traced shape " +
+      "to replace; the plane stays the sketch's. The reply says how many shapes it found and the threshold it used.",
+    kind: "import",
+    args: {
+      picture_id: z.string().regex(ASSET_ID).describe("The picture's id, as the prompt listed it."),
+      width: length("How wide the traced outline is, in mm."),
+      plane: plane.optional(),
+      face: faceArg
+        .optional()
+        .describe(
+          "A flat face to sketch on, from studio_inspect_body's faces: a point on it and its normal, in the world.",
+        ),
+      offset: planeOffset,
+      center: vec2.optional().describe("Where its middle is on the plane, as [u, v] in mm. Default [0, 0]."),
+      threshold: z
+        .number()
+        .int()
+        .min(1)
+        .max(255)
+        .nullable()
+        .optional()
+        .describe(
+          "Brightness, 0 black to 255 white, below which a pixel is a shape's (above, with invert). Default: found " +
+            "from the picture, which suits ink on paper.",
+        ),
+      invert: z.boolean().optional().describe("Trace the light shapes on a dark ground instead. Default false."),
+      detail: z
+        .enum(["low", "medium", "high"])
+        .optional()
+        .describe("How closely the outline follows the picture: low smooths away specks and jags. Default medium."),
+      height: length("Extrudes it at once by this, in mm, into a body of its own.").optional(),
+      hole: hole,
+      sketch_id: sketchId.optional().describe("A sketch to trace into instead of a new one, e.g. to trace again."),
+      index: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe("With sketch_id: the traced shape to replace, from 0. Without it, the outline is added."),
+      name: featureName,
+    },
+  }),
+
   import_model: command({
     title: "Import a library model",
     description:
@@ -1414,6 +1605,105 @@ export function addMesh(
 /** The body separate_parts would work on, or why it can't: checked before it's measured, which takes a while. */
 export function separableBody(doc: StudioDocument, id: string): BodyFeature {
   return freeBody(doc, id);
+}
+
+/** trace_picture's settings, as the server traces with them. */
+export function traceSettings(args: { threshold?: number | null; invert?: boolean; detail?: TraceShape["detail"] }) {
+  return {
+    threshold: args.threshold ?? null,
+    invert: args.invert ?? false,
+    detail: args.detail ?? "medium",
+  } satisfies TraceSettings;
+}
+
+/** The sketch trace_picture would work in, or why it can't: checked before the picture is traced, which takes a
+ *  moment. */
+export function traceTarget(
+  doc: StudioDocument,
+  args: { sketch_id?: string; index?: number; plane?: string; face?: unknown },
+): void {
+  if (args.sketch_id) {
+    const sketch = findSketch(doc, args.sketch_id);
+    if (args.plane || args.face)
+      throw new CommandError("Give a sketch_id, or a plane or face for a new sketch, not both.");
+    if (args.index !== undefined && shapeAt(sketch, args.index).type !== "trace")
+      throw new CommandError(`Shape ${args.index} of ${sketch.id} isn't a traced picture.`);
+    if (args.index === undefined && sketch.shapes.length >= LIMITS.shapesPerSketch)
+      throw new CommandError(`A sketch holds up to ${LIMITS.shapesPerSketch} shapes.`);
+  } else {
+    if (args.index !== undefined) throw new CommandError("index goes with sketch_id.");
+    if (Boolean(args.plane) === Boolean(args.face))
+      throw new CommandError("Give a plane or a face to sketch on, one of them, or a sketch_id.");
+  }
+}
+
+/** What trace_picture adds once the server has traced the picture: the traced shape, in a new sketch or one there, and
+ *  the extrude of it if asked; on a copy of `doc`. */
+export function addTrace(
+  doc: StudioDocument,
+  args: {
+    picture_id: string;
+    width: number;
+    plane?: "XY" | "XZ" | "YZ";
+    face?: { point: Vec3; normal: Vec3 };
+    offset?: number;
+    center?: [number, number];
+    threshold?: number | null;
+    invert?: boolean;
+    detail?: TraceShape["detail"];
+    height?: number;
+    hole?: boolean;
+    sketch_id?: string;
+    index?: number;
+    name?: string;
+  },
+  traced: Traced,
+): CommandOutcome {
+  const next = structuredClone(doc);
+  traceTarget(next, args);
+  const traceShape: TraceShape = {
+    type: "trace",
+    picture_id: args.picture_id,
+    center: args.center ?? [0, 0],
+    width: args.width,
+    height: Number((args.width * traced.aspect).toFixed(3)),
+    ...traceSettings(args),
+    outline: traced.outline,
+    ...(args.hole ? { hole: true } : {}),
+  };
+  let into: string;
+  let created: string[] = [];
+  if (args.sketch_id) {
+    const sketch = findSketch(next, args.sketch_id);
+    if (args.index !== undefined) sketch.shapes[args.index] = traceShape;
+    else sketch.shapes.push(traceShape);
+    into = sketch.id;
+  } else {
+    created = startSketch(next, {
+      plane: args.plane,
+      face: args.face,
+      offset: args.offset,
+      shapes: [traceShape],
+      name: args.name,
+    }).created;
+    into = created[0];
+  }
+  const found =
+    `${traced.loops} ${traced.loops === 1 ? "shape" : "shapes"}` +
+    (traced.holes ? ` (${traced.holes} of them holes)` : "") +
+    `, ${fmt(traceShape.width)} × ${fmt(traceShape.height)} mm, at threshold ${traced.threshold}`;
+  if (!args.height)
+    return {
+      document: next,
+      created,
+      summary: `Traced the picture into ${into}: ${found}`,
+    };
+  const solid = extrudeSketch(next, { sketch_id: into, distance: args.height });
+  return {
+    document: next,
+    created: [...created, ...solid.created],
+    summary: `Traced the picture into ${into}: ${found}; extruded ${fmt(args.height)} mm as ${solid.created[0]}`,
+  };
 }
 
 /** What separate_parts adds once the body's parts have been measured: a part feature for each, on a copy of `doc`.

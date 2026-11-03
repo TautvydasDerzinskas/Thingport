@@ -5,6 +5,7 @@ import type { MeshData, StudioDocument } from "../../studio/document";
 import { evaluateDesign, measureParts } from "../../studio/geometry";
 import { analyze } from "../../studio/topology";
 import type { GeometryAnswer, GeometryQuestion, WorkerBody } from "./geometryClient";
+import { loadFontsFor } from "./studioFonts";
 
 // Makes a design's bodies off the page's thread, so a fillet or a shell that takes a second or two doesn't freeze the
 // view, and works out each body's flat faces and straight edges for picking them, and a body's loose parts.
@@ -23,6 +24,8 @@ self.addEventListener("message", async (event: MessageEvent<GeometryQuestion>) =
       module.setup();
       return module;
     });
+    // The design's text needs its fonts here too.
+    await loadFontsFor(document);
     if (parts) {
       const measured = measureParts(await manifold, document as StudioDocument, parts, (assetId) =>
         meshes.get(assetId),

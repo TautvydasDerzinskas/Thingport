@@ -26,6 +26,8 @@ import ViewSidebarOutlinedIcon from "@mui/icons-material/ViewSidebarOutlined";
 import PentagonOutlinedIcon from "@mui/icons-material/PentagonOutlined";
 import RectangleOutlinedIcon from "@mui/icons-material/RectangleOutlined";
 import RedoIcon from "@mui/icons-material/Redo";
+import TextFieldsIcon from "@mui/icons-material/TextFields";
+import WallpaperOutlinedIcon from "@mui/icons-material/WallpaperOutlined";
 import ThreeSixtyIcon from "@mui/icons-material/ThreeSixty";
 import UndoIcon from "@mui/icons-material/Undo";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
@@ -81,10 +83,14 @@ type Props = {
   onAdd: (primitive: Primitive) => void;
   onStartSketch: (plane: Exclude<SketchPlane, "FACE">) => void;
   onSketchTool: (tool: SketchTool) => void;
+  /** Adds a text to the sketch being drawn, for its words to be typed in the Properties panel. */
+  onSketchText: () => void;
   onFinishSketch: () => void;
   onExtrude: () => void;
   /** Opens a tool's panel. */
   onOperation: (kind: OperationKind) => void;
+  /** Opens the dialog that traces a picture into an outline. */
+  onTrace: () => void;
   onCombine: (kind: BooleanKind) => void;
   onMode: (mode: StudioMode) => void;
   onTogglePanel: (panel: StudioPanel) => void;
@@ -255,6 +261,9 @@ export default function StudioToolbar(props: Props) {
             ]}
             onChange={props.onSketchTool}
           />
+          <Tool label={t("studio.text.add")} onClick={props.onSketchText}>
+            <TextFieldsIcon />
+          </Tool>
           <Tool label={t("studio.actions.extrude")} disabled={!props.canExtrude} onClick={props.onExtrude}>
             <ExtrudeIcon />
           </Tool>
@@ -316,6 +325,16 @@ export default function StudioToolbar(props: Props) {
             onClick={() => props.onOperation("hole")}
           >
             <HoleIcon />
+          </Tool>
+          <Tool
+            label={t("studio.ops.text.title")}
+            disabled={noDesign || props.busy}
+            onClick={() => props.onOperation("text")}
+          >
+            <TextFieldsIcon />
+          </Tool>
+          <Tool label={t("studio.trace.title")} disabled={noDesign || props.busy} onClick={props.onTrace}>
+            <WallpaperOutlinedIcon />
           </Tool>
           <Gap />
           <Tool

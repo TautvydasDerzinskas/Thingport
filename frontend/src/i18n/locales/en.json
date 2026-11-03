@@ -1770,7 +1770,9 @@
           "modelsNeedKey": "Enter the API key to list the models it may use.",
           "effortClaude": "Effort",
           "effortClaudeHint": "How much Claude thinks before it answers. Lower is faster and cheaper, and these tasks rarely need more than Low.",
-          "effortClaudeDefault": "Model's default (send nothing)"
+          "effortClaudeDefault": "Model's default (send nothing)",
+          "vision": "Sees pictures",
+          "visionHelp": "Whether this model takes pictures in a prompt. Studio's assistant only offers to attach pictures to an AI that does. A new AI starts as its model's name suggests (Claude, GPT-4o and later, Gemini, Qwen-VL, LLaVA, Gemma 3…): switch it to match the model."
         }
       },
       "aiFeatures": {
@@ -2574,6 +2576,13 @@
         "light": "Light grey (no tint)",
         "failed": "Couldn't save the render color.",
         "help": "The color generated 3D renders and the 3D preview are drawn in. Picking an accent sets it to match; pick here to change it separately."
+      },
+      "studioPrompt": {
+        "heading": "Studio assistant",
+        "help": "Where Studio's Ask AI shows its conversation. Bar: under the view, one line while the AI works, the rest when you open it. Side panel: beside the view, so nothing covers the model.",
+        "bar": "Bar",
+        "panel": "Side panel",
+        "failed": "Couldn't save where the Studio assistant shows."
       }
     },
     "configuration": {
@@ -3172,7 +3181,9 @@
       "shapes": {
         "rectangle": "Rectangle",
         "circle": "Circle",
-        "polygon": "Polygon"
+        "polygon": "Polygon",
+        "text": "Text",
+        "trace": "Traced picture"
       },
       "planes": {
         "XY": "Top",
@@ -3279,7 +3290,7 @@
       "prompt": {
         "title": "Ask AI",
         "open": "Open Ask AI",
-        "help": "Describe a part, or a change to the open design, and the AI builds it step by step with the same tools as the toolbar. You see each step land, and Undo takes them back one at a time. An admin chooses which AIs are offered.",
+        "help": "Describe a part, or a change to the open design, and the AI builds it step by step with the same tools as the toolbar. You see each step land, and Undo takes them back one at a time. An admin chooses which AIs are offered. An AI that sees pictures takes up to 4: a photo or drawing to build from, or a logo to trace.",
         "model": "AI model",
         "addModel": "Add AI model",
         "noModels": "No AI is offered for Studio yet.",
@@ -3298,7 +3309,14 @@
         "steps_other": "{{count}} steps",
         "stopped": "Stopped.",
         "limit": "Stopped after {{count}} steps.",
-        "failed": "Couldn't finish: {{error}}"
+        "failed": "Couldn't finish: {{error}}",
+        "showConversation": "Show the conversation",
+        "hideConversation": "Hide the conversation",
+        "live": "Step {{number}}: {{step}}",
+        "attach": "Attach pictures",
+        "picture": "Picture {{number}}",
+        "removePicture": "Remove picture {{number}}",
+        "noVision": "This AI doesn't see pictures. Pick one that does, or remove them."
       },
       "panels": {
         "label": "Panels",
@@ -3440,12 +3458,66 @@
           "count_other": "{{count}} parts",
           "open_one": "{{count}} has gaps: it can be moved and exported, not combined",
           "open_other": "{{count}} have gaps: they can be moved and exported, not combined"
+        },
+        "text": {
+          "title": "Text",
+          "help": "Writes words as a solid: raised letters on a plane, or embossed or engraved on a body's flat face. Letter height is a capital's height; 6 mm or more prints well. The words, font and size stay editable on its sketch.",
+          "on": "Where",
+          "onPlane": "On a plane",
+          "onFace": "On a face",
+          "style": "Style",
+          "raised": "Raised",
+          "engraved": "Engraved",
+          "height": "Height",
+          "depth": "Depth",
+          "pick": "Click a flat face to write on"
         }
       },
       "imported": {
         "parts_one": "The model came in as one body of {{count}} part",
         "parts_other": "The model came in as one body of {{count}} separate parts",
         "separate": "Separate"
+      },
+      "text": {
+        "words": "Text",
+        "font": "Font",
+        "size": "Letter height",
+        "spacing": "Letter spacing",
+        "align": "Line up",
+        "aligns": {
+          "left": "Left",
+          "center": "Centre",
+          "right": "Right"
+        },
+        "placeholder": "Text",
+        "newLine": "Shift+Enter starts a new line",
+        "add": "Add text"
+      },
+      "trace": {
+        "title": "Trace picture",
+        "help": "Turns a picture's shapes into an outline to make solid: a logo, a silhouette, lettering, a drawing. Dark shapes on a light background are traced (Invert for light on dark; see-through counts as light), and holes stay holes. A clean picture with strong contrast traces best.",
+        "picture": "Picture",
+        "drop": "Drop a picture here, or paste one",
+        "choose": "Choose a picture",
+        "another": "Another picture",
+        "resultEmpty": "The traced outline shows here",
+        "threshold": "Threshold",
+        "auto": "Find it",
+        "invert": "Invert",
+        "detail": "Detail",
+        "details": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        },
+        "found_one": "{{count}} shape",
+        "found_other": "{{count}} shapes",
+        "holes_one": "{{count}} hole",
+        "holes_other": "{{count}} holes",
+        "make": "Make",
+        "solid": "Solid",
+        "sketch": "Sketch only",
+        "ok": "Trace"
       }
     }
   },

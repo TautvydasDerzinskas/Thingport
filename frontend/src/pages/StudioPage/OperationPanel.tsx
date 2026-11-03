@@ -8,12 +8,13 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
-import type { PartMeasure } from "../../studio/document";
-import { EdgeTreatmentField, NumberField } from "./fields";
+import { LIMITS, type PartMeasure } from "../../studio/document";
+import { EdgeTreatmentField, NumberField, StudioFontField } from "./fields";
 import type { Combine, HoleStyle, Operation } from "./operations";
 
 const rise = keyframes`from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; }`;
@@ -344,6 +345,97 @@ export default function OperationPanel({ op, onChange, error, ready, busy, label
       }
       case "sketch_face":
         return hint(t("studio.ops.sketch_face.pick"));
+      case "text":
+        return (
+          <>
+            <TextField
+              size="small"
+              label={t("studio.text.words")}
+              value={op.text}
+              placeholder={t("studio.text.placeholder")}
+              multiline
+              maxRows={3}
+              onChange={(event) => set({ text: event.target.value })}
+              helperText={t("studio.text.newLine")}
+              slotProps={{
+                inputLabel: { shrink: true },
+                htmlInput: { maxLength: LIMITS.textLength },
+                formHelperText: { sx: { mx: 0 } },
+              }}
+              fullWidth
+            />
+            <StudioFontField label={t("studio.text.font")} value={op.font} onChange={(font) => set({ font })} />
+            <Box sx={pair}>
+              <NumberField
+                live
+                label={t("studio.text.size")}
+                value={op.size}
+                unit="mm"
+                onCommit={(size) => size > 0 && set({ size })}
+              />
+              <NumberField
+                live
+                label={op.combine === "cut" ? t("studio.ops.text.depth") : t("studio.ops.text.height")}
+                value={op.height}
+                unit="mm"
+                onCommit={(height) => height > 0 && set({ height })}
+              />
+            </Box>
+            <Segmented
+              fullWidth
+              label={t("studio.ops.text.on")}
+              value={op.on}
+              options={[
+                { value: "plane", label: t("studio.ops.text.onPlane") },
+                { value: "face", label: t("studio.ops.text.onFace") },
+              ]}
+              onChange={(on) => set({ on, face: null, target: null, combine: on === "face" ? "join" : "new" })}
+            />
+            {op.on === "plane" ? (
+              <>
+                <Segmented
+                  fullWidth
+                  label={t("studio.properties.plane")}
+                  value={op.plane}
+                  options={(["XY", "XZ", "YZ"] as const).map((plane) => ({ value: plane, label: plane }))}
+                  onChange={(plane) => set({ plane })}
+                />
+                <Stack spacing={1}>
+                  <Segmented
+                    fullWidth
+                    label={t("studio.ops.combine.label")}
+                    value={op.combine}
+                    options={(["new", "join", "cut"] as const).map((each) => ({
+                      value: each,
+                      label: t(`studio.ops.combine.${each}`),
+                    }))}
+                    onChange={(value) => set({ combine: value, target: value === "new" ? null : op.target })}
+                  />
+                  {op.combine !== "new" &&
+                    (op.target
+                      ? picked(label(op.target), () => set({ target: null }))
+                      : hint(t("studio.ops.pickBody")))}
+                </Stack>
+              </>
+            ) : (
+              <>
+                <Segmented
+                  fullWidth
+                  label={t("studio.ops.text.style")}
+                  value={op.combine === "cut" ? "cut" : "join"}
+                  options={[
+                    { value: "join", label: t("studio.ops.text.raised") },
+                    { value: "cut", label: t("studio.ops.text.engraved") },
+                  ]}
+                  onChange={(value) => set({ combine: value })}
+                />
+                {op.face && op.target
+                  ? picked(label(op.target), () => set({ face: null, target: null }))
+                  : hint(t("studio.ops.text.pick"))}
+              </>
+            )}
+          </>
+        );
     }
   })();
 
@@ -353,7 +445,14 @@ export default function OperationPanel({ op, onChange, error, ready, busy, label
       component="section"
       aria-label={t(`studio.ops.${op.kind}.title`)}
       onKeyDown={(event) => {
-        if (event.key === "Enter" && canOk && !(event.target instanceof HTMLInputElement)) onOk();
+        // Enter in a field is the field's, but for a text's words, where only Shift+Enter starts a new line.
+        const field = event.target;
+        if (event.key !== "Enter" || field instanceof HTMLInputElement) return;
+        if (field instanceof HTMLTextAreaElement) {
+          if (event.shiftKey) return;
+          event.preventDefault();
+        }
+        if (canOk) onOk();
       }}
       sx={{
         position: "absolute",

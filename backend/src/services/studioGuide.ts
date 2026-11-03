@@ -41,9 +41,15 @@ Faces and edges aren't stored as such: a body is a mesh. Name them by where they
 
 - add_box, add_cylinder, add_cone, add_sphere, add_torus. Cylinders and cones can round or bevel their rims
   (top_edge, bottom_edge).
-- add_sketch on XY, XZ or YZ, or on a flat face (face: { point, normal }; the reply says where u and v point). Draw
-  rectangles, circles and polygons in the sketch's [u, v] millimetres; rectangles and polygons take corner_radius;
-  shapes marked hole are cut out of the others.
+- add_sketch on XY, XZ or YZ, or on a flat face (face: { point, normal }; the reply says where u and v point; on a wall
+  v is up). Draw rectangles, circles, polygons and text in the sketch's [u, v] millimetres; rectangles and polygons
+  take corner_radius; shapes marked hole are cut out of the others.
+- add_text writes words as a solid in one step: raised letters on a plane, or embossed (join) or engraved (cut) on a
+  body's flat face. size is a capital letter's height; 6 mm or more prints well. The reply says when a font has no
+  letter for a character, and which fonts do.
+- trace_picture turns one of the design's pictures (one attached to a prompt) into a sketch outline: the exact way to
+  make a logo, a silhouette or a drawn outline, holes kept. Give height to extrude it at once; for an object in a
+  photo, build it from shapes instead and compare it with studio_view_design.
 - extrude a sketch: a distance (negative goes the other way), symmetric, start_offset, a taper in degrees (a draft),
   and top_edge / bottom_edge rounding or bevel. operation join, cut or intersect with target_id works it into another
   body in the same step.
@@ -90,6 +96,10 @@ A tray with a lid lip:
 A model cut in two for printing:
 1. import_model the library model; split it with plane { point: [0, 0, h / 2], normal: [0, 0, 1] }.
 2. Optionally hole both parts at matching points for dowel pins.
+
+A name tag:
+1. add_box 60 × 20 × 3; fillet its four vertical edges with radius 3.
+2. add_text "Ada" size 10, height 1, on the top face ([0, 0, 3], [0, 0, 1]) with target_id the fillet.
 
 Look at the result with studio_view_design (iso, top, front, right...) as you go.
 `;

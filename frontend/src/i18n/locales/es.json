@@ -1797,7 +1797,9 @@
           "modelsNeedKey": "Escribe la clave de API para ver los modelos que puede usar.",
           "effortClaude": "Esfuerzo",
           "effortClaudeHint": "Cuánto piensa Claude antes de responder. Menos es más rápido y barato, y estas tareas rara vez necesitan más que Bajo.",
-          "effortClaudeDefault": "Predeterminado del modelo (no enviar nada)"
+          "effortClaudeDefault": "Predeterminado del modelo (no enviar nada)",
+          "vision": "Ve imágenes",
+          "visionHelp": "Si este modelo admite imágenes en una petición. El asistente de Studio solo ofrece adjuntar imágenes a una IA que las admite. Una IA nueva empieza según lo que indica el nombre de su modelo (Claude, GPT-4o y posteriores, Gemini, Qwen-VL, LLaVA, Gemma 3…): cámbialo para que coincida con el modelo."
         }
       },
       "aiFeatures": {
@@ -2608,6 +2610,13 @@
         "light": "Gris claro (sin tinte)",
         "failed": "No se pudo guardar el color del render.",
         "help": "El color en que se dibujan los renders 3D generados y la vista previa 3D. Al elegir un color de acento cambia con él; elige aquí para cambiarlo por separado."
+      },
+      "studioPrompt": {
+        "heading": "Asistente de Studio",
+        "help": "Dónde muestra Preguntar a la IA de Studio su conversación. Barra: bajo la vista, una línea mientras la IA trabaja y el resto al abrirla. Panel lateral: junto a la vista, para que nada tape el modelo.",
+        "bar": "Barra",
+        "panel": "Panel lateral",
+        "failed": "No se pudo guardar dónde se muestra el asistente de Studio."
       }
     },
     "configuration": {
@@ -3208,7 +3217,9 @@
       "shapes": {
         "rectangle": "Rectángulo",
         "circle": "Círculo",
-        "polygon": "Polígono"
+        "polygon": "Polígono",
+        "text": "Texto",
+        "trace": "Imagen calcada"
       },
       "planes": {
         "XY": "Superior",
@@ -3320,7 +3331,7 @@
       "prompt": {
         "title": "Preguntar a la IA",
         "open": "Abrir Preguntar a la IA",
-        "help": "Describe una pieza o un cambio en el diseño abierto, y la IA lo construye paso a paso con las mismas herramientas que la barra. Verás llegar cada paso, y Deshacer los revierte de uno en uno. Un administrador elige qué IA se ofrecen.",
+        "help": "Describe una pieza o un cambio en el diseño abierto, y la IA lo construye paso a paso con las mismas herramientas que la barra. Verás llegar cada paso, y Deshacer los revierte de uno en uno. Un administrador elige qué IA se ofrecen. Una IA que ve imágenes admite hasta 4: una foto o un dibujo del que partir, o un logotipo que calcar.",
         "model": "Modelo de IA",
         "addModel": "Añadir modelo de IA",
         "noModels": "Aún no se ofrece ninguna IA para Estudio.",
@@ -3340,7 +3351,14 @@
         "steps_other": "{{count}} pasos",
         "stopped": "Detenido.",
         "limit": "Detenido tras {{count}} pasos.",
-        "failed": "No pudo terminar: {{error}}"
+        "failed": "No pudo terminar: {{error}}",
+        "showConversation": "Mostrar la conversación",
+        "hideConversation": "Ocultar la conversación",
+        "live": "Paso {{number}}: {{step}}",
+        "attach": "Adjuntar imágenes",
+        "picture": "Imagen {{number}}",
+        "removePicture": "Quitar la imagen {{number}}",
+        "noVision": "Esta IA no ve imágenes. Elige una que las vea, o quítalas."
       },
       "panels": {
         "label": "Paneles",
@@ -3486,6 +3504,19 @@
           "open_one": "{{count}} tiene huecos: se puede mover y exportar, no combinar",
           "open_many": "{{count}} tienen huecos: se pueden mover y exportar, no combinar",
           "open_other": "{{count}} tienen huecos: se pueden mover y exportar, no combinar"
+        },
+        "text": {
+          "title": "Texto",
+          "help": "Convierte palabras en un sólido: letras en relieve sobre un plano, o en relieve o grabadas en una cara plana de un cuerpo. La altura de letra es la de una mayúscula; 6 mm o más se imprime bien. Las palabras, la fuente y el tamaño siguen editables en su boceto.",
+          "on": "Dónde",
+          "onPlane": "En un plano",
+          "onFace": "En una cara",
+          "style": "Estilo",
+          "raised": "En relieve",
+          "engraved": "Grabado",
+          "height": "Altura",
+          "depth": "Profundidad",
+          "pick": "Haz clic en una cara plana donde escribir"
         }
       },
       "imported": {
@@ -3493,6 +3524,49 @@
         "parts_many": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",
         "parts_other": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",
         "separate": "Separar"
+      },
+      "text": {
+        "words": "Texto",
+        "font": "Fuente",
+        "size": "Altura de letra",
+        "spacing": "Espaciado entre letras",
+        "align": "Alinear",
+        "aligns": {
+          "left": "Izquierda",
+          "center": "Centro",
+          "right": "Derecha"
+        },
+        "placeholder": "Texto",
+        "newLine": "Mayús+Intro empieza una línea nueva",
+        "add": "Añadir texto"
+      },
+      "trace": {
+        "title": "Calcar imagen",
+        "help": "Convierte las formas de una imagen en un contorno para hacerlo sólido: un logotipo, una silueta, un rótulo, un dibujo. Se calcan las formas oscuras sobre fondo claro (Invertir para claras sobre oscuro; lo transparente cuenta como claro), y los agujeros siguen siendo agujeros. Una imagen limpia y con buen contraste se calca mejor.",
+        "picture": "Imagen",
+        "drop": "Suelta una imagen aquí o pégala",
+        "choose": "Elegir una imagen",
+        "another": "Otra imagen",
+        "resultEmpty": "Aquí se verá el contorno calcado",
+        "threshold": "Umbral",
+        "auto": "Encontrarlo",
+        "invert": "Invertir",
+        "detail": "Detalle",
+        "details": {
+          "low": "Bajo",
+          "medium": "Medio",
+          "high": "Alto"
+        },
+        "found_one": "{{count}} forma",
+        "found_many": "{{count}} formas",
+        "found_other": "{{count}} formas",
+        "holes_one": "{{count}} agujero",
+        "holes_many": "{{count}} agujeros",
+        "holes_other": "{{count}} agujeros",
+        "make": "Crear",
+        "solid": "Sólido",
+        "sketch": "Solo boceto",
+        "ok": "Calcar"
       }
     }
   },

@@ -29,6 +29,17 @@ A design is a list of features, built in order:
   of the others. **Extrude** pulls the sketch into a solid: a distance, both ways or from an offset, with sides that
   taper and ends rounded or bevelled. **Revolve** turns it round one of the sketch's axes, all the way or part of it.
   Either can make a new body, or join, cut or intersect one you click.
+- **Text**: the **Text** tool writes words as a solid in one step: raised letters on a plane, or on a body's flat face
+  embossed (raised from it) or engraved (cut into it). Letter height is a capital's height; 6 mm or more prints well.
+  The fonts are the 21 bold faces Thingport carries for tools, each shown in its own face in the list. The words, font
+  and size stay editable on the text's sketch, and **Add text** in a sketch puts text among its other shapes. A font
+  without a letter you typed (some lack Lithuanian or Polish letters) says so, and names the fonts that have it.
+- **Trace picture**: turns a picture's shapes into an outline to make solid: a logo, a silhouette, lettering, a
+  drawing. Drop, paste or choose a picture and see what it traces to beside it: dark shapes on a light ground, or
+  light on dark with **Invert**; see-through counts as light. The threshold is found for you, or set it yourself; less
+  detail smooths away specks and jags. Holes stay holes, and what's inside them stays solid. Make it a solid of a
+  height straight away, or only the sketch, to extrude, revolve or cut with. Its size, threshold and detail can be
+  changed later in the properties panel, which traces it again.
 - **Library models**: **Open…** in the design's menu has a **Library** tab with your models' STL, 3MF, STEP, OBJ and
   GLB files. **Open** makes a new design from one; **Insert** brings it into the design that's open. It comes in at its
   own size, centred on the bed, and the design keeps its own copy, so changing the model later doesn't change the
@@ -106,6 +117,15 @@ that's open, and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> start
 - What's selected in the view goes along with your request, so "round the top edges of this" knows what "this" is.
 - Each design keeps its own conversation, so "make it taller" follows on from "make a box". Clear it from the box's
   header; the design stays as it is.
+- **Pictures**: with an AI that sees pictures (an admin says which, in [AI](ai.md#seeing-pictures)), the box takes up
+  to four: the picture button, paste, or drop them on it. A photo or a drawing with sizes on it is something to build
+  from; a logo or a silhouette the AI traces into an outline exactly, as **Trace picture** does. The pictures stay
+  with the design's conversation.
 - A run takes up to 30 steps and 10 minutes. Not every model can use tools: small local models often can't, and the
-  box says so when one doesn't. An admin can give a small local model the compact tool set, which covers shapes,
-  moving, combining and holes.
+  box says so when one doesn't. An admin can give a small local model the compact tool set, which covers shapes, text,
+  tracing, moving, combining and holes.
+
+The box stays small so you can watch the design change: while the AI works, one line says the step it's on, and then
+its answer; the conversation opens from the box's header. The view keeps the design above the box. If you'd rather
+read the conversation as it goes, pick **Side panel** under **Studio assistant** in **Configuration → Appearance**: it
+then shows beside the view, and the box keeps only the prompt.

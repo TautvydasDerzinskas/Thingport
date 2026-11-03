@@ -4,10 +4,12 @@ import Box from "@mui/material/Box";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import Segmented from "../../components/controls/Segmented";
+import FontField from "../../components/customizer/FontField";
 import type { EdgeTreatment } from "../../studio/document";
+import { fontName, STUDIO_FONTS, type StudioFontId } from "../../studio/text";
 
-// The number fields Studio's panels share: one kept on Enter or leaving it (each change is a command), one that takes
-// every valid number as it's typed (a tool's preview follows it).
+// The fields Studio's panels share: a number kept on Enter or leaving it (each change is a command), one that takes
+// every valid number as it's typed (a tool's preview follows it), and a text's font.
 
 const show = (value: number) => String(Number(value.toFixed(3)));
 const parse = (text: string) => Number(text.replace(",", "."));
@@ -109,5 +111,28 @@ export function EdgeTreatmentField({
         />
       )}
     </Box>
+  );
+}
+
+/** A text shape's font, from the ones Thingport carries, each name drawn in its own face. */
+export function StudioFontField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: StudioFontId;
+  onChange: (font: StudioFontId) => void;
+}) {
+  return (
+    <FontField
+      name={label}
+      label={label}
+      value={fontName(value)}
+      onChange={(name) => {
+        const font = STUDIO_FONTS.find((each) => each.name === name);
+        if (font) onChange(font.id);
+      }}
+    />
   );
 }

@@ -23,7 +23,8 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   `addMesh`, the shared change to the tree. `separate_parts` is a `"measure"` command: how many parts it makes depends
   on the geometry, which `apply` can't see, so the server finds the body's parts first (`measureParts`, in the worker
   thread, outside the design's lock and again if the design changed meanwhile) and adds them with `addParts`. The
-  page's preview finds them the same way in its worker.
+  page's preview finds them the same way in its worker. `trace_picture` is an `"import"` command too: the server
+  traces the design's picture in the worker thread (`tracePicture`) and adds the outline with `addTrace`.
 - **`meshAsset.ts`** — that copy's file format. Copies live in `STORAGE/studio/u-<user>/<design>/<asset>.tpsm`; the page
   fetches them from `GET /api/studio/designs/:id/assets/:assetId` and caches them, as an asset never changes.
 - **`geometry.ts`** — the feature tree to solids with manifold, which the page loads from WebAssembly in a web worker
@@ -45,6 +46,17 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   corners its triangles share. A part feature keeps its box in the source's own frame and is found again by it each
   time the source is made, matched with its siblings so each piece is taken once; if an edit takes it away, the part
   says so. Its own origin is its base's middle as it was separated.
+- **`text.ts`** — a text shape's letters, laid out in one of the fonts tools use (`frontend/src/assets/toolFonts`, all
+  static, so a letter's holes keep their winding). The core never reads a font: each side parses the ones a design or
+  a command uses and hands them to `addFont` first. The page fetches them (`StudioPage/studioFonts.ts`, in its worker
+  too); the server reads the copies `studio:sync` puts in `backend/assets/studio-fonts/` (`services/studioFonts.ts`,
+  before a command runs and in the worker). A font without one of the characters is refused, naming the fonts that
+  have it, rather than drawn with a gap.
+- **`trace.ts`** — a picture's shapes as outlines, followed along the pixels' edges so a hole winds against its outside
+  and an island in it against the hole; straightened to a budget of points, and packed as one string in the sketch's
+  trace shape, which `studio_get_design` shows as a line. The picture itself is kept beside the design as
+  `<id>.png` (`POST /api/studio/designs/:id/pictures`), for the prompt and for tracing again. The page's trace dialog
+  previews with the same code on a smaller copy.
 - **`shapes2d.ts`** and **`vec.ts`** — outlines (rounded corners, insets that keep their shape) and vector maths.
 
 The page applies a document command locally at once (`useStudioDesign`), then sends it; the server applies it again on
@@ -86,6 +98,12 @@ The page's **Ask AI** box runs an assistant on the server (`backend/src/services
   reloads the design as they land. Stop aborts the turn in flight.
 - **The conversation** is kept per design in `StudioMessage`, as text: prompts, answers, the steps taken and how the
   run ended. A new prompt is sent with the last 20, not with earlier runs' tool payloads or thinking.
+- **Pictures**: a prompt may carry up to four of the design's pictures, for an AI marked **Sees pictures**
+  (`AiConnection.vision`); others are refused before the run. They go as JPEGs no bigger than 1568 px with the prompt,
+  their ids in its text for `trace_picture`, and the newest ones again with a later prompt that has none.
+- **The page** keeps the assistant's state in `useStudioAssistant`, shown by the bar (`PromptOverlay.tsx`, one line
+  while it works) and, in the account's side panel layout, by `AssistantPanel`. The view offsets its camera by the
+  bar's height (`bottomInset`), so what it looks at sits above the bar.
 
 ## Adding something a person can do
 

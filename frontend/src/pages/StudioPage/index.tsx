@@ -33,7 +33,7 @@ import {
   type PartMeasure,
   type SketchFeature,
   type SketchPlane,
-  type SketchShape,
+  type OutlineShape,
   type StudioDocument,
   type Transform,
 } from "../../studio/document";
@@ -41,6 +41,7 @@ import DesignsDialog from "./DesignsDialog";
 import { designStl } from "./exportStl";
 import FeatureTree from "./FeatureTree";
 import { featureLabel } from "./labels";
+import { AssistantPanel } from "./AssistantThread";
 import PromptOverlay from "./PromptOverlay";
 import PropertiesPanel from "./PropertiesPanel";
 import RenameDialog from "./RenameDialog";
@@ -50,9 +51,13 @@ import { BoxIcon, ExtrudeIcon, SeparateIcon } from "./studioIcons";
 import { measurePartsInWorker } from "./geometryClient";
 import { openModelAsDesign, type StudioArrival } from "./openModel";
 import OperationPanel from "./OperationPanel";
+import TraceDialog, { type TraceRequest } from "./TraceDialog";
 import { commandOf, pickOf, startOperation, withPick, type Operation, type OperationKind } from "./operations";
 import { addParts, applyCommand, CommandError } from "../../studio/commands";
 import { useStudioDesign } from "./useStudioDesign";
+import { fontsLoadedFor, loadFontsFor } from "./studioFonts";
+import { useStudioAssistant } from "./useStudioAssistant";
+import { useStudioPromptLayout } from "../../hooks/useStudioPromptLayout";
 
 // Studio: a small parametric CAD. Everything that changes a design here is a command (frontend/src/studio/commands.ts)
 // run through useStudioDesign, so an AI connected over MCP, or later through the prompt below, can do all of it too.
@@ -160,16 +165,27 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     };
   }, [designId, setSearchParams, showError]);
 
-  const [assistant, setAssistant] = useState<StudioAiModels | null>(null);
+  const [aiModels, setAiModels] = useState<StudioAiModels | null>(null);
   useEffect(() => {
-    studioApi.aiModels().then(setAssistant, () => setAssistant({ enabled: false, models: [] }));
+    studioApi.aiModels().then(setAiModels, () => setAiModels({ enabled: false, models: [] }));
   }, []);
   // The assistant's steps land on the server: the design is read again as they do.
   const followAssistant = useCallback(() => {
     if (designId) void reload(designId);
   }, [designId, reload]);
+  const [promptLayout] = useStudioPromptLayout();
+  // How much of the bottom of the view the prompt covers, which the view keeps the model above.
+  const [promptInset, setPromptInset] = useState(0);
 
   const [selected, setSelected] = useState<string[]>([]);
+  const assistant = useStudioAssistant({
+    designId: design?.id ?? null,
+    offered: aiModels,
+    selected,
+    onProgress: followAssistant,
+    onError,
+    onUnauthorized,
+  });
   const [mode, setMode] = useState<StudioMode>("select");
   const [panels, setPanels] = useState(storedPanels);
   const togglePanel = (panel: StudioPanel) =>
@@ -184,6 +200,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [menu, setMenu] = useState<{ id: string; at: { top: number; left: number } } | null>(null);
   const [designsOpen, setDesignsOpen] = useState(false);
+  const [tracing, setTracing] = useState(false);
   const [renaming, setRenaming] = useState<{ kind: "design" } | { kind: "feature"; id: string } | null>(null);
   // A tool that takes more than a click, while its panel is open, and what making its preview said.
   const [operation, setOperation] = useState<Operation | null>(null);
@@ -360,6 +377,20 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   };
   const draft = operation ? commandOf(operation) : null;
   const draftKey = draft ? JSON.stringify(draft) : "";
+  // A text's preview is drawn in its font, fetched here the first time it's picked.
+  const [fontsIn, setFontsIn] = useState(0);
+  useEffect(() => {
+    if (!draft || fontsLoadedFor(draft.args)) return;
+    let active = true;
+    loadFontsFor(draft.args).then(
+      () => active && setFontsIn((n) => n + 1),
+      (error: unknown) => active && showError(error),
+    );
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey]);
   // The design as the tool would leave it, shown while its panel is open; or why the command refuses it.
   const separating = operation?.kind === "separate" ? operation.target : null;
   const partsFound = measured && measured.doc === doc && measured.target === separating ? measured : null;
@@ -380,7 +411,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       return { document: null, created: [], error: error instanceof CommandError ? error.message : String(error) };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftKey, doc, partsFound]);
+  }, [draftKey, doc, partsFound, fontsIn]);
   useEffect(() => {
     if (!separating || !doc || !design) return;
     let cancelled = false;
@@ -442,6 +473,16 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         setSketch({ id: created[0], tool: "rectangle" });
       });
     }
+  };
+
+  /** A traced picture: selected once it's in, and a sketch alone goes straight on to its extrude. */
+  const tracePicture = async (request: TraceRequest): Promise<boolean> => {
+    const created = await run("trace_picture", request);
+    if (!created?.length) return false;
+    setSketch(null);
+    setSelected(created.slice(-1));
+    if (request.height === undefined) setOperation(startOperation("extrude", created[0]));
+    return true;
   };
 
   const combine = async (kind: BooleanKind) => {
@@ -548,6 +589,12 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   };
   const sketchFeature = sketch && doc ? featureById(doc, sketch.id) : undefined;
   const renamingFeature = renaming?.kind === "feature" && doc ? featureById(doc, renaming.id) : undefined;
+  // In the side panel layout the conversation goes beside the view, once there is one.
+  const assistantPanel =
+    promptLayout === "panel" &&
+    Boolean(doc) &&
+    !assistant.minimized &&
+    (assistant.messages.length > 0 || assistant.running);
 
   const viewportArea = (() => {
     if (noDesigns && !designId) {
@@ -596,7 +643,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onTransform={(id: string, transform: Transform) =>
             void run("set_transform", { feature_id: id, ...transform })
           }
-          onShape={(sketchId: string, shape: SketchShape) =>
+          onShape={(sketchId: string, shape: OutlineShape) =>
             void run("add_sketch_shape", { sketch_id: sketchId, shape })
           }
           onContextMenu={(id, at) => {
@@ -608,6 +655,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onPick={onPick}
           onBusy={setBusy}
           tinted={operation?.kind === "separate" ? own : undefined}
+          bottomInset={promptInset}
         />
         {operation && (
           <OperationPanel
@@ -651,15 +699,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             {t(`studio.sketch.hint.${sketch.tool}`)}
           </Typography>
         )}
-        <PromptOverlay
-          designId={design!.id}
-          assistant={assistant}
-          isAdmin={isAdmin}
-          selected={selected}
-          onProgress={followAssistant}
-          onError={onError}
-          onUnauthorized={onUnauthorized}
-        />
+        <PromptOverlay assistant={assistant} isAdmin={isAdmin} layout={promptLayout} onInset={setPromptInset} />
       </>
     );
   })();
@@ -694,9 +734,17 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         onAdd={(kind) => void add(kind)}
         onStartSketch={(plane) => void startSketch(plane)}
         onSketchTool={(tool) => setSketch((prev) => (prev ? { ...prev, tool } : prev))}
+        onSketchText={() =>
+          sketch &&
+          void run("add_sketch_shape", {
+            sketch_id: sketch.id,
+            shape: { type: "text", text: t("studio.text.placeholder"), size: 10, center: [0, 0] },
+          })
+        }
         onFinishSketch={() => setSketch(null)}
         onExtrude={() => begin("extrude")}
         onOperation={(kind) => begin(kind)}
+        onTrace={() => setTracing(true)}
         onCombine={(kind) => void combine(kind)}
         onMode={setMode}
         onTogglePanel={togglePanel}
@@ -712,9 +760,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           display: "grid",
           gridTemplateColumns: {
             xs: "minmax(0, 1fr)",
-            md: [panels.features && "220px", "minmax(0, 1fr)", panels.properties && "270px"].filter(Boolean).join(" "),
+            md: [panels.features && "220px", "minmax(0, 1fr)", panels.properties && "270px", assistantPanel && "300px"]
+              .filter(Boolean)
+              .join(" "),
           },
-          gridTemplateRows: { xs: "minmax(360px, 60vh) auto auto", md: "minmax(0, 1fr)" },
+          gridTemplateRows: { xs: "minmax(360px, 60vh) auto auto auto", md: "minmax(0, 1fr)" },
         }}
       >
         {panels.features && (
@@ -748,6 +798,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           <Box sx={(theme) => ({ ...panelSx(theme, "left", 3), ...slideIn(fromRight) })}>
             {doc && (
               <PropertiesPanel
+                designId={design!.id}
                 document={doc}
                 selected={selected}
                 errors={errors}
@@ -762,7 +813,29 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             )}
           </Box>
         )}
+        {assistantPanel && (
+          <Box
+            sx={(theme) => ({
+              ...panelSx(theme, "left", 4),
+              ...slideIn(fromRight),
+              display: "flex",
+              flexDirection: "column",
+              [theme.breakpoints.down("md")]: { maxHeight: 360 },
+            })}
+          >
+            <AssistantPanel assistant={assistant} />
+          </Box>
+        )}
       </Box>
+
+      {tracing && design && (
+        <TraceDialog
+          designId={design.id}
+          onClose={() => setTracing(false)}
+          onTrace={tracePicture}
+          onError={showError}
+        />
+      )}
 
       <Menu open={Boolean(menuFeature)} onClose={closeMenu} anchorReference="anchorPosition" anchorPosition={menu?.at}>
         {menuFeature && [

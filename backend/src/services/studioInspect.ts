@@ -1,10 +1,11 @@
 import { Worker } from "node:worker_threads";
 import type { StudioDocument } from "../studio/document.generated";
+import type { TraceSettings } from "../studio/trace.generated";
 import { workerBootstrap } from "../utils/workerBootstrap";
 import type { StudioView, StudioWorkerInput, StudioWorkerResult } from "./studioWorker";
 
 // Studio's work in a worker thread, so a heavy design or file can't hold up the API: measuring and picturing a design
-// for an assistant, finding a body's parts, and reading a library model into a design. One at a time; a design's
+// for an assistant, finding a body's parts, reading a library model into a design, and tracing a picture. One at a time; a design's
 // measurements are kept until it changes, as an assistant tends to ask twice.
 
 const WORKER_BOOTSTRAP = workerBootstrap(__dirname, "studioWorker");
@@ -97,4 +98,9 @@ export function measureStudioParts(
 /** Reads a library model's file into `destPath`, the design's own copy of its mesh. */
 export function importStudioMesh(srcPath: string, ext: string, destPath: string): Promise<StudioWorkerResult> {
   return queued({ kind: "import", srcPath, ext, destPath }, IMPORT_TIMEOUT_MS);
+}
+
+/** Traces one of a design's pictures, as trace_picture does. */
+export function traceStudioPicture(picturePath: string, settings: TraceSettings): Promise<StudioWorkerResult> {
+  return queued({ kind: "trace", picturePath, settings }, INSPECT_TIMEOUT_MS);
 }

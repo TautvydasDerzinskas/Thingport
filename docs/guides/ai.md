@@ -80,6 +80,7 @@ for Ollama, LM Studio, OpenAI and the rest, or **Claude** for Anthropic's models
 - **Reasoning effort**: sent to the provider as `reasoning_effort`. Leave it on the provider's default unless a
   reasoning model is slow or runs out of tokens: **None** stops qwen3 thinking, but gpt-oss can't stop and needs
   **Low**. A provider that turns the setting down is asked again without it.
+- **Sees pictures**: whether the model takes pictures in a prompt (see [below](#seeing-pictures)).
 
 **Test connection** asks the model to categorize a calibration cube, and saving tests it too, so a wrong URL, key or
 model name shows up straight away.
@@ -125,6 +126,13 @@ Add as many models as you like. Click one to make it the **default**, which ever
 another one with **Use AI** in its settings. That way, for example, categorization can run on a small local model while
 descriptions use a bigger one.
 
+### Seeing pictures
+
+**Sees pictures** says a model takes pictures, and Studio's assistant offers to attach pictures to a prompt only for one
+that does. A new model starts as its name suggests: on for Claude, GPT-4o and later, Gemini, and open vision models
+such as `qwen2.5vl`, `llava`, `gemma3`, `pixtral` and `minicpm-v`; off for the rest. Switch it to match the model. One
+switched on that turns pictures down stops the run with a message saying so, rather than answering without them.
+
 ### Choosing a model
 
 - Small local models (7 to 8 billion parameters, such as `qwen2.5:7b` or `llama3.1:8b`) categorize well enough to make
@@ -169,7 +177,7 @@ Each request carries the assistant's tools, and how they're sent depends on the 
   tokens rather than 15,000. The tools and instructions are cached too: a later step, or another prompt within a few
   minutes, reads them at a tenth of the price.
 - **Compact**, set per AI under **Available models**, is for small local models: a dozen basic tools (shapes,
-  moving, combining, holes) described in a line each, about 1,600 tokens in all. Fillets, shells, sketches and the
+  text, moving, combining, holes) described in a line each, about 1,600 tokens in all. Fillets, shells, sketches and the
   rest need **All tools**. An AI on your own network starts on Compact when you switch it on.
 - **All tools** sends every tool, about 15,000 tokens. OpenAI and most cloud APIs cache the part that repeats on their
   own, and Ollama keeps it in memory between steps, so only a run's first step reads it all. On a slow CPU that first
@@ -180,8 +188,8 @@ Each request carries the assistant's tools, and how they're sent depends on the 
 
 With a model on your own hardware, nothing leaves your network. With a third-party API, a model's title, description
 and tags are sent to that provider, and its first photo too when **Send the first preview image** is on. Files are never
-sent. The Studio assistant sends the request, the design's features and sizes, and, when the AI asks to look, pictures
-of the design.
+sent. The Studio assistant sends the request, any pictures attached to it, the design's features and sizes, and, when
+the AI asks to look, pictures of the design.
 
 ## Troubleshooting
 

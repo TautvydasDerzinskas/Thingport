@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { keyframes } from "@mui/material/styles";
@@ -17,283 +17,220 @@ import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
+import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import StopRoundedIcon from "@mui/icons-material/StopRounded";
 import TuneIcon from "@mui/icons-material/Tune";
-import { UnauthorizedError } from "../../api/client";
-import {
-  studioApi,
-  type StudioAiModels,
-  type StudioAssistantMessage,
-  type StudioAssistantStep,
-  type StudioAssistantThread,
-} from "../../api/studio";
-import { useConfirm } from "../../components/ConfirmProvider";
+import type { StudioPromptLayout } from "../../api/settings";
+import { studioApi, type StudioPicture } from "../../api/studio";
+import { newLocalId } from "../../utils/localId";
 import HelpTip from "../../components/HelpTip";
 import { AiLogo } from "../AiPage/aiLogos";
+import { AssistantConversation, endingOf, fadeIn, StepLine } from "./AssistantThread";
+import PictureThumb from "./PictureThumb";
+import type { StudioAssistant } from "./useStudioAssistant";
 
 // Where a person asks Studio's assistant to make or change the design. It works on the server, through the same
 // commands as the toolbar (frontend/src/studio/commands.ts), each step landing in the view as it's taken; the page
 // follows its run here, and keeps the conversation with the design.
+//
+// The bar stays small so the model can be watched as it changes: while the AI works, one line says the step it's on,
+// and then its answer; the conversation opens only when asked for, or, in the side panel layout, shows beside the view.
 
-const MINIMIZED_KEY = "thingport_studio_prompt_minimized";
-const MODEL_KEY = "thingport_studio_ai_model";
-const POLL_MS = 1000;
 // What the model list's admin items are, as a Select only knows values.
 const ADD_MODEL = "__add_model";
 const CHOOSE_MODELS = "__choose_models";
+// The bar's distance from the bottom of the view.
+const MARGIN = 16;
+// Pictures one prompt may carry, as the server takes them.
+const MAX_PICTURES = 4;
+
+/** A picture added to the prompt: shown from the file at once, sent by its id once the design has kept it. */
+type Attachment = { key: string; url: string; picture: StudioPicture | null };
 
 const rise = keyframes`from { opacity: 0; transform: translate(-50%, 10px) scale(0.98); } to { opacity: 1; transform: translate(-50%, 0) scale(1); }`;
-const appear = keyframes`from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; }`;
-const fadeIn = {
-  animation: `${appear} 180ms ease-out`,
-  "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-} as const;
-
-function stored(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function store(key: string, value: string) {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {}
-}
 
 type Props = {
-  designId: string;
-  /** The AIs offered for the assistant; null while loading. */
-  assistant: StudioAiModels | null;
+  assistant: StudioAssistant;
   isAdmin: boolean;
-  /** What's selected in the view, by feature id, sent along so "round this" has a "this". */
-  selected: readonly string[];
-  /** A step landed: the design changed on the server. */
-  onProgress: () => void;
-  onError: (message: string) => void;
-  onUnauthorized?: () => void;
+  layout: StudioPromptLayout;
+  /** How much of the bottom of the view the bar covers, in px: the view keeps the model above it. */
+  onInset: (px: number) => void;
 };
 
-function StepLine({ step, working }: { step: StudioAssistantStep; working?: boolean }) {
-  return (
-    <Stack direction="row" spacing={0.75} alignItems="flex-start" sx={fadeIn}>
-      {working ? (
-        <CircularProgress size={12} sx={{ mt: "3px", flexShrink: 0 }} />
-      ) : step.ok ? (
-        <CheckCircleOutlineIcon sx={{ fontSize: 14, mt: "2px", color: "success.main", flexShrink: 0 }} />
-      ) : (
-        <ErrorOutlineIcon sx={{ fontSize: 14, mt: "2px", color: "warning.main", flexShrink: 0 }} />
-      )}
-      <Typography variant="caption" color="text.secondary" sx={{ minWidth: 0, overflowWrap: "anywhere" }}>
-        {step.summary ?? step.title}
-      </Typography>
-    </Stack>
-  );
-}
-
-/** An answer: its text, its steps folded away, and how its run ended if not as it should. */
-function Answer({ message }: { message: StudioAssistantMessage }) {
+/** The step the run is on, or how the last one ended: one line in place of the conversation. */
+function Status({ assistant, onOpen }: { assistant: StudioAssistant; onOpen: () => void }) {
   const { t } = useTranslation("app");
-  const [open, setOpen] = useState(false);
-  const ending =
-    message.outcome === "stopped"
-      ? t("studio.prompt.stopped")
-      : message.outcome === "limit"
-        ? t("studio.prompt.limit", { count: message.steps.length })
-        : message.outcome === "failed"
-          ? t("studio.prompt.failed", { error: message.error ?? "" })
-          : null;
+  const { messages, running } = assistant;
+  const steps = assistant.thread?.run?.steps ?? [];
+  const last = messages.at(-1);
+  const answer = !running && last?.role === "assistant" ? last : null;
+  const ending = answer ? endingOf(t, answer) : null;
+  if (running) {
+    const step = steps.at(-1);
+    return (
+      <Box component="output" aria-live="polite" sx={{ display: "block", mt: 1, px: 0.25 }}>
+        {/* Keyed by the step, so each new one fades in over the last. */}
+        <Box key={steps.length}>
+          <StepLine
+            working
+            oneLine
+            step={{
+              tool: "",
+              title: step
+                ? t("studio.prompt.live", { number: steps.length, step: step.summary ?? step.title })
+                : t("studio.prompt.working"),
+              summary: null,
+              ok: true,
+            }}
+          />
+        </Box>
+      </Box>
+    );
+  }
+  if (!answer || (!answer.text && !ending)) return null;
+  // The answer is what the button says; what it does is in its tooltip.
   return (
-    <Box sx={fadeIn}>
-      {message.text && (
-        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-          {message.text}
-        </Typography>
-      )}
-      {ending && (
-        <Typography variant="caption" sx={{ display: "block", color: "warning.main", mt: 0.25 }}>
-          {ending}
-        </Typography>
-      )}
-      {message.steps.length > 0 && (
-        <>
-          <Button
-            size="small"
-            onClick={() => setOpen((value) => !value)}
-            aria-expanded={open}
-            endIcon={
-              <ExpandMoreIcon
-                sx={{
-                  transform: open ? "rotate(180deg)" : "none",
-                  transition: "transform 150ms",
-                  "@media (prefers-reduced-motion: reduce)": { transition: "none" },
-                }}
-              />
-            }
-            sx={{ textTransform: "none", px: 0.5, minWidth: 0, color: "text.secondary", fontSize: "0.75rem" }}
+    <Tooltip title={t("studio.prompt.showConversation")} placement="top" describeChild>
+      <Box
+        component="button"
+        type="button"
+        onClick={onOpen}
+        sx={{
+          ...fadeIn,
+          display: "block",
+          width: "100%",
+          mt: 1,
+          p: 0.25,
+          border: 0,
+          borderRadius: 1,
+          background: "none",
+          color: "inherit",
+          font: "inherit",
+          textAlign: "left",
+          cursor: "pointer",
+          "&:hover": { bgcolor: "action.hover" },
+          "&:focus-visible": { outline: 2, outlineColor: "primary.main", outlineStyle: "solid" },
+        }}
+      >
+        {answer.text && (
+          <Typography
+            variant="body2"
+            sx={{
+              overflowWrap: "anywhere",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
           >
-            {t("studio.prompt.steps", { count: message.steps.length })}
-          </Button>
-          {open && (
-            <Stack spacing={0.25} sx={{ pl: 0.5 }}>
-              {message.steps.map((step, index) => (
-                // Steps have no id of their own, and never move.
-                // oxlint-disable-next-line react/no-array-index-key
-                <StepLine key={index} step={step} />
-              ))}
-            </Stack>
-          )}
-        </>
-      )}
-    </Box>
+            {answer.text}
+          </Typography>
+        )}
+        {ending && (
+          <Typography variant="caption" sx={{ display: "block", color: "warning.main" }} noWrap>
+            {ending}
+          </Typography>
+        )}
+      </Box>
+    </Tooltip>
   );
 }
 
-export default function PromptOverlay({
-  designId,
-  assistant,
-  isAdmin,
-  selected,
-  onProgress,
-  onError,
-  onUnauthorized,
-}: Props) {
+export default function PromptOverlay({ assistant, isAdmin, layout, onInset }: Props) {
   const { t } = useTranslation("app");
   const navigate = useNavigate();
-  const confirm = useConfirm();
-  const [minimized, setMinimized] = useState(() => stored(MINIMIZED_KEY) === "true");
-  const [modelId, setModelId] = useState<string>(() => stored(MODEL_KEY) ?? "");
   const [text, setText] = useState("");
-  const [thread, setThread] = useState<StudioAssistantThread | null>(null);
-  const [sending, setSending] = useState(false);
-  const threadEnd = useRef<HTMLDivElement>(null);
-  const models = assistant?.models ?? null;
-  const running = thread?.run?.status === "running";
+  // The conversation, opened from the bar; it folds away again as a new run starts, so the model can be watched.
+  const [expanded, setExpanded] = useState(false);
+  const { offered, models, modelId, messages, running, sending, minimized } = assistant;
+  const panel = layout === "panel";
+  const open = expanded && !panel;
+  const vision = Boolean(models?.find((each) => each.id === modelId)?.vision);
 
-  const fail = useCallback(
-    (error: unknown) => {
-      if (error instanceof UnauthorizedError) onUnauthorized?.();
-      else onError(error instanceof Error ? error.message : String(error));
-    },
-    [onError, onUnauthorized],
-  );
-
-  // The one chosen before while it's still offered, else the default.
+  // Pictures, for an AI that sees them: picked, pasted or dropped, kept with the design as soon as they're added.
+  const [attached, setAttached] = useState<Attachment[]>([]);
+  const [dragging, setDragging] = useState(false);
+  const picker = useRef<HTMLInputElement>(null);
+  const shown = useRef<Attachment[]>([]);
   useEffect(() => {
-    if (!models?.length || models.some((model) => model.id === modelId)) return;
-    setModelId((models.find((model) => model.is_default) ?? models[0]).id);
-  }, [models, modelId]);
-
-  // Another design, another conversation.
+    shown.current = attached;
+  }, [attached]);
+  const letGo = (keep: (each: Attachment) => boolean) =>
+    setAttached((list) => {
+      for (const each of list) if (!keep(each)) URL.revokeObjectURL(each.url);
+      return list.filter(keep);
+    });
+  // Another design's prompt starts with none; the files' addresses go with the page.
+  const designId = assistant.designId;
   useEffect(() => {
-    let active = true;
-    setThread(null);
-    studioApi.assistant(designId).then(
-      (loaded) => active && setThread(loaded),
-      (error: unknown) => active && fail(error),
-    );
-    return () => {
-      active = false;
-    };
-  }, [designId, fail]);
-
-  // While it works: its steps as they land, and the design with them; then its answer.
-  const steps = thread?.run?.steps.length ?? 0;
-  const seenSteps = useRef(0);
-  useEffect(() => {
-    if (!running) return;
-    seenSteps.current = 0;
-    const timer = window.setInterval(() => {
-      studioApi.assistant(designId).then(
-        (next) => {
-          const count = next.run?.steps.length ?? 0;
-          if (count !== seenSteps.current || next.run?.status !== "running") onProgress();
-          seenSteps.current = count;
-          setThread(next);
-        },
-        () => undefined,
-      );
-    }, POLL_MS);
-    return () => window.clearInterval(timer);
-  }, [running, designId, onProgress]);
-
-  // The newest line in view, as an answer or a step comes in.
-  const messageCount = thread?.messages.length ?? 0;
-  useEffect(() => {
-    threadEnd.current?.scrollIntoView({ block: "nearest" });
+    if (designId !== undefined) letGo(() => false);
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
-  }, [messageCount, steps]);
-
-  const minimize = (value: boolean) => {
-    setMinimized(value);
-    store(MINIMIZED_KEY, String(value));
+  }, [designId]);
+  useEffect(() => () => shown.current.forEach((each) => URL.revokeObjectURL(each.url)), []);
+  const attach = (files: ArrayLike<File>) => {
+    if (!designId || !vision) return;
+    const room = MAX_PICTURES - shown.current.length;
+    for (const file of Array.from(files)
+      .filter((each) => each.type.startsWith("image/"))
+      .slice(0, Math.max(0, room))) {
+      const key = newLocalId();
+      const added = { key, url: URL.createObjectURL(file), picture: null };
+      shown.current = [...shown.current, added];
+      setAttached((list) => [...list, added]);
+      studioApi.addPicture(designId, file).then(
+        (picture) => setAttached((list) => list.map((each) => (each.key === key ? { ...each, picture } : each))),
+        (error: unknown) => {
+          letGo((each) => each.key !== key);
+          assistant.fail(error);
+        },
+      );
+    }
   };
+  const uploading = attached.some((each) => !each.picture);
+  // A picture the AI chosen now can't see: the person decides, rather than it quietly being left out.
+  const blocked = attached.length > 0 && !vision;
+
+  // How much of the view the bar takes, kept up as it changes; not while the conversation is open over the view, which
+  // the person asked for.
+  const bar = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const element = bar.current;
+    if (!element || open) return;
+    const report = () => onInset(element.offsetHeight + MARGIN);
+    report();
+    const observer = new ResizeObserver(report);
+    observer.observe(element);
+    return () => observer.disconnect();
+    // The bar and the minimized button are different elements.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+  }, [open, minimized, onInset]);
+  useEffect(() => () => onInset(0), [onInset]);
 
   const send = async () => {
     const prompt = text.trim();
-    if (!prompt || running || sending) return;
-    setSending(true);
-    try {
-      const { run } = await studioApi.ask(designId, {
+    if (uploading || blocked) return;
+    setExpanded(false);
+    if (
+      await assistant.send(
         prompt,
-        ai_connection_id: modelId || null,
-        selected: [...selected],
-      });
+        attached.flatMap((each) => (each.picture ? [each.picture] : [])),
+      )
+    ) {
       setText("");
-      // The prompt shows at once; the server has kept it too.
-      setThread((current) => ({
-        messages: [
-          ...(current?.messages ?? []),
-          {
-            id: `local-${run.started_at}`,
-            role: "user",
-            text: prompt,
-            steps: [],
-            outcome: null,
-            error: null,
-            model: null,
-            created_at: run.started_at,
-          },
-        ],
-        run,
-      }));
-    } catch (error) {
-      fail(error);
-    } finally {
-      setSending(false);
+      letGo(() => false);
     }
-  };
-
-  const stop = () => {
-    studioApi
-      .stopAssistant(designId)
-      .then(({ run }) => setThread((current) => (current ? { ...current, run } : current)), fail);
-  };
-
-  const clear = async () => {
-    const ok = await confirm({
-      title: t("studio.prompt.clearTitle"),
-      message: t("studio.prompt.clearMessage"),
-      confirmLabel: t("studio.prompt.clear"),
-      destructive: true,
-    });
-    if (!ok) return;
-    studioApi.clearAssistant(designId).then(() => setThread({ messages: [], run: null }), fail);
   };
 
   const placement = {
     position: "absolute",
     left: "50%",
-    bottom: 16,
+    bottom: MARGIN,
     transform: "translate(-50%, 0)",
     zIndex: 2,
     animation: `${rise} 200ms ease-out`,
@@ -303,10 +240,11 @@ export default function PromptOverlay({
   if (minimized) {
     return (
       <Button
+        ref={bar as Ref<HTMLButtonElement>}
         variant="contained"
         color="inherit"
         startIcon={running ? <CircularProgress size={16} /> : <AutoAwesomeOutlinedIcon />}
-        onClick={() => minimize(false)}
+        onClick={() => assistant.minimize(false)}
         aria-label={t("studio.prompt.open")}
         sx={{
           ...placement,
@@ -326,24 +264,39 @@ export default function PromptOverlay({
     );
   }
 
-  const off = assistant !== null && !assistant.enabled;
-  const noModels = assistant !== null && assistant.enabled && !assistant.models.length;
-  const usable = Boolean(assistant?.enabled && assistant.models.length);
-  const messages = thread?.messages ?? [];
-  // The run's steps under the prompt that started it, until its answer comes.
-  const live = running ? (thread?.run?.steps ?? []) : [];
+  const off = offered !== null && !offered.enabled;
+  const noModels = offered !== null && offered.enabled && !offered.models.length;
+  const usable = Boolean(offered?.enabled && offered.models.length);
+
+  const hasFiles = (event: React.DragEvent) => vision && event.dataTransfer.types.includes("Files");
 
   return (
     <Paper
+      ref={bar}
       component="section"
       elevation={6}
       aria-label={t("studio.prompt.title")}
+      onDragOver={(event) => {
+        if (!hasFiles(event)) return;
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+      }}
+      onDrop={(event) => {
+        setDragging(false);
+        if (!hasFiles(event)) return;
+        event.preventDefault();
+        attach(event.dataTransfer.files);
+      }}
       sx={{
         ...placement,
         width: "min(680px, calc(100% - 32px))",
         borderRadius: 3,
         border: 1,
-        borderColor: "divider",
+        borderColor: dragging ? "primary.main" : "divider",
+        transition: "border-color 150ms",
         px: 1.5,
         pt: 1,
         pb: 1.25,
@@ -366,8 +319,7 @@ export default function PromptOverlay({
               const value = event.target.value;
               if (value === ADD_MODEL) return navigate("/admin-ai?add=model");
               if (value === CHOOSE_MODELS) return navigate("/admin-ai?feature=studio");
-              setModelId(value);
-              store(MODEL_KEY, value);
+              assistant.chooseModel(value);
             }}
             inputProps={{ "aria-label": t("studio.prompt.model") }}
             renderValue={(id) => {
@@ -414,60 +366,39 @@ export default function PromptOverlay({
             )}
           </Select>
         )}
-        {messages.length > 0 && !running && (
+        {!panel && messages.length > 0 && (
+          <Tooltip title={open ? t("studio.prompt.hideConversation") : t("studio.prompt.showConversation")}>
+            <IconButton
+              size="small"
+              aria-label={open ? t("studio.prompt.hideConversation") : t("studio.prompt.showConversation")}
+              aria-expanded={open}
+              color={open ? "primary" : "default"}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              <ForumOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {open && !running && (
           <Tooltip title={t("studio.prompt.clear")}>
-            <IconButton size="small" aria-label={t("studio.prompt.clear")} onClick={() => void clear()}>
+            <IconButton size="small" aria-label={t("studio.prompt.clear")} onClick={() => void assistant.clear()}>
               <DeleteSweepOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         )}
         <Tooltip title={t("studio.prompt.minimize")}>
-          <IconButton size="small" aria-label={t("studio.prompt.minimize")} onClick={() => minimize(true)}>
+          <IconButton size="small" aria-label={t("studio.prompt.minimize")} onClick={() => assistant.minimize(true)}>
             <KeyboardArrowDownIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </Stack>
 
-      {(messages.length > 0 || running) && (
-        <Stack
-          spacing={1.25}
-          role="log"
-          aria-live="polite"
-          sx={{ mt: 1, maxHeight: "min(40vh, 320px)", overflowY: "auto", pr: 0.5 }}
-        >
-          {messages.map((message) =>
-            message.role === "user" ? (
-              <Box
-                key={message.id}
-                sx={{
-                  ...fadeIn,
-                  alignSelf: "flex-end",
-                  maxWidth: "85%",
-                  bgcolor: "action.selected",
-                  borderRadius: 2,
-                  px: 1.25,
-                  py: 0.75,
-                }}
-              >
-                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-                  {message.text}
-                </Typography>
-              </Box>
-            ) : (
-              <Answer key={message.id} message={message} />
-            ),
-          )}
-          {running && (
-            <Stack spacing={0.25}>
-              {live.map((step, index) => (
-                // oxlint-disable-next-line react/no-array-index-key
-                <StepLine key={index} step={step} />
-              ))}
-              <StepLine step={{ tool: "", title: t("studio.prompt.working"), summary: null, ok: true }} working />
-            </Stack>
-          )}
-          <div ref={threadEnd} />
-        </Stack>
+      {open && (messages.length > 0 || running) ? (
+        <Box sx={{ mt: 1 }}>
+          <AssistantConversation assistant={assistant} maxHeight="min(40vh, 320px)" />
+        </Box>
+      ) : (
+        !panel && <Status assistant={assistant} onOpen={() => setExpanded(true)} />
       )}
 
       {off || noModels ? (
@@ -486,51 +417,123 @@ export default function PromptOverlay({
           )}
         </Stack>
       ) : (
-        <Stack
-          direction="row"
-          alignItems="flex-end"
-          spacing={1}
-          sx={{ mt: 1, border: 1, borderColor: "divider", borderRadius: 2, pl: 1.5, pr: 0.5, py: 0.5 }}
-        >
-          <InputBase
-            multiline
-            maxRows={4}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            onKeyDown={(event) => {
-              // Enter sends, Shift+Enter starts a new line; not while an input method is composing.
-              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-                event.preventDefault();
-                void send();
-              }
-            }}
-            placeholder={t("studio.prompt.placeholder")}
-            disabled={!usable}
-            inputProps={{ "aria-label": t("studio.prompt.placeholder") }}
-            sx={{ flex: 1, fontSize: "0.9rem", py: 0.5 }}
-          />
-          {running ? (
-            <Tooltip title={t("studio.prompt.stop")}>
-              <IconButton size="small" color="primary" aria-label={t("studio.prompt.stop")} onClick={stop}>
-                <StopRoundedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title={t("studio.prompt.send")}>
-              <span>
-                <IconButton
-                  size="small"
-                  color="primary"
-                  aria-label={t("studio.prompt.send")}
-                  disabled={!usable || !text.trim() || sending}
-                  onClick={() => void send()}
-                >
-                  {sending ? <CircularProgress size={16} /> : <SendRoundedIcon fontSize="small" />}
-                </IconButton>
-              </span>
-            </Tooltip>
+        <Box sx={{ mt: 1, border: 1, borderColor: "divider", borderRadius: 2, pl: 1.5, pr: 0.5, py: 0.5 }}>
+          {attached.length > 0 && (
+            <Stack direction="row" spacing={0.75} sx={{ pt: 0.75, pb: 0.25, flexWrap: "wrap" }}>
+              {attached.map((each, index) => (
+                <Box key={each.key} sx={{ position: "relative", ...fadeIn }}>
+                  <PictureThumb
+                    source={{ url: each.url }}
+                    size={48}
+                    alt={t("studio.prompt.picture", { number: index + 1 })}
+                    dim={!each.picture || blocked}
+                  />
+                  {!each.picture && (
+                    <CircularProgress
+                      size={18}
+                      aria-label={t("studio.working")}
+                      sx={{ position: "absolute", top: 15, left: 15 }}
+                    />
+                  )}
+                  <IconButton
+                    size="small"
+                    aria-label={t("studio.prompt.removePicture", { number: index + 1 })}
+                    onClick={() => letGo((other) => other.key !== each.key)}
+                    sx={{
+                      position: "absolute",
+                      top: -8,
+                      right: -8,
+                      p: 0.25,
+                      bgcolor: "background.paper",
+                      border: 1,
+                      borderColor: "divider",
+                      "&:hover": { bgcolor: "background.paper" },
+                    }}
+                  >
+                    <CloseRoundedIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Box>
+              ))}
+            </Stack>
           )}
-        </Stack>
+          {blocked && (
+            <Typography variant="caption" sx={{ display: "block", color: "warning.main", pt: 0.5 }}>
+              {t("studio.prompt.noVision")}
+            </Typography>
+          )}
+          <Stack direction="row" alignItems="flex-end" spacing={1}>
+            {vision && (
+              <Tooltip title={t("studio.prompt.attach")}>
+                <span>
+                  <IconButton
+                    size="small"
+                    aria-label={t("studio.prompt.attach")}
+                    disabled={!usable || attached.length >= MAX_PICTURES}
+                    onClick={() => picker.current?.click()}
+                    sx={{ ml: -1 }}
+                  >
+                    <AddPhotoAlternateOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+            <input
+              ref={picker}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              onChange={(event) => {
+                attach(event.target.files ?? []);
+                event.target.value = "";
+              }}
+            />
+            <InputBase
+              multiline
+              maxRows={4}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              onPaste={(event) => {
+                const files = Array.from(event.clipboardData.files).filter((file) => file.type.startsWith("image/"));
+                if (!vision || !files.length) return;
+                event.preventDefault();
+                attach(files);
+              }}
+              onKeyDown={(event) => {
+                // Enter sends, Shift+Enter starts a new line; not while an input method is composing.
+                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  void send();
+                }
+              }}
+              placeholder={t("studio.prompt.placeholder")}
+              disabled={!usable}
+              inputProps={{ "aria-label": t("studio.prompt.placeholder") }}
+              sx={{ flex: 1, fontSize: "0.9rem", py: 0.5 }}
+            />
+            {running ? (
+              <Tooltip title={t("studio.prompt.stop")}>
+                <IconButton size="small" color="primary" aria-label={t("studio.prompt.stop")} onClick={assistant.stop}>
+                  <StopRoundedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <Tooltip title={t("studio.prompt.send")}>
+                <span>
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    aria-label={t("studio.prompt.send")}
+                    disabled={!usable || !text.trim() || sending || uploading || blocked}
+                    onClick={() => void send()}
+                  >
+                    {sending ? <CircularProgress size={16} /> : <SendRoundedIcon fontSize="small" />}
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+          </Stack>
+        </Box>
       )}
     </Paper>
   );

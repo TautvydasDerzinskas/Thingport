@@ -1,5 +1,6 @@
 import type { StudioCommandName } from "../../studio/commands";
 import type { EdgeTreatment } from "../../studio/document";
+import { DEFAULT_FONT, type StudioFontId } from "../../studio/text";
 import type { EdgePick, FacePick, PickRequest, Picked } from "./StudioViewport";
 
 // The tools that take more than a click: what each has been given so far (its fields and what's been picked in the
@@ -50,7 +51,21 @@ export type Operation =
     }
   | { kind: "scale"; target: string | null; factor: number }
   | { kind: "separate"; target: string | null }
-  | { kind: "sketch_face"; face: FacePick | null };
+  | { kind: "sketch_face"; face: FacePick | null }
+  | {
+      kind: "text";
+      text: string;
+      font: StudioFontId;
+      size: number;
+      height: number;
+      /** On one of the main planes, or on a body's face. */
+      on: "plane" | "face";
+      plane: "XY" | "XZ" | "YZ";
+      face: FacePick | null;
+      /** On a plane, a body of its own or joined to or cut from one; on a face, raised from it or cut into it. */
+      combine: "new" | "join" | "cut";
+      target: string | null;
+    };
 
 export type OperationKind = Operation["kind"];
 
@@ -104,6 +119,19 @@ export function startOperation(kind: OperationKind, on: string | null): Operatio
       return { kind, target: on };
     case "sketch_face":
       return { kind, face: null };
+    case "text":
+      return {
+        kind,
+        text: "",
+        font: DEFAULT_FONT,
+        size: 10,
+        height: 2,
+        on: "plane",
+        plane: "XY",
+        face: null,
+        combine: "new",
+        target: null,
+      };
   }
 }
 
@@ -183,6 +211,18 @@ export function commandOf(op: Operation): { name: StudioCommandName; args: Recor
       return op.target ? { name: "separate_parts", args: { feature_id: op.target } } : null;
     case "sketch_face":
       return op.face ? { name: "add_sketch", args: { face: op.face } } : null;
+    case "text": {
+      if (!op.text.trim()) return null;
+      const text = { text: op.text, font: op.font, size: op.size, height: op.height };
+      if (op.on === "face")
+        return op.face && op.target
+          ? { name: "add_text", args: { ...text, face: op.face, operation: op.combine, target_id: op.target } }
+          : null;
+      if (op.combine === "new") return { name: "add_text", args: { ...text, plane: op.plane } };
+      return op.target
+        ? { name: "add_text", args: { ...text, plane: op.plane, operation: op.combine, target_id: op.target } }
+        : null;
+    }
   }
 }
 
@@ -216,6 +256,9 @@ export function pickOf(op: Operation, own: string[]): PickRequest | null {
       return op.target ? null : { kind: "body", bodies: null, chosen: none };
     case "sketch_face":
       return { kind: "face", bodies: null, chosen: none };
+    case "text":
+      if (op.on === "face") return { kind: "face", bodies: null, chosen: { ...none, faces: op.face ? [op.face] : [] } };
+      return op.combine === "new" ? null : { kind: "body", bodies: null, chosen: none };
   }
 }
 
@@ -267,6 +310,9 @@ export function withPick(op: Operation, picked: Picked, own: string[]): Operatio
       return picked.kind === "body" ? { ...op, target: body } : op;
     case "sketch_face":
       return picked.kind === "face" ? { ...op, face: picked.face } : op;
+    case "text":
+      if (picked.kind === "face" && op.on === "face") return { ...op, face: picked.face, target: body };
+      return picked.kind === "body" && !onPreview ? { ...op, target: body } : op;
   }
 }
 

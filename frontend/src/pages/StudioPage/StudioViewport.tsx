@@ -16,12 +16,13 @@ import {
   inputsOf,
   isBody,
   sketchFrame,
+  shapeContours,
   shapeOutline,
   sketchPointToWorld,
   topLevel,
   type BodyFeature,
+  type OutlineShape,
   type SketchFeature,
-  type SketchShape,
   type StudioDocument,
   type Transform,
   type Vec2,
@@ -75,7 +76,7 @@ type Props = {
   /** What a selection box took in. */
   onBoxSelect: (ids: string[], additive: boolean) => void;
   onTransform: (id: string, transform: Transform) => void;
-  onShape: (sketchId: string, shape: SketchShape) => void;
+  onShape: (sketchId: string, shape: OutlineShape) => void;
   onContextMenu: (id: string, at: { top: number; left: number }) => void;
   /** The bodies that couldn't be made, by id, each time that changes. */
   onErrors: (errors: Record<string, string>) => void;
@@ -86,6 +87,9 @@ type Props = {
   onBusy: (busy: boolean) => void;
   /** Bodies a tool's preview tells apart, each in a colour of its own: the parts a body would separate into. */
   tinted?: readonly string[];
+  /** How much of the bottom of the view something covers, in px (Ask AI's bar): the view's middle, and fitting the
+   *  design into it, stay above that. */
+  bottomInset?: number;
 };
 
 const BED = 300;
@@ -185,6 +189,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     pointer: Pointer | null;
     hovered: string | null;
     render: () => void;
+    /** Sizes the picture to the view, and leaves out what the bottom inset covers. */
+    resize: () => void;
+    /** What the bottom inset takes from the view now, in px. */
+    inset: () => number;
     /** Moves the camera there, gliding unless motion is to be kept down. */
     moveCamera: (position: THREE.Vector3, target: THREE.Vector3) => void;
     /** Puts the camera where it's gliding to at once, so what's pressed on is where it's going to be. */
@@ -350,11 +358,18 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const chosenLayer = new THREE.Group();
     scene.add(bed, sketches, sketchGrid, preview, hoverLayer, chosenLayer);
 
+    // Kept to half the view, so a short one still shows something.
+    const inset = () => Math.min(latest.current.bottomInset ?? 0, container.clientHeight / 2);
     const resize = () => {
       const { clientWidth: width, clientHeight: height } = container;
       if (!width || !height) return;
       renderer.setSize(width, height);
-      camera.aspect = width / height;
+      // The camera sees a frame taller by what's covered, and the view shows the bottom of it: what it looks at sits in
+      // the middle of the part left uncovered.
+      const covered = inset();
+      camera.aspect = width / (height + covered);
+      if (covered) camera.setViewOffset(width, height + covered, 0, covered, width, height);
+      else camera.clearViewOffset();
       camera.updateProjectionMatrix();
       render();
     };
@@ -381,6 +396,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       pointer: null,
       hovered: null,
       render,
+      resize,
+      inset,
       moveCamera,
       settleCamera: () => {
         settle();
@@ -410,6 +427,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    stage.current?.resize();
+  }, [props.bottomInset]);
 
   // The cube's labels and colours follow the theme and the language.
   useEffect(() => {
@@ -554,18 +575,27 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const lit = sketch.id === activeSketch || props.selected.includes(sketch.id);
       const { n } = sketchFrame(sketch);
       for (const shape of sketch.shapes) {
-        const points = shapeOutline(shape).map((point) => {
-          const [x, y, z] = sketchPointToWorld(sketch, point);
-          // A hair in front of the plane, so the bed's lines don't cross it out.
-          return new THREE.Vector3(x + n[0] * 0.02, y + n[1] * 0.02, z + n[2] * 0.02);
-        });
-        const material = shape.hole
-          ? new THREE.LineDashedMaterial({ color: lit ? colors.accent : colors.sketch, dashSize: 1.5, gapSize: 1 })
-          : new THREE.LineBasicMaterial({ color: lit ? colors.accent : colors.sketch });
-        const loop = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points), material);
-        if (shape.hole) loop.computeLineDistances();
-        loop.userData.featureId = sketch.id;
-        s.sketches.add(loop);
+        let contours: Vec2[][];
+        try {
+          contours = shapeContours(shape);
+        } catch {
+          // A text whose font can't draw it: its extrude says why.
+          continue;
+        }
+        for (const contour of contours) {
+          const points = contour.map((point) => {
+            const [x, y, z] = sketchPointToWorld(sketch, point);
+            // A hair in front of the plane, so the bed's lines don't cross it out.
+            return new THREE.Vector3(x + n[0] * 0.02, y + n[1] * 0.02, z + n[2] * 0.02);
+          });
+          const material = shape.hole
+            ? new THREE.LineDashedMaterial({ color: lit ? colors.accent : colors.sketch, dashSize: 1.5, gapSize: 1 })
+            : new THREE.LineBasicMaterial({ color: lit ? colors.accent : colors.sketch });
+          const loop = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points), material);
+          if (shape.hole) loop.computeLineDistances();
+          loop.userData.featureId = sketch.id;
+          s.sketches.add(loop);
+        }
       }
     }
     s.render();
@@ -670,8 +700,13 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       if (bounds.isEmpty()) bounds.set(new THREE.Vector3(-60, -60, 0), new THREE.Vector3(60, 60, 30));
     }
     const sphere = bounds.getBoundingSphere(new THREE.Sphere());
-    const fov = THREE.MathUtils.degToRad(s.camera.fov);
-    const distance = Math.max(20, (sphere.radius / Math.sin(fov / 2)) * 1.15);
+    // Fitted into the part of the view left uncovered.
+    const height = s.renderer.domElement.clientHeight || 1;
+    const covered = s.inset();
+    const half = Math.atan(
+      Math.tan(THREE.MathUtils.degToRad(s.camera.fov) / 2) * ((height - covered) / (height + covered)),
+    );
+    const distance = Math.max(20, (sphere.radius / Math.sin(half)) * 1.15);
     s.camera.near = Math.max(0.1, distance / 1000);
     s.camera.far = distance * 100;
     s.camera.updateProjectionMatrix();
@@ -838,7 +873,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       ];
     };
 
-    const shapeOf = (drawing: Drawing, closing = false): SketchShape | null => {
+    const shapeOf = (drawing: Drawing, closing = false): OutlineShape | null => {
       if (drawing.tool === "polygon") {
         const points = closing || !drawing.hover ? drawing.points : [...drawing.points, drawing.hover];
         return points.length >= (closing ? 3 : 2) ? { type: "polygon", points } : null;
@@ -921,7 +956,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const rect = canvas.getBoundingClientRect();
       const pixel =
         (2 * s.camera.position.distanceTo(s.orbit.target) * Math.tan(THREE.MathUtils.degToRad(s.camera.fov) / 2)) /
-        rect.height;
+        (rect.height + s.inset());
       if (request.kind === "edge") {
         raycaster.params.Line = { threshold: pixel * 6 };
         const hit = raycaster.intersectObjects(

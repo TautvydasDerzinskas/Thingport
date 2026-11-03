@@ -1,4 +1,4 @@
-import { Router, type NextFunction, type Request, type Response } from "express";
+import express, { Router, type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { STUDIO_ENABLED } from "../config";
@@ -7,9 +7,11 @@ import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { listAiConnections } from "../services/aiConnectionService";
 import { getStudioAssistantPrefs } from "../services/settingsService";
+import { ASSET_ID } from "../studio/document.generated";
 import {
   assistantThread,
   clearAssistantThread,
+  MAX_PICTURES,
   startAssistantRun,
   stopAssistantRun,
 } from "../services/studioAssistant";
@@ -20,8 +22,10 @@ import {
   getStudioDesignVersion,
   listStudioDesigns,
   listStudioLibrary,
+  addStudioPicture,
   runStudioCommand,
   studioAssetPath,
+  studioPicturePath,
 } from "../services/studioService";
 
 // Studio, the CAD page. Every change to a design comes in through POST .../commands, the same commands its MCP tools
@@ -63,6 +67,7 @@ router.get(
           id: connection.id,
           model: connection.model,
           host,
+          vision: connection.vision,
           is_default: connection.id === prefs.defaultAiConnectionId,
         };
       }),
@@ -128,6 +133,30 @@ router.get(
   }),
 );
 
+// A picture for the design: one to ask the assistant about, or to trace. The body is the file itself.
+router.post(
+  "/studio/designs/:id/pictures",
+  ...studio,
+  express.raw({ type: "image/*", limit: "25mb" }),
+  asyncHandler(async (req, res) => {
+    if (!Buffer.isBuffer(req.body) || !req.body.length)
+      throw new HttpError(415, "Send the picture itself, as an image/* body", "studio_bad_picture");
+    res.status(201).json(await addStudioPicture(req.userId!, req.params.id, req.body));
+  }),
+);
+
+// A design's picture, as it was kept. Never changes.
+router.get(
+  "/studio/designs/:id/pictures/:pictureId",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    const file = await studioPicturePath(req.userId!, req.params.id, req.params.pictureId);
+    if (!file) throw new HttpError(404, "Picture not found");
+    res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+    res.type("image/png").sendFile(file);
+  }),
+);
+
 router.delete(
   "/studio/designs/:id",
   ...studio,
@@ -163,6 +192,8 @@ const promptSchema = z
     ai_connection_id: z.string().min(1).nullable().optional(),
     // What's selected in the view, by feature id, so "round this" has a "this".
     selected: z.array(z.string().min(1).max(100)).max(50).optional(),
+    // Pictures the design keeps (POST .../pictures), for an AI that sees them.
+    pictures: z.array(z.string().regex(ASSET_ID)).max(MAX_PICTURES).optional(),
   })
   .strict();
 
@@ -175,6 +206,7 @@ router.post(
       prompt: body.prompt,
       aiConnectionId: body.ai_connection_id ?? null,
       selected: body.selected,
+      pictures: body.pictures,
     });
     res.status(202).json({ run });
   }),

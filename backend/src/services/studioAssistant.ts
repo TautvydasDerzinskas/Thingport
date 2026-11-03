@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import sharp from "sharp";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { StudioMessage } from "@prisma/client";
@@ -8,11 +10,18 @@ import { WithImages, type McpToolContext, type McpToolDefinition } from "../mcp/
 import { HttpError } from "../utils/fileUtils";
 import { getAiConnection, resolveAiProvider } from "./aiConnectionService";
 import { limited, noSecretError } from "./aiProviderClient";
-import { toolChatTurn, type ChatMessage, type ToolCall, type ToolResult, type ToolSpec } from "./aiToolChat";
+import {
+  toolChatTurn,
+  type ChatImage,
+  type ChatMessage,
+  type ToolCall,
+  type ToolResult,
+  type ToolSpec,
+} from "./aiToolChat";
 import { LIMITS } from "../studio/document.generated";
 import { getPublicUrl, getStudioAssistantPrefs } from "./settingsService";
 import { STUDIO_GUIDE } from "./studioGuide";
-import { getStudioDesign } from "./studioService";
+import { getStudioDesign, studioPicturePath, type StudioPicture } from "./studioService";
 
 // Studio's own assistant: a person asks in the prompt on the page, and the AI an admin offers for it makes the change
 // with the design's MCP tools (mcp/studioTools.ts), the same commands as the toolbar, for that design only. Each step
@@ -28,6 +37,10 @@ const RUN_MS = 10 * 60_000;
 /** How much of the conversation a new prompt is sent with; less for the compact set's small models. */
 const HISTORY = 20;
 const COMPACT_HISTORY = 6;
+/** Pictures one prompt may carry. */
+export const MAX_PICTURES = 4;
+// What an AI is sent of a picture: about as much as it looks at (Claude's own advice), as a JPEG.
+const PICTURE_SEND_PX = 1568;
 
 const SYSTEM = `You are the assistant in Thingport Studio, a CAD page for designing 3D-printable parts. The person asks
 you to make or change the design open on their screen, and watches each step land as you take it.
@@ -57,9 +70,9 @@ const CORE = new Set([
   "studio_boolean",
 ]);
 const SEARCH_NOTE = `Only a few of your tools are loaded at first. Search for the rest by what they do: other shapes
-(cone, sphere, torus), sketches, extrude and revolve, press/pull, fillet, chamfer, hole, shell, split, separating
-parts, scaling, moving, editing, renaming and deleting features, undo, looking at the design, and finding a library
-model to import.`;
+(cone, sphere, torus), text, tracing a picture, sketches, extrude and revolve, press/pull, fillet, chamfer, hole,
+shell, split, separating parts, scaling, moving, editing, renaming and deleting features, undo, looking at the design,
+and finding a library model to import.`;
 
 // For small local models: the few tools most requests need, each said in a line, and the arguments that matter. Every
 // one is the same command as in full, so a person and the AI still change a design the same way.
@@ -98,6 +111,16 @@ const COMPACT: Record<string, { description: string; args: string[] }> = {
     description:
       "Makes one body of several: union joins them, subtract cuts tool_ids out of target_id, intersect keeps the overlap.",
     args: ["operation", "target_id", "tool_ids"],
+  },
+  studio_add_text: {
+    description:
+      "Adds 3D text: letters of a size in mm (a capital's height), standing height mm up from the bed (plane XY), centred on center.",
+    args: ["text", "size", "height", "plane", "center"],
+  },
+  studio_trace_picture: {
+    description:
+      "Traces a picture attached to the prompt, by its id, into a solid: its dark shapes (light, with invert) as an outline width mm wide, extruded height mm up from the bed (plane XY).",
+    args: ["picture_id", "width", "height", "invert", "plane"],
   },
   studio_hole: {
     description:
@@ -257,11 +280,34 @@ function runOut(run: Run) {
   };
 }
 
+const picturesOf = (message: StudioMessage) => (message.pictures as StudioPicture[] | null) ?? [];
+
+/** The pictures as the AI is told of them, by the ids trace_picture takes. */
+function pictureNote(pictures: StudioPicture[]): string {
+  return pictures.length
+    ? `Pictures attached, by id: ${pictures.map((each) => `${each.id} (${each.width} × ${each.height} px)`).join(", ")}. ` +
+        "studio_trace_picture turns a picture's shapes into a sketch outline to extrude, which is how a logo, a " +
+        "silhouette or a drawn outline comes out exact; for an object, build it from shapes and compare it with " +
+        "studio_view_design."
+    : "";
+}
+
+/** A picture as the AI is sent it: flattened on white, no bigger than it looks at. */
+async function chatImage(file: string): Promise<ChatImage> {
+  const data = await sharp(await fs.readFile(file))
+    .flatten({ background: "#ffffff" })
+    .resize(PICTURE_SEND_PX, PICTURE_SEND_PX, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+  return { data: data.toString("base64"), mimeType: "image/jpeg" };
+}
+
 function messageOut(message: StudioMessage) {
   return {
     id: message.id,
     role: message.role,
     text: message.text,
+    pictures: picturesOf(message),
     steps: (message.steps as AssistantStep[] | null) ?? [],
     outcome: message.outcome,
     error: message.error,
@@ -284,7 +330,8 @@ export async function assistantThread(userId: string, designId: string) {
 
 /** What a run ends with as the conversation's next prompts read it: its answer, and what it did. */
 function historyMessage(message: StudioMessage): ChatMessage | null {
-  if (message.role === "user") return { role: "user", text: message.text };
+  if (message.role === "user")
+    return { role: "user", text: [message.text, pictureNote(picturesOf(message))].filter(Boolean).join("\n\n") };
   const steps = (message.steps as AssistantStep[] | null) ?? [];
   const done = steps.filter((step) => step.ok).map((step) => step.summary ?? step.title);
   const ending =
@@ -342,11 +389,21 @@ async function runTool(
 
 class Stopped extends Error {}
 
+/** The pictures still kept, as the AI is sent them. */
+async function picturesFor(userId: string, designId: string, pictures: StudioPicture[]): Promise<ChatImage[]> {
+  const images: ChatImage[] = [];
+  for (const picture of pictures) {
+    const file = await studioPicturePath(userId, designId, picture.id);
+    if (file) images.push(await chatImage(file));
+  }
+  return images;
+}
+
 /** Starts the assistant on a design. Runs in the background; the page follows it with assistantThread. */
 export async function startAssistantRun(
   userId: string,
   designId: string,
-  input: { prompt: string; aiConnectionId?: string | null; selected?: string[] },
+  input: { prompt: string; aiConnectionId?: string | null; selected?: string[]; pictures?: string[] },
 ) {
   const prefs = await getStudioAssistantPrefs();
   if (!prefs.enabled)
@@ -367,6 +424,20 @@ export async function startAssistantRun(
         ? "compact"
         : "full";
   await getStudioDesign(userId, designId);
+  const pictureIds = [...new Set(input.pictures ?? [])];
+  if (pictureIds.length && !connection.vision)
+    throw new HttpError(
+      400,
+      "That AI doesn't see pictures. Pick one that does, or send it without them.",
+      "studio_assistant_no_vision",
+    );
+  const pictures: StudioPicture[] = [];
+  for (const id of pictureIds) {
+    const file = await studioPicturePath(userId, designId, id);
+    if (!file) throw new HttpError(400, "One of the pictures isn't this design's", "studio_picture_not_found");
+    const { width = 0, height = 0 } = await sharp(file).metadata();
+    pictures.push({ id, width, height });
+  }
   if (runs.get(designId)?.status === "running")
     throw new HttpError(409, "The assistant is already working on this design", "studio_assistant_busy");
   // Taken at once, before anything else is awaited, so a second prompt sent meanwhile finds it.
@@ -388,8 +459,10 @@ export async function startAssistantRun(
       orderBy: { createdAt: "desc" },
       take: mode === "compact" ? COMPACT_HISTORY : HISTORY,
     });
-    await prisma.studioMessage.create({ data: { designId, role: "user", text: input.prompt } });
-    void work(run, connectionId, mode, input, history.toReversed());
+    await prisma.studioMessage.create({
+      data: { designId, role: "user", text: input.prompt, ...(pictures.length ? { pictures } : {}) },
+    });
+    void work(run, connectionId, mode, { ...input, pictures }, history.toReversed());
   } catch (error) {
     runs.delete(designId);
     throw error;
@@ -401,7 +474,7 @@ async function work(
   run: Run,
   connectionId: string,
   mode: ToolMode,
-  input: { prompt: string; selected?: string[] },
+  input: { prompt: string; selected?: string[]; pictures: StudioPicture[] },
   history: StudioMessage[],
 ): Promise<void> {
   const settings = await resolveAiProvider(connectionId);
@@ -431,14 +504,30 @@ async function work(
     );
     const request = [
       input.prompt,
+      pictureNote(input.pictures),
       input.selected?.length ? `Selected in the view: ${input.selected.join(", ")}` : "",
       `The design now (studio_get_design):\n${mode === "compact" ? compactState(state.result.text) : state.result.text}`,
     ]
       .filter(Boolean)
       .join("\n\n");
+    const earlier = history.flatMap((message) => {
+      const said = historyMessage(message);
+      return said ? [{ message, said }] : [];
+    });
+    // The newest pictures go along again when this prompt has none, so "more like the picture" still has one to
+    // look at; older ones are only named.
+    const lastPictured = input.pictures.length
+      ? undefined
+      : earlier.findLast(({ message }) => message.role === "user" && picturesOf(message).length);
+    if (lastPictured?.said.role === "user")
+      lastPictured.said.images = await picturesFor(run.userId, run.designId, picturesOf(lastPictured.message));
     const messages: ChatMessage[] = [
-      ...history.flatMap((message) => historyMessage(message) ?? []),
-      { role: "user", text: request },
+      ...earlier.map(({ said }) => said),
+      {
+        role: "user",
+        text: request,
+        ...(input.pictures.length ? { images: await picturesFor(run.userId, run.designId, input.pictures) } : {}),
+      },
     ];
     for (;;) {
       stillGoing();

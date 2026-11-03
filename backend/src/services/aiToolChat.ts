@@ -28,10 +28,13 @@ export type ToolResult = {
   text: string;
   isError: boolean;
   /** Base64 PNGs, for AIs that see pictures. */
-  images: { data: string; mimeType: string }[];
+  images: ChatImage[];
 };
+/** A picture as an AI is sent it. */
+export type ChatImage = { data: string; mimeType: string };
 export type ChatMessage =
-  | { role: "user"; text: string }
+  /** `images` are the person's own pictures, sent with what they asked: only to an AI that sees them. */
+  | { role: "user"; text: string; images?: ChatImage[] }
   /** `raw` is the provider's own answer, replayed as it came: Claude's thinking has to go back unchanged. */
   | { role: "assistant"; text: string; calls: ToolCall[]; raw?: unknown }
   | { role: "tool"; results: ToolResult[] };
@@ -64,6 +67,9 @@ const ATTEMPTS = 3;
 
 /** The AI that can't use tools is told apart from any other bad request: the assistant needs them. */
 export const NO_TOOLS = "This AI can't use tools, which the Studio assistant needs. Pick another one.";
+/** An AI marked as seeing pictures that turned the person's own down: leaving them out would answer another question. */
+export const NO_PICTURES =
+  "This AI turned the pictures down. An admin can switch off Sees pictures for it in Administration > AI, or pick another AI.";
 
 // Connections whose provider turned pictures down in a tool result's follow-up, so later turns leave them out.
 const imagesRejected = new Set<string>();
@@ -76,12 +82,23 @@ export function toolChatTurn(settings: ProviderSettings, request: ToolChatReques
 
 type OpenAiMessage = Record<string, unknown>;
 
+const imagePart = (image: ChatImage) => ({
+  type: "image_url",
+  image_url: { url: `data:${image.mimeType};base64,${image.data}` },
+});
+
 /** The conversation as OpenAI-style chat messages. A tool message can only hold text, so pictures follow in a user
- *  message of their own. */
+ *  message of their own. `withImages` is for the tools' pictures; the person's own always go. */
 function openAiMessages(request: ToolChatRequest, withImages: boolean): OpenAiMessage[] {
   const out: OpenAiMessage[] = [{ role: "system", content: request.system }];
   for (const message of request.messages) {
-    if (message.role === "user") out.push({ role: "user", content: message.text });
+    if (message.role === "user")
+      out.push({
+        role: "user",
+        content: message.images?.length
+          ? [...message.images.map(imagePart), { type: "text", text: message.text }]
+          : message.text,
+      });
     else if (message.role === "assistant")
       out.push({
         role: "assistant",
@@ -102,13 +119,7 @@ function openAiMessages(request: ToolChatRequest, withImages: boolean): OpenAiMe
       if (images.length)
         out.push({
           role: "user",
-          content: [
-            { type: "text", text: "The pictures the tool took:" },
-            ...images.map((image) => ({
-              type: "image_url",
-              image_url: { url: `data:${image.mimeType};base64,${image.data}` },
-            })),
-          ],
+          content: [{ type: "text", text: "The pictures the tool took:" }, ...images.map(imagePart)],
         });
     }
   }
@@ -186,6 +197,11 @@ async function openAiToolTurn(settings: ProviderSettings, request: ToolChatReque
           attempt--;
           continue;
         }
+        if (
+          /image/i.test(problem) &&
+          request.messages.some((message) => message.role === "user" && message.images?.length)
+        )
+          throw new Error(NO_PICTURES);
         if (withImages && /image/i.test(problem)) {
           withImages = false;
           imagesRejected.add(connection);

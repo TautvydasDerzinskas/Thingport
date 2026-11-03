@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
-import { topLevel } from "../studio/document.generated";
+import { topLevel, type Feature } from "../studio/document.generated";
+import { traceSummary } from "../studio/trace.generated";
 import {
   createStudioDesign,
   deleteStudioDesign,
@@ -37,6 +38,20 @@ function brief(ctx: McpToolContext, design: StudioDesignOut) {
     can_redo: design.can_redo,
     url: designUrl(ctx, design.id),
   };
+}
+
+/** The features as an assistant reads them: a traced picture's outline, thousands of points packed, said in a line. */
+function briefFeatures(features: Feature[]) {
+  return features.map((feature) =>
+    feature.type === "sketch" && feature.shapes.some((shape) => shape.type === "trace")
+      ? {
+          ...feature,
+          shapes: feature.shapes.map((shape) =>
+            shape.type === "trace" ? { ...shape, outline: traceSummary(shape.outline) } : shape,
+          ),
+        }
+      : feature,
+  );
 }
 
 const listDesigns: McpToolDefinition = {
@@ -87,7 +102,7 @@ const getDesign: McpToolDefinition = {
       ...brief(ctx, design),
       units: "mm",
       up: "+Z",
-      features: design.document.features,
+      features: briefFeatures(design.document.features),
       top_level: topLevel(design.document).map((feature) => feature.id),
       bodies:
         inspected.status === "ok"

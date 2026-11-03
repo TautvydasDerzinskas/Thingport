@@ -63,6 +63,7 @@ import {
 import { useResolvedTheme } from "./hooks/useResolvedTheme";
 import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./hooks/useAccentColor";
 import { resetCardPreview } from "./hooks/useCardPreview";
+import { resetStudioPromptLayout } from "./hooks/useStudioPromptLayout";
 import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
 import { resetCustomWidgets } from "./hooks/useCustomWidgets";
 import { resetTools } from "./hooks/useTools";
@@ -443,6 +444,7 @@ export default function App() {
   // The token's lifetime is read from the token itself.
   const handleLogin = (tok: string, _expiresIn: number, loggedInUser: AuthUser) => {
     resetCardPreview();
+    resetStudioPromptLayout();
     resetHoverSlideshowEnabled();
     resetCustomWidgets();
     resetTools();

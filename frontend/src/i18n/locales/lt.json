@@ -1815,7 +1815,9 @@
           "modelsNeedKey": "Įveskite API raktą, kad pamatytumėte, kuriuos modelius jis gali naudoti.",
           "effortClaude": "Pastangos",
           "effortClaudeHint": "Kiek Claude mąsto prieš atsakydamas. Žemesnis lygis greitesnis ir pigesnis, o šioms užduotims retai reikia daugiau nei „Žemas“.",
-          "effortClaudeDefault": "Modelio numatytasis (nieko nesiųsti)"
+          "effortClaudeDefault": "Modelio numatytasis (nieko nesiųsti)",
+          "vision": "Mato paveikslėlius",
+          "visionHelp": "Ar šis modelis priima paveikslėlius užklausoje. Studio asistentas siūlo pridėti paveikslėlių tik tokiam DI. Naujas DI pradeda pagal tai, ką rodo jo modelio pavadinimas (Claude, GPT-4o ir naujesni, Gemini, Qwen-VL, LLaVA, Gemma 3…): pakeiskite, kad atitiktų modelį."
         }
       },
       "aiFeatures": {
@@ -2681,6 +2683,13 @@
         "light": "Šviesiai pilka (be atspalvio)",
         "failed": "Nepavyko išsaugoti atvaizdo spalvos.",
         "help": "Spalva, kuria piešiami sugeneruoti 3D atvaizdai ir 3D peržiūra. Pasirinkus akcento spalvą, ji pasikeičia kartu; čia galite ją pakeisti atskirai."
+      },
+      "studioPrompt": {
+        "heading": "Studio asistentas",
+        "help": "Kur Studio „Klausti DI“ rodo pokalbį. Juosta: po vaizdu, viena eilutė, kol DI dirba, o visa kita – kai ją atidarote. Šoninis skydelis: šalia vaizdo, kad niekas neuždengtų modelio.",
+        "bar": "Juosta",
+        "panel": "Šoninis skydelis",
+        "failed": "Nepavyko išsaugoti, kur rodomas Studio asistentas."
       }
     },
     "configuration": {
@@ -3295,7 +3304,9 @@
       "shapes": {
         "rectangle": "Stačiakampis",
         "circle": "Apskritimas",
-        "polygon": "Daugiakampis"
+        "polygon": "Daugiakampis",
+        "text": "Tekstas",
+        "trace": "Apvestas paveikslėlis"
       },
       "planes": {
         "XY": "Viršus",
@@ -3407,7 +3418,7 @@
       "prompt": {
         "title": "Klausti DI",
         "open": "Atverti „Klausti DI“",
-        "help": "Aprašykite detalę arba atidaryto projekto pakeitimą, ir DI jį sukurs žingsnis po žingsnio tais pačiais įrankiais kaip įrankių juosta. Matysite kiekvieną žingsnį, o „Atšaukti“ juos atšaukia po vieną. Kuriuos DI siūlyti, renkasi administratorius.",
+        "help": "Aprašykite detalę arba atidaryto projekto pakeitimą, ir DI jį sukurs žingsnis po žingsnio tais pačiais įrankiais kaip įrankių juosta. Matysite kiekvieną žingsnį, o „Atšaukti“ juos atšaukia po vieną. Kuriuos DI siūlyti, renkasi administratorius. DI, kuris mato paveikslėlius, priima iki 4: nuotrauką ar brėžinį, pagal kurį kurti, arba logotipą, kurį apvesti.",
         "model": "DI modelis",
         "addModel": "Pridėti DI modelį",
         "noModels": "Studijai dar nesiūlomas joks DI.",
@@ -3427,7 +3438,14 @@
         "steps_other": "{{count}} žingsnių",
         "stopped": "Sustabdyta.",
         "limit": "Sustabdyta po {{count}} žingsnių.",
-        "failed": "Nepavyko užbaigti: {{error}}"
+        "failed": "Nepavyko užbaigti: {{error}}",
+        "showConversation": "Rodyti pokalbį",
+        "hideConversation": "Slėpti pokalbį",
+        "live": "Žingsnis {{number}}: {{step}}",
+        "attach": "Pridėti paveikslėlių",
+        "picture": "Paveikslėlis {{number}}",
+        "removePicture": "Pašalinti paveikslėlį {{number}}",
+        "noVision": "Šis DI nemato paveikslėlių. Pasirinkite tokį, kuris mato, arba juos pašalinkite."
       },
       "panels": {
         "label": "Skydeliai",
@@ -3573,6 +3591,19 @@
           "open_one": "{{count}} turi tarpų: ją galima perkelti ir eksportuoti, bet ne sujungti",
           "open_few": "{{count}} turi tarpų: jas galima perkelti ir eksportuoti, bet ne sujungti",
           "open_other": "{{count}} turi tarpų: jas galima perkelti ir eksportuoti, bet ne sujungti"
+        },
+        "text": {
+          "title": "Tekstas",
+          "help": "Paverčia žodžius kietu kūnu: iškiliomis raidėmis plokštumoje arba iškiliai ar įgilintai ant plokščio kūno paviršiaus. Raidžių aukštis – didžiosios raidės aukštis; 6 mm ar daugiau gerai atsispausdina. Žodžius, šriftą ir dydį vėliau galima keisti jo eskize.",
+          "on": "Kur",
+          "onPlane": "Plokštumoje",
+          "onFace": "Ant paviršiaus",
+          "style": "Stilius",
+          "raised": "Iškilios",
+          "engraved": "Įgilintos",
+          "height": "Aukštis",
+          "depth": "Gylis",
+          "pick": "Spustelėkite plokščią paviršių, ant kurio rašyti"
         }
       },
       "imported": {
@@ -3580,6 +3611,49 @@
         "parts_few": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
         "parts_other": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
         "separate": "Atskirti"
+      },
+      "text": {
+        "words": "Tekstas",
+        "font": "Šriftas",
+        "size": "Raidžių aukštis",
+        "spacing": "Tarpai tarp raidžių",
+        "align": "Lygiuoti",
+        "aligns": {
+          "left": "Kairėje",
+          "center": "Centre",
+          "right": "Dešinėje"
+        },
+        "placeholder": "Tekstas",
+        "newLine": "Shift+Enter pradeda naują eilutę",
+        "add": "Pridėti tekstą"
+      },
+      "trace": {
+        "title": "Apvesti paveikslėlį",
+        "help": "Paverčia paveikslėlio figūras kontūru, iš kurio daromas kietas kūnas: logotipą, siluetą, užrašą, piešinį. Apvedamos tamsios figūros šviesiame fone (Invertuoti – šviesios tamsiame; permatoma laikoma šviesia), o skylės lieka skylėmis. Geriausiai apvedamas švarus, kontrastingas paveikslėlis.",
+        "picture": "Paveikslėlis",
+        "drop": "Numeskite paveikslėlį čia arba įklijuokite",
+        "choose": "Pasirinkti paveikslėlį",
+        "another": "Kitas paveikslėlis",
+        "resultEmpty": "Čia matysite apvestą kontūrą",
+        "threshold": "Slenkstis",
+        "auto": "Rasti",
+        "invert": "Invertuoti",
+        "detail": "Detalumas",
+        "details": {
+          "low": "Mažas",
+          "medium": "Vidutinis",
+          "high": "Didelis"
+        },
+        "found_one": "{{count}} figūra",
+        "found_few": "{{count}} figūros",
+        "found_other": "{{count}} figūrų",
+        "holes_one": "{{count}} skylė",
+        "holes_few": "{{count}} skylės",
+        "holes_other": "{{count}} skylių",
+        "make": "Sukurti",
+        "solid": "Kūną",
+        "sketch": "Tik eskizą",
+        "ok": "Apvesti"
       }
     }
   },

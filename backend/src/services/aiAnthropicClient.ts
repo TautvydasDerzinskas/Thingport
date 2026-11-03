@@ -281,7 +281,26 @@ const MIN_TURN_MS = 120_000;
 /** The conversation as Claude's messages: its own answers as they came, tool results with their pictures. */
 function claudeMessages(messages: ChatMessage[]): Anthropic.Beta.BetaMessageParam[] {
   return messages.flatMap((message): Anthropic.Beta.BetaMessageParam[] => {
-    if (message.role === "user") return [{ role: "user", content: message.text }];
+    if (message.role === "user")
+      return [
+        {
+          role: "user",
+          // Pictures first: Claude reads a picture best before the words about it.
+          content: message.images?.length
+            ? [
+                ...message.images.map((image) => ({
+                  type: "image" as const,
+                  source: {
+                    type: "base64" as const,
+                    media_type: image.mimeType as "image/png" | "image/jpeg" | "image/gif" | "image/webp",
+                    data: image.data,
+                  },
+                })),
+                { type: "text" as const, text: message.text },
+              ]
+            : message.text,
+        },
+      ];
     if (message.role === "assistant") {
       if (message.raw) return [{ role: "assistant", content: message.raw as Anthropic.Beta.BetaContentBlockParam[] }];
       const blocks: Anthropic.Beta.BetaContentBlockParam[] = [
