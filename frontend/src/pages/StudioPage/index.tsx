@@ -43,6 +43,7 @@ import RenameDialog from "./RenameDialog";
 import StudioToolbar, { type BooleanKind, type Primitive, type StudioPanel } from "./StudioToolbar";
 import StudioViewport, { type SketchTool, type StudioMode, type StudioViewportHandle } from "./StudioViewport";
 import { BoxIcon, ExtrudeIcon } from "./studioIcons";
+import { openModelAsDesign } from "./openModel";
 import { useStudioDesign } from "./useStudioDesign";
 
 // Studio: a small parametric CAD. Everything that changes a design here is a command (frontend/src/studio/commands.ts)
@@ -255,17 +256,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       return true;
     }
     try {
-      const created = await studioApi.create(model.title.slice(0, 120) || t("studio.design.untitled"));
-      try {
-        await studioApi.run(created.id, "import_model", { model_id: model.id, file_id: fileId });
-      } catch (error) {
-        // A design that couldn't take the model isn't left behind, empty.
-        await studioApi.remove(created.id).catch(() => undefined);
-        throw error;
-      }
+      const created = await openModelAsDesign(model, fileId, t("studio.design.untitled"));
       setNoDesigns(false);
       setDesignsOpen(false);
-      setSearchParams({ design: created.id });
+      setSearchParams({ design: created });
       return true;
     } catch (error) {
       showError(error);

@@ -4156,6 +4156,7 @@
         "images": "peržiūros nuotraukos"
       },
       "openInSlicer": "Atverti su {{slicer}}",
+      "openInStudio": "Atidaryti Studijoje",
       "openNormalizedInSlicer": "Atverti normalizuotą su {{slicer}}",
       "normalizedInfo": "MakerWorld failai yra Bambu Studio projektai, kuriuos {{slicer}} dažnai atveria be spalvų ar spausdinimo nustatymų. Ši parinktis atveria konvertuotą kopiją, kurioje išlieka nudažytos spalvos, gijų spalvos, plokštės ir autoriaus nustatymai (sienelės, sluoksnio aukštis, užpildas, atramos). Atkreipkite dėmesį: kelių dalių objektai gali būti sujungti į vieną, atskirų objektų nustatymai ir spalvų keitimai tarp sluoksnių pašalinami, o spausdintuvo profilį pasirenkate patys. Saugomas failas nekeičiamas.",
       "normalizePreparing": "Ruošiamas normalizuotas failas…",

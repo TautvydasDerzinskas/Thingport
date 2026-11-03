@@ -22,6 +22,9 @@ import PrintIcon from "@mui/icons-material/Print";
 import type { Print } from "../../api/prints";
 import { aiCategorizationApi } from "../../api/aiCategorization";
 import { UnauthorizedError } from "../../api/client";
+import { MODEL_EXTS } from "../../constants/fileTypes";
+import { useStudioEnabled } from "../../hooks/useStudioEnabled";
+import { openModelAsDesign } from "../StudioPage/openModel";
 import { useToast } from "../../components/ToastProvider";
 import type { AuthUser } from "../../api/auth";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
@@ -105,6 +108,30 @@ export default function ModelSidePanel({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const selectedFile = files.find((file) => file.key === selectedKey) ?? files[0] ?? null;
   const normalizedTarget = normalizedTargetFor(selectedFile);
+
+  // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
+  const studioEnabled = useStudioEnabled() === true;
+  const [openingInStudio, setOpeningInStudio] = useState(false);
+  const studioPlate =
+    studioEnabled && selectedFile?.plate && MODEL_EXTS.has(selectedFile.filename.split(".").pop()?.toLowerCase() ?? "")
+      ? selectedFile.plate
+      : null;
+  const openInStudio = async () => {
+    if (!studioPlate) return;
+    setOpeningInStudio(true);
+    try {
+      const design = await openModelAsDesign(
+        { id: print.id, title: print.title || print.name },
+        studioPlate.id,
+        t("app:studio.design.untitled"),
+      );
+      navigate(`/studio?design=${encodeURIComponent(design)}`);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else showToast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
+      setOpeningInStudio(false);
+    }
+  };
   const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
   // Opened from the button below rather than a menu, so there is no menu to close.
   const customize = useCustomize(print, () => {}, onUnauthorized);
@@ -355,6 +382,8 @@ export default function ModelSidePanel({
             zipCount={files.filter((file) => file.plate).length}
             onDownloadZip={() => void downloadAllZip()}
             onCustomize={customize.available ? customize.start : undefined}
+            onOpenInStudio={studioPlate ? () => void openInStudio() : undefined}
+            openingInStudio={openingInStudio}
           />
         )}
         {slicerOption && normalizedTarget && (

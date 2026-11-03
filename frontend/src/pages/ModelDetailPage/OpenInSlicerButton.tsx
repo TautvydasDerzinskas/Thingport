@@ -12,6 +12,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import DesignServicesOutlinedIcon from "@mui/icons-material/DesignServicesOutlined";
 import DownloadIcon from "@mui/icons-material/Download";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
 import TuneIcon from "@mui/icons-material/Tune";
@@ -34,6 +35,9 @@ type Props = {
   onDownloadZip: () => void;
   /** Set for a model that came with its generator script, which then takes the main action. */
   onCustomize?: () => void;
+  /** Set when the file can open in Studio as a new design. */
+  onOpenInStudio?: () => void;
+  openingInStudio?: boolean;
 };
 
 /** A slicer's logo on the white tile it's drawn for, so the dark parts stay visible in dark mode. */
@@ -75,6 +79,8 @@ export default function OpenInSlicerButton({
   zipCount,
   onDownloadZip,
   onCustomize,
+  onOpenInStudio,
+  openingInStudio,
 }: Props) {
   const { t } = useTranslation(["models"]);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -87,7 +93,7 @@ export default function OpenInSlicerButton({
   const offersSlicers = canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
   // Likewise the download: in the menu unless it is the main button.
   const offersDownload = customizes || opensSlicer;
-  const hasMenu = offersSlicers || offersDownload || zipCount > 1;
+  const hasMenu = offersSlicers || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
   const close = () => setAnchor(null);
   const downloadIcon = downloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon fontSize="small" />;
 
@@ -165,7 +171,25 @@ export default function OpenInSlicerButton({
               <ListItemText primaryTypographyProps={{ variant: "body2" }}>{option.label}</ListItemText>
             </MenuItem>
           ))}
-        {offersSlicers && <Divider />}
+        {onOpenInStudio && (
+          <MenuItem
+            disabled={openingInStudio}
+            onClick={() => {
+              onOpenInStudio();
+              close();
+            }}
+          >
+            <ListItemIcon>
+              {openingInStudio ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <DesignServicesOutlinedIcon fontSize="small" />
+              )}
+            </ListItemIcon>
+            <ListItemText primaryTypographyProps={{ variant: "body2" }}>{t("models:detail.openInStudio")}</ListItemText>
+          </MenuItem>
+        )}
+        {(offersSlicers || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
         {offersDownload && (
           <MenuItem
             disabled={downloading}

@@ -4066,6 +4066,7 @@
         "images": "imágenes de vista previa"
       },
       "openInSlicer": "Abrir en {{slicer}}",
+      "openInStudio": "Abrir en Estudio",
       "openNormalizedInSlicer": "Abrir versión normalizada en {{slicer}}",
       "normalizedInfo": "Los archivos de MakerWorld son proyectos de Bambu Studio, que {{slicer}} a menudo abre sin sus colores ni sus ajustes de impresión. Esta opción abre una copia convertida que conserva los colores pintados, los colores del filamento, las placas y los ajustes del diseñador (paredes, altura de capa, relleno, soportes). Atención: los objetos con varias piezas pueden fusionarse en uno, se pierden los ajustes específicos por objeto y los cambios de color por capa, y debes elegir tu propio perfil de impresora. El archivo guardado no se modifica.",
       "normalizePreparing": "Preparando el archivo normalizado…",

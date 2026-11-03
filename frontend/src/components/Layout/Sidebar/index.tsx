@@ -402,26 +402,6 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
             </ListItemButton>
           )}
 
-          {collapsed ? (
-            <CollapsedNavIcon
-              icon={<DownloadIcon fontSize="small" />}
-              label={t("sidebar.downloads")}
-              selected={onDownload}
-              onClick={() => navigate("/downloads")}
-            />
-          ) : (
-            <ListItemButton
-              selected={onDownload}
-              onClick={() => navigate("/downloads")}
-              sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onDownload) }}
-            >
-              <ListItemIcon sx={{ minWidth: 30 }}>
-                <DownloadIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={t("sidebar.downloads")} primaryTypographyProps={{ variant: "body2" }} />
-            </ListItemButton>
-          )}
-
           {showTools &&
             (collapsed ? (
               <CollapsedNavIcon
@@ -463,6 +443,26 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
                 <ListItemText primary={t("sidebar.studio")} primaryTypographyProps={{ variant: "body2" }} />
               </ListItemButton>
             ))}
+
+          {collapsed ? (
+            <CollapsedNavIcon
+              icon={<DownloadIcon fontSize="small" />}
+              label={t("sidebar.downloads")}
+              selected={onDownload}
+              onClick={() => navigate("/downloads")}
+            />
+          ) : (
+            <ListItemButton
+              selected={onDownload}
+              onClick={() => navigate("/downloads")}
+              sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onDownload) }}
+            >
+              <ListItemIcon sx={{ minWidth: 30 }}>
+                <DownloadIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary={t("sidebar.downloads")} primaryTypographyProps={{ variant: "body2" }} />
+            </ListItemButton>
+          )}
 
           {/* Bookmarked tags + collections, interleaved in the user's own manual order -- only
               once any exist, so an empty section never shows just a bare divider with nothing

@@ -4026,6 +4026,7 @@
         "images": "preview images"
       },
       "openInSlicer": "Open in {{slicer}}",
+      "openInStudio": "Open in Studio",
       "openNormalizedInSlicer": "Open normalized in {{slicer}}",
       "normalizedInfo": "MakerWorld files are Bambu Studio projects, which {{slicer}} often opens without their colors or print settings. This opens a converted copy that keeps painted colors, filament colors, plates and the designer's settings (walls, layer height, infill, supports). Heads up: multi-part objects may be merged into one, per-object overrides and layer color changes are dropped, and you pick your own printer profile. The stored file isn't changed.",
       "normalizePreparing": "Preparing normalized file…",
