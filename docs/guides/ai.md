@@ -4,7 +4,8 @@ Thingport can use an AI model to sort models into your categories and to clean u
 are optional and off until an admin adds a model. Everything else in Thingport works without them.
 
 The model can run on your own hardware, with [Ollama](https://ollama.com), LM Studio or vLLM, so nothing leaves your
-network. A cloud API such as OpenAI, OpenRouter or Google Gemini works too.
+network. A cloud API such as OpenAI, OpenRouter or Google Gemini works too, and so does Anthropic's Claude, through its
+own API.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/20_admin_ai.png">
@@ -63,7 +64,8 @@ models with nothing new since their last check.
 
 ## Set up an AI model
 
-Admins add models under **Administration → AI → Models → Add AI model**.
+Admins add models under **Administration → AI → Models → Add AI model**. Pick its **Type** first: **OpenAI-compatible**
+for Ollama, LM Studio, OpenAI and the rest, or **Claude** for Anthropic's models.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/37_ai_model.png">
@@ -81,6 +83,23 @@ Admins add models under **Administration → AI → Models → Add AI model**.
 
 **Test connection** asks the model to categorize a calibration cube, and saving tests it too, so a wrong URL, key or
 model name shows up straight away.
+
+### Claude
+
+With **Claude** picked, the API base URL is filled in (`https://api.anthropic.com`): change it only to reach Claude
+through a proxy. An **API key** is required; create one at [console.anthropic.com](https://console.anthropic.com) under
+**API keys**. Once it's typed in, the models it may use are listed, such as `claude-haiku-5-5`, `claude-sonnet-5-5`
+and `claude-opus-5-5`.
+
+- **Effort** takes the place of reasoning effort: how much Claude thinks before it answers. Current Claude models always
+  think a little, so there's no **None**. These tasks rarely need more than **Low**, which is also the fastest and
+  cheapest.
+- Claude bills each request by the words it reads and writes. Categorizing a whole library sends every model's title,
+  description and tags, so a large run costs more than a few models do. `claude-haiku-5-5` is the cheap choice for
+  categorization; a larger model writes better descriptions.
+- If Claude Opus 5.5, Sonnet 5.5 or Fable 5.1 declines to answer, which can happen with something harmless that looks
+  like a weapon, Anthropic answers with another model in the same request, billed as that model. A request no model
+  answers fails with **Claude declined to answer**.
 
 | Provider      | API base URL                                               | API key |
 | ------------- | ---------------------------------------------------------- | ------- |
@@ -111,8 +130,8 @@ descriptions use a bigger one.
   suggestions worth reviewing. Bigger ones are more reliable, and better at writing descriptions.
 - Small models are often sure of themselves even when they're wrong, so start with **Suggest for review**. Switch to
   **Apply automatically** once you trust the model's picks, and keep the confidence threshold high.
-- **Send the first preview image** only helps with a model that can see images, such as `qwen2.5vl` or `llava`, or most
-  cloud models.
+- **Send the first preview image** only helps with a model that can see images, such as `qwen2.5vl` or `llava`, Claude, or
+  most other cloud models.
 
 ## Turn the features on
 

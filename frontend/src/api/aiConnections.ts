@@ -3,12 +3,20 @@ import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
 import { invalidateAiCategorizationStatus } from "./aiCategorization";
 import { invalidateAiDescriptionStatus } from "./aiDescriptions";
 
+/** How Thingport talks to an AI: the OpenAI-style API most providers and local servers offer, or Claude's own. */
+export const AI_KINDS = ["openai", "anthropic"] as const;
+export type AiKind = (typeof AI_KINDS)[number];
+
+/** Where Claude answers unless it's reached through a proxy. */
+export const CLAUDE_BASE_URL = "https://api.anthropic.com";
+
 /** What a connection may send as reasoning_effort; null sends nothing. */
 export const REASONING_EFFORTS = ["none", "low", "medium", "high"] as const;
 export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 
 export type AiConnection = {
   id: string;
+  kind: AiKind;
   base_url: string;
   model: string;
   has_api_key: boolean;
@@ -20,6 +28,7 @@ export type AiConnection = {
 
 /** api_key: omitted keeps the saved one, null or "" removes it. */
 export type AiConnectionInput = {
+  kind: AiKind;
   base_url: string;
   model: string;
   api_key?: string | null;
@@ -68,6 +77,6 @@ export const aiConnectionsApi = {
   /** `id` fills in what the form leaves out from that saved AI, such as its key. */
   test: (payload: Partial<AiConnectionInput> & { id?: string }): Promise<AiConnectionTest> =>
     request("/settings/ai-connections/test", "POST", payload),
-  models: (payload: { id?: string; base_url?: string; api_key?: string | null }): Promise<AiModelList> =>
+  models: (payload: { id?: string; kind?: AiKind; base_url?: string; api_key?: string | null }): Promise<AiModelList> =>
     request("/settings/ai-connections/models", "POST", payload),
 };

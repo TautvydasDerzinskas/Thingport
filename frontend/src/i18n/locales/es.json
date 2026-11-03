@@ -1734,7 +1734,7 @@
         "heading": "IA",
         "connection": {
           "heading": "Modelos",
-          "subtitle": "Servicios compatibles con OpenAI que usan las funciones de IA de Thingport.",
+          "subtitle": "Las IA que usan las funciones de Thingport: servicios compatibles con OpenAI o Claude.",
           "gridHint": "Haz clic en una IA para hacerla predeterminada. Haz doble clic para editarla o probarla, o clic derecho para ver más opciones.",
           "add": "Añadir modelo de IA",
           "addTitle": "Añadir modelo de IA",
@@ -1779,7 +1779,18 @@
           "testFailed": "La prueba de conexión ha fallado.",
           "save": "Guardar",
           "saving": "Comprobando la conexión…",
-          "failed": "No se pudo cargar ni guardar la IA."
+          "failed": "No se pudo cargar ni guardar la IA.",
+          "kind": "Tipo",
+          "kinds": {
+            "openai": "Compatible con OpenAI",
+            "anthropic": "Claude"
+          },
+          "baseUrlHintClaude": "Déjala así, salvo que llegues a Claude a través de un proxy.",
+          "keyRequiredClaude": "Obligatoria: una clave de API de Anthropic, de console.anthropic.com, en API keys.",
+          "modelsNeedKey": "Escribe la clave de API para ver los modelos que puede usar.",
+          "effortClaude": "Esfuerzo",
+          "effortClaudeHint": "Cuánto piensa Claude antes de responder. Menos es más rápido y barato, y estas tareas rara vez necesitan más que Bajo.",
+          "effortClaudeDefault": "Predeterminado del modelo (no enviar nada)"
         }
       },
       "aiFeatures": {

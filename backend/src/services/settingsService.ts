@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { AiProviderKind, Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { FLARESOLVERR_REQUIRE_HTTPS, FLARESOLVERR_URL, PUBLIC_URL } from "../config";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "./meshQuality";
@@ -412,10 +412,12 @@ export const DEFAULT_AI_CATEGORIZATION_PREFS: AiCategorizationPrefs = {
 };
 
 /** Ollama, LM Studio, vLLM and OpenAI serve the API under /v1, so a bare origin gets it added. Any other path is
- * kept, for providers like OpenRouter (/api/v1) or Gemini (/v1beta/openai). */
-export function normalizeAiBaseUrl(value: string | null | undefined): string | null {
+ * kept, for providers like OpenRouter (/api/v1) or Gemini (/v1beta/openai). Claude's SDK adds /v1 itself, so its
+ * URL is kept without one. */
+export function normalizeAiBaseUrl(value: string | null | undefined, kind: AiProviderKind = "openai"): string | null {
   const trimmed = (value ?? "").trim().replace(/\/+$/, "");
   if (!trimmed) return null;
+  if (kind === "anthropic") return trimmed.replace(/\/v1$/, "");
   try {
     const url = new URL(trimmed);
     if (url.pathname === "/" && !url.search && !url.hash) return `${trimmed}/v1`;
