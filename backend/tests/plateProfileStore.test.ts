@@ -92,6 +92,26 @@ describe("the 3MF profile of a plate", () => {
     expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2, plate_stats: [] } });
   });
 
+  it("re-reads a plate whose file changed since the profile was stored", async () => {
+    const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
+    expect(await stored(plateId)).toMatchObject({ profileMeta: { file: { size: expect.any(Number) } } });
+    const filePath = resolvePlateFilePath(await stored(plateId))!;
+    const zip = new JSZip();
+    zip.file(
+      "3D/3dmodel.model",
+      `<?xml version="1.0"?><model><metadata name="ProfileTitle">changed</metadata><resources/></model>`,
+    );
+    fs.writeFileSync(filePath, await zip.generateAsync({ type: "nodebuffer" }));
+    expect((await getPrint(printId)).profile.title).toBe("changed");
+  });
+
+  it("does not re-read a current profile stored without a file stamp", async () => {
+    const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
+    await prisma.plate.update({ where: { id: plateId }, data: { profileMeta: { version: 2, title: "kept" } } });
+    expect((await getPrint(printId)).profile.title).toBe("kept");
+    expect((await stored(plateId)).profileMeta).toEqual({ version: 2, title: "kept" });
+  });
+
   it("leaves STL plates alone", async () => {
     const stl = path.join(dir, `${nonce()}.stl`);
     fs.writeFileSync(stl, `solid ${nonce()}\nendsolid\n`);
