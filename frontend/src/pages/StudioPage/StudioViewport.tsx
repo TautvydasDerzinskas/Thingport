@@ -63,7 +63,13 @@ export type StudioViewportHandle = {
   view: (view: CameraView) => void;
   /** Drops a shape half drawn, or a selection box; false when there wasn't one. */
   cancelDrawing: () => boolean;
+  /** A picture of the design as the view shows it, above what the bottom inset covers, without what a tool shows (the
+   *  gizmo, the selection, picks and the sketch grid); null before the view is up. */
+  snapshot: () => Promise<Blob | null>;
 };
+
+// A snapshot's longest side, in pixels.
+const SNAPSHOT_PX = 1600;
 
 type Props = {
   designId: string;
@@ -164,6 +170,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
   const cubeHost = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const latest = useRef(props);
+  // While a snapshot is drawn: nothing is selected or under the pointer.
+  const snapshotting = useRef(false);
   useEffect(() => {
     latest.current = props;
   });
@@ -606,11 +614,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
   const paint = () => {
     const s = stage.current;
     if (!s) return;
-    const chosen = new Set(latest.current.selected);
+    const chosen = new Set(snapshotting.current ? [] : latest.current.selected);
     const tinted = latest.current.tinted ?? [];
     for (const [id, body] of s.bodies) {
       const on = chosen.has(id);
-      const hover = !on && s.hovered === id;
+      const hover = !on && !snapshotting.current && s.hovered === id;
       const material = body.mesh.material as THREE.MeshStandardMaterial;
       // Told apart by hue, the accent's turned on by the golden ratio for each, so neighbours never look alike.
       const tint = tinted.indexOf(id);
@@ -689,9 +697,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
   }, [pickKey, props.document, colorKey]);
 
   // --- Camera ---
-  const frame = (direction: THREE.Vector3, box?: THREE.Box3) => {
-    const s = stage.current;
-    if (!s) return;
+  /** Where the camera goes to fit the design (or `box`) into the uncovered view, looking along `direction`. */
+  const framing = (direction: THREE.Vector3, box?: THREE.Box3) => {
+    const s = stage.current!;
     let bounds = box;
     if (!bounds) {
       bounds = new THREE.Box3();
@@ -707,10 +715,22 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       Math.tan(THREE.MathUtils.degToRad(s.camera.fov) / 2) * ((height - covered) / (height + covered)),
     );
     const distance = Math.max(20, (sphere.radius / Math.sin(half)) * 1.15);
-    s.camera.near = Math.max(0.1, distance / 1000);
-    s.camera.far = distance * 100;
+    return {
+      position: sphere.center.clone().addScaledVector(direction, distance),
+      target: sphere.center.clone(),
+      near: Math.max(0.1, distance / 1000),
+      far: distance * 100,
+    };
+  };
+
+  const frame = (direction: THREE.Vector3, box?: THREE.Box3) => {
+    const s = stage.current;
+    if (!s) return;
+    const to = framing(direction, box);
+    s.camera.near = to.near;
+    s.camera.far = to.far;
     s.camera.updateProjectionMatrix();
-    s.moveCamera(sphere.center.clone().addScaledVector(direction, distance), sphere.center.clone());
+    s.moveCamera(to.position, to.target);
   };
 
   const cancelBox = () => {
@@ -736,6 +756,55 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       clear(s.preview);
       s.render();
       return true;
+    },
+    snapshot: () => {
+      const s = stage.current;
+      if (!s) return Promise.resolve(null);
+      s.settleCamera();
+      const hidden = [s.gizmo.getHelper(), s.hoverLayer, s.chosenLayer, s.preview, s.sketchGrid];
+      const shown = hidden.map((object) => object.visible);
+      hidden.forEach((object) => (object.visible = false));
+      snapshotting.current = true;
+      paint();
+      // From where the person looks, but with the design filling the picture; the view is put back after.
+      const before = {
+        position: s.camera.position.clone(),
+        target: s.orbit.target.clone(),
+        near: s.camera.near,
+        far: s.camera.far,
+      };
+      const to = framing(s.camera.position.clone().sub(s.orbit.target).normalize());
+      s.camera.position.copy(to.position);
+      s.camera.near = to.near;
+      s.camera.far = to.far;
+      s.camera.lookAt(to.target);
+      s.camera.updateProjectionMatrix();
+      s.camera.updateMatrixWorld();
+      // Drawn now and read straight away, before the browser clears what WebGL drew.
+      s.renderer.render(s.scene, s.camera);
+      const canvas = s.renderer.domElement;
+      const covered = Math.round(s.inset() * (canvas.height / (canvas.clientHeight || 1)));
+      const width = canvas.width;
+      const height = Math.max(1, canvas.height - covered);
+      const fit = Math.min(1, SNAPSHOT_PX / Math.max(width, height));
+      const out = document.createElement("canvas");
+      out.width = Math.round(width * fit);
+      out.height = Math.round(height * fit);
+      const context = out.getContext("2d")!;
+      // The view is see-through, over the page: the picture gets the page's background.
+      context.fillStyle = theme.thingport.pageBackground;
+      context.fillRect(0, 0, out.width, out.height);
+      context.drawImage(canvas, 0, 0, width, height, 0, 0, out.width, out.height);
+      s.camera.position.copy(before.position);
+      s.camera.near = before.near;
+      s.camera.far = before.far;
+      s.camera.lookAt(before.target);
+      s.camera.updateProjectionMatrix();
+      s.orbit.update();
+      hidden.forEach((object, i) => (object.visible = shown[i]));
+      snapshotting.current = false;
+      paint();
+      return new Promise((resolve) => out.toBlob(resolve, "image/png"));
     },
   }));
 

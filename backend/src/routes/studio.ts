@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { listAiConnections } from "../services/aiConnectionService";
+import { saveStudioDesignToLibrary } from "../services/studioLibrary";
 import { getStudioAssistantPrefs } from "../services/settingsService";
 import { ASSET_ID } from "../studio/document.generated";
 import {
@@ -154,6 +155,28 @@ router.get(
     if (!file) throw new HttpError(404, "Picture not found");
     res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
     res.type("image/png").sendFile(file);
+  }),
+);
+
+// The design as a model in the library: an STL of its visible bodies, the picture the page took of it, and what was
+// asked about it as its description.
+const saveSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    picture_id: z.string().regex(ASSET_ID).optional(),
+  })
+  .strict();
+
+router.post(
+  "/studio/designs/:id/save-to-library",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(saveSchema, req.body ?? {});
+    const model = await saveStudioDesignToLibrary(req.userId!, req.params.id, {
+      name: body.name,
+      pictureId: body.picture_id,
+    });
+    res.status(201).json({ model });
   }),
 );
 

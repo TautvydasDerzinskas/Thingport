@@ -3315,7 +3315,7 @@
         "open": "Abrir…",
         "openTitle": "Abrir un diseño",
         "rename": "Cambiar nombre del diseño",
-        "export": "Exportar STL",
+        "export": "Descargar STL",
         "delete": "Eliminar diseño",
         "deleteTitle": "¿Eliminar «{{name}}»?",
         "deleteMessage": "El diseño y su historial se eliminan para siempre.",
@@ -3323,10 +3323,14 @@
         "emptyTitle": "Aún no hay diseños",
         "emptyHint": "Empieza uno y constrúyelo con formas y bocetos.",
         "untitled": "Diseño sin título",
-        "nothingToExport": "No hay nada visible que exportar",
+        "nothingToExport": "No hay nada visible que descargar",
         "features_one": "{{count}} elemento",
         "features_many": "{{count}} elementos",
-        "features_other": "{{count}} elementos"
+        "features_other": "{{count}} elementos",
+        "saveToLibrary": "Guardar en Thingport",
+        "saving": "Guardando en Thingport…",
+        "saved": "«{{name}}» guardado en tu biblioteca",
+        "openSaved": "Abrir"
       },
       "prompt": {
         "title": "Preguntar a la IA",

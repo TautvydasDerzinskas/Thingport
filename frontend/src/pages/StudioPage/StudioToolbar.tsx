@@ -22,6 +22,7 @@ import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRen
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
+import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import HighlightAltOutlinedIcon from "@mui/icons-material/HighlightAltOutlined";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
@@ -85,6 +86,8 @@ type Props = {
   onOpenDesign: () => void;
   onRenameDesign: () => void;
   onExport: () => void;
+  /** Saves the design to the library as a model. */
+  onSaveToLibrary: () => void;
   onDeleteDesign: () => void;
   onAdd: (primitive: Primitive) => void;
   onStartSketch: (plane: Exclude<SketchPlane, "FACE">) => void;
@@ -262,6 +265,13 @@ export default function StudioToolbar(props: Props) {
                 <FileDownloadOutlinedIcon fontSize="small" />,
                 t("studio.design.export"),
                 props.onExport,
+                closeDesign,
+              )}
+            {!noDesign &&
+              menuItem(
+                <LibraryAddOutlinedIcon fontSize="small" />,
+                t("studio.design.saveToLibrary"),
+                props.onSaveToLibrary,
                 closeDesign,
               )}
             {!noDesign && <Divider />}

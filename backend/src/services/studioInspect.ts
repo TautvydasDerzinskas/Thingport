@@ -104,3 +104,8 @@ export function importStudioMesh(srcPath: string, ext: string, destPath: string)
 export function traceStudioPicture(picturePath: string, settings: TraceSettings): Promise<StudioWorkerResult> {
   return queued({ kind: "trace", picturePath, settings }, INSPECT_TIMEOUT_MS);
 }
+
+/** The design's visible bodies as one STL, for saving it to the library. */
+export function studioStl(document: StudioDocument, assetDir: string): Promise<StudioWorkerResult> {
+  return queued({ kind: "stl", document, assetDir }, IMPORT_TIMEOUT_MS);
+}

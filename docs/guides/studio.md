@@ -98,7 +98,10 @@ values in the panel on the right. Units are millimetres, and Z is up, as on a pr
 | <kbd>F</kbd>                                                    | Fit the view to the design                                                         |
 | <kbd>Esc</kbd>                                                  | Drop a shape half drawn or a selection box, finish the sketch, clear the selection |
 
-**Export STL** in the design's menu saves the visible bodies as one STL for your slicer.
+**Download STL** in the design's menu saves the visible bodies as one STL for your slicer. **Save to Thingport** makes a
+model of them in your library instead: the STL, a picture of the view as you see it, and what you asked Ask AI about
+the design as its description. Each save is a new model, a copy of the design as it was; an AI connected over MCP, or
+Ask AI, can save it too when you ask.
 
 ## Working with an AI assistant
 

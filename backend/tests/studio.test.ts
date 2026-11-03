@@ -15,6 +15,7 @@ import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS } from "../src/mcp/tools";
 import { STUDIO_COMMAND_LIST } from "../src/studio/commands.generated";
 import { decodeMesh } from "../src/studio/meshAsset.generated";
+import { resolvePlateFilePath } from "../src/services/printCreation";
 import { studioAssetDir } from "../src/services/studioService";
 
 // Studio end to end: designs are their owner's, every change is a command kept as a revision, and every command is
@@ -209,6 +210,57 @@ describe("Studio", () => {
       plane: "XY",
     });
     expect(missing.status).toBe(400);
+  });
+
+  it("saves a design to the library: its STL, its picture, and what was asked as its description", async () => {
+    const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Tag" });
+    const empty = await request(app).post(`/api/studio/designs/${design.id}/save-to-library`).set(auth(alice)).send({});
+    expect(empty.status).toBe(400);
+    expect(empty.body.code).toBe("studio_save_empty");
+
+    await command(alice, design.id, "add_box", { width: 30, depth: 20, height: 4 });
+    await prisma.studioMessage.createMany({
+      data: [
+        { designId: design.id, role: "user", text: "Make a tag" },
+        { designId: design.id, role: "assistant", text: "Made it." },
+        { designId: design.id, role: "user", text: "Make it 4 mm thick" },
+      ],
+    });
+    const png = await sharp({ create: { width: 64, height: 48, channels: 3, background: "#336699" } })
+      .png()
+      .toBuffer();
+    const picture = await request(app)
+      .post(`/api/studio/designs/${design.id}/pictures`)
+      .set(auth(alice))
+      .set("Content-Type", "image/png")
+      .send(png);
+    expect(
+      (await request(app).post(`/api/studio/designs/${design.id}/save-to-library`).set(auth(bob)).send({})).status,
+    ).toBe(404);
+    const saved = await request(app)
+      .post(`/api/studio/designs/${design.id}/save-to-library`)
+      .set(auth(alice))
+      .send({ picture_id: picture.body.id });
+    expect(saved.status).toBe(201);
+    const model = saved.body.model;
+    expect(model.title).toBe("Tag");
+    expect(model.notes).toBe("- Make a tag\n- Make it 4 mm thick");
+    expect(model.plates.map((plate: { filename: string }) => plate.filename)).toEqual(["Tag.stl"]);
+    expect(model.preview_images).toHaveLength(1);
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: model.id } });
+    const stl = fs.readFileSync(resolvePlateFilePath(plate)!);
+    // A binary STL of the box: 12 triangles.
+    expect(stl.readUInt32LE(80)).toBe(12);
+
+    // An assistant saves it too, and the server pictures it.
+    const token = await mcpToken(alice);
+    const viaMcp = await callTool(token, "studio_save_to_library", { design_id: design.id, name: "Tag again" });
+    expect(viaMcp.data).toMatchObject({ name: "Tag again", model_id: expect.any(String) });
+    const again = await prisma.print.findUnique({
+      where: { id: viaMcp.data.model_id },
+      include: { previewImages: true },
+    });
+    expect(again?.previewImages).toHaveLength(1);
   });
 
   it("keeps where each person's assistant shows: the bar until they pick the side panel", async () => {

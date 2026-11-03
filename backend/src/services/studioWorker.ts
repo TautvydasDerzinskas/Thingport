@@ -14,6 +14,7 @@ import {
   type BodyDescription,
 } from "../studio/geometry.generated";
 import { decodeMesh, encodeMesh } from "../studio/meshAsset.generated";
+import { binaryStl } from "../studio/stl.generated";
 import { bright, tracePicture, type Traced, type TraceSettings } from "../studio/trace.generated";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
 import { loadFontsFor } from "./studioFonts";
@@ -50,7 +51,8 @@ export type StudioWorkerInput =
   | { kind: "import"; srcPath: string; ext: string; destPath: string }
   | { kind: "trace"; picturePath: string; settings: TraceSettings }
   | { kind: "describe"; document: StudioDocument; assetDir: string; featureId: string }
-  | { kind: "parts"; document: StudioDocument; assetDir: string; featureId: string };
+  | { kind: "parts"; document: StudioDocument; assetDir: string; featureId: string }
+  | { kind: "stl"; document: StudioDocument; assetDir: string };
 
 export type StudioBodyStats = { id: string; bounds: { min: Vec3; max: Vec3 }; volume: number; triangles: number };
 
@@ -66,6 +68,8 @@ export type StudioWorkerResult =
   | { status: "described"; body: BodyDescription }
   | { status: "measured"; parts: PartMeasure[] }
   | { status: "traced"; traced: Traced }
+  /** The visible bodies as a binary STL; null when there are none. */
+  | { status: "stl"; stl: Uint8Array | null; triangles: number }
   /** A file that can't come in, and why, in words for whoever asked. */
   | { status: "refused"; reason: string }
   | { status: "too-complex"; triangles: number }
@@ -181,6 +185,17 @@ async function importMesh(input: Extract<StudioWorkerInput, { kind: "import" }>)
   return { status: "imported", solid, triangles: mesh.indices.length / 3, size, parts };
 }
 
+/** The design's visible bodies as one STL, as the page's Download STL makes it. */
+async function stl(input: Extract<StudioWorkerInput, { kind: "stl" }>): Promise<StudioWorkerResult> {
+  const estimate = estimateTriangles(input.document);
+  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  const visible = new Set(input.document.features.filter((feature) => feature.visible).map((feature) => feature.id));
+  const { bodies, errors } = evaluateDesign(await manifold(), input.document, undefined, meshesIn(input.assetDir));
+  if (errors.length) return { status: "refused", reason: `${errors[0].id} couldn't be made: ${errors[0].message}` };
+  const parts = bodies.filter((body) => visible.has(body.id)).map(worldTriangles);
+  return { status: "stl", stl: binaryStl(parts), triangles: parts.reduce((sum, part) => sum + part.length / 9, 0) };
+}
+
 async function trace(input: Extract<StudioWorkerInput, { kind: "trace" }>): Promise<StudioWorkerResult> {
   const { data, info } = await sharp(input.picturePath).raw().toBuffer({ resolveWithObject: true });
   // As red, green, blue and alpha, whether it's grey, grey with alpha, colour, or colour with alpha.
@@ -213,7 +228,9 @@ if (parentPort) {
       ? describe(design)
       : design.kind === "parts"
         ? findParts(design)
-        : inspect(design);
+        : design.kind === "stl"
+          ? stl(design)
+          : inspect(design);
   };
   const job = input.kind === "import" ? importMesh(input) : input.kind === "trace" ? trace(input) : made(input);
   job.then(reply, (error: unknown) =>

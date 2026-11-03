@@ -76,6 +76,8 @@ Faces and edges aren't stored as such: a body is a mesh. Name them by where they
 - boolean: union, subtract or intersect bodies; keep_tools leaves the tools as they are.
 - set_transform (absolute) and scale_feature (a factor) move, turn and size a body.
 - update_feature changes any feature's numbers later, e.g. a fillet's radius or a hole's diameter.
+- studio_save_to_library saves the design to the user's library as a new model (an STL, a picture and their requests
+  as its description). Save only when the user asks.
 - import_model brings in a library model's STL, 3MF, STEP, OBJ or GLB (find it with search_models). A closed mesh works
   with everything above; one with gaps can only be moved, scaled and exported. A model of several pieces comes in as
   one body, and the reply says how many: separate_parts splits it, and the pieces of one with gaps that are closed

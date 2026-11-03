@@ -3402,7 +3402,7 @@
         "open": "Atidaryti…",
         "openTitle": "Atidaryti projektą",
         "rename": "Pervadinti projektą",
-        "export": "Eksportuoti STL",
+        "export": "Atsisiųsti STL",
         "delete": "Ištrinti projektą",
         "deleteTitle": "Ištrinti „{{name}}“?",
         "deleteMessage": "Projektas ir jo istorija bus ištrinti visam laikui.",
@@ -3410,10 +3410,14 @@
         "emptyTitle": "Kol kas nėra projektų",
         "emptyHint": "Pradėkite naują ir kurkite jį iš formų bei eskizų.",
         "untitled": "Projektas be pavadinimo",
-        "nothingToExport": "Nėra matomų elementų eksportuoti",
+        "nothingToExport": "Nėra matomų elementų atsisiųsti",
         "features_one": "{{count}} elementas",
         "features_few": "{{count}} elementai",
-        "features_other": "{{count}} elementų"
+        "features_other": "{{count}} elementų",
+        "saveToLibrary": "Išsaugoti į Thingport",
+        "saving": "Išsaugoma į Thingport…",
+        "saved": "„{{name}}“ išsaugotas jūsų bibliotekoje",
+        "openSaved": "Atidaryti"
       },
       "prompt": {
         "title": "Klausti DI",

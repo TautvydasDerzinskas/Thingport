@@ -3328,7 +3328,7 @@
         "open": "Ouvrir…",
         "openTitle": "Ouvrir une conception",
         "rename": "Renommer la conception",
-        "export": "Exporter en STL",
+        "export": "Télécharger le STL",
         "delete": "Supprimer la conception",
         "deleteTitle": "Supprimer « {{name}} » ?",
         "deleteMessage": "La conception et son historique sont supprimés définitivement.",
@@ -3336,10 +3336,14 @@
         "emptyTitle": "Aucune conception pour l’instant",
         "emptyHint": "Commencez-en une, puis construisez-la avec des formes et des esquisses.",
         "untitled": "Conception sans titre",
-        "nothingToExport": "Rien de visible à exporter",
+        "nothingToExport": "Rien de visible à télécharger",
         "features_one": "{{count}} élément",
         "features_many": "{{count}} éléments",
-        "features_other": "{{count}} éléments"
+        "features_other": "{{count}} éléments",
+        "saveToLibrary": "Enregistrer dans Thingport",
+        "saving": "Enregistrement dans Thingport…",
+        "saved": "« {{name}} » enregistré dans votre bibliothèque",
+        "openSaved": "Ouvrir"
       },
       "prompt": {
         "title": "Demander à l’IA",

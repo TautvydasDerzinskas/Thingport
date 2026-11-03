@@ -3275,7 +3275,7 @@
         "open": "Open…",
         "openTitle": "Open a design",
         "rename": "Rename design",
-        "export": "Export STL",
+        "export": "Download STL",
         "delete": "Delete design",
         "deleteTitle": "Delete “{{name}}”?",
         "deleteMessage": "The design and its history are deleted for good.",
@@ -3283,9 +3283,13 @@
         "emptyTitle": "No designs yet",
         "emptyHint": "Start one, then build it from shapes and sketches.",
         "untitled": "Untitled design",
-        "nothingToExport": "Nothing visible to export",
+        "nothingToExport": "Nothing visible to download",
         "features_one": "{{count}} feature",
-        "features_other": "{{count}} features"
+        "features_other": "{{count}} features",
+        "saveToLibrary": "Save to Thingport",
+        "saving": "Saving to Thingport…",
+        "saved": "Saved “{{name}}” to your library",
+        "openSaved": "Open"
       },
       "prompt": {
         "title": "Ask AI",

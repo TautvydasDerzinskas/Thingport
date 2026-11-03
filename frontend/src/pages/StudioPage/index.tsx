@@ -520,6 +520,27 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     }
   };
 
+  // Saving to the library: the view as it is, kept with the design, is the model's picture.
+  const [saving, setSaving] = useState(false);
+  const saveToLibrary = async () => {
+    if (!design || saving) return;
+    setSaving(true);
+    try {
+      const snapshot = await viewport.current?.snapshot();
+      const picture = snapshot ? await studioApi.addPicture(design.id, snapshot) : null;
+      const { model } = await studioApi.saveToLibrary(design.id, picture ? { picture_id: picture.id } : {});
+      toast({
+        message: t("studio.design.saved", { name: model.title || model.name }),
+        severity: "success",
+        action: { label: t("studio.design.openSaved"), onClick: () => navigate(`/models/${model.id}`) },
+      });
+    } catch (error) {
+      showError(error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const deleteDesign = async () => {
     if (!design) return;
     const ok = await confirm({
@@ -694,11 +715,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             onCancel={() => setOperation(null)}
           />
         )}
-        {busy && !operation && (
+        {(busy || saving) && !operation && (
           <Chip
             size="small"
             icon={<CircularProgress size={12} />}
-            label={t("studio.working")}
+            label={saving ? t("studio.design.saving") : t("studio.working")}
             // Above the prompt, however tall it is.
             sx={{
               position: "absolute",
@@ -764,6 +785,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         onOpenDesign={() => setDesignsOpen(true)}
         onRenameDesign={() => setRenaming({ kind: "design" })}
         onExport={() => void exportStl()}
+        onSaveToLibrary={() => void saveToLibrary()}
         onDeleteDesign={() => void deleteDesign()}
         onAdd={(kind) => void add(kind)}
         onStartSketch={(plane) => void startSketch(plane)}

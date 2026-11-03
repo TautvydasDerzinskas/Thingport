@@ -140,6 +140,13 @@ export const studioApi = {
     }
     return res.json();
   },
+  /** Saves the design to the library as a new model; `picture_id` is the picture to show it by. */
+  saveToLibrary: (id: string, body: { name?: string; picture_id?: string }) =>
+    request<{ model: { id: string; name: string; title: string | null } }>(
+      `${design(id)}/save-to-library`,
+      "POST",
+      body,
+    ),
   picture: async (id: string, pictureId: string): Promise<Blob> => {
     const res = await fetch(`${apiBase()}${design(id)}/pictures/${encodeURIComponent(pictureId)}`, {
       headers: authHeaders(),

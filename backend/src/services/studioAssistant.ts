@@ -72,7 +72,7 @@ const CORE = new Set([
 const SEARCH_NOTE = `Only a few of your tools are loaded at first. Search for the rest by what they do: other shapes
 (cone, sphere, torus), text, tracing a picture, sketches, extrude and revolve, press/pull, fillet, chamfer, hole,
 shell, split, separating parts, scaling, moving, editing, renaming and deleting features, undo, looking at the design,
-and finding a library model to import.`;
+finding a library model to import, and saving the design to the library.`;
 
 // For small local models: the few tools most requests need, each said in a line, and the arguments that matter. Every
 // one is the same command as in full, so a person and the AI still change a design the same way.

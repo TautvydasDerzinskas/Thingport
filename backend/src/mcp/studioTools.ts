@@ -15,6 +15,7 @@ import {
 import { describeStudioBody, inspectStudioDesign } from "../services/studioInspect";
 import { STUDIO_GUIDE } from "../services/studioGuide";
 import { STUDIO_VIEWS } from "../services/studioWorker";
+import { saveStudioDesignToLibrary } from "../services/studioLibrary";
 import { HttpError } from "../utils/fileUtils";
 import { WithImages, type McpToolContext, type McpToolDefinition } from "./toolTypes";
 
@@ -239,6 +240,32 @@ const deleteDesign: McpToolDefinition = {
   },
 };
 
+const saveToLibrary: McpToolDefinition = {
+  name: "studio_save_to_library",
+  title: "Save a Studio design to the library",
+  description:
+    "Saves the design to the user's Thingport library as a new model: its visible bodies as one STL in mm, a picture " +
+    "of it, and the requests the user made to Studio's assistant about it as its description. Each save is a new " +
+    "model, a copy of the design as it is now. Save when the user asks to; returns the model's id and link.",
+  readOnly: false,
+  group: "studio",
+  inputSchema: {
+    design_id: designId,
+    name: z.string().trim().min(1).max(120).optional().describe("The model's name. Default: the design's."),
+  },
+  async run(ctx, args) {
+    const model = await saveStudioDesignToLibrary(ctx.userId, args.design_id as string, {
+      name: args.name as string | undefined,
+    });
+    return {
+      done: `Saved the design to the library as “${model.title || model.name}”`,
+      model_id: model.id,
+      name: model.title || model.name,
+      url: ctx.publicUrl ? `${ctx.publicUrl}/models/${model.id}` : null,
+    };
+  },
+};
+
 const commandTools: McpToolDefinition[] = STUDIO_COMMAND_LIST.map((command) => ({
   name: `studio_${command.name}`,
   title: command.title,
@@ -280,5 +307,6 @@ export const STUDIO_MCP_TOOLS: readonly McpToolDefinition[] = [
   viewDesign,
   createDesign,
   deleteDesign,
+  saveToLibrary,
   ...commandTools,
 ];
