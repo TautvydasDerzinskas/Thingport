@@ -80,6 +80,8 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
     if (!baseUrl || (draft.kind === "anthropic" && !draft.api_key && (!hasApiKey || clearKey))) {
       setModels([]);
       setModelsError(null);
+      // A fetch it cancels can't say it's done.
+      setModelsLoading(false);
       return;
     }
     let active = true;
@@ -220,6 +222,7 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Segmented
             fullWidth
+            disabled={disabled}
             label={t("adminSettings.ai.connection.kind")}
             value={draft.kind}
             options={AI_KINDS.map((kind) => ({ value: kind, label: t(`adminSettings.ai.connection.kinds.${kind}`) }))}

@@ -1,5 +1,5 @@
 import http from "node:http";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
@@ -11,7 +11,7 @@ import {
 } from "../src/services/settingsService";
 import { createAiConnection } from "../src/services/aiConnectionService";
 import { setAiRetryDelayForTest } from "../src/services/aiProviderClient";
-import { categorizePrint } from "../src/services/aiCategorizationService";
+import { categorizePrint, testAiProvider } from "../src/services/aiCategorizationService";
 import { improvePrintDescription } from "../src/services/aiDescriptionService";
 import { claudeContent, claudeSchema } from "../src/services/aiAnthropicClient";
 
@@ -32,6 +32,8 @@ let openai: http.Server | null = null;
 const seen: Seen[] = [];
 let openaiRequests = 0;
 let reply: (body: Record<string, unknown>, index: number) => Reply = () => ({ text: "{}" });
+// A server that always says there are more models.
+let endlessModels = false;
 const MODEL_PAGES = [
   { data: [{ id: "claude-sonnet-5-5", type: "model" }], has_more: true, first_id: "a", last_id: "claude-sonnet-5-5" },
   { data: [{ id: "claude-haiku-5-5", type: "model" }], has_more: false, first_id: "b", last_id: "claude-haiku-5-5" },
@@ -84,6 +86,10 @@ async function startClaude(): Promise<string> {
       return send(res, 401, { type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } });
     if (url.pathname === "/v1/models") {
       const after = url.searchParams.get("after_id");
+      if (endlessModels) {
+        const next = `claude-${Number(after?.split("-")[1] ?? 0) + 1}`;
+        return send(res, 200, { data: [{ id: next, type: "model" }], has_more: true, first_id: next, last_id: next });
+      }
       return send(res, 200, MODEL_PAGES[after ? MODEL_PAGES.findIndex((page) => page.last_id === after) + 1 : 0]);
     }
     if (url.pathname !== "/v1/messages")
@@ -190,6 +196,7 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
+  endlessModels = false;
   await stop(claude);
   await stop(openai);
   claude = null;
@@ -254,6 +261,79 @@ describe("Claude as an AI", () => {
       .set(auth())
       .send({ kind: "anthropic", base_url: url, api_key: "sk-ant-wrong" });
     expect(wrongKey.body).toEqual({ ok: false, error: "Claude rejected the API key (HTTP 401)" });
+  });
+
+  it("moves an AI to Claude by its type alone, its saved URL made Claude's", async () => {
+    const url = await startClaude();
+    reply = (body) => ({ text: picking(body, "Calibration") });
+    const saved = await createAiConnection({
+      baseUrl: `${url}/v1`,
+      apiKey: null,
+      model: "claude-haiku-5-5",
+      timeoutMs: 2000,
+      concurrency: 1,
+      reasoningEffort: null,
+    });
+    const moved = await request(app)
+      .patch(`/api/settings/ai-connections/${saved.id}`)
+      .set(auth())
+      .send({ kind: "anthropic", api_key: KEY });
+    expect(moved.status).toBe(200);
+    expect(moved.body).toMatchObject({ kind: "anthropic", base_url: url });
+  });
+
+  it("stops listing models after ten pages, however many more a server says there are", async () => {
+    const url = await startClaude();
+    endlessModels = true;
+    const listed = await request(app)
+      .post("/api/settings/ai-connections/models")
+      .set(auth())
+      .send({ kind: "anthropic", base_url: url, api_key: KEY });
+    expect(listed.body.ok).toBe(true);
+    expect(listed.body.models).toHaveLength(10);
+    expect(seen.filter((each) => each.path === "/v1/models")).toHaveLength(10);
+  });
+
+  it("asks Anthropic's own API for its fallback, for a model that has one", async () => {
+    // Anthropic's own host can't be faked by a local server, so its requests are caught on their way out.
+    const asked: { headers: Headers; body: Record<string, unknown> }[] = [];
+    const realFetch = globalThis.fetch;
+    vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+      const target = input instanceof Request ? input.url : String(input);
+      if (!target.startsWith("https://api.anthropic.com/")) return realFetch(input, init);
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      asked.push({ headers: new Headers(init?.headers), body });
+      const message = {
+        id: "msg_test",
+        type: "message",
+        role: "assistant",
+        model: body.model,
+        content: [{ type: "text", text: picking(body, "Calibration") }],
+        stop_reason: "end_turn",
+        stop_sequence: null,
+        stop_details: null,
+        usage: { input_tokens: 10, output_tokens: 20 },
+      };
+      return new Response(JSON.stringify(message), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    try {
+      const provider = {
+        kind: "anthropic" as const,
+        baseUrl: "https://api.anthropic.com",
+        apiKey: KEY,
+        timeoutMs: 2000,
+        reasoningEffort: null,
+      };
+      expect(await testAiProvider({ ...provider, model: "claude-opus-5-5" })).toMatchObject({ ok: true });
+      expect(asked[0].body).toMatchObject({ model: "claude-opus-5-5", fallbacks: "default" });
+      expect(asked[0].headers.get("anthropic-beta")).toContain("server-side-fallback-2026-07-01");
+      // Haiku has no fallback to ask for.
+      expect(await testAiProvider({ ...provider, model: "claude-haiku-5-5" })).toMatchObject({ ok: true });
+      expect(asked[1].body.fallbacks).toBeUndefined();
+      expect(asked[1].headers.get("anthropic-beta")).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("categorizes with Claude, and rewrites a description with it while categorization uses another AI", async () => {

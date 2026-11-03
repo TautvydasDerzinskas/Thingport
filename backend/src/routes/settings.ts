@@ -1127,7 +1127,8 @@ async function providerFrom(
   const kind = body.kind ?? saved?.kind ?? DEFAULT_AI_PROVIDER.kind;
   return {
     kind,
-    baseUrl: body.base_url !== undefined ? normalizeAiBaseUrl(body.base_url, kind) : (saved?.baseUrl ?? null),
+    // The saved URL too, so moving an AI to the other kind alone gives it that kind's form: Claude's has no /v1.
+    baseUrl: normalizeAiBaseUrl(body.base_url !== undefined ? body.base_url : saved?.baseUrl, kind),
     model: body.model ?? saved?.model ?? null,
     apiKey: body.api_key !== undefined ? body.api_key || null : (saved?.apiKey ?? DEFAULT_AI_PROVIDER.apiKey),
     timeoutMs: body.timeout_ms ?? saved?.timeoutMs ?? DEFAULT_AI_PROVIDER.timeoutMs,
@@ -1193,7 +1194,7 @@ router.patch(
     }
     const connection = await updateAiConnection(req.params.id, {
       ...(body.kind !== undefined ? { kind: body.kind } : {}),
-      ...(body.base_url !== undefined ? { baseUrl: provider.baseUrl! } : {}),
+      ...(body.base_url !== undefined || body.kind !== undefined ? { baseUrl: provider.baseUrl! } : {}),
       ...(body.model !== undefined ? { model: provider.model! } : {}),
       ...(body.api_key !== undefined ? { apiKey: provider.apiKey } : {}),
       ...(body.timeout_ms !== undefined ? { timeoutMs: body.timeout_ms } : {}),

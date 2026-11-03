@@ -31,6 +31,9 @@ const UNSUPPORTED_KEYWORDS = new Set([
   "maxLength",
 ]);
 
+// Anthropic lists a few dozen models, a thousand to a page.
+const MODEL_PAGES = 10;
+
 // Connections (base URL and model) that answered 400 to an effort or to structured outputs, older models that take
 // neither, so later requests leave it out.
 const effortRejected = new Set<string>();
@@ -81,7 +84,8 @@ function readableHttpError(error: InstanceType<typeof Anthropic.APIError>, apiKe
   return new Error(`AI provider returned HTTP ${error.status}${message ? `: ${message}` : ""}`);
 }
 
-/** The models the key may use, from Anthropic's Models API, for the settings form and the health check. */
+/** The models the key may use, from Anthropic's Models API, for the settings form and the health check. The whole
+ *  list gets `timeoutMs` and at most MODEL_PAGES pages, so a proxy that always says there are more can't hold it. */
 export async function listClaudeModels(
   provider: { baseUrl: string | null; apiKey: string | null },
   timeoutMs: number,
@@ -91,14 +95,20 @@ export async function listClaudeModels(
     apiKey: provider.apiKey,
     baseURL: provider.baseUrl ?? CLAUDE_BASE_URL,
     maxRetries: 0,
-    timeout: timeoutMs,
   });
+  const signal = AbortSignal.timeout(timeoutMs);
   try {
     const ids: string[] = [];
-    for await (const model of client.models.list({ limit: 1000 })) ids.push(model.id);
+    let afterId: string | null = null;
+    for (let page = 0; page < MODEL_PAGES; page++) {
+      const listed = await client.models.list({ limit: 1000, ...(afterId ? { after_id: afterId } : {}) }, { signal });
+      ids.push(...listed.data.map((model) => model.id));
+      if (!listed.has_more || !listed.last_id) break;
+      afterId = listed.last_id;
+    }
     return { ok: true, models: [...new Set(ids)].toSorted((a, b) => a.localeCompare(b)) };
   } catch (error) {
-    if (error instanceof Anthropic.APIConnectionTimeoutError)
+    if (error instanceof Anthropic.APIUserAbortError || error instanceof Anthropic.APIConnectionTimeoutError)
       return { ok: false, error: `The AI provider did not answer within ${timeoutMs / 1000} s` };
     if (error instanceof Anthropic.APIConnectionError)
       return { ok: false, error: "Could not reach the AI provider. Check the API base URL." };

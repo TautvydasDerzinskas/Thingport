@@ -98,8 +98,9 @@ and `claude-opus-5-5`.
   description and tags, so a large run costs more than a few models do. `claude-haiku-5-5` is the cheap choice for
   categorization; a larger model writes better descriptions.
 - If Claude Opus 5.5, Sonnet 5.5 or Fable 5.1 declines to answer, which can happen with something harmless that looks
-  like a weapon, Anthropic answers with another model in the same request, billed as that model. A request no model
-  answers fails with **Claude declined to answer**.
+  like a weapon, Anthropic answers with another model in the same request, billed as that model. Thingport asks for
+  this only at `api.anthropic.com`, not through a proxy. A request no model answers fails with **Claude declined to
+  answer**.
 
 | Provider      | API base URL                                               | API key |
 | ------------- | ---------------------------------------------------------- | ------- |
