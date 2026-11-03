@@ -33,7 +33,7 @@ import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
-import ModelFileSelect from "./ModelFileSelect";
+import ModelFileList from "./ModelFileList";
 import OpenInSlicerButton from "./OpenInSlicerButton";
 import { useNormalizedOpen } from "./useNormalizedOpen";
 import AddToCollectionModal from "./AddToCollectionModal";
@@ -336,8 +336,8 @@ export default function ModelSidePanel({
           </Box>
         )}
 
-        {selectedFile && files.length > 1 && (
-          <ModelFileSelect files={files} selected={selectedFile} onSelect={(file) => setSelectedKey(file.key)} />
+        {selectedFile && (
+          <ModelFileList files={files} selected={selectedFile} onSelect={(file) => setSelectedKey(file.key)} />
         )}
         {selectedFile && (
           <OpenInSlicerButton

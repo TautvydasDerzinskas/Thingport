@@ -3924,7 +3924,7 @@
         "manageSettings": "Manage quality checks"
       },
       "fileSelectLabel": "Files ({{count}})",
-      "fileSelectAria": "File: {{file}}. Choose another",
+      "fileListAria": "Model files",
       "downloadFile": "Download file",
       "moreOpenOptions": "Other slicers and downloads",
       "openActions": "Open or download",

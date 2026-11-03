@@ -4058,7 +4058,7 @@
         "manageSettings": "Tvarkyti kokybės patikrą"
       },
       "fileSelectLabel": "Failai ({{count}})",
-      "fileSelectAria": "Failas: {{file}}. Pasirinkti kitą",
+      "fileListAria": "Modelio failai",
       "downloadFile": "Atsisiųsti failą",
       "moreOpenOptions": "Kitos pjaustyklės ir atsisiuntimai",
       "openActions": "Atverti arba atsisiųsti",

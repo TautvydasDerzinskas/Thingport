@@ -3974,7 +3974,7 @@
         "manageSettings": "Gérer le contrôle de qualité"
       },
       "fileSelectLabel": "Fichiers ({{count}})",
-      "fileSelectAria": "Fichier : {{file}}. En choisir un autre",
+      "fileListAria": "Fichiers du modèle",
       "downloadFile": "Télécharger le fichier",
       "moreOpenOptions": "Autres slicers et téléchargements",
       "openActions": "Ouvrir ou télécharger",

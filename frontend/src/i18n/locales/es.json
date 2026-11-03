@@ -3961,7 +3961,7 @@
         "manageSettings": "Gestionar la comprobación de calidad"
       },
       "fileSelectLabel": "Archivos ({{count}})",
-      "fileSelectAria": "Archivo: {{file}}. Elegir otro",
+      "fileListAria": "Archivos del modelo",
       "downloadFile": "Descargar archivo",
       "moreOpenOptions": "Otros slicers y descargas",
       "openActions": "Abrir o descargar",
