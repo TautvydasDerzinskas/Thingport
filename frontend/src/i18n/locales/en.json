@@ -3111,7 +3111,8 @@
         "torus": "Torus",
         "extrude": "Extrude",
         "boolean": "Combine",
-        "sketch": "Sketch"
+        "sketch": "Sketch",
+        "mesh": "Mesh"
       },
       "tree": {
         "heading": "Features",
@@ -3166,7 +3167,8 @@
         "label": "Gizmo",
         "translate": "Move",
         "rotate": "Rotate",
-        "scale": "Scale"
+        "scale": "Scale",
+        "select": "Select"
       },
       "view": {
         "label": "Views",
@@ -3174,7 +3176,8 @@
         "top": "Top",
         "front": "Front",
         "right": "Right",
-        "fit": "Fit to view"
+        "fit": "Fit to view",
+        "navigation": "Right-drag turns the view, middle-drag (or Shift + right-drag) moves it, the wheel zooms. Left-drag draws a box to select: from left to right it takes what's wholly inside, from right to left also what it touches. Shift adds to the selection."
       },
       "properties": {
         "heading": "Properties",
@@ -3210,6 +3213,15 @@
           "minor_radius": "Tube radius",
           "distance": "Distance",
           "offset": "Offset"
+        },
+        "mesh": {
+          "source": "Source",
+          "triangles_one": "{{count}} triangle",
+          "triangles_other": "{{count}} triangles",
+          "importedSize": "Imported at {{size}} mm",
+          "solid": "Closed solid",
+          "open": "Not a closed solid",
+          "openHelp": "It has gaps, so it can be moved, scaled and exported, but not combined with other bodies."
         }
       },
       "design": {
@@ -3242,6 +3254,34 @@
         "placeholder": "Describe a part, or a change to this one",
         "send": "Send",
         "sendSoon": "Sending to the AI comes in a later update"
+      },
+      "panels": {
+        "label": "Panels",
+        "features": "Features",
+        "properties": "Properties"
+      },
+      "viewCube": {
+        "label": "View cube: click a face, edge or corner to look from there, drag it to turn the view",
+        "home": "Home view",
+        "top": "TOP",
+        "bottom": "BOTTOM",
+        "front": "FRONT",
+        "back": "BACK",
+        "left": "LEFT",
+        "right": "RIGHT"
+      },
+      "open": {
+        "designs": "Designs",
+        "library": "Library",
+        "search": "Search your models",
+        "help": "STL, 3MF, STEP, OBJ and GLB files come in as mesh bodies, at their own size. The design keeps its own copy, so later changes to the model don't reach it.",
+        "open": "Open",
+        "openHelp": "As a new design",
+        "insert": "Insert",
+        "insertHelp": "Into this design",
+        "noMatches": "No models with a 3D file match",
+        "emptyLibrary": "Your library has no STL, 3MF, STEP, OBJ or GLB files yet",
+        "loadMore": "Load more"
       }
     }
   },

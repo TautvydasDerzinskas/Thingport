@@ -6,6 +6,7 @@ import {
   getStudioDesign,
   listStudioDesigns,
   runStudioCommand,
+  studioAssetDir,
   studioDesignHistory,
   type StudioDesignOut,
 } from "../services/studioService";
@@ -71,7 +72,12 @@ const getDesign: McpToolDefinition = {
   async run(ctx, args) {
     const design = await getStudioDesign(ctx.userId, args.design_id as string);
     const [inspected, recent] = await Promise.all([
-      inspectStudioDesign(`${design.id}:${design.version}`, design.document, null),
+      inspectStudioDesign(
+        `${design.id}:${design.version}`,
+        design.document,
+        studioAssetDir(ctx.userId, design.id),
+        null,
+      ),
       studioDesignHistory(design, 10),
     ]);
     const used = new Set(
@@ -95,7 +101,8 @@ const getDesign: McpToolDefinition = {
               id: body.id,
               bounds: body.bounds,
               size: body.bounds.max.map((max, axis) => max - body.bounds.min[axis]),
-              volume_mm3: Math.round(body.volume * 100) / 100,
+              // An open mesh encloses nothing to measure.
+              volume_mm3: Number.isNaN(body.volume) ? null : Math.round(body.volume * 100) / 100,
             }))
           : null,
       problems:
@@ -133,14 +140,19 @@ const viewDesign: McpToolDefinition = {
     const design = await getStudioDesign(ctx.userId, args.design_id as string);
     const views = (args.views as (typeof STUDIO_VIEWS)[number][] | undefined) ?? ["iso"];
     const size = (args.size as number | undefined) ?? 512;
-    const inspected = await inspectStudioDesign(`${design.id}:${design.version}`, design.document, {
-      views,
-      size,
-      color: RENDER_COLOR,
-    });
+    const inspected = await inspectStudioDesign(
+      `${design.id}:${design.version}`,
+      design.document,
+      studioAssetDir(ctx.userId, design.id),
+      {
+        views,
+        size,
+        color: RENDER_COLOR,
+      },
+    );
     if (inspected.status === "too-complex")
       throw new HttpError(422, `The design is too heavy to picture here (about ${inspected.triangles} triangles).`);
-    if (inspected.status === "error") throw new Error(`studio_view_design failed: ${inspected.error}`);
+    if (inspected.status !== "ok") throw new Error(`studio_view_design failed: ${JSON.stringify(inspected)}`);
     return new WithImages(
       { ...brief(ctx, design), views, bodies: inspected.bodies.length, problems: inspected.errors },
       inspected.images.map((image) => ({ data: image.png, mimeType: "image/png" })),

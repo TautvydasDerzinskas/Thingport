@@ -20,6 +20,14 @@ export type StudioDesign = StudioDesignSummary & {
 
 export type StudioCommandResult = { design: StudioDesign; summary: string; created: string[] };
 
+/** A library model Studio can import, with the 3D files it could take. */
+export type StudioLibraryModel = {
+  id: string;
+  title: string;
+  thumb_url: string | null;
+  files: { id: string; name: string; size: number }[];
+};
+
 /** An AI from Administration > AI, as the prompt's picker shows it. */
 export type StudioAiModel = { id: string; model: string; host: string; is_default: boolean };
 
@@ -60,6 +68,19 @@ export const studioApi = {
   status: () => request<{ enabled: boolean }>("/studio/status"),
   aiModels: () => request<StudioAiModel[]>("/studio/ai-models"),
   list: () => request<StudioDesignSummary[]>("/studio/designs"),
+  library: (q: string, offset = 0) =>
+    request<{ models: StudioLibraryModel[]; next_offset: number | null }>(
+      `/studio/library?${new URLSearchParams({ q, offset: String(offset) })}`,
+    ),
+  /** A design's copy of a mesh it imported, as frontend/src/studio/meshAsset.ts reads it. */
+  asset: async (id: string, assetId: string): Promise<ArrayBuffer> => {
+    const res = await fetch(`${apiBase()}${design(id)}/assets/${encodeURIComponent(assetId)}`, {
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new StudioError(`Mesh not found (${res.status})`, res.status, null);
+    return res.arrayBuffer();
+  },
   create: (name: string) => request<StudioDesign>("/studio/designs", "POST", { name }),
   get: (id: string) => request<StudioDesign>(design(id)),
   version: (id: string) => request<{ version: number }>(`${design(id)}/version`),

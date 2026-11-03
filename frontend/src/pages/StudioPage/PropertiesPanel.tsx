@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link as RouterLink } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Link from "@mui/material/Link";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -218,6 +220,36 @@ export default function PropertiesPanel({ document, selected, errors, run, onSel
         />
       </Box>
 
+      {feature.type === "mesh" && (
+        <Section title={t("studio.properties.mesh.source")}>
+          <Stack spacing={0.5}>
+            <Link component={RouterLink} to={`/models/${feature.source.model_id}`} variant="body2" noWrap>
+              {feature.source.model_title}
+            </Link>
+            <Typography variant="caption" color="text.secondary" noWrap title={feature.source.file_name}>
+              {feature.source.file_name} · {t("studio.properties.mesh.triangles", { count: feature.triangles })}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {t("studio.properties.mesh.importedSize", { size: feature.size.map(show).join(" × ") })}
+            </Typography>
+            {feature.solid ? (
+              <Chip
+                size="small"
+                color="success"
+                variant="outlined"
+                label={t("studio.properties.mesh.solid")}
+                sx={{ alignSelf: "flex-start", mt: 0.5 }}
+              />
+            ) : (
+              <Stack direction="row" alignItems="center" sx={{ color: "warning.main", mt: 0.5 }}>
+                <WarningAmberRoundedIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                <Typography variant="caption">{t("studio.properties.mesh.open")}</Typography>
+                <HelpTip text={t("studio.properties.mesh.openHelp")} />
+              </Stack>
+            )}
+          </Stack>
+        </Section>
+      )}
       {feature.type === "box" && (
         <Section title={t("studio.properties.size")}>
           <Box sx={triple}>

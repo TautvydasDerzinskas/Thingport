@@ -1,11 +1,15 @@
+import fs from "node:fs";
+import path from "node:path";
 import { parentPort, workerData } from "node:worker_threads";
 import sharp from "sharp";
-import type { StudioDocument, Vec3 } from "../studio/document.generated";
-import { estimateTriangles, evaluateDesign, worldTriangles } from "../studio/geometry.generated";
-import { renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
+import type { ManifoldToplevel } from "manifold-3d";
+import { LIMITS, type MeshData, type StudioDocument, type Vec3 } from "../studio/document.generated";
+import { estimateTriangles, evaluateDesign, prepareMesh, worldTriangles } from "../studio/geometry.generated";
+import { decodeMesh, encodeMesh } from "../studio/meshAsset.generated";
+import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
 
-// Makes a Studio design's solids for an assistant, off the main thread: what each body measures and, when asked,
-// pictures of it. Runs in a worker thread (studioInspect.ts); keep it free of config/db imports.
+// Studio's heavy work, off the main thread: measuring and picturing a design for an assistant, and making the design's
+// own copy of a library model it imports. Runs in a worker thread (studioInspect.ts); keep it free of config/db imports.
 
 export const STUDIO_VIEWS = ["iso", "top", "front", "right", "back", "left", "bottom"] as const;
 export type StudioView = (typeof STUDIO_VIEWS)[number];
@@ -24,10 +28,15 @@ const CAMERAS: Record<StudioView, RenderCamera> = {
 // Past this the design isn't made at all: it would take the server too long. A design in the browser has no such cap.
 const MAX_TRIANGLES = 2_000_000;
 
-export type StudioWorkerInput = {
-  document: StudioDocument;
-  render: { views: StudioView[]; size: number; color: string } | null;
-};
+export type StudioWorkerInput =
+  | {
+      kind: "inspect";
+      document: StudioDocument;
+      /** Where the design's imported meshes are, as <asset id>.tpsm. */
+      assetDir: string;
+      render: { views: StudioView[]; size: number; color: string } | null;
+    }
+  | { kind: "import"; srcPath: string; ext: string; destPath: string };
 
 export type StudioBodyStats = { id: string; bounds: { min: Vec3; max: Vec3 }; volume: number; triangles: number };
 
@@ -39,16 +48,35 @@ export type StudioWorkerResult =
       /** Base64 PNGs, one per view asked for. */
       images: { view: StudioView; png: string }[];
     }
+  | { status: "imported"; solid: boolean; triangles: number; size: Vec3 }
+  /** A file that can't come in, and why, in words for whoever asked. */
+  | { status: "refused"; reason: string }
   | { status: "too-complex"; triangles: number }
   | { status: "error"; error: string };
 
-async function run(input: StudioWorkerInput): Promise<StudioWorkerResult> {
-  const estimate = estimateTriangles(input.document);
-  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+async function manifold(): Promise<ManifoldToplevel> {
   const { default: Module } = await import("manifold-3d/manifold.js");
   const wasm = await Module();
   wasm.setup();
-  const { bodies, errors } = evaluateDesign(wasm, input.document);
+  return wasm;
+}
+
+async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): Promise<StudioWorkerResult> {
+  const estimate = estimateTriangles(input.document);
+  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  const wasm = await manifold();
+  const meshes = new Map<string, MeshData | null>();
+  const meshOf = (assetId: string) => {
+    if (!meshes.has(assetId)) {
+      try {
+        meshes.set(assetId, decodeMesh(fs.readFileSync(path.join(input.assetDir, `${assetId}.tpsm`))));
+      } catch {
+        meshes.set(assetId, null);
+      }
+    }
+    return meshes.get(assetId) ?? undefined;
+  };
+  const { bodies, errors } = evaluateDesign(wasm, input.document, undefined, meshOf);
   const visible = new Set(input.document.features.filter((feature) => feature.visible).map((feature) => feature.id));
   const images: { view: StudioView; png: string }[] = [];
   if (input.render) {
@@ -79,11 +107,39 @@ async function run(input: StudioWorkerInput): Promise<StudioWorkerResult> {
   };
 }
 
+async function importMesh(input: Extract<StudioWorkerInput, { kind: "import" }>): Promise<StudioWorkerResult> {
+  const loaded = await loadTriangles(input.srcPath, input.ext, false);
+  if (typeof loaded === "string")
+    return {
+      status: "refused",
+      reason: loaded === "too-complex" ? "The file is too large to read" : "Studio can't read this file",
+    };
+  const count = loaded.triangles.length / 9;
+  if (count === 0) return { status: "refused", reason: "The file has no triangles in it" };
+  if (count > LIMITS.meshTriangles)
+    return {
+      status: "refused",
+      reason: `It has ${count.toLocaleString("en")} triangles; Studio takes up to ${LIMITS.meshTriangles.toLocaleString("en")}`,
+    };
+  // The loader turns print files Y-up for three.js; Studio is Z-up, as the files themselves are.
+  const zUp = new Float32Array(loaded.triangles.length);
+  for (let i = 0; i < zUp.length; i += 3) {
+    zUp[i] = loaded.triangles[i];
+    zUp[i + 1] = -loaded.triangles[i + 2];
+    zUp[i + 2] = loaded.triangles[i + 1];
+  }
+  const { mesh, solid, size } = prepareMesh(await manifold(), zUp);
+  fs.mkdirSync(path.dirname(input.destPath), { recursive: true });
+  fs.writeFileSync(input.destPath, encodeMesh(mesh));
+  return { status: "imported", solid, triangles: mesh.indices.length / 3, size };
+}
+
 if (parentPort) {
+  const input = workerData as StudioWorkerInput;
   const reply = (result: StudioWorkerResult) =>
     // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker_threads port, not window.postMessage.
     parentPort!.postMessage(result);
-  run(workerData as StudioWorkerInput).then(reply, (error: unknown) =>
+  (input.kind === "import" ? importMesh(input) : inspect(input)).then(reply, (error: unknown) =>
     reply({ status: "error", error: error instanceof Error ? (error.stack ?? error.message) : String(error) }),
   );
 }

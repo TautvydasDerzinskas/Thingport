@@ -1,8 +1,22 @@
+import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 import type { Prisma, StudioDesign } from "@prisma/client";
 import { prisma } from "../db";
+import { RENDERABLE_MODEL_EXTS, STUDIO_ASSETS } from "../config";
 import { HttpError } from "../utils/fileUtils";
-import { applyCommand, CommandError, parseCommandArgs, studioCommand } from "../studio/commands.generated";
-import { emptyDocument, topLevel, type StudioDocument } from "../studio/document.generated";
+import {
+  addMesh,
+  applyCommand,
+  CommandError,
+  parseCommandArgs,
+  studioCommand,
+  type CommandOutcome,
+} from "../studio/commands.generated";
+import { ASSET_ID, emptyDocument, topLevel, type StudioDocument, type Vec3 } from "../studio/document.generated";
+import { resolvePlateFilePath } from "./printCreation";
+import { listPrints } from "./printQuery";
+import { importStudioMesh } from "./studioInspect";
 
 // Studio's designs: each user's own, changed only by the commands in frontend/src/studio/commands.ts, whether the page
 // or an assistant runs them. Every change to the feature tree is kept as a revision, which is what undo and redo move
@@ -121,6 +135,89 @@ export async function createStudioDesign(userId: string, name: string | undefine
 export async function deleteStudioDesign(userId: string, id: string): Promise<void> {
   await owned(prisma, userId, id);
   await prisma.studioDesign.delete({ where: { id } });
+  await fs.rm(studioAssetDir(userId, id), { recursive: true, force: true });
+}
+
+/** Where a design keeps the meshes it imported. Under the user, so deleting the account takes them too. */
+export function studioAssetDir(userId: string, designId: string): string {
+  return path.join(STUDIO_ASSETS, `u-${userId}`, designId);
+}
+
+/** One of a design's imported meshes, for the page to draw; null when there's no such design or mesh. */
+export async function studioAssetPath(userId: string, designId: string, assetId: string): Promise<string | null> {
+  if (!ASSET_ID.test(assetId)) return null;
+  await owned(prisma, userId, designId);
+  const file = path.join(studioAssetDir(userId, designId), `${assetId}.tpsm`);
+  return (await fs.stat(file).catch(() => null))?.isFile() ? file : null;
+}
+
+const extOf = (filename: string) => path.extname(filename).toLowerCase();
+
+/** The user's library models with a 3D file Studio can import, newest first or best match for `q`. */
+export async function listStudioLibrary(userId: string, q: string | undefined, offset: number) {
+  const page = await listPrints(
+    userId,
+    { q: q?.trim() || undefined },
+    { sort: q?.trim() ? "relevance" : "newest", limit: 30, offset },
+  );
+  return {
+    models: page.prints
+      .map((print) => ({
+        id: print.id,
+        title: print.title || print.name,
+        thumb_url: print.thumb_url,
+        files: print.plates
+          .filter((plate) => RENDERABLE_MODEL_EXTS.has(extOf(plate.filename)))
+          .map((plate) => ({ id: plate.id, name: plate.filename, size: plate.size })),
+      }))
+      .filter((model) => model.files.length > 0),
+    next_offset: page.hasMore ? page.nextOffset : null,
+  };
+}
+
+/** Makes the design's own copy of a library model's 3D file, and says what it is. */
+async function importLibraryFile(userId: string, designId: string, modelId: string, fileId: string | undefined) {
+  const print = await prisma.print.findFirst({
+    where: { id: modelId, userId },
+    include: { plates: { orderBy: { position: "asc" } } },
+  });
+  if (!print) throw new HttpError(404, "Model not found", "studio_model_not_found");
+  const plates = print.plates.filter((plate) => RENDERABLE_MODEL_EXTS.has(extOf(plate.filename)));
+  const plate = fileId ? plates.find((each) => each.id === fileId) : plates[0];
+  if (!plate)
+    throw new HttpError(
+      400,
+      fileId
+        ? "That isn't one of the model's 3D files Studio can import (STL, 3MF, STEP, OBJ or GLB)"
+        : "The model has no 3D file Studio can import (STL, 3MF, STEP, OBJ or GLB)",
+      "studio_no_importable_file",
+    );
+  const source = resolvePlateFilePath(plate);
+  if (!source) throw new HttpError(404, `${plate.filename} is missing from storage`, "studio_file_missing");
+  const assetId = crypto.randomBytes(12).toString("hex");
+  const destination = path.join(studioAssetDir(userId, designId), `${assetId}.tpsm`);
+  const result = await importStudioMesh(source, extOf(plate.filename), destination);
+  if (result.status === "refused")
+    throw new HttpError(422, `${plate.filename}: ${result.reason}`, "studio_import_refused");
+  if (result.status !== "imported") {
+    console.error(`[studio] importing ${plate.filename} failed`, result);
+    throw new HttpError(422, `Couldn't read ${plate.filename}`, "studio_import_failed");
+  }
+  return {
+    destination,
+    mesh: {
+      asset_id: assetId,
+      solid: result.solid,
+      triangles: result.triangles,
+      size: result.size.map((n) => Number(n.toFixed(3))) as Vec3,
+      source: {
+        model_id: print.id,
+        file_id: plate.id,
+        file_name: plate.filename,
+        model_title: print.title || print.name,
+      },
+    },
+  };
 }
 
 /**
@@ -136,7 +233,15 @@ export async function runStudioCommand(
 ): Promise<StudioCommandOut> {
   const definition = studioCommand(name);
   if (!definition) throw new HttpError(400, `There's no Studio command ${name}`, "studio_unknown_command");
+  // An import reads the file first, outside the design's lock: a big one takes a while, and the design may change
+  // meanwhile. Its mesh is then added to the design as it is by then.
+  let imported: Awaited<ReturnType<typeof importLibraryFile>> | null = null;
   try {
+    if (definition.kind === "import") {
+      const parsed = parseCommandArgs(definition, args);
+      await owned(prisma, userId, id);
+      imported = await importLibraryFile(userId, id, String(parsed.model_id), parsed.file_id as string | undefined);
+    }
     return await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "StudioDesign" WHERE id = ${id} FOR UPDATE`;
       const design = await owned(tx, userId, id);
@@ -172,7 +277,9 @@ export async function runStudioCommand(
         };
       }
 
-      const outcome = applyCommand(documentOf(design), name, parsed);
+      const outcome: CommandOutcome = imported
+        ? addMesh(documentOf(design), imported.mesh, parsed)
+        : applyCommand(documentOf(design), name, parsed);
       const position = design.position + 1;
       // A change after an undo leaves nothing to redo; past the limit, the oldest are let go.
       await tx.studioRevision.deleteMany({
@@ -196,6 +303,8 @@ export async function runStudioCommand(
       return { design: await out(tx, updated), summary: outcome.summary, created: outcome.created };
     });
   } catch (error) {
+    // An import that didn't make it into the design leaves no copy behind.
+    if (imported) await fs.rm(imported.destination, { force: true });
     if (error instanceof CommandError) throw new HttpError(400, error.message, "studio_command_refused");
     throw error;
   }

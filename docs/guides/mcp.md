@@ -93,7 +93,8 @@ a widget or a tool with the same folder name.
 **Studio designs**, when an admin has turned [Studio](studio.md) on, is one permission for all of Studio's tools:
 `studio_list_designs`, `studio_get_design` and `studio_view_design` to read and look at a design, `studio_create_design`
 and `studio_delete_design`, and one tool for each step you can take on the page, from `studio_add_box` and
-`studio_extrude` to `studio_boolean` and `studio_undo`. It's off for a new token. They change only your Studio designs,
+`studio_extrude` to `studio_boolean` and `studio_undo`. `studio_import_model` brings in one of your library models'
+3D files, so an assistant can find a model with `search_models` and work on it. It's off for a new token. They change only your Studio designs,
 never your models.
 
 An import runs the same checks as **Add > Import** (a provider an admin turned off stays off, and a model already in

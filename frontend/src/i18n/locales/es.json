@@ -3147,7 +3147,8 @@
         "torus": "Toro",
         "extrude": "Extrusión",
         "boolean": "Combinación",
-        "sketch": "Boceto"
+        "sketch": "Boceto",
+        "mesh": "Malla"
       },
       "tree": {
         "heading": "Elementos",
@@ -3202,7 +3203,8 @@
         "label": "Manipulador",
         "translate": "Mover",
         "rotate": "Rotar",
-        "scale": "Escalar"
+        "scale": "Escalar",
+        "select": "Seleccionar"
       },
       "view": {
         "label": "Vistas",
@@ -3210,7 +3212,8 @@
         "top": "Superior",
         "front": "Frontal",
         "right": "Derecha",
-        "fit": "Ajustar a la vista"
+        "fit": "Ajustar a la vista",
+        "navigation": "Arrastrar con el botón derecho gira la vista, con el central (o Mayús + derecho) la desplaza, la rueda acerca. Arrastrar con el izquierdo dibuja un cuadro de selección: de izquierda a derecha toma lo que queda dentro por completo, de derecha a izquierda también lo que toca. Mayús añade a la selección."
       },
       "properties": {
         "heading": "Propiedades",
@@ -3248,6 +3251,16 @@
           "minor_radius": "Radio del tubo",
           "distance": "Distancia",
           "offset": "Desplazamiento"
+        },
+        "mesh": {
+          "source": "Origen",
+          "triangles_one": "{{count}} triángulo",
+          "triangles_many": "{{count}} triángulos",
+          "triangles_other": "{{count}} triángulos",
+          "importedSize": "Importado a {{size}} mm",
+          "solid": "Sólido cerrado",
+          "open": "No es un sólido cerrado",
+          "openHelp": "Tiene huecos, así que se puede mover, escalar y exportar, pero no combinar con otros cuerpos."
         }
       },
       "design": {
@@ -3281,6 +3294,34 @@
         "placeholder": "Describe una pieza o un cambio en esta",
         "send": "Enviar",
         "sendSoon": "El envío a la IA llegará en una próxima actualización"
+      },
+      "panels": {
+        "label": "Paneles",
+        "features": "Elementos",
+        "properties": "Propiedades"
+      },
+      "viewCube": {
+        "label": "Cubo de vista: haz clic en una cara, arista o esquina para mirar desde ahí, arrástralo para girar la vista",
+        "home": "Vista inicial",
+        "top": "SUPERIOR",
+        "bottom": "INFERIOR",
+        "front": "FRONTAL",
+        "back": "POSTERIOR",
+        "left": "IZQUIERDA",
+        "right": "DERECHA"
+      },
+      "open": {
+        "designs": "Diseños",
+        "library": "Biblioteca",
+        "search": "Busca tus modelos",
+        "help": "Los archivos STL, 3MF, STEP, OBJ y GLB entran como cuerpos de malla, a su propio tamaño. El diseño guarda su propia copia, así que los cambios posteriores en el modelo no le llegan.",
+        "open": "Abrir",
+        "openHelp": "Como un diseño nuevo",
+        "insert": "Insertar",
+        "insertHelp": "En este diseño",
+        "noMatches": "Ningún modelo con un archivo 3D coincide",
+        "emptyLibrary": "Tu biblioteca aún no tiene archivos STL, 3MF, STEP, OBJ ni GLB",
+        "loadMore": "Cargar más"
       }
     }
   },

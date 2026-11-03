@@ -42,6 +42,8 @@ export const PREVIEWS = path.join(STORAGE, "previews");
 export const DESCRIPTION_IMAGES = path.join(STORAGE, "description-images");
 // 3D previews, and the failure markers of renders.
 export const MODEL_PREVIEWS = path.join(STORAGE, "model-previews");
+// Studio's copies of the meshes its designs imported, as studio/u-<user>/<design>/<asset>.tpsm.
+export const STUDIO_ASSETS = path.join(STORAGE, "studio");
 // One picture per tag for the Tags page, built from its models' pictures.
 export const TAG_MOSAICS = path.join(STORAGE, "tag-mosaics");
 // Icons users uploaded, by id; see services/iconService.ts.

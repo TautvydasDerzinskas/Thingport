@@ -20,16 +20,19 @@ import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRen
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import HighlightAltOutlinedIcon from "@mui/icons-material/HighlightAltOutlined";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
+import ViewSidebarOutlinedIcon from "@mui/icons-material/ViewSidebarOutlined";
 import PentagonOutlinedIcon from "@mui/icons-material/PentagonOutlined";
 import RectangleOutlinedIcon from "@mui/icons-material/RectangleOutlined";
 import RedoIcon from "@mui/icons-material/Redo";
 import ThreeSixtyIcon from "@mui/icons-material/ThreeSixty";
 import UndoIcon from "@mui/icons-material/Undo";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
+import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import type { SketchPlane } from "../../studio/document";
-import type { CameraView, SketchTool, TransformMode } from "./StudioViewport";
+import type { CameraView, SketchTool, StudioMode } from "./StudioViewport";
 import {
   BoxIcon,
   ConeIcon,
@@ -44,6 +47,7 @@ import {
 } from "./studioIcons";
 
 export type Primitive = "box" | "cylinder" | "cone" | "sphere" | "torus";
+export type StudioPanel = "features" | "properties";
 export type BooleanKind = "union" | "subtract" | "intersect";
 
 type Props = {
@@ -53,7 +57,9 @@ type Props = {
   /** Booleans need two bodies or more, selected; the first is the one the others act on. */
   canCombine: boolean;
   canExtrude: boolean;
-  transformMode: TransformMode;
+  mode: StudioMode;
+  /** Which side panels show. */
+  panels: Record<StudioPanel, boolean>;
   /** While a sketch is being drawn: its plane, and the tool drawing it. */
   sketch: { plane: SketchPlane; tool: SketchTool } | null;
   busy: boolean;
@@ -68,7 +74,8 @@ type Props = {
   onFinishSketch: () => void;
   onExtrude: () => void;
   onCombine: (kind: BooleanKind) => void;
-  onTransformMode: (mode: TransformMode) => void;
+  onMode: (mode: StudioMode) => void;
+  onTogglePanel: (panel: StudioPanel) => void;
   onUndo: () => void;
   onRedo: () => void;
   onView: (view: CameraView) => void;
@@ -124,6 +131,7 @@ export default function StudioToolbar(props: Props) {
   const [designMenu, setDesignMenu] = useState<HTMLElement | null>(null);
   const [sketchMenu, setSketchMenu] = useState<HTMLElement | null>(null);
   const [viewMenu, setViewMenu] = useState<HTMLElement | null>(null);
+  const [panelMenu, setPanelMenu] = useState<HTMLElement | null>(null);
   const noDesign = props.designName === null;
 
   const menuItem = (icon: React.ReactNode, label: string, onClick: () => void, close: () => void) => (
@@ -287,13 +295,14 @@ export default function StudioToolbar(props: Props) {
           <Gap />
           <Segmented
             label={t("studio.transform.label")}
-            value={props.transformMode}
+            value={props.mode}
             options={[
+              { value: "select", label: `${t("studio.transform.select")} (Q)`, icon: <HighlightAltOutlinedIcon /> },
               { value: "translate", label: `${t("studio.transform.translate")} (W)`, icon: <OpenWithIcon /> },
               { value: "rotate", label: `${t("studio.transform.rotate")} (E)`, icon: <ThreeSixtyIcon /> },
               { value: "scale", label: `${t("studio.transform.scale")} (R)`, icon: <AspectRatioIcon /> },
             ]}
-            onChange={props.onTransformMode}
+            onChange={props.onMode}
           />
         </>
       )}
@@ -310,6 +319,23 @@ export default function StudioToolbar(props: Props) {
         <RedoIcon />
       </Tool>
       <Box sx={{ flex: 1 }} />
+      <HelpTip text={t("studio.view.navigation")} />
+      <Tool label={t("studio.panels.label")} onClick={(event) => setPanelMenu(event.currentTarget)}>
+        <ViewSidebarOutlinedIcon />
+      </Tool>
+      <Menu anchorEl={panelMenu} open={Boolean(panelMenu)} onClose={() => setPanelMenu(null)}>
+        {(["features", "properties"] as const).map((panel) => (
+          <MenuItem
+            key={panel}
+            role="menuitemcheckbox"
+            aria-checked={props.panels[panel]}
+            onClick={() => props.onTogglePanel(panel)}
+          >
+            <ListItemIcon>{props.panels[panel] && <CheckRoundedIcon fontSize="small" />}</ListItemIcon>
+            <ListItemText>{t(`studio.panels.${panel}`)}</ListItemText>
+          </MenuItem>
+        ))}
+      </Menu>
       <Tool label={t("studio.view.label")} onClick={(event) => setViewMenu(event.currentTarget)}>
         <VideocamOutlinedIcon />
       </Tool>

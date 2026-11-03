@@ -53,9 +53,22 @@ export type BooleanFeature = Body & {
   tool_ids: string[];
 };
 export type SketchFeature = Common & { type: "sketch"; plane: SketchPlane; offset: number; shapes: SketchShape[] };
+/** A model brought in from the library. Its triangles are the design's own copy, `asset_id`, kept beside the design:
+ *  a later change to the library model doesn't reach it. */
+export type MeshFeature = Body & {
+  type: "mesh";
+  asset_id: string;
+  /** Closed, with no gaps, so a boolean can use it. One that isn't can still be moved, scaled and exported. */
+  solid: boolean;
+  triangles: number;
+  /** Its size as it came in, in mm, [x, y, z]. */
+  size: Vec3;
+  /** Where it came from, as it was then. */
+  source: { model_id: string; file_id: string; file_name: string; model_title: string };
+};
 
 export type PrimitiveFeature = BoxFeature | CylinderFeature | ConeFeature | SphereFeature | TorusFeature;
-export type BodyFeature = PrimitiveFeature | ExtrudeFeature | BooleanFeature;
+export type BodyFeature = PrimitiveFeature | MeshFeature | ExtrudeFeature | BooleanFeature;
 export type Feature = BodyFeature | SketchFeature;
 export type FeatureType = Feature["type"];
 
@@ -76,7 +89,15 @@ export const LIMITS = {
   size: 10_000,
   segmentsMin: 3,
   segmentsMax: 256,
+  /** An imported mesh's triangles. */
+  meshTriangles: 1_000_000,
 } as const;
+
+/** A mesh as a design keeps it: corners shared between triangles, centred on X and Y, standing on Z = 0, in mm. */
+export type MeshData = { positions: Float32Array; indices: Uint32Array };
+
+/** An imported mesh's id, as its file beside the design is named. */
+export const ASSET_ID = /^[0-9a-f]{24}$/;
 
 export const DEFAULT_SEGMENTS = 64;
 

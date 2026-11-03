@@ -3234,7 +3234,8 @@
         "torus": "Toras",
         "extrude": "Išstūmimas",
         "boolean": "Derinys",
-        "sketch": "Eskizas"
+        "sketch": "Eskizas",
+        "mesh": "Tinklelis"
       },
       "tree": {
         "heading": "Elementai",
@@ -3289,7 +3290,8 @@
         "label": "Valdiklis",
         "translate": "Perkelti",
         "rotate": "Pasukti",
-        "scale": "Keisti mastelį"
+        "scale": "Keisti mastelį",
+        "select": "Žymėti"
       },
       "view": {
         "label": "Vaizdai",
@@ -3297,7 +3299,8 @@
         "top": "Iš viršaus",
         "front": "Iš priekio",
         "right": "Iš dešinės",
-        "fit": "Talpinti į vaizdą"
+        "fit": "Talpinti į vaizdą",
+        "navigation": "Vilkdami dešiniuoju mygtuku sukate vaizdą, viduriniu (arba Shift + dešiniuoju) – stumiate, ratuku – artinate. Vilkdami kairiuoju brėžiate žymėjimo rėmelį: iš kairės į dešinę jis pažymi tai, kas visiškai viduje, iš dešinės į kairę – ir tai, ką paliečia. Shift prideda prie pažymėtų."
       },
       "properties": {
         "heading": "Savybės",
@@ -3335,6 +3338,16 @@
           "minor_radius": "Vamzdžio spindulys",
           "distance": "Atstumas",
           "offset": "Poslinkis"
+        },
+        "mesh": {
+          "source": "Šaltinis",
+          "triangles_one": "{{count}} trikampis",
+          "triangles_few": "{{count}} trikampiai",
+          "triangles_other": "{{count}} trikampių",
+          "importedSize": "Įkeltas {{size}} mm dydžio",
+          "solid": "Uždaras kūnas",
+          "open": "Ne uždaras kūnas",
+          "openHelp": "Jame yra tarpų, todėl jį galima perkelti, keisti mastelį ir eksportuoti, bet ne sujungti su kitais kūnais."
         }
       },
       "design": {
@@ -3368,6 +3381,34 @@
         "placeholder": "Aprašykite detalę arba šios detalės pakeitimą",
         "send": "Siųsti",
         "sendSoon": "Siuntimas DI bus įdiegtas vėlesniame atnaujinime"
+      },
+      "panels": {
+        "label": "Skydeliai",
+        "features": "Elementai",
+        "properties": "Savybės"
+      },
+      "viewCube": {
+        "label": "Vaizdo kubas: spustelėkite sieną, briauną ar kampą, kad žiūrėtumėte iš ten, vilkite jį, kad pasuktumėte vaizdą",
+        "home": "Pradinis vaizdas",
+        "top": "VIRŠUS",
+        "bottom": "APAČIA",
+        "front": "PRIEKIS",
+        "back": "GALAS",
+        "left": "KAIRĖ",
+        "right": "DEŠINĖ"
+      },
+      "open": {
+        "designs": "Projektai",
+        "library": "Biblioteka",
+        "search": "Ieškokite savo modelių",
+        "help": "STL, 3MF, STEP, OBJ ir GLB failai įkeliami kaip tinklelio kūnai, savo tikru dydžiu. Projektas pasilieka savo kopiją, todėl vėlesni modelio pakeitimai jos nepaliečia.",
+        "open": "Atidaryti",
+        "openHelp": "Kaip naują projektą",
+        "insert": "Įterpti",
+        "insertHelp": "Į šį projektą",
+        "noMatches": "Nėra atitinkančių modelių su 3D failu",
+        "emptyLibrary": "Jūsų bibliotekoje dar nėra STL, 3MF, STEP, OBJ ar GLB failų",
+        "loadMore": "Įkelti daugiau"
       }
     }
   },

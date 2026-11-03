@@ -56,6 +56,15 @@ export function TorusIcon(props: SvgIconProps) {
   );
 }
 
+/** A model brought in from the library: a shape made of triangles. */
+export function MeshIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M12 3.5 20.5 19h-17zM12 3.5 8.2 19M12 3.5 15.8 19M6.2 14h11.6" />
+    </SvgIcon>
+  );
+}
+
 export function ExtrudeIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props}>
@@ -116,6 +125,7 @@ export function FeatureIcon({ type, ...props }: SvgIconProps & { type: FeatureTy
   if (type === "sphere") return <SphereIcon {...props} />;
   if (type === "torus") return <TorusIcon {...props} />;
   if (type === "extrude") return <ExtrudeIcon {...props} />;
+  if (type === "mesh") return <MeshIcon {...props} />;
   if (type === "sketch") return <SketchIcon {...props} />;
   return <UnionIcon {...props} />;
 }

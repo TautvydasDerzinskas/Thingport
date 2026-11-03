@@ -14,12 +14,18 @@ page (StudioPage/) ──run(command)──▶ POST /api/studio/designs/:id/comm
 MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) ───────────▶ studioService ──▶ revision
 ```
 
-- **`document.ts`** — a design is a parametric feature tree, plain JSON: primitives, sketches, extrudes and booleans,
-  in mm with Z up. A boolean or extrude _consumes_ its inputs, which stay editable under it.
+- **`document.ts`** — a design is a parametric feature tree, plain JSON: primitives, imported meshes, sketches, extrudes
+  and booleans, in mm with Z up. A boolean or extrude _consumes_ its inputs, which stay editable under it.
 - **`commands.ts`** — `STUDIO_COMMANDS`: each has a title, a description written for an AI, zod `args` and a pure
-  `apply(doc, args)`. Undo, redo and `rename_design` have no `apply`; the server carries them out.
+  `apply(doc, args)`. Undo, redo and `rename_design` have no `apply`; the server carries them out. `import_model` is
+  an `"import"` command: the server first reads the library file into the design's own copy, then adds it with
+  `addMesh`, the shared change to the tree.
+- **`meshAsset.ts`** — that copy's file format. Copies live in `STORAGE/studio/u-<user>/<design>/<asset>.tpsm`; the page
+  fetches them from `GET /api/studio/designs/:id/assets/:assetId` and caches them, as an asset never changes.
 - **`geometry.ts`** — the feature tree to solids with manifold, which the page loads from WebAssembly and the backend
-  from its package (`services/studioWorker.ts`, in a worker thread with a timeout).
+  from its package (`services/studioWorker.ts`, in a worker thread with a timeout). `prepareMesh` turns an imported
+  file's triangles into the design's copy: corners joined, centred on the bed, and marked `solid` only when manifold
+  takes it as closed. An open one still shows and exports, but booleans refuse it.
 
 The page applies a document command locally at once (`useStudioDesign`), then sends it; the server applies it again on
 the stored design, one command at a time per design, and keeps a revision, which undo and redo move between. An open

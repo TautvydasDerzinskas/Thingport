@@ -9,6 +9,7 @@ import {
   isBody,
   LIMITS,
   type BodyFeature,
+  type MeshFeature,
   type Feature,
   type FeatureType,
   type SketchFeature,
@@ -39,13 +40,16 @@ export type CommandOutcome = {
   created: string[];
 };
 
+export type CommandKind = "document" | "history" | "design" | "import";
+
 type CommandDefinition<S extends z.ZodRawShape> = {
   /** Short, for an MCP client's tool list. */
   title: string;
   description: string;
   args: S;
-  /** "document" commands change the feature tree; "history" ones move through it; "design" ones change the design. */
-  kind?: "document" | "history" | "design";
+  /** "document" commands change the feature tree; "history" ones move through it; "design" ones change the design;
+   *  "import" ones need the server to bring something in first, then change the tree with a helper here. */
+  kind?: CommandKind;
   /** Changes or removes something already there, rather than only adding. */
   destructive?: boolean;
   apply?: (doc: StudioDocument, args: z.output<z.ZodObject<S>>) => CommandOutcome;
@@ -186,6 +190,7 @@ const EDITABLE: Record<FeatureType, string[]> = {
   extrude: ["distance"],
   boolean: ["operation"],
   sketch: ["plane", "offset"],
+  mesh: [],
 };
 
 /** Copies a feature and everything it's built from, inputs first so the order still holds. Returns the copy's id. */
@@ -449,7 +454,11 @@ export const STUDIO_COMMANDS = {
       const ids = [args.target_id, ...args.tool_ids];
       if (new Set(ids).size !== ids.length) throw new CommandError("Each body can only be in a boolean once.");
       for (const id of ids) {
-        findBody(doc, id);
+        const body = findBody(doc, id);
+        if (body.type === "mesh" && !body.solid)
+          throw new CommandError(
+            `${id} isn't a closed solid, so it can't be combined. It can still be moved, scaled and exported.`,
+          );
         assertFree(doc, id);
       }
       const id = nextId(doc, "boolean");
@@ -621,6 +630,26 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  import_model: command({
+    title: "Import a library model",
+    description:
+      "Brings one of the user's library models into the design as a mesh body: an STL, 3MF, STEP, OBJ or GLB file. " +
+      "Find the model with search_models or list_models, and its files with list_model_files. It comes in at its own " +
+      "size in mm, centred and standing on the bed, before position and rotation apply. A closed mesh can be combined " +
+      `with booleans like any body; one with gaps can only be moved, scaled and exported. A 3MF brings its first plate as ` +
+      `one body. Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its own copy.`,
+    kind: "import",
+    args: {
+      model_id: z.string().min(1).describe("The library model's id."),
+      file_id: z
+        .string()
+        .min(1)
+        .optional()
+        .describe("Which of its 3D files, by its id from list_model_files. Default: its first one."),
+      ...placement,
+    },
+  }),
+
   rename_design: command({
     title: "Rename the design",
     description: "Gives the design a new name.",
@@ -655,7 +684,7 @@ export type AnyStudioCommand = {
   title: string;
   description: string;
   args: z.ZodRawShape;
-  kind: "document" | "history" | "design";
+  kind: CommandKind;
   destructive: boolean;
   apply?: (doc: StudioDocument, args: Record<string, unknown>) => CommandOutcome;
 };
@@ -689,6 +718,32 @@ export function parseCommandArgs(definition: AnyStudioCommand, args: unknown): R
   throw new CommandError(
     parsed.error.issues.map((issue) => `${issue.path.join(".") || "arguments"}: ${issue.message}`).join("; "),
   );
+}
+
+/** What an import adds once the server has made the design's copy of the mesh: the import_model command's change to
+ *  the feature tree, on a copy of `doc`. */
+export function addMesh(
+  doc: StudioDocument,
+  mesh: Pick<MeshFeature, "asset_id" | "solid" | "triangles" | "size" | "source">,
+  args: { position?: Vec3; rotation?: Vec3; name?: string },
+): CommandOutcome {
+  const next = structuredClone(doc);
+  const id = nextId(next, "mesh");
+  addFeature(next, {
+    id,
+    type: "mesh",
+    name: args.name ?? mesh.source.model_title.slice(0, 80),
+    visible: true,
+    transform: placed(args),
+    ...mesh,
+  });
+  return {
+    document: next,
+    created: [id],
+    summary:
+      `Imported ${mesh.source.file_name} as ${id}, ${size3(...mesh.size)}` +
+      (mesh.solid ? "" : ": not a closed solid, so it can't be combined"),
+  };
 }
 
 /** Carries out a document command on a copy of `doc`. */

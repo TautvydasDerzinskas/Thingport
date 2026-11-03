@@ -11,7 +11,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
-import type { Theme } from "@mui/material/styles";
+import { keyframes, type Theme } from "@mui/material/styles";
 import AddBoxOutlinedIcon from "@mui/icons-material/AddBoxOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -40,8 +40,8 @@ import { featureLabel } from "./labels";
 import PromptOverlay from "./PromptOverlay";
 import PropertiesPanel from "./PropertiesPanel";
 import RenameDialog from "./RenameDialog";
-import StudioToolbar, { type BooleanKind, type Primitive } from "./StudioToolbar";
-import StudioViewport, { type SketchTool, type StudioViewportHandle, type TransformMode } from "./StudioViewport";
+import StudioToolbar, { type BooleanKind, type Primitive, type StudioPanel } from "./StudioToolbar";
+import StudioViewport, { type SketchTool, type StudioMode, type StudioViewportHandle } from "./StudioViewport";
 import { BoxIcon, ExtrudeIcon } from "./studioIcons";
 import { useStudioDesign } from "./useStudioDesign";
 
@@ -57,6 +57,24 @@ type Props = {
 const EXTRUDE_MM = 10;
 // How far a copy lands from the original, so it isn't hidden inside it.
 const COPY_OFFSET: [number, number, number] = [10, 10, 0];
+const PANELS_KEY = "thingport_studio_panels";
+const BOTH_PANELS: Record<StudioPanel, boolean> = { features: true, properties: true };
+
+// A panel slides in from its side as it's shown again.
+const fromLeft = keyframes`from { opacity: 0; transform: translateX(-12px); }`;
+const fromRight = keyframes`from { opacity: 0; transform: translateX(12px); }`;
+
+/** Which side panels this browser last showed. */
+function storedPanels(): Record<StudioPanel, boolean> {
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(PANELS_KEY) ?? "null");
+    if (value && typeof value === "object") {
+      const { features, properties } = value as Record<string, unknown>;
+      if (typeof features === "boolean" && typeof properties === "boolean") return { features, properties };
+    }
+  } catch {}
+  return BOTH_PANELS;
+}
 
 /**
  * A side panel: beside the view on a wide screen, stacked under it on a narrow one, in `order`. Its wide-screen styles
@@ -76,6 +94,13 @@ function panelSx(theme: Theme, side: "left" | "right", order: number) {
       borderTop: 0,
       [side === "left" ? "borderLeft" : "borderRight"]: line,
     },
+  };
+}
+
+function slideIn(frames: ReturnType<typeof keyframes>) {
+  return {
+    animation: `${frames} 200ms ease-out`,
+    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
   };
 }
 
@@ -132,7 +157,16 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   }, []);
 
   const [selected, setSelected] = useState<string[]>([]);
-  const [transformMode, setTransformMode] = useState<TransformMode>("translate");
+  const [mode, setMode] = useState<StudioMode>("select");
+  const [panels, setPanels] = useState(storedPanels);
+  const togglePanel = (panel: StudioPanel) =>
+    setPanels((prev) => {
+      const next = { ...prev, [panel]: !prev[panel] };
+      try {
+        window.localStorage.setItem(PANELS_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   const [sketch, setSketch] = useState<{ id: string; tool: SketchTool } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [menu, setMenu] = useState<{ id: string; at: { top: number; left: number } } | null>(null);
@@ -197,8 +231,46 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     });
   }, []);
 
+  const boxSelect = useCallback(
+    (ids: string[], additive: boolean) =>
+      setSelected((prev) => (additive ? [...prev, ...ids.filter((id) => !prev.includes(id))] : ids)),
+    [],
+  );
+
   const selectCreated = (created: string[] | null) => {
     if (created?.length) setSelected(created.slice(-1));
+  };
+
+  /** A library model's file: as a design of its own, named after the model, or into the one open. False if it failed. */
+  const importModel = async (
+    model: { id: string; title: string },
+    fileId: string,
+    into: "new" | "current",
+  ): Promise<boolean> => {
+    if (into === "current") {
+      const created = await run("import_model", { model_id: model.id, file_id: fileId });
+      if (!created) return false;
+      setDesignsOpen(false);
+      selectCreated(created);
+      return true;
+    }
+    try {
+      const created = await studioApi.create(model.title.slice(0, 120) || t("studio.design.untitled"));
+      try {
+        await studioApi.run(created.id, "import_model", { model_id: model.id, file_id: fileId });
+      } catch (error) {
+        // A design that couldn't take the model isn't left behind, empty.
+        await studioApi.remove(created.id).catch(() => undefined);
+        throw error;
+      }
+      setNoDesigns(false);
+      setDesignsOpen(false);
+      setSearchParams({ design: created.id });
+      return true;
+    } catch (error) {
+      showError(error);
+      return false;
+    }
   };
 
   const add = async (kind: Primitive) => {
@@ -247,7 +319,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const exportStl = async () => {
     if (!doc || !design) return;
     try {
-      const blob = await designStl(doc);
+      const blob = await designStl(design.id, doc);
       if (!blob) return toast({ message: t("studio.design.nothingToExport"), severity: "info" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -297,8 +369,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     } else if ((event.key === "Delete" || event.key === "Backspace") && !sketch && selected.length) {
       event.preventDefault();
       void deleteSelected();
-    } else if (!sketch && (key === "w" || key === "e" || key === "r")) {
-      setTransformMode(key === "w" ? "translate" : key === "e" ? "rotate" : "scale");
+    } else if (!sketch && (key === "q" || key === "w" || key === "e" || key === "r")) {
+      setMode(key === "q" ? "select" : key === "w" ? "translate" : key === "e" ? "rotate" : "scale");
     } else if (key === "f") {
       viewport.current?.fit();
     }
@@ -371,11 +443,13 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       <>
         <StudioViewport
           ref={viewport}
+          designId={design!.id}
           document={doc}
           selected={selected}
-          transformMode={transformMode}
+          mode={mode}
           sketch={sketch}
           onSelect={select}
+          onBoxSelect={boxSelect}
           onTransform={(id: string, transform: Transform) =>
             void run("set_transform", { feature_id: id, ...transform })
           }
@@ -429,7 +503,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         canRedo={Boolean(design?.can_redo)}
         canCombine={selectedBodies.length >= 2}
         canExtrude={Boolean(extrudable)}
-        transformMode={transformMode}
+        mode={mode}
+        panels={panels}
         sketch={sketch && sketchFeature?.type === "sketch" ? { plane: sketchFeature.plane, tool: sketch.tool } : null}
         busy={!doc}
         onNewDesign={() => void newDesign()}
@@ -443,7 +518,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         onFinishSketch={() => setSketch(null)}
         onExtrude={() => void extrude()}
         onCombine={(kind) => void combine(kind)}
-        onTransformMode={setTransformMode}
+        onMode={setMode}
+        onTogglePanel={togglePanel}
         onUndo={() => void run("undo", {})}
         onRedo={() => void run("redo", {})}
         onView={(view) => viewport.current?.view(view)}
@@ -454,24 +530,29 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           flex: 1,
           minHeight: 0,
           display: "grid",
-          gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "220px minmax(0, 1fr) 270px" },
+          gridTemplateColumns: {
+            xs: "minmax(0, 1fr)",
+            md: [panels.features && "220px", "minmax(0, 1fr)", panels.properties && "270px"].filter(Boolean).join(" "),
+          },
           gridTemplateRows: { xs: "minmax(360px, 60vh) auto auto", md: "minmax(0, 1fr)" },
         }}
       >
-        <Box sx={(theme) => panelSx(theme, "right", 2)}>
-          {doc && (
-            <FeatureTree
-              document={doc}
-              selected={selected}
-              errors={errors}
-              onSelect={select}
-              onMenu={(id, at) => setMenu({ id, at })}
-              onToggleVisible={(feature) =>
-                void run("set_visibility", { feature_id: feature.id, visible: !feature.visible })
-              }
-            />
-          )}
-        </Box>
+        {panels.features && (
+          <Box sx={(theme) => ({ ...panelSx(theme, "right", 2), ...slideIn(fromLeft) })}>
+            {doc && (
+              <FeatureTree
+                document={doc}
+                selected={selected}
+                errors={errors}
+                onSelect={select}
+                onMenu={(id, at) => setMenu({ id, at })}
+                onToggleVisible={(feature) =>
+                  void run("set_visibility", { feature_id: feature.id, visible: !feature.visible })
+                }
+              />
+            )}
+          </Box>
+        )}
         <Box
           sx={{
             order: { xs: 1, md: 0 },
@@ -483,21 +564,23 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         >
           {viewportArea}
         </Box>
-        <Box sx={(theme) => panelSx(theme, "left", 3)}>
-          {doc && (
-            <PropertiesPanel
-              document={doc}
-              selected={selected}
-              errors={errors}
-              run={run}
-              onSelect={(id) => setSelected([id])}
-              onEditSketch={(id) => {
-                setSelected([id]);
-                setSketch({ id, tool: "rectangle" });
-              }}
-            />
-          )}
-        </Box>
+        {panels.properties && (
+          <Box sx={(theme) => ({ ...panelSx(theme, "left", 3), ...slideIn(fromRight) })}>
+            {doc && (
+              <PropertiesPanel
+                document={doc}
+                selected={selected}
+                errors={errors}
+                run={run}
+                onSelect={(id) => setSelected([id])}
+                onEditSketch={(id) => {
+                  setSelected([id]);
+                  setSketch({ id, tool: "rectangle" });
+                }}
+              />
+            )}
+          </Box>
+        )}
       </Box>
 
       <Menu open={Boolean(menuFeature)} onClose={closeMenu} anchorReference="anchorPosition" anchorPosition={menu?.at}>
@@ -581,13 +664,14 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
 
       <DesignsDialog
         open={designsOpen}
-        currentId={designId}
+        currentId={design?.id ?? null}
         onClose={() => setDesignsOpen(false)}
         onOpen={(id) => {
           setDesignsOpen(false);
           setSearchParams({ design: id });
         }}
         onNew={() => void newDesign()}
+        onImport={importModel}
         onError={showError}
       />
       <RenameDialog

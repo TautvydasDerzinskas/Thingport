@@ -52,7 +52,11 @@ const normalize = (a: Vec): Vec => {
 type Geometry = { triangles: Float32Array; colors: Uint8Array | null };
 
 /** Every triangle as 9 floats, in a Y-up world; `wantColors` also reads the colour each was drawn in. */
-async function loadTriangles(srcPath: string, ext: string, wantColors: boolean): Promise<Geometry | PreviewRefusal> {
+export async function loadTriangles(
+  srcPath: string,
+  ext: string,
+  wantColors: boolean,
+): Promise<Geometry | PreviewRefusal> {
   const THREE = await import("three");
   let root: import("three").Object3D;
   if (ext === ".3mf") {

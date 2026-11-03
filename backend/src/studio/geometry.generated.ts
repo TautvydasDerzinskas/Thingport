@@ -11,6 +11,7 @@ import {
   topLevel,
   transformMatrix,
   type BodyFeature,
+  type MeshData,
   type SketchFeature,
   type StudioDocument,
   type Vec3,
@@ -54,11 +55,19 @@ function planeMatrix(sketch: SketchFeature): Mat4 {
   return [...u, 0, ...v, 0, ...n, 0, ...at, 1] as Mat4;
 }
 
+/** An imported mesh's triangles by its asset id, once the caller has loaded them. */
+export type MeshLookup = (assetId: string) => MeshData | undefined;
+
 /**
  * Makes the design's top-level bodies, or only the ones in `ids`. One that fails, say a boolean that came out empty,
- * is reported in `errors` and the rest still come out.
+ * is reported in `errors` and the rest still come out. Imported meshes come from `meshes`.
  */
-export function evaluateDesign(wasm: ManifoldToplevel, doc: StudioDocument, ids?: readonly string[]): Evaluation {
+export function evaluateDesign(
+  wasm: ManifoldToplevel,
+  doc: StudioDocument,
+  ids?: readonly string[],
+  meshes?: MeshLookup,
+): Evaluation {
   const { Manifold, CrossSection } = wasm;
   // Manifold's objects live in WebAssembly memory, which nothing collects: everything made here goes at the end.
   const made: Disposable[] = [];
@@ -109,6 +118,11 @@ export function evaluateDesign(wasm: ManifoldToplevel, doc: StudioDocument, ids?
         if (feature.distance < 0) solid = own(solid.translate([0, 0, -height]));
         return own(solid.transform(planeMatrix(sketch)));
       }
+      case "mesh": {
+        if (!feature.solid) throw new Error(`${feature.id} isn't a closed solid`);
+        const data = meshOf(feature.id, feature.asset_id);
+        return own(new Manifold(new wasm.Mesh({ numProp: 3, vertProperties: data.positions, triVerts: data.indices })));
+      }
       case "boolean": {
         const target = inWorld(feature.target_id);
         const tools = feature.tool_ids.map(inWorld);
@@ -117,6 +131,12 @@ export function evaluateDesign(wasm: ManifoldToplevel, doc: StudioDocument, ids?
         return own(target.subtract(own(Manifold.union(tools))));
       }
     }
+  };
+
+  const meshOf = (id: string, assetId: string): MeshData => {
+    const data = meshes?.(assetId);
+    if (!data) throw new Error(`${id}'s mesh isn't loaded`);
+    return data;
   };
 
   // The body where it is: what a boolean is made of.
@@ -137,6 +157,11 @@ export function evaluateDesign(wasm: ManifoldToplevel, doc: StudioDocument, ids?
     for (const feature of topLevel(doc)) {
       if (!isBody(feature) || (wanted && !wanted.has(feature.id))) continue;
       try {
+        // An open mesh isn't a solid manifold can make, but it shows, moves and exports as it is.
+        if (feature.type === "mesh" && !feature.solid) {
+          bodies.push(openMesh(feature.id, meshOf(feature.id, feature.asset_id), transformMatrix(feature.transform)));
+          continue;
+        }
         const solid = local(feature);
         const status = solid.status();
         if (status !== "NoError") throw new Error(`manifold reported ${status}`);
@@ -180,6 +205,75 @@ export function evaluateDesign(wasm: ManifoldToplevel, doc: StudioDocument, ids?
   return { bodies, errors };
 }
 
+/** An open mesh as a body: as it is, measured but with no volume, which it doesn't enclose. */
+function openMesh(id: string, mesh: MeshData, matrix: number[]): EvaluatedBody {
+  const min: Vec3 = [Infinity, Infinity, Infinity];
+  const max: Vec3 = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < mesh.positions.length; i += 3) {
+    const point = applyMatrix(matrix, [mesh.positions[i], mesh.positions[i + 1], mesh.positions[i + 2]]);
+    for (let axis = 0; axis < 3; axis++) {
+      min[axis] = Math.min(min[axis], point[axis]);
+      max[axis] = Math.max(max[axis], point[axis]);
+    }
+  }
+  return { id, mesh, matrix, bounds: { min, max }, volume: Number.NaN, triangles: mesh.indices.length / 3 };
+}
+
+/**
+ * Makes an imported model's triangles (nine numbers each, Z up, in mm) into the design's copy: corners shared, centred
+ * on X and Y and standing on Z = 0, and as manifold cleaned it when it's a closed solid.
+ */
+export function prepareMesh(
+  wasm: ManifoldToplevel,
+  triangles: Float32Array,
+): { mesh: MeshData; solid: boolean; size: Vec3 } {
+  // Corners at the same place become one, as an STL repeats each corner for every triangle that has it.
+  const corners = new Map<string, number>();
+  const positions: number[] = [];
+  const indices = new Uint32Array(triangles.length / 3);
+  for (let i = 0; i < triangles.length; i += 3) {
+    const key = `${triangles[i]},${triangles[i + 1]},${triangles[i + 2]}`;
+    let index = corners.get(key);
+    if (index === undefined) {
+      index = positions.length / 3;
+      corners.set(key, index);
+      positions.push(triangles[i], triangles[i + 1], triangles[i + 2]);
+    }
+    indices[i / 3] = index;
+  }
+  const min: Vec3 = [Infinity, Infinity, Infinity];
+  const max: Vec3 = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < positions.length; i += 3) {
+    for (let axis = 0; axis < 3; axis++) {
+      min[axis] = Math.min(min[axis], positions[i + axis]);
+      max[axis] = Math.max(max[axis], positions[i + axis]);
+    }
+  }
+  const shift: Vec3 = [-(min[0] + max[0]) / 2, -(min[1] + max[1]) / 2, -min[2]];
+  const centred = new Float32Array(positions.length);
+  for (let i = 0; i < positions.length; i++) centred[i] = positions[i] + shift[i % 3];
+  const size: Vec3 = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
+  const welded: MeshData = { positions: centred, indices };
+  try {
+    const solid = new wasm.Manifold(new wasm.Mesh({ numProp: 3, vertProperties: centred, triVerts: indices }));
+    try {
+      if (solid.status() !== "NoError" || solid.isEmpty()) return { mesh: welded, solid: false, size };
+      const clean = solid.getMesh();
+      const stride = clean.numProp;
+      const count = clean.vertProperties.length / stride;
+      const out = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++)
+        for (let axis = 0; axis < 3; axis++) out[i * 3 + axis] = clean.vertProperties[i * stride + axis];
+      return { mesh: { positions: out, indices: new Uint32Array(clean.triVerts) }, solid: true, size };
+    } finally {
+      solid.delete();
+    }
+  } catch {
+    // "Not manifold": it has gaps, or edges shared by more than two triangles.
+    return { mesh: welded, solid: false, size };
+  }
+}
+
 /** A body's triangles in the world, nine numbers each, as an STL file or a renderer takes them. */
 export function worldTriangles(body: EvaluatedBody): Float32Array {
   const { positions, indices } = body.mesh;
@@ -202,6 +296,7 @@ export function estimateTriangles(doc: StudioDocument): number {
     else if (feature.type === "cylinder" || feature.type === "cone") total += feature.segments * 4;
     else if (feature.type === "sphere") total += (feature.segments * feature.segments) / 2;
     else if (feature.type === "torus") total += feature.segments * feature.segments * 2;
+    else if (feature.type === "mesh") total += feature.triangles;
     else if (feature.type === "sketch")
       total += feature.shapes.reduce(
         (sum, shape) => sum + 4 * (shape.type === "polygon" ? shape.points.length : shape.type === "circle" ? 64 : 4),

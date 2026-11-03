@@ -3,18 +3,21 @@ import type { StudioDocument } from "../studio/document.generated";
 import { workerBootstrap } from "../utils/workerBootstrap";
 import type { StudioView, StudioWorkerInput, StudioWorkerResult } from "./studioWorker";
 
-// Measures and pictures a Studio design for an assistant, in a worker thread so a heavy design can't hold up the API.
-// One at a time, and a design's answer is kept until it changes, as an assistant tends to ask twice.
+// Studio's work in a worker thread, so a heavy design or file can't hold up the API: measuring and picturing a design
+// for an assistant, and reading a library model into a design. One at a time; a design's measurements are kept until
+// it changes, as an assistant tends to ask twice.
 
 const WORKER_BOOTSTRAP = workerBootstrap(__dirname, "studioWorker");
-const TIMEOUT_MS = 30_000;
-const MEMORY_MB = 512;
+const INSPECT_TIMEOUT_MS = 30_000;
+// A big STEP file takes a while to read.
+const IMPORT_TIMEOUT_MS = 180_000;
+const MEMORY_MB = 1024;
 const CACHE_SIZE = 32;
 
 const cache = new Map<string, StudioWorkerResult>();
 let queue: Promise<unknown> = Promise.resolve();
 
-function inWorker(input: StudioWorkerInput): Promise<StudioWorkerResult> {
+function inWorker(input: StudioWorkerInput, timeoutMs: number): Promise<StudioWorkerResult> {
   return new Promise((resolve) => {
     const worker = new Worker(WORKER_BOOTSTRAP, {
       eval: true,
@@ -29,8 +32,8 @@ function inWorker(input: StudioWorkerInput): Promise<StudioWorkerResult> {
       void worker.terminate().finally(() => resolve(result));
     };
     const timeout = setTimeout(
-      () => finish({ status: "error", error: `took longer than ${TIMEOUT_MS / 1000} s` }),
-      TIMEOUT_MS,
+      () => finish({ status: "error", error: `took longer than ${timeoutMs / 1000} s` }),
+      timeoutMs,
     );
     worker.once("message", (result: StudioWorkerResult) => finish(result));
     worker.once("error", (error) => finish({ status: "error", error: error.stack ?? String(error) }));
@@ -38,22 +41,32 @@ function inWorker(input: StudioWorkerInput): Promise<StudioWorkerResult> {
   });
 }
 
+function queued(input: StudioWorkerInput, timeoutMs: number): Promise<StudioWorkerResult> {
+  const result = queue.then(() => inWorker(input, timeoutMs));
+  queue = result.catch(() => undefined);
+  return result;
+}
+
 /** `key` names the design as it is now (its id and version), so an unchanged one isn't made again. */
 export function inspectStudioDesign(
   key: string,
   document: StudioDocument,
+  assetDir: string,
   render: { views: StudioView[]; size: number; color: string } | null,
 ): Promise<StudioWorkerResult> {
   const cacheKey = render ? `${key}:${render.views.join(",")}:${render.size}` : key;
   const known = cache.get(cacheKey);
   if (known) return Promise.resolve(known);
-  const result = queue.then(() => inWorker({ document, render }));
-  queue = result.catch(() => undefined);
-  return result.then((outcome) => {
+  return queued({ kind: "inspect", document, assetDir, render }, INSPECT_TIMEOUT_MS).then((outcome) => {
     if (outcome.status !== "error") {
       cache.set(cacheKey, outcome);
       if (cache.size > CACHE_SIZE) cache.delete(cache.keys().next().value!);
     }
     return outcome;
   });
+}
+
+/** Reads a library model's file into `destPath`, the design's own copy of its mesh. */
+export function importStudioMesh(srcPath: string, ext: string, destPath: string): Promise<StudioWorkerResult> {
+  return queued({ kind: "import", srcPath, ext, destPath }, IMPORT_TIMEOUT_MS);
 }

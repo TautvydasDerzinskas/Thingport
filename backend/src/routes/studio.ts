@@ -12,7 +12,9 @@ import {
   getStudioDesign,
   getStudioDesignVersion,
   listStudioDesigns,
+  listStudioLibrary,
   runStudioCommand,
+  studioAssetPath,
 } from "../services/studioService";
 
 // Studio, the CAD page. Every change to a design comes in through POST .../commands, the same commands its MCP tools
@@ -50,6 +52,17 @@ router.get(
   }),
 );
 
+// The user's models with a 3D file Studio can import, for the Open dialog's Library tab.
+router.get(
+  "/studio/library",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    const q = typeof req.query.q === "string" ? req.query.q.slice(0, 200) : undefined;
+    const offset = Math.max(0, Number.parseInt(String(req.query.offset ?? "0"), 10) || 0);
+    res.json(await listStudioLibrary(req.userId!, q, offset));
+  }),
+);
+
 router.get(
   "/studio/designs",
   ...studio,
@@ -82,6 +95,18 @@ router.get(
   ...studio,
   asyncHandler(async (req, res) => {
     res.json({ version: await getStudioDesignVersion(req.userId!, req.params.id) });
+  }),
+);
+
+// A design's copy of a mesh it imported. Never changes: a new import is a new asset.
+router.get(
+  "/studio/designs/:id/assets/:assetId",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    const file = await studioAssetPath(req.userId!, req.params.id, req.params.assetId);
+    if (!file) throw new HttpError(404, "Mesh not found");
+    res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+    res.type("application/octet-stream").sendFile(file);
   }),
 );
 

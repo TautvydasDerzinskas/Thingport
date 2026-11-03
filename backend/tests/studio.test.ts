@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 
@@ -7,8 +10,11 @@ vi.hoisted(() => {
 });
 
 import { createApp } from "../src/app";
+import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS } from "../src/mcp/tools";
 import { STUDIO_COMMAND_LIST } from "../src/studio/commands.generated";
+import { decodeMesh } from "../src/studio/meshAsset.generated";
+import { studioAssetDir } from "../src/services/studioService";
 
 // Studio end to end: designs are their owner's, every change is a command kept as a revision, and every command is
 // an MCP tool an assistant can run the same way.
@@ -55,7 +61,9 @@ describe("Studio", () => {
   let alice: string;
   let bob: string;
   beforeAll(async () => {
-    [alice, bob] = await Promise.all([register("alice"), register("bob")]);
+    // One after the other: on a new instance the first account is its admin, and a second at the same time is turned away.
+    alice = await register("alice");
+    bob = await register("bob");
   });
 
   it("says it's on, and keeps each user's designs to themselves", async () => {
@@ -154,5 +162,147 @@ describe("Studio", () => {
     // The page sees what the assistant did.
     const page = await request(app).get(`/api/studio/designs/${id}`).set(auth(alice));
     expect(page.body.document.features.map((f: { id: string }) => f.id)).toEqual(["box-1", "cylinder-2", "boolean-3"]);
+  });
+
+  describe("importing library models", () => {
+    /** An ASCII STL of a w x d x h box from the origin, Z up; `open` leaves its top off. */
+    function boxStl(w: number, d: number, h: number, open = false): string {
+      const v = (x: number, y: number, z: number) => `vertex ${x * w} ${y * d} ${z * h}`;
+      const quads: [number, number, number][][] = [
+        [
+          [0, 0, 0],
+          [0, 1, 0],
+          [1, 1, 0],
+          [1, 0, 0],
+        ],
+        [
+          [0, 0, 1],
+          [1, 0, 1],
+          [1, 1, 1],
+          [0, 1, 1],
+        ],
+        [
+          [0, 0, 0],
+          [1, 0, 0],
+          [1, 0, 1],
+          [0, 0, 1],
+        ],
+        [
+          [0, 1, 0],
+          [0, 1, 1],
+          [1, 1, 1],
+          [1, 1, 0],
+        ],
+        [
+          [0, 0, 0],
+          [0, 0, 1],
+          [0, 1, 1],
+          [0, 1, 0],
+        ],
+        [
+          [1, 0, 0],
+          [1, 1, 0],
+          [1, 1, 1],
+          [1, 0, 1],
+        ],
+      ].filter((_, i) => !(open && i === 1)) as [number, number, number][][];
+      const facets = quads.flatMap(([a, b, c, e]) =>
+        [
+          [a, b, c],
+          [a, c, e],
+        ].map((tri) => `facet normal 0 0 0\nouter loop\n${tri.map((p) => v(...p)).join("\n")}\nendloop\nendfacet`),
+      );
+      return `solid box\n${facets.join("\n")}\nendsolid box\n`;
+    }
+
+    async function upload(session: string, filename: string, text: string) {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-studio-"));
+      const file = path.join(dir, filename);
+      fs.writeFileSync(file, text);
+      const res = await request(app).post("/api/upload").set(auth(session)).attach("files", file);
+      fs.rmSync(dir, { recursive: true, force: true });
+      if (res.status !== 200) throw new Error(`upload: ${res.status} ${JSON.stringify(res.body)}`);
+      return { modelId: res.body.prints[0].id as string, fileId: res.body.prints[0].plates[0].id as string };
+    }
+
+    it("brings a closed STL in as a solid, centred on the bed, that booleans can cut", async () => {
+      const box = await upload(alice, "studio-box.stl", boxStl(10, 20, 30));
+      const library = await request(app).get("/api/studio/library").set(auth(alice));
+      const listed = library.body.models.find((model: { id: string }) => model.id === box.modelId);
+      expect(listed.files).toEqual([expect.objectContaining({ id: box.fileId, name: "studio-box.stl" })]);
+
+      const { body: design } = await request(app).post("/api/studio/designs").set(auth(alice)).send({});
+      const imported = await command(alice, design.id, "import_model", { model_id: box.modelId });
+      expect(imported.status).toBe(200);
+      expect(imported.body.created).toEqual(["mesh-1"]);
+      const mesh = imported.body.design.document.features[0];
+      expect(mesh).toMatchObject({
+        type: "mesh",
+        solid: true,
+        size: [10, 20, 30],
+        source: { model_id: box.modelId, file_id: box.fileId, file_name: "studio-box.stl" },
+      });
+
+      const asset = await request(app)
+        .get(`/api/studio/designs/${design.id}/assets/${mesh.asset_id}`)
+        .set(auth(alice))
+        .buffer(true)
+        .parse((res, done) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk: Buffer) => chunks.push(chunk));
+          res.on("end", () => done(null, Buffer.concat(chunks)));
+        });
+      expect(asset.status).toBe(200);
+      const zs = decodeMesh(new Uint8Array(asset.body as Buffer)).positions.filter((_, i) => i % 3 === 2);
+      expect([Math.min(...zs), Math.max(...zs)]).toEqual([0, 30]);
+      expect(
+        (await request(app).get(`/api/studio/designs/${design.id}/assets/${mesh.asset_id}`).set(auth(bob))).status,
+      ).toBe(404);
+
+      await command(alice, design.id, "add_cylinder", { radius: 3, height: 50, position: [0, 0, -10] });
+      const cut = await command(alice, design.id, "boolean", {
+        operation: "subtract",
+        target_id: "mesh-1",
+        tool_ids: ["cylinder-2"],
+      });
+      expect(cut.status).toBe(200);
+      // Someone else's model isn't one to import.
+      expect((await command(bob, design.id, "import_model", { model_id: box.modelId })).status).toBe(404);
+
+      const owner = (await prisma.studioDesign.findUniqueOrThrow({ where: { id: design.id } })).userId;
+      expect(fs.existsSync(studioAssetDir(owner, design.id))).toBe(true);
+      await request(app).delete(`/api/studio/designs/${design.id}`).set(auth(alice));
+      expect(fs.existsSync(studioAssetDir(owner, design.id))).toBe(false);
+    });
+
+    it("lets an assistant import an open mesh, which shows and measures but won't combine", async () => {
+      const open = await upload(alice, "studio-tray.stl", boxStl(40, 40, 10, true));
+      const res = await request(app)
+        .post("/api/profile/api-token")
+        .set(auth(alice))
+        .send({ mcp_tools: [...DEFAULT_MCP_TOOL_NAMES, ...STUDIO_TOOLS] });
+      const token = res.body.token as string;
+      const id = (await callTool(token, "studio_create_design", {})).data.design_id as string;
+      const imported = await callTool(token, "studio_import_model", {
+        design_id: id,
+        model_id: open.modelId,
+        position: [0, 0, 5],
+      });
+      expect(imported.data.done).toMatch(/not a closed solid/);
+      await callTool(token, "studio_add_box", { design_id: id, width: 5, depth: 5, height: 5 });
+      const refused = await callTool(token, "studio_boolean", {
+        design_id: id,
+        operation: "union",
+        target_id: "mesh-1",
+        tool_ids: ["box-2"],
+      });
+      expect(refused).toMatchObject({ isError: true, text: expect.stringMatching(/isn't a closed solid/) });
+      const read = await callTool(token, "studio_get_design", { design_id: id });
+      const body = read.data.bodies.find((each: { id: string }) => each.id === "mesh-1");
+      expect(body).toMatchObject({ size: [40, 40, 10], volume_mm3: null });
+      expect(body.bounds.min[2]).toBe(5);
+      const view = await callTool(token, "studio_view_design", { design_id: id, size: 128 });
+      expect(view.content.some((part) => part.type === "image")).toBe(true);
+    });
   });
 });
