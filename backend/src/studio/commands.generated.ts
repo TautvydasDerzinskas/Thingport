@@ -7,6 +7,7 @@ import {
   featureById,
   inputsOf,
   isBody,
+  isSolid,
   LIMITS,
   shapeOutline,
   transformMatrix,
@@ -17,6 +18,7 @@ import {
   type Feature,
   type FeatureType,
   type MeshFeature,
+  type PartMeasure,
   type SketchFeature,
   type SketchShape,
   type StudioDocument,
@@ -47,7 +49,7 @@ export type CommandOutcome = {
   created: string[];
 };
 
-export type CommandKind = "document" | "history" | "design" | "import";
+export type CommandKind = "document" | "history" | "design" | "import" | "measure";
 
 type CommandDefinition<S extends z.ZodRawShape> = {
   /** Short, for an MCP client's tool list. */
@@ -55,7 +57,8 @@ type CommandDefinition<S extends z.ZodRawShape> = {
   description: string;
   args: S;
   /** "document" commands change the feature tree; "history" ones move through it; "design" ones change the design;
-   *  "import" ones need the server to bring something in first, then change the tree with a helper here. */
+   *  "import" ones need the server to bring something in first, and "measure" ones need it to measure the design's
+   *  geometry first, then change the tree with a helper here. */
   kind?: CommandKind;
   /** Changes or removes something already there, rather than only adding. */
   destructive?: boolean;
@@ -254,7 +257,7 @@ function freeBody(doc: StudioDocument, id: string): BodyFeature {
 
 /** Whether a body is a closed solid, as booleans need; an open imported mesh isn't. */
 function assertSolid(body: BodyFeature): void {
-  if (body.type === "mesh" && !body.solid)
+  if (!isSolid(body))
     throw new CommandError(
       `${body.id} isn't a closed solid, so it can't be combined or changed. It can still be moved, scaled and exported.`,
     );
@@ -349,6 +352,7 @@ const EDITABLE: Record<FeatureType, string[]> = {
   split: ["keep"],
   sketch: ["plane", "offset"],
   mesh: [],
+  part: [],
 };
 
 /** Copies a feature and everything it's built from, inputs first so the order still holds. Returns the copy's id. */
@@ -380,6 +384,9 @@ function copyTree(doc: StudioDocument, id: string, copies: Map<string, string>):
     case "split":
       copy.source_id = map(copy.source_id);
       if (copy.tool_id) copy.tool_id = map(copy.tool_id);
+      break;
+    case "part":
+      copy.source_id = map(copy.source_id);
       break;
   }
   addFeature(doc, copy);
@@ -997,6 +1004,21 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  separate_parts: command({
+    title: "Separate a body into its parts",
+    description:
+      "Makes each loose part of a body, each piece of it that doesn't touch the rest, a body of its own: an imported " +
+      "model of several parts (import_model says how many it has), say, or the pieces a cut left. A hollow inside a " +
+      "part stays with it, and parts that overlap without being joined are separate parts: join those with boolean " +
+      "union, as a boolean on overlapping parts left in one body counts the overlap twice. Each part's own origin is " +
+      "the middle of its base, where it is now, so moving, turning or scaling one works about it. The parts stay " +
+      "editable and belong to the body; deleting them all gives it back, and deleting one leaves that part out. " +
+      `Refused for a body of one part, or of more than ${LIMITS.partsPerBody}. Parts of a mesh with gaps that are ` +
+      "closed themselves can be combined; the rest can only be moved, scaled and exported.",
+    kind: "measure",
+    args: { feature_id: bodyId },
+  }),
+
   boolean: command({
     title: "Combine bodies",
     description:
@@ -1249,8 +1271,8 @@ export const STUDIO_COMMANDS = {
     title: "Delete a feature",
     description:
       "Deletes a feature. Deleting one made from others (a boolean, an extrude or revolve, a fillet, a hole, a shell, a " +
-      "split part...) gives back what it was made from. A feature that's part of another can't be deleted until that " +
-      "one is.",
+      "split part...) gives back what it was made from, once nothing else is made from it: a body's separated parts " +
+      "give it back when the last of them goes. A feature that's part of another can't be deleted until that one is.",
     destructive: true,
     args: { feature_id: featureId },
     apply(doc, args) {
@@ -1276,9 +1298,10 @@ export const STUDIO_COMMANDS = {
       "Brings one of the user's library models into the design as a mesh body: an STL, 3MF, STEP, OBJ or GLB file. " +
       "Find the model with search_models or list_models, and its files with list_model_files. It comes in at its own " +
       "size in mm, centred and standing on the bed, before position and rotation apply. A closed mesh can be combined, " +
-      "rounded, drilled and hollowed like any body; one with gaps can only be moved, scaled and exported. A 3MF brings " +
-      `its first plate as one body. Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its ` +
-      "own copy.",
+      "rounded, drilled and hollowed like any body; one with gaps can only be moved, scaled and exported. It comes in " +
+      "as one body however many loose parts it has (a 3MF's plate, or an STL of several pieces): the reply says how " +
+      "many, and separate_parts makes each a body of its own. " +
+      `Up to ${LIMITS.meshTriangles.toLocaleString("en")} triangles. The design keeps its own copy.`,
     kind: "import",
     args: {
       model_id: z.string().min(1).describe("The library model's id."),
@@ -1365,7 +1388,7 @@ export function parseCommandArgs(definition: AnyStudioCommand, args: unknown): R
  *  the feature tree, on a copy of `doc`. */
 export function addMesh(
   doc: StudioDocument,
-  mesh: Pick<MeshFeature, "asset_id" | "solid" | "triangles" | "size" | "source">,
+  mesh: Pick<MeshFeature, "asset_id" | "solid" | "triangles" | "size" | "parts" | "source">,
   args: { position?: Vec3; rotation?: Vec3; name?: string },
 ): CommandOutcome {
   const next = structuredClone(doc);
@@ -1383,7 +1406,50 @@ export function addMesh(
     created: [id],
     summary:
       `Imported ${mesh.source.file_name} as ${id}, ${size3(...mesh.size)}` +
-      (mesh.solid ? "" : ": not a closed solid, so it can't be combined"),
+      (mesh.solid ? "" : ": not a closed solid, so it can't be combined") +
+      (mesh.parts && mesh.parts > 1
+        ? `. It's ${mesh.parts} separate parts in one body: separate_parts makes each a body of its own`
+        : ""),
+  };
+}
+
+/** The body separate_parts would work on, or why it can't: checked before it's measured, which takes a while. */
+export function separableBody(doc: StudioDocument, id: string): BodyFeature {
+  return freeBody(doc, id);
+}
+
+/** What separate_parts adds once the body's parts have been measured: a part feature for each, on a copy of `doc`.
+ *  The browser previews it with parts it measured itself, the server makes it with its own. */
+export function addParts(doc: StudioDocument, args: { feature_id: string }, parts: PartMeasure[]): CommandOutcome {
+  const next = structuredClone(doc);
+  const body = separableBody(next, args.feature_id);
+  if (parts.length < 2) throw new CommandError(`${body.id} is one part: there's nothing to separate.`);
+  if (parts.length > LIMITS.partsPerBody)
+    throw new CommandError(
+      `${body.id} is in ${parts.length} parts; Studio separates up to ${LIMITS.partsPerBody} at a time.`,
+    );
+  const created = parts.map((part) => {
+    const id = nextId(next, "part");
+    addFeature(next, {
+      id,
+      type: "part",
+      name: "",
+      visible: true,
+      transform: { position: part.origin, rotation: [0, 0, 0], scale: [1, 1, 1] },
+      source_id: body.id,
+      bounds: part.bounds,
+      origin: part.origin,
+      solid: part.solid,
+    });
+    return id;
+  });
+  const open = parts.filter((part) => !part.solid).length;
+  return {
+    document: next,
+    created,
+    summary:
+      `Separated ${body.id} into ${created.length} parts, ${created[0]} to ${created.at(-1)}, largest first` +
+      (open ? `; ${open} of them have gaps, so they can't be combined` : ""),
   };
 }
 

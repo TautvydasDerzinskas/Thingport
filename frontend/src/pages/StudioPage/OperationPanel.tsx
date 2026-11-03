@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
+import type { PartMeasure } from "../../studio/document";
 import { EdgeTreatmentField, NumberField } from "./fields";
 import type { Combine, HoleStyle, Operation } from "./operations";
 
@@ -28,6 +29,8 @@ type Props = {
   busy: boolean;
   /** A body's name, for the chips that say what's been picked. */
   label: (id: string) => string;
+  /** The parts a body would separate into, once they've been found. */
+  parts?: PartMeasure[] | null;
   onOk: () => void;
   onCancel: () => void;
 };
@@ -35,7 +38,7 @@ type Props = {
 const pair = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 1 } as const;
 
 /** A tool's settings, over the view while it's picked from: what it works on, its numbers, and OK or Cancel. */
-export default function OperationPanel({ op, onChange, error, ready, busy, label, onOk, onCancel }: Props) {
+export default function OperationPanel({ op, onChange, error, ready, busy, label, parts, onOk, onCancel }: Props) {
   const { t } = useTranslation("app");
   const set = (changes: Partial<Operation>) => onChange({ ...op, ...changes } as Operation);
   const target = "target" in op ? op.target : null;
@@ -329,6 +332,16 @@ export default function OperationPanel({ op, onChange, error, ready, busy, label
             />
           </>
         );
+      case "separate": {
+        const open = parts?.filter((part) => !part.solid).length ?? 0;
+        return (
+          <>
+            {op.target ? picked(label(op.target), () => set({ target: null })) : hint(t("studio.ops.pickBody"))}
+            {op.target && parts && parts.length > 1 && hint(t("studio.ops.separate.count", { count: parts.length }))}
+            {op.target && open > 0 && hint(t("studio.ops.separate.open", { count: open }))}
+          </>
+        );
+      }
       case "sketch_face":
         return hint(t("studio.ops.sketch_face.pick"));
     }

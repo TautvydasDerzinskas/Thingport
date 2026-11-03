@@ -32,7 +32,8 @@ A design is a list of features, built in order:
 - **Library models**: **Open…** in the design's menu has a **Library** tab with your models' STL, 3MF, STEP, OBJ and
   GLB files. **Open** makes a new design from one; **Insert** brings it into the design that's open. It comes in at its
   own size, centred on the bed, and the design keeps its own copy, so changing the model later doesn't change the
-  design. A 3MF brings its first plate. A mesh with gaps can be moved, scaled and exported, but not combined.
+  design. A 3MF brings its first plate. A mesh with gaps can be moved, scaled and exported, but not combined. A model
+  of several loose pieces comes in as one body, and Studio says how many: **Separate** makes each its own.
 - **Combining**: select two bodies or more and pick **Union**, **Subtract** or **Intersect**. The first one you selected
   is the one the others are joined to, cut from or overlapped with.
 
@@ -54,6 +55,10 @@ why, and OK waits until it can.
 - **Shell**: hollows the body with walls of a thickness, and clicked flat faces are left open, as a tray's top. Flat
   walls come out exactly that thick. Bodies over 20,000 triangles are refused, so shell parts before combining them.
 - **Split**: cuts a body in two by a plane, a flat face or another body; both parts stay editable.
+- **Separate parts**: makes each loose piece of a body its own body, shown in its own colour before you press OK. A
+  hollow inside a piece stays with it, and pieces that overlap without being joined come apart too: union them
+  afterwards to join them properly. Each part moves, turns and scales about the middle of its base. Deleting all the
+  parts gives the body back. Also on a body's right-click menu, and on an imported model's properties.
 - **Scale**: makes a body bigger or smaller about its own middle.
 
 The mouse works as in most CAD:

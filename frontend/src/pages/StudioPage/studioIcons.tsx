@@ -131,6 +131,26 @@ export function SplitIcon(props: SvgIconProps) {
   );
 }
 
+/** Two pieces of a body drawn apart, where they were dashed between them. */
+export function SeparateIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M3 12.5h7.5V20H3zM13.5 4H21v7.5h-7.5z" />
+      <path {...line} d="M10.5 12.5 13.5 11.5M10.5 15.5l3-4" strokeDasharray="1.4 1.8" />
+    </SvgIcon>
+  );
+}
+
+/** One of a body's separated parts: a piece, its sibling dashed beside it. */
+export function PartIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M3.5 9h10v11h-10z" />
+      <path {...line} d="M16.5 4h4v8h-4z" strokeDasharray="1.4 1.8" />
+    </SvgIcon>
+  );
+}
+
 export function ExtrudeIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props}>
@@ -199,6 +219,7 @@ export function FeatureIcon({ type, ...props }: SvgIconProps & { type: FeatureTy
   if (type === "hole") return <HoleIcon {...props} />;
   if (type === "shell") return <ShellIcon {...props} />;
   if (type === "split") return <SplitIcon {...props} />;
+  if (type === "part") return <PartIcon {...props} />;
   if (type === "sketch") return <SketchIcon {...props} />;
   return <UnionIcon {...props} />;
 }

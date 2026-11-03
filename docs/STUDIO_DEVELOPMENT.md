@@ -15,12 +15,15 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
 ```
 
 - **`document.ts`** — a design is a parametric feature tree, plain JSON: primitives, imported meshes, sketches, extrudes,
-  revolves, booleans and the changes to a body (press/pull, fillet, chamfer, hole, shell, split), in mm with Z up. A
-  feature made from others _consumes_ them, and they stay editable under it.
+  revolves, booleans and the changes to a body (press/pull, fillet, chamfer, hole, shell, split, separated parts), in
+  mm with Z up. A feature made from others _consumes_ them, and they stay editable under it.
 - **`commands.ts`** — `STUDIO_COMMANDS`: each has a title, a description written for an AI, zod `args` and a pure
   `apply(doc, args)`. Undo, redo and `rename_design` have no `apply`; the server carries them out. `import_model` is
   an `"import"` command: the server first reads the library file into the design's own copy, then adds it with
-  `addMesh`, the shared change to the tree.
+  `addMesh`, the shared change to the tree. `separate_parts` is a `"measure"` command: how many parts it makes depends
+  on the geometry, which `apply` can't see, so the server finds the body's parts first (`measureParts`, in the worker
+  thread, outside the design's lock and again if the design changed meanwhile) and adds them with `addParts`. The
+  page's preview finds them the same way in its worker.
 - **`meshAsset.ts`** — that copy's file format. Copies live in `STORAGE/studio/u-<user>/<design>/<asset>.tpsm`; the page
   fetches them from `GET /api/studio/designs/:id/assets/:assetId` and caches them, as an asset never changes.
 - **`geometry.ts`** — the feature tree to solids with manifold, which the page loads from WebAssembly in a web worker
@@ -37,6 +40,11 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   cylinder rims, hole cutters, the cutters a fillet or chamfer takes from (or adds to) the edges, and a shell's walls.
   A shell is built exactly, not by rolling a ball round the body: a slab under each kept face, a wedge along each
   inside edge and a ball where an inside corner needs one, so flat walls come out exactly as thick as asked.
+- **`parts.ts`** — a body's loose parts. Manifold gives each closed surface apart, a hollow's inside one with negative
+  volume, which goes back with the smallest part around it (a ray-crossing test); a mesh with gaps falls apart by the
+  corners its triangles share. A part feature keeps its box in the source's own frame and is found again by it each
+  time the source is made, matched with its siblings so each piece is taken once; if an edit takes it away, the part
+  says so. Its own origin is its base's middle as it was separated.
 - **`shapes2d.ts`** and **`vec.ts`** — outlines (rounded corners, insets that keep their shape) and vector maths.
 
 The page applies a document command locally at once (`useStudioDesign`), then sends it; the server applies it again on

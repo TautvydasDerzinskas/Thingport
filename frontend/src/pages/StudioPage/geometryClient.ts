@@ -1,8 +1,9 @@
-import type { MeshData, StudioDocument, Vec3 } from "../../studio/document";
+import type { MeshData, PartMeasure, StudioDocument, Vec3 } from "../../studio/document";
 import type { EvaluatedBody } from "../../studio/geometry";
 import { designMeshes } from "./meshAssets";
 
-// The page's side of the geometry worker: a design in, its bodies out, each with what picking a face or an edge needs.
+// The page's side of the geometry worker: a design in, its bodies out, each with what picking a face or an edge needs;
+// or a body's loose parts, for separating them.
 
 export type WorkerBody = EvaluatedBody & {
   picking: {
@@ -20,12 +21,15 @@ export type GeometryQuestion = {
   ids?: string[];
   /** Imported meshes the worker hasn't had yet, by asset id. */
   assets: Record<string, MeshData>;
+  /** A body to find the loose parts of, instead of making bodies. */
+  parts?: string;
 };
 
 export type GeometryAnswer = {
   id: number;
   bodies: WorkerBody[];
   errors: { id: string; message: string }[];
+  parts?: PartMeasure[];
   failure?: string;
 };
 
@@ -46,10 +50,21 @@ function hire(): Worker {
 }
 
 /** The design's bodies (or only `ids`), made in the worker. */
-export async function evaluateInWorker(
+export function evaluateInWorker(designId: string, document: StudioDocument, ids?: string[]): Promise<GeometryAnswer> {
+  return ask(designId, document, { ids });
+}
+
+/** A body's loose parts, as separate_parts would make them: what the server finds too, from the same code. */
+export async function measurePartsInWorker(designId: string, document: StudioDocument, featureId: string) {
+  const answer = await ask(designId, document, { parts: featureId });
+  if (answer.failure !== undefined) throw new Error(answer.failure);
+  return answer.parts ?? [];
+}
+
+async function ask(
   designId: string,
   document: StudioDocument,
-  ids?: string[],
+  question: Pick<GeometryQuestion, "ids" | "parts">,
 ): Promise<GeometryAnswer> {
   const lookup = await designMeshes(designId, document);
   const assets: Record<string, MeshData> = {};
@@ -65,6 +80,6 @@ export async function evaluateInWorker(
   return new Promise((resolve) => {
     waiting.set(id, resolve);
     // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker, not a window.
-    hire().postMessage({ id, document, ids, assets } satisfies GeometryQuestion);
+    hire().postMessage({ id, document, assets, ...question } satisfies GeometryQuestion);
   });
 }

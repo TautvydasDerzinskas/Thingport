@@ -3,11 +3,12 @@ import path from "node:path";
 import { parentPort, workerData } from "node:worker_threads";
 import sharp from "sharp";
 import type { ManifoldToplevel } from "manifold-3d";
-import { LIMITS, type MeshData, type StudioDocument, type Vec3 } from "../studio/document.generated";
+import { LIMITS, type MeshData, type PartMeasure, type StudioDocument, type Vec3 } from "../studio/document.generated";
 import {
   describeBody,
   estimateTriangles,
   evaluateDesign,
+  measureParts,
   prepareMesh,
   worldTriangles,
   type BodyDescription,
@@ -15,8 +16,9 @@ import {
 import { decodeMesh, encodeMesh } from "../studio/meshAsset.generated";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
 
-// Studio's heavy work, off the main thread: measuring and picturing a design for an assistant, and making the design's
-// own copy of a library model it imports. Runs in a worker thread (studioInspect.ts); keep it free of config/db imports.
+// Studio's heavy work, off the main thread: measuring and picturing a design for an assistant, finding a body's loose
+// parts to separate them, and making the design's own copy of a library model it imports. Runs in a worker thread
+// (studioInspect.ts); keep it free of config/db imports.
 
 export const STUDIO_VIEWS = ["iso", "top", "front", "right", "back", "left", "bottom"] as const;
 export type StudioView = (typeof STUDIO_VIEWS)[number];
@@ -44,7 +46,8 @@ export type StudioWorkerInput =
       render: { views: StudioView[]; size: number; color: string } | null;
     }
   | { kind: "import"; srcPath: string; ext: string; destPath: string }
-  | { kind: "describe"; document: StudioDocument; assetDir: string; featureId: string };
+  | { kind: "describe"; document: StudioDocument; assetDir: string; featureId: string }
+  | { kind: "parts"; document: StudioDocument; assetDir: string; featureId: string };
 
 export type StudioBodyStats = { id: string; bounds: { min: Vec3; max: Vec3 }; volume: number; triangles: number };
 
@@ -56,8 +59,9 @@ export type StudioWorkerResult =
       /** Base64 PNGs, one per view asked for. */
       images: { view: StudioView; png: string }[];
     }
-  | { status: "imported"; solid: boolean; triangles: number; size: Vec3 }
+  | { status: "imported"; solid: boolean; triangles: number; size: Vec3; parts: number }
   | { status: "described"; body: BodyDescription }
+  | { status: "measured"; parts: PartMeasure[] }
   /** A file that can't come in, and why, in words for whoever asked. */
   | { status: "refused"; reason: string }
   | { status: "too-complex"; triangles: number }
@@ -92,6 +96,19 @@ async function describe(input: Extract<StudioWorkerInput, { kind: "describe" }>)
     return {
       status: "described",
       body: describeBody(await manifold(), input.document, input.featureId, meshesIn(input.assetDir)),
+    };
+  } catch (error) {
+    return { status: "refused", reason: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+async function findParts(input: Extract<StudioWorkerInput, { kind: "parts" }>): Promise<StudioWorkerResult> {
+  const estimate = estimateTriangles(input.document);
+  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  try {
+    return {
+      status: "measured",
+      parts: measureParts(await manifold(), input.document, input.featureId, meshesIn(input.assetDir)),
     };
   } catch (error) {
     return { status: "refused", reason: error instanceof Error ? error.message : String(error) };
@@ -154,10 +171,10 @@ async function importMesh(input: Extract<StudioWorkerInput, { kind: "import" }>)
     zUp[i + 1] = -loaded.triangles[i + 2];
     zUp[i + 2] = loaded.triangles[i + 1];
   }
-  const { mesh, solid, size } = prepareMesh(await manifold(), zUp);
+  const { mesh, solid, size, parts } = prepareMesh(await manifold(), zUp);
   fs.mkdirSync(path.dirname(input.destPath), { recursive: true });
   fs.writeFileSync(input.destPath, encodeMesh(mesh));
-  return { status: "imported", solid, triangles: mesh.indices.length / 3, size };
+  return { status: "imported", solid, triangles: mesh.indices.length / 3, size, parts };
 }
 
 if (parentPort) {
@@ -166,7 +183,13 @@ if (parentPort) {
     // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker_threads port, not window.postMessage.
     parentPort!.postMessage(result);
   const job =
-    input.kind === "import" ? importMesh(input) : input.kind === "describe" ? describe(input) : inspect(input);
+    input.kind === "import"
+      ? importMesh(input)
+      : input.kind === "describe"
+        ? describe(input)
+        : input.kind === "parts"
+          ? findParts(input)
+          : inspect(input);
   job.then(reply, (error: unknown) =>
     reply({ status: "error", error: error instanceof Error ? (error.stack ?? error.message) : String(error) }),
   );

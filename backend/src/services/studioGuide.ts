@@ -63,11 +63,17 @@ Faces and edges aren't stored as such: a body is a mesh. Name them by where they
   ${LIMITS.shellTriangles} triangles are refused: shell parts before combining them.
 - split: by a plane (two parts, front and back of its normal) or by another body (inside and outside; the cutting body
   stays). Good for cutting a model into printable pieces.
+- separate_parts: makes each loose part of a body (each piece not touching the rest) a body of its own, largest first,
+  each with its own origin at its base's middle. A hollow inside a part stays with it. Parts that overlap without being
+  joined come apart too; a boolean on a body that still holds such parts counts their overlap twice, so separate them
+  and union them first.
 - boolean: union, subtract or intersect bodies; keep_tools leaves the tools as they are.
 - set_transform (absolute) and scale_feature (a factor) move, turn and size a body.
 - update_feature changes any feature's numbers later, e.g. a fillet's radius or a hole's diameter.
 - import_model brings in a library model's STL, 3MF, STEP, OBJ or GLB (find it with search_models). A closed mesh works
-  with everything above; one with gaps can only be moved, scaled and exported.
+  with everything above; one with gaps can only be moved, scaled and exported. A model of several pieces comes in as
+  one body, and the reply says how many: separate_parts splits it, and the pieces of one with gaps that are closed
+  themselves can then be combined.
 
 ## Recipes
 

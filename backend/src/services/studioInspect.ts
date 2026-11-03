@@ -4,8 +4,8 @@ import { workerBootstrap } from "../utils/workerBootstrap";
 import type { StudioView, StudioWorkerInput, StudioWorkerResult } from "./studioWorker";
 
 // Studio's work in a worker thread, so a heavy design or file can't hold up the API: measuring and picturing a design
-// for an assistant, and reading a library model into a design. One at a time; a design's measurements are kept until
-// it changes, as an assistant tends to ask twice.
+// for an assistant, finding a body's parts, and reading a library model into a design. One at a time; a design's
+// measurements are kept until it changes, as an assistant tends to ask twice.
 
 const WORKER_BOOTSTRAP = workerBootstrap(__dirname, "studioWorker");
 const INSPECT_TIMEOUT_MS = 30_000;
@@ -83,6 +83,15 @@ export function describeStudioBody(
     }
     return outcome;
   });
+}
+
+/** A body's loose parts, as separate_parts makes them. Not kept: the command changes the design straight after. */
+export function measureStudioParts(
+  document: StudioDocument,
+  assetDir: string,
+  featureId: string,
+): Promise<StudioWorkerResult> {
+  return queued({ kind: "parts", document, assetDir, featureId }, INSPECT_TIMEOUT_MS);
 }
 
 /** Reads a library model's file into `destPath`, the design's own copy of its mesh. */

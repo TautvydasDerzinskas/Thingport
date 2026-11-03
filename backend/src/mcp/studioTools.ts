@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
+import { topLevel } from "../studio/document.generated";
 import {
   createStudioDesign,
   deleteStudioDesign,
@@ -66,7 +67,8 @@ const getDesign: McpToolDefinition = {
     "Reads a design: its feature tree (every feature with its id, type, dimensions and transform), the size and place " +
     "of each body, problems such as a boolean that came out empty, and the latest changes and who made them, the user " +
     "included. Units are mm and Z is up; the bed is the XY plane at z=0. Features listed under top_level show on their " +
-    "own; the rest are part of a boolean or an extrude. Read it before changing a design the user has been working on.",
+    "own; the rest are part of another (a boolean, an extrude, a fillet, a split or separated part...). Read it " +
+    "before changing a design the user has been working on.",
   readOnly: true,
   group: "studio",
   inputSchema: { design_id: designId },
@@ -81,21 +83,12 @@ const getDesign: McpToolDefinition = {
       ),
       studioDesignHistory(design, 10),
     ]);
-    const used = new Set(
-      design.document.features.flatMap((feature) =>
-        feature.type === "boolean"
-          ? [feature.target_id, ...feature.tool_ids]
-          : feature.type === "extrude"
-            ? [feature.sketch_id]
-            : [],
-      ),
-    );
     return {
       ...brief(ctx, design),
       units: "mm",
       up: "+Z",
       features: design.document.features,
-      top_level: design.document.features.filter((feature) => !used.has(feature.id)).map((feature) => feature.id),
+      top_level: topLevel(design.document).map((feature) => feature.id),
       bodies:
         inspected.status === "ok"
           ? inspected.bodies.map((body) => ({

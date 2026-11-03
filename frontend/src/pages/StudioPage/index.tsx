@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
@@ -30,9 +30,11 @@ import {
   featureById,
   isBody,
   topLevel,
+  type PartMeasure,
   type SketchFeature,
   type SketchPlane,
   type SketchShape,
+  type StudioDocument,
   type Transform,
 } from "../../studio/document";
 import DesignsDialog from "./DesignsDialog";
@@ -44,11 +46,12 @@ import PropertiesPanel from "./PropertiesPanel";
 import RenameDialog from "./RenameDialog";
 import StudioToolbar, { type BooleanKind, type Primitive, type StudioPanel } from "./StudioToolbar";
 import StudioViewport, { type SketchTool, type StudioMode, type StudioViewportHandle } from "./StudioViewport";
-import { BoxIcon, ExtrudeIcon } from "./studioIcons";
-import { openModelAsDesign } from "./openModel";
+import { BoxIcon, ExtrudeIcon, SeparateIcon } from "./studioIcons";
+import { measurePartsInWorker } from "./geometryClient";
+import { openModelAsDesign, type StudioArrival } from "./openModel";
 import OperationPanel from "./OperationPanel";
 import { commandOf, pickOf, startOperation, withPick, type Operation, type OperationKind } from "./operations";
-import { applyCommand, CommandError } from "../../studio/commands";
+import { addParts, applyCommand, CommandError } from "../../studio/commands";
 import { useStudioDesign } from "./useStudioDesign";
 
 // Studio: a small parametric CAD. Everything that changes a design here is a command (frontend/src/studio/commands.ts)
@@ -124,6 +127,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const confirm = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
   const designId = searchParams.get("design");
+  const location = useLocation();
+  const navigate = useNavigate();
   const viewport = useRef<StudioViewportHandle>(null);
 
   const showError = useCallback(
@@ -180,6 +185,17 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [operation, setOperation] = useState<Operation | null>(null);
   const [busy, setBusy] = useState(false);
   const [previewFailure, setPreviewFailure] = useState<{ key: string; message: string } | null>(null);
+  // A command the server works out, on its way: OK waits for it.
+  const [finishing, setFinishing] = useState(false);
+  // A body's loose parts, found for the Separate tool's preview, for the design as it was then.
+  const [measured, setMeasured] = useState<{
+    doc: StudioDocument;
+    target: string;
+    parts: PartMeasure[] | null;
+    error: string | null;
+  } | null>(null);
+  // A model just brought in, to say so if it's in several parts.
+  const [partsHint, setPartsHint] = useState<{ design: string; mesh: string } | null>(null);
 
   // Another design starts with nothing selected; a feature that's gone is let go of.
   const [shownDesign, setShownDesign] = useState(designId);
@@ -197,6 +213,30 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     );
     setSketch((prev) => (prev && featureById(doc, prev.id)?.type !== "sketch" ? null : prev));
   }, [doc]);
+
+  // A model opened here from its own page: the mesh it brought in, to say if it's in parts. Taken once, so going back
+  // or reloading doesn't say it again.
+  useEffect(() => {
+    const imported = (location.state as StudioArrival | null)?.imported;
+    if (!imported || !designId) return;
+    setPartsHint({ design: designId, mesh: imported });
+    navigate({ search: location.search }, { replace: true, state: null });
+  }, [location.state, location.search, designId, navigate]);
+
+  // A model that came in as one body of several parts says so once it shows, with the way to separate them.
+  useEffect(() => {
+    if (!partsHint || !doc || design?.id !== partsHint.design) return;
+    setPartsHint(null);
+    const mesh = featureById(doc, partsHint.mesh);
+    if (mesh?.type !== "mesh" || !mesh.parts || mesh.parts < 2 || consumerOf(doc, mesh.id)) return;
+    toast({
+      message: t("studio.imported.parts", { count: mesh.parts }),
+      severity: "info",
+      autoHideMs: 10_000,
+      action: { label: t("studio.imported.separate"), onClick: () => separateBody(mesh.id) },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partsHint, doc, design?.id]);
 
   const newDesign = useCallback(async () => {
     try {
@@ -261,13 +301,15 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       if (!created) return false;
       setDesignsOpen(false);
       selectCreated(created);
+      if (design && created[0]) setPartsHint({ design: design.id, mesh: created[0] });
       return true;
     }
     try {
       const created = await openModelAsDesign(model, fileId, t("studio.design.untitled"));
       setNoDesigns(false);
       setDesignsOpen(false);
-      setSearchParams({ design: created });
+      setSearchParams({ design: created.id });
+      if (created.mesh) setPartsHint({ design: created.id, mesh: created.mesh });
       return true;
     } catch (error) {
       showError(error);
@@ -307,19 +349,53 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setSketch(null);
     setOperation(startOperation(kind, selectedBody));
   };
+  const separateBody = (id: string) => {
+    setSketch(null);
+    setSelected([id]);
+    setOperation(startOperation("separate", id));
+  };
   const draft = operation ? commandOf(operation) : null;
   const draftKey = draft ? JSON.stringify(draft) : "";
   // The design as the tool would leave it, shown while its panel is open; or why the command refuses it.
+  const separating = operation?.kind === "separate" ? operation.target : null;
+  const partsFound = measured && measured.doc === doc && measured.target === separating ? measured : null;
+  const measuring = Boolean(separating) && !partsFound;
   const preview = useMemo(() => {
     if (!draft || !doc || draft.name === "add_sketch") return null;
     try {
+      // The server finds a body's parts as it separates it; the preview finds them here, with the same code.
+      if (draft.name === "separate_parts") {
+        if (!partsFound) return null;
+        if (partsFound.error) return { document: null, created: [], error: partsFound.error };
+        const outcome = addParts(doc, { feature_id: partsFound.target }, partsFound.parts ?? []);
+        return { document: outcome.document, created: outcome.created, error: null };
+      }
       const outcome = applyCommand(doc, draft.name, draft.args);
       return { document: outcome.document, created: outcome.created, error: null };
     } catch (error) {
       return { document: null, created: [], error: error instanceof CommandError ? error.message : String(error) };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftKey, doc]);
+  }, [draftKey, doc, partsFound]);
+  useEffect(() => {
+    if (!separating || !doc || !design) return;
+    let cancelled = false;
+    measurePartsInWorker(design.id, doc, separating).then(
+      (parts) => !cancelled && setMeasured({ doc, target: separating, parts, error: null }),
+      (error: unknown) =>
+        !cancelled &&
+        setMeasured({
+          doc,
+          target: separating,
+          parts: null,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+    );
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, separating, design?.id]);
   const own = preview?.created ?? [];
   // A preview that couldn't be made shows the design as it is instead, so what the tool needs can still be picked.
   const previewFailed = previewFailure?.key === draftKey;
@@ -333,10 +409,12 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
 
   const finishOperation = async () => {
     if (!operation || !draft) return;
-    const created = await run(draft.name, draft.args as never);
+    setFinishing(true);
+    const created = await run(draft.name, draft.args as never).finally(() => setFinishing(false));
     if (!created) return;
     setOperation(null);
     setPreviewFailure(null);
+    if (operation.kind === "separate") return setSelected(created);
     if (operation.kind === "sketch_face" && created[0]) {
       setSelected([created[0]]);
       setSketch({ id: created[0], tool: "rectangle" });
@@ -525,6 +603,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           pick={operation ? pickOf(operation, own) : null}
           onPick={onPick}
           onBusy={setBusy}
+          tinted={operation?.kind === "separate" ? own : undefined}
         />
         {operation && (
           <OperationPanel
@@ -532,7 +611,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             onChange={setOperation}
             error={operationError}
             ready={Boolean(draft)}
-            busy={busy}
+            busy={busy || measuring || finishing}
+            parts={partsFound?.parts}
             label={(id) => {
               const feature = featureById(doc, id);
               return feature ? featureLabel(feature, t) : id;
@@ -661,6 +741,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
                 errors={errors}
                 run={run}
                 onSelect={(id) => setSelected([id])}
+                onSeparate={separateBody}
                 onEditSketch={(id) => {
                   setSelected([id]);
                   setSketch({ id, tool: "rectangle" });
@@ -736,6 +817,14 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             </ListItemIcon>
             <ListItemText>{t("studio.actions.duplicate")}</ListItemText>
           </MenuItem>,
+          isBody(menuFeature) && !consumerOf(doc!, menuFeature.id) && (
+            <MenuItem key="separate" onClick={menuAction(() => separateBody(menuFeature.id))}>
+              <ListItemIcon>
+                <SeparateIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t("studio.actions.separate")}</ListItemText>
+            </MenuItem>
+          ),
           <Divider key="divider" />,
           <MenuItem
             key="delete"

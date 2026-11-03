@@ -95,7 +95,8 @@ a widget or a tool with the same folder name.
 `studio_view_design` to read and look at a design, `studio_inspect_body` for a body's faces and edges as the tools name
 them, `studio_create_design` and `studio_delete_design`, and one tool for each step you can take on the page, from
 `studio_add_box` and `studio_extrude` to `studio_fillet`, `studio_shell` and `studio_undo`. `studio_import_model` brings in one of your library models'
-3D files, so an assistant can find a model with `search_models` and work on it. It's off for a new token. They change only your Studio designs,
+3D files, so an assistant can find a model with `search_models` and work on it, and `studio_separate_parts` makes each
+piece of a model of several its own body. It's off for a new token. They change only your Studio designs,
 never your models.
 
 An import runs the same checks as **Add > Import** (a provider an admin turned off stays off, and a model already in

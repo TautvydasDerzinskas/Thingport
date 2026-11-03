@@ -84,6 +84,8 @@ type Props = {
   onPick: (picked: Picked) => void;
   /** Whether bodies are being made, for a note while a slow one is. */
   onBusy: (busy: boolean) => void;
+  /** Bodies a tool's preview tells apart, each in a colour of its own: the parts a body would separate into. */
+  tinted?: readonly string[];
 };
 
 const BED = 300;
@@ -575,11 +577,15 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const s = stage.current;
     if (!s) return;
     const chosen = new Set(latest.current.selected);
+    const tinted = latest.current.tinted ?? [];
     for (const [id, body] of s.bodies) {
       const on = chosen.has(id);
       const hover = !on && s.hovered === id;
       const material = body.mesh.material as THREE.MeshStandardMaterial;
-      material.color.copy(colors.model).lerp(colors.accent, on ? 0.35 : hover ? 0.15 : 0);
+      // Told apart by hue, the accent's turned on by the golden ratio for each, so neighbours never look alike.
+      const tint = tinted.indexOf(id);
+      const base = tint >= 0 ? colors.accent.clone().offsetHSL(tint * 0.382, 0, 0) : colors.model;
+      material.color.copy(base).lerp(colors.accent, on ? 0.35 : hover ? 0.15 : 0);
       material.emissive.copy(colors.accent);
       material.emissiveIntensity = on ? 0.12 : hover ? 0.05 : 0;
       const edges = body.edges.material as THREE.LineBasicMaterial;
@@ -605,11 +611,12 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     s.render();
   };
 
+  const tintKey = props.tinted?.join(",") ?? "";
   useEffect(() => {
     paint();
     attachGizmo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.selected, props.mode, activeSketch, colorKey]);
+  }, [props.selected, props.mode, activeSketch, colorKey, tintKey]);
 
   // --- Picking: the edges there are to pick, and what's been picked ---
   const pickKey = props.pick ? JSON.stringify(props.pick) : "";

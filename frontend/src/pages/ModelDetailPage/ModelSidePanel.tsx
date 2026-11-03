@@ -24,7 +24,7 @@ import { aiCategorizationApi } from "../../api/aiCategorization";
 import { UnauthorizedError } from "../../api/client";
 import { MODEL_EXTS } from "../../constants/fileTypes";
 import { useStudioEnabled } from "../../hooks/useStudioEnabled";
-import { openModelAsDesign } from "../StudioPage/openModel";
+import { openModelAsDesign, type StudioArrival } from "../StudioPage/openModel";
 import { useToast } from "../../components/ToastProvider";
 import type { AuthUser } from "../../api/auth";
 import { useGravatarUrl } from "../../hooks/useGravatarUrl";
@@ -125,7 +125,9 @@ export default function ModelSidePanel({
         studioPlate.id,
         t("app:studio.design.untitled"),
       );
-      navigate(`/studio?design=${encodeURIComponent(design)}`);
+      navigate(`/studio?design=${encodeURIComponent(design.id)}`, {
+        state: { imported: design.mesh ?? undefined } satisfies StudioArrival,
+      });
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else showToast({ message: err instanceof Error ? err.message : String(err), severity: "error" });

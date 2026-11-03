@@ -143,15 +143,37 @@ export type MeshFeature = Body & {
   triangles: number;
   /** Its size as it came in, in mm, [x, y, z]. */
   size: Vec3;
+  /** How many loose parts it came in as, which separate_parts makes bodies of their own. Not known for older imports. */
+  parts?: number;
   /** Where it came from, as it was then. */
   source: { model_id: string; file_id: string; file_name: string; model_title: string };
 };
+/** One of the loose parts of a body, which separate_parts makes all of. */
+export type PartFeature = Body & {
+  type: "part";
+  source_id: string;
+  /** Where it is in its source, in the source's own frame: it's found again by this each time the source is made. */
+  bounds: { min: Vec3; max: Vec3 };
+  /** The point of the world its own origin was at as it was separated: its base's middle. */
+  origin: Vec3;
+  /** Closed, so a boolean can use it; a part of a mesh with gaps may not be. */
+  solid: boolean;
+};
+/** A loose part as a body is measured for separate_parts: what its part feature keeps. */
+export type PartMeasure = Pick<PartFeature, "bounds" | "origin" | "solid">;
 
 export type PrimitiveFeature = BoxFeature | CylinderFeature | ConeFeature | SphereFeature | TorusFeature;
 /** Features that change one body, which they then belong to. */
 export type ModifyFeature = PressPullFeature | FilletFeature | ChamferFeature | HoleFeature | ShellFeature;
 export type BodyFeature =
-  PrimitiveFeature | MeshFeature | ExtrudeFeature | RevolveFeature | BooleanFeature | ModifyFeature | SplitFeature;
+  | PrimitiveFeature
+  | MeshFeature
+  | ExtrudeFeature
+  | RevolveFeature
+  | BooleanFeature
+  | ModifyFeature
+  | SplitFeature
+  | PartFeature;
 export type Feature = BodyFeature | SketchFeature;
 export type FeatureType = Feature["type"];
 
@@ -178,6 +200,8 @@ export const LIMITS = {
   edgesPerFeature: 100,
   /** A shell builds walls under every face, which takes time with every triangle: past this it's refused. */
   shellTriangles: 20_000,
+  /** The parts one body separates into. */
+  partsPerBody: 100,
 } as const;
 
 /** A mesh as a design keeps it: corners shared between triangles, centred on X and Y, standing on Z = 0, in mm. */
@@ -214,13 +238,21 @@ export function inputsOf(feature: Feature): string[] {
       return [feature.target_id];
     case "split":
       return feature.tool_id ? [feature.source_id, feature.tool_id] : [feature.source_id];
+    case "part":
+      return [feature.source_id];
     default:
       return [];
   }
 }
 
+/** Whether a body is a closed solid, as booleans and changes to it need: an imported mesh with gaps, or a part of one,
+ *  may not be. */
+export function isSolid(feature: BodyFeature): boolean {
+  return !((feature.type === "mesh" || feature.type === "part") && !feature.solid);
+}
+
 /** The feature built from this one, which it then belongs to: a boolean, a change to it, or the extrude of a sketch.
- *  A split's two parts both are; this is the first. */
+ *  A split's two parts both are, as are a body's separated parts; this is the first. */
 export function consumerOf(doc: StudioDocument, id: string): Feature | undefined {
   return doc.features.find((feature) => inputsOf(feature).includes(id));
 }

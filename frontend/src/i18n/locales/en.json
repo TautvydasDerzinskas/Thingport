@@ -3121,7 +3121,8 @@
         "chamfer": "Chamfer",
         "hole": "Hole",
         "shell": "Shell",
-        "split": "Split"
+        "split": "Split",
+        "part": "Part"
       },
       "tree": {
         "heading": "Features",
@@ -3151,7 +3152,8 @@
           "sphere": "Add sphere",
           "torus": "Add torus"
         },
-        "revolve": "Revolve"
+        "revolve": "Revolve",
+        "separate": "Separate parts"
       },
       "shapes": {
         "rectangle": "Rectangle",
@@ -3236,7 +3238,9 @@
           "importedSize": "Imported at {{size}} mm",
           "solid": "Closed solid",
           "open": "Not a closed solid",
-          "openHelp": "It has gaps, so it can be moved, scaled and exported, but not combined with other bodies."
+          "openHelp": "It has gaps, so it can be moved, scaled and exported, but not combined with other bodies.",
+          "parts_one": "{{count}} part",
+          "parts_other": "{{count}} separate parts"
         },
         "cornerRadius": "Corner radius"
       },
@@ -3403,7 +3407,20 @@
           "pick": "Click a flat face to sketch on"
         },
         "edges_one": "{{count}} edge",
-        "edges_other": "{{count}} edges"
+        "edges_other": "{{count}} edges",
+        "separate": {
+          "title": "Separate parts",
+          "help": "Makes each loose part of the body, each piece that doesn't touch the rest, a body of its own. A hollow inside a part stays with it; parts that overlap without being joined stay apart, each in its own colour here. Deleting all the parts gives the body back.",
+          "count_one": "{{count}} part",
+          "count_other": "{{count}} parts",
+          "open_one": "{{count}} has gaps: it can be moved and exported, not combined",
+          "open_other": "{{count}} have gaps: they can be moved and exported, not combined"
+        }
+      },
+      "imported": {
+        "parts_one": "The model came in as one body of {{count}} part",
+        "parts_other": "The model came in as one body of {{count}} separate parts",
+        "separate": "Separate"
       }
     }
   },

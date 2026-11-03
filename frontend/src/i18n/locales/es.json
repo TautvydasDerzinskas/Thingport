@@ -3157,7 +3157,8 @@
         "chamfer": "Chaflán",
         "hole": "Agujero",
         "shell": "Vaciado",
-        "split": "División"
+        "split": "División",
+        "part": "Pieza"
       },
       "tree": {
         "heading": "Elementos",
@@ -3187,7 +3188,8 @@
           "sphere": "Añadir esfera",
           "torus": "Añadir toro"
         },
-        "revolve": "Revolucionar"
+        "revolve": "Revolucionar",
+        "separate": "Separar piezas"
       },
       "shapes": {
         "rectangle": "Rectángulo",
@@ -3275,7 +3277,10 @@
           "importedSize": "Importado a {{size}} mm",
           "solid": "Sólido cerrado",
           "open": "No es un sólido cerrado",
-          "openHelp": "Tiene huecos, así que se puede mover, escalar y exportar, pero no combinar con otros cuerpos."
+          "openHelp": "Tiene huecos, así que se puede mover, escalar y exportar, pero no combinar con otros cuerpos.",
+          "parts_one": "{{count}} pieza",
+          "parts_many": "{{count}} piezas separadas",
+          "parts_other": "{{count}} piezas separadas"
         },
         "cornerRadius": "Radio de las esquinas"
       },
@@ -3445,7 +3450,23 @@
         },
         "edges_one": "{{count}} arista",
         "edges_many": "{{count}} aristas",
-        "edges_other": "{{count}} aristas"
+        "edges_other": "{{count}} aristas",
+        "separate": {
+          "title": "Separar piezas",
+          "help": "Convierte cada pieza suelta del cuerpo, cada trozo que no toca al resto, en un cuerpo propio. Un hueco dentro de una pieza se queda con ella; las piezas que se solapan sin estar unidas quedan separadas, aquí cada una de su color. Al borrar todas las piezas vuelve el cuerpo.",
+          "count_one": "{{count}} pieza",
+          "count_many": "{{count}} piezas",
+          "count_other": "{{count}} piezas",
+          "open_one": "{{count}} tiene huecos: se puede mover y exportar, no combinar",
+          "open_many": "{{count}} tienen huecos: se pueden mover y exportar, no combinar",
+          "open_other": "{{count}} tienen huecos: se pueden mover y exportar, no combinar"
+        }
+      },
+      "imported": {
+        "parts_one": "El modelo se importó como un solo cuerpo de {{count}} pieza",
+        "parts_many": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",
+        "parts_other": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",
+        "separate": "Separar"
       }
     }
   },

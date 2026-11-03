@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import Module from "manifold-3d";
-import { applyCommand, type StudioCommandArgs, type StudioCommandName } from "./commands";
-import { emptyDocument, topLevel, type StudioDocument } from "./document";
-import { describeBody, evaluateDesign } from "./geometry";
+import Module, { type Manifold } from "manifold-3d";
+import { addMesh, addParts, applyCommand, type StudioCommandArgs, type StudioCommandName } from "./commands";
+import { emptyDocument, topLevel, type MeshData, type StudioDocument } from "./document";
+import { describeBody, evaluateDesign, measureParts, prepareMesh, type MeshLookup } from "./geometry";
 
 // Each phase 3 operation against geometry worked out another way: a formula, or the same shape made by another route.
 
@@ -15,8 +15,8 @@ function run<N extends StudioCommandName>(doc: StudioDocument, name: N, args: St
   return applyCommand(doc, name, args).document;
 }
 
-async function body(doc: StudioDocument, id: string) {
-  const { bodies, errors } = evaluateDesign(await wasm, doc);
+async function body(doc: StudioDocument, id: string, meshes?: MeshLookup) {
+  const { bodies, errors } = evaluateDesign(await wasm, doc, undefined, meshes);
   const error = errors.find((each) => each.id === id);
   if (error) throw new Error(error.message);
   const found = bodies.find((each) => each.id === id);
@@ -24,8 +24,52 @@ async function body(doc: StudioDocument, id: string) {
   return found;
 }
 
-async function problem(doc: StudioDocument, id: string): Promise<string | undefined> {
-  return evaluateDesign(await wasm, doc).errors.find((each) => each.id === id)?.message;
+async function problem(doc: StudioDocument, id: string, meshes?: MeshLookup): Promise<string | undefined> {
+  return evaluateDesign(await wasm, doc, undefined, meshes).errors.find((each) => each.id === id)?.message;
+}
+
+/** separate_parts as the server runs it: the body measured, then the parts added. */
+async function separate(doc: StudioDocument, id: string, meshes?: MeshLookup) {
+  return addParts(doc, { feature_id: id }, measureParts(await wasm, doc, id, meshes)).document;
+}
+
+/** Solids' triangles as a file has them, nine numbers each, with nothing joined between them. */
+function fileOf(solids: Manifold[], skip?: (normal: number[]) => boolean): Float32Array {
+  const out: number[] = [];
+  for (const solid of solids) {
+    const mesh = solid.getMesh();
+    const at = (i: number) => [0, 1, 2].map((k) => mesh.vertProperties[i * mesh.numProp + k]);
+    for (let t = 0; t < mesh.triVerts.length; t += 3) {
+      const [a, b, c] = [0, 1, 2].map((k) => at(mesh.triVerts[t + k]));
+      const n = [
+        (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
+        (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]),
+        (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]),
+      ];
+      if (!skip?.(n)) out.push(...a, ...b, ...c);
+    }
+  }
+  return new Float32Array(out);
+}
+
+/** A design with one imported model of these triangles, and where its mesh is. */
+async function imported(triangles: Float32Array) {
+  const prepared = prepareMesh(await wasm, triangles);
+  const assetId = "a".repeat(24);
+  const doc = addMesh(
+    emptyDocument(),
+    {
+      asset_id: assetId,
+      solid: prepared.solid,
+      triangles: prepared.mesh.indices.length / 3,
+      size: prepared.size,
+      parts: prepared.parts,
+      source: { model_id: "m", file_id: "f", file_name: "parts.stl", model_title: "Parts" },
+    },
+    {},
+  ).document;
+  const meshes: MeshLookup = (id: string): MeshData | undefined => (id === assetId ? prepared.mesh : undefined);
+  return { doc, meshes, prepared };
 }
 
 const box = (w = 20, d = 20, h = 10) => run(emptyDocument(), "add_box", { width: w, depth: d, height: h });
@@ -280,5 +324,84 @@ describe("Studio operations", () => {
     let kept = run(box(), "add_box", { width: 5, depth: 5, height: 30, position: [0, 0, -10] });
     kept = run(kept, "boolean", { operation: "subtract", target_id: "box-1", tool_ids: ["box-2"], keep_tools: true });
     expect(topLevel(kept).map((f) => f.id)).toEqual(["box-2", "boolean-4"]);
+  });
+
+  it("separates the pieces a cut leaves into bodies of their own, found again after an edit", async () => {
+    // A 30 mm bar with its middle cut out: two 10 mm cubes.
+    let cut = run(box(30, 10, 10), "add_box", { width: 10, depth: 20, height: 20, position: [0, 0, -5] });
+    cut = run(cut, "boolean", { operation: "subtract", target_id: "box-1", tool_ids: ["box-2"] });
+    const doc = await separate(cut, "boolean-3");
+    expect(topLevel(doc).map((f) => f.id)).toEqual(["part-4", "part-5"]);
+    const left = await body(doc, "part-4");
+    expect(left.bounds).toEqual({ min: [-15, -5, 0], max: [-5, 5, 10] });
+    near(left.volume, 1000);
+    // Its own origin is its base's middle, so it turns about itself.
+    expect(doc.features.find((f) => f.id === "part-4")).toMatchObject({ transform: { position: [-10, 0, 0] } });
+    const turned = await body(run(doc, "set_transform", { feature_id: "part-4", rotation: [0, 0, 45] }), "part-4");
+    expect((turned.bounds.min[0] + turned.bounds.max[0]) / 2).toBeCloseTo(-10);
+
+    // A narrower cut leaves both a little bigger, and they're still found; one that doesn't go through leaves neither.
+    near((await body(run(doc, "update_feature", { feature_id: "box-2", width: 8 }), "part-4")).volume, 1100);
+    const shallow = run(doc, "set_transform", { feature_id: "box-2", position: [0, 0, 5] });
+    expect(await problem(shallow, "part-4")).toMatch(/isn't in boolean-3 any more/);
+
+    // Deleting one leaves it out; deleting both gives the body back.
+    let back = run(doc, "delete_feature", { feature_id: "part-4" });
+    expect(topLevel(back).map((f) => f.id)).toEqual(["part-5"]);
+    back = run(back, "delete_feature", { feature_id: "part-5" });
+    expect(topLevel(back).map((f) => f.id)).toEqual(["boolean-3"]);
+  });
+
+  it("keeps a hollow with the part around it, and a ball rattling inside it apart", async () => {
+    const hollow = run(box(20, 20, 20), "shell", { feature_id: "box-1", thickness: 2 });
+    await expect(separate(hollow, "shell-2")).rejects.toThrow(/one part/);
+    let rattle = run(hollow, "add_sphere", { radius: 4, position: [0, 0, 6] });
+    rattle = run(rattle, "boolean", { operation: "union", target_id: "shell-2", tool_ids: ["sphere-3"] });
+    rattle = await separate(rattle, "boolean-4");
+    expect(topLevel(rattle).map((f) => f.id)).toEqual(["part-5", "part-6"]);
+    near((await body(rattle, "part-5")).volume, 8000 - 16 ** 3, 1e-6);
+    const ball = await body(run(emptyDocument(), "add_sphere", { radius: 4 }), "sphere-1");
+    near((await body(rattle, "part-6")).volume, ball.volume, 1e-6);
+  });
+
+  it("separates an imported model's overlapping parts, which then join properly", async () => {
+    const { Manifold } = await wasm;
+    const { doc, meshes, prepared } = await imported(
+      fileOf([Manifold.cube([10, 10, 10]), Manifold.cube([10, 10, 10]).translate([5, 5, 5])]),
+    );
+    expect(prepared).toMatchObject({ solid: true, parts: 2 });
+    // Left in one body, the overlap counts twice.
+    near((await body(doc, "mesh-1", meshes)).volume, 2000);
+    const parts = await separate(doc, "mesh-1", meshes);
+    near((await body(parts, "part-2", meshes)).volume, 1000);
+    const joined = run(parts, "boolean", { operation: "union", target_id: "part-2", tool_ids: ["part-3"] });
+    near((await body(joined, "boolean-4", meshes)).volume, 2000 - 125);
+  });
+
+  it("separates a mesh with gaps into its parts, and the closed ones combine", async () => {
+    const { Manifold } = await wasm;
+    // A tray with no top, beside a closed cube.
+    const tray = fileOf([Manifold.cube([10, 10, 10])], (normal) => normal[2] > 0);
+    const cube = fileOf([Manifold.cube([10, 10, 10]).translate([20, 0, 0])]);
+    const { doc, meshes, prepared } = await imported(new Float32Array([...tray, ...cube]));
+    expect(prepared).toMatchObject({ solid: false, parts: 2 });
+    const parts = await separate(doc, "mesh-1", meshes);
+    expect(parts.features.flatMap((f) => (f.type === "part" ? [f.solid] : []))).toEqual([false, true]);
+    expect((await body(parts, "part-2", meshes)).volume).toBeNaN();
+    near((await body(parts, "part-3", meshes)).volume, 1000);
+    const more = run(parts, "add_box", { width: 5, depth: 5, height: 5, position: [15, 0, 10] });
+    near(
+      (
+        await body(
+          run(more, "boolean", { operation: "union", target_id: "part-3", tool_ids: ["box-4"] }),
+          "boolean-5",
+          meshes,
+        )
+      ).volume,
+      1125,
+    );
+    expect(() => run(more, "boolean", { operation: "union", target_id: "part-2", tool_ids: ["box-4"] })).toThrow(
+      /isn't a closed solid/,
+    );
   });
 });

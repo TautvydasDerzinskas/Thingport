@@ -3244,7 +3244,8 @@
         "chamfer": "Nuožula",
         "hole": "Skylė",
         "shell": "Apvalkalas",
-        "split": "Padalijimas"
+        "split": "Padalijimas",
+        "part": "Dalis"
       },
       "tree": {
         "heading": "Elementai",
@@ -3274,7 +3275,8 @@
           "sphere": "Pridėti sferą",
           "torus": "Pridėti torą"
         },
-        "revolve": "Sukti"
+        "revolve": "Sukti",
+        "separate": "Atskirti dalis"
       },
       "shapes": {
         "rectangle": "Stačiakampis",
@@ -3362,7 +3364,10 @@
           "importedSize": "Įkeltas {{size}} mm dydžio",
           "solid": "Uždaras kūnas",
           "open": "Ne uždaras kūnas",
-          "openHelp": "Jame yra tarpų, todėl jį galima perkelti, keisti mastelį ir eksportuoti, bet ne sujungti su kitais kūnais."
+          "openHelp": "Jame yra tarpų, todėl jį galima perkelti, keisti mastelį ir eksportuoti, bet ne sujungti su kitais kūnais.",
+          "parts_one": "{{count}} atskira dalis",
+          "parts_few": "{{count}} atskiros dalys",
+          "parts_other": "{{count}} atskirų dalių"
         },
         "cornerRadius": "Kampų spindulys"
       },
@@ -3532,7 +3537,23 @@
         },
         "edges_one": "{{count}} briauna",
         "edges_few": "{{count}} briaunos",
-        "edges_other": "{{count}} briaunų"
+        "edges_other": "{{count}} briaunų",
+        "separate": {
+          "title": "Atskirti dalis",
+          "help": "Kiekvieną laisvą kūno dalį, kiekvieną gabalą, kuris neliečia kitų, paverčia atskiru kūnu. Ertmė dalies viduje lieka su ja; persidengiančios, bet nesujungtos dalys lieka atskiros, čia kiekviena savo spalva. Ištrynus visas dalis, kūnas grąžinamas.",
+          "count_one": "{{count}} dalis",
+          "count_few": "{{count}} dalys",
+          "count_other": "{{count}} dalių",
+          "open_one": "{{count}} turi tarpų: ją galima perkelti ir eksportuoti, bet ne sujungti",
+          "open_few": "{{count}} turi tarpų: jas galima perkelti ir eksportuoti, bet ne sujungti",
+          "open_other": "{{count}} turi tarpų: jas galima perkelti ir eksportuoti, bet ne sujungti"
+        }
+      },
+      "imported": {
+        "parts_one": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskiros dalies",
+        "parts_few": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
+        "parts_other": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
+        "separate": "Atskirti"
       }
     }
   },

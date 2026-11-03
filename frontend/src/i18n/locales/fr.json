@@ -3170,7 +3170,8 @@
         "chamfer": "Chanfrein",
         "hole": "Trou",
         "shell": "Coque",
-        "split": "Division"
+        "split": "Division",
+        "part": "Pièce"
       },
       "tree": {
         "heading": "Éléments",
@@ -3200,7 +3201,8 @@
           "sphere": "Ajouter une sphère",
           "torus": "Ajouter un tore"
         },
-        "revolve": "Révolution"
+        "revolve": "Révolution",
+        "separate": "Séparer les pièces"
       },
       "shapes": {
         "rectangle": "Rectangle",
@@ -3288,7 +3290,10 @@
           "importedSize": "Importé à {{size}} mm",
           "solid": "Solide fermé",
           "open": "Pas un solide fermé",
-          "openHelp": "Il a des trous : il peut être déplacé, mis à l’échelle et exporté, mais pas combiné avec d’autres corps."
+          "openHelp": "Il a des trous : il peut être déplacé, mis à l’échelle et exporté, mais pas combiné avec d’autres corps.",
+          "parts_one": "{{count}} pièce",
+          "parts_many": "{{count}} pièces séparées",
+          "parts_other": "{{count}} pièces séparées"
         },
         "cornerRadius": "Rayon des coins"
       },
@@ -3458,7 +3463,23 @@
         },
         "edges_one": "{{count}} arête",
         "edges_many": "{{count}} arêtes",
-        "edges_other": "{{count}} arêtes"
+        "edges_other": "{{count}} arêtes",
+        "separate": {
+          "title": "Séparer les pièces",
+          "help": "Fait de chaque pièce détachée du corps, chaque morceau qui ne touche pas le reste, un corps à part. Un creux à l’intérieur d’une pièce reste avec elle ; les pièces qui se chevauchent sans être jointes restent séparées, ici chacune de sa couleur. Supprimer toutes les pièces rend le corps.",
+          "count_one": "{{count}} pièce",
+          "count_many": "{{count}} pièces",
+          "count_other": "{{count}} pièces",
+          "open_one": "{{count}} a des trous : elle peut être déplacée et exportée, pas combinée",
+          "open_many": "{{count}} ont des trous : elles peuvent être déplacées et exportées, pas combinées",
+          "open_other": "{{count}} ont des trous : elles peuvent être déplacées et exportées, pas combinées"
+        }
+      },
+      "imported": {
+        "parts_one": "Le modèle a été importé en un seul corps de {{count}} pièce",
+        "parts_many": "Le modèle a été importé en un seul corps de {{count}} pièces séparées",
+        "parts_other": "Le modèle a été importé en un seul corps de {{count}} pièces séparées",
+        "separate": "Séparer"
       }
     }
   },

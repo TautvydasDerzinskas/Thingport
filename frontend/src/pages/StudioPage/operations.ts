@@ -49,6 +49,7 @@ export type Operation =
       tool: string | null;
     }
   | { kind: "scale"; target: string | null; factor: number }
+  | { kind: "separate"; target: string | null }
   | { kind: "sketch_face"; face: FacePick | null };
 
 export type OperationKind = Operation["kind"];
@@ -99,6 +100,8 @@ export function startOperation(kind: OperationKind, on: string | null): Operatio
       return { kind, target: on, by: "plane", plane: "XY", offset: 0, face: null, tool: null };
     case "scale":
       return { kind, target: on, factor: 1 };
+    case "separate":
+      return { kind, target: on };
     case "sketch_face":
       return { kind, face: null };
   }
@@ -176,6 +179,8 @@ export function commandOf(op: Operation): { name: StudioCommandName; args: Recor
       return op.target && op.factor !== 1
         ? { name: "scale_feature", args: { feature_id: op.target, factor: op.factor } }
         : null;
+    case "separate":
+      return op.target ? { name: "separate_parts", args: { feature_id: op.target } } : null;
     case "sketch_face":
       return op.face ? { name: "add_sketch", args: { face: op.face } } : null;
   }
@@ -207,6 +212,7 @@ export function pickOf(op: Operation, own: string[]): PickRequest | null {
       if (op.by === "body") return { kind: "body", bodies: null, chosen: none };
       return null;
     case "scale":
+    case "separate":
       return op.target ? null : { kind: "body", bodies: null, chosen: none };
     case "sketch_face":
       return { kind: "face", bodies: null, chosen: none };
@@ -257,6 +263,7 @@ export function withPick(op: Operation, picked: Picked, own: string[]): Operatio
       if (picked.kind === "face" && op.by === "face") return { ...op, face: picked.face };
       return op;
     case "scale":
+    case "separate":
       return picked.kind === "body" ? { ...op, target: body } : op;
     case "sketch_face":
       return picked.kind === "face" ? { ...op, face: picked.face } : op;

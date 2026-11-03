@@ -11,9 +11,12 @@ import {
   transformMatrix,
   type BodyFeature,
   type MeshData,
+  type PartFeature,
+  type PartMeasure,
   type SketchFeature,
   type StudioDocument,
 } from "./document";
+import { boundsOfPositions, closedParts, matchParts, openParts, partOrder, type Bounds } from "./parts";
 import { edgeWork, extrudeRings, holeCutter, loft, roundedCylinder, sectionOf, wallsOf, type Own } from "./solids";
 import { analyze, faceTriangles2d, findEdge, findFace, type Topology } from "./topology";
 import {
@@ -75,6 +78,18 @@ function meshOf(solid: Manifold): MeshData {
   return { positions, indices: new Uint32Array(mesh.triVerts) };
 }
 
+/** A mesh's corners put through a matrix. */
+function movedMesh(mesh: MeshData, matrix: number[]): MeshData {
+  const positions = new Float32Array(mesh.positions.length);
+  for (let i = 0; i < positions.length; i += 3) {
+    const [x, y, z] = applyMatrix(matrix, [mesh.positions[i], mesh.positions[i + 1], mesh.positions[i + 2]]);
+    positions[i] = x;
+    positions[i + 1] = y;
+    positions[i + 2] = z;
+  }
+  return { positions, indices: mesh.indices };
+}
+
 /** Outlines, reversed one by one: a section mirrored across its v axis. */
 function mirrored(outlines: Vec2[][]): Vec2[][] {
   return outlines.map((outline) => outline.map(([x, y]): Vec2 => [-x, y]).toReversed());
@@ -123,11 +138,63 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
     return Math.max(1e-4, size * 1e-5);
   };
 
-  // A body that another feature changes, where it is, and the matrix that places references made in its own frame.
-  const target = (id: string) => {
+  const bodyOf = (id: string): BodyFeature => {
     const feature = featureById(doc, id);
     if (!feature || !isBody(feature)) throw new Error(`${id} is missing`);
-    return { solid: inWorld(id), matrix: transformMatrix(feature.transform) };
+    return feature;
+  };
+
+  // A body that another feature changes, where it is, and the matrix that places references made in its own frame.
+  const target = (id: string) => ({ solid: inWorld(id), matrix: transformMatrix(bodyOf(id).transform) });
+
+  // A body's loose parts in its own frame, found once for all the parts separated from it: a closed body's as solids,
+  // a mesh with gaps as its triangles.
+  type Piece = { bounds: Bounds; solid: Manifold | null; mesh: MeshData | null };
+  const pieceSets = new Map<string, Piece[]>();
+  const piecesOf = (source: BodyFeature): Piece[] => {
+    const known = pieceSets.get(source.id);
+    if (known) return known;
+    const open = openOf(source);
+    const pieces: Piece[] = open
+      ? openParts(open).map((mesh) => ({ bounds: boundsOfPositions(mesh.positions), solid: null, mesh }))
+      : closedParts(wasm, own, local(source)).map((solid) => {
+          const box = solid.boundingBox();
+          return { bounds: { min: [...box.min] as Vec3, max: [...box.max] as Vec3 }, solid, mesh: null };
+        });
+    pieces.sort((a, b) => partOrder(a.bounds, b.bounds));
+    pieceSets.set(source.id, pieces);
+    return pieces;
+  };
+
+  // Which of its source's parts a part is, matched with its siblings so each is taken once, and the matrix from the
+  // source's own frame to the part's: where the source puts it, less where the part's origin was.
+  const assigned = new Map<string, number>();
+  const pieceOf = (part: PartFeature) => {
+    const source = bodyOf(part.source_id);
+    const pieces = piecesOf(source);
+    if (!assigned.has(part.id)) {
+      const siblings = doc.features.filter(
+        (feature): feature is PartFeature => feature.type === "part" && feature.source_id === part.source_id,
+      );
+      const found = matchParts(
+        siblings.map((sibling) => sibling.bounds),
+        pieces.map((piece) => piece.bounds),
+      );
+      siblings.forEach((sibling, index) => assigned.set(sibling.id, found[index]));
+    }
+    const index = assigned.get(part.id)!;
+    if (index < 0) throw new Error(`The part ${part.id} was isn't in ${part.source_id} any more`);
+    const matrix = transformMatrix(source.transform);
+    for (let axis = 0; axis < 3; axis++) matrix[12 + axis] -= part.origin[axis];
+    return { piece: pieces[index], matrix };
+  };
+
+  // The triangles of a body that isn't closed, in its own frame; null for one that is.
+  const openOf = (feature: BodyFeature): MeshData | null => {
+    if (feature.type === "mesh") return feature.solid ? null : meshData(feature.id, feature.asset_id);
+    if (feature.type !== "part" || feature.solid) return null;
+    const { piece, matrix } = pieceOf(feature);
+    return piece.mesh ? movedMesh(piece.mesh, matrix) : null;
   };
 
   // The body as made, before its own transform.
@@ -308,7 +375,45 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
         const tool = inWorld(feature.tool_id);
         return own(feature.keep === "inside" ? solid.intersect(tool) : solid.subtract(tool));
       }
+      case "part": {
+        const { piece, matrix } = pieceOf(feature);
+        if (piece.solid) return own(piece.solid.transform(matrix as Mat4));
+        if (!feature.solid) throw new Error(`${feature.id} isn't a closed solid`);
+        // A part of a mesh with gaps that's closed itself.
+        const mesh = movedMesh(piece.mesh!, matrix);
+        return own(new Manifold(new wasm.Mesh({ numProp: 3, vertProperties: mesh.positions, triVerts: mesh.indices })));
+      }
     }
+  };
+
+  // What separate_parts makes of a body: its parts, where they are in its own frame and in the world.
+  const measure = (id: string): PartMeasure[] => {
+    const source = bodyOf(id);
+    const matrix = transformMatrix(source.transform);
+    return piecesOf(source).map((piece) => {
+      let solid = Boolean(piece.solid);
+      let world: Bounds;
+      if (piece.solid) {
+        const box = own(piece.solid.transform(matrix as Mat4)).boundingBox();
+        world = { min: [...box.min] as Vec3, max: [...box.max] as Vec3 };
+      } else {
+        const moved = movedMesh(piece.mesh!, matrix);
+        world = boundsOfPositions(moved.positions);
+        try {
+          const closed = own(
+            new Manifold(new wasm.Mesh({ numProp: 3, vertProperties: moved.positions, triVerts: moved.indices })),
+          );
+          solid = closed.status() === "NoError" && !closed.isEmpty();
+        } catch {
+          // Not manifold: this part has the gaps.
+        }
+      }
+      return {
+        bounds: { min: round3v(piece.bounds.min), max: round3v(piece.bounds.max) },
+        origin: round3v([(world.min[0] + world.max[0]) / 2, (world.min[1] + world.max[1]) / 2, world.min[2]]),
+        solid,
+      };
+    });
   };
 
   // Each body is made once, or tried once when it can't be: both halves of a split, say, are made from one.
@@ -340,7 +445,8 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
   return {
     local,
     inWorld,
-    meshData,
+    openOf,
+    measure,
     dispose: () => {
       for (const each of made) each.delete();
     },
@@ -366,10 +472,9 @@ export function evaluateDesign(
       if (!isBody(feature) || (wanted && !wanted.has(feature.id))) continue;
       try {
         // An open mesh isn't a solid manifold can make, but it shows, moves and exports as it is.
-        if (feature.type === "mesh" && !feature.solid) {
-          bodies.push(
-            openMesh(feature.id, made.meshData(feature.id, feature.asset_id), transformMatrix(feature.transform)),
-          );
+        const open = made.openOf(feature);
+        if (open) {
+          bodies.push(openMesh(feature.id, open, transformMatrix(feature.transform)));
           continue;
         }
         const solid = made.local(feature);
@@ -469,6 +574,25 @@ export function describeBody(
   }
 }
 
+/**
+ * A body's loose parts, as separate_parts would make them: largest first, each with where it is in the body's own frame
+ * (by which it's found again), the world point at its base's middle, and whether it's closed. Throws when the body
+ * can't be made.
+ */
+export function measureParts(
+  wasm: ManifoldToplevel,
+  doc: StudioDocument,
+  id: string,
+  meshes?: MeshLookup,
+): PartMeasure[] {
+  const made = evaluator(wasm, doc, meshes);
+  try {
+    return made.measure(id);
+  } finally {
+    made.dispose();
+  }
+}
+
 /** An open mesh as a body: as it is, measured but with no volume, which it doesn't enclose. */
 function openMesh(id: string, mesh: MeshData, matrix: number[]): EvaluatedBody {
   const min: Vec3 = [Infinity, Infinity, Infinity];
@@ -485,12 +609,13 @@ function openMesh(id: string, mesh: MeshData, matrix: number[]): EvaluatedBody {
 
 /**
  * Makes an imported model's triangles (nine numbers each, Z up, in mm) into the design's copy: corners shared, centred
- * on X and Y and standing on Z = 0, and as manifold cleaned it when it's a closed solid.
+ * on X and Y and standing on Z = 0, and as manifold cleaned it when it's a closed solid. Says how many loose parts it
+ * is, too.
  */
 export function prepareMesh(
   wasm: ManifoldToplevel,
   triangles: Float32Array,
-): { mesh: MeshData; solid: boolean; size: Vec3 } {
+): { mesh: MeshData; solid: boolean; size: Vec3; parts: number } {
   // Corners at the same place become one, as an STL repeats each corner for every triangle that has it.
   const corners = new Map<string, number>();
   const positions: number[] = [];
@@ -518,17 +643,21 @@ export function prepareMesh(
   for (let i = 0; i < positions.length; i++) centred[i] = positions[i] + shift[i % 3];
   const size: Vec3 = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
   const welded: MeshData = { positions: centred, indices };
+  const open = () => ({ mesh: welded, solid: false, size, parts: openParts(welded).length });
+  const made: { delete(): void }[] = [];
+  const own: Own = (value) => {
+    made.push(value);
+    return value;
+  };
   try {
-    const solid = new wasm.Manifold(new wasm.Mesh({ numProp: 3, vertProperties: centred, triVerts: indices }));
-    try {
-      if (solid.status() !== "NoError" || solid.isEmpty()) return { mesh: welded, solid: false, size };
-      return { mesh: meshOf(solid), solid: true, size };
-    } finally {
-      solid.delete();
-    }
+    const solid = own(new wasm.Manifold(new wasm.Mesh({ numProp: 3, vertProperties: centred, triVerts: indices })));
+    if (solid.status() !== "NoError" || solid.isEmpty()) return open();
+    return { mesh: meshOf(solid), solid: true, size, parts: closedParts(wasm, own, solid).length };
   } catch {
     // "Not manifold": it has gaps, or edges shared by more than two triangles.
-    return { mesh: welded, solid: false, size };
+    return open();
+  } finally {
+    for (const each of made) each.delete();
   }
 }
 

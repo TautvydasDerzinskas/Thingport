@@ -42,6 +42,7 @@ import {
   PressPullIcon,
   RevolveIcon,
   ShellIcon,
+  SeparateIcon,
   SplitIcon,
   BoxIcon,
   ConeIcon,
@@ -107,6 +108,7 @@ const MODIFY: { kind: OperationKind; Icon: React.ComponentType<SvgIconProps> }[]
   { kind: "chamfer", Icon: ChamferIcon },
   { kind: "shell", Icon: ShellIcon },
   { kind: "split", Icon: SplitIcon },
+  { kind: "separate", Icon: SeparateIcon },
   { kind: "scale", Icon: AspectRatioIcon },
 ];
 

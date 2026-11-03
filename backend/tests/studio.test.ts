@@ -221,7 +221,12 @@ describe("Studio", () => {
   describe("importing library models", () => {
     /** An ASCII STL of a w x d x h box from the origin, Z up; `open` leaves its top off. */
     function boxStl(w: number, d: number, h: number, open = false): string {
-      const v = (x: number, y: number, z: number) => `vertex ${x * w} ${y * d} ${z * h}`;
+      return `solid box\n${boxFacets(w, d, h, open, [0, 0, 0])}\nendsolid box\n`;
+    }
+
+    /** A box's facets, from `at`. */
+    function boxFacets(w: number, d: number, h: number, open: boolean, at: [number, number, number]): string {
+      const v = (x: number, y: number, z: number) => `vertex ${at[0] + x * w} ${at[1] + y * d} ${at[2] + z * h}`;
       const quads: [number, number, number][][] = [
         [
           [0, 0, 0],
@@ -260,13 +265,14 @@ describe("Studio", () => {
           [1, 0, 1],
         ],
       ].filter((_, i) => !(open && i === 1)) as [number, number, number][][];
-      const facets = quads.flatMap(([a, b, c, e]) =>
-        [
-          [a, b, c],
-          [a, c, e],
-        ].map((tri) => `facet normal 0 0 0\nouter loop\n${tri.map((p) => v(...p)).join("\n")}\nendloop\nendfacet`),
-      );
-      return `solid box\n${facets.join("\n")}\nendsolid box\n`;
+      return quads
+        .flatMap(([a, b, c, e]) =>
+          [
+            [a, b, c],
+            [a, c, e],
+          ].map((tri) => `facet normal 0 0 0\nouter loop\n${tri.map((p) => v(...p)).join("\n")}\nendloop\nendfacet`),
+        )
+        .join("\n");
     }
 
     async function upload(session: string, filename: string, text: string) {
@@ -357,6 +363,54 @@ describe("Studio", () => {
       expect(body.bounds.min[2]).toBe(5);
       const view = await callTool(token, "studio_view_design", { design_id: id, size: 128 });
       expect(view.content.some((part) => part.type === "image")).toBe(true);
+    });
+
+    it("says a model came in as several parts, and separates them into bodies an assistant can work on", async () => {
+      const pair = `solid pair\n${boxFacets(10, 10, 10, false, [0, 0, 0])}\n${boxFacets(10, 10, 20, false, [30, 0, 0])}\nendsolid pair\n`;
+      const model = await upload(alice, "studio-pair.stl", pair);
+      const res = await request(app)
+        .post("/api/profile/api-token")
+        .set(auth(alice))
+        .send({ mcp_tools: [...DEFAULT_MCP_TOOL_NAMES, ...STUDIO_TOOLS] });
+      const token = res.body.token as string;
+      const id = (await callTool(token, "studio_create_design", {})).data.design_id as string;
+      const imported = await callTool(token, "studio_import_model", { design_id: id, model_id: model.modelId });
+      expect(imported.data.done).toMatch(/2 separate parts in one body: separate_parts/);
+
+      const separated = await callTool(token, "studio_separate_parts", { design_id: id, feature_id: "mesh-1" });
+      expect(separated.data).toMatchObject({ created: ["part-2", "part-3"], problems: [] });
+      const read = await callTool(token, "studio_get_design", { design_id: id });
+      expect(read.data.top_level).toEqual(["part-2", "part-3"]);
+      // Largest first, each standing where it was, its own origin at its base's middle.
+      const tall = read.data.features.find((each: { id: string }) => each.id === "part-2");
+      expect(tall).toMatchObject({
+        type: "part",
+        source_id: "mesh-1",
+        solid: true,
+        transform: { position: [15, 0, 0] },
+      });
+      const sizes = read.data.bodies.map((each: { id: string; size: number[] }) => [each.id, each.size]);
+      expect(sizes).toEqual([
+        ["part-2", [10, 10, 20]],
+        ["part-3", [10, 10, 10]],
+      ]);
+      // A part is a body like any other: it can be drilled, and it's one part.
+      const hole = await callTool(token, "studio_hole", {
+        design_id: id,
+        feature_id: "part-3",
+        point: [-15, 0, 10],
+        normal: [0, 0, 1],
+        diameter: 4,
+      });
+      expect(hole.data.problems).toEqual([]);
+      const again = await callTool(token, "studio_separate_parts", { design_id: id, feature_id: "hole-4" });
+      expect(again).toMatchObject({ isError: true, text: expect.stringMatching(/one part/) });
+
+      // Deleting the parts gives the model back.
+      await callTool(token, "studio_delete_feature", { design_id: id, feature_id: "part-2" });
+      await callTool(token, "studio_delete_feature", { design_id: id, feature_id: "hole-4" });
+      await callTool(token, "studio_delete_feature", { design_id: id, feature_id: "part-3" });
+      expect((await callTool(token, "studio_get_design", { design_id: id })).data.top_level).toEqual(["mesh-1"]);
     });
   });
 });

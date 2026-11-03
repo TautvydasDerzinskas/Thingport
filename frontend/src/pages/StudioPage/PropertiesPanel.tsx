@@ -33,7 +33,7 @@ import {
 import type { RunCommand } from "./useStudioDesign";
 import { EdgeTreatmentField, NumberField } from "./fields";
 import { featureLabel } from "./labels";
-import { FeatureIcon } from "./studioIcons";
+import { FeatureIcon, SeparateIcon } from "./studioIcons";
 
 type Props = {
   document: StudioDocument;
@@ -41,6 +41,8 @@ type Props = {
   errors: Record<string, string>;
   run: RunCommand;
   onSelect: (id: string) => void;
+  /** Opens the Separate tool on a body. */
+  onSeparate: (id: string) => void;
   onEditSketch: (id: string) => void;
 };
 
@@ -100,7 +102,15 @@ const triple = { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr)
 const pair = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 1 } as const;
 
 /** The selected feature's dimensions, place and parts, each field one command. */
-export default function PropertiesPanel({ document, selected, errors, run, onSelect, onEditSketch }: Props) {
+export default function PropertiesPanel({
+  document,
+  selected,
+  errors,
+  run,
+  onSelect,
+  onSeparate,
+  onEditSketch,
+}: Props) {
   const { t } = useTranslation("app");
   const feature = selected.length === 1 ? featureById(document, selected[0]) : undefined;
 
@@ -196,15 +206,24 @@ export default function PropertiesPanel({ document, selected, errors, run, onSel
                 sx={{ alignSelf: "flex-start", mt: 0.5 }}
               />
             ) : (
-              <Stack direction="row" alignItems="center" sx={{ color: "warning.main", mt: 0.5 }}>
-                <WarningAmberRoundedIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                <Typography variant="caption">{t("studio.properties.mesh.open")}</Typography>
-                <HelpTip text={t("studio.properties.mesh.openHelp")} />
+              <OpenWarning />
+            )}
+            {feature.parts !== undefined && feature.parts > 1 && (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+                  {t("studio.properties.mesh.parts", { count: feature.parts })}
+                </Typography>
+                {!partOf && (
+                  <Button size="small" startIcon={<SeparateIcon />} onClick={() => onSeparate(id)}>
+                    {t("studio.imported.separate")}
+                  </Button>
+                )}
               </Stack>
             )}
           </Stack>
         </Section>
       )}
+      {feature.type === "part" && !feature.solid && <OpenWarning />}
       {feature.type === "box" && (
         <Section title={t("studio.properties.size")}>
           <Box sx={triple}>
@@ -485,6 +504,18 @@ export default function PropertiesPanel({ document, selected, errors, run, onSel
       {feature.type === "sketch" && <SketchProperties sketch={feature} run={run} onEditSketch={onEditSketch} />}
       {isBody(feature) && <TransformFields feature={feature} run={run} />}
     </Box>
+  );
+}
+
+/** A mesh, or a part of one, with gaps: what it can and can't do. */
+function OpenWarning() {
+  const { t } = useTranslation("app");
+  return (
+    <Stack direction="row" alignItems="center" sx={{ color: "warning.main", mt: 0.5 }}>
+      <WarningAmberRoundedIcon sx={{ fontSize: 16, mr: 0.5 }} />
+      <Typography variant="caption">{t("studio.properties.mesh.open")}</Typography>
+      <HelpTip text={t("studio.properties.mesh.openHelp")} />
+    </Stack>
   );
 }
 

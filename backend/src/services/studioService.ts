@@ -7,16 +7,18 @@ import { RENDERABLE_MODEL_EXTS, STUDIO_ASSETS } from "../config";
 import { HttpError } from "../utils/fileUtils";
 import {
   addMesh,
+  addParts,
   applyCommand,
   CommandError,
   parseCommandArgs,
+  separableBody,
   studioCommand,
   type CommandOutcome,
 } from "../studio/commands.generated";
 import { ASSET_ID, emptyDocument, topLevel, type StudioDocument, type Vec3 } from "../studio/document.generated";
 import { resolvePlateFilePath } from "./printCreation";
 import { listPrints } from "./printQuery";
-import { importStudioMesh } from "./studioInspect";
+import { importStudioMesh, measureStudioParts } from "./studioInspect";
 
 // Studio's designs: each user's own, changed only by the commands in frontend/src/studio/commands.ts, whether the page
 // or an assistant runs them. Every change to the feature tree is kept as a revision, which is what undo and redo move
@@ -24,6 +26,8 @@ import { importStudioMesh } from "./studioInspect";
 
 /** How many changes back undo reaches. */
 const HISTORY_LIMIT = 100;
+/** How many times separate_parts measures a body again when the design changed while it was being measured. */
+const MEASURE_TRIES = 3;
 const DEFAULT_NAME = "Untitled design";
 
 /** Who ran a command: the page, or an assistant connected with an API token. */
@@ -210,6 +214,7 @@ async function importLibraryFile(userId: string, designId: string, modelId: stri
       solid: result.solid,
       triangles: result.triangles,
       size: result.size.map((n) => Number(n.toFixed(3))) as Vec3,
+      parts: result.parts,
       source: {
         model_id: print.id,
         file_id: plate.id,
@@ -218,6 +223,24 @@ async function importLibraryFile(userId: string, designId: string, modelId: stri
       },
     },
   };
+}
+
+/** A body's loose parts for separate_parts, found as the design is now and outside its lock: a big mesh takes a while. */
+async function partsFor(userId: string, id: string, featureId: string) {
+  const design = await owned(prisma, userId, id);
+  // The command's own checks first, so a body that can't be separated isn't measured for nothing.
+  separableBody(documentOf(design), featureId);
+  const outcome = await measureStudioParts(documentOf(design), studioAssetDir(userId, id), featureId);
+  if (outcome.status === "measured") return { version: design.version, parts: outcome.parts };
+  if (outcome.status === "refused") throw new CommandError(outcome.reason);
+  if (outcome.status === "too-complex")
+    throw new HttpError(
+      422,
+      `The design is too heavy to separate here (about ${outcome.triangles} triangles)`,
+      "studio_too_complex",
+    );
+  console.error("[studio] finding a body's parts failed", outcome);
+  throw new HttpError(500, "Couldn't find the body's parts", "studio_parts_failed");
 }
 
 /**
@@ -242,66 +265,82 @@ export async function runStudioCommand(
       await owned(prisma, userId, id);
       imported = await importLibraryFile(userId, id, String(parsed.model_id), parsed.file_id as string | undefined);
     }
-    return await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "StudioDesign" WHERE id = ${id} FOR UPDATE`;
-      const design = await owned(tx, userId, id);
-      const parsed = parseCommandArgs(definition, args);
+    // separate_parts measures the body outside the lock too, and again if the design changed before the lock was had.
+    for (let tries = 1; ; tries++) {
+      const measured =
+        definition.kind === "measure"
+          ? await partsFor(userId, id, String(parseCommandArgs(definition, args).feature_id))
+          : null;
+      const done = await prisma.$transaction(async (tx): Promise<StudioCommandOut | null> => {
+        await tx.$queryRaw`SELECT id FROM "StudioDesign" WHERE id = ${id} FOR UPDATE`;
+        const design = await owned(tx, userId, id);
+        const parsed = parseCommandArgs(definition, args);
+        if (measured && design.version !== measured.version) return null;
 
-      if (definition.kind === "design") {
-        const renamed = String(parsed.name);
+        if (definition.kind === "design") {
+          const renamed = String(parsed.name);
+          const updated = await tx.studioDesign.update({
+            where: { id },
+            data: { name: renamed, version: { increment: 1 } },
+          });
+          return { design: await out(tx, updated), summary: `Renamed the design “${renamed}”`, created: [] };
+        }
+
+        if (definition.kind === "history") {
+          const undo = name === "undo";
+          const [current, target] = await Promise.all([
+            tx.studioRevision.findUnique({ where: { designId_position: { designId: id, position: design.position } } }),
+            tx.studioRevision.findUnique({
+              where: { designId_position: { designId: id, position: design.position + (undo ? -1 : 1) } },
+            }),
+          ]);
+          if (!target) throw new CommandError(undo ? "There's nothing to undo." : "There's nothing to redo.");
+          const updated = await tx.studioDesign.update({
+            where: { id },
+            data: { document: json(target.document), position: target.position, version: { increment: 1 } },
+          });
+          const what = undo ? current?.summary : target.summary;
+          return {
+            design: await out(tx, updated),
+            summary: `${undo ? "Undid" : "Redid"}${what ? `: ${what}` : ""}`,
+            created: [],
+          };
+        }
+
+        const outcome: CommandOutcome = measured
+          ? addParts(documentOf(design), { feature_id: String(parsed.feature_id) }, measured.parts)
+          : imported
+            ? addMesh(documentOf(design), imported.mesh, parsed)
+            : applyCommand(documentOf(design), name, parsed);
+        const position = design.position + 1;
+        // A change after an undo leaves nothing to redo; past the limit, the oldest are let go.
+        await tx.studioRevision.deleteMany({
+          where: {
+            designId: id,
+            OR: [{ position: { gte: position } }, { position: { lte: position - HISTORY_LIMIT } }],
+          },
+        });
+        await tx.studioRevision.create({
+          data: {
+            designId: id,
+            position,
+            document: json(outcome.document),
+            command: name,
+            args: json(parsed),
+            summary: outcome.summary,
+            actor,
+          },
+        });
         const updated = await tx.studioDesign.update({
           where: { id },
-          data: { name: renamed, version: { increment: 1 } },
+          data: { document: json(outcome.document), position, version: { increment: 1 } },
         });
-        return { design: await out(tx, updated), summary: `Renamed the design “${renamed}”`, created: [] };
-      }
-
-      if (definition.kind === "history") {
-        const undo = name === "undo";
-        const [current, target] = await Promise.all([
-          tx.studioRevision.findUnique({ where: { designId_position: { designId: id, position: design.position } } }),
-          tx.studioRevision.findUnique({
-            where: { designId_position: { designId: id, position: design.position + (undo ? -1 : 1) } },
-          }),
-        ]);
-        if (!target) throw new CommandError(undo ? "There's nothing to undo." : "There's nothing to redo.");
-        const updated = await tx.studioDesign.update({
-          where: { id },
-          data: { document: json(target.document), position: target.position, version: { increment: 1 } },
-        });
-        const what = undo ? current?.summary : target.summary;
-        return {
-          design: await out(tx, updated),
-          summary: `${undo ? "Undid" : "Redid"}${what ? `: ${what}` : ""}`,
-          created: [],
-        };
-      }
-
-      const outcome: CommandOutcome = imported
-        ? addMesh(documentOf(design), imported.mesh, parsed)
-        : applyCommand(documentOf(design), name, parsed);
-      const position = design.position + 1;
-      // A change after an undo leaves nothing to redo; past the limit, the oldest are let go.
-      await tx.studioRevision.deleteMany({
-        where: { designId: id, OR: [{ position: { gte: position } }, { position: { lte: position - HISTORY_LIMIT } }] },
+        return { design: await out(tx, updated), summary: outcome.summary, created: outcome.created };
       });
-      await tx.studioRevision.create({
-        data: {
-          designId: id,
-          position,
-          document: json(outcome.document),
-          command: name,
-          args: json(parsed),
-          summary: outcome.summary,
-          actor,
-        },
-      });
-      const updated = await tx.studioDesign.update({
-        where: { id },
-        data: { document: json(outcome.document), position, version: { increment: 1 } },
-      });
-      return { design: await out(tx, updated), summary: outcome.summary, created: outcome.created };
-    });
+      if (done) return done;
+      if (tries >= MEASURE_TRIES)
+        throw new HttpError(409, "The design kept changing while its parts were being found: try again", "studio_busy");
+    }
   } catch (error) {
     // An import that didn't make it into the design leaves no copy behind.
     if (imported) await fs.rm(imported.destination, { force: true });
