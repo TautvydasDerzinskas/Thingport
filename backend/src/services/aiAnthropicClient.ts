@@ -1,7 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ReasoningEffort } from "@prisma/client";
 import { parseAnswerJson } from "./aiAnswerJson";
-import type { AskOptions, ProviderContent, Unusable } from "./aiProviderClient";
+import type { AskOptions, ProviderContent, ProviderSettings, Unusable } from "./aiProviderClient";
+import type { ChatMessage, ChatTurn, ToolCall, ToolChatRequest } from "./aiToolChat";
 
 // Claude, through Anthropic's own Messages API: what askProvider does for an OpenAI-style provider, for an AI of the
 // "anthropic" kind. The same question in and the same parsed answer or error out, so a feature can't tell which.
@@ -38,6 +39,11 @@ const MODEL_PAGES = 10;
 // neither, so later requests leave it out.
 const effortRejected = new Set<string>();
 const formatRejected = new Set<string>();
+const toolSearchRejected = new Set<string>();
+
+function wantsFallback(model: string, baseUrl: string): boolean {
+  return FALLBACK_MODELS.has(model) && URL.canParse(baseUrl) && new URL(baseUrl).hostname === "api.anthropic.com";
+}
 
 /** A feature's schema as Claude's structured outputs take it. */
 export function claudeSchema(node: unknown): unknown {
@@ -130,8 +136,7 @@ export async function askClaude<T>(options: AskOptions<T>, wait: (milliseconds: 
   const client = new Anthropic({ apiKey, baseURL: baseUrl, maxRetries: 0 });
   let effort = settings.reasoningEffort && !effortRejected.has(connection) ? EFFORT[settings.reasoningEffort] : null;
   let structured = !formatRejected.has(connection);
-  const fallback =
-    FALLBACK_MODELS.has(settings.model) && URL.canParse(baseUrl) && new URL(baseUrl).hostname === "api.anthropic.com";
+  const fallback = wantsFallback(settings.model, baseUrl);
 
   for (let attempt = 0; attempt < attempts; attempt++) {
     const last = attempt === attempts - 1;
@@ -264,6 +269,172 @@ export async function askClaude<T>(options: AskOptions<T>, wait: (milliseconds: 
       throw error;
     } finally {
       clearTimeout(timeout);
+    }
+  }
+  throw new Error("AI provider request failed");
+}
+
+// Room for one turn of a tool conversation, before thinking; and how long a turn may take at least.
+const TURN_TOKENS = 8192;
+const MIN_TURN_MS = 120_000;
+
+/** The conversation as Claude's messages: its own answers as they came, tool results with their pictures. */
+function claudeMessages(messages: ChatMessage[]): Anthropic.Beta.BetaMessageParam[] {
+  return messages.flatMap((message): Anthropic.Beta.BetaMessageParam[] => {
+    if (message.role === "user") return [{ role: "user", content: message.text }];
+    if (message.role === "assistant") {
+      if (message.raw) return [{ role: "assistant", content: message.raw as Anthropic.Beta.BetaContentBlockParam[] }];
+      const blocks: Anthropic.Beta.BetaContentBlockParam[] = [
+        ...(message.text ? [{ type: "text" as const, text: message.text }] : []),
+        ...message.calls.map((call) => ({ type: "tool_use" as const, id: call.id, name: call.name, input: call.args })),
+      ];
+      return blocks.length ? [{ role: "assistant", content: blocks }] : [];
+    }
+    return [
+      {
+        role: "user",
+        content: message.results.map((result) => ({
+          type: "tool_result" as const,
+          tool_use_id: result.id,
+          is_error: result.isError,
+          content: [
+            { type: "text" as const, text: result.text },
+            ...result.images.map((image) => ({
+              type: "image" as const,
+              source: {
+                type: "base64" as const,
+                media_type: image.mimeType as "image/png" | "image/jpeg" | "image/gif" | "image/webp",
+                data: image.data,
+              },
+            })),
+          ],
+        })),
+      },
+    ];
+  });
+}
+
+/** One turn of a tool conversation with Claude (aiToolChat.ts), retried as askClaude retries. */
+export async function claudeToolTurn(
+  settings: ProviderSettings,
+  request: ToolChatRequest,
+  wait: (milliseconds: number) => Promise<void>,
+): Promise<ChatTurn> {
+  if (!settings.apiKey) throw new Error("Claude needs an API key");
+  if (!settings.model) throw new Error("Set the model name first");
+  const apiKey = settings.apiKey;
+  const baseUrl = settings.baseUrl ?? CLAUDE_BASE_URL;
+  const connection = `${baseUrl}|${settings.model}`;
+  const client = new Anthropic({ apiKey, baseURL: baseUrl, maxRetries: 0 });
+  let effort = settings.reasoningEffort && !effortRejected.has(connection) ? EFFORT[settings.reasoningEffort] : null;
+  const fallback = wantsFallback(settings.model, baseUrl);
+  const timeoutMs = Math.max(settings.timeoutMs, MIN_TURN_MS);
+  let search = Boolean(request.toolSearch) && !toolSearchRejected.has(connection);
+  const messages = claudeMessages(request.messages);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    // With tool search, Claude is sent the few tools it uses most and finds the rest by what they do; the deferred
+    // ones stay out of the prompt, and what it finds is added further on, so the cached start stays as it was.
+    const tools: Anthropic.Beta.BetaToolUnion[] = [
+      ...(search ? [{ type: "tool_search_tool_bm25_20251119" as const, name: "tool_search_tool_bm25" as const }] : []),
+      ...request.tools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        input_schema: tool.schema as Anthropic.Beta.BetaTool.InputSchema,
+        ...(search && tool.deferred ? { defer_loading: true } : {}),
+      })),
+    ];
+    const last = attempt === 2;
+    const signal = AbortSignal.any([request.signal, AbortSignal.timeout(timeoutMs)]);
+    try {
+      // Streamed, as a turn this long has to be; only the whole answer is used.
+      const message = await client.beta.messages
+        .stream(
+          {
+            model: settings.model,
+            max_tokens: TURN_TOKENS + THINKING_TOKENS[effort ?? "unset"],
+            // Cached up to the end of the instructions, so another run within a few minutes reads the tools and the
+            // guide at a tenth of the price; and, by the top-level marker, up to the conversation's end as it grows.
+            system: [{ type: "text", text: request.system, cache_control: { type: "ephemeral" } }],
+            cache_control: { type: "ephemeral" },
+            tools,
+            messages,
+            ...(effort ? { output_config: { effort } } : {}),
+            ...(fallback ? { betas: [FALLBACK_BETA], fallbacks: "default" as const } : {}),
+          },
+          { signal },
+        )
+        .finalMessage();
+      request.log.debug("turn answered", {
+        input_tokens: message.usage.input_tokens,
+        cache_read_tokens: message.usage.cache_read_input_tokens,
+        cache_written_tokens: message.usage.cache_creation_input_tokens,
+        output_tokens: message.usage.output_tokens,
+      });
+      const text = message.content
+        .flatMap((block) => (block.type === "text" ? [block.text] : []))
+        .join("")
+        .trim();
+      if (message.stop_reason === "refusal") {
+        const category = message.stop_details?.category;
+        return {
+          text: `Claude declined to answer${category ? ` (${category})` : ""}`,
+          calls: [],
+          raw: message.content,
+          ended: "refusal",
+        };
+      }
+      // A tool call cut off at the token limit is only half there: none is run.
+      if (message.stop_reason === "max_tokens") return { text, calls: [], raw: message.content, ended: "limit" };
+      // A server tool, its search, went on too long for one turn: asked again with this as it is, Claude goes on.
+      if (message.stop_reason === "pause_turn") return { text, calls: [], raw: message.content, ended: "paused" };
+      const calls = message.content.flatMap((block): ToolCall[] =>
+        block.type === "tool_use"
+          ? [
+              {
+                id: block.id,
+                name: block.name,
+                args: (block.input && typeof block.input === "object" ? block.input : {}) as Record<string, unknown>,
+              },
+            ]
+          : [],
+      );
+      return { text, calls, raw: message.content, ended: calls.length ? "tools" : "answer" };
+    } catch (error) {
+      if (request.signal.aborted) throw error;
+      if (error instanceof Anthropic.BadRequestError && effort && /effort/i.test(apiMessage(error, apiKey))) {
+        effort = null;
+        effortRejected.add(connection);
+        attempt--;
+        continue;
+      }
+      // A model or a proxy without tool search gets every tool up front instead.
+      if (
+        error instanceof Anthropic.BadRequestError &&
+        search &&
+        /tool_search|defer_loading/i.test(apiMessage(error, apiKey))
+      ) {
+        search = false;
+        toolSearchRejected.add(connection);
+        request.log.warn("Claude turned tool search down, sending every tool instead");
+        attempt--;
+        continue;
+      }
+      // A turn that took too long isn't asked again: it would still be running ahead of the new one.
+      if (error instanceof Anthropic.APIUserAbortError)
+        throw new Error(`The AI provider did not answer within ${Math.round(timeoutMs / 1000)} s`, { cause: error });
+      if (error instanceof Anthropic.APIConnectionError) {
+        if (last) throw new Error("Could not reach the AI provider. Check the API base URL.", { cause: error });
+        await wait(attempt === 0 ? 1000 : 3000);
+        continue;
+      }
+      if (error instanceof Anthropic.APIError && typeof error.status === "number") {
+        const retryable = error.status === 429 || error.status >= 500;
+        if (!retryable || last) throw readableHttpError(error, apiKey);
+        const retryAfter = Number(error.headers?.get("retry-after") ?? Number.NaN);
+        await wait(Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(30000, retryAfter * 1000) : 2000);
+        continue;
+      }
+      throw error;
     }
   }
   throw new Error("AI provider request failed");

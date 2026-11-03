@@ -22,7 +22,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { studioApi, type StudioAiModel } from "../../api/studio";
+import { studioApi, type StudioAiModels } from "../../api/studio";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 import {
@@ -139,7 +139,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     [onUnauthorized, toast],
   );
   const onError = useCallback((message: string) => toast({ message, severity: "error" }), [toast]);
-  const { design, loadFailed, run } = useStudioDesign(designId, { onError, onUnauthorized });
+  const { design, loadFailed, run, reload } = useStudioDesign(designId, { onError, onUnauthorized });
   const doc = design?.document ?? null;
 
   // With no design asked for, the latest one opens; with none at all, the empty state offers a new one.
@@ -160,10 +160,14 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     };
   }, [designId, setSearchParams, showError]);
 
-  const [models, setModels] = useState<StudioAiModel[] | null>(null);
+  const [assistant, setAssistant] = useState<StudioAiModels | null>(null);
   useEffect(() => {
-    studioApi.aiModels().then(setModels, () => setModels([]));
+    studioApi.aiModels().then(setAssistant, () => setAssistant({ enabled: false, models: [] }));
   }, []);
+  // The assistant's steps land on the server: the design is read again as they do.
+  const followAssistant = useCallback(() => {
+    if (designId) void reload(designId);
+  }, [designId, reload]);
 
   const [selected, setSelected] = useState<string[]>([]);
   const [mode, setMode] = useState<StudioMode>("select");
@@ -647,7 +651,15 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             {t(`studio.sketch.hint.${sketch.tool}`)}
           </Typography>
         )}
-        <PromptOverlay models={models} isAdmin={isAdmin} />
+        <PromptOverlay
+          designId={design!.id}
+          assistant={assistant}
+          isAdmin={isAdmin}
+          selected={selected}
+          onProgress={followAssistant}
+          onError={onError}
+          onUnauthorized={onUnauthorized}
+        />
       </>
     );
   })();

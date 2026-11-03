@@ -20,6 +20,11 @@ export type ProviderContent = ({ type: "text"; text: string } | { type: "image_u
 const slots = new Map<string, { active: number; waiters: (() => void)[] }>();
 let retryDelay = (milliseconds: number) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 
+/** The pause before asking a provider again, which tests shorten. */
+export function waitToRetry(milliseconds: number): Promise<void> {
+  return retryDelay(milliseconds);
+}
+
 /** Keeps timeout and retry tests fast without changing production backoff behavior. */
 export function setAiRetryDelayForTest(delay?: (milliseconds: number) => Promise<void>): void {
   retryDelay = delay ?? ((milliseconds) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds)));
@@ -51,7 +56,7 @@ export function noSecretError(error: unknown): Error {
 }
 
 /** What a failed fetch means to an admin; fetch itself only says "fetch failed" or "aborted". */
-function readableNetworkError(error: unknown, waited: { timeoutMs: number; stalled?: boolean }): unknown {
+export function readableNetworkError(error: unknown, waited: { timeoutMs: number; stalled?: boolean }): unknown {
   if (error instanceof Error && error.name === "AbortError")
     return new Error(
       waited.stalled
@@ -82,7 +87,7 @@ export async function previewPart(
   }
 }
 
-function chatUrl(baseUrl: string): string {
+export function chatUrl(baseUrl: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 }
 
@@ -131,11 +136,11 @@ async function readStream(response: Response, onPiece: () => void): Promise<Chat
 }
 
 // Connections (base URL and model) that answered 400 to reasoning_effort, so later requests leave it out.
-const reasoningEffortRejected = new Set<string>();
+export const reasoningEffortRejected = new Set<string>();
 
 // A reasoning model's thinking comes out of max_tokens too, so each effort gets room for it on top of the answer.
 // No effort sent leaves the model at its own default, which is about medium.
-const THINKING_TOKENS: Record<ReasoningEffort | "unset", number> = {
+export const THINKING_TOKENS: Record<ReasoningEffort | "unset", number> = {
   none: 0,
   low: 2048,
   medium: 6144,

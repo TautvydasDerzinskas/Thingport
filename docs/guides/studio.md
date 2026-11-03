@@ -94,5 +94,18 @@ design build up on the page.
 
 Every change, yours or the assistant's, can be undone, and the assistant can see what you changed meanwhile.
 
-The **Ask AI** box at the bottom of the page will do the same from inside Thingport, with an AI an admin added in
-**Administration → AI**. You can already pick which one; sending to it comes in a later update.
+### Ask AI
+
+The **Ask AI** box at the bottom of the page does the same from inside Thingport, once an admin turns on the **Studio
+assistant** and picks the AIs it offers (see [AI](ai.md#studio-assistant)). Describe a part, or a change to the design
+that's open, and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> starts a new line).
+
+- The assistant works through the same steps as the toolbar, and each one shows in the view as it lands, listed under
+  your request while it works. **Stop** ends the run after the step it's on, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd>
+  takes its steps back one at a time.
+- What's selected in the view goes along with your request, so "round the top edges of this" knows what "this" is.
+- Each design keeps its own conversation, so "make it taller" follows on from "make a box". Clear it from the box's
+  header; the design stays as it is.
+- A run takes up to 30 steps and 10 minutes. Not every model can use tools: small local models often can't, and the
+  box says so when one doesn't. An admin can give a small local model the compact tool set, which covers shapes,
+  moving, combining and holes.

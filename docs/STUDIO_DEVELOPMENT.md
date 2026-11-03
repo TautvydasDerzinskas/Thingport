@@ -59,6 +59,34 @@ the one command it makes (`commandOf`). Its panel (`OperationPanel.tsx`) edits i
 An assistant reads `studio_guide` (`backend/src/services/studioGuide.ts`) first: the world, how faces and edges are
 named, and recipes. Keep it in step when a command's behaviour changes.
 
+## Studio's own assistant
+
+The page's **Ask AI** box runs an assistant on the server (`backend/src/services/studioAssistant.ts`), behind the
+**Studio assistant** feature in Administration → AI, which an admin turns on and gives the AIs it may use
+(`StudioAssistantPrefs`; anything else is refused).
+
+- **Its tools are the MCP tools.** It takes the `studio_*` tools from `MCP_TOOLS` (all but listing, creating and
+  deleting designs, and the guide, which is its system prompt) plus `search_models` and `list_model_files` for imports,
+  with the schemas MCP clients see and the design id filled in. Commands run as `studioActor: "assistant"`, so each
+  step is a revision marked `assistant`. There is nothing to add for a new command.
+- **Either kind of AI.** `aiToolChat.ts` keeps one conversation format and turns it into OpenAI-style function calling,
+  or Claude's tool use (`claudeToolTurn` in `aiAnthropicClient.ts`, streamed, its answers replayed as they came so its
+  thinking and its tool searches go back unchanged).
+- **Three ways to send the tools** (`ToolMode`). Every schema is inlined and tightened (no `additionalProperties`, no
+  ±10 m coordinate limits, a vector's item once): the server checks each call anyway.
+  - `search`, for Claude: the `CORE` tools loaded, the rest `defer_loading` behind its BM25 tool search, with a line in
+    the system prompt saying what can be found. Cached at the end of the instructions (`cache_control` on the system
+    block, so another run reuses it) and at the conversation's end (the top-level marker). A model or proxy that turns
+    tool search down gets every tool instead.
+  - `compact`, for the AIs an admin marks so: the `COMPACT` tools, a line each, the arguments that matter, short
+    instructions, a slimmer design state and less history. A new command isn't in it unless you add it there.
+  - `full`, for any other AI: every tool. OpenAI-style providers cache the repeated start themselves.
+- **A run** gets the design as `studio_get_design` reads it and what's selected, takes up to 30 tool calls in 10
+  minutes, and is kept in memory, one per design; the page polls `GET /studio/designs/:id/assistant` for its steps and
+  reloads the design as they land. Stop aborts the turn in flight.
+- **The conversation** is kept per design in `StudioMessage`, as text: prompts, answers, the steps taken and how the
+  run ended. A new prompt is sent with the last 20, not with earlier runs' tool payloads or thinking.
+
 ## Adding something a person can do
 
 1. **Add a command** in `frontend/src/studio/commands.ts`, with a description an AI can act on with nothing else to go

@@ -46,6 +46,9 @@ import {
   setAiDescriptionPrefs,
   type AiCategorizationPrefs,
   type AiDescriptionPrefs,
+  getStudioAssistantPrefs,
+  setStudioAssistantPrefs,
+  type StudioAssistantPrefs,
   getWidgetSources,
   getMcpAccess,
   setWidgetSources,
@@ -1076,6 +1079,51 @@ router.patch(
   }),
 );
 
+function studioAssistantPrefsOut(prefs: StudioAssistantPrefs) {
+  return {
+    enabled: prefs.enabled,
+    ai_connection_ids: prefs.aiConnectionIds,
+    default_ai_connection_id: prefs.defaultAiConnectionId,
+    compact_ai_connection_ids: prefs.compactAiConnectionIds,
+  };
+}
+
+router.get(
+  "/settings/studio-assistant",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json(studioAssistantPrefsOut(await getStudioAssistantPrefs()));
+  }),
+);
+
+const studioAssistantPrefsSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    // The AIs people may pick in Studio's prompt; any not offered here are refused, whatever the page sends.
+    ai_connection_ids: z.array(z.string().min(1)).max(100).optional(),
+    default_ai_connection_id: z.string().nullable().optional(),
+    // Of those, the ones given the compact tool set, for small local models.
+    compact_ai_connection_ids: z.array(z.string().min(1)).max(100).optional(),
+  })
+  .strict();
+router.patch(
+  "/settings/studio-assistant",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(studioAssistantPrefsSchema, req.body);
+    for (const id of body.ai_connection_ids ?? []) await getAiConnection(id);
+    const prefs = await setStudioAssistantPrefs({
+      ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
+      ...(body.ai_connection_ids !== undefined ? { aiConnectionIds: body.ai_connection_ids } : {}),
+      ...(body.default_ai_connection_id !== undefined ? { defaultAiConnectionId: body.default_ai_connection_id } : {}),
+      ...(body.compact_ai_connection_ids !== undefined
+        ? { compactAiConnectionIds: body.compact_ai_connection_ids }
+        : {}),
+    });
+    res.json(studioAssistantPrefsOut(prefs));
+  }),
+);
+
 function aiConnectionOut(connection: AiConnection) {
   return {
     id: connection.id,
@@ -1210,6 +1258,12 @@ router.delete(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await deleteAiConnection(req.params.id);
+    // Studio's assistant stops offering it; its default, if it was, moves to the next one offered.
+    const assistant = await getStudioAssistantPrefs();
+    if (assistant.aiConnectionIds.includes(req.params.id))
+      await setStudioAssistantPrefs({
+        aiConnectionIds: assistant.aiConnectionIds.filter((id) => id !== req.params.id),
+      });
     // With no model left every feature switches off, so adding one later doesn't quietly start them again.
     if (!(await listAiConnections()).length) {
       await setAiCategorizationPrefs({ enabled: false, aiConnectionId: null });

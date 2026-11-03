@@ -1834,7 +1834,9 @@
         "manage": "Valdymas",
         "descriptions": "Patobulinti aprašymai",
         "descriptionsDescription": "Naudodamas DI sutvarko modelių aprašymus importuojant arba paleidus: pašalina savireklamą, išverčia ir sutvarko juos, kad peržiūrėtumėte arba iš karto pritaiko.",
-        "privacy": "Naudojant trečiosios šalies API, modelių pavadinimai, aprašymai ir žymos perduodami už šio serverio ribų. Paveikslėliai siunčiami tik įjungus šią parinktį."
+        "privacy": "Naudojant trečiosios šalies API, modelių pavadinimai, aprašymai ir žymos perduodami už šio serverio ribų. Paveikslėliai siunčiami tik įjungus šią parinktį.",
+        "studio": "Studijos asistentas",
+        "studioDescription": "Leidžia Studijos lauke paprašyti DI kurti ir keisti projektus žingsnis po žingsnio, naudojant jūsų siūlomus DI."
       },
       "aiCategorization": {
         "heading": "DI kategorizavimas",
@@ -2505,6 +2507,18 @@
           "off": "Naudotojų įrankiai išjungti.",
           "by": "{{name}} · {{email}}"
         }
+      },
+      "studioAssistant": {
+        "offered": "Siūlomi modeliai",
+        "offeredHelp": "Iš jų renkamasi Studijos lauke. Naujas DI nesiūlomas, kol jo čia neįjungsite. Naudojant debesų DI, kiekviena užklausa apmokestinama jo paskyrai. „Kompaktiškas“ mažam vietiniam modeliui duoda keliolika pagrindinių įrankių (formos, perkėlimas, sujungimas, skylės) dešimtadaliu užklausos dydžio; užapvalinimams, apvalkalams ir eskizams reikia „Visų įrankių“. Claude gauna juos visus, o reikiamus susiranda paieška.",
+        "offerAria": "Siūlyti {{model}} Studijoje",
+        "default": "Numatytasis modelis",
+        "noneOffered": "Įjunkite bent vieną modelį, iš kurio būtų galima rinktis.",
+        "save": "Išsaugoti",
+        "failed": "Nepavyko įkelti ar išsaugoti Studijos asistento nustatymų.",
+        "toolsAll": "Visi įrankiai",
+        "toolsCompact": "Kompaktiškas",
+        "toolsAria": "Įrankiai, kuriuos gauna {{model}}"
       }
     },
     "download": {
@@ -3393,15 +3407,27 @@
       "prompt": {
         "title": "Klausti DI",
         "open": "Atverti „Klausti DI“",
-        "soon": "Netrukus",
-        "help": "DI kurs ir keis projektą už jus žingsnis po žingsnio tais pačiais įrankiais kaip įrankių juosta. Čia pasirinkite, kurį DI naudoti; administratorius juos prideda skiltyje Administravimas > DI.",
+        "help": "Aprašykite detalę arba atidaryto projekto pakeitimą, ir DI jį sukurs žingsnis po žingsnio tais pačiais įrankiais kaip įrankių juosta. Matysite kiekvieną žingsnį, o „Atšaukti“ juos atšaukia po vieną. Kuriuos DI siūlyti, renkasi administratorius.",
         "model": "DI modelis",
-        "addModel": "Pridėti DI",
-        "noModels": "Kol kas nepridėtas joks DI",
+        "addModel": "Pridėti DI modelį",
+        "noModels": "Studijai dar nesiūlomas joks DI.",
         "minimize": "Sumažinti",
         "placeholder": "Aprašykite detalę arba šios detalės pakeitimą",
         "send": "Siųsti",
-        "sendSoon": "Siuntimas DI bus įdiegtas vėlesniame atnaujinime"
+        "chooseModels": "Pasirinkti siūlomus modelius",
+        "off": "Studijos asistentas išjungtas.",
+        "turnOn": "Įjungti",
+        "stop": "Sustabdyti",
+        "working": "Dirba…",
+        "clear": "Išvalyti pokalbį",
+        "clearTitle": "Išvalyti pokalbį?",
+        "clearMessage": "Asistentas pamirš, kas buvo pasakyta apie šį projektą. Projektas liks toks, koks yra.",
+        "steps_one": "{{count}} žingsnis",
+        "steps_few": "{{count}} žingsniai",
+        "steps_other": "{{count}} žingsnių",
+        "stopped": "Sustabdyta.",
+        "limit": "Sustabdyta po {{count}} žingsnių.",
+        "failed": "Nepavyko užbaigti: {{error}}"
       },
       "panels": {
         "label": "Skydeliai",

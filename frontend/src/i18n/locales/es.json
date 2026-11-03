@@ -1816,7 +1816,9 @@
         "manage": "Gestionar",
         "descriptions": "Descripciones mejoradas",
         "descriptionsDescription": "Limpia las descripciones de los modelos con IA, al importarlos o en una ejecución: elimina la autopromoción, las traduce y las ordena, para que las revises o para aplicarlas de inmediato.",
-        "privacy": "Con una API de terceros, los títulos, las descripciones y las etiquetas de los modelos salen de este servidor. Las imágenes solo se envían si está activado."
+        "privacy": "Con una API de terceros, los títulos, las descripciones y las etiquetas de los modelos salen de este servidor. Las imágenes solo se envían si está activado.",
+        "studio": "Asistente de Estudio",
+        "studioDescription": "Permite pedir a una IA, en el cuadro de Estudio, que construya y cambie los diseños paso a paso, con las IA que ofrezcas."
       },
       "aiCategorization": {
         "heading": "Categorización por IA",
@@ -2457,6 +2459,18 @@
           "off": "Las herramientas propias de los usuarios están desactivadas.",
           "by": "{{name}} · {{email}}"
         }
+      },
+      "studioAssistant": {
+        "offered": "Modelos disponibles",
+        "offeredHelp": "Se elige entre estos en el cuadro de Estudio. Una IA nueva no se ofrece hasta que la actives aquí. Con una IA en la nube, cada petición se cobra a su cuenta. Compacto da a un modelo local pequeño una docena de herramientas básicas (formas, mover, combinar, agujeros) en una décima parte de la petición; los redondeos, vaciados y bocetos necesitan Todas. Claude las recibe todas y busca las que necesita.",
+        "offerAria": "Ofrecer {{model}} en Estudio",
+        "default": "Modelo predeterminado",
+        "noneOffered": "Activa al menos un modelo para que se pueda elegir.",
+        "save": "Guardar",
+        "failed": "No se pudieron cargar o guardar los ajustes del asistente de Estudio.",
+        "toolsAll": "Todas",
+        "toolsCompact": "Compacto",
+        "toolsAria": "Herramientas que recibe {{model}}"
       }
     },
     "download": {
@@ -3306,15 +3320,27 @@
       "prompt": {
         "title": "Preguntar a la IA",
         "open": "Abrir Preguntar a la IA",
-        "soon": "Pronto",
-        "help": "Una IA creará y cambiará el diseño por ti, paso a paso, con las mismas herramientas que la barra. Elige aquí qué IA; un administrador las añade en Administración > IA.",
+        "help": "Describe una pieza o un cambio en el diseño abierto, y la IA lo construye paso a paso con las mismas herramientas que la barra. Verás llegar cada paso, y Deshacer los revierte de uno en uno. Un administrador elige qué IA se ofrecen.",
         "model": "Modelo de IA",
-        "addModel": "Añadir una IA",
-        "noModels": "Aún no se ha añadido ninguna IA",
+        "addModel": "Añadir modelo de IA",
+        "noModels": "Aún no se ofrece ninguna IA para Estudio.",
         "minimize": "Minimizar",
         "placeholder": "Describe una pieza o un cambio en esta",
         "send": "Enviar",
-        "sendSoon": "El envío a la IA llegará en una próxima actualización"
+        "chooseModels": "Elegir los modelos disponibles",
+        "off": "El asistente de Estudio está desactivado.",
+        "turnOn": "Activarlo",
+        "stop": "Detener",
+        "working": "Trabajando…",
+        "clear": "Borrar la conversación",
+        "clearTitle": "¿Borrar la conversación?",
+        "clearMessage": "El asistente olvida lo que se dijo sobre este diseño. El diseño se queda como está.",
+        "steps_one": "{{count}} paso",
+        "steps_many": "{{count}} pasos",
+        "steps_other": "{{count}} pasos",
+        "stopped": "Detenido.",
+        "limit": "Detenido tras {{count}} pasos.",
+        "failed": "No pudo terminar: {{error}}"
       },
       "panels": {
         "label": "Paneles",

@@ -239,7 +239,7 @@ const commandTools: McpToolDefinition[] = STUDIO_COMMAND_LIST.map((command) => (
       design_id as string,
       command.name,
       rest,
-      "mcp",
+      ctx.studioActor ?? "mcp",
     );
     // What couldn't be made, said straight away: a fillet too big for its edge, a shell too detailed.
     const inspected = await inspectStudioDesign(

@@ -7,6 +7,8 @@ export type McpToolContext = {
   userId: string;
   /** The instance's address as an admin set it, "" when unset: see getPublicUrl. */
   publicUrl: string;
+  /** Who a Studio command is recorded as: an MCP client unless Studio's own assistant runs the tool. */
+  studioActor?: "mcp" | "assistant";
 };
 
 export type McpToolDefinition = {

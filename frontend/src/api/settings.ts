@@ -241,6 +241,16 @@ export type AiCategorizationSettings = {
 
 export type AiCategorizationSettingsInput = Partial<AiCategorizationSettings>;
 
+/** Studio's assistant: on or off, the AIs people may pick in its prompt, and the one picked first. */
+export type StudioAssistantSettings = {
+  enabled: boolean;
+  ai_connection_ids: string[];
+  /** One of ai_connection_ids; null while none is offered. */
+  default_ai_connection_id: string | null;
+  /** Offered AIs given the compact tool set, for small local models. */
+  compact_ai_connection_ids: string[];
+};
+
 export type SmtpSettings = {
   host: string | null;
   port: number;
@@ -342,6 +352,24 @@ export const settingsApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update AI categorization settings"));
     invalidateAiCategorizationStatus();
+    return res.json();
+  },
+
+  getStudioAssistant: async (): Promise<StudioAssistantSettings> => {
+    const res = await fetch(`${apiBase()}/settings/studio-assistant`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the Studio assistant's settings");
+    return res.json();
+  },
+
+  updateStudioAssistant: async (payload: Partial<StudioAssistantSettings>): Promise<StudioAssistantSettings> => {
+    const res = await fetch(`${apiBase()}/settings/studio-assistant`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the Studio assistant's settings"));
     return res.json();
   },
 

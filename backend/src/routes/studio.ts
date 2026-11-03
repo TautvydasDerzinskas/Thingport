@@ -6,6 +6,13 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { listAiConnections } from "../services/aiConnectionService";
+import { getStudioAssistantPrefs } from "../services/settingsService";
+import {
+  assistantThread,
+  clearAssistantThread,
+  startAssistantRun,
+  stopAssistantRun,
+} from "../services/studioAssistant";
 import {
   createStudioDesign,
   deleteStudioDesign,
@@ -34,21 +41,32 @@ router.get("/studio/status", requireAuth, (_req, res) => {
   res.json({ enabled: STUDIO_ENABLED });
 });
 
-// The AIs an admin added in Administration > AI, for the prompt's picker: which model, and where it runs, never a key.
+// The AIs an admin offers for the assistant, for the prompt's picker: which model, and where it runs, never a key. While
+// the assistant is off, none are listed.
 router.get(
   "/studio/ai-models",
   ...studio,
   asyncHandler(async (_req, res) => {
-    const connections = await listAiConnections();
-    res.json(
-      connections.map((connection) => {
+    const prefs = await getStudioAssistantPrefs();
+    const offered = new Set(prefs.aiConnectionIds);
+    const connections = prefs.enabled
+      ? (await listAiConnections()).filter((connection) => offered.has(connection.id))
+      : [];
+    res.json({
+      enabled: prefs.enabled,
+      models: connections.map((connection) => {
         let host = "";
         try {
           host = new URL(connection.baseUrl).host;
         } catch {}
-        return { id: connection.id, model: connection.model, host, is_default: connection.isDefault };
+        return {
+          id: connection.id,
+          model: connection.model,
+          host,
+          is_default: connection.id === prefs.defaultAiConnectionId,
+        };
       }),
-    );
+    });
   }),
 );
 
@@ -127,6 +145,55 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = parseBody(commandSchema, req.body);
     res.json(await runStudioCommand(req.userId!, req.params.id, body.command, body.args ?? {}, "user"));
+  }),
+);
+
+// Studio's assistant: the conversation about a design and the run going on, a prompt to start one, and stopping it.
+router.get(
+  "/studio/designs/:id/assistant",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    res.json(await assistantThread(req.userId!, req.params.id));
+  }),
+);
+
+const promptSchema = z
+  .object({
+    prompt: z.string().trim().min(1).max(4000),
+    ai_connection_id: z.string().min(1).nullable().optional(),
+    // What's selected in the view, by feature id, so "round this" has a "this".
+    selected: z.array(z.string().min(1).max(100)).max(50).optional(),
+  })
+  .strict();
+
+router.post(
+  "/studio/designs/:id/assistant",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(promptSchema, req.body);
+    const run = await startAssistantRun(req.userId!, req.params.id, {
+      prompt: body.prompt,
+      aiConnectionId: body.ai_connection_id ?? null,
+      selected: body.selected,
+    });
+    res.status(202).json({ run });
+  }),
+);
+
+router.post(
+  "/studio/designs/:id/assistant/stop",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    res.json({ run: await stopAssistantRun(req.userId!, req.params.id) });
+  }),
+);
+
+router.delete(
+  "/studio/designs/:id/assistant",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    await clearAssistantThread(req.userId!, req.params.id);
+    res.status(204).end();
   }),
 );
 

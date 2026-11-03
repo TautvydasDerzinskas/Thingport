@@ -148,11 +148,40 @@ tab starts a run over your library and lists what's waiting for review.
 Once a feature is on, it's there for everyone on this Thingport, and each person's runs and suggestions cover their own
 library.
 
+### Studio assistant
+
+On an instance with [Studio](studio.md) on, a third tile, **Studio assistant**, lets people ask an AI in Studio's
+**Ask AI** box to build and change their designs. It's off until you switch it on. Click it to pick:
+
+- **Available models**: the AIs people may pick from in Studio. A new AI isn't offered until you switch it on here, so
+  adding one for categorization doesn't expose it to Studio's users. The server refuses any other.
+- **Default model**: the one picked first in the box.
+
+An admin also finds **Add AI model** and **Choose available models** at the bottom of the box's model list.
+
+The assistant needs a model that can use tools (function calling). Claude and the larger cloud models can; small local
+models often can't, and the box says so. Every prompt is billed to a cloud AI's account, and a request may take several
+steps, each a request of its own.
+
+Each request carries the assistant's tools, and how they're sent depends on the AI:
+
+- **Claude** gets a few tools up front and finds the rest by searching for them, so a request starts at about 3,000
+  tokens rather than 15,000. The tools and instructions are cached too: a later step, or another prompt within a few
+  minutes, reads them at a tenth of the price.
+- **Compact**, set per AI under **Available models**, is for small local models: a dozen basic tools (shapes,
+  moving, combining, holes) described in a line each, about 1,600 tokens in all. Fillets, shells, sketches and the
+  rest need **All tools**. An AI on your own network starts on Compact when you switch it on.
+- **All tools** sends every tool, about 15,000 tokens. OpenAI and most cloud APIs cache the part that repeats on their
+  own, and Ollama keeps it in memory between steps, so only a run's first step reads it all. On a slow CPU that first
+  step can still take minutes: raise Ollama's context (`OLLAMA_CONTEXT_LENGTH`, at least 24576 for All tools) or use
+  Compact.
+
 ## Privacy
 
 With a model on your own hardware, nothing leaves your network. With a third-party API, a model's title, description
 and tags are sent to that provider, and its first photo too when **Send the first preview image** is on. Files are never
-sent.
+sent. The Studio assistant sends the request, the design's features and sizes, and, when the AI asks to look, pictures
+of the design.
 
 ## Troubleshooting
 

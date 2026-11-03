@@ -46,7 +46,8 @@
     "undici": "7.29.1",
     "yaml": "2.9.1",
     "yauzl": "^3.4.0",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

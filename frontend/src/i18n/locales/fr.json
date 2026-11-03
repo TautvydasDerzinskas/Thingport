@@ -1816,7 +1816,9 @@
         "manage": "Gérer",
         "descriptions": "Descriptions améliorées",
         "descriptionsDescription": "Nettoie les descriptions de modèles grâce à l’IA, lors de l’importation ou lors d’une exécution : supprime l’autopromotion, les traduit et les met en forme, pour validation de votre part ou application immédiate.",
-        "privacy": "Avec une API tierce, les titres, descriptions et étiquettes des modèles quittent ce serveur. Les images ne sont envoyées que si cette option est activée."
+        "privacy": "Avec une API tierce, les titres, descriptions et étiquettes des modèles quittent ce serveur. Les images ne sont envoyées que si cette option est activée.",
+        "studio": "Assistant de Studio",
+        "studioDescription": "Permet de demander à une IA, dans le champ de Studio, de construire et modifier les conceptions étape par étape, avec les IA que vous proposez."
       },
       "aiCategorization": {
         "heading": "Catégorisation par IA",
@@ -2457,6 +2459,18 @@
           "off": "Les outils des utilisateurs sont désactivés.",
           "by": "{{name}} · {{email}}"
         }
+      },
+      "studioAssistant": {
+        "offered": "Modèles proposés",
+        "offeredHelp": "C’est parmi eux que l’on choisit dans le champ de Studio. Une nouvelle IA n’est proposée qu’une fois activée ici. Avec une IA dans le cloud, chaque demande est facturée à son compte. Compact donne à un petit modèle local une douzaine d’outils de base (formes, déplacement, combinaison, trous) en un dixième de la demande ; congés, coques et esquisses demandent Tous les outils. Claude les reçoit tous et trouve ceux qu’il lui faut par recherche.",
+        "offerAria": "Proposer {{model}} dans Studio",
+        "default": "Modèle par défaut",
+        "noneOffered": "Activez au moins un modèle parmi lesquels choisir.",
+        "save": "Enregistrer",
+        "failed": "Impossible de charger ou d’enregistrer les réglages de l’assistant de Studio.",
+        "toolsAll": "Tous les outils",
+        "toolsCompact": "Compact",
+        "toolsAria": "Outils donnés à {{model}}"
       }
     },
     "download": {
@@ -3319,15 +3333,27 @@
       "prompt": {
         "title": "Demander à l’IA",
         "open": "Ouvrir Demander à l’IA",
-        "soon": "Bientôt",
-        "help": "Une IA construira et modifiera la conception pour vous, étape par étape, avec les mêmes outils que la barre. Choisissez ici quelle IA ; un administrateur les ajoute dans Administration > IA.",
+        "help": "Décrivez une pièce, ou une modification de la conception ouverte, et l’IA la construit étape par étape avec les mêmes outils que la barre. Vous voyez chaque étape arriver, et Annuler les défait une à une. Un administrateur choisit les IA proposées.",
         "model": "Modèle d’IA",
-        "addModel": "Ajouter une IA",
-        "noModels": "Aucune IA ajoutée pour l’instant",
+        "addModel": "Ajouter un modèle d’IA",
+        "noModels": "Aucune IA n’est encore proposée pour Studio.",
         "minimize": "Réduire",
         "placeholder": "Décrivez une pièce, ou une modification de celle-ci",
         "send": "Envoyer",
-        "sendSoon": "L’envoi à l’IA arrive dans une prochaine mise à jour"
+        "chooseModels": "Choisir les modèles proposés",
+        "off": "L’assistant de Studio est désactivé.",
+        "turnOn": "L’activer",
+        "stop": "Arrêter",
+        "working": "En cours…",
+        "clear": "Effacer la conversation",
+        "clearTitle": "Effacer la conversation ?",
+        "clearMessage": "L’assistant oublie ce qui a été dit sur cette conception. La conception reste telle quelle.",
+        "steps_one": "{{count}} étape",
+        "steps_many": "{{count}} étapes",
+        "steps_other": "{{count}} étapes",
+        "stopped": "Arrêté.",
+        "limit": "Arrêté après {{count}} étapes.",
+        "failed": "Impossible de terminer : {{error}}"
       },
       "panels": {
         "label": "Panneaux",

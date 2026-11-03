@@ -714,6 +714,7 @@ model StudioDesign {
   /// Which revision `document` is: undo moves it back one, redo forward.
   position  Int              @default(0)
   revisions StudioRevision[]
+  messages  StudioMessage[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
@@ -731,11 +732,32 @@ model StudioRevision {
   command   String?
   args      Json?
   summary   String?
-  /// "user" from the page, "mcp" from an assistant connected with an API token.
+  /// "user" from the page, "mcp" from an assistant connected with an API token, "assistant" from Studio's own.
   actor     String
   createdAt DateTime     @default(now())
 
   @@unique([designId, position])
+}
+
+/// The conversation with Studio's assistant about one design: what was asked, what it answered and the steps it took,
+/// so a later prompt can build on it. Text only: the AI's own working, tool payloads and thinking aren't kept.
+model StudioMessage {
+  id        String       @id @default(cuid())
+  designId  String
+  design    StudioDesign @relation(fields: [designId], references: [id], onDelete: Cascade)
+  /// "user" or "assistant".
+  role      String
+  text      String
+  /// An answer's steps, [{ tool, title, summary, ok }], and how its run ended: done, stopped, limit or failed.
+  steps     Json?
+  outcome   String?
+  /// Why a failed run stopped, in the provider's words.
+  error     String?
+  /// The AI that answered, as it was named then.
+  model     String?
+  createdAt DateTime     @default(now())
+
+  @@index([designId, createdAt])
 }
 
 /// What a tool keeps for a user through `thingport.storage`: JSON values by key.

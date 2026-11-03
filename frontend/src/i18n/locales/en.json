@@ -1789,7 +1789,9 @@
         "manage": "Manage",
         "descriptions": "Improved descriptions",
         "descriptionsDescription": "Cleans up model descriptions with AI, on import or in a run: drops self-promotion, translates and tidies them, for you to review or applied at once.",
-        "privacy": "With a third-party API, model titles, descriptions and tags leave this server. Images are sent only when enabled."
+        "privacy": "With a third-party API, model titles, descriptions and tags leave this server. Images are sent only when enabled.",
+        "studio": "Studio assistant",
+        "studioDescription": "Lets people ask an AI in Studio's prompt to build and change their designs, step by step, with the AIs you offer."
       },
       "aiCategorization": {
         "heading": "AI Categorization",
@@ -2423,6 +2425,18 @@
           "off": "Users' own tools are off.",
           "by": "{{name}} · {{email}}"
         }
+      },
+      "studioAssistant": {
+        "offered": "Available models",
+        "offeredHelp": "People pick from these in Studio's prompt. A new AI isn't offered until you switch it on here. With a cloud AI, every prompt is billed to its account. Compact gives a small local model a dozen basic tools (shapes, moving, combining, holes) in a tenth of the prompt; fillets, shells and sketches need All tools. Claude gets them all, finding the ones it needs by search.",
+        "offerAria": "Offer {{model}} in Studio",
+        "default": "Default model",
+        "noneOffered": "Switch on at least one model for people to pick from.",
+        "save": "Save",
+        "failed": "Couldn't load or save the Studio assistant's settings.",
+        "toolsAll": "All tools",
+        "toolsCompact": "Compact",
+        "toolsAria": "Tools {{model}} gets"
       }
     },
     "download": {
@@ -3265,15 +3279,26 @@
       "prompt": {
         "title": "Ask AI",
         "open": "Open Ask AI",
-        "soon": "Soon",
-        "help": "An AI will build and change the design for you, step by step, with the same tools as the toolbar. Choose which AI here; an admin adds them in Administration > AI.",
+        "help": "Describe a part, or a change to the open design, and the AI builds it step by step with the same tools as the toolbar. You see each step land, and Undo takes them back one at a time. An admin chooses which AIs are offered.",
         "model": "AI model",
-        "addModel": "Add an AI",
-        "noModels": "No AI added yet",
+        "addModel": "Add AI model",
+        "noModels": "No AI is offered for Studio yet.",
         "minimize": "Minimise",
         "placeholder": "Describe a part, or a change to this one",
         "send": "Send",
-        "sendSoon": "Sending to the AI comes in a later update"
+        "chooseModels": "Choose available models",
+        "off": "The Studio assistant is off.",
+        "turnOn": "Turn it on",
+        "stop": "Stop",
+        "working": "Working…",
+        "clear": "Clear conversation",
+        "clearTitle": "Clear the conversation?",
+        "clearMessage": "The assistant forgets what was said about this design. The design stays as it is.",
+        "steps_one": "{{count}} step",
+        "steps_other": "{{count}} steps",
+        "stopped": "Stopped.",
+        "limit": "Stopped after {{count}} steps.",
+        "failed": "Couldn't finish: {{error}}"
       },
       "panels": {
         "label": "Panels",

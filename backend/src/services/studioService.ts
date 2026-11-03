@@ -30,8 +30,8 @@ const HISTORY_LIMIT = 100;
 const MEASURE_TRIES = 3;
 const DEFAULT_NAME = "Untitled design";
 
-/** Who ran a command: the page, or an assistant connected with an API token. */
-export type StudioActor = "user" | "mcp";
+/** Who ran a command: the page, an assistant connected with an API token, or Studio's own assistant. */
+export type StudioActor = "user" | "mcp" | "assistant";
 
 export type StudioDesignSummary = {
   id: string;

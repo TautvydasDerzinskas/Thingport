@@ -30,6 +30,32 @@ export type StudioLibraryModel = {
 
 /** An AI from Administration > AI, as the prompt's picker shows it. */
 export type StudioAiModel = { id: string; model: string; host: string; is_default: boolean };
+/** The AIs an admin offers for the assistant; none while it's off. */
+export type StudioAiModels = { enabled: boolean; models: StudioAiModel[] };
+
+/** One tool call the assistant made: what it was, what it did, and whether it worked. */
+export type StudioAssistantStep = { tool: string; title: string; summary: string | null; ok: boolean };
+export type StudioAssistantOutcome = "done" | "stopped" | "limit" | "failed";
+export type StudioAssistantMessage = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  steps: StudioAssistantStep[];
+  outcome: StudioAssistantOutcome | null;
+  error: string | null;
+  model: string | null;
+  created_at: string;
+};
+export type StudioAssistantRun = {
+  status: "running" | StudioAssistantOutcome;
+  steps: StudioAssistantStep[];
+  model: string;
+  error: string | null;
+  started_at: string;
+  finished_at: string | null;
+};
+/** The conversation about a design, and the run going on or just finished. */
+export type StudioAssistantThread = { messages: StudioAssistantMessage[]; run: StudioAssistantRun | null };
 
 /** What the server said no to, in its words: a command it couldn't carry out says why. */
 export class StudioError extends Error {
@@ -66,7 +92,7 @@ const design = (id: string) => `/studio/designs/${encodeURIComponent(id)}`;
 
 export const studioApi = {
   status: () => request<{ enabled: boolean }>("/studio/status"),
-  aiModels: () => request<StudioAiModel[]>("/studio/ai-models"),
+  aiModels: () => request<StudioAiModels>("/studio/ai-models"),
   list: () => request<StudioDesignSummary[]>("/studio/designs"),
   library: (q: string, offset = 0) =>
     request<{ models: StudioLibraryModel[]; next_offset: number | null }>(
@@ -85,6 +111,12 @@ export const studioApi = {
   get: (id: string) => request<StudioDesign>(design(id)),
   version: (id: string) => request<{ version: number }>(`${design(id)}/version`),
   remove: (id: string) => request<void>(design(id), "DELETE"),
+  assistant: (id: string) => request<StudioAssistantThread>(`${design(id)}/assistant`),
+  /** Starts the assistant on a prompt; it works in the background, which `assistant` follows. */
+  ask: (id: string, body: { prompt: string; ai_connection_id: string | null; selected: string[] }) =>
+    request<{ run: StudioAssistantRun }>(`${design(id)}/assistant`, "POST", body),
+  stopAssistant: (id: string) => request<{ run: StudioAssistantRun | null }>(`${design(id)}/assistant/stop`, "POST"),
+  clearAssistant: (id: string) => request<void>(`${design(id)}/assistant`, "DELETE"),
   /** Every change to a design goes through here, as the same commands an assistant runs. */
   run: <N extends StudioCommandName>(id: string, command: N, args: StudioCommandArgs<N>) =>
     request<StudioCommandResult>(`${design(id)}/commands`, "POST", { command, args }),
