@@ -14,13 +14,17 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import { UnauthorizedError } from "../../api/client";
 import {
+  AI_KINDS,
   aiConnectionsApi,
+  CLAUDE_BASE_URL,
   REASONING_EFFORTS,
   type AiConnection,
   type AiConnectionInput,
+  type AiKind,
   type ReasoningEffort,
 } from "../../api/aiConnections";
 import { useConfirm } from "../../components/ConfirmProvider";
+import Segmented from "../../components/controls/Segmented";
 import { AiLogo } from "./aiLogos";
 
 type Props = {
@@ -35,6 +39,7 @@ type Props = {
 type Draft = Omit<AiConnectionInput, "api_key"> & { api_key: string };
 
 const draftOf = (connection: AiConnection | null): Draft => ({
+  kind: connection?.kind ?? "openai",
   base_url: connection?.base_url ?? "",
   model: connection?.model ?? "",
   api_key: "",
@@ -56,6 +61,9 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
   const hasApiKey = Boolean(connection?.has_api_key);
+  const claude = draft.kind === "anthropic";
+  // Claude can't be asked anything, its models listed included, without a key.
+  const keyAvailable = Boolean(draft.api_key) || (hasApiKey && !clearKey);
 
   const update = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
@@ -69,9 +77,11 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
   // The provider's own list, refetched a moment after the URL or key stops changing; the field still takes any name.
   useEffect(() => {
     const baseUrl = draft.base_url.trim();
-    if (!baseUrl) {
+    if (!baseUrl || (draft.kind === "anthropic" && !draft.api_key && (!hasApiKey || clearKey))) {
       setModels([]);
       setModelsError(null);
+      // A fetch it cancels can't say it's done.
+      setModelsLoading(false);
       return;
     }
     let active = true;
@@ -80,6 +90,7 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
       void aiConnectionsApi
         .models({
           ...(connection ? { id: connection.id } : {}),
+          kind: draft.kind,
           base_url: baseUrl,
           ...(clearKey ? { api_key: null } : draft.api_key ? { api_key: draft.api_key } : {}),
         })
@@ -100,13 +111,25 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
       active = false;
       window.clearTimeout(timer);
     };
-  }, [connection, draft.base_url, draft.api_key, clearKey, onUnauthorized]);
+  }, [connection, draft.kind, draft.base_url, draft.api_key, clearKey, hasApiKey, onUnauthorized]);
+
+  // Claude has one address, filled in; switching away from it leaves the field for the other kind's own.
+  const switchKind = (kind: AiKind) =>
+    setDraft((current) => ({
+      ...current,
+      kind,
+      base_url:
+        kind === "anthropic" ? CLAUDE_BASE_URL : current.base_url.trim() === CLAUDE_BASE_URL ? "" : current.base_url,
+      // Claude always thinks, so there's no "none" to ask it for.
+      reasoning_effort: kind === "anthropic" && current.reasoning_effort === "none" ? "low" : current.reasoning_effort,
+    }));
 
   const save = async () => {
     setBusy("save");
     setStatus(null);
     setError(null);
     const fields = {
+      kind: draft.kind,
       base_url: draft.base_url.trim(),
       model: draft.model.trim(),
       timeout_ms: Number(draft.timeout_ms),
@@ -140,6 +163,7 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
     try {
       const result = await aiConnectionsApi.test({
         ...(connection ? { id: connection.id } : {}),
+        kind: draft.kind,
         base_url: draft.base_url.trim(),
         model: draft.model.trim(),
         timeout_ms: Number(draft.timeout_ms),
@@ -180,7 +204,7 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
     }
   };
 
-  const ready = Boolean(draft.base_url.trim() && draft.model.trim());
+  const ready = Boolean(draft.base_url.trim() && draft.model.trim() && (!claude || keyAvailable));
   const showSavedKey = hasApiKey && !clearKey && !draft.api_key;
   const disabled = busy !== null;
 
@@ -196,11 +220,21 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
+          <Segmented
+            fullWidth
+            disabled={disabled}
+            label={t("adminSettings.ai.connection.kind")}
+            value={draft.kind}
+            options={AI_KINDS.map((kind) => ({ value: kind, label: t(`adminSettings.ai.connection.kinds.${kind}`) }))}
+            onChange={switchKind}
+          />
           <TextField
             label={t("adminSettings.ai.connection.baseUrl")}
             value={draft.base_url}
             onChange={(event) => update("base_url", event.target.value)}
-            helperText={t("adminSettings.ai.connection.baseUrlHint")}
+            helperText={
+              claude ? t("adminSettings.ai.connection.baseUrlHintClaude") : t("adminSettings.ai.connection.baseUrlHint")
+            }
             disabled={disabled}
             fullWidth
             // oxlint-disable-next-line jsx-a11y/no-autofocus
@@ -218,12 +252,15 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
               <TextField
                 {...params}
                 label={t("adminSettings.ai.connection.model")}
+                placeholder={claude ? "claude-haiku-5-5" : undefined}
                 helperText={
                   modelsError
                     ? t("adminSettings.ai.connection.modelsUnavailable", { error: modelsError })
                     : models.length
                       ? t("adminSettings.ai.connection.modelsAvailable", { count: models.length })
-                      : undefined
+                      : claude && !keyAvailable
+                        ? t("adminSettings.ai.connection.modelsNeedKey")
+                        : undefined
                 }
               />
             )}
@@ -241,7 +278,9 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
                 ? t("adminSettings.ai.connection.keyWillClear")
                 : hasApiKey
                   ? t("adminSettings.ai.connection.keySet")
-                  : t("adminSettings.ai.connection.keyOptional")
+                  : claude
+                    ? t("adminSettings.ai.connection.keyRequiredClaude")
+                    : t("adminSettings.ai.connection.keyOptional")
             }
             disabled={disabled}
             autoComplete="new-password"
@@ -292,15 +331,25 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
           {/* A select can't hold null, so "" stands for sending nothing. */}
           <TextField
             select
-            label={t("adminSettings.ai.connection.reasoningEffort")}
+            label={
+              claude ? t("adminSettings.ai.connection.effortClaude") : t("adminSettings.ai.connection.reasoningEffort")
+            }
             value={draft.reasoning_effort ?? ""}
             onChange={(event) => update("reasoning_effort", (event.target.value || null) as ReasoningEffort | null)}
-            helperText={t("adminSettings.ai.connection.reasoningEffortHint")}
+            helperText={
+              claude
+                ? t("adminSettings.ai.connection.effortClaudeHint")
+                : t("adminSettings.ai.connection.reasoningEffortHint")
+            }
             disabled={disabled}
             fullWidth
           >
-            <MenuItem value="">{t("adminSettings.ai.connection.reasoningEffortDefault")}</MenuItem>
-            {REASONING_EFFORTS.map((effort) => (
+            <MenuItem value="">
+              {claude
+                ? t("adminSettings.ai.connection.effortClaudeDefault")
+                : t("adminSettings.ai.connection.reasoningEffortDefault")}
+            </MenuItem>
+            {REASONING_EFFORTS.filter((effort) => !claude || effort !== "none").map((effort) => (
               <MenuItem key={effort} value={effort}>
                 {t(`adminSettings.ai.connection.reasoningEffortLevels.${effort}`)}
               </MenuItem>

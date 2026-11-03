@@ -5,6 +5,8 @@ import type { Logger } from "../logger";
 import { previewImagePath } from "./previewImageService";
 import { aiPreviewJpeg } from "./imageProcessing";
 import type { AiProvider } from "./aiConnectionService";
+import { askClaude } from "./aiAnthropicClient";
+import { parseAnswerJson } from "./aiAnswerJson";
 
 /** What one request to a provider needs, saved or only typed into the settings form. */
 export type ProviderSettings = Omit<AiProvider, "baseUrl" | "model" | "concurrency"> & {
@@ -84,26 +86,6 @@ function chatUrl(baseUrl: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 }
 
-/**
- * Providers that ignore response_format (Xiaomi MiMo) wrap the object in prose or markdown, e.g.
- * `**{...}**`; the outermost braces are tried when the whole text doesn't parse. undefined when
- * neither does.
- */
-function parseAnswerJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start === -1 || end <= start) return undefined;
-    try {
-      return JSON.parse(text.slice(start, end + 1));
-    } catch {
-      return undefined;
-    }
-  }
-}
-
 type ChatBody = {
   choices?: { message?: { content?: unknown }; finish_reason?: unknown }[];
   usage?: { completion_tokens?: unknown; completion_tokens_details?: { reasoning_tokens?: unknown } };
@@ -164,11 +146,8 @@ const THINKING_TOKENS: Record<ReasoningEffort | "unset", number> = {
 /** Throws the given message as the answer's problem, logging what an admin needs to tell why. */
 export type Unusable = (message: string) => Error;
 
-/**
- * Asks a provider for one JSON answer in `schema`, retrying what a retry can fix, and hands the parsed object to
- * `read`, which returns what the feature needs or throws `unusable(...)` for an answer it can't use.
- */
-export async function askProvider<T>(options: {
+/** One question for a provider, of either kind. */
+export type AskOptions<T> = {
   settings: ProviderSettings;
   content: ProviderContent;
   schemaName: string;
@@ -187,7 +166,15 @@ export async function askProvider<T>(options: {
    */
   stream?: { firstChunkMs: number; idleMs: number };
   read: (json: unknown, unusable: Unusable, answer: Record<string, unknown>) => T;
-}): Promise<T> {
+};
+
+/**
+ * Asks a provider for one JSON answer in `schema`, retrying what a retry can fix, and hands the parsed object to
+ * `read`, which returns what the feature needs or throws `unusable(...)` for an answer it can't use. Claude has its
+ * own API (aiAnthropicClient.ts); every other provider takes the OpenAI-style one below.
+ */
+export async function askProvider<T>(options: AskOptions<T>): Promise<T> {
+  if (options.settings.kind === "anthropic") return askClaude(options, (milliseconds) => retryDelay(milliseconds));
   const {
     settings,
     content,
@@ -289,11 +276,7 @@ export async function askProvider<T>(options: {
         return new Error(message);
       };
       if (typeof raw !== "string") throw unusable(`AI provider returned ${noAnswer}`);
-      const unfenced = raw
-        .trim()
-        .replace(/^```(?:json)?\s*/i, "")
-        .replace(/\s*```$/, "");
-      const json = parseAnswerJson(unfenced);
+      const json = parseAnswerJson(raw);
       if (json === undefined) {
         // JSON.parse only says where it stopped, which tells an admin nothing about the provider.
         if (body.choices?.[0]?.finish_reason === "length")

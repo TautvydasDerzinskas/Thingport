@@ -1707,7 +1707,7 @@
         "heading": "AI",
         "connection": {
           "heading": "Models",
-          "subtitle": "OpenAI-compatible services Thingport's AI features use.",
+          "subtitle": "The AIs Thingport's features use: OpenAI-compatible services, or Claude.",
           "gridHint": "Click an AI to make it the default. Double-click to edit or test it, or right-click for more.",
           "add": "Add AI model",
           "addTitle": "Add AI model",
@@ -1752,7 +1752,18 @@
           "testFailed": "Connection test failed.",
           "save": "Save",
           "saving": "Checking connection…",
-          "failed": "Failed to load or save the AI."
+          "failed": "Failed to load or save the AI.",
+          "kind": "Type",
+          "kinds": {
+            "openai": "OpenAI-compatible",
+            "anthropic": "Claude"
+          },
+          "baseUrlHintClaude": "Leave it as it is unless you reach Claude through a proxy.",
+          "keyRequiredClaude": "Required: an Anthropic API key, from console.anthropic.com under API keys.",
+          "modelsNeedKey": "Enter the API key to list the models it may use.",
+          "effortClaude": "Effort",
+          "effortClaudeHint": "How much Claude thinks before it answers. Lower is faster and cheaper, and these tasks rarely need more than Low.",
+          "effortClaudeDefault": "Model's default (send nothing)"
         }
       },
       "aiFeatures": {

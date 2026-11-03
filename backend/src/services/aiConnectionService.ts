@@ -1,4 +1,4 @@
-import type { AiConnection, Prisma, ReasoningEffort } from "@prisma/client";
+import type { AiConnection, AiProviderKind, Prisma, ReasoningEffort } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { normalizeAiBaseUrl } from "./settingsService";
@@ -6,10 +6,12 @@ import { normalizeAiBaseUrl } from "./settingsService";
 /** What a request to a provider needs, whether the connection is saved or only typed into the form. */
 export type AiProvider = Pick<
   AiConnection,
-  "baseUrl" | "apiKey" | "model" | "timeoutMs" | "concurrency" | "reasoningEffort"
+  "kind" | "baseUrl" | "apiKey" | "model" | "timeoutMs" | "concurrency" | "reasoningEffort"
 >;
 
 export type AiConnectionInput = {
+  /** OpenAI-compatible unless said otherwise. */
+  kind?: AiProviderKind;
   baseUrl: string;
   apiKey: string | null;
   model: string;
@@ -19,6 +21,7 @@ export type AiConnectionInput = {
 };
 
 export const DEFAULT_AI_PROVIDER: Omit<AiProvider, "baseUrl" | "model"> = {
+  kind: "openai",
   apiKey: null,
   timeoutMs: 60000,
   concurrency: 1,
@@ -63,6 +66,7 @@ export async function resolveAiProvider(id: string | null | undefined): Promise<
   const connection = await resolveAiConnection(id);
   if (!connection) return { ...DEFAULT_AI_PROVIDER, baseUrl: null, model: null, connectionId: null };
   return {
+    kind: connection.kind,
     baseUrl: connection.baseUrl,
     apiKey: connection.apiKey,
     model: connection.model,
@@ -82,7 +86,7 @@ export async function createAiConnection(input: AiConnectionInput): Promise<AiCo
     return tx.aiConnection.create({
       data: {
         ...input,
-        baseUrl: normalizeAiBaseUrl(input.baseUrl) ?? input.baseUrl,
+        baseUrl: normalizeAiBaseUrl(input.baseUrl, input.kind) ?? input.baseUrl,
         isDefault: !hasDefault,
         position: last ? last.position + 1 : 0,
       },
@@ -91,10 +95,14 @@ export async function createAiConnection(input: AiConnectionInput): Promise<AiCo
 }
 
 export async function updateAiConnection(id: string, patch: Partial<AiConnectionInput>): Promise<AiConnection> {
-  await getAiConnection(id);
+  const saved = await getAiConnection(id);
+  const kind = patch.kind ?? saved.kind;
   return prisma.aiConnection.update({
     where: { id },
-    data: { ...patch, ...(patch.baseUrl !== undefined ? { baseUrl: normalizeAiBaseUrl(patch.baseUrl) ?? "" } : {}) },
+    data: {
+      ...patch,
+      ...(patch.baseUrl !== undefined ? { baseUrl: normalizeAiBaseUrl(patch.baseUrl, kind) ?? "" } : {}),
+    },
   });
 }
 

@@ -1750,7 +1750,7 @@
         "heading": "DI",
         "connection": {
           "heading": "Modeliai",
-          "subtitle": "Su OpenAI suderinamos paslaugos, kurias naudoja Thingport DI funkcijos.",
+          "subtitle": "DI, kuriuos naudoja Thingport funkcijos: su OpenAI suderinamos paslaugos arba Claude.",
           "gridHint": "Spustelėkite DI, kad jis taptų numatytuoju. Dukart spustelėkite, kad redaguotumėte ar patikrintumėte, arba spustelėkite dešiniuoju mygtuku, kad pamatytumėte daugiau.",
           "add": "Pridėti DI modelį",
           "addTitle": "Pridėti DI modelį",
@@ -1797,7 +1797,18 @@
           "testFailed": "Ryšio patikra nepavyko.",
           "save": "Išsaugoti",
           "saving": "Tikrinamas ryšys…",
-          "failed": "Nepavyko įkelti arba išsaugoti DI."
+          "failed": "Nepavyko įkelti arba išsaugoti DI.",
+          "kind": "Tipas",
+          "kinds": {
+            "openai": "Suderinamas su OpenAI",
+            "anthropic": "Claude"
+          },
+          "baseUrlHintClaude": "Palikite kaip yra, nebent Claude pasiekiate per tarpinį serverį.",
+          "keyRequiredClaude": "Būtinas: Anthropic API raktas iš console.anthropic.com, skiltyje API keys.",
+          "modelsNeedKey": "Įveskite API raktą, kad pamatytumėte, kuriuos modelius jis gali naudoti.",
+          "effortClaude": "Pastangos",
+          "effortClaudeHint": "Kiek Claude mąsto prieš atsakydamas. Žemesnis lygis greitesnis ir pigesnis, o šioms užduotims retai reikia daugiau nei „Žemas“.",
+          "effortClaudeDefault": "Modelio numatytasis (nieko nesiųsti)"
         }
       },
       "aiFeatures": {

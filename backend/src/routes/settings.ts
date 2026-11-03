@@ -1,4 +1,4 @@
-import type { AiConnection, ReasoningEffort } from "@prisma/client";
+import type { AiConnection, AiProviderKind, ReasoningEffort } from "@prisma/client";
 import { currentStorageMove, startStorageMove, type StorageMoveRun } from "../services/storageMoveService";
 import {
   currentFileReuseBackfill,
@@ -1079,6 +1079,7 @@ router.patch(
 function aiConnectionOut(connection: AiConnection) {
   return {
     id: connection.id,
+    kind: connection.kind,
     base_url: connection.baseUrl,
     model: connection.model,
     has_api_key: Boolean(connection.apiKey),
@@ -1099,6 +1100,8 @@ router.get(
 
 // api_key: omitted keeps the saved one, null or "" means none.
 const aiConnectionFields = {
+  // OpenAI-compatible, or Claude through Anthropic's own API.
+  kind: z.enum(["openai", "anthropic"]),
   base_url: z.string().trim().min(1),
   model: z.string().trim().min(1),
   api_key: z.string().nullable().optional(),
@@ -1112,6 +1115,7 @@ const aiConnectionFields = {
 async function providerFrom(
   id: string | undefined,
   body: Partial<{
+    kind: AiProviderKind;
     base_url: string;
     model: string;
     api_key: string | null;
@@ -1120,8 +1124,11 @@ async function providerFrom(
   }>,
 ) {
   const saved = id ? await getAiConnection(id) : null;
+  const kind = body.kind ?? saved?.kind ?? DEFAULT_AI_PROVIDER.kind;
   return {
-    baseUrl: body.base_url !== undefined ? normalizeAiBaseUrl(body.base_url) : (saved?.baseUrl ?? null),
+    kind,
+    // The saved URL too, so moving an AI to the other kind alone gives it that kind's form: Claude's has no /v1.
+    baseUrl: normalizeAiBaseUrl(body.base_url !== undefined ? body.base_url : saved?.baseUrl, kind),
     model: body.model ?? saved?.model ?? null,
     apiKey: body.api_key !== undefined ? body.api_key || null : (saved?.apiKey ?? DEFAULT_AI_PROVIDER.apiKey),
     timeoutMs: body.timeout_ms ?? saved?.timeoutMs ?? DEFAULT_AI_PROVIDER.timeoutMs,
@@ -1142,6 +1149,7 @@ async function requireAnswer(provider: Awaited<ReturnType<typeof providerFrom>>)
 const aiConnectionCreateSchema = z
   .object({
     ...aiConnectionFields,
+    kind: aiConnectionFields.kind.optional(),
     timeout_ms: aiConnectionFields.timeout_ms.optional(),
     concurrency: aiConnectionFields.concurrency.optional(),
     reasoning_effort: aiConnectionFields.reasoning_effort.optional(),
@@ -1155,6 +1163,7 @@ router.post(
     const provider = await providerFrom(undefined, body);
     await requireAnswer(provider);
     const connection = await createAiConnection({
+      kind: provider.kind,
       baseUrl: provider.baseUrl!,
       model: provider.model!,
       apiKey: provider.apiKey,
@@ -1175,6 +1184,7 @@ router.patch(
     const provider = await providerFrom(req.params.id, body);
     // Concurrency and reasoning effort don't change whether it answers.
     if (
+      body.kind !== undefined ||
       body.base_url !== undefined ||
       body.model !== undefined ||
       body.api_key !== undefined ||
@@ -1183,7 +1193,8 @@ router.patch(
       await requireAnswer(provider);
     }
     const connection = await updateAiConnection(req.params.id, {
-      ...(body.base_url !== undefined ? { baseUrl: provider.baseUrl! } : {}),
+      ...(body.kind !== undefined ? { kind: body.kind } : {}),
+      ...(body.base_url !== undefined || body.kind !== undefined ? { baseUrl: provider.baseUrl! } : {}),
       ...(body.model !== undefined ? { model: provider.model! } : {}),
       ...(body.api_key !== undefined ? { apiKey: provider.apiKey } : {}),
       ...(body.timeout_ms !== undefined ? { timeoutMs: body.timeout_ms } : {}),
@@ -1228,6 +1239,7 @@ router.post(
 const aiModelListSchema = z
   .object({
     id: z.string().optional(),
+    kind: aiConnectionFields.kind.optional(),
     base_url: z.string().trim().min(1).optional(),
     api_key: z.string().nullable().optional(),
   })

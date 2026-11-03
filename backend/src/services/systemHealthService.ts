@@ -219,7 +219,11 @@ async function checkAi(): Promise<Found> {
   const facts = { host: hostOf(connection.baseUrl), model: connection.model };
   const start = Date.now();
   // The model list, not a test prompt: a prompt takes minutes on a slow CPU, the list comes back at once.
-  const result = await listAiProviderModels({ baseUrl: connection.baseUrl, apiKey: connection.apiKey });
+  const result = await listAiProviderModels({
+    kind: connection.kind,
+    baseUrl: connection.baseUrl,
+    apiKey: connection.apiKey,
+  });
   const latency_ms = Date.now() - start;
   if (!result.ok) return found("error", "unreachable", facts, result.error);
   // Some providers list nothing they'd still answer for, so a missing model is a warning, not a failure.

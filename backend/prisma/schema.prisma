@@ -27,6 +27,13 @@ enum ReasoningEffort {
   high
 }
 
+/// How Thingport talks to an AI: the OpenAI-style chat API most providers and local servers offer, or Anthropic's own
+/// Messages API for Claude.
+enum AiProviderKind {
+  openai
+  anthropic
+}
+
 model User {
   id                       String               @id @default(cuid())
   email                    String               @unique
@@ -730,9 +737,10 @@ model Setting {
   value Json
 }
 
-/// An OpenAI-compatible AI service. Features use the default one unless set to another.
+/// An AI service: OpenAI-compatible, or Claude. Features use the default one unless set to another.
 model AiConnection {
   id              String           @id @default(cuid())
+  kind            AiProviderKind   @default(openai)
   baseUrl         String
   /// Write-only: the API only ever says whether one is set.
   apiKey          String?

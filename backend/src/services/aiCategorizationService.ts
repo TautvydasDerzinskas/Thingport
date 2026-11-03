@@ -1,4 +1,4 @@
-import { Prisma, type CategorySource, type Print } from "@prisma/client";
+import { Prisma, type AiProviderKind, type CategorySource, type Print } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
@@ -6,6 +6,7 @@ import { createLogger } from "../logger";
 import { createLog } from "./auditLog";
 import { createNotification } from "./notificationService";
 import { setPrintCategory } from "./printCategoryService";
+import { listClaudeModels } from "./aiAnthropicClient";
 import { resolveAiProvider, type ResolvedAiProvider } from "./aiConnectionService";
 import {
   askProvider,
@@ -686,13 +687,15 @@ export function cancelAiCategorizationRun(userId: string): AiCategorizationRun |
 const MODEL_LIST_TIMEOUT_MS = 10_000;
 
 /**
- * The models a provider serves, from the OpenAI-style `GET /models` that Ollama, LM Studio, vLLM, OpenAI, OpenRouter
- * and Gemini all answer, so the settings form can suggest them.
+ * The models a provider serves, so the settings form can suggest them: from the OpenAI-style `GET /models` that
+ * Ollama, LM Studio, vLLM, OpenAI, OpenRouter and Gemini all answer, or from Anthropic's Models API for Claude.
  */
 export async function listAiProviderModels(provider: {
+  kind: AiProviderKind;
   baseUrl: string | null;
   apiKey: string | null;
 }): Promise<{ ok: true; models: string[] } | { ok: false; error: string }> {
+  if (provider.kind === "anthropic") return listClaudeModels(provider, MODEL_LIST_TIMEOUT_MS);
   if (!provider.baseUrl) return { ok: false, error: "Set the API base URL first" };
   try {
     const response = await fetch(`${provider.baseUrl.replace(/\/+$/, "")}/models`, {
