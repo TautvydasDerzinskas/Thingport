@@ -82,7 +82,7 @@ describe("Studio", () => {
     const created = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Bracket" });
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({ name: "Bracket", version: 0, can_undo: false, can_redo: false });
-    expect(created.body.document).toEqual({ version: 1, features: [], next_id: 1 });
+    expect(created.body.document).toEqual({ version: 1, features: [], next_id: 1, units: "mm" });
 
     const mine = await request(app).get("/api/studio/designs").set(auth(alice));
     expect(mine.body.map((design: { id: string }) => design.id)).toContain(created.body.id);
@@ -263,21 +263,42 @@ describe("Studio", () => {
     expect(again?.previewImages).toHaveLength(1);
   });
 
-  it("keeps where each person's assistant shows: the bar until they pick the side panel", async () => {
-    expect((await request(app).get("/api/settings/studio-prompt-layout").set(auth(bob))).body).toEqual({
-      layout: "bar",
+  it("keeps each person's Studio settings: where the assistant shows, and the units new designs start in", async () => {
+    const settings = (session: string) => request(app).get("/api/studio/settings").set(auth(session));
+    expect((await settings(bob)).body).toEqual({ prompt_layout: "bar", units: "mm" });
+    const set = await request(app).patch("/api/studio/settings").set(auth(bob)).send({ prompt_layout: "panel" });
+    expect(set.body).toEqual({ prompt_layout: "panel", units: "mm" });
+    await request(app).patch("/api/studio/settings").set(auth(bob)).send({ units: "in" });
+    expect((await settings(bob)).body).toEqual({ prompt_layout: "panel", units: "in" });
+    expect((await settings(alice)).body).toEqual({ prompt_layout: "bar", units: "mm" });
+    expect((await request(app).patch("/api/studio/settings").set(auth(bob)).send({ units: "ft" })).status).toBe(400);
+    expect((await request(app).patch("/api/studio/settings").set(auth(bob)).send({ layout: "panel" })).status).toBe(
+      400,
+    );
+
+    // A new design starts in them; an assistant can say otherwise, and anyone can change a design's own.
+    const { body: inches } = await request(app).post("/api/studio/designs").set(auth(bob)).send({});
+    expect(inches.document.units).toBe("in");
+    const token = await mcpToken(bob);
+    const metric = await callTool(token, "studio_create_design", { units: "cm" });
+    const read = await callTool(token, "studio_get_design", { design_id: metric.data.design_id });
+    expect(read.data).toMatchObject({ units: "mm", display_units: "cm", parameters: [] });
+    const switched = await command(bob, inches.id, "set_units", { units: "mm" });
+    expect(switched.body.design.document.units).toBe("mm");
+    expect((await command(bob, inches.id, "undo")).body.design.document.units).toBe("in");
+
+    // A formula typed in an inch design keeps its inches, and get_design lists parameters with their units.
+    await command(bob, inches.id, "add_box", { width: 10, depth: 10, height: 10 });
+    await command(bob, inches.id, "set_parameter", { name: "side", value: 1, unit: "in" });
+    const followed = await command(bob, inches.id, "set_expression", {
+      feature_id: "box-1",
+      field: "width",
+      expression: "side + 0.5",
     });
-    const set = await request(app).patch("/api/settings/studio-prompt-layout").set(auth(bob)).send({ layout: "panel" });
-    expect(set.body).toEqual({ layout: "panel" });
-    expect((await request(app).get("/api/settings/studio-prompt-layout").set(auth(bob))).body).toEqual({
-      layout: "panel",
-    });
-    expect((await request(app).get("/api/settings/studio-prompt-layout").set(auth(alice))).body).toEqual({
-      layout: "bar",
-    });
-    expect(
-      (await request(app).patch("/api/settings/studio-prompt-layout").set(auth(bob)).send({ layout: "top" })).status,
-    ).toBe(400);
+    expect(followed.body.summary).toBe("box-1's width follows side + 0.5 in: it's 38.1");
+    const state = await callTool(token, "studio_get_design", { design_id: inches.id });
+    expect(state.data.parameters).toEqual([{ name: "side", value: 1, unit: "in" }]);
+    await request(app).patch("/api/studio/settings").set(auth(bob)).send({ prompt_layout: "bar", units: "mm" });
   });
 
   it("applies commands sent at once one after another, so none is lost", async () => {

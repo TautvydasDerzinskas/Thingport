@@ -2623,13 +2623,6 @@
         "light": "Gris clair (sans teinte)",
         "failed": "Impossible d’enregistrer la couleur du rendu.",
         "help": "La couleur des rendus 3D générés et de l’aperçu 3D. Choisir une couleur d’accent la change aussi ; choisissez ici pour la modifier séparément."
-      },
-      "studioPrompt": {
-        "heading": "Assistant de Studio",
-        "help": "Où Demander à l’IA de Studio affiche sa conversation. Barre : sous la vue, une ligne pendant que l’IA travaille, le reste quand vous l'ouvrez. Panneau latéral : à côté de la vue, pour que rien ne cache le modèle.",
-        "bar": "Barre",
-        "panel": "Panneau latéral",
-        "failed": "Impossible d’enregistrer où s’affiche l'assistant de Studio."
       }
     },
     "configuration": {
@@ -3705,7 +3698,10 @@
         "unused": "Inutilisé",
         "uses_one": "Utilisé par {{count}} champ",
         "uses_many": "Utilisé par {{count}} champs",
-        "uses_other": "Utilisé par {{count}} champs"
+        "uses_other": "Utilisé par {{count}} champs",
+        "noUnit": "Aucune",
+        "unit": "Unité",
+        "unitOf": "Unité de {{name}}"
       },
       "check": {
         "title": "Vérifier pour l'impression",
@@ -3717,18 +3713,16 @@
         "minWall": "Paroi min.",
         "ready": "Prêt à imprimer",
         "nothing": "Aucun corps visible à vérifier.",
-        "size": "{{x}} × {{y}} × {{z}} mm",
-        "volume": "{{cm3}} cm³",
         "empty": "Vide",
         "tooBig": "Trop grand pour le plateau",
         "offBed": "Hors du plateau",
-        "floating": "Flotte à {{mm}} mm",
-        "sunk": "Enfoncé de {{mm}} mm",
+        "floating": "Flotte à {{value}}",
+        "sunk": "Enfoncé de {{value}}",
         "pieces_one": "{{count}} pièce détachée",
         "pieces_many": "{{count}} pièces détachées",
         "pieces_other": "{{count}} pièces détachées",
-        "overhang": "{{area}} mm² de porte-à-faux",
-        "thin": "Parois jusqu'à {{mm}} mm",
+        "overhang": "{{value}} de porte-à-faux",
+        "thin": "Parois jusqu'à {{value}}",
         "overlaps": "Chevauche {{name}}",
         "open": "Pas un solide fermé",
         "toBed": "Sur le plateau",
@@ -3736,11 +3730,92 @@
         "measureNeedsTwo": "Ajoutez deux corps pour mesurer entre eux.",
         "first": "De",
         "second": "À",
-        "gap": "Écart {{mm}} mm",
+        "gap": "Écart {{value}}",
         "touching": "Se touchent",
-        "overlap": "Chevauchement {{cm3}} cm³",
+        "overlap": "Chevauchement {{value}}",
         "far": "À plus de 1 m",
         "toBedOf": "Poser {{name}} sur le plateau"
+      },
+      "status": {
+        "label": "Mesures du design",
+        "design": "Design",
+        "selection": "Sélection",
+        "bodiesLabel": "Corps",
+        "size": "Taille",
+        "volume": "Volume",
+        "openMeshes": "Les maillages ouverts n'ont pas de volume : ils ne sont pas comptés",
+        "units": "Unités"
+      },
+      "measure": {
+        "title": "Mesurer",
+        "help": "Sélectionnez des points, des arêtes, des faces ou des corps. Une sélection affiche sa propre taille : la position d'un point, la longueur d'une arête, l'aire d'une face, la taille et le volume d'un corps. Deux affichent la plus courte distance entre eux, ce qu'elle fait le long de X, Y et Z, et l'angle entre eux. Les mesures sont dans les unités de la barre d'état, et mesurer ne modifie pas le design.",
+        "filter": "Quoi sélectionner",
+        "clear": "Effacer",
+        "done": "Terminé",
+        "again": "Cliquez à nouveau pour recommencer",
+        "kinds": {
+          "point": "Point",
+          "edge": "Arête",
+          "face": "Face",
+          "body": "Corps"
+        },
+        "pickFirst": {
+          "point": "Cliquez sur un point pour le mesurer",
+          "edge": "Cliquez sur une arête pour la mesurer",
+          "face": "Cliquez sur une face pour la mesurer",
+          "body": "Cliquez sur un corps pour le mesurer"
+        },
+        "pickSecond": {
+          "point": "Cliquez sur un deuxième point pour mesurer entre les deux",
+          "edge": "Cliquez sur une deuxième arête pour mesurer entre les deux",
+          "face": "Cliquez sur une deuxième face pour mesurer entre les deux",
+          "body": "Cliquez sur un deuxième corps pour mesurer entre les deux"
+        },
+        "readings": {
+          "distance": "Distance",
+          "length": "Longueur",
+          "gap": "Écart",
+          "area": "Aire",
+          "volume": "Volume",
+          "overlap": "Chevauchement",
+          "angle": "Angle",
+          "size": "Taille",
+          "touching": "Se touchent",
+          "far": "À plus de 1 m",
+          "openMesh": "Un maillage ouvert n'a pas de volume",
+          "measuring": "Mesure…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Réglages du Studio",
+        "sections": {
+          "assistant": "Demander à l’IA",
+          "units": "Unités"
+        },
+        "assistantIntro": "Où « Demander à l’IA » affiche sa conversation.",
+        "layout": "Disposition",
+        "layoutHelp": "Barre : sous la vue, une ligne pendant que l'IA travaille, le reste en l'ouvrant. Panneau latéral : à côté de la vue, pour que rien ne cache le modèle.",
+        "layouts": {
+          "bar": "Barre",
+          "panel": "Panneau latéral"
+        },
+        "failed": "Impossible d'enregistrer le réglage.",
+        "unitsIntro": "Dans quelles unités les cotes sont affichées et saisies. Les cotes ne changent pas ; seule leur lecture change.",
+        "designUnits": "Ce design",
+        "designUnitsHelp": "Enregistré avec le design et annulable comme toute modification. Une cote saisie sans unité est dans celles-ci ; avec une unité, comme 2 in ou 5 mm, dans celle-là.",
+        "newUnits": "Nouveaux designs",
+        "newUnitsHelp": "Les unités dans lesquelles un nouveau design commence. Gardées sur votre compte, donc sur tous vos appareils.",
+        "unitNames": {
+          "mm": "Millimètres",
+          "cm": "Centimètres",
+          "in": "Pouces"
+        }
       }
     }
   },
@@ -4485,7 +4560,7 @@
         "images": "images d’aperçu"
       },
       "openInSlicer": "Ouvrir dans {{slicer}}",
-      "openInStudio": "Ouvrir dans le Studio",
+      "openInStudio": "Ouvrir dans Thingport Studio",
       "openNormalizedInSlicer": "Ouvrir la version normalisée dans {{slicer}}",
       "normalizedInfo": "Les fichiers MakerWorld sont des projets Bambu Studio, que {{slicer}} ouvre souvent sans leurs couleurs ni leurs réglages d’impression. Cette option ouvre une copie convertie qui conserve les couleurs peintes, les couleurs de filament, les plateaux et les réglages du créateur (parois, hauteur de couche, remplissage, supports). Attention : les objets en plusieurs pièces peuvent être fusionnés en un seul, les réglages propres à chaque objet et les changements de couleur par couche sont perdus, et vous choisissez votre propre profil d’imprimante. Le fichier enregistré n’est pas modifié.",
       "normalizePreparing": "Préparation du fichier normalisé…",

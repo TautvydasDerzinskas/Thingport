@@ -35,6 +35,8 @@ import RedoIcon from "@mui/icons-material/Redo";
 import GestureOutlinedIcon from "@mui/icons-material/GestureOutlined";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import WallpaperOutlinedIcon from "@mui/icons-material/WallpaperOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import StraightenOutlinedIcon from "@mui/icons-material/StraightenOutlined";
 import ThreeSixtyIcon from "@mui/icons-material/ThreeSixty";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
 import UndoIcon from "@mui/icons-material/Undo";
@@ -109,6 +111,11 @@ type Props = {
   onParameters: () => void;
   /** Opens the check of whether the design will print, and the measure between two bodies. */
   onCheck: () => void;
+  /** Opens Studio's own settings: where Ask AI shows, and units. */
+  onSettings: () => void;
+  /** Whether the measure tool is on, and turns it on or off. */
+  measuring: boolean;
+  onMeasure: () => void;
   onDeleteDesign: () => void;
   onAdd: (primitive: Primitive) => void;
   onStartSketch: (plane: Exclude<SketchPlane, "FACE">) => void;
@@ -169,19 +176,29 @@ function Tool({
   label,
   shortcut,
   disabled,
+  active,
   onClick,
   children,
 }: {
   label: string;
   shortcut?: string;
   disabled?: boolean;
+  /** A tool that stays on until it's clicked again, as Measure does. */
+  active?: boolean;
   onClick: (event: React.MouseEvent<HTMLElement>) => void;
   children: React.ReactNode;
 }) {
   return (
     <Tooltip title={shortcut ? `${label} (${shortcut})` : label}>
       <span>
-        <IconButton size="small" aria-label={label} disabled={disabled} onClick={onClick} sx={{ borderRadius: 1.5 }}>
+        <IconButton
+          size="small"
+          aria-label={label}
+          aria-pressed={active}
+          disabled={disabled}
+          onClick={onClick}
+          sx={{ borderRadius: 1.5, bgcolor: active ? "action.selected" : undefined }}
+        >
           {children}
         </IconButton>
       </span>
@@ -520,6 +537,15 @@ export default function StudioToolbar(props: Props) {
             <RedoIcon />
           </Tool>
           <Box sx={{ flex: 1 }} />
+          <Tool
+            label={t("studio.measure.title")}
+            shortcut="I"
+            active={props.measuring}
+            disabled={noDesign}
+            onClick={props.onMeasure}
+          >
+            <StraightenOutlinedIcon />
+          </Tool>
           <Tool label={t("studio.check.title")} disabled={noDesign} onClick={props.onCheck}>
             <FactCheckOutlinedIcon />
           </Tool>
@@ -561,6 +587,11 @@ export default function StudioToolbar(props: Props) {
           </Tool>
         </Box>
       )}
+      {/* In view mode too: where Ask AI shows is a setting of the view. */}
+      {!props.editing && <Box sx={{ flex: 1 }} />}
+      <Tool label={t("studio.settings.title")} onClick={props.onSettings}>
+        <SettingsOutlinedIcon />
+      </Tool>
     </Box>
   );
 }

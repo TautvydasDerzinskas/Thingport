@@ -3,6 +3,10 @@
 //
 // A formula is text a person or an AI typed, so it's read by a small parser of its own and never run as code; the
 // browser and the server work it out the same way. Angles are in degrees, as everywhere in Studio.
+//
+// Formulas know their units, as CAD's do: a number can carry one (2 in, 5 mm, 45 deg), each parameter has its own, and
+// a length field takes only a length. A bare number added to a length is a length in the design's units, and is kept
+// with that unit written after it, so a formula means the same size whatever units the design is shown in later.
 
 /** The longest formula read: far more than a size needs, and short enough to quote whole in a message. */
 export const FORMULA_LENGTH = 500;
@@ -36,7 +40,16 @@ const MANY = new Map<string, (...values: number[]) => number>([
   ["max", Math.max],
 ]);
 const FUNCTIONS = [...MANY.keys(), ...ONE.keys()];
-const RESERVED = new Set(["pi", ...FUNCTIONS]);
+/** The length units a design is shown in, and a number in a formula can carry. */
+export type LengthUnit = "mm" | "cm" | "in";
+/** Millimetres in one of each. */
+export const MM_PER: Record<LengthUnit, number> = { mm: 1, cm: 10, in: 25.4 };
+/** A parameter's unit: a length, an angle in degrees, or none, for a plain number such as a count. */
+export type ParameterUnit = LengthUnit | "deg" | "none";
+export const PARAMETER_UNITS: ParameterUnit[] = ["mm", "cm", "in", "deg", "none"];
+type NumberUnit = LengthUnit | "deg";
+const UNITS = new Set<string>(["mm", "cm", "in", "deg"]);
+const RESERVED = new Set(["pi", ...FUNCTIONS, ...UNITS]);
 
 const NUMBER = /(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/y;
 const NAME = /[A-Za-z_][A-Za-z0-9_]*/y;
@@ -49,7 +62,7 @@ const COMMA = 'A "," goes only between a function\'s numbers, as in min(a, b)';
 type Token = { kind: "number" | "name" | "symbol" | "end"; text: string; at: number; end: number };
 /** A piece of a formula, with where it is in the text (start inclusive, end exclusive) for messages. */
 type Node = { start: number; end: number } & (
-  | { kind: "number"; value: number }
+  | { kind: "number"; value: number; unit?: NumberUnit }
   | { kind: "name"; name: string }
   | { kind: "negate"; operand: Node }
   | { kind: "operator"; operator: string; at: number; left: Node; right: Node }
@@ -73,6 +86,12 @@ function tokenize(text: string): Token[] {
   for (let at = 0; at < text.length;) {
     const char = String.fromCodePoint(text.codePointAt(at)!);
     if (/\s/.test(char)) {
+      at++;
+      continue;
+    }
+    // ° is deg, as in 45°.
+    if (char === "°") {
+      tokens.push({ kind: "name", text: "deg", at, end: at + 1 });
       at++;
       continue;
     }
@@ -154,13 +173,22 @@ function parse(text: string): Node {
     const token = tokens[i];
     if (token.kind === "number") {
       i++;
-      return { kind: "number", value: Number(token.text), start: token.at, end: token.end };
+      const unit = tokens[i].kind === "name" && UNITS.has(tokens[i].text) ? tokens[i++] : null;
+      return {
+        kind: "number",
+        value: Number(token.text),
+        ...(unit ? { unit: unit.text as NumberUnit } : {}),
+        start: token.at,
+        end: unit?.end ?? token.end,
+      };
     }
     if (token.kind === "name") {
       i++;
       if (is("(")) return call(token);
       if (ONE.has(token.text) || MANY.has(token.text))
         fail(text, token.at, `${token.text} is a function: give it its number in brackets, as ${token.text}(…)`);
+      if (UNITS.has(token.text))
+        fail(text, token.at, `${token.text} is a unit: put it right after a number, as 2 ${token.text}`);
       return { kind: "name", name: token.text, start: token.at, end: token.end };
     }
     if (is("(")) {
@@ -243,20 +271,39 @@ function closest(name: string, names: string[]): string | undefined {
   return best;
 }
 
+/** A parameter as a formula sees it: its value in mm if it's a length, else in degrees or as it is. */
+export type ParameterQuantity = { value: number; length: boolean };
+
+/** What a field takes: a length, in mm, or a plain number (an angle in degrees, a count, a scale). */
+export type FieldKind = "length" | "number";
+
+/** A value with its dimension: `power` 1 for a length (in mm), 2 for an area, 0 for a plain number. `loose` is a
+ *  bare number not yet given a unit, which takes on the dimension of what it's added to. */
+type Quantity = { value: number; power: number; loose: boolean };
+
+const dimension = (power: number) =>
+  power === 0 ? "a plain number" : power === 1 ? "a length" : power === 2 ? "an area" : `a length^${power}`;
+
 /**
- * The value of a formula, with these parameters' values; throws, saying where, when it can't be worked out. A formula
- * has numbers, parameters' names, + - * / and % (the remainder, with the first number's sign), ^ for a power (taken
- * right to left, and before a sign in front of it: -2^2 is -4), brackets, pi, and the functions min(a, b, …), max(…),
- * abs, sqrt, round (halves away from zero), floor, ceil, sin, cos and tan of an angle in degrees, and asin, acos and
- * atan giving one. Throws on a name that's no parameter, a division by zero, a result that isn't a finite number, a
- * formula that can't be read, and one over 500 characters.
+ * Works a formula out, with these parameters. Bare numbers that turn out to be lengths are taken in `bare`, and each is
+ * handed to `mark`. Throws, saying where, on a name that's no parameter, a division by zero, a result that isn't a
+ * finite number, units that don't go together (a length plus a plain number), a formula that can't be read, and one
+ * over 500 characters.
  */
-export function evaluateExpression(text: string, parameters: Readonly<Record<string, number>>): number {
-  const parameter = (name: string, at: number): number => {
-    if (name === "pi") return Math.PI;
+function work(
+  text: string,
+  parameters: Readonly<Record<string, ParameterQuantity>>,
+  want: FieldKind,
+  bare: LengthUnit,
+  mark: (node: Node) => void,
+): number {
+  const looseOf = new Map<Node, boolean>();
+  const parameter = (name: string, at: number): Quantity => {
+    if (name === "pi") return { value: Math.PI, power: 0, loose: false };
     if (Object.hasOwn(parameters, name)) {
-      const value = parameters[name];
-      if (typeof value === "number" && Number.isFinite(value)) return value;
+      const found = parameters[name];
+      if (found && Number.isFinite(found.value))
+        return { value: found.value, power: found.length ? 1 : 0, loose: false };
       fail(text, at, `The parameter "${name}" has no finite value`);
     }
     const guess = closest(name, [...Object.keys(parameters), "pi"]);
@@ -264,47 +311,160 @@ export function evaluateExpression(text: string, parameters: Readonly<Record<str
       `There's no parameter called "${name}" (${where(text, at)}).${guess ? ` Did you mean "${guess}"?` : ""}`,
     );
   };
-  const compute = (node: Node): number => {
+  const quote = (node: Node) => `"${text.slice(node.start, node.end)}"`;
+  // A bare number, or a sum or product of them, given a dimension: its first number in each term carries the unit.
+  const adopt = (node: Node, power: number): void => {
+    if (!looseOf.get(node)) return;
+    if (node.kind === "number") {
+      if (power !== 1) fail(text, node.start, `${quote(node)} needs a unit here: write it after the number`);
+      mark(node);
+    } else if (node.kind === "negate") adopt(node.operand, power);
+    else if (node.kind === "operator") {
+      if (node.operator === "+" || node.operator === "-" || node.operator === "%") {
+        adopt(node.left, power);
+        adopt(node.right, power);
+      } else if (node.operator === "*" || node.operator === "/") adopt(node.left, power);
+      else fail(text, node.start, `${quote(node)} needs its units written in`);
+    } else if (node.kind === "call") {
+      if (node.name === "sqrt") fail(text, node.start, `${quote(node)} needs its units written in`);
+      node.args.forEach((arg) => adopt(arg, power));
+    }
+  };
+  // Two values added, taken from or compared: the same dimension, a bare number taking on the other's.
+  const unify = (nodes: Node[], values: Quantity[], at: number, verb: string): Quantity[] => {
+    const firm = values.find((each) => !each.loose);
+    if (!firm) return values;
+    return values.map((each, k) => {
+      if (each.loose) {
+        if (firm.power === 0) return { ...each, loose: false };
+        adopt(nodes[k], firm.power);
+        return { value: each.value * MM_PER[bare] ** firm.power, power: firm.power, loose: false };
+      }
+      if (each.power !== firm.power)
+        fail(text, at, `Can't ${verb} ${dimension(firm.power)} and ${dimension(each.power)}`);
+      return each;
+    });
+  };
+  const plain = (node: Node, value: Quantity, what: string) => {
+    if (value.power !== 0)
+      fail(text, node.start, `${what} takes a plain number, and ${quote(node)} is ${dimension(value.power)}`);
+  };
+  const compute = (node: Node): Quantity => {
     switch (node.kind) {
       case "number":
-        return node.value;
+        if (node.unit === "deg") return { value: node.value, power: 0, loose: false };
+        if (node.unit) return { value: node.value * MM_PER[node.unit], power: 1, loose: false };
+        return { value: node.value, power: 0, loose: true };
       case "name":
         return parameter(node.name, node.start);
-      case "negate":
-        return -value(node.operand);
+      case "negate": {
+        const inner = value(node.operand);
+        return { ...inner, value: -inner.value };
+      }
       case "call": {
         const args = node.args.map(value);
         const many = MANY.get(node.name);
-        return many ? many(...args) : ONE.get(node.name)!(args[0]);
+        if (many) {
+          const same = unify(node.args, args, node.start, "compare");
+          return {
+            value: many(...same.map((each) => each.value)),
+            power: same[0].power,
+            loose: same.every((each) => each.loose),
+          };
+        }
+        const [arg] = args;
+        if (["sin", "cos", "tan", "asin", "acos", "atan"].includes(node.name)) {
+          plain(node.args[0], arg, node.name);
+          return { value: ONE.get(node.name)!(arg.value), power: 0, loose: false };
+        }
+        if (node.name === "sqrt") {
+          if (arg.power % 2) fail(text, node.start, `sqrt of ${dimension(arg.power)} has no unit`);
+          return { value: Math.sqrt(arg.value), power: arg.power / 2, loose: arg.loose };
+        }
+        return { value: ONE.get(node.name)!(arg.value), power: arg.power, loose: arg.loose };
       }
       case "operator": {
         const left = value(node.left);
         const right = value(node.right);
-        if ((node.operator === "/" || node.operator === "%") && right === 0)
+        if ((node.operator === "/" || node.operator === "%") && right.value === 0)
           fail(
             text,
             node.at,
-            node.right.kind === "number"
-              ? "Division by zero"
-              : `Division by zero: "${text.slice(node.right.start, node.right.end)}" comes to 0`,
+            node.right.kind === "number" ? "Division by zero" : `Division by zero: ${quote(node.right)} comes to 0`,
           );
-        if (node.operator === "+") return left + right;
-        if (node.operator === "-") return left - right;
-        if (node.operator === "*") return left * right;
-        if (node.operator === "/") return left / right;
-        if (node.operator === "%") return left % right;
-        return left ** right;
+        const loose = left.loose && right.loose;
+        if (node.operator === "+" || node.operator === "-" || node.operator === "%") {
+          const verb = node.operator === "+" ? "add" : node.operator === "-" ? "take" : "divide";
+          const [a, b] = unify([node.left, node.right], [left, right], node.at, verb);
+          const result =
+            node.operator === "+" ? a.value + b.value : node.operator === "-" ? a.value - b.value : a.value % b.value;
+          return { value: result, power: a.power, loose };
+        }
+        if (node.operator === "*") return { value: left.value * right.value, power: left.power + right.power, loose };
+        if (node.operator === "/") return { value: left.value / right.value, power: left.power - right.power, loose };
+        plain(node.right, right, "A power");
+        if (left.power && !Number.isInteger(right.value))
+          fail(
+            text,
+            node.at,
+            `${quote(node.left)} is ${dimension(left.power)}: it can only be raised to a whole power`,
+          );
+        return { value: left.value ** right.value, power: left.power * right.value, loose };
       }
     }
   };
   // Every step is checked, so the message points at the part that went wrong, not at the whole formula.
-  const value = (node: Node): number => {
+  const value = (node: Node): Quantity => {
     const result = compute(node);
-    if (!Number.isFinite(result))
-      fail(text, node.start, `"${text.slice(node.start, node.end)}" doesn't come to a finite number`);
+    looseOf.set(node, result.loose);
+    if (!Number.isFinite(result.value)) fail(text, node.start, `${quote(node)} doesn't come to a finite number`);
     return result;
   };
-  return value(parse(text));
+  const root = parse(text);
+  let result = value(root);
+  if (result.loose && want === "length") {
+    adopt(root, 1);
+    result = { value: result.value * MM_PER[bare], power: 1, loose: false };
+  }
+  const needs = want === "length" ? 1 : 0;
+  if (result.power !== needs)
+    throw new Error(`It needs ${dimension(needs)}, and "${text}" comes to ${dimension(result.power)}.`);
+  return result.value;
+}
+
+/**
+ * The value of a formula for a field: in mm for a length, else in degrees or as it is. A formula has numbers, which
+ * can carry a unit (mm, cm, in, deg or °), parameters' names, + - * / and % (the remainder, with the first number's
+ * sign), ^ for a power (taken right to left, and before a sign in front of it: -2^2 is -4), brackets, pi, and the
+ * functions min(a, b, …), max(…), abs, sqrt, round, floor and ceil (lengths to whole mm; halves away from zero), sin,
+ * cos and tan of an angle in degrees, and asin, acos and atan giving one. A bare number that's a length is in mm, as a
+ * kept formula's are (see withUnits). Throws, saying where, when it can't be worked out or its units don't fit.
+ */
+export function evaluateExpression(
+  text: string,
+  parameters: Readonly<Record<string, ParameterQuantity>>,
+  want: FieldKind,
+): number {
+  return work(text, parameters, want, "mm", () => undefined);
+}
+
+/**
+ * The formula as it's kept: each bare number that's a length given `unit`, the design's, written after it, as CAD
+ * keeps a typed 10 as 10 in. So it means the same size whatever units the design is shown in later. Throws as
+ * evaluateExpression does.
+ */
+export function withUnits(
+  text: string,
+  parameters: Readonly<Record<string, ParameterQuantity>>,
+  want: FieldKind,
+  unit: LengthUnit,
+): string {
+  const marked: Node[] = [];
+  work(text, parameters, want, unit, (node) => marked.push(node));
+  let out = text;
+  for (const node of marked.toSorted((a, b) => b.end - a.end))
+    out = `${out.slice(0, node.end)} ${unit}${out.slice(node.end)}`;
+  return out;
 }
 
 /** The parameter names a formula uses, each once, in the order they first appear; throws when it can't be read. */
@@ -323,7 +483,7 @@ export function expressionNames(text: string): string[] {
 }
 
 /** Throws unless `name` can be a parameter's name: letters, digits and _, not starting with a digit, at most 40
- *  characters, and not pi or a function's name. */
+ *  characters, and not pi, a function's name or a unit's. */
 export function checkParameterName(name: string): void {
   if (!name) throw new Error("A parameter needs a name.");
   if (name.length > PARAMETER_NAME_LENGTH)
@@ -337,7 +497,7 @@ export function checkParameterName(name: string): void {
         "and doesn't start with a digit, as wall_2.",
     );
   if (RESERVED.has(name)) {
-    const meaning = name === "pi" ? "the number pi" : `the function ${name}()`;
+    const meaning = name === "pi" ? "the number pi" : UNITS.has(name) ? `the unit ${name}` : `the function ${name}()`;
     throw new Error(`"${name}" can't be a parameter's name: in a formula it's ${meaning}.`);
   }
 }

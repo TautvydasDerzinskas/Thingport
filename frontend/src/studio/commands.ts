@@ -19,6 +19,7 @@ import {
   type FeatureType,
   type MeshFeature,
   type PartMeasure,
+  type Parameter,
   type PatternFeature,
   type PatternKind,
   rotationDegrees,
@@ -31,7 +32,16 @@ import {
   type Vec3,
 } from "./document";
 import { DEFAULT_FONT, fontName, STUDIO_FONT_IDS, STUDIO_FONTS } from "./text";
-import { checkParameterName, evaluateExpression, expressionNames } from "./expressions";
+import {
+  checkParameterName,
+  evaluateExpression,
+  expressionNames,
+  MM_PER,
+  PARAMETER_UNITS,
+  withUnits,
+  type FieldKind,
+  type ParameterQuantity,
+} from "./expressions";
 import { PATH_CHARACTERS } from "./svgPath";
 import { isoPitch, threadProblem } from "./threads";
 import type { TraceShape, Traced, TraceSettings } from "./trace";
@@ -731,15 +741,41 @@ function setField(doc: StudioDocument, feature: Feature, field: string, value: n
   updateFeature(doc, feature.id, changes);
 }
 
+/** Fields that take a plain number (a count, an angle in degrees, a scale); every other one is a length, in mm. */
+const PLAIN_FIELDS = new Set(["taper", "angle", "count", "grid_count"]);
+
+function fieldKind(field: string): FieldKind {
+  const transform = TRANSFORM_FIELD.exec(field);
+  if (transform) return transform[1] === "position" ? "length" : "number";
+  return PLAIN_FIELDS.has(field) ? "number" : "length";
+}
+
+/** The design's parameters as formulas see them: lengths in mm, the rest as they are. */
+function parameterQuantities(doc: StudioDocument): Record<string, ParameterQuantity> {
+  return Object.fromEntries(
+    (doc.parameters ?? []).map((parameter) => {
+      const unit = parameter.unit ?? "mm";
+      return [
+        parameter.name,
+        unit === "deg" || unit === "none"
+          ? { value: parameter.value, length: false }
+          : { value: parameter.value * MM_PER[unit], length: true },
+      ];
+    }),
+  );
+}
+
+const unitText = (unit: Parameter["unit"]) => (unit === "none" ? "" : unit === "deg" ? "°" : ` ${unit ?? "mm"}`);
+
 /** Works out every formula again from the design's parameters, in the order the features were made. */
 function applyExpressions(doc: StudioDocument): string[] {
-  const values = Object.fromEntries((doc.parameters ?? []).map((parameter) => [parameter.name, parameter.value]));
+  const values = parameterQuantities(doc);
   const changed: string[] = [];
   for (const feature of doc.features) {
     for (const [field, expression] of Object.entries(feature.expressions ?? {})) {
       let value: number;
       try {
-        value = Number(evaluateExpression(expression, values).toFixed(6)) + 0;
+        value = Number(evaluateExpression(expression, values, fieldKind(field)).toFixed(6)) + 0;
         if (fieldValue(feature, field) === value) continue;
         setField(doc, feature, field, value);
       } catch (error) {
@@ -1988,13 +2024,20 @@ export const STUDIO_COMMANDS = {
   set_parameter: command({
     title: "Set a parameter",
     description:
-      "Sets a design parameter, a named number such as wall = 2 that features' numbers can follow as formulas " +
-      "(set_expression), making it if it isn't there yet. Every formula that uses it is worked out again and its " +
-      "feature changed, checked as if the number were typed in: a value that would make one impossible (a negative " +
-      "width, say) is refused, saying which. Names are letters, digits and _, starting with a letter.",
+      "Sets a design parameter, a named number with a unit such as wall = 2 mm that features' numbers can follow as " +
+      "formulas (set_expression), making it if it isn't there yet. Every formula that uses it is worked out again and " +
+      "its feature changed, checked as if the number were typed in: a value that would make one impossible (a " +
+      "negative width, say) is refused, saying which. Names are letters, digits and _, starting with a letter.",
     args: {
       name: z.string().min(1).max(40).describe("e.g. wall, width, hole_d."),
-      value: parameterValue.describe("Its value, a plain number (in mm where it's a length)."),
+      value: parameterValue.describe("Its value, in its unit."),
+      unit: z
+        .enum(PARAMETER_UNITS as [string, ...string[]])
+        .optional()
+        .describe(
+          "mm, cm or in for a length, deg for an angle, none for a plain number such as a count. Default: the " +
+            "parameter's own unit, or mm for a new one.",
+        ),
     },
     apply(doc, args) {
       try {
@@ -2004,18 +2047,19 @@ export const STUDIO_COMMANDS = {
       }
       const parameters = (doc.parameters ??= []);
       const known = parameters.find((parameter) => parameter.name === args.name);
-      if (known) known.value = args.value;
+      const unit = (args.unit as Parameter["unit"]) ?? known?.unit ?? "mm";
+      if (known) Object.assign(known, { value: args.value, unit });
       else {
         if (parameters.length >= LIMITS.parameters)
           throw new CommandError(`A design holds up to ${LIMITS.parameters} parameters.`);
-        parameters.push({ name: args.name, value: args.value });
+        parameters.push({ name: args.name, value: args.value, unit });
       }
       const changed = applyExpressions(doc);
       return {
         document: doc,
         created: [],
         summary:
-          `${known ? "Set" : "Added"} ${args.name} = ${fmt(args.value)}` +
+          `${known ? "Set" : "Added"} ${args.name} = ${fmt(args.value)}${unitText(unit)}` +
           (changed.length ? `; changed ${changed.join(", ")}` : ""),
       };
     },
@@ -2041,6 +2085,19 @@ export const STUDIO_COMMANDS = {
     },
   }),
 
+  set_units: command({
+    title: "Set the design's units",
+    description:
+      "Sets the units the person sees and types the design's sizes in: mm, cm or in, as a CAD document's units. It " +
+      "changes no size, only how they read on the page; every tool, get_design included, stays in mm. Talk to the " +
+      "person in these units.",
+    args: { units: z.enum(["mm", "cm", "in"]).describe("mm, cm or in.") },
+    apply(doc, args) {
+      doc.units = args.units;
+      return { document: doc, created: [], summary: `Shown in ${args.units}` };
+    },
+  }),
+
   set_expression: command({
     title: "Make a number follow a formula",
     description:
@@ -2048,8 +2105,11 @@ export const STUDIO_COMMANDS = {
       "changing a parameter changes it. field is any number update_feature takes for that feature (width, radius, " +
       "distance, count...), its place, turn or scale as position.x, rotation.z, scale.y, or a sketch shape's size as " +
       "shapes.0.width, shapes.0.radius, shapes.0.center.u. Formulas take + - * / % ^, parentheses, min, max, abs, " +
-      "sqrt, round, floor, ceil, sin, cos, tan (degrees) and pi. A null expression lets the field go, keeping its " +
-      "number; so does giving the field a number by hand.",
+      "sqrt, round, floor, ceil, sin, cos, tan (degrees) and pi, and know units as CAD's do: a number can carry one " +
+      "(2 mm, 0.5 in, 1 cm, 45 deg), a length field takes only a length (angle, taper, count, rotation and scale take " +
+      "plain numbers), and a bare number added to a length, or a formula that's only a number, is a length in the " +
+      "design's units (get_design's display_units), kept with that unit written in. Write units to be sure. A null " +
+      "expression lets the field go, keeping its number; so does giving the field a number by hand.",
     args: {
       feature_id: featureId,
       field: z.string().min(1).max(60).describe("The field, as above."),
@@ -2073,12 +2133,20 @@ export const STUDIO_COMMANDS = {
       }
       if (missing.length)
         throw new CommandError(`There's no parameter called ${missing.join(" or ")}: add it with set_parameter first.`);
-      feature.expressions = { ...feature.expressions, [args.field]: args.expression };
+      let kept: string;
+      try {
+        kept = withUnits(args.expression, parameterQuantities(doc), fieldKind(args.field), doc.units ?? "mm");
+      } catch (error) {
+        throw new CommandError(
+          `${feature.id}'s ${args.field} can't be ${args.expression}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      feature.expressions = { ...feature.expressions, [args.field]: kept };
       applyExpressions(doc);
       return {
         document: doc,
         created: [],
-        summary: `${feature.id}'s ${args.field} follows ${args.expression}: it's ${fmt(fieldValue(feature, args.field)!)}`,
+        summary: `${feature.id}'s ${args.field} follows ${kept}: it's ${fmt(fieldValue(feature, args.field)!)}`,
       };
     },
   }),

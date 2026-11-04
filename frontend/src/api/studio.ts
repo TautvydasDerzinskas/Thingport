@@ -95,8 +95,15 @@ async function request<T>(path: string, method = "GET", payload?: unknown): Prom
 
 const design = (id: string) => `/studio/designs/${encodeURIComponent(id)}`;
 
+/** Where Studio's assistant shows: the bar under the view, or a panel beside it. */
+export type StudioPromptLayout = "bar" | "panel";
+/** A person's own Studio settings, kept on the account. */
+export type StudioSettings = { prompt_layout: StudioPromptLayout; units: "mm" | "cm" | "in" };
+
 export const studioApi = {
   status: () => request<{ enabled: boolean }>("/studio/status"),
+  settings: () => request<StudioSettings>("/studio/settings"),
+  updateSettings: (changes: Partial<StudioSettings>) => request<StudioSettings>("/studio/settings", "PATCH", changes),
   aiModels: () => request<StudioAiModels>("/studio/ai-models"),
   list: () => request<StudioDesignSummary[]>("/studio/designs"),
   library: (q: string, offset = 0) =>

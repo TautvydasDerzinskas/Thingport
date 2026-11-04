@@ -29,7 +29,11 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   bodies first (`measureBounds`) and the command places them by it. A design's `parameters` are named numbers, and a
   feature's `expressions` map a field (`width`, `position.x`, `shapes.0.radius`) to a formula over them
   (`expressions.ts`); `set_parameter` works every formula out again in tree order, and a command that sets a number by
-  hand drops its formula.
+  hand drops its formula. Formulas are unit-aware, as CAD's are: each parameter has a unit, a field takes a length or
+  a plain number (`fieldKind`), and `set_expression` keeps a formula with the design's unit written after each bare
+  number that's a length (`withUnits`), so it evaluates the same in mm whatever the design is shown in. A design's
+  `units` are only how it's shown and typed (`set_units`; the page's fields convert through `StudioUnitsContext`):
+  every size in the document and in every command stays in mm.
 - **`meshAsset.ts`** — that copy's file format. Copies live in `STORAGE/studio/u-<user>/<design>/<asset>.tpsm`; the page
   fetches them from `GET /api/studio/designs/:id/assets/:assetId` and caches them, as an asset never changes.
 - **`geometry.ts`** — the feature tree to solids with manifold, which the page loads from WebAssembly in a web worker

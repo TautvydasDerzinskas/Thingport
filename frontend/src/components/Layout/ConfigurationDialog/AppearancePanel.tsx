@@ -7,7 +7,7 @@ import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../../api/client";
-import { settingsApi, type CardPreview, type StudioPromptLayout } from "../../../api/settings";
+import { settingsApi, type CardPreview } from "../../../api/settings";
 import { matchLanguage, SUPPORTED_LANGUAGES } from "../../../constants/languages";
 import {
   ACCENT_COLORS,
@@ -28,8 +28,6 @@ import {
 import { setCachedAuthorPreviewEnabled, useAuthorPreviewEnabled } from "../../../hooks/useAuthorPreviewEnabled";
 import { useCardPreview } from "../../../hooks/useCardPreview";
 import { useHoverSlideshowEnabled } from "../../../hooks/useHoverSlideshowEnabled";
-import { useStudioEnabled } from "../../../hooks/useStudioEnabled";
-import { useStudioPromptLayout } from "../../../hooks/useStudioPromptLayout";
 import { accentSwatch, renderSwatch } from "../../../theme";
 import { useConfirm } from "../../ConfirmProvider";
 import ColorSwatches from "../../controls/ColorSwatches";
@@ -40,7 +38,6 @@ import { PanelHeader, SectionLabel } from "./parts";
 const THEMES: ThemeSelection[] = ["light", "dark", "system"];
 const DEFAULT_THEME: ThemeSelection = "system";
 const DEFAULT_CARD_PREVIEW: CardPreview = "images";
-const DEFAULT_PROMPT_LAYOUT: StudioPromptLayout = "bar";
 // More languages than this no longer fit a segmented control comfortably.
 const MAX_SEGMENTED_LANGUAGES = 4;
 
@@ -50,8 +47,8 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Language, theme, accent, render colour, model card pictures and hover slideshow, author preview, and where Studio's
- *  assistant shows, each applied as it's changed. */
+/** Language, theme, accent, render colour, model card pictures and hover slideshow, and author preview, each applied as
+ *  it's changed. Studio's own settings are in Studio. */
 export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }: Props) {
   const { t, i18n } = useTranslation("app");
   const authorPreview = useAuthorPreviewEnabled();
@@ -77,10 +74,6 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
   const [cardPreviewError, setCardPreviewError] = React.useState<string | null>(null);
   const [hoverSlideshow, setHoverSlideshow] = useHoverSlideshowEnabled();
   const [hoverSlideshowError, setHoverSlideshowError] = React.useState<string | null>(null);
-  // Only where Studio is switched on.
-  const studioEnabled = useStudioEnabled() === true;
-  const [promptLayout, setPromptLayout] = useStudioPromptLayout();
-  const [promptLayoutError, setPromptLayoutError] = React.useState<string | null>(null);
   const confirm = useConfirm();
 
   const changeTheme = async (next: ThemeSelection) => {
@@ -146,16 +139,6 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
     }
   };
 
-  const changePromptLayout = async (next: StudioPromptLayout) => {
-    setPromptLayoutError(null);
-    try {
-      await setPromptLayout(next);
-    } catch (err) {
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setPromptLayoutError(t("appearance.studioPrompt.failed"));
-    }
-  };
-
   const toggleAuthorPreview = async (enabled: boolean) => {
     setAuthorPreviewError(null);
     // Shown straight away; put back if the save fails.
@@ -177,8 +160,7 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
     accentAtDefault &&
     (cardPreview ?? DEFAULT_CARD_PREVIEW) === DEFAULT_CARD_PREVIEW &&
     hoverSlideshow &&
-    authorPreview &&
-    promptLayout === DEFAULT_PROMPT_LAYOUT;
+    authorPreview;
 
   const resetToDefaults = async () => {
     const confirmed = await confirm({
@@ -194,7 +176,6 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
     if (cardPreview !== null && cardPreview !== DEFAULT_CARD_PREVIEW) void changeCardPreview(DEFAULT_CARD_PREVIEW);
     if (!hoverSlideshow) void toggleHoverSlideshow(true);
     if (!authorPreview) void toggleAuthorPreview(true);
-    if (promptLayout !== DEFAULT_PROMPT_LAYOUT) void changePromptLayout(DEFAULT_PROMPT_LAYOUT);
   };
 
   return (
@@ -351,28 +332,6 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
             </Typography>
           )}
         </div>
-        {studioEnabled && (
-          <div>
-            <SectionLabel>
-              {t("appearance.studioPrompt.heading")}
-              <HelpTip text={t("appearance.studioPrompt.help")} />
-            </SectionLabel>
-            <Segmented
-              label={t("appearance.studioPrompt.heading")}
-              value={promptLayout}
-              onChange={(next) => void changePromptLayout(next)}
-              options={[
-                { value: "bar", label: t("appearance.studioPrompt.bar") },
-                { value: "panel", label: t("appearance.studioPrompt.panel") },
-              ]}
-            />
-            {promptLayoutError && (
-              <Typography variant="caption" color="error" sx={{ display: "block", mt: 1 }}>
-                {promptLayoutError}
-              </Typography>
-            )}
-          </div>
-        )}
       </Stack>
     </>
   );

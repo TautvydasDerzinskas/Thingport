@@ -2610,13 +2610,6 @@
         "light": "Gris claro (sin tinte)",
         "failed": "No se pudo guardar el color del render.",
         "help": "El color en que se dibujan los renders 3D generados y la vista previa 3D. Al elegir un color de acento cambia con él; elige aquí para cambiarlo por separado."
-      },
-      "studioPrompt": {
-        "heading": "Asistente de Studio",
-        "help": "Dónde muestra Preguntar a la IA de Studio su conversación. Barra: bajo la vista, una línea mientras la IA trabaja y el resto al abrirla. Panel lateral: junto a la vista, para que nada tape el modelo.",
-        "bar": "Barra",
-        "panel": "Panel lateral",
-        "failed": "No se pudo guardar dónde se muestra el asistente de Studio."
       }
     },
     "configuration": {
@@ -3692,7 +3685,10 @@
         "unused": "Sin usar",
         "uses_one": "Lo usa {{count}} campo",
         "uses_many": "Lo usan {{count}} campos",
-        "uses_other": "Lo usan {{count}} campos"
+        "uses_other": "Lo usan {{count}} campos",
+        "noUnit": "Ninguna",
+        "unit": "Unidad",
+        "unitOf": "Unidad de {{name}}"
       },
       "check": {
         "title": "Comprobar para imprimir",
@@ -3704,18 +3700,16 @@
         "minWall": "Pared mín.",
         "ready": "Listo para imprimir",
         "nothing": "No hay cuerpos visibles que comprobar.",
-        "size": "{{x}} × {{y}} × {{z}} mm",
-        "volume": "{{cm3}} cm³",
         "empty": "Vacío",
         "tooBig": "Demasiado grande para la cama",
         "offBed": "Fuera de la cama",
-        "floating": "Flota {{mm}} mm por encima",
-        "sunk": "Hundido {{mm}} mm",
+        "floating": "Flota {{value}} por encima",
+        "sunk": "Hundido {{value}}",
         "pieces_one": "{{count}} pieza suelta",
         "pieces_many": "{{count}} piezas sueltas",
         "pieces_other": "{{count}} piezas sueltas",
-        "overhang": "{{area}} mm² de voladizo",
-        "thin": "Paredes de hasta {{mm}} mm",
+        "overhang": "{{value}} de voladizo",
+        "thin": "Paredes de hasta {{value}}",
         "overlaps": "Se solapa con {{name}}",
         "open": "No es un sólido cerrado",
         "toBed": "A la cama",
@@ -3723,11 +3717,92 @@
         "measureNeedsTwo": "Añade dos cuerpos para medir entre ellos.",
         "first": "Desde",
         "second": "Hasta",
-        "gap": "Separación {{mm}} mm",
+        "gap": "Separación {{value}}",
         "touching": "Se tocan",
-        "overlap": "Solape {{cm3}} cm³",
+        "overlap": "Solape {{value}}",
         "far": "A más de 1 m",
         "toBedOf": "Poner {{name}} sobre la cama"
+      },
+      "status": {
+        "label": "Medidas del diseño",
+        "design": "Diseño",
+        "selection": "Selección",
+        "bodiesLabel": "Cuerpos",
+        "size": "Tamaño",
+        "volume": "Volumen",
+        "openMeshes": "Las mallas abiertas no tienen volumen, así que no se cuentan",
+        "units": "Unidades"
+      },
+      "measure": {
+        "title": "Medir",
+        "help": "Selecciona puntos, aristas, caras o cuerpos. Una selección muestra su propio tamaño: la posición de un punto, la longitud de una arista, el área de una cara, el tamaño y el volumen de un cuerpo. Dos muestran la distancia más corta entre ellos, cuánto es a lo largo de X, Y y Z, y el ángulo entre ellos. Las medidas están en las unidades de la barra de estado, y medir no cambia el diseño.",
+        "filter": "Qué seleccionar",
+        "clear": "Borrar",
+        "done": "Listo",
+        "again": "Haz clic de nuevo para empezar otra vez",
+        "kinds": {
+          "point": "Punto",
+          "edge": "Arista",
+          "face": "Cara",
+          "body": "Cuerpo"
+        },
+        "pickFirst": {
+          "point": "Haz clic en un punto para medirlo",
+          "edge": "Haz clic en una arista para medirla",
+          "face": "Haz clic en una cara para medirla",
+          "body": "Haz clic en un cuerpo para medirlo"
+        },
+        "pickSecond": {
+          "point": "Haz clic en un segundo punto para medir entre ambos",
+          "edge": "Haz clic en una segunda arista para medir entre ambas",
+          "face": "Haz clic en una segunda cara para medir entre ambas",
+          "body": "Haz clic en un segundo cuerpo para medir entre ambos"
+        },
+        "readings": {
+          "distance": "Distancia",
+          "length": "Longitud",
+          "gap": "Separación",
+          "area": "Área",
+          "volume": "Volumen",
+          "overlap": "Solape",
+          "angle": "Ángulo",
+          "size": "Tamaño",
+          "touching": "Se tocan",
+          "far": "A más de 1 m",
+          "openMesh": "Una malla abierta no tiene volumen",
+          "measuring": "Midiendo…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Ajustes de Studio",
+        "sections": {
+          "assistant": "Preguntar a la IA",
+          "units": "Unidades"
+        },
+        "assistantIntro": "Dónde muestra su conversación Preguntar a la IA.",
+        "layout": "Disposición",
+        "layoutHelp": "Barra: bajo la vista, una línea mientras la IA trabaja y el resto al abrirla. Panel lateral: junto a la vista, para que nada tape el modelo.",
+        "layouts": {
+          "bar": "Barra",
+          "panel": "Panel lateral"
+        },
+        "failed": "No se pudo guardar el ajuste.",
+        "unitsIntro": "En qué se muestran y escriben las medidas. Las medidas no cambian; solo cómo se leen.",
+        "designUnits": "Este diseño",
+        "designUnitsHelp": "Se guarda con el diseño y se deshace como cualquier cambio. Una medida escrita sin unidad está en estas; una con unidad, como 2 in o 5 mm, en esa.",
+        "newUnits": "Diseños nuevos",
+        "newUnitsHelp": "Las unidades con las que empieza un diseño nuevo. Se guardan en tu cuenta, así que valen en todos tus dispositivos.",
+        "unitNames": {
+          "mm": "Milímetros",
+          "cm": "Centímetros",
+          "in": "Pulgadas"
+        }
       }
     }
   },
@@ -4472,7 +4547,7 @@
         "images": "imágenes de vista previa"
       },
       "openInSlicer": "Abrir en {{slicer}}",
-      "openInStudio": "Abrir en Estudio",
+      "openInStudio": "Abrir en Thingport Studio",
       "openNormalizedInSlicer": "Abrir versión normalizada en {{slicer}}",
       "normalizedInfo": "Los archivos de MakerWorld son proyectos de Bambu Studio, que {{slicer}} a menudo abre sin sus colores ni sus ajustes de impresión. Esta opción abre una copia convertida que conserva los colores pintados, los colores del filamento, las placas y los ajustes del diseñador (paredes, altura de capa, relleno, soportes). Atención: los objetos con varias piezas pueden fusionarse en uno, se pierden los ajustes específicos por objeto y los cambios de color por capa, y debes elegir tu propio perfil de impresora. El archivo guardado no se modifica.",
       "normalizePreparing": "Preparando el archivo normalizado…",

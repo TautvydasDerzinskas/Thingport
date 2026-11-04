@@ -2683,13 +2683,6 @@
         "light": "Šviesiai pilka (be atspalvio)",
         "failed": "Nepavyko išsaugoti atvaizdo spalvos.",
         "help": "Spalva, kuria piešiami sugeneruoti 3D atvaizdai ir 3D peržiūra. Pasirinkus akcento spalvą, ji pasikeičia kartu; čia galite ją pakeisti atskirai."
-      },
-      "studioPrompt": {
-        "heading": "Studio asistentas",
-        "help": "Kur Studio „Klausti DI“ rodo pokalbį. Juosta: po vaizdu, viena eilutė, kol DI dirba, o visa kita – kai ją atidarote. Šoninis skydelis: šalia vaizdo, kad niekas neuždengtų modelio.",
-        "bar": "Juosta",
-        "panel": "Šoninis skydelis",
-        "failed": "Nepavyko išsaugoti, kur rodomas Studio asistentas."
       }
     },
     "configuration": {
@@ -3779,7 +3772,10 @@
         "unused": "Nenaudojamas",
         "uses_one": "Naudoja {{count}} laukelis",
         "uses_few": "Naudoja {{count}} laukeliai",
-        "uses_other": "Naudoja {{count}} laukelių"
+        "uses_other": "Naudoja {{count}} laukelių",
+        "noUnit": "Nėra",
+        "unit": "Vienetas",
+        "unitOf": "{{name}} vienetas"
       },
       "check": {
         "title": "Patikrinti spausdinimui",
@@ -3791,18 +3787,16 @@
         "minWall": "Min. sienelė",
         "ready": "Paruošta spausdinti",
         "nothing": "Nėra matomų kūnų, kuriuos būtų galima patikrinti.",
-        "size": "{{x}} × {{y}} × {{z}} mm",
-        "volume": "{{cm3}} cm³",
         "empty": "Tuščias",
         "tooBig": "Per didelis pagrindui",
         "offBed": "Už pagrindo ribų",
-        "floating": "Kybo {{mm}} mm aukščiau",
-        "sunk": "Įsmigęs {{mm}} mm",
+        "floating": "Kybo {{value}} aukščiau",
+        "sunk": "Įsmigęs {{value}}",
         "pieces_one": "{{count}} atskira dalis",
         "pieces_few": "{{count}} atskiros dalys",
         "pieces_other": "{{count}} atskirų dalių",
-        "overhang": "{{area}} mm² iškyšų",
-        "thin": "Sienelės iki {{mm}} mm",
+        "overhang": "{{value}} iškyšų",
+        "thin": "Sienelės iki {{value}}",
         "overlaps": "Kertasi su {{name}}",
         "open": "Ne uždaras kūnas",
         "toBed": "Ant pagrindo",
@@ -3810,11 +3804,92 @@
         "measureNeedsTwo": "Pridėkite du kūnus, kad galėtumėte išmatuoti atstumą tarp jų.",
         "first": "Nuo",
         "second": "Iki",
-        "gap": "Tarpas {{mm}} mm",
+        "gap": "Tarpas {{value}}",
         "touching": "Liečiasi",
-        "overlap": "Persidengia {{cm3}} cm³",
+        "overlap": "Persidengia {{value}}",
         "far": "Daugiau nei 1 m atstumu",
         "toBedOf": "Padėti {{name}} ant pagrindo"
+      },
+      "status": {
+        "label": "Dizaino matmenys",
+        "design": "Dizainas",
+        "selection": "Pasirinkta",
+        "bodiesLabel": "Kūnai",
+        "size": "Dydis",
+        "volume": "Tūris",
+        "openMeshes": "Atviri tinkleliai neturi tūrio, todėl neįskaičiuojami",
+        "units": "Vienetai"
+      },
+      "measure": {
+        "title": "Matuoti",
+        "help": "Pasirinkite taškus, briaunas, paviršius arba kūnus. Vienas pasirinkimas parodo jo paties dydį: taško padėtį, briaunos ilgį, paviršiaus plotą, kūno dydį ir tūrį. Du parodo trumpiausią atstumą tarp jų, kiek tai sudaro pagal X, Y ir Z, ir kampą tarp jų. Reikšmės rodomos būsenos juostos vienetais, o matavimas dizaino nekeičia.",
+        "filter": "Ką pasirinkti",
+        "clear": "Išvalyti",
+        "done": "Baigti",
+        "again": "Spustelėkite dar kartą, kad pradėtumėte iš naujo",
+        "kinds": {
+          "point": "Taškas",
+          "edge": "Briauna",
+          "face": "Paviršius",
+          "body": "Kūnas"
+        },
+        "pickFirst": {
+          "point": "Spustelėkite tašką, kurį norite matuoti",
+          "edge": "Spustelėkite briauną, kurią norite matuoti",
+          "face": "Spustelėkite paviršių, kurį norite matuoti",
+          "body": "Spustelėkite kūną, kurį norite matuoti"
+        },
+        "pickSecond": {
+          "point": "Spustelėkite antrą tašką, kad išmatuotumėte atstumą tarp jų",
+          "edge": "Spustelėkite antrą briauną, kad išmatuotumėte atstumą tarp jų",
+          "face": "Spustelėkite antrą paviršių, kad išmatuotumėte atstumą tarp jų",
+          "body": "Spustelėkite antrą kūną, kad išmatuotumėte atstumą tarp jų"
+        },
+        "readings": {
+          "distance": "Atstumas",
+          "length": "Ilgis",
+          "gap": "Tarpas",
+          "area": "Plotas",
+          "volume": "Tūris",
+          "overlap": "Persidengimas",
+          "angle": "Kampas",
+          "size": "Dydis",
+          "touching": "Liečiasi",
+          "far": "Daugiau nei 1 m atstumu",
+          "openMesh": "Atviras tinklelis neturi tūrio",
+          "measuring": "Matuojama…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Studijos nustatymai",
+        "sections": {
+          "assistant": "Klausti DI",
+          "units": "Vienetai"
+        },
+        "assistantIntro": "Kur „Klausti DI“ rodo pokalbį.",
+        "layout": "Išdėstymas",
+        "layoutHelp": "Juosta: po vaizdu, viena eilutė, kol DI dirba, likusi dalis atsidaro paspaudus. Šoninis skydelis: šalia vaizdo, kad niekas neuždengtų modelio.",
+        "layouts": {
+          "bar": "Juosta",
+          "panel": "Šoninis skydelis"
+        },
+        "failed": "Nepavyko išsaugoti nustatymo.",
+        "unitsIntro": "Kokiais vienetais rodomi ir įvedami dydžiai. Patys dydžiai nesikeičia, keičiasi tik tai, kaip jie užrašomi.",
+        "designUnits": "Šis dizainas",
+        "designUnitsHelp": "Išsaugoma su dizainu ir atšaukiama kaip bet kuris pakeitimas. Dydis be vieneto įvedamas šiais vienetais; su vienetu, pvz., 2 in ar 5 mm, – tuo vienetu.",
+        "newUnits": "Nauji dizainai",
+        "newUnitsHelp": "Kokiais vienetais pradedamas naujas dizainas. Saugoma jūsų paskyroje, todėl galioja visuose įrenginiuose.",
+        "unitNames": {
+          "mm": "Milimetrai",
+          "cm": "Centimetrai",
+          "in": "Coliai"
+        }
       }
     }
   },
@@ -4562,7 +4637,7 @@
         "images": "peržiūros nuotraukos"
       },
       "openInSlicer": "Atverti su {{slicer}}",
-      "openInStudio": "Atidaryti Studijoje",
+      "openInStudio": "Atidaryti „Thingport Studio“",
       "openNormalizedInSlicer": "Atverti normalizuotą su {{slicer}}",
       "normalizedInfo": "MakerWorld failai yra Bambu Studio projektai, kuriuos {{slicer}} dažnai atveria be spalvų ar spausdinimo nustatymų. Ši parinktis atveria konvertuotą kopiją, kurioje išlieka nudažytos spalvos, gijų spalvos, plokštės ir autoriaus nustatymai (sienelės, sluoksnio aukštis, užpildas, atramos). Atkreipkite dėmesį: kelių dalių objektai gali būti sujungti į vieną, atskirų objektų nustatymai ir spalvų keitimai tarp sluoksnių pašalinami, o spausdintuvo profilį pasirenkate patys. Saugomas failas nekeičiamas.",
       "normalizePreparing": "Ruošiamas normalizuotas failas…",

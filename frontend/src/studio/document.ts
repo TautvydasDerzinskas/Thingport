@@ -13,6 +13,7 @@ import { applyMatrix, cross, frameMatrix, normalize, type Vec2, type Vec3 } from
 import { treatCorners } from "./shapes2d";
 import { textContours, type TextShape } from "./text";
 import { pathContours } from "./svgPath";
+import type { LengthUnit, ParameterUnit } from "./expressions";
 import { traceContours, type TraceShape } from "./trace";
 export { applyMatrix };
 
@@ -241,10 +242,14 @@ export type Feature = BodyFeature | SketchFeature;
 export type FeatureType = Feature["type"];
 
 /** A named number a design's formulas use, such as wall = 2. */
-export type Parameter = { name: string; value: number };
+/** A named number formulas use: its value in its own unit (mm when it has none set, from before parameters had one). */
+export type Parameter = { name: string; value: number; unit?: ParameterUnit };
 
 export type StudioDocument = {
   version: typeof DOCUMENT_VERSION;
+  /** The units the design is shown and typed in, as a CAD document's are; mm when absent. Only how sizes read: every
+   *  size in the document, and in every command, is in mm. */
+  units?: LengthUnit;
   /** Absent in a design that never had one. */
   parameters?: Parameter[];
   /** In the order they were made, so a feature only ever uses ones before it. */

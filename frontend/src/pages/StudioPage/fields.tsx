@@ -13,18 +13,22 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import Segmented from "../../components/controls/Segmented";
 import FontField from "../../components/customizer/FontField";
 import type { EdgeTreatment, Vec3 } from "../../studio/document";
+import { MM_PER } from "../../studio/expressions";
 import { fontName, STUDIO_FONTS, type StudioFontId } from "../../studio/text";
+import { FIELD_DIGITS, typedLength, useDesignUnits } from "./units";
 
 // The fields Studio's panels share: a number kept on Enter or leaving it (each change is a command), one that takes
 // every valid number as it's typed (a tool's preview follows it), a text's font and a sweep's path.
 
-const show = (value: number) => String(Number(value.toFixed(3)));
-const parse = (text: string) => Number(text.replace(",", "."));
+const parsePlain = (text: string) => (/^\s*$/.test(text) ? Number.NaN : Number(text.replace(",", ".")));
 
 /**
  * Kept on Enter or on leaving the field; Escape, or something that isn't a number, puts it back. Where `onExpression`
  * is given, "=" and a formula over the design's parameters makes the number follow it: the field's name then has ƒx
  * after it, and the field shows the formula while it's being edited.
+ *
+ * A length (`unit` "mm", as every caller gives one) shows and takes the design's units, as CAD's fields do, its value
+ * staying in mm: a bare number is in the design's units, and one typed with a unit (2 in, 5 mm, 3") is in that.
  */
 export function NumberField({
   label,
@@ -46,13 +50,19 @@ export function NumberField({
   onExpression?: (expression: string) => void;
 }) {
   const { t } = useTranslation("app");
+  const units = useDesignUnits();
+  const length = unit === "mm";
+  const shownUnit = length ? units : unit;
+  const show = (mm: number) =>
+    length ? String(Number((mm / MM_PER[units]).toFixed(FIELD_DIGITS[units])) + 0) : String(Number(mm.toFixed(3)) + 0);
+  const parse = (typed: string) => (length ? typedLength(typed, units) : parsePlain(typed));
   const [text, setText] = useState(show(value));
   const [editing, setEditing] = useState(false);
   useEffect(() => {
     // While typing a live field, "1." is still 1: only an outside change rewrites it.
-    if (!editing && parse(text) !== value) setText(show(value));
+    if (!editing) setText(show(value));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }, [value, units]);
   const formula = onExpression !== undefined && text.trim().startsWith("=");
   const commit = () => {
     setEditing(false);
@@ -61,9 +71,12 @@ export function NumberField({
       if (typed && typed !== expression) onExpression!(typed);
       return setText(show(value));
     }
+    // Left as shown, it's left alone: shown rounded in inches, it would come back a hair off.
+    if (text.trim() === show(value)) return;
     const next = parse(text);
-    if (text.trim() === "" || !Number.isFinite(next)) return setText(show(value));
+    if (!Number.isFinite(next)) return setText(show(value));
     if (next !== value) onCommit(next);
+    setText(show(next));
   };
   const follows = expression !== undefined && !editing;
   // A narrow field has no room for a mark beside its number: ƒx goes by its name, the formula in a tooltip.
@@ -91,13 +104,7 @@ export function NumberField({
         onChange={(event) => {
           setText(event.target.value);
           const next = parse(event.target.value);
-          if (
-            live &&
-            !event.target.value.trim().startsWith("=") &&
-            event.target.value.trim() !== "" &&
-            Number.isFinite(next) &&
-            next !== value
-          )
+          if (live && !event.target.value.trim().startsWith("=") && Number.isFinite(next) && next !== value)
             onCommit(next);
         }}
         onBlur={commit}
@@ -111,11 +118,11 @@ export function NumberField({
         slotProps={{
           htmlInput: {
             inputMode: onExpression ? "text" : "decimal",
-            "aria-label": `${unit ? `${label} (${unit})` : label}${expression !== undefined ? `, = ${expression}` : ""}`,
+            "aria-label": `${shownUnit ? `${label} (${shownUnit})` : label}${expression !== undefined ? `, = ${expression}` : ""}`,
           },
           input: {
-            endAdornment: unit ? <InputAdornment position="end">{unit}</InputAdornment> : undefined,
-            sx: unit ? { pr: 1 } : undefined,
+            endAdornment: shownUnit ? <InputAdornment position="end">{shownUnit}</InputAdornment> : undefined,
+            sx: shownUnit ? { pr: 1 } : undefined,
           },
           inputLabel: { shrink: true },
         }}
@@ -197,6 +204,7 @@ export function PathPointsField({
               key={axis}
               live={live}
               label={axis}
+              unit="mm"
               value={point[i]}
               onCommit={(value) =>
                 onChange(

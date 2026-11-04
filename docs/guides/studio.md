@@ -52,7 +52,9 @@ A design is a list of features, built in order:
   height straight away, or only the sketch, to extrude, revolve or cut with. Its size, threshold and detail can be
   changed later in the properties panel, which traces it again.
 - **Library models**: **Open…** in the design's menu has a **Library** tab with your models' STL, 3MF, STEP, OBJ and
-  GLB files. **Open** makes a new design from one; **Insert** brings it into the design that's open. It comes in at its
+  GLB files. **Open** makes a new design from one; **Insert** brings it into the design that's open. **Open in
+  Thingport Studio**, on a model's page and on its right-click menu in any grid of models, does the same from there,
+  asking which file when it has several. It comes in at its
   own size, centred on the bed, and the design keeps its own copy, so changing the model later doesn't change the
   design. A 3MF brings its first plate. A mesh with gaps can be moved, scaled and exported, but not combined. A model
   of several loose pieces comes in as one body, and Studio says how many: **Separate** makes each its own.
@@ -63,10 +65,24 @@ A design is a list of features, built in order:
 Designs stay editable: change a box's width, or a sketch's circle, and everything built from it follows. The bodies a
 boolean was made from are folded under it in the feature list, and deleting the boolean gives them back.
 
-**Parameters** in the design's menu names the numbers a design hangs on, such as `wall = 2`. Type `=` and a formula in
-any size field (`=wall * 2 + 10`) and the field follows it, marked **ƒx**; change the parameter and every field that
-follows it changes too. A formula takes `+ - * / % ^`, brackets, `pi` and functions such as `min`, `max`, `round` and
-`sqrt`. Typing a plain number into the field lets its formula go.
+**Parameters** in the design's menu names the numbers a design hangs on, each with its unit as in other CAD: a length
+(mm, cm or in, such as `wall = 2 mm`), an angle (°), or none, for a count. Type `=` and a formula in any size field
+(`=wall * 2 + 10`) and the field follows it, marked **ƒx**; change the parameter and every field that follows it
+changes too. A formula takes `+ - * / % ^`, brackets, `pi`, functions such as `min`, `max`, `round` and `sqrt`, and
+numbers with units (`2 in + 5 mm`, `45°`). A length field takes only a length and a count only a plain number, so
+`wall * wall` in a width is refused. A bare number added to a length is in the design's units, and is kept with that
+unit written in (`wall + 1` in an inch design is kept as `wall + 1 in`), so switching units never changes a size.
+Typing a plain number into the field lets its formula go.
+
+## Units
+
+As in other CAD, each design has its own units, **mm**, **cm** or **in**, switched in the status bar along the bottom
+or in **Studio settings** (the gear at the top right), and undone like any change. Every size field shows and takes
+them: a bare number is in the design's units, and one typed with its own (`2 in`, `5 mm`, `3"`) is converted. The
+status bar, Measure and the print check read out in them, sketches snap to whole millimetres or sixteenths of an inch,
+and the bed's grid is in centimetres or half inches. Switching units changes no size: a design is kept in millimetres,
+and so are its commands and what an assistant reads, which then talks to you in your units. **Studio settings** also
+sets the units new designs start in, kept on your account.
 
 ## Changing a body
 
@@ -115,7 +131,18 @@ values in the panel on the right. Units are millimetres, and Z is up, as on a pr
 | <kbd>⌘</kbd><kbd>Z</kbd> / <kbd>⇧</kbd><kbd>⌘</kbd><kbd>Z</kbd> | Undo / redo (Ctrl on Windows)                                                      |
 | <kbd>Delete</kbd>                                               | Delete what's selected                                                             |
 | <kbd>F</kbd>                                                    | Fit the view to the design                                                         |
+| <kbd>I</kbd>                                                    | Measure                                                                            |
 | <kbd>Esc</kbd>                                                  | Drop a shape half drawn or a selection box, finish the sketch, clear the selection |
+
+While editing, the **status bar** along the bottom gives how many bodies there are, how big they are together and how
+much they hold: the selected bodies, or the whole design when nothing is selected. Its **mm / cm / in** switch sets
+the design's [units](#units).
+
+**Measure** (the ruler in the toolbar, or <kbd>I</kbd>) works as in other CAD: choose what to pick (points, edges,
+faces or bodies) and click. One pick shows its own size: a point's position, an edge's length, a face's area, a body's
+size and volume. A second shows the shortest distance between them, drawn as a dashed line, how far apart that is
+along X, Y and Z, and the angle between edges or faces; between two bodies, the gap or how much they overlap. A third
+click starts again. Measuring changes nothing in the design.
 
 **Check for printing** (the checklist at the right of the toolbar) checks each visible body where it is placed: on the
 bed and within it, in one piece, not overlapping another, no overhang that needs support and no wall too thin to print,
@@ -160,5 +187,5 @@ that's open, and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> start
 
 The box stays small so you can watch the design change: while the AI works, one line says the step it's on, and then
 its answer; the conversation opens from the box's header. The view keeps the design above the box. If you'd rather
-read the conversation as it goes, pick **Side panel** under **Studio assistant** in **Configuration → Appearance**: it
-then shows beside the view, and the box keeps only the prompt.
+read the conversation as it goes, pick **Side panel** under **Ask AI** in **Studio settings** (the gear at the top
+right of Studio): it then shows beside the view, and the box keeps only the prompt.

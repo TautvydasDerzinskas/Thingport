@@ -16,13 +16,21 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import HelpTip from "../../components/HelpTip";
 import type { StudioDocument } from "../../studio/document";
-import { checkParameterName, expressionNames, PARAMETER_NAME_LENGTH } from "../../studio/expressions";
+import Segmented from "../../components/controls/Segmented";
+import {
+  checkParameterName,
+  expressionNames,
+  PARAMETER_NAME_LENGTH,
+  PARAMETER_UNITS,
+  type ParameterUnit,
+} from "../../studio/expressions";
 import { NumberField } from "./fields";
 import { featureLabel } from "./labels";
 import type { RunCommand } from "./useStudioDesign";
+import { useDesignUnits } from "./units";
 
-// The design's parameters: named numbers its sizes can follow as formulas. Changing one here works every formula that
-// uses it out again, as set_parameter does for an assistant.
+// The design's parameters: named numbers its sizes can follow as formulas, each with its unit as in CAD (a length, an
+// angle or none). Changing one here works every formula that uses it out again, as set_parameter does for an assistant.
 
 const appear = keyframes`from { opacity: 0; transform: translateY(-4px); }`;
 
@@ -35,9 +43,17 @@ type Props = {
 
 export default function ParametersDialog({ open, doc, run, onClose }: Props) {
   const { t } = useTranslation("app");
+  const designUnits = useDesignUnits();
   const [name, setName] = useState("");
   const [value, setValue] = useState("");
+  // A new parameter starts in the design's units.
+  const [unit, setUnit] = useState<ParameterUnit | null>(null);
+  const newUnit = unit ?? designUnits;
   const parameters = doc?.parameters ?? [];
+  const unitOptions = PARAMETER_UNITS.map((each) => ({
+    value: each,
+    label: each === "deg" ? "°" : each === "none" ? t("studio.parameters.noUnit") : each,
+  }));
 
   // Which fields follow each parameter, as "Box 1 width".
   const uses = useMemo(() => {
@@ -69,13 +85,14 @@ export default function ParametersDialog({ open, doc, run, onClose }: Props) {
   const canAdd = Boolean(name) && !nameProblem && value.trim() !== "" && Number.isFinite(typed);
   const add = async () => {
     if (!canAdd) return;
-    if ((await run("set_parameter", { name, value: typed })) === null) return;
+    if ((await run("set_parameter", { name, value: typed, unit: newUnit })) === null) return;
     setName("");
     setValue("");
+    setUnit(null);
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
         {t("studio.parameters.title")}
         <HelpTip text={t("studio.parameters.help")} />
@@ -110,13 +127,22 @@ export default function ParametersDialog({ open, doc, run, onClose }: Props) {
                       </Typography>
                     </Tooltip>
                   </Box>
-                  <Box sx={{ width: 120 }}>
+                  <Box sx={{ width: 110 }}>
                     <NumberField
                       label={t("studio.parameters.value")}
                       value={parameter.value}
                       onCommit={(next) => void run("set_parameter", { name: parameter.name, value: next })}
                     />
                   </Box>
+                  {/* The number stays as it is: switching mm to in makes it that many inches, as retyping it would. */}
+                  <Segmented
+                    label={t("studio.parameters.unitOf", { name: parameter.name })}
+                    value={parameter.unit ?? "mm"}
+                    options={unitOptions}
+                    onChange={(next) =>
+                      void run("set_parameter", { name: parameter.name, value: parameter.value, unit: next })
+                    }
+                  />
                   {/* One a formula uses can't go: what uses it is said on hover. */}
                   <Tooltip title={usedBy.length ? t("studio.parameters.inUse") : deleteLabel}>
                     <span>
@@ -163,8 +189,9 @@ export default function ParametersDialog({ open, doc, run, onClose }: Props) {
             onChange={(event) => setValue(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && void add()}
             slotProps={{ htmlInput: { inputMode: "decimal" }, inputLabel: { shrink: true } }}
-            sx={{ width: 120, "& input": { py: 0.75, fontSize: "0.85rem" } }}
+            sx={{ width: 110, "& input": { py: 0.75, fontSize: "0.85rem" } }}
           />
+          <Segmented label={t("studio.parameters.unit")} value={newUnit} options={unitOptions} onChange={setUnit} />
           <Tooltip title={t("studio.parameters.add")}>
             <span>
               <IconButton aria-label={t("studio.parameters.add")} disabled={!canAdd} onClick={() => void add()}>

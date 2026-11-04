@@ -90,6 +90,8 @@ model User {
   cardPreview              String?
   // Where Studio's assistant shows its conversation, one of STUDIO_PROMPT_LAYOUTS; null means "bar".
   studioPromptLayout       String?
+  // The units a new Studio design starts in, one of STUDIO_UNITS; null means "mm".
+  studioUnits              String?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.
   weatherLocation          Json?
   authorPreviewEnabled     Boolean              @default(true)

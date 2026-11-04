@@ -2576,13 +2576,6 @@
         "light": "Light grey (no tint)",
         "failed": "Couldn't save the render color.",
         "help": "The color generated 3D renders and the 3D preview are drawn in. Picking an accent sets it to match; pick here to change it separately."
-      },
-      "studioPrompt": {
-        "heading": "Studio assistant",
-        "help": "Where Studio's Ask AI shows its conversation. Bar: under the view, one line while the AI works, the rest when you open it. Side panel: beside the view, so nothing covers the model.",
-        "bar": "Bar",
-        "panel": "Side panel",
-        "failed": "Couldn't save where the Studio assistant shows."
       }
     },
     "configuration": {
@@ -3642,7 +3635,10 @@
         "badName": "Letters, digits and _, not starting with a digit",
         "unused": "Not used",
         "uses_one": "Used by {{count}} field",
-        "uses_other": "Used by {{count}} fields"
+        "uses_other": "Used by {{count}} fields",
+        "noUnit": "None",
+        "unit": "Unit",
+        "unitOf": "{{name}}'s unit"
       },
       "check": {
         "title": "Check for printing",
@@ -3654,17 +3650,15 @@
         "minWall": "Min wall",
         "ready": "Ready to print",
         "nothing": "There are no visible bodies to check.",
-        "size": "{{x}} × {{y}} × {{z}} mm",
-        "volume": "{{cm3}} cm³",
         "empty": "Empty",
         "tooBig": "Too big for the bed",
         "offBed": "Off the bed",
-        "floating": "Floating {{mm}} mm up",
-        "sunk": "Sunk {{mm}} mm",
+        "floating": "Floating {{value}} up",
+        "sunk": "Sunk {{value}}",
         "pieces_one": "{{count}} loose piece",
         "pieces_other": "{{count}} loose pieces",
-        "overhang": "{{area}} mm² overhang",
-        "thin": "Walls down to {{mm}} mm",
+        "overhang": "{{value}} overhang",
+        "thin": "Walls down to {{value}}",
         "overlaps": "Overlaps {{name}}",
         "open": "Not a closed solid",
         "toBed": "Onto bed",
@@ -3672,11 +3666,92 @@
         "measureNeedsTwo": "Add two bodies to measure between them.",
         "first": "From",
         "second": "To",
-        "gap": "Gap {{mm}} mm",
+        "gap": "Gap {{value}}",
         "touching": "Touching",
-        "overlap": "Overlap {{cm3}} cm³",
+        "overlap": "Overlap {{value}}",
         "far": "Over 1 m apart",
         "toBedOf": "Put {{name}} on the bed"
+      },
+      "status": {
+        "label": "Design measurements",
+        "design": "Design",
+        "selection": "Selection",
+        "bodiesLabel": "Bodies",
+        "size": "Size",
+        "volume": "Volume",
+        "openMeshes": "Open meshes hold no volume, so they're left out",
+        "units": "Units"
+      },
+      "measure": {
+        "title": "Measure",
+        "help": "Pick points, edges, faces or bodies. One pick shows its own size: a point's position, an edge's length, a face's area, a body's size and volume. Two show the shortest distance between them, how far apart that is along X, Y and Z, and the angle between them. Readings are in the status bar's units, and measuring doesn't change the design.",
+        "filter": "What to pick",
+        "clear": "Clear",
+        "done": "Done",
+        "again": "Click again to start over",
+        "kinds": {
+          "point": "Point",
+          "edge": "Edge",
+          "face": "Face",
+          "body": "Body"
+        },
+        "pickFirst": {
+          "point": "Click a point to measure",
+          "edge": "Click an edge to measure",
+          "face": "Click a face to measure",
+          "body": "Click a body to measure"
+        },
+        "pickSecond": {
+          "point": "Click a second point to measure between them",
+          "edge": "Click a second edge to measure between them",
+          "face": "Click a second face to measure between them",
+          "body": "Click a second body to measure between them"
+        },
+        "readings": {
+          "distance": "Distance",
+          "length": "Length",
+          "gap": "Gap",
+          "area": "Area",
+          "volume": "Volume",
+          "overlap": "Overlap",
+          "angle": "Angle",
+          "size": "Size",
+          "touching": "Touching",
+          "far": "Over 1 m apart",
+          "openMesh": "An open mesh holds no volume",
+          "measuring": "Measuring…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Studio settings",
+        "sections": {
+          "assistant": "Ask AI",
+          "units": "Units"
+        },
+        "assistantIntro": "Where Ask AI shows its conversation.",
+        "layout": "Layout",
+        "layoutHelp": "Bar: under the view, one line while the AI works, the rest when you open it. Side panel: beside the view, so nothing covers the model.",
+        "layouts": {
+          "bar": "Bar",
+          "panel": "Side panel"
+        },
+        "failed": "Couldn't save the setting.",
+        "unitsIntro": "What sizes are shown and typed in. Sizes stay exactly as they are; only how they read changes.",
+        "designUnits": "This design",
+        "designUnitsHelp": "Saved with the design and undone like any change. A size typed without a unit is in these; one typed with a unit, such as 2 in or 5 mm, is in that.",
+        "newUnits": "New designs",
+        "newUnitsHelp": "The units a new design starts in. Kept on your account, so every device has them.",
+        "unitNames": {
+          "mm": "Millimetres",
+          "cm": "Centimetres",
+          "in": "Inches"
+        }
       }
     }
   },
@@ -4421,7 +4496,7 @@
         "images": "preview images"
       },
       "openInSlicer": "Open in {{slicer}}",
-      "openInStudio": "Open in Studio",
+      "openInStudio": "Open in Thingport Studio",
       "openNormalizedInSlicer": "Open normalized in {{slicer}}",
       "normalizedInfo": "MakerWorld files are Bambu Studio projects, which {{slicer}} often opens without their colors or print settings. This opens a converted copy that keeps painted colors, filament colors, plates and the designer's settings (walls, layer height, infill, supports). Heads up: multi-part objects may be merged into one, per-object overrides and layer color changes are dropped, and you pick your own printer profile. The stored file isn't changed.",
       "normalizePreparing": "Preparing normalized file…",

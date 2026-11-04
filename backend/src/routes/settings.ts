@@ -118,11 +118,6 @@ import { getDisabledProviders, PROVIDERS, setProviderEnabled } from "../services
 import { type AuthSlot, MANIFESTS, type ProviderId } from "../providers/index.generated";
 import { PROVIDERS as PROVIDER_BACKENDS } from "../providers/registry";
 import { CARD_PREVIEWS, getCardPreview, setCardPreview } from "../services/cardPreviewService";
-import {
-  getStudioPromptLayout,
-  setStudioPromptLayout,
-  STUDIO_PROMPT_LAYOUTS,
-} from "../services/studioPromptLayoutService";
 import { createLog } from "../services/auditLog";
 import { testFlaresolverr } from "../services/flaresolverr";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "../services/meshQuality";
@@ -899,22 +894,6 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(cardPreviewSchema, req.body);
     res.json({ preview: await setCardPreview(req.userId!, body.preview) });
-  }),
-);
-
-router.get(
-  "/settings/studio-prompt-layout",
-  asyncHandler(async (req, res) => {
-    res.json({ layout: await getStudioPromptLayout(req.userId!) });
-  }),
-);
-
-const studioPromptLayoutSchema = z.object({ layout: z.enum(STUDIO_PROMPT_LAYOUTS) });
-router.patch(
-  "/settings/studio-prompt-layout",
-  asyncHandler(async (req, res) => {
-    const body = parseBody(studioPromptLayoutSchema, req.body);
-    res.json({ layout: await setStudioPromptLayout(req.userId!, body.layout) });
   }),
 );
 

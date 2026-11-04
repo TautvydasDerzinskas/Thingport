@@ -26,7 +26,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import StopRoundedIcon from "@mui/icons-material/StopRounded";
 import TuneIcon from "@mui/icons-material/Tune";
-import type { StudioPromptLayout } from "../../api/settings";
+import type { StudioPromptLayout } from "../../api/studio";
 import { studioApi, type StudioPicture } from "../../api/studio";
 import { newLocalId } from "../../utils/localId";
 import HelpTip from "../../components/HelpTip";

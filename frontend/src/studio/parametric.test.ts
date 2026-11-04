@@ -30,7 +30,7 @@ describe("Studio parameters", () => {
     let box = featureById(doc, "box-1");
     expect(box?.type === "box" && [box.width, box.transform.position[2]]).toEqual([25, 1]);
     const changed = applyCommand(doc, "set_parameter", { name: "wall", value: 3 });
-    expect(changed.summary).toBe("Set wall = 3; changed box-1 width, box-1 position.z");
+    expect(changed.summary).toBe("Set wall = 3 mm; changed box-1 width, box-1 position.z");
     box = featureById(changed.document, "box-1");
     expect(box?.type === "box" && [box.width, box.transform.position[2]]).toEqual([35, 1.5]);
   });
@@ -40,7 +40,7 @@ describe("Studio parameters", () => {
     doc = run(doc, "add_box", { width: 10, depth: 10, height: 10 });
     doc = run(doc, "set_expression", { feature_id: "box-1", field: "height", expression: "size - 5" });
     expect(() => run(doc, "set_parameter", { name: "size", value: 3 })).toThrow(
-      /box-1's height \(= size - 5\) can't follow/,
+      /box-1's height \(= size - 5 mm\) can't follow/,
     );
     expect(() => run(doc, "set_expression", { feature_id: "box-1", field: "width", expression: "wal * 2" })).toThrow(
       /no parameter called wal/,
@@ -50,6 +50,40 @@ describe("Studio parameters", () => {
     );
     expect(() => run(doc, "delete_parameter", { name: "size" })).toThrow(/size is used by box-1 height/);
     expect(() => run(doc, "set_parameter", { name: "2nd", value: 1 })).toThrow(CommandError);
+  });
+
+  it("keeps sizes in mm, shown in the design's units, and formulas in the units they were typed in", () => {
+    let doc = run(emptyDocument(), "add_box", { width: 25.4, depth: 10, height: 10 });
+    doc = run(doc, "set_units", { units: "in" });
+    expect(doc.units).toBe("in");
+    // Shown in inches, the box is the same box.
+    const box = () => featureById(doc, "box-1");
+    expect((box() as { width: number }).width).toBe(25.4);
+    // A bare number typed in an inch design is inches, and is kept as such.
+    doc = run(doc, "set_parameter", { name: "gap", value: 0.5, unit: "in" });
+    doc = run(doc, "set_parameter", { name: "n", value: 3, unit: "none" });
+    doc = run(doc, "set_expression", { feature_id: "box-1", field: "width", expression: "gap * n + 1" });
+    expect(box()?.expressions).toEqual({ width: "gap * n + 1 in" });
+    expect((box() as { width: number }).width).toBeCloseTo(25.4 * 2.5);
+    // Back in mm, nothing moves.
+    doc = run(doc, "set_units", { units: "mm" });
+    doc = run(doc, "set_parameter", { name: "n", value: 3 });
+    expect((box() as { width: number }).width).toBeCloseTo(25.4 * 2.5);
+    expect(doc.parameters).toEqual([
+      { name: "gap", value: 0.5, unit: "in" },
+      { name: "n", value: 3, unit: "none" },
+    ]);
+    // A count takes a plain number, a length a length.
+    doc = run(doc, "add_box", { width: 5, depth: 5, height: 5 });
+    doc = run(doc, "linear_pattern", { feature_id: "box-2", count: 2, spacing: 10 });
+    doc = run(doc, "set_expression", { feature_id: "pattern-3", field: "count", expression: "n + 1" });
+    expect(featureById(doc, "pattern-3")).toMatchObject({ count: 4 });
+    expect(() => run(doc, "set_expression", { feature_id: "pattern-3", field: "count", expression: "gap" })).toThrow(
+      /It needs a plain number, and "gap" comes to a length/,
+    );
+    expect(() => run(doc, "set_expression", { feature_id: "pattern-3", field: "spacing", expression: "n" })).toThrow(
+      /It needs a length/,
+    );
   });
 
   it("lets a formula go when its number is given by hand", () => {

@@ -24,6 +24,7 @@ import type { BodyCheck, PrintCheckOptions } from "../../studio/printCheck";
 import { NumberField } from "./fields";
 import { checkInWorker, measureBetweenInWorker } from "./geometryClient";
 import { featureLabel } from "./labels";
+import type { UnitFormat } from "./units";
 import type { RunCommand } from "./useStudioDesign";
 
 // Whether the design will print as it's placed, checked in the page's worker with the same code studio_check_print
@@ -56,9 +57,9 @@ function storedOptions(): PrintCheckOptions {
   return DEFAULTS;
 }
 
-const mm = (value: number) => Number(value.toFixed(2));
-
 type Props = {
+  /** The units its sizes read out in, the status bar's. */
+  format: UnitFormat;
   open: boolean;
   designId: string | null;
   doc: StudioDocument | null;
@@ -68,7 +69,7 @@ type Props = {
   onClose: () => void;
 };
 
-export default function CheckDialog({ open, designId, doc, selected, run, onClose }: Props) {
+export default function CheckDialog({ format, open, designId, doc, selected, run, onClose }: Props) {
   const { t } = useTranslation("app");
   const [options, setOptions] = useState(storedOptions);
   const change = (next: Partial<PrintCheckOptions>) =>
@@ -143,11 +144,11 @@ export default function CheckDialog({ open, designId, doc, selected, run, onClos
     const found: string[] = [];
     if (body.size.some((side, axis) => side > options.bed[axis] + 0.01)) found.push(t("studio.check.tooBig"));
     else if (!body.fitsBed && !body.belowBed) found.push(t("studio.check.offBed"));
-    if (body.aboveBed) found.push(t("studio.check.floating", { mm: mm(body.aboveBed) }));
-    if (body.belowBed) found.push(t("studio.check.sunk", { mm: mm(body.belowBed) }));
+    if (body.aboveBed) found.push(t("studio.check.floating", { value: format.length(body.aboveBed) }));
+    if (body.belowBed) found.push(t("studio.check.sunk", { value: format.length(body.belowBed) }));
     if (body.pieces > 1) found.push(t("studio.check.pieces", { count: body.pieces }));
-    if (body.overhang) found.push(t("studio.check.overhang", { area: Math.round(body.overhang.area) }));
-    if (body.thinWalls) found.push(t("studio.check.thin", { mm: mm(body.thinWalls.thinnest) }));
+    if (body.overhang) found.push(t("studio.check.overhang", { value: format.area(body.overhang.area) }));
+    if (body.thinWalls) found.push(t("studio.check.thin", { value: format.length(body.thinWalls.thinnest) }));
     for (const overlap of check.overlaps)
       if (overlap.a === body.id || overlap.b === body.id)
         found.push(t("studio.check.overlaps", { name: name(overlap.a === body.id ? overlap.b : overlap.a) }));
@@ -243,13 +244,7 @@ export default function CheckDialog({ open, designId, doc, selected, run, onClos
                       </Typography>
                       {row.body && row.body.pieces > 0 && (
                         <Typography variant="caption" color="text.secondary" noWrap>
-                          {t("studio.check.size", {
-                            x: mm(row.body.size[0]),
-                            y: mm(row.body.size[1]),
-                            z: mm(row.body.size[2]),
-                          })}
-                          {" · "}
-                          {t("studio.check.volume", { cm3: Number((row.body.volume / 1000).toFixed(2)) })}
+                          {format.size(row.body.size)} · {format.volume(row.body.volume)}
                         </Typography>
                       )}
                     </Stack>
@@ -316,13 +311,13 @@ export default function CheckDialog({ open, designId, doc, selected, run, onClos
                   {between.failure}
                 </Box>
               ) : between.overlap > 0 ? (
-                t("studio.check.overlap", { cm3: Number((between.overlap / 1000).toFixed(3)) })
+                t("studio.check.overlap", { value: format.volume(between.overlap) })
               ) : between.gap === 0 ? (
                 t("studio.check.touching")
               ) : between.gap >= SEARCH ? (
                 t("studio.check.far")
               ) : (
-                t("studio.check.gap", { mm: mm(between.gap) })
+                t("studio.check.gap", { value: format.length(between.gap) })
               )}
             </Typography>
           </Stack>

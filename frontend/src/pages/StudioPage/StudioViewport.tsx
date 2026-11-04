@@ -28,6 +28,7 @@ import {
   type Vec2,
   type Vec3,
 } from "../../studio/document";
+import type { LengthUnit } from "../../studio/expressions";
 import { evaluateInWorker, type WorkerBody } from "./geometryClient";
 import { createViewCube, type ViewCube, type ViewCubeStyle } from "./viewCube";
 
@@ -50,13 +51,20 @@ export type PickRequest = {
   kind: "face" | "edge" | "point" | "body";
   bodies: string[] | null;
   chosen: { faces: FacePick[]; edges: EdgePick[]; points: FacePick[] };
+  /** A dashed line between two points, as the measure tool shows a distance. */
+  line?: [Vec3, Vec3] | null;
 };
-export type Picked = { body: string } & (
-  | { kind: "face"; face: FacePick }
-  | { kind: "edge"; edge: EdgePick }
-  | { kind: "point"; point: FacePick }
-  | { kind: "body" }
-);
+export type Picked = { body: string } &
+  /** `region` is the face's triangles in the world, for measuring it. */
+  (
+    | { kind: "face"; face: FacePick; region: [Vec3, Vec3, Vec3][] }
+    | { kind: "edge"; edge: EdgePick }
+    | { kind: "point"; point: FacePick }
+    | { kind: "body" }
+  );
+
+/** A body as it is in the view: where it reaches in the world and how much it holds (NaN for an open mesh), in mm. */
+export type BodyStats = { id: string; visible: boolean; bounds: { min: Vec3; max: Vec3 }; volume: number };
 
 export type StudioViewportHandle = {
   fit: () => void;
@@ -91,6 +99,8 @@ type Props = {
   onPick: (picked: Picked) => void;
   /** Whether bodies are being made, for a note while a slow one is. */
   onBusy: (busy: boolean) => void;
+  /** Each top-level body's extent and volume, each time a body is made or moved. */
+  onStats?: (stats: BodyStats[]) => void;
   /** Bodies a tool's preview tells apart, each in a colour of its own: the parts a body would separate into. */
   tinted?: readonly string[];
   /** How much of the bottom of the view something covers, in px (Ask AI's bar): the view's middle, and fitting the
@@ -104,7 +114,15 @@ const CLICK_PX = 4;
 // Where a polygon's last click closes it, near its first point.
 const CLOSE_PX = 10;
 const CREASE = (30 * Math.PI) / 180;
-const SNAP_MM = 1;
+/** What a sketch's points and a moved body snap to, and the bed's and a sketch's grids, in the design's units as in
+ *  CAD: whole millimetres, or sixteenths of an inch; grid squares of 1 cm or half an inch, and a sketch's of a quarter. */
+const SNAP: Record<LengthUnit, number> = { mm: 1, cm: 1, in: 25.4 / 16 };
+const GRID: Record<LengthUnit, number> = { mm: 10, cm: 10, in: 12.7 };
+/** A grid of `step` squares about as wide as the bed: an even count of them, so a line runs through the origin. */
+const gridOf = (step: number, color: THREE.Color) => {
+  const squares = 2 * Math.round(BED / 2 / step);
+  return new THREE.GridHelper(squares * step, squares, color, color);
+};
 const CAMERA_MS = 280;
 // A hair off straight up or down, so the camera's up (Z) is never along the way it looks.
 const off = (direction: THREE.Vector3) =>
@@ -157,6 +175,8 @@ type BodyObject = {
   local: { positions: Float32Array; indices: Uint32Array };
   /** The straight edges a fillet or chamfer can take, shown while picking edges. */
   edgeLines: THREE.LineSegments;
+  /** Its volume as made, before its transform's scale: mm³, NaN for an open mesh. */
+  volume: number;
 };
 type Drawing =
   { tool: "rectangle" | "circle"; start: Vec2; end: Vec2 } | { tool: "polygon"; points: Vec2[]; hover: Vec2 | null };
@@ -338,7 +358,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     });
 
     const gizmo = new TransformControls(camera, renderer.domElement);
-    gizmo.setTranslationSnap(SNAP_MM);
+    gizmo.setTranslationSnap(SNAP[latest.current.document.units ?? "mm"]);
     gizmo.setRotationSnap(THREE.MathUtils.degToRad(5));
     gizmo.setScaleSnap(0.05);
     gizmo.addEventListener("change", render);
@@ -446,12 +466,14 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colorKey, i18n.language]);
 
-  // The bed: a grid of 10 mm squares, X and Y drawn in their axis colours.
+  // The bed: a grid of 1 cm or half-inch squares, X and Y drawn in their axis colours.
+  const units = props.document.units ?? "mm";
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
+    s.gizmo.setTranslationSnap(SNAP[units]);
     clear(s.bed);
-    const grid = new THREE.GridHelper(BED, BED / 10, colors.grid, colors.grid);
+    const grid = gridOf(GRID[units], colors.grid);
     grid.rotation.x = Math.PI / 2;
     (grid.material as THREE.LineBasicMaterial).transparent = true;
     (grid.material as THREE.LineBasicMaterial).opacity = theme.palette.mode === "dark" ? 0.18 : 0.22;
@@ -464,7 +486,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     s.bed.add(axis(new THREE.Vector3(BED / 2, 0, 0.01), colors.x), axis(new THREE.Vector3(0, BED / 2, 0.01), colors.y));
     s.render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorKey]);
+  }, [colorKey, units]);
 
   // --- Bodies: made again only when their shape changed; moving one only moves it ---
   useEffect(() => {
@@ -496,6 +518,22 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         applyTransform(body.group, feature.transform);
         body.group.visible = feature.visible;
       }
+      latest.current.onStats?.(
+        bodies.flatMap((feature): BodyStats[] => {
+          const body = s.bodies.get(feature.id);
+          if (!body) return [];
+          body.group.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(body.mesh, true);
+          return [
+            {
+              id: feature.id,
+              visible: feature.visible,
+              bounds: { min: box.min.toArray(), max: box.max.toArray() },
+              volume: body.volume * Math.abs(body.group.matrixWorld.determinant()),
+            },
+          ];
+        }),
+      );
       paint();
       attachGizmo();
       s.render();
@@ -560,6 +598,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
           picking: body.picking,
           local: body.mesh,
           edgeLines,
+          volume: body.volume / Math.abs(new THREE.Matrix4().fromArray(body.matrix).determinant()),
         });
       }
       latest.current.onErrors(Object.fromEntries(s.errors));
@@ -691,6 +730,25 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         disc.renderOrder = 3;
         s.chosenLayer.add(disc);
       }
+      if (request.line) {
+        const ends = request.line.map((end) => new THREE.Vector3(...end));
+        const line = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(ends),
+          new THREE.LineDashedMaterial({ color: colors.accent, dashSize: mark, gapSize: mark * 0.6, depthTest: false }),
+        );
+        line.computeLineDistances();
+        line.renderOrder = 4;
+        s.chosenLayer.add(line);
+        for (const end of ends) {
+          const dot = new THREE.Mesh(
+            new THREE.SphereGeometry(mark * 0.3, 12, 8),
+            new THREE.MeshBasicMaterial({ color: colors.accent, depthTest: false }),
+          );
+          dot.position.copy(end);
+          dot.renderOrder = 4;
+          s.chosenLayer.add(dot);
+        }
+      }
     }
     s.render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -811,7 +869,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
   // --- Sketch mode: the plane faces the camera, the left button draws ---
   const sketchFeature = activeSketch ? featureById(props.document, activeSketch) : undefined;
   const sketchPlaneKey =
-    sketchFeature?.type === "sketch" ? `${sketchFeature.id}|${sketchFeature.plane}|${sketchFeature.offset}` : null;
+    sketchFeature?.type === "sketch"
+      ? `${sketchFeature.id}|${sketchFeature.plane}|${sketchFeature.offset}|${props.document.units ?? "mm"}`
+      : null;
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
@@ -824,7 +884,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       return;
     }
     const { u, v, n } = sketchFrame(sketch);
-    const grid = new THREE.GridHelper(BED, BED / 5, colors.accent, colors.accent);
+    const grid = gridOf(GRID[units] / 2, colors.accent);
     (grid.material as THREE.LineBasicMaterial).transparent = true;
     (grid.material as THREE.LineBasicMaterial).opacity = 0.16;
     // GridHelper lies in XZ: turn its X and Z onto the plane's u and v.
@@ -937,8 +997,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const hit = raycaster.ray.intersectPlane(plane, new THREE.Vector3());
       if (!hit) return null;
       return [
-        tidy(round(hit.dot(new THREE.Vector3(...u)), SNAP_MM)),
-        tidy(round(hit.dot(new THREE.Vector3(...v)), SNAP_MM)),
+        tidy(round(hit.dot(new THREE.Vector3(...u)), SNAP[latest.current.document.units ?? "mm"])),
+        tidy(round(hit.dot(new THREE.Vector3(...v)), SNAP[latest.current.document.units ?? "mm"])),
       ];
     };
 
@@ -1093,7 +1153,15 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       );
       show.matrixAutoUpdate = false;
       show.matrix.copy(body.group.matrixWorld);
-      return { picked: { kind: "face", body: id, face: at }, show };
+      const region: [Vec3, Vec3, Vec3][] = [];
+      for (let k = 0; k < corners.length; k += 9) {
+        const corner = (j: number) =>
+          new THREE.Vector3(corners[k + j], corners[k + j + 1], corners[k + j + 2])
+            .applyMatrix4(body.group.matrixWorld)
+            .toArray();
+        region.push([corner(0), corner(3), corner(6)]);
+      }
+      return { picked: { kind: "face", body: id, face: at, region }, show };
     };
 
     const pickHover = (event: PointerEvent) => {

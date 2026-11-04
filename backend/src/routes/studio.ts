@@ -8,6 +8,13 @@ import { parseBody } from "../utils/validate";
 import { listAiConnections } from "../services/aiConnectionService";
 import { saveStudioDesignToLibrary } from "../services/studioLibrary";
 import { getStudioAssistantPrefs } from "../services/settingsService";
+import {
+  getStudioSettings,
+  setStudioSettings,
+  STUDIO_PROMPT_LAYOUTS,
+  STUDIO_UNITS,
+  type StudioSettings,
+} from "../services/studioSettingsService";
 import { ASSET_ID } from "../studio/document.generated";
 import {
   assistantThread,
@@ -45,6 +52,33 @@ const studio = [requireAuth, requireStudio];
 router.get("/studio/status", requireAuth, (_req, res) => {
   res.json({ enabled: STUDIO_ENABLED });
 });
+
+// The person's own Studio settings: where the assistant shows, and the units new designs start in.
+const studioSettingsOut = (settings: StudioSettings) => ({
+  prompt_layout: settings.promptLayout,
+  units: settings.units,
+});
+router.get(
+  "/studio/settings",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    res.json(studioSettingsOut(await getStudioSettings(req.userId!)));
+  }),
+);
+
+const studioSettingsSchema = z
+  .object({ prompt_layout: z.enum(STUDIO_PROMPT_LAYOUTS).optional(), units: z.enum(STUDIO_UNITS).optional() })
+  .strict();
+router.patch(
+  "/studio/settings",
+  ...studio,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(studioSettingsSchema, req.body);
+    res.json(
+      studioSettingsOut(await setStudioSettings(req.userId!, { promptLayout: body.prompt_layout, units: body.units })),
+    );
+  }),
+);
 
 // The AIs an admin offers for the assistant, for the prompt's picker: which model, and where it runs, never a key. While
 // the assistant is off, none are listed.

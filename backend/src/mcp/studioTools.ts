@@ -1,3 +1,4 @@
+import { STUDIO_UNITS, type StudioUnits } from "../services/studioSettingsService";
 import { z } from "zod";
 import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
 import { topLevel, type Feature, type Vec3 } from "../studio/document.generated";
@@ -107,7 +108,11 @@ const getDesign: McpToolDefinition = {
     return {
       ...brief(ctx, design),
       units: "mm",
+      // What the person sees and types sizes in: every number here and in every tool stays in mm.
+      display_units: design.document.units ?? "mm",
       up: "+Z",
+      // Each with its unit: mm, cm or in for a length, deg, or none.
+      parameters: (design.document.parameters ?? []).map((parameter) => ({ unit: "mm", ...parameter })),
       features: briefFeatures(design.document.features),
       top_level: topLevel(design.document).map((feature) => feature.id),
       bodies:
@@ -222,12 +227,25 @@ const inspectBody: McpToolDefinition = {
 const createDesign: McpToolDefinition = {
   name: "studio_create_design",
   title: "Create a Studio design",
-  description: "Starts a new, empty design in Studio. Its id is what the other studio_ tools take.",
+  description:
+    "Starts a new, empty design in Studio. Its id is what the other studio_ tools take. It's shown in the units the " +
+    "person's Studio settings start designs in, unless units says otherwise; every tool works in mm either way.",
   readOnly: false,
   group: "studio",
-  inputSchema: { name: z.string().trim().max(120).optional().describe("Default “Untitled design”.") },
+  inputSchema: {
+    name: z.string().trim().max(120).optional().describe("Default “Untitled design”."),
+    units: z.enum(STUDIO_UNITS).optional().describe("mm, cm or in: what the person sees sizes in."),
+  },
   async run(ctx, args) {
-    return brief(ctx, await createStudioDesign(ctx.userId, args.name as string | undefined, "mcp"));
+    return brief(
+      ctx,
+      await createStudioDesign(
+        ctx.userId,
+        args.name as string | undefined,
+        "mcp",
+        args.units as StudioUnits | undefined,
+      ),
+    );
   },
 };
 

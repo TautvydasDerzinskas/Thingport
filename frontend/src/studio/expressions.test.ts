@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { checkParameterName, evaluateExpression, expressionNames } from "./expressions";
+import { checkParameterName, evaluateExpression, expressionNames, withUnits, type FieldKind } from "./expressions";
 
 // Formulas over a design's parameters: worked out the way arithmetic is written, in degrees, and refused with a
 // message that says where when they can't be.
 
-const parameters = { wall: 1.6, height: 40, width: 25, _r2: 3 };
-const value = (text: string) => evaluateExpression(text, parameters);
+// Plain numbers, as parameters with no unit.
+const plain = (values: Record<string, number>) =>
+  Object.fromEntries(Object.entries(values).map(([name, each]) => [name, { value: each, length: false }]));
+const parameters = plain({ wall: 1.6, height: 40, width: 25, _r2: 3 });
+const value = (text: string) => evaluateExpression(text, parameters, "number");
 
 describe("Studio expressions", () => {
   it("reads numbers as they're usually written", () => {
@@ -20,7 +23,7 @@ describe("Studio expressions", () => {
   it("works out the parameters' values", () => {
     expect(value("wall * 2 + 10")).toBeCloseTo(13.2, 12);
     expect(value("height/2-_r2")).toBe(17);
-    expect(evaluateExpression("x", { x: -4 })).toBe(-4);
+    expect(evaluateExpression("x", plain({ x: -4 }), "number")).toBe(-4);
   });
 
   it("multiplies and divides before it adds, left to right", () => {
@@ -85,8 +88,8 @@ describe("Studio expressions", () => {
     expect(() => value("PI * 2")).toThrow(/Did you mean "pi"\?/);
     expect(() => value("depth")).toThrow(/^There's no parameter called "depth" \(at character 1 of "depth"\)\.$/);
     // Nothing inherited from an object counts as one.
-    expect(() => evaluateExpression("constructor", {})).toThrow(/no parameter called "constructor"/);
-    expect(() => evaluateExpression("x", { x: Number.NaN })).toThrow(/"x" has no finite value/);
+    expect(() => evaluateExpression("constructor", {}, "number")).toThrow(/no parameter called "constructor"/);
+    expect(() => evaluateExpression("x", plain({ x: Number.NaN }), "number")).toThrow(/"x" has no finite value/);
   });
 
   it("refuses division by zero and results that aren't finite numbers, saying where", () => {
@@ -167,5 +170,43 @@ describe("Studio expressions", () => {
       "atan",
     ])
       expect(() => checkParameterName(name)).toThrow(`in a formula it's the function ${name}()`);
+  });
+
+  it("knows units, as CAD formulas do: lengths, angles and plain numbers", () => {
+    // wall is 2 mm, gap 0.5 in; n is a count.
+    const sized = {
+      wall: { value: 2, length: true },
+      gap: { value: 12.7, length: true },
+      n: { value: 6, length: false },
+    };
+    const length = (text: string, kind: FieldKind = "length") => evaluateExpression(text, sized, kind);
+    expect(length("2 in")).toBeCloseTo(50.8);
+    expect(length("2in + 5 mm")).toBeCloseTo(55.8);
+    expect(length("wall * 2 + gap")).toBeCloseTo(16.7);
+    expect(length("wall * n")).toBe(12);
+    // A bare number added to a length is one, in mm as it's kept.
+    expect(length("wall + 1")).toBe(3);
+    expect(length("45°", "number")).toBe(45);
+    expect(length("sin(30 deg)", "number")).toBeCloseTo(0.5);
+    expect(length("n * 2", "number")).toBe(12);
+    expect(() => length("n * 2")).toThrow(/It needs a length, and "n \* 2" comes to a plain number/);
+    expect(() => length("wall", "number")).toThrow(/It needs a plain number, and "wall" comes to a length/);
+    expect(() => length("wall * wall")).toThrow(/comes to an area/);
+    expect(() => length("wall + n")).toThrow(/Can't add a length and a plain number/);
+    expect(() => length("sin(wall)", "number")).toThrow(/sin takes a plain number/);
+    expect(() => length("in")).toThrow(/in is a unit/);
+    expect(() => checkParameterName("mm")).toThrow(/the unit mm/);
+  });
+
+  it("writes the design's unit after each bare number that's a length, so a formula keeps its size", () => {
+    const sized = { wall: { value: 2, length: true }, n: { value: 6, length: false } };
+    expect(withUnits("10", sized, "length", "in")).toBe("10 in");
+    expect(withUnits("wall + 1", sized, "length", "in")).toBe("wall + 1 in");
+    expect(withUnits("wall * 2", sized, "length", "in")).toBe("wall * 2");
+    expect(withUnits("2 * 5", sized, "length", "cm")).toBe("2 cm * 5");
+    expect(withUnits("max(wall, 1) - (2 + 3)", sized, "length", "in")).toBe("max(wall, 1 in) - (2 in + 3 in)");
+    expect(withUnits("n + 1", sized, "number", "in")).toBe("n + 1");
+    // Kept, it means the same in any units: 10 in is 254 mm.
+    expect(evaluateExpression(withUnits("10", sized, "length", "in"), sized, "length")).toBeCloseTo(254);
   });
 });

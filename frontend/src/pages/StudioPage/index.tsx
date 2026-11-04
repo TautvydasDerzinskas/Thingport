@@ -49,12 +49,23 @@ import PropertiesPanel from "./PropertiesPanel";
 import RenameDialog from "./RenameDialog";
 import SidePanel from "./SidePanel";
 import StudioToolbar, { type BooleanKind, type Primitive, type StudioPanel } from "./StudioToolbar";
-import StudioViewport, { type SketchTool, type StudioMode, type StudioViewportHandle } from "./StudioViewport";
+import StudioViewport, {
+  type BodyStats,
+  type Picked,
+  type SketchTool,
+  type StudioMode,
+  type StudioViewportHandle,
+} from "./StudioViewport";
+import StatusBar from "./StatusBar";
+import MeasurePanel from "./MeasurePanel";
+import { readingsOf, type BodyGap, type MeasureFilter } from "./measureTool";
+import { StudioUnitsContext, unitFormat } from "./units";
 import { BoxIcon, ExtrudeIcon, SeparateIcon } from "./studioIcons";
-import { measureBoundsInWorker, measurePartsInWorker } from "./geometryClient";
+import { measureBetweenInWorker, measureBoundsInWorker, measurePartsInWorker } from "./geometryClient";
 import { openModelAsDesign, type StudioArrival } from "./openModel";
 import OperationPanel from "./OperationPanel";
 import ParametersDialog from "./ParametersDialog";
+import StudioSettingsDialog from "./StudioSettingsDialog";
 import PathDialog from "./PathDialog";
 import TraceDialog, { type TraceRequest } from "./TraceDialog";
 import {
@@ -79,7 +90,7 @@ import {
 import { useStudioDesign } from "./useStudioDesign";
 import { fontsLoadedFor, loadFontsFor } from "./studioFonts";
 import { useStudioAssistant } from "./useStudioAssistant";
-import { useStudioPromptLayout } from "../../hooks/useStudioPromptLayout";
+import { useStudioSettings } from "../../hooks/useStudioSettings";
 
 // Studio: a small parametric CAD. Everything that changes a design here is a command (frontend/src/studio/commands.ts)
 // run through useStudioDesign, so an AI connected over MCP, or later through the prompt below, can do all of it too.
@@ -149,7 +160,7 @@ function typing(target: EventTarget | null): boolean {
 }
 
 export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
-  const { t } = useTranslation("app");
+  const { t, i18n } = useTranslation("app");
   const toast = useToast();
   const confirm = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -195,7 +206,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const followAssistant = useCallback(() => {
     if (designId) void reload(designId);
   }, [designId, reload]);
-  const [promptLayout] = useStudioPromptLayout();
+  const [studioSettings, setStudioSettings] = useStudioSettings();
+  const promptLayout = studioSettings.prompt_layout;
   // How much of the bottom of the view the prompt covers, which the view keeps the model above.
   const [promptInset, setPromptInset] = useState(0);
 
@@ -227,6 +239,16 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [tracing, setTracing] = useState(false);
   const [pathing, setPathing] = useState(false);
   const [parametersOpen, setParametersOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  // The design's units, which every size on the page reads and is typed in; and each body's size and volume as the view
+  // has them.
+  const units = doc?.units ?? "mm";
+  const format = useMemo(() => unitFormat(units, i18n.language), [units, i18n.language]);
+  const [stats, setStats] = useState<BodyStats[]>([]);
+  const statsById = useMemo(() => new Map(stats.map((body) => [body.id, body])), [stats]);
+  // The measure tool: what it picks, and what's been picked (two at most).
+  const [measureTool, setMeasureTool] = useState<{ filter: MeasureFilter; picks: Picked[] } | null>(null);
+  const [bodyGap, setBodyGap] = useState<BodyGap | null>(null);
   const [checking, setChecking] = useState(false);
   const [renaming, setRenaming] = useState<{ kind: "design" } | { kind: "feature"; id: string } | null>(null);
   // A tool that takes more than a click, while its panel is open, and what making its preview said.
@@ -659,11 +681,50 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     if (editing) {
       setOperation(null);
       setSketch(null);
+      setMeasureTool(null);
       setMode("select");
       setMenu(null);
     }
     setEditing(!editing);
   };
+
+  // --- Measuring: only looks, so it's no command ---
+  const measurePicks = measureTool?.picks;
+  // A change to the design leaves what was picked behind.
+  useEffect(() => {
+    setMeasureTool((prev) => (prev?.picks.length ? { ...prev, picks: [] } : prev));
+  }, [doc]);
+  // A tool's panel or a sketch takes the clicks instead.
+  useEffect(() => {
+    if (operation || sketch) setMeasureTool(null);
+  }, [operation, sketch]);
+  useEffect(() => {
+    setBodyGap(null);
+    const [a, b] = measurePicks ?? [];
+    if (!design || !doc || a?.kind !== "body" || b?.kind !== "body") return;
+    let cancelled = false;
+    measureBetweenInWorker(design.id, doc, a.body, b.body).then(
+      (between) => !cancelled && setBodyGap(between),
+      (error: unknown) => !cancelled && setBodyGap({ failure: error instanceof Error ? error.message : String(error) }),
+    );
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [measurePicks]);
+  const measureReadout = useMemo(
+    () => (measureTool ? readingsOf(measureTool.picks, statsById, bodyGap) : null),
+    [measureTool, statsById, bodyGap],
+  );
+  const toggleMeasure = () => {
+    if (measureTool) return setMeasureTool(null);
+    setOperation(null);
+    setSketch(null);
+    setMeasureTool({ filter: "face", picks: [] });
+  };
+  const onMeasurePick = (picked: Picked) =>
+    // A third pick starts again from it.
+    setMeasureTool((prev) => prev && { ...prev, picks: prev.picks.length >= 2 ? [picked] : [...prev.picks, picked] });
 
   // --- Keys ---
   const keys = useRef<(event: KeyboardEvent) => void>(() => undefined);
@@ -681,6 +742,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       return;
     } else if (event.key === "Escape") {
       if (operation) return setOperation(null);
+      if (measureTool) return setMeasureTool(null);
       if (viewport.current?.cancelDrawing()) return;
       if (sketch) setSketch(null);
       else setSelected([]);
@@ -695,6 +757,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       setMode(key === "q" ? "select" : key === "w" ? "translate" : key === "e" ? "rotate" : "scale");
     } else if (key === "f") {
       viewport.current?.fit();
+    } else if (key === "i" && !sketch) {
+      toggleMeasure();
     }
   };
   useEffect(() => {
@@ -790,9 +854,25 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             setMenu({ id, at });
           }}
           onErrors={onViewErrors}
-          pick={operation ? pickOf(operation, own) : null}
-          onPick={onPick}
+          pick={
+            operation
+              ? pickOf(operation, own)
+              : measureTool
+                ? {
+                    kind: measureTool.filter,
+                    bodies: null,
+                    chosen: {
+                      faces: measureTool.picks.flatMap((each) => (each.kind === "face" ? [each.face] : [])),
+                      edges: measureTool.picks.flatMap((each) => (each.kind === "edge" ? [each.edge] : [])),
+                      points: measureTool.picks.flatMap((each) => (each.kind === "point" ? [each.point] : [])),
+                    },
+                    line: measureReadout?.line ?? null,
+                  }
+                : null
+          }
+          onPick={operation ? onPick : onMeasurePick}
           onBusy={setBusy}
+          onStats={setStats}
           tinted={operation?.kind === "separate" ? own : undefined}
           bottomInset={promptInset}
         />
@@ -810,6 +890,30 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             }}
             onOk={() => void finishOperation()}
             onCancel={() => setOperation(null)}
+          />
+        )}
+        {measureTool && !operation && (
+          <MeasurePanel
+            filter={measureTool.filter}
+            onFilter={(filter) =>
+              // A body is measured against a body, the rest against each other: a switch across leaves the picks.
+              setMeasureTool(
+                (prev) =>
+                  prev && {
+                    filter,
+                    picks: (filter === "body") === (prev.filter === "body") ? prev.picks : [],
+                  },
+              )
+            }
+            picks={measureTool.picks}
+            readings={measureReadout?.readings ?? []}
+            format={format}
+            label={(id) => {
+              const feature = featureById(doc, id);
+              return feature ? featureLabel(feature, t) : id;
+            }}
+            onClear={() => setMeasureTool((prev) => prev && { ...prev, picks: [] })}
+            onClose={() => setMeasureTool(null)}
           />
         )}
         {(busy || saving) && !operation && (
@@ -851,321 +955,348 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   })();
 
   return (
-    <Paper
-      ref={root}
-      variant="outlined"
-      sx={(theme) => ({
-        height: { xs: "auto", md: height ?? "calc(100vh - 120px)" },
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        borderRadius: 2,
-        transition: "border-color 200ms, background-color 200ms",
-        "@media (prefers-reduced-motion: reduce)": { transition: "none" },
-        // Out of edit mode the frame is the view's own: no border, and the Edit button on the view's background.
-        ...(editing ? {} : { borderColor: "transparent", bgcolor: theme.thingport.pageBackground }),
-      })}
-    >
-      <StudioToolbar
-        editing={editing}
-        onToggleEditing={toggleEditing}
-        designName={design?.name ?? null}
-        canUndo={Boolean(design?.can_undo)}
-        canRedo={Boolean(design?.can_redo)}
-        canCombine={selectedBodies.length >= 2}
-        canHull={selectedBodies.length >= 1}
-        canLoft={selectedSketches.length >= 2}
-        onLoft={() => void loftSelected()}
-        onHull={() => void hullSelected()}
-        canExtrude={Boolean(extrudable)}
-        mode={mode}
-        panels={panels}
-        sketch={sketch && sketchFeature?.type === "sketch" ? { plane: sketchFeature.plane, tool: sketch.tool } : null}
-        busy={!doc}
-        onNewDesign={() => void newDesign()}
-        onOpenDesign={() => setDesignsOpen(true)}
-        onRenameDesign={() => setRenaming({ kind: "design" })}
-        onExport={() => void exportStl()}
-        onSaveToLibrary={() => void saveToLibrary()}
-        onParameters={() => setParametersOpen(true)}
-        onCheck={() => setChecking(true)}
-        onDeleteDesign={() => void deleteDesign()}
-        onAdd={(kind) => void add(kind)}
-        onStartSketch={(plane) => void startSketch(plane)}
-        onSketchTool={(tool) => setSketch((prev) => (prev ? { ...prev, tool } : prev))}
-        onSketchPath={() => setPathing(true)}
-        onSketchText={() =>
-          sketch &&
-          void run("add_sketch_shape", {
-            sketch_id: sketch.id,
-            shape: { type: "text", text: t("studio.text.placeholder"), size: 10, center: [0, 0] },
-          })
-        }
-        onFinishSketch={() => setSketch(null)}
-        onExtrude={() => begin("extrude")}
-        onOperation={(kind) => begin(kind)}
-        onTrace={() => setTracing(true)}
-        onCombine={(kind) => void combine(kind)}
-        onMode={setMode}
-        onTogglePanel={togglePanel}
-        onUndo={() => void run("undo", {})}
-        onRedo={() => void run("redo", {})}
-        onView={(view) => viewport.current?.view(view)}
-        onFit={() => viewport.current?.fit()}
-      />
-      <Box
-        sx={{
-          flex: 1,
-          minHeight: 0,
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "minmax(0, 1fr)",
-            // A hidden panel leaves a strip with its tab, while editing.
-            md: [
-              editing && (panels.features ? "220px" : "36px"),
-              "minmax(0, 1fr)",
-              editing && (panels.properties ? "270px" : "36px"),
-              assistantPanel && "300px",
-            ]
-              .filter(Boolean)
-              .join(" "),
-          },
-          gridTemplateRows: { xs: "minmax(360px, 60vh) auto auto auto", md: "minmax(0, 1fr)" },
-        }}
+    <StudioUnitsContext.Provider value={units}>
+      <Paper
+        ref={root}
+        variant="outlined"
+        sx={(theme) => ({
+          height: { xs: "auto", md: height ?? "calc(100vh - 120px)" },
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          borderRadius: 2,
+          transition: "border-color 200ms, background-color 200ms",
+          "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+          // Out of edit mode the frame is the view's own: no border, and the Edit button on the view's background.
+          ...(editing ? {} : { borderColor: "transparent", bgcolor: theme.thingport.pageBackground }),
+        })}
       >
-        {editing && (
-          <Box sx={(theme) => ({ ...panelSx(theme, "right", 2), ...slideIn(fromLeft) })}>
-            {panels.features ? (
-              <SidePanel
-                title={t("studio.panels.features")}
-                side="left"
-                hideLabel={t("studio.panels.hide", { panel: t("studio.panels.features") })}
-                onHide={() => togglePanel("features")}
-              >
-                {doc && (
-                  <FeatureTree
-                    document={doc}
-                    selected={selected}
-                    errors={errors}
-                    onSelect={select}
-                    onMenu={(id, at) => setMenu({ id, at })}
-                    onToggleVisible={(feature) =>
-                      void run("set_visibility", { feature_id: feature.id, visible: !feature.visible })
-                    }
-                  />
-                )}
-              </SidePanel>
-            ) : (
-              <PanelTab
-                side="left"
-                label={t("studio.panels.features")}
-                ariaLabel={t("studio.panels.show", { panel: t("studio.panels.features") })}
-                onOpen={() => togglePanel("features")}
-              />
-            )}
-          </Box>
-        )}
+        <StudioToolbar
+          editing={editing}
+          onToggleEditing={toggleEditing}
+          designName={design?.name ?? null}
+          canUndo={Boolean(design?.can_undo)}
+          canRedo={Boolean(design?.can_redo)}
+          canCombine={selectedBodies.length >= 2}
+          canHull={selectedBodies.length >= 1}
+          canLoft={selectedSketches.length >= 2}
+          onLoft={() => void loftSelected()}
+          onHull={() => void hullSelected()}
+          canExtrude={Boolean(extrudable)}
+          mode={mode}
+          panels={panels}
+          sketch={sketch && sketchFeature?.type === "sketch" ? { plane: sketchFeature.plane, tool: sketch.tool } : null}
+          busy={!doc}
+          onNewDesign={() => void newDesign()}
+          onOpenDesign={() => setDesignsOpen(true)}
+          onRenameDesign={() => setRenaming({ kind: "design" })}
+          onExport={() => void exportStl()}
+          onSaveToLibrary={() => void saveToLibrary()}
+          onParameters={() => setParametersOpen(true)}
+          onCheck={() => setChecking(true)}
+          onSettings={() => setSettingsOpen(true)}
+          measuring={Boolean(measureTool)}
+          onMeasure={toggleMeasure}
+          onDeleteDesign={() => void deleteDesign()}
+          onAdd={(kind) => void add(kind)}
+          onStartSketch={(plane) => void startSketch(plane)}
+          onSketchTool={(tool) => setSketch((prev) => (prev ? { ...prev, tool } : prev))}
+          onSketchPath={() => setPathing(true)}
+          onSketchText={() =>
+            sketch &&
+            void run("add_sketch_shape", {
+              sketch_id: sketch.id,
+              shape: { type: "text", text: t("studio.text.placeholder"), size: 10, center: [0, 0] },
+            })
+          }
+          onFinishSketch={() => setSketch(null)}
+          onExtrude={() => begin("extrude")}
+          onOperation={(kind) => begin(kind)}
+          onTrace={() => setTracing(true)}
+          onCombine={(kind) => void combine(kind)}
+          onMode={setMode}
+          onTogglePanel={togglePanel}
+          onUndo={() => void run("undo", {})}
+          onRedo={() => void run("redo", {})}
+          onView={(view) => viewport.current?.view(view)}
+          onFit={() => viewport.current?.fit()}
+        />
         <Box
           sx={{
-            order: { xs: 1, md: 0 },
-            position: "relative",
+            flex: 1,
             minHeight: 0,
-            overflow: "hidden",
-            bgcolor: (theme) => theme.thingport.pageBackground,
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "minmax(0, 1fr)",
+              // A hidden panel leaves a strip with its tab, while editing.
+              md: [
+                editing && (panels.features ? "220px" : "36px"),
+                "minmax(0, 1fr)",
+                editing && (panels.properties ? "270px" : "36px"),
+                assistantPanel && "300px",
+              ]
+                .filter(Boolean)
+                .join(" "),
+            },
+            gridTemplateRows: { xs: "minmax(360px, 60vh) auto auto auto", md: "minmax(0, 1fr)" },
           }}
         >
-          {viewportArea}
-        </Box>
-        {editing && (
-          <Box sx={(theme) => ({ ...panelSx(theme, "left", 3), ...slideIn(fromRight) })}>
-            {panels.properties ? (
-              <SidePanel
-                title={t("studio.panels.properties")}
-                side="right"
-                hideLabel={t("studio.panels.hide", { panel: t("studio.panels.properties") })}
-                onHide={() => togglePanel("properties")}
-              >
-                {doc && (
-                  <PropertiesPanel
-                    designId={design!.id}
-                    document={doc}
-                    selected={selected}
-                    errors={errors}
-                    run={run}
-                    onSelect={(id) => setSelected([id])}
-                    onSeparate={separateBody}
-                    onEditSketch={(id) => {
-                      setSelected([id]);
-                      setSketch({ id, tool: "rectangle" });
-                    }}
-                  />
-                )}
-              </SidePanel>
-            ) : (
-              <PanelTab
-                side="right"
-                label={t("studio.panels.properties")}
-                ariaLabel={t("studio.panels.show", { panel: t("studio.panels.properties") })}
-                onOpen={() => togglePanel("properties")}
-              />
-            )}
-          </Box>
-        )}
-        {assistantPanel && (
+          {editing && (
+            <Box sx={(theme) => ({ ...panelSx(theme, "right", 2), ...slideIn(fromLeft) })}>
+              {panels.features ? (
+                <SidePanel
+                  title={t("studio.panels.features")}
+                  side="left"
+                  hideLabel={t("studio.panels.hide", { panel: t("studio.panels.features") })}
+                  onHide={() => togglePanel("features")}
+                >
+                  {doc && (
+                    <FeatureTree
+                      document={doc}
+                      selected={selected}
+                      errors={errors}
+                      onSelect={select}
+                      onMenu={(id, at) => setMenu({ id, at })}
+                      onToggleVisible={(feature) =>
+                        void run("set_visibility", { feature_id: feature.id, visible: !feature.visible })
+                      }
+                    />
+                  )}
+                </SidePanel>
+              ) : (
+                <PanelTab
+                  side="left"
+                  label={t("studio.panels.features")}
+                  ariaLabel={t("studio.panels.show", { panel: t("studio.panels.features") })}
+                  onOpen={() => togglePanel("features")}
+                />
+              )}
+            </Box>
+          )}
           <Box
-            sx={(theme) => ({
-              ...panelSx(theme, "left", 4),
-              ...slideIn(fromRight),
-              display: "flex",
-              flexDirection: "column",
-              [theme.breakpoints.down("md")]: { maxHeight: 360 },
-            })}
+            sx={{
+              order: { xs: 1, md: 0 },
+              position: "relative",
+              minHeight: 0,
+              overflow: "hidden",
+              bgcolor: (theme) => theme.thingport.pageBackground,
+            }}
           >
-            <AssistantPanel assistant={assistant} />
+            {viewportArea}
           </Box>
-        )}
-      </Box>
-
-      {pathing && sketch && (
-        <PathDialog
-          onClose={() => setPathing(false)}
-          onAdd={(d) => void run("add_sketch_shape", { sketch_id: sketch.id, shape: { type: "path", d } })}
-        />
-      )}
-      <ParametersDialog open={parametersOpen} doc={doc} run={run} onClose={() => setParametersOpen(false)} />
-      <CheckDialog
-        open={checking}
-        designId={design?.id ?? null}
-        doc={doc}
-        selected={selected}
-        run={run}
-        onClose={() => setChecking(false)}
-      />
-      {tracing && design && (
-        <TraceDialog
-          designId={design.id}
-          onClose={() => setTracing(false)}
-          onTrace={tracePicture}
-          onError={showError}
-        />
-      )}
-
-      <Menu open={Boolean(menuFeature)} onClose={closeMenu} anchorReference="anchorPosition" anchorPosition={menu?.at}>
-        {menuFeature && [
-          <MenuItem key="rename" onClick={menuAction(() => setRenaming({ kind: "feature", id: menuFeature.id }))}>
-            <ListItemIcon>
-              <DriveFileRenameOutlineOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t("studio.actions.rename")}</ListItemText>
-          </MenuItem>,
-          menuFeature.type === "sketch" && (
-            <MenuItem
-              key="draw"
-              onClick={menuAction(() => {
-                setSelected([menuFeature.id]);
-                setSketch({ id: menuFeature.id, tool: "rectangle" });
+          {editing && (
+            <Box sx={(theme) => ({ ...panelSx(theme, "left", 3), ...slideIn(fromRight) })}>
+              {panels.properties ? (
+                <SidePanel
+                  title={t("studio.panels.properties")}
+                  side="right"
+                  hideLabel={t("studio.panels.hide", { panel: t("studio.panels.properties") })}
+                  onHide={() => togglePanel("properties")}
+                >
+                  {doc && (
+                    <PropertiesPanel
+                      designId={design!.id}
+                      document={doc}
+                      selected={selected}
+                      errors={errors}
+                      run={run}
+                      onSelect={(id) => setSelected([id])}
+                      onSeparate={separateBody}
+                      onEditSketch={(id) => {
+                        setSelected([id]);
+                        setSketch({ id, tool: "rectangle" });
+                      }}
+                    />
+                  )}
+                </SidePanel>
+              ) : (
+                <PanelTab
+                  side="right"
+                  label={t("studio.panels.properties")}
+                  ariaLabel={t("studio.panels.show", { panel: t("studio.panels.properties") })}
+                  onOpen={() => togglePanel("properties")}
+                />
+              )}
+            </Box>
+          )}
+          {assistantPanel && (
+            <Box
+              sx={(theme) => ({
+                ...panelSx(theme, "left", 4),
+                ...slideIn(fromRight),
+                display: "flex",
+                flexDirection: "column",
+                [theme.breakpoints.down("md")]: { maxHeight: 360 },
               })}
             >
+              <AssistantPanel assistant={assistant} />
+            </Box>
+          )}
+        </Box>
+        {editing && doc && (
+          <StatusBar
+            stats={stats}
+            selected={selected}
+            format={format}
+            onUnit={(next) => void run("set_units", { units: next })}
+          />
+        )}
+
+        {pathing && sketch && (
+          <PathDialog
+            onClose={() => setPathing(false)}
+            onAdd={(d) => void run("add_sketch_shape", { sketch_id: sketch.id, shape: { type: "path", d } })}
+          />
+        )}
+        <ParametersDialog open={parametersOpen} doc={doc} run={run} onClose={() => setParametersOpen(false)} />
+        <StudioSettingsDialog
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          settings={studioSettings}
+          onChange={setStudioSettings}
+          designUnits={doc ? units : null}
+          onDesignUnits={(next) => void run("set_units", { units: next })}
+        />
+        <CheckDialog
+          format={format}
+          open={checking}
+          designId={design?.id ?? null}
+          doc={doc}
+          selected={selected}
+          run={run}
+          onClose={() => setChecking(false)}
+        />
+        {tracing && design && (
+          <TraceDialog
+            designId={design.id}
+            onClose={() => setTracing(false)}
+            onTrace={tracePicture}
+            onError={showError}
+          />
+        )}
+
+        <Menu
+          open={Boolean(menuFeature)}
+          onClose={closeMenu}
+          anchorReference="anchorPosition"
+          anchorPosition={menu?.at}
+        >
+          {menuFeature && [
+            <MenuItem key="rename" onClick={menuAction(() => setRenaming({ kind: "feature", id: menuFeature.id }))}>
               <ListItemIcon>
-                <EditOutlinedIcon fontSize="small" />
+                <DriveFileRenameOutlineOutlinedIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText>{t("studio.actions.drawOnSketch")}</ListItemText>
-            </MenuItem>
-          ),
-          menuFeature.type === "sketch" && !consumerOf(doc!, menuFeature.id) && (
+              <ListItemText>{t("studio.actions.rename")}</ListItemText>
+            </MenuItem>,
+            menuFeature.type === "sketch" && (
+              <MenuItem
+                key="draw"
+                onClick={menuAction(() => {
+                  setSelected([menuFeature.id]);
+                  setSketch({ id: menuFeature.id, tool: "rectangle" });
+                })}
+              >
+                <ListItemIcon>
+                  <EditOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t("studio.actions.drawOnSketch")}</ListItemText>
+              </MenuItem>
+            ),
+            menuFeature.type === "sketch" && !consumerOf(doc!, menuFeature.id) && (
+              <MenuItem
+                key="extrude"
+                disabled={!menuFeature.shapes.some((shape) => !shape.hole)}
+                onClick={menuAction(() => begin("extrude", menuFeature.id))}
+              >
+                <ListItemIcon>
+                  <ExtrudeIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t("studio.actions.extrude")}</ListItemText>
+              </MenuItem>
+            ),
             <MenuItem
-              key="extrude"
-              disabled={!menuFeature.shapes.some((shape) => !shape.hole)}
-              onClick={menuAction(() => begin("extrude", menuFeature.id))}
+              key="visible"
+              onClick={menuAction(
+                () => void run("set_visibility", { feature_id: menuFeature.id, visible: !menuFeature.visible }),
+              )}
             >
               <ListItemIcon>
-                <ExtrudeIcon fontSize="small" />
+                {menuFeature.visible ? (
+                  <VisibilityOffOutlinedIcon fontSize="small" />
+                ) : (
+                  <VisibilityOutlinedIcon fontSize="small" />
+                )}
               </ListItemIcon>
-              <ListItemText>{t("studio.actions.extrude")}</ListItemText>
-            </MenuItem>
-          ),
-          <MenuItem
-            key="visible"
-            onClick={menuAction(
-              () => void run("set_visibility", { feature_id: menuFeature.id, visible: !menuFeature.visible }),
-            )}
-          >
-            <ListItemIcon>
-              {menuFeature.visible ? (
-                <VisibilityOffOutlinedIcon fontSize="small" />
-              ) : (
-                <VisibilityOutlinedIcon fontSize="small" />
+              <ListItemText>{menuFeature.visible ? t("studio.actions.hide") : t("studio.actions.show")}</ListItemText>
+            </MenuItem>,
+            <MenuItem
+              key="duplicate"
+              onClick={menuAction(async () =>
+                selectCreated(
+                  await run("duplicate_feature", {
+                    feature_id: menuFeature.id,
+                    ...(isBody(menuFeature) ? { offset: COPY_OFFSET } : {}),
+                  }),
+                ),
               )}
-            </ListItemIcon>
-            <ListItemText>{menuFeature.visible ? t("studio.actions.hide") : t("studio.actions.show")}</ListItemText>
-          </MenuItem>,
-          <MenuItem
-            key="duplicate"
-            onClick={menuAction(async () =>
-              selectCreated(
-                await run("duplicate_feature", {
-                  feature_id: menuFeature.id,
-                  ...(isBody(menuFeature) ? { offset: COPY_OFFSET } : {}),
-                }),
-              ),
-            )}
-          >
-            <ListItemIcon>
-              <ContentCopyOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t("studio.actions.duplicate")}</ListItemText>
-          </MenuItem>,
-          isBody(menuFeature) && !consumerOf(doc!, menuFeature.id) && (
-            <MenuItem key="separate" onClick={menuAction(() => separateBody(menuFeature.id))}>
+            >
               <ListItemIcon>
-                <SeparateIcon fontSize="small" />
+                <ContentCopyOutlinedIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText>{t("studio.actions.separate")}</ListItemText>
-            </MenuItem>
-          ),
-          <Divider key="divider" />,
-          <MenuItem
-            key="delete"
-            onClick={menuAction(() => void run("delete_feature", { feature_id: menuFeature.id }))}
-            sx={{ color: "error.main" }}
-          >
-            <ListItemIcon sx={{ color: "inherit" }}>
-              <DeleteOutlineIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t("studio.actions.delete")}</ListItemText>
-          </MenuItem>,
-        ]}
-      </Menu>
+              <ListItemText>{t("studio.actions.duplicate")}</ListItemText>
+            </MenuItem>,
+            isBody(menuFeature) && !consumerOf(doc!, menuFeature.id) && (
+              <MenuItem key="separate" onClick={menuAction(() => separateBody(menuFeature.id))}>
+                <ListItemIcon>
+                  <SeparateIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>{t("studio.actions.separate")}</ListItemText>
+              </MenuItem>
+            ),
+            <Divider key="divider" />,
+            <MenuItem
+              key="delete"
+              onClick={menuAction(() => void run("delete_feature", { feature_id: menuFeature.id }))}
+              sx={{ color: "error.main" }}
+            >
+              <ListItemIcon sx={{ color: "inherit" }}>
+                <DeleteOutlineIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t("studio.actions.delete")}</ListItemText>
+            </MenuItem>,
+          ]}
+        </Menu>
 
-      <DesignsDialog
-        open={designsOpen}
-        currentId={design?.id ?? null}
-        onClose={() => setDesignsOpen(false)}
-        onOpen={(id) => {
-          setDesignsOpen(false);
-          setSearchParams({ design: id });
-        }}
-        onNew={() => void newDesign()}
-        onImport={importModel}
-        onError={showError}
-      />
-      <RenameDialog
-        value={
-          renaming?.kind === "design"
-            ? (design?.name ?? null)
-            : renamingFeature
-              ? renamingFeature.name || featureLabel(renamingFeature, t)
-              : null
-        }
-        title={renaming?.kind === "design" ? t("studio.design.rename") : t("studio.actions.rename")}
-        allowEmpty={renaming?.kind === "feature"}
-        maxLength={renaming?.kind === "design" ? 120 : 80}
-        onClose={() => setRenaming(null)}
-        onSave={(name) => {
-          if (renaming?.kind === "design") void run("rename_design", { name });
-          else if (renamingFeature) void run("rename_feature", { feature_id: renamingFeature.id, name });
-        }}
-      />
-    </Paper>
+        <DesignsDialog
+          open={designsOpen}
+          currentId={design?.id ?? null}
+          onClose={() => setDesignsOpen(false)}
+          onOpen={(id) => {
+            setDesignsOpen(false);
+            setSearchParams({ design: id });
+          }}
+          onNew={() => void newDesign()}
+          onImport={importModel}
+          onError={showError}
+        />
+        <RenameDialog
+          value={
+            renaming?.kind === "design"
+              ? (design?.name ?? null)
+              : renamingFeature
+                ? renamingFeature.name || featureLabel(renamingFeature, t)
+                : null
+          }
+          title={renaming?.kind === "design" ? t("studio.design.rename") : t("studio.actions.rename")}
+          allowEmpty={renaming?.kind === "feature"}
+          maxLength={renaming?.kind === "design" ? 120 : 80}
+          onClose={() => setRenaming(null)}
+          onSave={(name) => {
+            if (renaming?.kind === "design") void run("rename_design", { name });
+            else if (renamingFeature) void run("rename_feature", { feature_id: renamingFeature.id, name });
+          }}
+        />
+      </Paper>
+    </StudioUnitsContext.Provider>
   );
 }

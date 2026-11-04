@@ -13,6 +13,8 @@ read it again (studio_get_design) before building on something.
 ## The world
 
 - Millimetres. Z is up; the bed is the XY plane at z = 0. The front is -Y, the right side +X.
+- Every tool takes and gives sizes in mm. The person sees and types them in the design's display_units (mm, cm or
+  in, from studio_get_design), as a CAD document's units: talk to them in those (1 in is 25.4 mm), and work in mm.
 - A box, cylinder, cone or torus has its origin at the centre of its base, a sphere at its lowest point: position
   z = 0 stands it on the bed.
 - Rotation is in degrees about the world X, then Y, then Z axis.
@@ -123,8 +125,10 @@ Check a part meant for printing with studio_check_print (floating or sunk bodies
 loose pieces), and a fit or a clearance with studio_measure (the gap between two bodies, or their overlap). As CAD
 does, the check judges a thread as the plain cylinder it's cut on, so its ridges aren't counted as overhang or thin walls.
 
-For a design someone will want to change, set_parameter names its key numbers (wall = 2, hole_d = 5) and
-set_expression makes features follow them (width = wall * 2 + 30): one change to a parameter then changes them all.
+For a design someone will want to change, set_parameter names its key numbers, each with its unit (wall = 2 mm,
+hole_d = 5 mm, holes = 6 with unit none) and set_expression makes features follow them (width = wall * 2 + 30 mm):
+one change to a parameter then changes them all. Formulas know units: a length field takes a length, a count a plain
+number, and a bare number added to a length is in the design's display_units, so write units in (30 mm) to be sure.
 
 Look at the result with studio_view_design (iso, top, front, right...) as you go.
 `;

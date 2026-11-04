@@ -140,7 +140,8 @@ const COMPACT: Record<string, { description: string; args: string[] }> = {
 const COMPACT_SYSTEM = `You build and change 3D-printable parts in Thingport Studio with the tools. Millimetres; Z is up and
 the bed is z = 0. A box, cylinder or cone stands on its position, the middle of its base; a sphere on its lowest point.
 Rotation is degrees about X, then Y, then Z. Features have ids like box-1. Take one step at a time and read each reply.
-When done, say in one or two sentences, in the person's language, what you made.`;
+The person thinks in the design's display_units: convert their sizes to mm (1 in = 25.4 mm, 1 cm = 10 mm), and give
+sizes back in their units. When done, say in one or two sentences, in the person's language, what you made.`;
 
 type AssistantTool = {
   tool: McpToolDefinition;
@@ -248,7 +249,15 @@ function compactState(state: string): string {
       (key === "scale" && sameJson(value, [1, 1, 1]))
         ? undefined
         : value;
-    return JSON.stringify({ top_level: read.top_level, features: read.features, bodies: read.bodies }, plain);
+    return JSON.stringify(
+      {
+        display_units: read.display_units,
+        top_level: read.top_level,
+        features: read.features,
+        bodies: read.bodies,
+      },
+      plain,
+    );
   } catch {
     return state;
   }

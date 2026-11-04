@@ -31,6 +31,7 @@ import { listPrints } from "./printQuery";
 import { loadFontsFor } from "./studioFonts";
 import { importStudioMesh, measureStudioBounds, measureStudioParts, traceStudioPicture } from "./studioInspect";
 import type { StudioWorkerResult } from "./studioWorker";
+import { getStudioSettings, type StudioUnits } from "./studioSettingsService";
 
 // Studio's designs: each user's own, changed only by the commands in frontend/src/studio/commands.ts, whether the page
 // or an assistant runs them. Every change to the feature tree is kept as a revision, which is what undo and redo move
@@ -135,8 +136,14 @@ export async function studioDesignHistory(design: Pick<StudioDesignOut, "id">, l
   return revisions.map((revision) => ({ summary: revision.summary, by: revision.actor, at: revision.createdAt }));
 }
 
-export async function createStudioDesign(userId: string, name: string | undefined, actor: StudioActor) {
-  const document = emptyDocument();
+/** A new design, in the units the person's settings start one in unless `units` says otherwise. */
+export async function createStudioDesign(
+  userId: string,
+  name: string | undefined,
+  actor: StudioActor,
+  units?: StudioUnits,
+) {
+  const document = { ...emptyDocument(), units: units ?? (await getStudioSettings(userId)).units };
   const design = await prisma.studioDesign.create({
     data: {
       userId,
