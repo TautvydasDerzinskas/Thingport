@@ -3979,6 +3979,8 @@
       },
       "fileSelectLabel": "Archivos ({{count}})",
       "fileListAria": "Archivos del modelo",
+      "defaultFile": "Predeterminado",
+      "defaultFileHelp": "Marcado como predeterminado por el sitio de origen",
       "downloadFile": "Descargar archivo",
       "moreOpenOptions": "Otros slicers y descargas",
       "openActions": "Abrir o descargar",

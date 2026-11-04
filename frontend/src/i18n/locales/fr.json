@@ -3992,6 +3992,8 @@
       },
       "fileSelectLabel": "Fichiers ({{count}})",
       "fileListAria": "Fichiers du modèle",
+      "defaultFile": "Par défaut",
+      "defaultFileHelp": "Marqué comme fichier par défaut par le site source",
       "downloadFile": "Télécharger le fichier",
       "moreOpenOptions": "Autres slicers et téléchargements",
       "openActions": "Ouvrir ou télécharger",

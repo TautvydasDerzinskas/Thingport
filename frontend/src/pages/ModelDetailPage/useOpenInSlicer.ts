@@ -39,6 +39,11 @@ export function modelFiles(print: Print): ModelFile[] {
   return out;
 }
 
+/** The file selected before the user picks one: the one the source site marks as its default, else the first. */
+export function defaultFile<T extends Pick<ModelFile, "plate">>(files: T[]): T | null {
+  return files.find((file) => file.plate?.is_default) ?? files[0] ?? null;
+}
+
 export function slicerHref(slicerId: string, file: ModelFile): string {
   return slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename);
 }

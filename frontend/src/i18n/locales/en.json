@@ -3941,6 +3941,8 @@
       },
       "fileSelectLabel": "Files ({{count}})",
       "fileListAria": "Model files",
+      "defaultFile": "Default",
+      "defaultFileHelp": "Marked as the default by the source site",
       "downloadFile": "Download file",
       "moreOpenOptions": "Other slicers and downloads",
       "openActions": "Open or download",

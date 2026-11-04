@@ -45,6 +45,7 @@ export type Plate = {
   render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
   own_colors?: boolean; // the file carries colours of its own, so our picture of it is a colour render
   profile?: PlateProfile | null; // slicer profile of a 3MF; null for other formats or when unreadable
+  is_default?: boolean; // the source site offers this file as its default; at most one file of a model
 };
 
 export type PrintFile = {

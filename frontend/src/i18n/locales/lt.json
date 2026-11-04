@@ -4076,6 +4076,8 @@
       },
       "fileSelectLabel": "Failai ({{count}})",
       "fileListAria": "Modelio failai",
+      "defaultFile": "Numatytasis",
+      "defaultFileHelp": "Šaltinio svetainė pažymėjo kaip numatytąjį",
       "downloadFile": "Atsisiųsti failą",
       "moreOpenOptions": "Kitos pjaustyklės ir atsisiuntimai",
       "openActions": "Atverti arba atsisiųsti",

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { Plate } from "../../api/prints";
 import en from "../../i18n/locales/en.json";
 import ModelFileList, { nextFocusIndex } from "./ModelFileList";
-import type { ModelFile } from "./useOpenInSlicer";
+import { defaultFile, type ModelFile } from "./useOpenInSlicer";
 
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", defaultNS: "models", resources: { en: { models: en.models } } });
@@ -99,4 +99,24 @@ describe("ModelFileList", () => {
     expect(html).toContain("Prepared print");
     expect(html).toContain("p.gcode.3mf");
   });
+
+  it("marks only the file the source flags as default, with a help tip", () => {
+    const flagged = file(1);
+    flagged.plate = { ...flagged.plate!, is_default: true };
+    const html = render([file(0), flagged]);
+    expect(html.match(/>Default</g)).toHaveLength(1);
+    expect(html).toContain("Marked as the default by the source site");
+    expect(render([file(0), file(1)])).not.toContain(">Default<");
+  });
+});
+
+describe("defaultFile", () => {
+  const flag = (f: ModelFile): ModelFile => ({ ...f, plate: { ...f.plate!, is_default: true } });
+  it("is null for no files", () => expect(defaultFile([])).toBeNull());
+  it("is the only file", () => expect(defaultFile([file(0)])?.key).toBe("k0"));
+  it("is the first file without a flag", () => expect(defaultFile([file(0), file(1)])?.key).toBe("k0"));
+  it("is the flagged file, even when not the first", () =>
+    expect(defaultFile([file(0), flag(file(1)), file(2)])?.key).toBe("k1"));
+  it("ignores files without plate data", () =>
+    expect(defaultFile([{ ...file(0), plate: null }, flag(file(1))])?.key).toBe("k1"));
 });

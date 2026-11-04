@@ -30,7 +30,7 @@ import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { importProviderInfo } from "../../constants/importProviders";
 import { useDownloadPrint } from "./useDownloadPrint";
-import { useOpenInSlicer } from "./useOpenInSlicer";
+import { defaultFile, useOpenInSlicer } from "./useOpenInSlicer";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
 import ModelFileList from "./ModelFileList";
@@ -101,9 +101,9 @@ export default function ModelSidePanel({
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
   const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor } = useOpenInSlicer(print);
-  // Every action below applies to this file; the first until one is picked.
+  // Every action below applies to this file; the source's default (else the first) until one is picked.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const selectedFile = files.find((file) => file.key === selectedKey) ?? files[0] ?? null;
+  const selectedFile = files.find((file) => file.key === selectedKey) ?? defaultFile(files);
   const normalizedTarget = normalizedTargetFor(selectedFile);
   const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
   // Opened from the button below rather than a menu, so there is no menu to close.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
@@ -8,6 +9,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import PrintIcon from "@mui/icons-material/Print";
+import HelpTip from "../../components/HelpTip";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
 import { fileRowText } from "./fileRowText";
 import type { ModelFile } from "./useOpenInSlicer";
@@ -170,11 +172,17 @@ export default function ModelFileList({ files, selected, onSelect }: Props) {
                 <ListItemText
                   primary={text.primary}
                   secondary={text.secondary}
-                  sx={{ m: 0, minWidth: 0 }}
+                  sx={{ m: 0, minWidth: 0, flex: "1 1 auto" }}
                   primaryTypographyProps={{ variant: "body2", fontWeight: 600, noWrap: true }}
                   secondaryTypographyProps={{ variant: "caption", component: "div" }}
                 />
               </Tooltip>
+              {file.plate?.is_default && (
+                <Box sx={{ display: "inline-flex", alignItems: "center", flexShrink: 0, mt: 0.25 }}>
+                  <Chip size="small" variant="outlined" color="primary" label={t("models:detail.defaultFile")} />
+                  <HelpTip text={t("models:detail.defaultFileHelp")} />
+                </Box>
+              )}
             </ListItemButton>
           );
         })}
