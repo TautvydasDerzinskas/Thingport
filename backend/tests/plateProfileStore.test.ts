@@ -114,6 +114,13 @@ describe("the 3MF profile of a plate", () => {
     expect((await getPrint(printId)).profile).toBeNull();
   });
 
+  it("drops the old profile when the stamped file is gone, keeping the stored row", async () => {
+    const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
+    fs.rmSync(resolvePlateFilePath(await stored(plateId))!);
+    expect((await getPrint(printId)).profile).toBeNull();
+    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2, title: TITLE } });
+  });
+
   it("does not re-read a current profile stored without a file stamp", async () => {
     const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
     await prisma.plate.update({ where: { id: plateId }, data: { profileMeta: { version: 2, title: "kept" } } });
@@ -149,6 +156,14 @@ describe("the 3MF profile of a plate", () => {
     const outs = await printOutsByIds(userId, [printId]);
     expect(outs.get(printId)!.plates[0].profile?.title).toBe(TITLE);
     expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2, title: TITLE } });
+  });
+
+  it("leaves the plates of prints the caller doesn't own unread", async () => {
+    const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
+    await prisma.plate.update({ where: { id: plateId }, data: { profileMeta: Prisma.JsonNull } });
+    const other = await register(app, "profilestore", "stranger");
+    expect((await printOutsByIds(other.id, [printId])).size).toBe(0);
+    expect((await stored(plateId)).profileMeta).toBeNull();
   });
 
   it("does not store a profile read for a name the plate no longer has", async () => {

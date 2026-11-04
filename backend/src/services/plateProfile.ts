@@ -475,7 +475,8 @@ function storedStamp(value: Prisma.JsonObject): FileStamp | null {
 }
 
 /** Reads the missing or outdated profiles of 3MF plates, and those of files changed since, saves them and sets them on
- *  the given objects. A plate whose file is gone or unreadable is skipped and stays as it was, so it is tried again. */
+ *  the given objects. A plate whose file is gone or unreadable stores nothing, so it is tried again; one that had a profile
+ *  shows none, since that profile describes a file that is no longer there. */
 export async function ensurePlateProfiles<
   T extends Pick<Plate, "id" | "filename" | "storagePath" | "sourcePath" | "profileMeta">,
 >(plates: T[]): Promise<void> {
@@ -487,7 +488,10 @@ export async function ensurePlateProfiles<
     if (current && !stamp) continue;
     try {
       const filePath = resolvePlateFilePath(plate);
-      if (!filePath) continue;
+      if (!filePath) {
+        if (stamp) plate.profileMeta = null;
+        continue;
+      }
       if (stamp) {
         const now = await fileStamp(filePath);
         if (now.size === stamp.size && now.mtime_ms === stamp.mtime_ms) continue;

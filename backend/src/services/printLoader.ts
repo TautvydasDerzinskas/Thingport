@@ -74,7 +74,9 @@ export async function printOutsByIds(userId: string, printIds: string[]): Promis
     aiSuggestionsShown(),
   ]);
   // Callers pass a bounded id list (search results, cover ids, at most 500 bulk ids), and each plate is read once.
-  await ensurePlateProfiles(plates);
+  // Only plates of prints the caller owns are read: the plate query doesn't filter by user.
+  const owned = new Set(prints.map((p) => p.id));
+  await ensurePlateProfiles(plates.filter((p) => owned.has(p.printId)));
   const platesByPrint = groupByPrintId(plates);
   const filesByPrint = groupByPrintId(files);
   const previewsByPrint = groupByPrintId(previewImages);
