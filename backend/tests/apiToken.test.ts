@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { API_TOKEN_SCOPE_IDS, scopeForPath } from "../src/services/apiTokenScopes";
+import { API_TOKEN_SCOPE_IDS, DEFAULT_API_TOKEN_SCOPE_IDS, scopeForPath } from "../src/services/apiTokenScopes";
 
 const app = createApp();
 let session: string;
@@ -119,9 +119,10 @@ describe("API token", () => {
     }
   });
 
-  it("reads every REST scope when new, and only the allowed ones once narrowed", async () => {
+  it("reads every REST scope but chats when new, and only the allowed ones once narrowed", async () => {
     const { body } = await request(app).post("/api/profile/api-token").set(auth(session));
-    expect(body.rest_scopes).toEqual(API_TOKEN_SCOPE_IDS);
+    expect(body.rest_scopes).toEqual(DEFAULT_API_TOKEN_SCOPE_IDS);
+    expect(body.rest_scopes).not.toContain("chats");
 
     const narrowed = await request(app)
       .put("/api/profile/api-token/rest-scopes")

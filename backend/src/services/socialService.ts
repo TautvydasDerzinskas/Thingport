@@ -11,11 +11,13 @@ import { getSocialSettings } from "./settingsService";
 
 const IN_PUBLIC_COLLECTION: Prisma.PrintWhereInput = { collectionItems: { some: { collection: { isPublic: true } } } };
 
-/** Whether Explore is offered: social features are on, and there's someone else on the instance to explore. */
-export async function socialStatus(): Promise<{ enabled: boolean; explore: boolean }> {
-  const { enabled } = await getSocialSettings();
-  if (!enabled) return { enabled, explore: false };
-  return { enabled, explore: (await prisma.user.count({ take: 2 })) > 1 };
+/** Whether Explore and Chats are offered: social features are on (and chats with them), and there's someone else on the
+ *  instance to explore or talk to. */
+export async function socialStatus(): Promise<{ enabled: boolean; explore: boolean; chats: boolean }> {
+  const { enabled, chats } = await getSocialSettings();
+  if (!enabled) return { enabled, explore: false, chats: false };
+  const others = (await prisma.user.count({ take: 2 })) > 1;
+  return { enabled, explore: others, chats: chats && others };
 }
 
 /** The models `userId` may open, download and copy: their own, and while social features are on, every model in a

@@ -46,6 +46,7 @@ import ConnectionsPage from "./pages/ConnectionsPage";
 import CaptchaPage from "./pages/CaptchaPage";
 import ExplorePage from "./pages/ExplorePage";
 import ExploreUserPage from "./pages/ExplorePage/ExploreUserPage";
+import ChatsPage from "./pages/ChatsPage";
 import RenderingPage from "./pages/RenderingPage";
 import AiPage from "./pages/AiPage";
 import { healthApi, type HealthInfo } from "./api/health";
@@ -305,6 +306,9 @@ function AppShell({
             />
           }
         />
+        {/* Direct messages and rooms, while an admin has chats on under social features. */}
+        <Route path="/chats" element={<ChatsPage onUnauthorized={onUnauthorized} />} />
+        <Route path="/chats/:chatId" element={<ChatsPage onUnauthorized={onUnauthorized} />} />
         <Route
           path="/explore/models/:printId"
           element={

@@ -20,6 +20,8 @@ import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
+import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
+import Badge from "@mui/material/Badge";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -52,6 +54,8 @@ import { type BookmarkEntry, bookmarksApi } from "../../../api/bookmarks";
 import { useTools } from "../../../hooks/useTools";
 import { useStudioEnabled } from "../../../hooks/useStudioEnabled";
 import { useSocialStatus } from "../../../hooks/useSocialStatus";
+import { useChats } from "../../chats/ChatsContext";
+import { UnreadPill } from "../../chats/ChatList";
 
 const SIDEBAR_WIDTH = 240;
 export const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -247,9 +251,14 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
   // While an admin has social features on and there's someone else on the instance to explore.
   const showExplore = useSocialStatus()?.explore === true;
   const onExplore = location.pathname === "/explore" || location.pathname.startsWith("/explore/");
+  // While an admin has chats on under social features, with how many messages are waiting.
+  const { enabled: showChats, unread: chatsUnread } = useChats();
+  const onChats = location.pathname === "/chats" || location.pathname.startsWith("/chats/");
   const onAdmin = location.pathname.startsWith("/admin");
-  // Administration opens its own menu beside this one, so this one folds to icons there, whatever the user chose.
-  const collapsed = !mobile && (collapsedByUser || onAdmin);
+  // Administration and Chats open their own column beside this one, so this one folds to icons there, whatever the
+  // user chose.
+  const folded = onAdmin || (onChats && showChats);
+  const collapsed = !mobile && (collapsedByUser || folded);
 
   const toggleCollapsed = () => {
     setCollapsedByUser((prev) => {
@@ -304,8 +313,8 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
           </Link>
         )}
         {!mobile &&
-          (onAdmin ? (
-            // Folded for administration, there's nothing to unfold: the mark leads home instead.
+          (folded ? (
+            // Folded for administration or Chats, there's nothing to unfold: the mark leads home instead.
             <Tooltip title={t("sidebar.dashboard")} placement="right">
               <Link
                 component={RouterLink}
@@ -405,6 +414,48 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
                   <ExploreOutlinedIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary={t("sidebar.explore")} primaryTypographyProps={{ variant: "body2" }} />
+              </ListItemButton>
+            ))}
+
+          {showChats &&
+            (collapsed ? (
+              <CollapsedNavIcon
+                icon={
+                  <Badge
+                    badgeContent={chatsUnread}
+                    color="primary"
+                    max={99}
+                    // Small enough to leave the icon readable beside it.
+                    sx={{
+                      "& .MuiBadge-badge": {
+                        height: 15,
+                        minWidth: 15,
+                        px: "4px",
+                        fontSize: "0.6rem",
+                        top: -2,
+                        right: -4,
+                      },
+                    }}
+                  >
+                    <ForumOutlinedIcon fontSize="small" />
+                  </Badge>
+                }
+                label={chatsUnread ? t("sidebar.chatsUnread", { count: chatsUnread }) : t("sidebar.chats")}
+                selected={onChats}
+                onClick={() => navigate("/chats")}
+              />
+            ) : (
+              <ListItemButton
+                selected={onChats}
+                onClick={() => navigate("/chats")}
+                aria-label={chatsUnread ? t("sidebar.chatsUnread", { count: chatsUnread }) : undefined}
+                sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onChats) }}
+              >
+                <ListItemIcon sx={{ minWidth: 30 }}>
+                  <ForumOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("sidebar.chats")} primaryTypographyProps={{ variant: "body2" }} />
+                {chatsUnread > 0 && <UnreadPill count={chatsUnread} />}
               </ListItemButton>
             ))}
 

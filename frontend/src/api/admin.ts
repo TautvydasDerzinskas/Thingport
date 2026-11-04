@@ -92,7 +92,10 @@ export type LogAction =
   | "sign_in_disconnected"
   | "grab_connected"
   | "grab_disconnected"
-  | "social_settings_changed";
+  | "social_settings_changed"
+  | "chat_room_created"
+  | "chat_room_edited"
+  | "chat_room_deleted";
 
 export type LogEntry = {
   id: string;

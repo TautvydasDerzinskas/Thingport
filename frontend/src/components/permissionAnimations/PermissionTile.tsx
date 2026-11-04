@@ -618,6 +618,20 @@ const pictures: Record<string, () => React.ReactNode> = {
       ))}
     </>
   ),
+  // Two speech bubbles, one answering the other.
+  chats: () => (
+    <>
+      <Box sx={{ ...at(7, 9, 18, 12), bgcolor: "primary.main", borderRadius: "5px", animation: run(bob, 1.6) }} />
+      <Box
+        sx={{
+          ...at(16, 19, 17, 11),
+          bgcolor: "text.disabled",
+          borderRadius: "5px",
+          animation: run(bob, 1.6, "0.8s"),
+        }}
+      />
+    </>
+  ),
   other: () => (
     <>
       {[0, 1, 2].map((i) => (

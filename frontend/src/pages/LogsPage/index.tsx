@@ -79,6 +79,9 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   grab_connected: "info",
   grab_disconnected: "default",
   social_settings_changed: "warning",
+  chat_room_created: "info",
+  chat_room_edited: "default",
+  chat_room_deleted: "error",
 };
 
 function isoDateOnly(d: Date): string {
@@ -154,9 +157,16 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "user_invited":
         return typeof d.email === "string" ? d.email : "";
       case "social_settings_changed":
-        return typeof d.enabled === "boolean"
-          ? t(d.enabled ? "adminSettings.logs.socialOn" : "adminSettings.logs.socialOff")
+        if (typeof d.enabled === "boolean") {
+          return t(d.enabled ? "adminSettings.logs.socialOn" : "adminSettings.logs.socialOff");
+        }
+        return typeof d.chats === "boolean"
+          ? t(d.chats ? "adminSettings.logs.chatsOn" : "adminSettings.logs.chatsOff")
           : "";
+      case "chat_room_created":
+      case "chat_room_edited":
+      case "chat_room_deleted":
+        return typeof d.name === "string" ? d.name : "";
       case "descriptions_refetched":
         return t("adminSettings.logs.descriptionsRefetched", {
           email: typeof d.email === "string" ? d.email : "",

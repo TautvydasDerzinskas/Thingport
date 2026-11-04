@@ -18,6 +18,7 @@ import MoveToInboxOutlinedIcon from "@mui/icons-material/MoveToInboxOutlined";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import type { Notification, NotificationType } from "../../api/notifications";
 import { isNew } from "./useNotificationFeed";
 
@@ -31,6 +32,7 @@ const TYPE_STYLE: Record<NotificationType, { Icon: typeof SyncIcon; color: Palet
   consume: { Icon: MoveToInboxOutlinedIcon, color: "success" },
   ai: { Icon: AutoAwesomeOutlinedIcon, color: "secondary" },
   system: { Icon: CampaignOutlinedIcon, color: "error" },
+  chat: { Icon: ChatBubbleOutlineIcon, color: "info" },
   general: { Icon: NotificationsNoneIcon, color: null },
 };
 

@@ -37,6 +37,7 @@ import HubIcon from "@mui/icons-material/Hub";
 import LayersIcon from "@mui/icons-material/Layers";
 import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
 import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
+import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 import DownloadIcon from "@mui/icons-material/Download";
 import PersonIcon from "@mui/icons-material/Person";
 import WebAssetIcon from "@mui/icons-material/WebAsset";
@@ -138,6 +139,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   models: <ViewInArIcon />,
   collections: <CollectionsIcon />,
   explore: <ExploreOutlinedIcon />,
+  chats: <ForumOutlinedIcon />,
   tags: <LocalOfferIcon />,
   downloads: <DownloadIcon />,
   tools: <HandymanOutlinedIcon />,
@@ -208,8 +210,10 @@ export default function GlobalSearch({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   // The tools the user may open; null while they're still loading, which is only the first moment.
   const tools = useTools();
-  // Explore is a page to find only while the sidebar offers it.
-  const explore = useSocialStatus()?.explore === true;
+  // Explore and Chats are pages to find only while the sidebar offers them.
+  const social = useSocialStatus();
+  const explore = social?.explore === true;
+  const chats = social?.chats === true;
   // Until the user arrows away, the selection tracks the top row, so results that arrive late take it.
   const userMovedRef = useRef(false);
   // Where focus was before the search took it; Escape hands it back, as a dialog does.
@@ -509,7 +513,7 @@ export default function GlobalSearch({
   } else if (!trimmedQuery) {
     const shown = recents
       // Kept, not dropped, while the viewer isn't known to be an admin yet.
-      .filter((entry) => entry.kind !== "page" || pageFor(entry, pagesFor(isAdmin, explore)))
+      .filter((entry) => entry.kind !== "page" || pageFor(entry, pagesFor(isAdmin, explore, chats)))
       .slice(0, RECENTS_SHOWN);
     // Not a heading over nothing, where every recent one was a page no longer offered.
     if (shown.length) {
@@ -612,7 +616,7 @@ export default function GlobalSearch({
       PageId,
       string
     >;
-    const pages = matchPages(trimmedQuery, pageLabels, isAdmin, explore).map(pageItem);
+    const pages = matchPages(trimmedQuery, pageLabels, isAdmin, explore, chats).map(pageItem);
     if (pages.length) sections.push({ id: "pages", label: t("app:search.sectionPages"), items: pages });
     const matched = commands
       .map((command) => ({ command, score: bestScore(trimmedQuery, command.label, command.keywords) }))
