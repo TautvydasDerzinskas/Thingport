@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import type { PlateProfile, PlateStat } from "../api/prints";
+import type { PlateSummary } from "../utils/bambuThreeMf";
 import { extOf } from "../utils/fileExtensions";
 import { formatDuration, formatMm, formatWeight, shownValues } from "./ProfileBadges";
 
@@ -20,6 +21,27 @@ export function plateStatText(stat: PlateStat | undefined, locale: string): stri
 /** The stats of the plate the file numbers `index` (1-based, as in slice_info.config); undefined when it has none. */
 export function statForPlate(profile: PlateProfile | null | undefined, index: number): PlateStat | undefined {
   return profile?.plate_stats?.find((s) => s.index === index);
+}
+
+/**
+ * The plates to list for a file. The file's plate JSONs say how many plates it has (the "Plates" detail), so
+ * plates the viewer found beyond that count (empty build plates of a project) are left out and both agree.
+ * Without geometry (a sliced `.gcode.3mf`) the list comes from the profile: the plates with stats, else 1..N.
+ */
+export function platesToList(
+  viewerPlates: PlateSummary[],
+  profile: PlateProfile | null | undefined,
+  noGeometry: boolean,
+): PlateSummary[] {
+  const count = profile?.plates != null && profile.plates > 0 ? profile.plates : null;
+  if (viewerPlates.length > 0) {
+    const within = count != null ? viewerPlates.filter((p) => p.index <= count) : viewerPlates;
+    return within.length > 0 ? within : viewerPlates;
+  }
+  if (!noGeometry || !profile) return [];
+  const stats = profile.plate_stats ?? [];
+  const indexes = stats.length > 0 ? stats.map((s) => s.index) : Array.from({ length: count ?? 0 }, (_, i) => i + 1);
+  return indexes.toSorted((a, b) => a - b).map((index) => ({ index, name: null, objectCount: 0 }));
 }
 
 /**

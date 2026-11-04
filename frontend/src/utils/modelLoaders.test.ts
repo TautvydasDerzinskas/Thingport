@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { applyThemeToObject, objectFromMesh, paletteForTheme } from "./modelLoaders";
+import { applyThemeToObject, hasNoGeometry, objectFromMesh, paletteForTheme } from "./modelLoaders";
 import { hasOwnColor } from "./ownColor";
 import { parseOff } from "../sdk/threeMf";
 
@@ -43,5 +43,20 @@ describe("objectFromMesh", () => {
     expect(Array.isArray(object.material)).toBe(false);
     expect(hasOwnColor(object.material as THREE.Material)).toBe(true);
     expect(object.geometry.groups).toHaveLength(0);
+  });
+});
+
+describe("hasNoGeometry", () => {
+  it("is true for an empty group, as a sliced .gcode.3mf loads", () => {
+    const group = new THREE.Group();
+    group.add(new THREE.Group());
+    expect(hasNoGeometry(group)).toBe(true);
+    expect(hasNoGeometry(new THREE.Group().add(new THREE.Mesh(new THREE.BufferGeometry())))).toBe(true);
+  });
+
+  it("is false once any child has vertices", () => {
+    const group = new THREE.Group();
+    group.add(new THREE.Group().add(meshOf("OFF\n3 1 0\n0 0 0\n1 0 0\n0 1 0\n3 0 1 2\n")));
+    expect(hasNoGeometry(group)).toBe(false);
   });
 });

@@ -10,6 +10,7 @@ import { type ResolvedTheme } from "../../../constants/settingsOptions";
 import {
   applyThemeToObject,
   disposeObject3D,
+  hasNoGeometry,
   loadBambuThreeMFForViewer,
   loadObjectFromAsset,
   objectFromMesh,
@@ -56,6 +57,8 @@ type ModelViewerProps = {
   /** Server pre-rendered GLB, tried before parsing a 3MF client-side. */
   previewGlbUrl?: string | null;
   /** Fired once a 3MF's internal plates are known. `getThumbnail` reuses the fetched bytes. */
+  /** The file loaded but holds no geometry (a sliced `.gcode.3mf`). Without it the viewer shows its "unsupported" overlay. */
+  onNoGeometry?: () => void;
   onPlatesDetected?: (plates: PlateSummary[], getThumbnail: (index: number) => Promise<string | null>) => void;
   renderStyle?: RenderStyle;
   showBuildPlate?: boolean;
@@ -140,6 +143,7 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
     selectedPlateId = null,
     previewGlbUrl,
     onPlatesDetected,
+    onNoGeometry,
     renderStyle = "solid",
     showBuildPlate = true,
     autoRotate = false,
@@ -159,6 +163,8 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
   meshRef.current = mesh;
   const onOwnColorRef = useRef(onOwnColorChange);
   onOwnColorRef.current = onOwnColorChange;
+  const onNoGeometryRef = useRef(onNoGeometry);
+  onNoGeometryRef.current = onNoGeometry;
   const sceneApiRef = useRef<{
     applyAppearance: () => void;
     setCameraView: (view: CameraView) => void;
@@ -516,8 +522,15 @@ const ModelViewer = forwardRef<ModelViewerHandle, ModelViewerProps>(function Mod
               const result = await loadBambuThreeMFForViewer(url);
               if (!result) {
                 const obj = await loadObjectFromAsset(e, url);
-                if (!obj) {
-                  reportError("unsupported");
+                if (!obj || hasNoGeometry(obj)) {
+                  if (obj) disposeObject3D(obj);
+                  if (disposed) return;
+                  if (obj && onNoGeometryRef.current) {
+                    setIsLoading(false);
+                    onNoGeometryRef.current();
+                  } else {
+                    reportError("unsupported");
+                  }
                   return;
                 }
                 if (disposed) {

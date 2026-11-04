@@ -3820,7 +3820,11 @@
         "file": "Archivo",
         "type": "Tipo"
       },
-      "internalPlatesDivider": "{{count}} placas en este archivo",
+      "internalPlatesDivider_one": "{{count}} placa en este archivo",
+      "internalPlatesDivider_many": "{{count}} placas en este archivo",
+      "internalPlatesDivider_other": "{{count}} placas en este archivo",
+      "noGeometry": "Archivo laminado sin modelo 3D",
+      "noGeometryHint": "Solo se muestran los ajustes del laminador y los tiempos por placa.",
       "internalPlateObjectCount_one": "{{count}} objeto",
       "internalPlateObjectCount_other": "{{count}} objetos",
       "previewToolbar": {

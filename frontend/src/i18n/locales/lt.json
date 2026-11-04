@@ -3909,7 +3909,11 @@
         "file": "Failas",
         "type": "Tipas"
       },
-      "internalPlatesDivider": "{{count}} plokščių šiame faile",
+      "internalPlatesDivider_one": "{{count}} plokštė šiame faile",
+      "internalPlatesDivider_few": "{{count}} plokštės šiame faile",
+      "internalPlatesDivider_other": "{{count}} plokščių šiame faile",
+      "noGeometry": "Supjaustytas failas be 3D modelio",
+      "noGeometryHint": "Rodomi tik pjaustyklės nustatymai ir plokščių laikai.",
       "internalPlateObjectCount_one": "{{count}} objektas",
       "internalPlateObjectCount_few": "{{count}} objektai",
       "internalPlateObjectCount_other": "{{count}} objektų",

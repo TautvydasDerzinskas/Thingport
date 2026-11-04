@@ -14,6 +14,7 @@ import ListItemText from "@mui/material/ListItemText";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import LayersIcon from "@mui/icons-material/Layers";
+import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -21,7 +22,7 @@ import { type Print, printsApi } from "../../api/prints";
 import { MODEL_EXTS } from "../../constants/fileTypes";
 import { extOf, stemOf } from "../../utils/fileExtensions";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
-import ProfileDetails, { plateStatText, statForPlate } from "../../components/ProfileDetails";
+import ProfileDetails, { plateStatText, platesToList, statForPlate } from "../../components/ProfileDetails";
 import ModelViewer, {
   type CameraView,
   type ModelViewerHandle,
@@ -76,7 +77,13 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
   const is3d = Boolean(activePlate) && MODEL_EXTS.has(ext);
 
   // Plates inside the active .3mf, reset when the file changes.
-  const [internalPlates, setInternalPlates] = useState<PlateSummary[]>([]);
+  const [viewerPlates, setViewerPlates] = useState<PlateSummary[]>([]);
+  // The file loaded but holds no model (a sliced .gcode.3mf): the plate list then comes from its profile.
+  const [noGeometry, setNoGeometry] = useState(false);
+  const internalPlates = useMemo(
+    () => platesToList(viewerPlates, activePlate?.profile, noGeometry),
+    [viewerPlates, activePlate?.profile, noGeometry],
+  );
   const [internalThumbnails, setInternalThumbnails] = useState<Record<number, string | null>>({});
   const [selectedInternalPlateId, setSelectedInternalPlateId] = useState<number | null>(null);
 
@@ -102,7 +109,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
   const showFileRows = sortedPlates.length > 1 || internalPlates.length === 0;
 
   const handlePlatesDetected = (plates: PlateSummary[], getThumbnail: (index: number) => Promise<string | null>) => {
-    setInternalPlates(plates);
+    setViewerPlates(plates);
     setSelectedInternalPlateId(plates[0]?.index ?? null);
     setInternalThumbnails({});
     Promise.all(plates.map(async (plate) => [plate.index, await getThumbnail(plate.index)] as const)).then((pairs) => {
@@ -117,9 +124,15 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
     // The next file answers for itself; until it does, the palette shouldn't stay disabled on the strength
     // of the last one.
     setOwnColor(false);
-    setInternalPlates([]);
+    setViewerPlates([]);
+    setNoGeometry(false);
     setInternalThumbnails({});
     setSelectedInternalPlateId(null);
+  };
+
+  const handleNoGeometry = () => {
+    setNoGeometry(true);
+    setOwnColor(false);
   };
 
   return (
@@ -194,7 +207,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                 {internalPlates.map((plate) => (
                   <ListItemButton
                     key={plate.index}
-                    selected={plate.index === selectedInternalPlateId}
+                    selected={plate.index === (selectedInternalPlateId ?? internalPlates[0]?.index)}
                     onClick={() => setSelectedInternalPlateId(plate.index)}
                     sx={{ borderRadius: 1, mb: 0.25, py: 0.5 }}
                   >
@@ -229,7 +242,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                           : t("models:detail.plateLabel", { n: plate.index })
                       }
                       secondary={[
-                        t("models:detail.internalPlateObjectCount", { count: plate.objectCount }),
+                        noGeometry ? null : t("models:detail.internalPlateObjectCount", { count: plate.objectCount }),
                         plateStatText(statForPlate(activePlate?.profile, plate.index), locale),
                       ]
                         .filter(Boolean)
@@ -252,7 +265,23 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
         </Paper>
 
         <Box sx={{ width: "100%", height: "100%" }}>
-          {is3d && activePlate ? (
+          {is3d && activePlate && noGeometry ? (
+            // Centred in the space right of the 280px side panel, so it isn't half under it.
+            <Stack
+              spacing={0.5}
+              alignItems="center"
+              justifyContent="center"
+              sx={{ height: "100%", pl: "312px", pr: 2, textAlign: "center" }}
+            >
+              <ViewInArOutlinedIcon color="disabled" sx={{ fontSize: 40 }} />
+              <Typography color="text.primary" fontWeight={600}>
+                {t("models:detail.noGeometry")}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {t("models:detail.noGeometryHint")}
+              </Typography>
+            </Stack>
+          ) : is3d && activePlate ? (
             <ModelViewer
               ref={viewerRef}
               key={activePlate.id}
@@ -268,6 +297,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
               selectedPlateId={selectedInternalPlateId}
               previewGlbUrl={activePlate.preview_glb_url ? printsApi.fileUrl(activePlate.preview_glb_url) : null}
               onPlatesDetected={handlePlatesDetected}
+              onNoGeometry={handleNoGeometry}
               onOwnColorChange={setOwnColor}
             />
           ) : (
@@ -277,7 +307,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
           )}
         </Box>
 
-        {is3d && (
+        {is3d && !noGeometry && (
           // Lined up with the close button, just above the viewer's orientation cube (72px, 12px from the corner).
           <Stack spacing={1} sx={{ position: "absolute", bottom: 92, right: 10, zIndex: 2 }}>
             <IconButton
@@ -297,7 +327,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
           </Stack>
         )}
 
-        {is3d && (
+        {is3d && !noGeometry && (
           <PreviewToolbar
             cameraView={cameraView}
             onCameraView={handleCameraView}

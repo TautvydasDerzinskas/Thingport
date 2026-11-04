@@ -3783,7 +3783,10 @@
         "file": "File",
         "type": "Type"
       },
-      "internalPlatesDivider": "{{count}} plates in this file",
+      "internalPlatesDivider_one": "{{count}} plate in this file",
+      "internalPlatesDivider_other": "{{count}} plates in this file",
+      "noGeometry": "Sliced file without a 3D model",
+      "noGeometryHint": "Only the slicer settings and plate times are shown.",
       "internalPlateObjectCount_one": "{{count}} object",
       "internalPlateObjectCount_other": "{{count}} objects",
       "previewToolbar": {

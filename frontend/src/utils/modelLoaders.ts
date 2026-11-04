@@ -661,3 +661,15 @@ async function loadViaThreeMFLoader(url: string) {
     new ThreeMFLoader().load(url, resolve, undefined, reject);
   });
 }
+
+/** True when nothing in `object` has a vertex, e.g. the empty group a sliced `.gcode.3mf` (plates and settings, no
+ *  model) loads as. */
+export function hasNoGeometry(object: THREE.Object3D): boolean {
+  let found = false;
+  object.traverse((child) => {
+    if (found) return;
+    const geometry = (child as THREE.Mesh).geometry as THREE.BufferGeometry | undefined;
+    if (geometry && (geometry.getAttribute("position")?.count ?? 0) > 0) found = true;
+  });
+  return !found;
+}

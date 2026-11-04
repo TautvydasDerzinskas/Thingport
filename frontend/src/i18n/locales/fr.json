@@ -3833,7 +3833,11 @@
         "file": "Fichier",
         "type": "Type"
       },
-      "internalPlatesDivider": "{{count}} plateaux dans ce fichier",
+      "internalPlatesDivider_one": "{{count}} plaque dans ce fichier",
+      "internalPlatesDivider_many": "{{count}} plaques dans ce fichier",
+      "internalPlatesDivider_other": "{{count}} plaques dans ce fichier",
+      "noGeometry": "Fichier découpé sans modèle 3D",
+      "noGeometryHint": "Seuls les réglages du slicer et les temps par plaque sont affichés.",
       "internalPlateObjectCount_one": "{{count}} objet",
       "internalPlateObjectCount_other": "{{count}} objets",
       "previewToolbar": {
