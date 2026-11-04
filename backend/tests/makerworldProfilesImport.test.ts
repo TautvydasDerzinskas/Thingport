@@ -542,7 +542,7 @@ describe("Improved descriptions on import", () => {
     });
     await setAiDescriptionPrefs({ ...DEFAULT_AI_DESCRIPTION_PREFS, enabled: true, onImport: true, mode: "suggest" });
 
-    const designId = String((stamp % 1_000_000_000) + 200);
+    const designId = String((stamp % 1_000_000_000) + 300);
     const photoUrl = "https://makerworld.bblmw.com/phoenix/summary.png";
     const png = await solid(0, 128, 0);
     global.fetch = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async (input, init) => {
