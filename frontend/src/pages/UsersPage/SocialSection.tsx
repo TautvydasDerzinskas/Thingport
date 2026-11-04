@@ -42,7 +42,7 @@ export default function SocialSection({ onUnauthorized }: Props) {
   // Only the latest read counts: two at once (opening, then the tab coming back) can answer in either order.
   const reads = React.useRef(0);
   // What the server last said: a read that finds it changed (another admin switched it) tells the rest of the app too.
-  const known = React.useRef<boolean | null>(null);
+  const known = React.useRef<SocialSettings | null>(null);
 
   const read = React.useCallback(() => {
     const reading = ++reads.current;
@@ -53,8 +53,9 @@ export default function SocialSection({ onUnauthorized }: Props) {
         if (!current()) return;
         setSettings(value);
         setLoadFailed(false);
-        if (known.current !== null && known.current !== value.enabled) void refreshSocialStatus();
-        known.current = value.enabled;
+        const was = known.current;
+        if (was && (was.enabled !== value.enabled || was.chats !== value.chats)) void refreshSocialStatus();
+        known.current = value;
       },
       (err) => {
         if (!current()) return;
@@ -92,7 +93,7 @@ export default function SocialSection({ onUnauthorized }: Props) {
     try {
       const saved = await socialApi.updateSettings(patch);
       setSettings(saved);
-      known.current = saved.enabled;
+      known.current = saved;
       // The sidebar's Explore and Chats, and the collection form's Private/Public, follow straight away.
       void refreshSocialStatus();
     } catch (err) {
@@ -129,6 +130,10 @@ export default function SocialSection({ onUnauthorized }: Props) {
     </>
   );
   const enabled = settings?.enabled ?? false;
+  // Closed with social features, wherever they were switched off, rather than waiting hidden to come back with them.
+  React.useEffect(() => {
+    if (!enabled) setSettingsOpen(false);
+  }, [enabled]);
   const settingsLabel = t("adminSettings.social.settingsTitle");
 
   return (

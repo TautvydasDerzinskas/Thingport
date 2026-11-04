@@ -114,11 +114,14 @@ export async function getSocialSettings(): Promise<SocialSettings> {
   };
 }
 
-/** Changes only what's given. */
+/** Changes only what's given, merged into what's stored in one statement: two changes at once, one to each
+ *  setting, would otherwise each write back the other's old value. */
 export async function setSocialSettings(patch: Partial<SocialSettings>): Promise<SocialSettings> {
-  const value = { ...(await getSocialSettings()), ...patch };
-  await prisma.setting.upsert({ where: { key: SOCIAL_KEY }, create: { key: SOCIAL_KEY, value }, update: { value } });
-  return value;
+  const given = JSON.stringify(patch);
+  await prisma.$executeRaw`
+    INSERT INTO "Setting" (key, value) VALUES (${SOCIAL_KEY}, ${given}::jsonb)
+    ON CONFLICT (key) DO UPDATE SET value = "Setting".value || EXCLUDED.value`;
+  return getSocialSettings();
 }
 
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";

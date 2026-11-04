@@ -47,20 +47,28 @@ export default function RoomDialog({ room, viewerId, onClose, onSaved, onUnautho
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const trimmed = name.trim();
-  const keepSelf = !room || room.members.some((member) => member.id === viewerId);
-
   const save = async () => {
     setSaving(true);
     setError(null);
-    const memberIds = [...(keepSelf ? [viewerId] : []), ...members.map((member) => member.id)];
-    const input = {
-      name: trimmed,
-      description: description.trim() || null,
-      is_public: visibility === "public",
-      ...(visibility === "private" ? { member_ids: memberIds } : {}),
-    };
+    const text = { name: trimmed, description: description.trim() || null, is_public: visibility === "public" };
+    const chosen = members.map((member) => member.id);
     try {
-      onSaved(editing ? await chatsApi.updateRoom(editing.id, input) : await chatsApi.createRoom(input));
+      if (editing) {
+        // By who's added and who's taken out, so anyone the editor didn't load stays where they are. The admin
+        // editing isn't in the picker, so they stay as they were too.
+        const had = new Set((room?.members ?? []).map((member) => member.id).filter((id) => id !== viewerId));
+        const kept = new Set(chosen);
+        const changes =
+          visibility === "private"
+            ? {
+                add_member_ids: chosen.filter((id) => !had.has(id)),
+                remove_member_ids: [...had].filter((id) => !kept.has(id)),
+              }
+            : {};
+        onSaved(await chatsApi.updateRoom(editing.id, { ...text, ...changes }));
+      } else {
+        onSaved(await chatsApi.createRoom({ ...text, ...(visibility === "private" ? { member_ids: chosen } : {}) }));
+      }
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : t("chats.roomSaveFailed"));

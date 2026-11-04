@@ -274,9 +274,16 @@ export default function ChatList({ onUnauthorized, onNavigate }: Props) {
         <Typography variant="body2" color="text.secondary">
           {t("chats.emptyList")}
         </Typography>
-        <Button size="small" variant="outlined" startIcon={<EditNoteOutlinedIcon />} onClick={() => setNewChat(true)}>
-          {t("chats.newMessage")}
-        </Button>
+        <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center" useFlexGap>
+          <Button size="small" variant="outlined" startIcon={<EditNoteOutlinedIcon />} onClick={() => setNewChat(true)}>
+            {t("chats.newMessage")}
+          </Button>
+          {isAdmin && (
+            <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={() => setNewRoom(true)}>
+              {t("chats.newRoom")}
+            </Button>
+          )}
+        </Stack>
       </Stack>
     );
   } else {

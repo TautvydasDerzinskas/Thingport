@@ -307,7 +307,7 @@ export default function MessageList({
                         {message.pending === "sending"
                           ? t("chats.sending")
                           : message.id === seenId
-                            ? t("chats.seenAt", { time: clockTime(message.created_at, i18n.language) })
+                            ? t("chats.seenAt", { time: clockTime(otherReadAt ?? message.created_at, i18n.language) })
                             : clockTime(message.created_at, i18n.language)}
                       </Typography>
                     )

@@ -100,7 +100,7 @@ export default function Conversation({ chatId, mobile, onUnauthorized }: Props) 
   const navigate = useNavigate();
   const showToast = useToast();
   const confirm = useConfirm();
-  const { chats, viewerId, putChat, refreshUnread } = useChats();
+  const { chats, viewerId, putChat, refreshUnread, refreshList } = useChats();
   const actions = useChatActions(chatId, onUnauthorized);
   const listed = chats?.find((chat) => chat.id === chatId) ?? null;
   const [detail, setDetail] = React.useState<ChatDetail | null>(null);
@@ -212,6 +212,11 @@ export default function Conversation({ chatId, mobile, onUnauthorized }: Props) 
           seen: joinedRef.current,
         });
         if (opening !== opened.current) return;
+        // More was deleted than a poll says: the chat is read again from the latest page.
+        if (page.deleted_more) {
+          setReload((n) => n + 1);
+          return;
+        }
         const known = cursor.current.lastId;
         take(page);
         // Read here, so the badge and the list stop counting it.
@@ -292,6 +297,8 @@ export default function Conversation({ chatId, mobile, onUnauthorized }: Props) 
     try {
       await chatsApi.deleteMessage(chatId, message.id);
       setMessages((previous) => previous.map((m) => (m.id === message.id ? { ...m, deleted: true, body: "" } : m)));
+      // The list may be showing it as the latest; read afresh rather than patched, as another may have come meanwhile.
+      void refreshList();
     } catch (err) {
       if (!failed(err) && !(err instanceof UnauthorizedError)) {
         showToast({ message: err instanceof Error ? err.message : t("chats.actionFailed"), severity: "error" });

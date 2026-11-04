@@ -56,13 +56,17 @@ export function ChatsProvider({ viewerId, isAdmin, onUnauthorized, children }: P
   // Read inside the polls without restarting them on every navigation.
   const pathRef = React.useRef(pathname);
   const live = React.useRef({ toast: showToast, notifications: refreshNotifications, navigate, t, onUnauthorized });
+  const shown = React.useRef({ enabled, active });
   React.useEffect(() => {
     pathRef.current = pathname;
     live.current = { toast: showToast, notifications: refreshNotifications, navigate, t, onUnauthorized };
+    shown.current = { enabled, active };
   });
   // The newest unread message already said: the first answer only sets it, as what's waiting isn't news this moment.
   const toldId = React.useRef<string | null | undefined>(undefined);
+  // Only the latest ask of each counts: answers can come back in any order.
   const listGeneration = React.useRef(0);
+  const unreadGeneration = React.useRef(0);
 
   const failed = React.useCallback((err: unknown) => {
     if (err instanceof UnauthorizedError) live.current.onUnauthorized?.();
@@ -71,26 +75,33 @@ export function ChatsProvider({ viewerId, isAdmin, onUnauthorized, children }: P
   }, []);
 
   const refreshUnread = React.useCallback(() => {
-    chatsApi.unread(visible()).then((summary) => {
-      setUnread(summary.unread);
-      const latest = summary.latest;
-      const known = toldId.current;
-      toldId.current = latest?.message_id ?? null;
-      if (known === undefined || !latest || latest.message_id === known) return;
-      // Something new: the bell has it as well, and Chats' own list, if it's open, shows it now.
-      void live.current.notifications();
-      const path = pathRef.current;
-      if (path === "/chats" || path.startsWith("/chats/")) return;
-      live.current.toast({
-        message: `${latest.title} — ${latest.body}`,
-        severity: "info",
-        action: {
-          label: live.current.t("chats.open"),
-          onClick: () => live.current.navigate(`/chats/${latest.chat_id}`),
-        },
-        autoHideMs: 8000,
-      });
-    }, failed);
+    const asked = ++unreadGeneration.current;
+    chatsApi.unread(visible()).then(
+      (summary) => {
+        if (asked !== unreadGeneration.current) return;
+        setUnread(summary.unread);
+        const latest = summary.latest;
+        const known = toldId.current;
+        toldId.current = latest?.message_id ?? null;
+        if (known === undefined || !latest || latest.message_id === known) return;
+        // Something new: the bell has it as well, and Chats' own list, if it's open, shows it now.
+        void live.current.notifications();
+        const path = pathRef.current;
+        if (path === "/chats" || path.startsWith("/chats/")) return;
+        live.current.toast({
+          message: `${latest.title} — ${latest.body}`,
+          severity: "info",
+          action: {
+            label: live.current.t("chats.open"),
+            onClick: () => live.current.navigate(`/chats/${latest.chat_id}`),
+          },
+          autoHideMs: 8000,
+        });
+      },
+      (err) => {
+        if (asked === unreadGeneration.current) failed(err);
+      },
+    );
   }, [failed]);
 
   const refreshList = React.useCallback(async () => {
@@ -140,6 +151,22 @@ export function ChatsProvider({ viewerId, isAdmin, onUnauthorized, children }: P
       document.removeEventListener("visibilitychange", onReturn);
     };
   }, [active, refreshList]);
+
+  // Another account signed in, in another tab: nothing of the last one's stays on show, and theirs is read at once.
+  const shownFor = React.useRef(viewerId);
+  React.useEffect(() => {
+    if (shownFor.current === viewerId) return;
+    shownFor.current = viewerId;
+    listGeneration.current += 1;
+    unreadGeneration.current += 1;
+    toldId.current = undefined;
+    setChats(null);
+    setListFailed(false);
+    setUnread(0);
+    if (!shown.current.enabled) return;
+    refreshUnread();
+    if (shown.current.active) void refreshList();
+  }, [viewerId, refreshUnread, refreshList]);
 
   // What's read in the list is read for the badge too.
   React.useEffect(() => {

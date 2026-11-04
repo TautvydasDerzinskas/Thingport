@@ -29,6 +29,8 @@ export default function ChatMenuHost({ chat, anchor, onClose, openChatId, onUnau
   // "loading" while the room's members are read for it.
   const [members, setMembers] = React.useState<ChatDetail | "loading" | null>(null);
   const [editing, setEditing] = React.useState<ChatDetail | null>(null);
+  // Each opening of the members list or the editor; closing moves it on too, so a late answer doesn't open it again.
+  const asked = React.useRef(0);
 
   const detail = async (target: Chat) => {
     try {
@@ -41,14 +43,20 @@ export default function ChatMenuHost({ chat, anchor, onClose, openChatId, onUnau
   };
 
   const showMembers = async (target: Chat) => {
+    const ask = ++asked.current;
     setMembers("loading");
     const room = await detail(target);
-    setMembers(room);
+    if (ask === asked.current) setMembers(room);
   };
   const edit = async (target: Chat) => {
+    const ask = ++asked.current;
     setMembers(null);
     const room = await detail(target);
-    if (room) setEditing(room);
+    if (room && ask === asked.current) setEditing(room);
+  };
+  const closeMembers = () => {
+    asked.current += 1;
+    setMembers(null);
   };
 
   return (
@@ -65,7 +73,7 @@ export default function ChatMenuHost({ chat, anchor, onClose, openChatId, onUnau
         <MembersDialog
           room={members === "loading" ? null : members}
           viewerId={viewerId}
-          onClose={() => setMembers(null)}
+          onClose={closeMembers}
           onEdit={members !== "loading" && members.can_manage ? () => void edit(members) : undefined}
         />
       )}

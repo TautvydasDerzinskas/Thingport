@@ -157,12 +157,17 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "user_invited":
         return typeof d.email === "string" ? d.email : "";
       case "social_settings_changed":
-        if (typeof d.enabled === "boolean") {
-          return t(d.enabled ? "adminSettings.logs.socialOn" : "adminSettings.logs.socialOff");
-        }
-        return typeof d.chats === "boolean"
-          ? t(d.chats ? "adminSettings.logs.chatsOn" : "adminSettings.logs.chatsOff")
-          : "";
+        // One change can carry both.
+        return [
+          typeof d.enabled === "boolean"
+            ? t(d.enabled ? "adminSettings.logs.socialOn" : "adminSettings.logs.socialOff")
+            : null,
+          typeof d.chats === "boolean"
+            ? t(d.chats ? "adminSettings.logs.chatsOn" : "adminSettings.logs.chatsOff")
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
       case "chat_room_created":
       case "chat_room_edited":
       case "chat_room_deleted":

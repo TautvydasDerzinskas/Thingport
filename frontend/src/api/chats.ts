@@ -56,6 +56,8 @@ export type MessagePage = {
   has_more: boolean;
   /** Deleted since `since`. */
   deleted_ids: string[];
+  /** More were deleted than `deleted_ids` holds: read the chat again. */
+  deleted_more: boolean;
   /** The server's time, for the next poll's `since`. */
   now: string;
   /** Direct messages: when the other person last read them. */
@@ -68,6 +70,12 @@ export type RoomInput = {
   is_public: boolean;
   /** A private room's members; the admin making it is always one. */
   member_ids?: string[];
+};
+
+/** A room's changes. Members change by who's added and taken out: those not named stay, loaded or not. */
+export type RoomPatch = Partial<Omit<RoomInput, "member_ids">> & {
+  add_member_ids?: string[];
+  remove_member_ids?: string[];
 };
 
 /** Asked for something of Chats while an admin has them, or social features, off. */
@@ -157,7 +165,7 @@ export const chatsApi = {
 
   createRoom: (input: RoomInput) => send<Chat>("POST", "/chats/rooms", input, "Failed to create the room"),
 
-  updateRoom: (chatId: string, patch: Partial<RoomInput>) =>
+  updateRoom: (chatId: string, patch: RoomPatch) =>
     send<Chat>("PATCH", `/chats/rooms/${encodeURIComponent(chatId)}`, patch, "Failed to save the room"),
 
   deleteRoom: (chatId: string) =>

@@ -2,7 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { setSocialSettings } from "../src/services/settingsService";
+import { notifyRecipient } from "../src/services/chatService";
+import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
 
 const app = createApp();
 
@@ -233,16 +234,12 @@ describe("rooms", () => {
     expect((await send(ana, roomId, "Printer 2 is jammed")).status).toBe(200);
 
     // Ben in, Ana out: she loses it, and what told her about it.
-    await request(app)
-      .patch(`/api/chats/rooms/${roomId}`)
-      .set(auth(admin))
-      .send({ member_ids: [admin.id, ana.id] });
     await send(admin, roomId, "Noted");
     await chatNotifications(ana, roomId, 1);
     const changed = await request(app)
       .patch(`/api/chats/rooms/${roomId}`)
       .set(auth(admin))
-      .send({ member_ids: [admin.id, ben.id] });
+      .send({ add_member_ids: [ben.id], remove_member_ids: [ana.id] });
     expect(changed.body.member_count).toBe(2);
     expect((await request(app).get(`/api/chats/${roomId}`).set(auth(ana))).status).toBe(404);
     expect(
@@ -312,5 +309,155 @@ describe("an API token", () => {
     expect((await prisma.user.findUniqueOrThrow({ where: { id: ana.id } })).lastSeenAt).toBeNull();
     await request(app).get("/api/chats/unread").query({ seen: "1" }).set(auth(ana));
     expect((await prisma.user.findUniqueOrThrow({ where: { id: ana.id } })).lastSeenAt).not.toBeNull();
+  });
+});
+
+describe("review findings", () => {
+  beforeAll(() => setSocialSettings({ enabled: true, chats: true }));
+
+  it("keeps a private room's words from an admin who manages it but isn't in it", async () => {
+    const made = await request(app)
+      .post("/api/chats/rooms")
+      .set(auth(admin))
+      .send({ name: "Staff only", is_public: false, member_ids: [ana.id] });
+    await request(app)
+      .patch(`/api/chats/rooms/${made.body.id}`)
+      .set(auth(admin))
+      .send({ remove_member_ids: [admin.id] });
+    await send(ana, made.body.id, "Secret plans");
+
+    const listed = (await request(app).get("/api/chats").set(auth(admin))).body.chats.find(
+      (c: { id: string }) => c.id === made.body.id,
+    );
+    expect(listed).toMatchObject({ readable: false, joined: false, last_message: null, can_manage: true });
+    const detail = await request(app).get(`/api/chats/${made.body.id}`).set(auth(admin));
+    expect(detail.body.last_message).toBeNull();
+    expect(JSON.stringify(detail.body)).not.toContain("Secret plans");
+    await request(app).delete(`/api/chats/rooms/${made.body.id}`).set(auth(admin));
+  });
+
+  it("changes a room's members by who's added and taken out, keeping the others", async () => {
+    const made = await request(app)
+      .post("/api/chats/rooms")
+      .set(auth(admin))
+      .send({ name: "Keepers", is_public: false, member_ids: [ana.id, ben.id] });
+    const added = await request(app)
+      .patch(`/api/chats/rooms/${made.body.id}`)
+      .set(auth(admin))
+      .send({ add_member_ids: [cleo.id] });
+    expect(added.body.member_count).toBe(4);
+    const removed = await request(app)
+      .patch(`/api/chats/rooms/${made.body.id}`)
+      .set(auth(admin))
+      .send({ remove_member_ids: [ben.id] });
+    expect(removed.body.member_count).toBe(3);
+    const members = (await request(app).get(`/api/chats/${made.body.id}`).set(auth(admin))).body.members;
+    expect(members.map((m: { id: string }) => m.id).toSorted()).toEqual([admin.id, ana.id, cleo.id].toSorted());
+    await request(app).delete(`/api/chats/rooms/${made.body.id}`).set(auth(admin));
+  });
+
+  it("gets a poll past a full overlap, to what came after", async () => {
+    const chat = (await request(app).post("/api/chats/direct").set(auth(cleo)).send({ user_id: ben.id })).body;
+    // More than a page's worth within the few seconds a poll looks back over.
+    const base = Date.now() - 3000;
+    await prisma.chatMessage.createMany({
+      data: Array.from({ length: 220 }, (_, i) => ({
+        chatId: chat.id,
+        senderId: cleo.id,
+        body: `flood ${i}`,
+        createdAt: new Date(base + i),
+      })),
+    });
+    const last = await prisma.chatMessage.findFirstOrThrow({
+      where: { chatId: chat.id },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    });
+    const next = await send(cleo, chat.id, "after the flood");
+    const poll = await request(app).get(`/api/chats/${chat.id}/messages`).query({ after: last.id }).set(auth(ben));
+    expect(poll.body.messages.map((m: { id: string }) => m.id)).toContain(next.body.id);
+  });
+
+  it("tells a poll about a deleted message older than the page it returns", async () => {
+    const chat = (await request(app).post("/api/chats/direct").set(auth(cleo)).send({ user_id: ana.id })).body;
+    const old = await send(cleo, chat.id, "from a while ago");
+    await prisma.chatMessage.update({ where: { id: old.body.id }, data: { createdAt: new Date(Date.now() - 60_000) } });
+    const recent = await send(cleo, chat.id, "just now");
+    const since = (await request(app).get(`/api/chats/${chat.id}/messages`).set(auth(ana))).body.now;
+    await request(app).delete(`/api/chats/${chat.id}/messages/${old.body.id}`).set(auth(cleo));
+
+    const poll = await request(app)
+      .get(`/api/chats/${chat.id}/messages`)
+      .query({ after: recent.body.id, since })
+      .set(auth(ana));
+    expect(poll.body.messages.map((m: { id: string }) => m.id)).not.toContain(old.body.id);
+    expect(poll.body.deleted_ids).toContain(old.body.id);
+    expect(poll.body.deleted_more).toBe(false);
+  });
+
+  describe("a notification already on its way", () => {
+    // What notifyMessage does for each recipient it listed, run after something it couldn't have seen.
+    async function setUp(name: string) {
+      const room = (
+        await request(app)
+          .post("/api/chats/rooms")
+          .set(auth(admin))
+          .send({ name, is_public: false, member_ids: [ana.id] })
+      ).body;
+      const chat = await prisma.chat.findUniqueOrThrow({ where: { id: room.id } });
+      const message = await prisma.chatMessage.create({ data: { chatId: room.id, senderId: admin.id, body: "Hush" } });
+      const told = () =>
+        prisma.notification.count({
+          where: { userId: ana.id, type: "chat", readAt: null, group: { path: ["chatId"], equals: room.id } },
+        });
+      return { chat, message, told, tell: () => notifyRecipient(chat, message, ana.id, admin.name) };
+    }
+
+    it("still reaches someone it's for", async () => {
+      const { tell, told } = await setUp("Control");
+      await tell();
+      expect(await told()).toBe(1);
+    });
+
+    it("isn't written once they've read the chat", async () => {
+      const { chat, tell, told } = await setUp("Read already");
+      await request(app).get(`/api/chats/${chat.id}/messages`).query({ seen: "1" }).set(auth(ana));
+      // Not as reading it now, only as having read it.
+      await prisma.chatMember.update({
+        where: { chatId_userId: { chatId: chat.id, userId: ana.id } },
+        data: { viewedAt: null },
+      });
+      await tell();
+      expect(await told()).toBe(0);
+    });
+
+    it("isn't written once the message is deleted", async () => {
+      const { chat, message, tell, told } = await setUp("Deleted already");
+      await request(app).delete(`/api/chats/${chat.id}/messages/${message.id}`).set(auth(admin));
+      await tell();
+      expect(await told()).toBe(0);
+    });
+
+    it("isn't written once they're out of the room", async () => {
+      const { chat, tell, told } = await setUp("Removed already");
+      await request(app)
+        .patch(`/api/chats/rooms/${chat.id}`)
+        .set(auth(admin))
+        .send({ remove_member_ids: [ana.id] });
+      await tell();
+      expect(await told()).toBe(0);
+    });
+
+    it("isn't written once the room is gone", async () => {
+      const { chat, tell, told } = await setUp("Deleted room");
+      await request(app).delete(`/api/chats/rooms/${chat.id}`).set(auth(admin));
+      await tell();
+      expect(await told()).toBe(0);
+    });
+  });
+
+  it("keeps both of two settings changed at once", async () => {
+    await setSocialSettings({ enabled: false, chats: false });
+    await Promise.all([setSocialSettings({ enabled: true }), setSocialSettings({ chats: true })]);
+    expect(await getSocialSettings()).toEqual({ enabled: true, chats: true });
   });
 });

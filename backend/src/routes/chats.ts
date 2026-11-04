@@ -81,6 +81,15 @@ const roomSchema = z.object({
   is_public: z.boolean(),
   member_ids: z.array(z.string()).max(500).optional(),
 });
+// Members by who's added and who's taken out, never a whole list: the editor may have loaded only some of them.
+const roomPatchSchema = roomSchema
+  .omit({ member_ids: true })
+  .partial()
+  .extend({
+    add_member_ids: z.array(z.string()).max(500).optional(),
+    remove_member_ids: z.array(z.string()).max(500).optional(),
+  });
+
 router.post(
   "/chats/rooms",
   requireAdmin,
@@ -101,7 +110,7 @@ router.patch(
   "/chats/rooms/:id",
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const patch = parseBody(roomSchema.partial(), req.body);
+    const patch = parseBody(roomPatchSchema, req.body);
     const room = await updateRoom(viewerOf(req), req.params.id, patch);
     res.json(room);
     void createLog({

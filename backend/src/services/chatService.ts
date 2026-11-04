@@ -16,7 +16,9 @@ export const MESSAGE_MAX_LENGTH = 4000;
 export const ROOM_NAME_MAX_LENGTH = 80;
 export const ROOM_DESCRIPTION_MAX_LENGTH = 300;
 export const MESSAGE_PAGE_SIZE = 50;
-const MAX_CHATS = 200;
+const POLL_PAGE_SIZE = 200;
+const MAX_DELETED_IDS = 500;
+const MAX_DIRECT_CHATS = 200;
 const MAX_PEOPLE = 50;
 const MAX_ROOM_MEMBERS = 500;
 
@@ -128,6 +130,12 @@ async function messageOuts(messages: ChatMessage[]): Promise<ChatMessageOut[]> {
   return messages.map((message) => messageOut(message, senders));
 }
 
+// Writing a chat notification for someone, and everything that would make it stale -- their reading the chat, leaving
+// it or being taken out, the room going -- take turns per user. Each checks what it needs inside its turn, so none can
+// land between another's check and its write. Two messages arriving together would otherwise also both start a
+// notification, or both miss the other's count.
+const withUserLock = createKeyedLock();
+
 /** Unread messages per chat for `userId`: others' messages after their lastReadAt, deleted ones aside. */
 async function unreadCounts(userId: string, chatIds: string[]): Promise<Map<string, number>> {
   if (!chatIds.length) return new Map();
@@ -188,6 +196,7 @@ async function chatOuts(viewer: Viewer, chats: ChatRow[]): Promise<ChatOut[]> {
     const own = chat.members[0];
     const room = chat.kind === "ROOM";
     const otherId = otherOf.get(chat.id);
+    const canRead = Boolean(own) || (room && chat.isPublic);
     return {
       id: chat.id,
       kind: room ? "room" : "direct",
@@ -197,36 +206,43 @@ async function chatOuts(viewer: Viewer, chats: ChatRow[]): Promise<ChatOut[]> {
       other: otherId ? (persons.get(otherId) ?? null) : null,
       member_count: chat._count.members,
       joined: Boolean(own),
-      readable: Boolean(own) || (room && chat.isPublic),
+      readable: canRead,
       favorite: own?.favorite ?? false,
       muted: own?.muted ?? false,
       unread: unread.get(chat.id) ?? 0,
-      last_message: latestOf.get(chat.id) ?? null,
+      // An admin managing a private room they're not in sees that it's there, not what's said in it.
+      last_message: canRead ? (latestOf.get(chat.id) ?? null) : null,
       last_message_at: chat.lastMessageAt.toISOString(),
       can_manage: room && viewer.isAdmin,
     };
   });
 }
 
-/** The chats `viewer` sees: those they're in -- direct messages once there's something in them, or they started
- *  them -- every public room, and for an admin every room, so they can manage the private ones they're not in. */
-function visibleWhere(viewer: Viewer): Prisma.ChatWhereInput {
-  const member = { members: { some: { userId: viewer.id } } } satisfies Prisma.ChatWhereInput;
-  return {
-    OR: [
-      { kind: "DIRECT", ...member, OR: [{ createdById: viewer.id }, { messages: { some: {} } }] },
-      { kind: "ROOM", ...(viewer.isAdmin ? {} : { OR: [member, { isPublic: true }] }) },
-    ],
-  };
-}
-
+/**
+ * The chats `viewer` sees: their direct messages once there's something in them (or they started them), every public
+ * room, the private ones they're in, and for an admin every room, so they can manage those they're not in. Rooms are
+ * all listed, as admins make them and there are few; direct messages the most recent MAX_DIRECT_CHATS, as an older one
+ * is still there to open by finding its person.
+ */
 export async function listChats(viewer: Viewer): Promise<ChatOut[]> {
-  const chats = await prisma.chat.findMany({
-    where: visibleWhere(viewer),
-    include: CHAT_INCLUDE(viewer.id),
-    orderBy: [{ lastMessageAt: "desc" }, { id: "desc" }],
-    take: MAX_CHATS,
-  });
+  const member = { members: { some: { userId: viewer.id } } } satisfies Prisma.ChatWhereInput;
+  const order = [{ lastMessageAt: "desc" }, { id: "desc" }] satisfies Prisma.ChatOrderByWithRelationInput[];
+  const [direct, rooms] = await Promise.all([
+    prisma.chat.findMany({
+      where: { kind: "DIRECT", ...member, OR: [{ createdById: viewer.id }, { messages: { some: {} } }] },
+      include: CHAT_INCLUDE(viewer.id),
+      orderBy: order,
+      take: MAX_DIRECT_CHATS,
+    }),
+    prisma.chat.findMany({
+      where: { kind: "ROOM", ...(viewer.isAdmin ? {} : { OR: [member, { isPublic: true }] }) },
+      include: CHAT_INCLUDE(viewer.id),
+      orderBy: order,
+    }),
+  ]);
+  const chats = [...direct, ...rooms].toSorted(
+    (a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime() || b.id.localeCompare(a.id),
+  );
   return chatOuts(viewer, chats);
 }
 
@@ -266,6 +282,8 @@ export type MessagePage = {
   has_more: boolean;
   /** Messages deleted since `since`, for a poll to take out what it already shows. */
   deleted_ids: string[];
+  /** More were deleted than `deleted_ids` holds: the poll reads the chat again instead. */
+  deleted_more: boolean;
   /** The server's time, for the next poll's `since`. */
   now: string;
   /** Direct messages: when the other person last read them, for "Seen". */
@@ -294,11 +312,29 @@ export async function listMessages(
   let messages: ChatMessage[];
   let hasMore = false;
   if (options.after && anchor) {
-    messages = await prisma.chatMessage.findMany({
-      where: { chatId, createdAt: { gte: new Date(anchor.createdAt.getTime() - POLL_OVERLAP_MS) } },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      take: 200,
-    });
+    // Read apart, so however many fall in the overlap, a poll always gets past the last message it has.
+    const [overlap, newer] = await Promise.all([
+      prisma.chatMessage.findMany({
+        where: {
+          chatId,
+          createdAt: { gte: new Date(anchor.createdAt.getTime() - POLL_OVERLAP_MS), lte: anchor.createdAt },
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: POLL_PAGE_SIZE,
+      }),
+      prisma.chatMessage.findMany({
+        where: {
+          chatId,
+          OR: [{ createdAt: { gt: anchor.createdAt } }, { createdAt: anchor.createdAt, id: { gt: anchor.id } }],
+        },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        take: POLL_PAGE_SIZE,
+      }),
+    ]);
+    const byId = new Map([...overlap, ...newer].map((message) => [message.id, message]));
+    messages = [...byId.values()].toSorted(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id),
+    );
   } else {
     // A poll whose last message is gone starts again from the latest page.
     const before = options.after ? null : anchor;
@@ -321,7 +357,7 @@ export async function listMessages(
       ? prisma.chatMessage.findMany({
           where: { chatId, deletedAt: { gte: new Date(options.since.getTime() - POLL_OVERLAP_MS) } },
           select: { id: true },
-          take: 500,
+          take: MAX_DELETED_IDS + 1,
         })
       : [],
     chat.kind === "DIRECT"
@@ -332,18 +368,21 @@ export async function listMessages(
   return {
     messages: await messageOuts(messages),
     has_more: hasMore,
-    deleted_ids: deleted.map((message) => message.id),
+    deleted_ids: deleted.slice(0, MAX_DELETED_IDS).map((message) => message.id),
+    deleted_more: deleted.length > MAX_DELETED_IDS,
     now: now.toISOString(),
     other_read_at: other?.lastReadAt.toISOString() ?? null,
   };
 }
 
 async function markRead(userId: string, chatId: string, at: Date): Promise<void> {
-  await prisma.chatMember.updateMany({ where: { chatId, userId }, data: { lastReadAt: at, viewedAt: at } });
-  // What told them about this chat has been read with it.
-  await prisma.notification.updateMany({
-    where: { userId, readAt: null, type: "chat", group: { path: ["chatId"], equals: chatId } },
-    data: { readAt: at },
+  await withUserLock(userId, async () => {
+    await prisma.chatMember.updateMany({ where: { chatId, userId }, data: { lastReadAt: at, viewedAt: at } });
+    // What told them about this chat has been read with it.
+    await prisma.notification.updateMany({
+      where: { userId, readAt: null, type: "chat", group: { path: ["chatId"], equals: chatId } },
+      data: { readAt: at },
+    });
   });
 }
 
@@ -364,7 +403,11 @@ export async function postMessage(viewer: Viewer, chatId: string, text: string):
   }
   const message = await prisma.$transaction(async (tx) => {
     const created = await tx.chatMessage.create({ data: { chatId, senderId: viewer.id, body } });
-    await tx.chat.update({ where: { id: chatId }, data: { lastMessageAt: created.createdAt } });
+    // Only forward: two messages a moment apart can be saved in either order.
+    await tx.chat.updateMany({
+      where: { id: chatId, lastMessageAt: { lt: created.createdAt } },
+      data: { lastMessageAt: created.createdAt },
+    });
     return created;
   });
   void notifyMessage(chat, message).catch((err) => console.error("Failed to notify about a chat message:", err));
@@ -380,7 +423,11 @@ export async function deleteMessage(viewer: Viewer, chatId: string, messageId: s
   if (!own && !(chat.kind === "ROOM" && viewer.isAdmin)) throw new HttpError(403, "Only its sender can delete it");
   if (message.deletedAt) return;
   await prisma.chatMessage.update({ where: { id: messageId }, data: { body: "", deletedAt: new Date() } });
-  // A notification quoting it stops quoting it.
+  await unquote(messageId);
+}
+
+/** A notification quoting a deleted message stops quoting it. */
+async function unquote(messageId: string): Promise<void> {
   await prisma.notification.updateMany({
     where: { type: "chat", group: { path: ["messageId"], equals: messageId } },
     data: { body: "Message deleted" },
@@ -411,7 +458,7 @@ export async function leaveRoom(viewer: Viewer, chatId: string): Promise<void> {
   const chat = await memberOf(viewer, chatId);
   if (chat.kind !== "ROOM") throw new HttpError(400, "Direct messages can't be left");
   await prisma.chatMember.delete({ where: { chatId_userId: { chatId, userId: viewer.id } } });
-  await dropNotifications(chatId, [viewer.id]);
+  await forget(chatId, [viewer.id]);
 }
 
 const directKey = (a: string, b: string) => [a, b].toSorted().join(":");
@@ -476,6 +523,13 @@ export type RoomInput = {
   member_ids?: string[];
 };
 
+/** A room's changes: what's given of RoomInput, and for a private room who's added and who's taken out. The
+ *  members not named stay, so an editor that only loaded some of them can't take the others out. */
+export type RoomPatch = Partial<Omit<RoomInput, "member_ids">> & {
+  add_member_ids?: string[];
+  remove_member_ids?: string[];
+};
+
 async function existingUserIds(ids: string[]): Promise<string[]> {
   if (!ids.length) return [];
   const users = await prisma.user.findMany({ where: { id: { in: [...new Set(ids)] } }, select: { id: true } });
@@ -512,31 +566,30 @@ export async function createRoom(admin: Viewer, input: RoomInput): Promise<ChatO
   return out;
 }
 
-/** Changes what's given. `member_ids` sets a private room's members (a public room's are whoever joined); a room made
- *  private keeps whoever was in it unless they're given. */
-export async function updateRoom(admin: Viewer, chatId: string, patch: Partial<RoomInput>): Promise<ChatOut> {
+/** Changes what's given. A private room's members change by `add_member_ids` and `remove_member_ids` (a public room's
+ *  are whoever joined); a room made private keeps whoever was in it. */
+export async function updateRoom(admin: Viewer, chatId: string, patch: RoomPatch): Promise<ChatOut> {
   const chat = await prisma.chat.findFirst({ where: { id: chatId, kind: "ROOM" } });
   if (!chat) throw new HttpError(404, "Room not found");
   const isPublic = patch.is_public ?? chat.isPublic;
-  await prisma.$transaction(async (tx) => {
+  const added = isPublic ? [] : await existingUserIds(patch.add_member_ids ?? []);
+  const removed = await prisma.$transaction(async (tx) => {
     await tx.chat.update({
       where: { id: chatId },
       data: { ...roomText(patch), ...(patch.is_public !== undefined ? { isPublic: patch.is_public } : {}) },
     });
-    if (isPublic || !patch.member_ids) return;
-    const wanted = await existingUserIds(patch.member_ids);
-    const removed = await tx.chatMember.findMany({
-      where: { chatId, userId: { notIn: wanted } },
-      select: { userId: true },
-    });
-    await tx.chatMember.deleteMany({ where: { chatId, userId: { notIn: wanted } } });
-    await tx.chatMember.createMany({ data: wanted.map((userId) => ({ chatId, userId })), skipDuplicates: true });
-    await dropNotifications(
-      chatId,
-      removed.map((member) => member.userId),
-      tx,
-    );
+    if (isPublic) return [];
+    const leaving = (
+      await tx.chatMember.findMany({
+        where: { chatId, userId: { in: patch.remove_member_ids ?? [], notIn: added } },
+        select: { userId: true },
+      })
+    ).map((member) => member.userId);
+    await tx.chatMember.deleteMany({ where: { chatId, userId: { in: leaving } } });
+    await tx.chatMember.createMany({ data: added.map((userId) => ({ chatId, userId })), skipDuplicates: true });
+    return leaving;
   });
+  await forget(chatId, removed);
   return (await chatOuts(admin, [await visibleChat(admin, chatId)]))[0];
 }
 
@@ -544,21 +597,25 @@ export async function updateRoom(admin: Viewer, chatId: string, patch: Partial<R
 export async function deleteRoom(chatId: string): Promise<Chat> {
   const chat = await prisma.chat.findFirst({ where: { id: chatId, kind: "ROOM" } });
   if (!chat) throw new HttpError(404, "Room not found");
+  const members = await prisma.chatMember.findMany({ where: { chatId }, select: { userId: true } });
   await prisma.chat.delete({ where: { id: chatId } });
-  await dropNotifications(chatId);
+  await forget(
+    chatId,
+    members.map((member) => member.userId),
+  );
+  // And anyone who joined as it went.
+  await prisma.notification.deleteMany({ where: { type: "chat", group: { path: ["chatId"], equals: chatId } } });
   return chat;
 }
 
-/** Notifications about a chat someone can no longer open: for `userIds`, or everyone. */
-async function dropNotifications(chatId: string, userIds?: string[], tx: Prisma.TransactionClient = prisma) {
-  if (userIds && !userIds.length) return;
-  await tx.notification.deleteMany({
-    where: {
-      type: "chat",
-      group: { path: ["chatId"], equals: chatId },
-      ...(userIds ? { userId: { in: userIds } } : {}),
-    },
-  });
+/** Drops what told `userIds` about a chat they can no longer open, once that's saved. In turn with a notification being
+ *  written for them: one already being written is dropped after it, and one after this finds them gone (notifyMessage). */
+async function forget(chatId: string, userIds: string[]): Promise<void> {
+  for (const userId of userIds) {
+    await withUserLock(userId, () =>
+      prisma.notification.deleteMany({ where: { userId, type: "chat", group: { path: ["chatId"], equals: chatId } } }),
+    );
+  }
 }
 
 export async function unreadSummary(userId: string): Promise<ChatUnreadOut> {
@@ -630,47 +687,55 @@ function readChatGroup(value: unknown): ChatGroup | null {
   return { key, chatId, messageId, at: typeof at === "string" ? at : "", count };
 }
 
-// Two messages arriving together would otherwise both start a notification, or both miss the other's count.
-const withUserLock = createKeyedLock();
-
 /** One unread notification per chat for each member not reading it, counting what came since; muted chats never. */
 async function notifyMessage(chat: Chat, message: ChatMessage): Promise<void> {
   const recipients = await prisma.chatMember.findMany({
-    where: {
-      chatId: chat.id,
-      userId: { not: message.senderId ?? undefined },
-      muted: false,
-      OR: [{ viewedAt: null }, { viewedAt: { lt: new Date(Date.now() - READING_MS) } }],
-    },
+    where: { chatId: chat.id, userId: { not: message.senderId ?? undefined }, muted: false },
     select: { userId: true },
   });
   if (!recipients.length) return;
   const sender = message.senderId ? (await userCards([message.senderId])).get(message.senderId) : undefined;
   const senderName = sender?.display_name ?? "Deleted user";
-  for (const { userId } of recipients) {
-    await withUserLock(userId, async () => {
-      const existing = await prisma.notification.findFirst({
-        where: { userId, readAt: null, type: "chat", group: { path: ["chatId"], equals: chat.id } },
-        orderBy: { createdAt: "desc" },
-      });
-      const folded = readChatGroup(existing?.group);
-      const count = (folded?.count ?? 0) + 1;
-      const at = message.createdAt.toISOString();
-      const text = notificationText(chat.kind, chat.name, senderName, message.body, count);
-      const group: ChatGroup = { key: "chat", chatId: chat.id, messageId: message.id, at, count };
-      if (existing && folded) {
-        // Two messages a moment apart can get here in either order: it goes on quoting the newer.
-        const older = folded.at > at;
-        await prisma.notification.update({
-          where: { id: existing.id },
-          data: older
-            ? { title: text.title, group: { ...folded, count } }
-            : // Up to the top of the list again, as the newest news.
-              { ...text, group, createdAt: new Date() },
-        });
-        return;
-      }
-      await createNotification(userId, { type: "chat", ...text, internalPath: `/chats/${chat.id}`, group });
+  for (const { userId } of recipients) await notifyRecipient(chat, message, userId, senderName);
+  // Deleted while these were written: deleteMessage's own pass may have come before the last of them.
+  const after = await prisma.chatMessage.findUnique({ where: { id: message.id }, select: { deletedAt: true } });
+  if (!after || after.deletedAt) await unquote(message.id);
+}
+
+/** Tells one recipient, in their turn, unless that's no longer theirs to hear. Exported for tests, which run it after
+ *  what notifyMessage's list of recipients didn't see coming. */
+export async function notifyRecipient(chat: Chat, message: ChatMessage, userId: string, senderName: string) {
+  await withUserLock(userId, async () => {
+    // Asked again in turn: since the recipients were read, they may have read the chat, muted it, left it or lost it,
+    // and the message may be gone.
+    const [member, current] = await Promise.all([
+      prisma.chatMember.findUnique({ where: { chatId_userId: { chatId: chat.id, userId } } }),
+      prisma.chatMessage.findUnique({ where: { id: message.id }, select: { deletedAt: true } }),
+    ]);
+    const reading = member?.viewedAt && Date.now() - member.viewedAt.getTime() < READING_MS;
+    if (!member || member.muted || reading || member.lastReadAt >= message.createdAt) return;
+    if (!current || current.deletedAt) return;
+    const existing = await prisma.notification.findFirst({
+      where: { userId, readAt: null, type: "chat", group: { path: ["chatId"], equals: chat.id } },
+      orderBy: { createdAt: "desc" },
     });
-  }
+    const folded = readChatGroup(existing?.group);
+    const count = (folded?.count ?? 0) + 1;
+    const at = message.createdAt.toISOString();
+    const text = notificationText(chat.kind, chat.name, senderName, message.body, count);
+    const group: ChatGroup = { key: "chat", chatId: chat.id, messageId: message.id, at, count };
+    if (existing && folded) {
+      // Two messages a moment apart can get here in either order: it goes on quoting the newer.
+      const older = folded.at > at;
+      await prisma.notification.update({
+        where: { id: existing.id },
+        data: older
+          ? { title: text.title, group: { ...folded, count } }
+          : // Up to the top of the list again, as the newest news.
+            { ...text, group, createdAt: new Date() },
+      });
+      return;
+    }
+    await createNotification(userId, { type: "chat", ...text, internalPath: `/chats/${chat.id}`, group });
+  });
 }
