@@ -3181,7 +3181,13 @@
         "hole": "Agujero",
         "shell": "Vaciado",
         "split": "División",
-        "part": "Pieza"
+        "part": "Pieza",
+        "pattern": "Patrón",
+        "mirror": "Simetría",
+        "hull": "Envolvente",
+        "thread": "Rosca",
+        "loft": "Transición",
+        "sweep": "Barrido"
       },
       "tree": {
         "heading": "Elementos",
@@ -3212,14 +3218,17 @@
           "torus": "Añadir toro"
         },
         "revolve": "Revolucionar",
-        "separate": "Separar piezas"
+        "separate": "Separar piezas",
+        "hull": "Envolver",
+        "loft": "Transición"
       },
       "shapes": {
         "rectangle": "Rectángulo",
         "circle": "Círculo",
         "polygon": "Polígono",
         "text": "Texto",
-        "trace": "Imagen calcada"
+        "trace": "Imagen calcada",
+        "path": "Trazado"
       },
       "planes": {
         "XY": "Superior",
@@ -3292,7 +3301,14 @@
           "offset": "Desplazamiento",
           "angle": "Ángulo",
           "diameter": "Diámetro",
-          "thickness": "Grosor"
+          "thickness": "Grosor",
+          "count": "Cantidad",
+          "spacing": "Separación",
+          "grid_count": "Filas",
+          "grid_spacing": "Separación entre filas",
+          "pitch": "Paso",
+          "length": "Longitud",
+          "clearance": "Holgura"
         },
         "mesh": {
           "source": "Origen",
@@ -3461,7 +3477,9 @@
           "angle": "Ángulo",
           "boreDiameter": "Diámetro del escariado",
           "boreDepth": "Profundidad del escariado",
-          "sinkDiameter": "Diámetro del avellanado"
+          "sinkDiameter": "Diámetro del avellanado",
+          "threaded": "Roscado",
+          "threadedAs": "Roscado {{size}}"
         },
         "shell": {
           "title": "Vaciado",
@@ -3523,6 +3541,63 @@
           "height": "Altura",
           "depth": "Profundidad",
           "pick": "Haz clic en una cara plana donde escribir"
+        },
+        "pattern": {
+          "title": "Patrón",
+          "help": "Repite un cuerpo en fila, en cuadrícula o alrededor de un eje, y une las copias con él en un solo cuerpo. Si cambias el cuerpo, cambian todas las copias. Para cortar muchos agujeros, repite el cilindro de uno y resta el patrón.",
+          "style": "Tipo",
+          "linear": "En fila",
+          "circular": "Alrededor de un eje",
+          "along": "A lo largo de",
+          "around": "Alrededor de",
+          "count": "Cantidad",
+          "spacing": "Separación",
+          "grid": "Segunda dirección (cuadrícula)",
+          "rows": "Filas",
+          "rowSpacing": "Separación entre filas",
+          "angle": "Repartir en",
+          "center": "Centro {{axis}}"
+        },
+        "mirror": {
+          "title": "Simetría",
+          "help": "Refleja un cuerpo respecto a un plano, para algo simétrico hecho mitad por mitad. Si conservas el original, la mitad y su reflejo forman un solo cuerpo.",
+          "plane": "Respecto a",
+          "keep": "Conservar el original"
+        },
+        "align": {
+          "title": "Alinear",
+          "help": "Alinea un cuerpo con otro, o con la cama: sus inicios, centros o finales juntos, o al lado (antes o después) con un hueco. En Z, después lo pone encima. Solo mueve el cuerpo.",
+          "pickBody": "Haz clic en el cuerpo que quieres mover",
+          "pickReference": "Haz clic en un cuerpo con el que alinearlo, o déjalo alineado con la cama",
+          "with": "Con {{name}}",
+          "axis": "En {{axis}}",
+          "none": "No",
+          "before": "Antes",
+          "start": "Inicio",
+          "center": "Centro",
+          "end": "Final",
+          "after": "Después",
+          "z_none": "No",
+          "z_before": "Debajo",
+          "z_start": "Base",
+          "z_center": "Medio",
+          "z_end": "Arriba",
+          "z_after": "Encima",
+          "gap": "Hueco"
+        },
+        "lay_flat": {
+          "title": "Apoyar",
+          "help": "Gira un cuerpo para que la cara en la que haces clic quede sobre la cama, como se orienta una pieza para imprimirla, y lo apoya en la cama.",
+          "pick": "Haz clic en la cara sobre la que apoyarlo"
+        },
+        "sweep": {
+          "title": "Barrido",
+          "help": "Lleva el contorno del boceto a lo largo de un recorrido de puntos y crea el sólido por el que pasa: un tubo, un asa, un riel. El origen del boceto va sobre el recorrido, así que dibuja el contorno a su alrededor; empieza perpendicular al recorrido en el primer punto. Suave traza una curva por los puntos y Cerrado forma un anillo.",
+          "path": "Puntos del recorrido (mm)",
+          "addPoint": "Añadir punto",
+          "removePoint": "Quitar el punto {{number}}",
+          "smooth": "Suave",
+          "closed": "Cerrado"
         }
       },
       "imported": {
@@ -3578,7 +3653,82 @@
         "start": "Editar diseño",
         "done": "Terminar de editar"
       },
-      "emptyView": "Pide a la IA abajo que haga algo, o haz clic en Editar para crearlo tú"
+      "emptyView": "Pide a la IA abajo que haga algo, o haz clic en Editar para crearlo tú",
+      "thread": {
+        "kind": "Tipo",
+        "external": "Exterior",
+        "internal": "Interior",
+        "hand": "Sentido",
+        "hands": {
+          "right": "A derechas",
+          "left": "A izquierdas"
+        },
+        "chamfer": "Extremos achaflanados"
+      },
+      "path": {
+        "title": "Añadir trazado",
+        "help": "Datos de trazado SVG en milímetros del boceto, x hacia la derecha e y hacia arriba: M, L, H, V, C, S, Q, T, A y Z, cada subtrazado un contorno cerrado. Pégalo desde un programa de dibujo o escríbelo a mano.",
+        "data": "Datos del trazado",
+        "fill": "Regla de relleno",
+        "fills": {
+          "evenodd": "Par-impar",
+          "nonzero": "No nulo"
+        },
+        "nothing": "Aún no hay nada que dibujar",
+        "add": "Añadir"
+      },
+      "parameters": {
+        "title": "Parámetros",
+        "help": "Números con nombre que pueden seguir las medidas del diseño. En cualquier campo de medida, escribe = y una fórmula, como =wall * 2 + 10. Al cambiar aquí un parámetro, se vuelven a calcular todas las fórmulas que lo usan.",
+        "follows": "Sigue = {{expression}}",
+        "name": "Nombre",
+        "value": "Valor",
+        "add": "Añadir parámetro",
+        "delete": "Eliminar {{name}}",
+        "inUse": "En uso: cambia primero los campos que lo siguen",
+        "none": "Aún no hay parámetros.",
+        "taken": "Ya hay uno con ese nombre",
+        "badName": "Letras, dígitos y _, sin empezar por un dígito",
+        "unused": "Sin usar",
+        "uses_one": "Lo usa {{count}} campo",
+        "uses_many": "Lo usan {{count}} campos",
+        "uses_other": "Lo usan {{count}} campos"
+      },
+      "check": {
+        "title": "Comprobar para imprimir",
+        "help": "Comprueba cada cuerpo visible donde está colocado: sobre la cama y dentro de ella, en una sola pieza, sin solaparse con otro, sin voladizos que necesiten soporte y sin paredes demasiado finas para imprimir. Es la misma comprobación que el asistente hace con su propio trabajo.",
+        "bed_x": "Cama X",
+        "bed_y": "Cama Y",
+        "bed_z": "Cama Z",
+        "overhangLimit": "Voladizo",
+        "minWall": "Pared mín.",
+        "ready": "Listo para imprimir",
+        "nothing": "No hay cuerpos visibles que comprobar.",
+        "size": "{{x}} × {{y}} × {{z}} mm",
+        "volume": "{{cm3}} cm³",
+        "empty": "Vacío",
+        "tooBig": "Demasiado grande para la cama",
+        "offBed": "Fuera de la cama",
+        "floating": "Flota {{mm}} mm por encima",
+        "sunk": "Hundido {{mm}} mm",
+        "pieces_one": "{{count}} pieza suelta",
+        "pieces_many": "{{count}} piezas sueltas",
+        "pieces_other": "{{count}} piezas sueltas",
+        "overhang": "{{area}} mm² de voladizo",
+        "thin": "Paredes de hasta {{mm}} mm",
+        "overlaps": "Se solapa con {{name}}",
+        "open": "No es un sólido cerrado",
+        "toBed": "A la cama",
+        "measure": "Medir",
+        "measureNeedsTwo": "Añade dos cuerpos para medir entre ellos.",
+        "first": "Desde",
+        "second": "Hasta",
+        "gap": "Separación {{mm}} mm",
+        "touching": "Se tocan",
+        "overlap": "Solape {{cm3}} cm³",
+        "far": "A más de 1 m",
+        "toBedOf": "Poner {{name}} sobre la cama"
+      }
     }
   },
   "common": {

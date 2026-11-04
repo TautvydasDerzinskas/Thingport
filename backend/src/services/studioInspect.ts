@@ -1,5 +1,6 @@
 import { Worker } from "node:worker_threads";
 import type { StudioDocument } from "../studio/document.generated";
+import type { PrintCheckOptions } from "../studio/printCheck.generated";
 import type { TraceSettings } from "../studio/trace.generated";
 import { workerBootstrap } from "../utils/workerBootstrap";
 import type { StudioView, StudioWorkerInput, StudioWorkerResult } from "./studioWorker";
@@ -108,4 +109,42 @@ export function traceStudioPicture(picturePath: string, settings: TraceSettings)
 /** The design's visible bodies as one STL, for saving it to the library. */
 export function studioStl(document: StudioDocument, assetDir: string): Promise<StudioWorkerResult> {
   return queued({ kind: "stl", document, assetDir }, IMPORT_TIMEOUT_MS);
+}
+
+/** Bodies' extents in the world, for align and lay_flat. Not kept: the command changes the design straight after. */
+export function measureStudioBounds(
+  document: StudioDocument,
+  assetDir: string,
+  ids: string[],
+): Promise<StudioWorkerResult> {
+  return queued({ kind: "bounds", document, assetDir, ids }, INSPECT_TIMEOUT_MS);
+}
+
+/** Whether a design will print as it's placed. Kept, as an assistant tends to ask again before changing anything. */
+export function checkStudioPrint(
+  key: string,
+  document: StudioDocument,
+  assetDir: string,
+  options: PrintCheckOptions,
+): Promise<StudioWorkerResult> {
+  const cacheKey = `${key}:check:${JSON.stringify(options)}`;
+  const known = cache.get(cacheKey);
+  if (known) return Promise.resolve(known);
+  return queued({ kind: "check", document, assetDir, options }, INSPECT_TIMEOUT_MS).then((outcome) => {
+    if (outcome.status !== "error") {
+      cache.set(cacheKey, outcome);
+      if (cache.size > CACHE_SIZE) cache.delete(cache.keys().next().value!);
+    }
+    return outcome;
+  });
+}
+
+/** How two bodies stand to each other: the gap between them or how much they overlap. */
+export function measureStudioBetween(
+  document: StudioDocument,
+  assetDir: string,
+  a: string,
+  b: string,
+): Promise<StudioWorkerResult> {
+  return queued({ kind: "between", document, assetDir, a, b }, INSPECT_TIMEOUT_MS);
 }

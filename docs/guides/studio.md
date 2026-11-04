@@ -27,13 +27,19 @@ their header, leaving a tab with their name there that opens them again; the pan
 
 A design is a list of features, built in order:
 
-- **Shapes**: box, cylinder, cone, sphere and torus, from the toolbar. Each starts at the middle of the bed, standing on
-  it.
+- **Shapes**: box, cylinder, cone, sphere, torus and thread, from the toolbar. Each starts at the middle of the bed,
+  standing on it. A thread is ISO metric (an M8 has a 1.25 mm pitch unless you change it): **External** is a threaded
+  rod, **Internal** the solid to subtract for a nut's thread, a little larger by its clearance so a printed rod fits.
 - **Sketches**: pick **Sketch** and a plane (top, front or right) or **On a face** of a body, then draw rectangles,
   circles and polygons on it; a rectangle or polygon can have rounded corners. A shape marked as a **hole** is cut out
   of the others. **Extrude** pulls the sketch into a solid: a distance, both ways or from an offset, with sides that
   taper and ends rounded or bevelled. **Revolve** turns it round one of the sketch's axes, all the way or part of it.
-  Either can make a new body, or join, cut or intersect one you click.
+  Either can make a new body, or join, cut or intersect one you click. **Add path** puts an SVG path among a sketch's
+  shapes, pasted from a drawing program or typed, in the sketch's millimetres with y up.
+- **Loft** and **Sweep**: select two sketches or more and **Loft** makes the solid that passes through their outlines in
+  the order you selected them, as a bottle from a square base to a round neck. **Sweep** pulls a sketch's outline along
+  a path of points (a pipe, a handle, a rail). As in other CAD, the profile stays where you drew it: the path starts on
+  the sketch's plane, square to it, and a new sweep's path starts out of the middle of the profile for you to edit.
 - **Text**: the **Text** tool writes words as a solid in one step: raised letters on a plane, or on a body's flat face
   embossed (raised from it) or engraved (cut into it). Letter height is a capital's height; 6 mm or more prints well.
   The fonts are the 21 bold faces Thingport carries for tools, each shown in its own face in the list. The words, font
@@ -51,10 +57,16 @@ A design is a list of features, built in order:
   design. A 3MF brings its first plate. A mesh with gaps can be moved, scaled and exported, but not combined. A model
   of several loose pieces comes in as one body, and Studio says how many: **Separate** makes each its own.
 - **Combining**: select two bodies or more and pick **Union**, **Subtract** or **Intersect**. The first one you selected
-  is the one the others are joined to, cut from or overlapped with.
+  is the one the others are joined to, cut from or overlapped with. **Hull** wraps one body or more in the tightest
+  convex body around them, as a rounded slot from two cylinders.
 
 Designs stay editable: change a box's width, or a sketch's circle, and everything built from it follows. The bodies a
 boolean was made from are folded under it in the feature list, and deleting the boolean gives them back.
+
+**Parameters** in the design's menu names the numbers a design hangs on, such as `wall = 2`. Type `=` and a formula in
+any size field (`=wall * 2 + 10`) and the field follows it, marked **ƒx**; change the parameter and every field that
+follows it changes too. A formula takes `+ - * / % ^`, brackets, `pi` and functions such as `min`, `max`, `round` and
+`sqrt`. Typing a plain number into the field lets its formula go.
 
 ## Changing a body
 
@@ -76,6 +88,13 @@ why, and OK waits until it can.
   afterwards to join them properly. Each part moves, turns and scales about the middle of its base. Deleting all the
   parts gives the body back. Also on a body's right-click menu, and on an imported model's properties.
 - **Scale**: makes a body bigger or smaller about its own middle.
+- **Pattern**: repeats a body in a row, a grid, or round an axis, evenly or over an angle, as one body: subtract a
+  pattern of cylinders for a ring of bolt holes. Change the body and every copy follows.
+- **Mirror**: reflects a body across a plane, keeping the original as well (half a part made whole) or not.
+- **Align**: lines a body up with another, or with the bed: before, at the start, centre or end of, or after it, on
+  each axis, with a gap. On top of another body, centred on it, is two clicks.
+- **Lay flat**: click a flat face and the body turns so that face is on the bed, as you'd turn a part for printing.
+- **Hole** can be **tapped**: threaded for an ISO bolt of that diameter to screw into.
 
 The mouse works as in most CAD:
 
@@ -97,6 +116,13 @@ values in the panel on the right. Units are millimetres, and Z is up, as on a pr
 | <kbd>Delete</kbd>                                               | Delete what's selected                                                             |
 | <kbd>F</kbd>                                                    | Fit the view to the design                                                         |
 | <kbd>Esc</kbd>                                                  | Drop a shape half drawn or a selection box, finish the sketch, clear the selection |
+
+**Check for printing** (the checklist at the right of the toolbar) checks each visible body where it is placed: on the
+bed and within it, in one piece, not overlapping another, no overhang that needs support and no wall too thin to print,
+for the bed size, overhang angle and thinnest wall you set. A floating body has **Onto bed** to put it down. Below it,
+**Measure** gives the gap or the overlap between two bodies, to check a fit or a clearance. Ask AI and an assistant over
+MCP run the same check on their own work. As in other CAD, a thread is judged as the plain cylinder it's cut on, so its
+ridges don't count as overhang or thin walls.
 
 **Download STL** in the design's menu saves the visible bodies as one STL for your slicer. **Save to Thingport** makes a
 model of them in your library instead: the STL, a picture of the view as you see it, and what you asked Ask AI about

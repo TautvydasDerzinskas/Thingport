@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { STUDIO_COMMAND_LIST } from "../studio/commands.generated";
-import { topLevel, type Feature } from "../studio/document.generated";
+import { topLevel, type Feature, type Vec3 } from "../studio/document.generated";
 import { traceSummary } from "../studio/trace.generated";
 import {
   createStudioDesign,
@@ -12,7 +12,12 @@ import {
   studioDesignHistory,
   type StudioDesignOut,
 } from "../services/studioService";
-import { describeStudioBody, inspectStudioDesign } from "../services/studioInspect";
+import {
+  checkStudioPrint,
+  describeStudioBody,
+  inspectStudioDesign,
+  measureStudioBetween,
+} from "../services/studioInspect";
 import { STUDIO_GUIDE } from "../services/studioGuide";
 import { STUDIO_VIEWS } from "../services/studioWorker";
 import { saveStudioDesignToLibrary } from "../services/studioLibrary";
@@ -240,6 +245,87 @@ const deleteDesign: McpToolDefinition = {
   },
 };
 
+const checkPrintTool: McpToolDefinition = {
+  name: "studio_check_print",
+  title: "Check a Studio design for printing",
+  description:
+    "Checks whether the design's visible bodies will print as they're placed: on the bed (not floating or sunk), " +
+    "within it, each in one piece and none overlapping another without being joined, no overhang steeper than " +
+    "allowed (which needs support) and no wall too thin to print. Returns problems, worst first, each saying what " +
+    "to do, and each body's size and volume. Check before finishing a part meant for printing.",
+  readOnly: true,
+  group: "studio",
+  inputSchema: {
+    design_id: designId,
+    bed: z
+      .tuple([z.number().positive().max(2000), z.number().positive().max(2000), z.number().positive().max(2000)])
+      .optional()
+      .describe("The printer's build volume, mm [x, y, z], centred on x = y = 0. Default [256, 256, 256]."),
+    overhang: z
+      .number()
+      .min(0)
+      .max(89)
+      .optional()
+      .describe("Steepest overhang that prints unsupported, degrees from vertical. Default 45."),
+    min_wall: z.number().positive().max(20).optional().describe("Thinnest wall that prints, mm. Default 0.8."),
+  },
+  async run(ctx, args) {
+    const design = await getStudioDesign(ctx.userId, args.design_id as string);
+    const outcome = await checkStudioPrint(
+      `${design.id}:${design.version}`,
+      design.document,
+      studioAssetDir(ctx.userId, design.id),
+      {
+        bed: (args.bed as Vec3 | undefined) ?? [256, 256, 256],
+        overhang: (args.overhang as number | undefined) ?? 45,
+        minWall: (args.min_wall as number | undefined) ?? 0.8,
+      },
+    );
+    if (outcome.status === "too-complex")
+      throw new HttpError(422, `The design is too heavy to check here (about ${outcome.triangles} triangles).`);
+    if (outcome.status !== "checked") throw new Error(`studio_check_print failed: ${JSON.stringify(outcome)}`);
+    const { problems, bodies, overlaps } = outcome.check;
+    return { ...brief(ctx, design), ready: problems.length === 0, problems, bodies, overlaps };
+  },
+};
+
+const measureTool: McpToolDefinition = {
+  name: "studio_measure",
+  title: "Measure between two bodies",
+  description:
+    "How two bodies stand to each other: the gap between their nearest points in mm (0 where they touch or " +
+    "overlap), how much they overlap in mm³, and each one's extent in the world. Check a fit, a clearance, or that " +
+    "parts meant to join really touch.",
+  readOnly: true,
+  group: "studio",
+  inputSchema: {
+    design_id: designId,
+    a_id: z.string().min(1).describe("One body, any body by id."),
+    b_id: z.string().min(1).describe("The other."),
+  },
+  async run(ctx, args) {
+    const design = await getStudioDesign(ctx.userId, args.design_id as string);
+    const outcome = await measureStudioBetween(
+      design.document,
+      studioAssetDir(ctx.userId, design.id),
+      args.a_id as string,
+      args.b_id as string,
+    );
+    if (outcome.status === "refused") throw new HttpError(400, outcome.reason);
+    if (outcome.status === "too-complex")
+      throw new HttpError(422, `The design is too heavy to measure here (about ${outcome.triangles} triangles).`);
+    if (outcome.status !== "between") throw new Error(`studio_measure failed: ${JSON.stringify(outcome)}`);
+    const { gap, overlap, a, b } = outcome.between;
+    return {
+      gap_mm: gap,
+      overlap_mm3: overlap,
+      touching: gap === 0,
+      [args.a_id as string]: a,
+      [args.b_id as string]: b,
+    };
+  },
+};
+
 const saveToLibrary: McpToolDefinition = {
   name: "studio_save_to_library",
   title: "Save a Studio design to the library",
@@ -307,6 +393,8 @@ export const STUDIO_MCP_TOOLS: readonly McpToolDefinition[] = [
   viewDesign,
   createDesign,
   deleteDesign,
+  checkPrintTool,
+  measureTool,
   saveToLibrary,
   ...commandTools,
 ];

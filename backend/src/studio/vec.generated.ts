@@ -77,3 +77,22 @@ export function invertAffine(m: number[]): number[] {
 export function frameMatrix(x: Vec3, y: Vec3, z: Vec3, origin: Vec3): number[] {
   return [...x, 0, ...y, 0, ...z, 0, ...origin, 1];
 }
+
+/** The rotation by `degrees` about the line through `point` along `axis` (right-handed: counter-clockwise looking
+ *  back along it), column-major. */
+export function rotationAbout(point: Vec3, axis: Vec3, degrees: number): number[] {
+  const [x, y, z] = normalize(axis);
+  const angle = (degrees * Math.PI) / 180;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const t = 1 - c;
+  // Rodrigues' rotation, by rows.
+  const r = [
+    [t * x * x + c, t * x * y - s * z, t * x * z + s * y],
+    [t * x * y + s * z, t * y * y + c, t * y * z - s * x],
+    [t * x * z - s * y, t * y * z + s * x, t * z * z + c],
+  ];
+  // The point stays where it is: p - R p.
+  const shift = [0, 1, 2].map((row) => point[row] - dot(r[row] as Vec3, point));
+  return [r[0][0], r[1][0], r[2][0], 0, r[0][1], r[1][1], r[2][1], 0, r[0][2], r[1][2], r[2][2], 0, ...shift, 1];
+}

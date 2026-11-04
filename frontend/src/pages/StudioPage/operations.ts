@@ -1,5 +1,12 @@
 import type { StudioCommandName } from "../../studio/commands";
-import type { EdgeTreatment } from "../../studio/document";
+import {
+  shapeContours,
+  sketchFrame,
+  type EdgeTreatment,
+  type SketchFeature,
+  type Vec2,
+  type Vec3,
+} from "../../studio/document";
 import { DEFAULT_FONT, type StudioFontId } from "../../studio/text";
 import type { EdgePick, FacePick, PickRequest, Picked } from "./StudioViewport";
 
@@ -8,7 +15,11 @@ import type { EdgePick, FacePick, PickRequest, Picked } from "./StudioViewport";
 // the command it makes and runs it on OK. Nothing here changes a design: the command does.
 
 export type Combine = "new" | "join" | "cut" | "intersect";
-export type HoleStyle = "simple" | "counterbore" | "countersink";
+export type WorldAxis = "X" | "Y" | "Z";
+export type AlignMode = "start" | "center" | "end" | "before" | "after";
+
+const AXIS: Record<WorldAxis, [number, number, number]> = { X: [1, 0, 0], Y: [0, 1, 0], Z: [0, 0, 1] };
+export type HoleStyle = "simple" | "counterbore" | "countersink" | "threaded";
 
 export type Operation =
   | {
@@ -24,6 +35,15 @@ export type Operation =
       target: string | null;
     }
   | { kind: "revolve"; sketch: string; axis: "u" | "v"; angle: number; combine: Combine; target: string | null }
+  | {
+      kind: "sweep";
+      sketch: string;
+      path: [number, number, number][];
+      smooth: boolean;
+      closed: boolean;
+      combine: Combine;
+      target: string | null;
+    }
   | { kind: "press_pull"; target: string | null; face: FacePick | null; distance: number }
   | { kind: "fillet" | "chamfer"; target: string | null; edges: EdgePick[]; size: number }
   | {
@@ -53,6 +73,33 @@ export type Operation =
   | { kind: "separate"; target: string | null }
   | { kind: "sketch_face"; face: FacePick | null }
   | {
+      kind: "pattern";
+      target: string | null;
+      /** In a row (a grid with a second row), or round an axis through `center`. */
+      style: "linear" | "circular";
+      axis: WorldAxis;
+      count: number;
+      spacing: number;
+      grid: boolean;
+      grid_axis: WorldAxis;
+      grid_count: number;
+      grid_spacing: number;
+      angle: number;
+      center: [number, number, number];
+    }
+  | { kind: "mirror"; target: string | null; plane: "YZ" | "XZ" | "XY"; offset: number; keep: boolean }
+  | {
+      kind: "align";
+      target: string | null;
+      /** The body to line up with; null for the bed. */
+      reference: string | null;
+      x: AlignMode | null;
+      y: AlignMode | null;
+      z: AlignMode | null;
+      gap: number;
+    }
+  | { kind: "lay_flat"; target: string | null; face: FacePick | null }
+  | {
       kind: "text";
       text: string;
       font: StudioFontId;
@@ -69,10 +116,38 @@ export type Operation =
 
 export type OperationKind = Operation["kind"];
 
+const rounded = (point: Vec3): Vec3 => point.map((value) => Number(value.toFixed(3))) as Vec3;
+
+/** A sweep's path as it starts, as CAD draws one: out of the middle of the sketch's profile, square to the sketch the
+ *  way an extrude goes, 30 mm. The profile stays where it is, so the path's first point has to stay on its plane. */
+export function startingPath(sketch: SketchFeature): Vec3[] {
+  const points = sketch.shapes
+    .filter((shape) => !shape.hole)
+    .flatMap((shape): Vec2[] => {
+      try {
+        return shapeContours(shape).flat();
+      } catch {
+        return [];
+      }
+    });
+  const middle = (axis: 0 | 1) =>
+    points.length
+      ? (Math.min(...points.map((point) => point[axis])) + Math.max(...points.map((point) => point[axis]))) / 2
+      : 0;
+  const { origin, u, v, n } = sketchFrame(sketch);
+  const start = origin.map((value, i) => value + u[i] * middle(0) + v[i] * middle(1)) as Vec3;
+  return [rounded(start), rounded(start.map((value, i) => value + n[i] * 30) as Vec3)];
+}
+
 /** A tool as it starts: on the one body selected, where that's what it works on. */
-export function startOperation(kind: Exclude<OperationKind, "extrude" | "revolve">, body: string | null): Operation;
+export function startOperation(
+  kind: Exclude<OperationKind, "extrude" | "revolve" | "sweep">,
+  body: string | null,
+): Operation;
 export function startOperation(kind: "extrude" | "revolve", sketch: string): Operation;
-export function startOperation(kind: OperationKind, on: string | null): Operation {
+/** A sweep starts on its sketch and its path, from startingPath. */
+export function startOperation(kind: "sweep", sketch: string, path: Vec3[]): Operation;
+export function startOperation(kind: OperationKind, on: string | null, path?: Vec3[]): Operation {
   switch (kind) {
     case "extrude":
       return {
@@ -89,6 +164,16 @@ export function startOperation(kind: OperationKind, on: string | null): Operatio
       };
     case "revolve":
       return { kind, sketch: on!, axis: "v", angle: 360, combine: "new", target: null };
+    case "sweep":
+      return {
+        kind,
+        sketch: on!,
+        path: path!,
+        smooth: false,
+        closed: false,
+        combine: "new",
+        target: null,
+      };
     case "press_pull":
       return { kind, target: on, face: null, distance: 5 };
     case "fillet":
@@ -119,6 +204,27 @@ export function startOperation(kind: OperationKind, on: string | null): Operatio
       return { kind, target: on };
     case "sketch_face":
       return { kind, face: null };
+    case "pattern":
+      return {
+        kind,
+        target: on,
+        style: "linear",
+        axis: "X",
+        count: 3,
+        spacing: 20,
+        grid: false,
+        grid_axis: "Y",
+        grid_count: 2,
+        grid_spacing: 20,
+        angle: 360,
+        center: [0, 0, 0],
+      };
+    case "mirror":
+      return { kind, target: on, plane: "YZ", offset: 0, keep: true };
+    case "align":
+      return { kind, target: on, reference: null, x: "center", y: "center", z: "start", gap: 0 };
+    case "lay_flat":
+      return { kind, target: on, face: null };
     case "text":
       return {
         kind,
@@ -141,9 +247,15 @@ const NORMALS = { XY: [0, 0, 1], XZ: [0, 1, 0], YZ: [1, 0, 0] } as const;
 export function commandOf(op: Operation): { name: StudioCommandName; args: Record<string, unknown> } | null {
   switch (op.kind) {
     case "extrude":
-    case "revolve": {
+    case "revolve":
+    case "sweep": {
       if (op.combine !== "new" && !op.target) return null;
       const combine = op.combine === "new" ? {} : { operation: op.combine, target_id: op.target };
+      if (op.kind === "sweep")
+        return {
+          name: "sweep",
+          args: { sketch_id: op.sketch, path: op.path, smooth: op.smooth, closed: op.closed, ...combine },
+        };
       if (op.kind === "revolve")
         return { name: "revolve", args: { sketch_id: op.sketch, axis: op.axis, angle: op.angle, ...combine } };
       return {
@@ -186,7 +298,9 @@ export function commandOf(op: Operation): { name: StudioCommandName; args: Recor
                 ? { counterbore: { diameter: op.bore_diameter, depth: op.bore_depth } }
                 : op.style === "countersink"
                   ? { countersink: { diameter: op.sink_diameter, angle: op.sink_angle } }
-                  : {}),
+                  : op.style === "threaded"
+                    ? { thread: {} }
+                    : {}),
             },
           }
         : null;
@@ -211,6 +325,59 @@ export function commandOf(op: Operation): { name: StudioCommandName; args: Recor
       return op.target ? { name: "separate_parts", args: { feature_id: op.target } } : null;
     case "sketch_face":
       return op.face ? { name: "add_sketch", args: { face: op.face } } : null;
+    case "pattern":
+      if (!op.target) return null;
+      if (op.style === "circular")
+        return {
+          name: "circular_pattern",
+          args: {
+            feature_id: op.target,
+            count: op.count,
+            axis_direction: AXIS[op.axis],
+            axis_point: op.center,
+            angle: op.angle,
+          },
+        };
+      return {
+        name: "linear_pattern",
+        args: {
+          feature_id: op.target,
+          direction: AXIS[op.axis],
+          count: op.count,
+          spacing: op.spacing,
+          ...(op.grid
+            ? { grid_direction: AXIS[op.grid_axis], grid_count: op.grid_count, grid_spacing: op.grid_spacing }
+            : {}),
+        },
+      };
+    case "mirror": {
+      if (!op.target) return null;
+      const normal = AXIS[op.plane === "YZ" ? "X" : op.plane === "XZ" ? "Y" : "Z"];
+      return {
+        name: "mirror",
+        args: {
+          feature_id: op.target,
+          plane_normal: normal,
+          plane_point: normal.map((n) => n * op.offset),
+          keep_original: op.keep,
+        },
+      };
+    }
+    case "align":
+      if (!op.target || (!op.x && !op.y && !op.z)) return null;
+      return {
+        name: "align",
+        args: {
+          feature_id: op.target,
+          ...(op.reference ? { to_id: op.reference } : {}),
+          ...(op.x ? { x: op.x } : {}),
+          ...(op.y ? { y: op.y } : {}),
+          ...(op.z ? { z: op.z } : {}),
+          ...(op.gap ? { gap: op.gap } : {}),
+        },
+      };
+    case "lay_flat":
+      return op.target && op.face ? { name: "lay_flat", args: { feature_id: op.target, face: op.face } } : null;
     case "text": {
       if (!op.text.trim()) return null;
       const text = { text: op.text, font: op.font, size: op.size, height: op.height };
@@ -234,6 +401,7 @@ export function pickOf(op: Operation, own: string[]): PickRequest | null {
   switch (op.kind) {
     case "extrude":
     case "revolve":
+    case "sweep":
       return op.combine === "new" ? null : { kind: "body", bodies: null, chosen: none };
     case "press_pull":
       return { kind: "face", bodies: null, chosen: { ...none, faces: op.face ? [op.face] : [] } };
@@ -256,6 +424,15 @@ export function pickOf(op: Operation, own: string[]): PickRequest | null {
       return op.target ? null : { kind: "body", bodies: null, chosen: none };
     case "sketch_face":
       return { kind: "face", bodies: null, chosen: none };
+    case "pattern":
+    case "mirror":
+      return op.target ? null : { kind: "body", bodies: null, chosen: none };
+    case "align":
+      // The body to move first, then, until one is picked, the one to line it up with.
+      return op.target && op.reference ? null : { kind: "body", bodies: null, chosen: none };
+    case "lay_flat":
+      // Once a face is picked the preview shows the body turned: another is picked after letting that one go.
+      return op.face ? null : { kind: "face", bodies: null, chosen: none };
     case "text":
       if (op.on === "face") return { kind: "face", bodies: null, chosen: { ...none, faces: op.face ? [op.face] : [] } };
       return op.combine === "new" ? null : { kind: "body", bodies: null, chosen: none };
@@ -271,6 +448,7 @@ export function withPick(op: Operation, picked: Picked, own: string[]): Operatio
   switch (op.kind) {
     case "extrude":
     case "revolve":
+    case "sweep":
       return picked.kind === "body" && !onPreview ? { ...op, target: body } : op;
     case "press_pull":
       return picked.kind === "face" ? { ...op, target: body, face: picked.face } : op;
@@ -310,6 +488,15 @@ export function withPick(op: Operation, picked: Picked, own: string[]): Operatio
       return picked.kind === "body" ? { ...op, target: body } : op;
     case "sketch_face":
       return picked.kind === "face" ? { ...op, face: picked.face } : op;
+    case "pattern":
+    case "mirror":
+      return picked.kind === "body" && !onPreview ? { ...op, target: body } : op;
+    case "align":
+      if (picked.kind !== "body" || onPreview) return op;
+      if (!op.target) return { ...op, target: body };
+      return body === op.target ? op : { ...op, reference: body };
+    case "lay_flat":
+      return picked.kind === "face" ? { ...op, target: body, face: picked.face } : op;
     case "text":
       if (picked.kind === "face" && op.on === "face") return { ...op, face: picked.face, target: body };
       return picked.kind === "body" && !onPreview ? { ...op, target: body } : op;

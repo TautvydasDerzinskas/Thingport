@@ -4,16 +4,20 @@ import type { CrossSection, Manifold, ManifoldToplevel, Mat4 } from "manifold-3d
 import {
   DEFAULT_SEGMENTS,
   featureById,
+  inputsOf,
   isBody,
   LIMITS,
   shapeContours,
+  shapeFill,
   sketchFrame,
   sketchMatrix,
   topLevel,
   transformMatrix,
   type BodyFeature,
+  type Feature,
   type MeshData,
   type PartFeature,
+  type PatternFeature,
   type PartMeasure,
   type SketchFeature,
   type StudioDocument,
@@ -29,14 +33,20 @@ import {
   wallsOf,
   type Own,
 } from "./solids.generated";
+import { checkPrint, type PrintCheck, type PrintCheckOptions } from "./printCheck.generated";
+import { loftSolid, sweepSolid } from "./sweep.generated";
+import { threadSolid, threadTriangles } from "./threads.generated";
 import { analyze, faceTriangles2d, findEdge, findFace, type Topology } from "./topology.generated";
 import {
+  add,
   applyMatrix,
   applyNormal,
   cross,
   dot,
   frameMatrix,
+  normalize,
   perpendicular,
+  rotationAbout,
   scale,
   sub,
   type Vec2,
@@ -128,7 +138,7 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
 
   const section = (sketch: SketchFeature): CrossSection => {
     const part = (shape: SketchFeature["shapes"][number]) =>
-      own(new CrossSection(shapeContours(shape, DEFAULT_SEGMENTS), "NonZero"));
+      own(new CrossSection(shapeContours(shape, DEFAULT_SEGMENTS), shapeFill(shape)));
     const solids = sketch.shapes.filter((shape) => !shape.hole).map(part);
     const holes = sketch.shapes.filter((shape) => shape.hole).map(part);
     if (!solids.length) throw new Error(`${sketch.id} has no shape to extrude`);
@@ -337,8 +347,35 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
         const point = applyMatrix(matrix, feature.face.point);
         const normal = applyNormal(matrix, feature.face.normal);
         const box = solid.boundingBox();
-        const through = Math.hypot(...box.max.map((max, axis) => max - box.min[axis])) * 2 + 10;
-        const cutter = holeCutter(wasm, own, feature, through, hairOf(solid));
+        const hair = hairOf(solid);
+        let cutter: Manifold;
+        if (feature.thread) {
+          // As deep as asked, or as far as the body goes along the hole: a thread's triangles grow with its length.
+          const across = Math.max(
+            ...[0, 1, 2, 3, 4, 5, 6, 7].map((corner) =>
+              dot(
+                sub(point, [0, 1, 2].map((axis) => ((corner >> axis) & 1 ? box.max : box.min)[axis]) as Vec3),
+                normal,
+              ),
+            ),
+          );
+          const deep = feature.depth ?? across + 1;
+          const thread = threadSolid(wasm, own, {
+            diameter: feature.diameter,
+            pitch: feature.thread.pitch,
+            length: deep,
+            internal: true,
+            clearance: feature.thread.clearance,
+            hand: "right",
+            chamfer: true,
+            segments: feature.segments,
+          });
+          // Into the body from its surface, its mouth a hair above it.
+          cutter = own(own(thread.mirror([0, 0, 1])).translate([0, 0, hair]));
+        } else {
+          const through = Math.hypot(...box.max.map((max, axis) => max - box.min[axis])) * 2 + 10;
+          cutter = holeCutter(wasm, own, feature, through, hair);
+        }
         const x = perpendicular(normal);
         return own(solid.subtract(own(cutter.transform(frameMatrix(x, cross(normal, x), normal, point) as Mat4))));
       }
@@ -385,6 +422,58 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
         if (!feature.tool_id) throw new Error(`${feature.id} has nothing to split by`);
         const tool = inWorld(feature.tool_id);
         return own(feature.keep === "inside" ? solid.intersect(tool) : solid.subtract(tool));
+      }
+      case "thread":
+        return threadSolid(wasm, own, feature);
+      case "pattern": {
+        const source = inWorld(feature.source_id);
+        if (feature.kind === "mirror") {
+          const point = feature.plane_point;
+          const image = own(
+            own(own(source.translate(scale(point, -1))).mirror(normalize(feature.plane_normal))).translate(point),
+          );
+          return feature.keep_original ? own(Manifold.union([source, image])) : image;
+        }
+        const copies: Manifold[] = [];
+        if (feature.kind === "linear") {
+          const along = scale(normalize(feature.direction), feature.spacing);
+          const across = feature.grid_direction ? scale(normalize(feature.grid_direction), feature.grid_spacing) : null;
+          for (let i = 0; i < feature.count; i++)
+            for (let j = 0; j < (across ? feature.grid_count : 1); j++)
+              copies.push(own(source.translate(add(scale(along, i), across ? scale(across, j) : [0, 0, 0]))));
+        } else {
+          // All the way round, the copies share the circle; part way, the first and last are at its ends.
+          const step = feature.angle >= 360 ? 360 / feature.count : feature.angle / (feature.count - 1);
+          for (let i = 0; i < feature.count; i++)
+            copies.push(
+              own(source.transform(rotationAbout(feature.axis_point, feature.axis_direction, step * i) as Mat4)),
+            );
+        }
+        return own(Manifold.union(copies));
+      }
+      case "hull":
+        return own(Manifold.hull(feature.body_ids.map(inWorld)));
+      case "loft": {
+        const loops = feature.sketch_ids.map((id) => {
+          const sketch = sketchOf(id);
+          const outlines = section(sketch).toPolygons() as Vec2[][];
+          if (outlines.length !== 1)
+            throw new Error(`${id} has to be one outline with no holes to loft through; it has ${outlines.length}`);
+          const matrix = sketchMatrix(sketch);
+          return outlines[0].map(([u, v]) => applyMatrix(matrix, [u, v, 0]));
+        });
+        return loftSolid(wasm, own, loops);
+      }
+      case "sweep": {
+        // The profile stays where it's drawn, as CAD sweeps a sketch.
+        const sketch = sketchOf(feature.sketch_id);
+        const { origin, u, v } = sketchFrame(sketch);
+        const outlines = section(sketch).toPolygons() as Vec2[][];
+        return sweepSolid(wasm, own, outlines, feature.path, {
+          closed: feature.closed,
+          smooth: feature.smooth,
+          drawn: { origin, u, v },
+        });
       }
       case "part": {
         const { piece, matrix } = pieceOf(feature);
@@ -604,6 +693,156 @@ export function measureParts(
   }
 }
 
+/** Bodies' extents in the world (any bodies, top-level or part of another), as align and lay_flat measure them. Throws
+ *  when one can't be made. */
+export function measureBounds(
+  wasm: ManifoldToplevel,
+  doc: StudioDocument,
+  ids: readonly string[],
+  meshes?: MeshLookup,
+): Record<string, { min: Vec3; max: Vec3 }> {
+  const made = evaluator(wasm, doc, meshes);
+  try {
+    const out: Record<string, { min: Vec3; max: Vec3 }> = {};
+    for (const id of ids) {
+      const feature = featureById(doc, id);
+      if (!feature || !isBody(feature)) throw new Error(`${id} is missing`);
+      const open = made.openOf(feature);
+      if (open) {
+        out[id] = openMesh(id, open, transformMatrix(feature.transform)).bounds;
+        continue;
+      }
+      const box = made.inWorld(id).boundingBox();
+      if (box.min.some((value) => !Number.isFinite(value))) throw new Error(`${id} came out empty`);
+      out[id] = { min: [...box.min] as Vec3, max: [...box.max] as Vec3 };
+    }
+    return out;
+  } finally {
+    made.dispose();
+  }
+}
+
+/** Checks the design's visible top-level bodies for printing, where they are. A body that isn't a closed solid can't
+ *  be checked, and is said so; one that can't be made is left out, as the view says why. */
+export function checkDesign(
+  wasm: ManifoldToplevel,
+  doc: StudioDocument,
+  options: PrintCheckOptions,
+  meshes?: MeshLookup,
+): PrintCheck & { open: string[] } {
+  const made = evaluator(wasm, doc, meshes);
+  const plainDoc = plainThreads(doc);
+  const plain = plainDoc ? evaluator(wasm, plainDoc, meshes) : null;
+  const checked: { delete(): void }[] = [];
+  const own: Own = (value) => {
+    checked.push(value);
+    return value;
+  };
+  try {
+    const bodies: { id: string; solid: Manifold; plain?: Manifold }[] = [];
+    const open: string[] = [];
+    for (const feature of topLevel(doc)) {
+      if (!isBody(feature) || !feature.visible) continue;
+      try {
+        if (made.openOf(feature)) open.push(feature.id);
+        else
+          bodies.push({
+            id: feature.id,
+            solid: made.inWorld(feature.id),
+            plain: plain && threaded(doc, feature.id) ? plain.inWorld(feature.id) : undefined,
+          });
+      } catch {
+        // Not made: its own error says why.
+      }
+    }
+    const report = checkPrint(wasm, own, bodies, options);
+    return {
+      ...report,
+      open,
+      problems: [
+        ...report.problems,
+        ...open.map((id) => `${id} has gaps, so it isn't a closed solid and can't be checked or printed as it is.`),
+      ],
+    };
+  } finally {
+    for (const each of checked) each.delete();
+    made.dispose();
+    plain?.dispose();
+  }
+}
+
+/** Whether a body has a thread in it: a thread, a tapped hole, or a body built from one. */
+function threaded(doc: StudioDocument, id: string): boolean {
+  const feature = featureById(doc, id);
+  if (!feature) return false;
+  if (feature.type === "thread" || (feature.type === "hole" && feature.thread)) return true;
+  return inputsOf(feature).some((input) => threaded(doc, input));
+}
+
+/** The design with its threads as CAD analyses them, null where it has none: a thread as the plain cylinder it's cut
+ *  on (a rod's outside, a cutter's bore, by its clearance), a tapped hole as a plain one of its size. Its ridges are
+ *  printed, but they're no overhang or thin wall to fix. */
+function plainThreads(doc: StudioDocument): StudioDocument | null {
+  if (!doc.features.some((feature) => feature.type === "thread" || (feature.type === "hole" && feature.thread)))
+    return null;
+  return {
+    ...doc,
+    features: doc.features.map((feature): Feature => {
+      if (feature.type === "hole" && feature.thread) return { ...feature, thread: null };
+      if (feature.type !== "thread") return feature;
+      const {
+        diameter,
+        length,
+        internal,
+        clearance,
+        segments,
+        pitch: _pitch,
+        hand: _hand,
+        chamfer: _chamfer,
+        ...body
+      } = feature;
+      return {
+        ...body,
+        type: "cylinder",
+        radius: diameter / 2 + (internal ? clearance : -clearance),
+        height: length,
+        segments,
+      };
+    }),
+  };
+}
+
+/** How two bodies stand to each other: the gap between them (0 where they touch or overlap, up to 1 m), how much they
+ *  overlap, and each one's extent in the world. */
+export function measureBetween(
+  wasm: ManifoldToplevel,
+  doc: StudioDocument,
+  a: string,
+  b: string,
+  meshes?: MeshLookup,
+): { gap: number; overlap: number; a: { min: Vec3; max: Vec3 }; b: { min: Vec3; max: Vec3 } } {
+  const made = evaluator(wasm, doc, meshes);
+  try {
+    const first = made.inWorld(a);
+    const second = made.inWorld(b);
+    const both = first.intersect(second);
+    const overlap = both.volume();
+    both.delete();
+    const box = (solid: Manifold) => {
+      const { min, max } = solid.boundingBox();
+      return { min: round3v([...min] as Vec3), max: round3v([...max] as Vec3) };
+    };
+    return {
+      gap: overlap > 1e-6 ? 0 : round3(first.minGap(second, 1000)),
+      overlap: round3(overlap),
+      a: box(first),
+      b: box(second),
+    };
+  } finally {
+    made.dispose();
+  }
+}
+
 /** An open mesh as a body: as it is, measured but with no volume, which it doesn't enclose. */
 function openMesh(id: string, mesh: MeshData, matrix: number[]): EvaluatedBody {
   const min: Vec3 = [Infinity, Infinity, Infinity];
@@ -686,34 +925,69 @@ export function worldTriangles(body: EvaluatedBody): Float32Array {
   return out;
 }
 
-/** Roughly how many triangles the design makes, before any of it is made: a server refuses one far too heavy. */
+/** How many copies of its body a pattern makes. */
+export function patternCopies(feature: PatternFeature): number {
+  if (feature.kind === "linear") return feature.count * (feature.grid_direction ? feature.grid_count : 1);
+  if (feature.kind === "circular") return feature.count;
+  return feature.keep_original ? 2 : 1;
+}
+
+/** Roughly how many triangles the design makes, before any of it is made: a server refuses one far too heavy. Each
+ *  body counts what it's made from, as many times as a pattern copies it. */
 export function estimateTriangles(doc: StudioDocument): number {
-  let total = 0;
-  for (const feature of doc.features) {
-    if (feature.type === "box") total += 12;
-    else if (feature.type === "cylinder" || feature.type === "cone") total += feature.segments * 4;
-    else if (feature.type === "sphere") total += (feature.segments * feature.segments) / 2;
-    else if (feature.type === "torus") total += feature.segments * feature.segments * 2;
-    else if (feature.type === "mesh") total += feature.triangles;
-    else if (feature.type === "revolve") total += feature.segments * 64;
-    else if (feature.type === "fillet") total += feature.edges.length * feature.segments * 4;
-    else if (feature.type === "sketch")
-      total += feature.shapes.reduce(
-        (sum, shape) =>
-          sum +
-          4 *
-            (shape.type === "polygon"
-              ? shape.points.length
-              : shape.type === "circle"
-                ? 64
-                : // A letter takes about this many points; a traced outline packs one in four bytes.
-                  shape.type === "text"
-                  ? shape.text.length * 60
-                  : shape.type === "trace"
-                    ? (shape.outline.length * 3) / 16
+  const known = new Map<string, number>();
+  const itself = (feature: Feature): number => {
+    if (feature.type === "box") return 12;
+    if (feature.type === "cylinder" || feature.type === "cone") return feature.segments * 4;
+    if (feature.type === "sphere") return (feature.segments * feature.segments) / 2;
+    if (feature.type === "torus") return feature.segments * feature.segments * 2;
+    if (feature.type === "mesh") return feature.triangles;
+    if (feature.type === "revolve") return feature.segments * 64;
+    if (feature.type === "fillet") return feature.edges.length * feature.segments * 4;
+    if (feature.type === "thread") return threadTriangles(feature);
+    if (feature.type === "loft") return feature.sketch_ids.length * 256;
+    if (feature.type === "sweep") return feature.path.length * (feature.smooth ? 8 : 1) * 128;
+    if (feature.type === "hole" && feature.thread)
+      return threadTriangles({
+        diameter: feature.diameter,
+        pitch: feature.thread.pitch,
+        length: feature.depth ?? 30,
+        internal: true,
+        clearance: feature.thread.clearance,
+        hand: "right",
+        chamfer: true,
+        segments: feature.segments,
+      });
+    if (feature.type !== "sketch") return 0;
+    return feature.shapes.reduce(
+      (sum, shape) =>
+        sum +
+        4 *
+          (shape.type === "polygon"
+            ? shape.points.length
+            : shape.type === "circle"
+              ? 64
+              : // A letter takes about this many points; a traced outline packs one in four bytes.
+                shape.type === "text"
+                ? shape.text.length * 60
+                : shape.type === "trace"
+                  ? (shape.outline.length * 3) / 16
+                  : // Roughly a point per few characters of path data.
+                    shape.type === "path"
+                    ? shape.d.length / 3
                     : 4),
-        0,
-      );
-  }
-  return total;
+      0,
+    );
+  };
+  const of = (id: string): number => {
+    const cached = known.get(id);
+    if (cached !== undefined) return cached;
+    const feature = featureById(doc, id);
+    if (!feature) return 0;
+    const inputs = inputsOf(feature).reduce((sum, input) => sum + of(input), 0);
+    const total = itself(feature) + inputs * (feature.type === "pattern" ? patternCopies(feature) : 1);
+    known.set(id, total);
+    return total;
+  };
+  return topLevel(doc).reduce((sum, feature) => sum + of(feature.id), 0);
 }

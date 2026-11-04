@@ -14,8 +14,10 @@ import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import { LIMITS, type PartMeasure } from "../../studio/document";
-import { EdgeTreatmentField, NumberField, StudioFontField } from "./fields";
-import type { Combine, HoleStyle, Operation } from "./operations";
+import { isoPitch } from "../../studio/threads";
+import { EdgeTreatmentField, NumberField, PathPointsField, StudioFontField } from "./fields";
+import type { AlignMode, Combine, HoleStyle, Operation, WorldAxis } from "./operations";
+import { AlignModeIcon } from "./studioIcons";
 
 const rise = keyframes`from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; }`;
 
@@ -72,6 +74,7 @@ export default function OperationPanel({ op, onChange, error, ready, busy, label
     </Typography>
   );
 
+  const axes = (["X", "Y", "Z"] as WorldAxis[]).map((axis) => ({ value: axis, label: axis }));
   const fields = (() => {
     switch (op.kind) {
       case "extrude":
@@ -151,6 +154,37 @@ export default function OperationPanel({ op, onChange, error, ready, busy, label
             {combine(op.combine, (value) => set({ combine: value, target: value === "new" ? null : op.target }))}
           </>
         );
+      case "sweep":
+        return (
+          <>
+            <PathPointsField live path={op.path} onChange={(path) => set({ path })} />
+            <Stack direction="row" spacing={1}>
+              <FormControlLabel
+                sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+                control={
+                  <Switch
+                    size="small"
+                    checked={op.smooth}
+                    onChange={(event) => set({ smooth: event.target.checked })}
+                  />
+                }
+                label={t("studio.ops.sweep.smooth")}
+              />
+              <FormControlLabel
+                sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+                control={
+                  <Switch
+                    size="small"
+                    checked={op.closed}
+                    onChange={(event) => set({ closed: event.target.checked })}
+                  />
+                }
+                label={t("studio.ops.sweep.closed")}
+              />
+            </Stack>
+            {combine(op.combine, (value) => set({ combine: value, target: value === "new" ? null : op.target }))}
+          </>
+        );
       case "press_pull":
         return (
           <>
@@ -217,12 +251,14 @@ export default function OperationPanel({ op, onChange, error, ready, busy, label
               fullWidth
               label={t("studio.ops.hole.style")}
               value={op.style}
-              options={(["simple", "counterbore", "countersink"] as HoleStyle[]).map((each) => ({
+              options={(["simple", "counterbore", "countersink", "threaded"] as HoleStyle[]).map((each) => ({
                 value: each,
                 label: t(`studio.ops.hole.${each}`),
               }))}
               onChange={(style) => set({ style })}
             />
+            {op.style === "threaded" &&
+              hint(t("studio.ops.hole.threadedAs", { size: `M${op.diameter}×${isoPitch(op.diameter)}` }))}
             {op.style === "counterbore" && (
               <Box sx={pair}>
                 <NumberField
@@ -345,6 +381,182 @@ export default function OperationPanel({ op, onChange, error, ready, busy, label
       }
       case "sketch_face":
         return hint(t("studio.ops.sketch_face.pick"));
+      case "pattern":
+        return (
+          <>
+            {op.target ? picked(label(op.target), () => set({ target: null })) : hint(t("studio.ops.pickBody"))}
+            <Segmented
+              fullWidth
+              label={t("studio.ops.pattern.style")}
+              value={op.style}
+              options={(["linear", "circular"] as const).map((style) => ({
+                value: style,
+                label: t(`studio.ops.pattern.${style}`),
+              }))}
+              onChange={(style) => set({ style })}
+            />
+            <Box sx={pair}>
+              <Segmented
+                fullWidth
+                label={op.style === "linear" ? t("studio.ops.pattern.along") : t("studio.ops.pattern.around")}
+                value={op.axis}
+                options={axes}
+                onChange={(axis) => set({ axis })}
+              />
+              <NumberField
+                live
+                label={t("studio.ops.pattern.count")}
+                value={op.count}
+                onCommit={(count) => Number.isInteger(count) && count >= 2 && count <= 200 && set({ count })}
+              />
+            </Box>
+            {op.style === "linear" ? (
+              <>
+                <NumberField
+                  live
+                  label={t("studio.ops.pattern.spacing")}
+                  value={op.spacing}
+                  unit="mm"
+                  onCommit={(spacing) => spacing !== 0 && set({ spacing })}
+                />
+                <FormControlLabel
+                  sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+                  control={
+                    <Switch size="small" checked={op.grid} onChange={(event) => set({ grid: event.target.checked })} />
+                  }
+                  label={t("studio.ops.pattern.grid")}
+                />
+                {op.grid && (
+                  <>
+                    <Box sx={pair}>
+                      <Segmented
+                        fullWidth
+                        label={t("studio.ops.pattern.along")}
+                        value={op.grid_axis}
+                        options={axes}
+                        onChange={(grid_axis) => set({ grid_axis })}
+                      />
+                      <NumberField
+                        live
+                        label={t("studio.ops.pattern.rows")}
+                        value={op.grid_count}
+                        onCommit={(grid_count) =>
+                          Number.isInteger(grid_count) && grid_count >= 1 && grid_count <= 200 && set({ grid_count })
+                        }
+                      />
+                    </Box>
+                    <NumberField
+                      live
+                      label={t("studio.ops.pattern.rowSpacing")}
+                      value={op.grid_spacing}
+                      unit="mm"
+                      onCommit={(grid_spacing) => grid_spacing !== 0 && set({ grid_spacing })}
+                    />
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <NumberField
+                  live
+                  label={t("studio.ops.pattern.angle")}
+                  value={op.angle}
+                  unit="°"
+                  onCommit={(angle) => angle >= 1 && angle <= 360 && set({ angle })}
+                />
+                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 1 }}>
+                  {(["X", "Y", "Z"] as const).map((axis, i) => (
+                    <NumberField
+                      key={axis}
+                      live
+                      label={t("studio.ops.pattern.center", { axis })}
+                      value={op.center[i]}
+                      unit="mm"
+                      onCommit={(value) =>
+                        set({
+                          center: op.center.map((each, j) => (j === i ? value : each)) as [number, number, number],
+                        })
+                      }
+                    />
+                  ))}
+                </Box>
+              </>
+            )}
+          </>
+        );
+      case "mirror":
+        return (
+          <>
+            {op.target ? picked(label(op.target), () => set({ target: null })) : hint(t("studio.ops.pickBody"))}
+            <Box sx={pair}>
+              <Segmented
+                fullWidth
+                label={t("studio.ops.mirror.plane")}
+                value={op.plane}
+                options={(["YZ", "XZ", "XY"] as const).map((plane) => ({ value: plane, label: plane }))}
+                onChange={(plane) => set({ plane })}
+              />
+              <NumberField
+                live
+                label={t("studio.properties.fields.offset")}
+                value={op.offset}
+                unit="mm"
+                onCommit={(offset) => set({ offset })}
+              />
+            </Box>
+            <FormControlLabel
+              sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+              control={
+                <Switch size="small" checked={op.keep} onChange={(event) => set({ keep: event.target.checked })} />
+              }
+              label={t("studio.ops.mirror.keep")}
+            />
+          </>
+        );
+      case "align":
+        return (
+          <>
+            {op.target
+              ? picked(label(op.target), () => set({ target: null, reference: null }))
+              : hint(t("studio.ops.align.pickBody"))}
+            {op.target &&
+              (op.reference
+                ? picked(t("studio.ops.align.with", { name: label(op.reference) }), () => set({ reference: null }))
+                : hint(t("studio.ops.align.pickReference")))}
+            {(["x", "y", "z"] as const).map((axis) => (
+              <Stack key={axis} direction="row" alignItems="center" spacing={1}>
+                <Typography variant="caption" sx={{ width: 14, fontWeight: 700, color: "text.secondary" }}>
+                  {axis.toUpperCase()}
+                </Typography>
+                <Segmented
+                  fullWidth
+                  label={t("studio.ops.align.axis", { axis: axis.toUpperCase() })}
+                  value={op[axis] ?? "none"}
+                  // Six words don't fit a row: each a drawing of where the body goes, its word the tooltip.
+                  options={(["none", "before", "start", "center", "end", "after"] as const).map((mode) => ({
+                    value: mode,
+                    label: t(`studio.ops.align.${axis === "z" ? `z_${mode}` : mode}`),
+                    icon: <AlignModeIcon mode={mode} vertical={axis === "z"} fontSize="small" />,
+                  }))}
+                  onChange={(mode) => set({ [axis]: mode === "none" ? null : (mode as AlignMode) })}
+                />
+              </Stack>
+            ))}
+            {[op.x, op.y, op.z].some((mode) => mode === "before" || mode === "after") && (
+              <NumberField
+                live
+                label={t("studio.ops.align.gap")}
+                value={op.gap}
+                unit="mm"
+                onCommit={(gap) => gap >= 0 && set({ gap })}
+              />
+            )}
+          </>
+        );
+      case "lay_flat":
+        return op.face && op.target
+          ? picked(label(op.target), () => set({ face: null, target: null }))
+          : hint(t("studio.ops.lay_flat.pick"));
       case "text":
         return (
           <>

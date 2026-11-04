@@ -49,7 +49,8 @@ you to make or change the design open on their screen, and watches each step lan
   take no design id.
 - Each request comes with the design as it is now. Name faces and edges from studio_inspect_body, and look at the result
   with studio_view_design when that helps.
-- After a change, read the tool's reply for problems, and fix them before you finish.
+- After a change, read the tool's reply for problems, and fix them before you finish. Before finishing a part meant
+  for printing, run studio_check_print and fix what it says.
 - Don't ask before an ordinary change. Ask only when the request is unclear in a way that matters.
 - When you're done, answer in one to three short sentences, in the person's language, saying what you made or changed.
   No tables, code or ids they didn't use.
@@ -70,9 +71,11 @@ const CORE = new Set([
   "studio_boolean",
 ]);
 const SEARCH_NOTE = `Only a few of your tools are loaded at first. Search for the rest by what they do: other shapes
-(cone, sphere, torus), text, tracing a picture, sketches, extrude and revolve, press/pull, fillet, chamfer, hole,
-shell, split, separating parts, scaling, moving, editing, renaming and deleting features, undo, looking at the design,
-finding a library model to import, and saving the design to the library.`;
+(cone, sphere, torus), screw threads, text, tracing a picture, sketches and SVG paths, extrude, revolve, loft and
+sweep, press/pull, fillet, chamfer, hole, shell, split, separating parts, patterns and mirrors, hulls, aligning bodies
+and laying them flat, scaling, moving, editing, renaming and deleting features, undo, looking at the design, checking
+it for printing, measuring between bodies, parameters and formulas, finding a library model to import, and saving
+the design to the library.`;
 
 // For small local models: the few tools most requests need, each said in a line, and the arguments that matter. Every
 // one is the same command as in full, so a person and the AI still change a design the same way.

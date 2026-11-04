@@ -5,15 +5,19 @@ import sharp from "sharp";
 import type { ManifoldToplevel } from "manifold-3d";
 import { LIMITS, type MeshData, type PartMeasure, type StudioDocument, type Vec3 } from "../studio/document.generated";
 import {
+  checkDesign,
   describeBody,
   estimateTriangles,
   evaluateDesign,
+  measureBetween,
+  measureBounds,
   measureParts,
   prepareMesh,
   worldTriangles,
   type BodyDescription,
 } from "../studio/geometry.generated";
 import { decodeMesh, encodeMesh } from "../studio/meshAsset.generated";
+import type { PrintCheck, PrintCheckOptions } from "../studio/printCheck.generated";
 import { binaryStl } from "../studio/stl.generated";
 import { bright, tracePicture, type Traced, type TraceSettings } from "../studio/trace.generated";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
@@ -52,7 +56,10 @@ export type StudioWorkerInput =
   | { kind: "trace"; picturePath: string; settings: TraceSettings }
   | { kind: "describe"; document: StudioDocument; assetDir: string; featureId: string }
   | { kind: "parts"; document: StudioDocument; assetDir: string; featureId: string }
-  | { kind: "stl"; document: StudioDocument; assetDir: string };
+  | { kind: "stl"; document: StudioDocument; assetDir: string }
+  | { kind: "bounds"; document: StudioDocument; assetDir: string; ids: string[] }
+  | { kind: "check"; document: StudioDocument; assetDir: string; options: PrintCheckOptions }
+  | { kind: "between"; document: StudioDocument; assetDir: string; a: string; b: string };
 
 export type StudioBodyStats = { id: string; bounds: { min: Vec3; max: Vec3 }; volume: number; triangles: number };
 
@@ -67,6 +74,9 @@ export type StudioWorkerResult =
   | { status: "imported"; solid: boolean; triangles: number; size: Vec3; parts: number }
   | { status: "described"; body: BodyDescription }
   | { status: "measured"; parts: PartMeasure[] }
+  | { status: "bounds"; bounds: Record<string, { min: Vec3; max: Vec3 }> }
+  | { status: "checked"; check: PrintCheck }
+  | { status: "between"; between: ReturnType<typeof measureBetween> }
   | { status: "traced"; traced: Traced }
   /** The visible bodies as a binary STL; null when there are none. */
   | { status: "stl"; stl: Uint8Array | null; triangles: number }
@@ -185,6 +195,44 @@ async function importMesh(input: Extract<StudioWorkerInput, { kind: "import" }>)
   return { status: "imported", solid, triangles: mesh.indices.length / 3, size, parts };
 }
 
+/** Whether the design will print as it's placed, for studio_check_print. */
+async function check(input: Extract<StudioWorkerInput, { kind: "check" }>): Promise<StudioWorkerResult> {
+  const estimate = estimateTriangles(input.document);
+  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  return {
+    status: "checked",
+    check: checkDesign(await manifold(), input.document, input.options, meshesIn(input.assetDir)),
+  };
+}
+
+/** How two bodies stand to each other, for studio_measure. */
+async function between(input: Extract<StudioWorkerInput, { kind: "between" }>): Promise<StudioWorkerResult> {
+  const estimate = estimateTriangles(input.document);
+  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  try {
+    return {
+      status: "between",
+      between: measureBetween(await manifold(), input.document, input.a, input.b, meshesIn(input.assetDir)),
+    };
+  } catch (error) {
+    return { status: "refused", reason: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/** Bodies' extents in the world, for align and lay_flat. */
+async function findBounds(input: Extract<StudioWorkerInput, { kind: "bounds" }>): Promise<StudioWorkerResult> {
+  const estimate = estimateTriangles(input.document);
+  if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
+  try {
+    return {
+      status: "bounds",
+      bounds: measureBounds(await manifold(), input.document, input.ids, meshesIn(input.assetDir)),
+    };
+  } catch (error) {
+    return { status: "refused", reason: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 /** The design's visible bodies as one STL, as the page's Download STL makes it. */
 async function stl(input: Extract<StudioWorkerInput, { kind: "stl" }>): Promise<StudioWorkerResult> {
   const estimate = estimateTriangles(input.document);
@@ -230,7 +278,13 @@ if (parentPort) {
         ? findParts(design)
         : design.kind === "stl"
           ? stl(design)
-          : inspect(design);
+          : design.kind === "bounds"
+            ? findBounds(design)
+            : design.kind === "check"
+              ? check(design)
+              : design.kind === "between"
+                ? between(design)
+                : inspect(design);
   };
   const job = input.kind === "import" ? importMesh(input) : input.kind === "trace" ? trace(input) : made(input);
   job.then(reply, (error: unknown) =>

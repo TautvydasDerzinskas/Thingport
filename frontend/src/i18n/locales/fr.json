@@ -3194,7 +3194,13 @@
         "hole": "Trou",
         "shell": "Coque",
         "split": "Division",
-        "part": "Pièce"
+        "part": "Pièce",
+        "pattern": "Répétition",
+        "mirror": "Miroir",
+        "hull": "Enveloppe",
+        "thread": "Filetage",
+        "loft": "Lissage",
+        "sweep": "Balayage"
       },
       "tree": {
         "heading": "Éléments",
@@ -3225,14 +3231,17 @@
           "torus": "Ajouter un tore"
         },
         "revolve": "Révolution",
-        "separate": "Séparer les pièces"
+        "separate": "Séparer les pièces",
+        "hull": "Envelopper",
+        "loft": "Lissage"
       },
       "shapes": {
         "rectangle": "Rectangle",
         "circle": "Cercle",
         "polygon": "Polygone",
         "text": "Texte",
-        "trace": "Image décalquée"
+        "trace": "Image décalquée",
+        "path": "Tracé"
       },
       "planes": {
         "XY": "Dessus",
@@ -3305,7 +3314,14 @@
           "offset": "Décalage",
           "angle": "Angle",
           "diameter": "Diamètre",
-          "thickness": "Épaisseur"
+          "thickness": "Épaisseur",
+          "count": "Nombre",
+          "spacing": "Espacement",
+          "grid_count": "Rangées",
+          "grid_spacing": "Espacement des rangées",
+          "pitch": "Pas",
+          "length": "Longueur",
+          "clearance": "Jeu"
         },
         "mesh": {
           "source": "Source",
@@ -3474,7 +3490,9 @@
           "angle": "Angle",
           "boreDiameter": "Diamètre du lamage",
           "boreDepth": "Profondeur du lamage",
-          "sinkDiameter": "Diamètre de la fraisure"
+          "sinkDiameter": "Diamètre de la fraisure",
+          "threaded": "Taraudé",
+          "threadedAs": "Taraudé {{size}}"
         },
         "shell": {
           "title": "Coque",
@@ -3536,6 +3554,63 @@
           "height": "Hauteur",
           "depth": "Profondeur",
           "pick": "Cliquez sur une face plane où écrire"
+        },
+        "pattern": {
+          "title": "Répétition",
+          "help": "Répète un corps en ligne, en grille ou autour d’un axe, et en fait un seul corps avec lui. Modifiez le corps et toutes les copies suivent. Pour percer de nombreux trous, répétez le cylindre d’un trou et soustrayez la répétition.",
+          "style": "Type",
+          "linear": "En ligne",
+          "circular": "Autour d’un axe",
+          "along": "Le long de",
+          "around": "Autour de",
+          "count": "Nombre",
+          "spacing": "Espacement",
+          "grid": "Seconde direction (grille)",
+          "rows": "Rangées",
+          "rowSpacing": "Espacement des rangées",
+          "angle": "Réparties sur",
+          "center": "Centre {{axis}}"
+        },
+        "mirror": {
+          "title": "Miroir",
+          "help": "Reflète un corps par rapport à un plan, pour un objet symétrique construit moitié par moitié. En gardant l’original, la moitié et son reflet forment un seul corps.",
+          "plane": "Par rapport à",
+          "keep": "Garder l’original"
+        },
+        "align": {
+          "title": "Aligner",
+          "help": "Aligne un corps sur un autre, ou sur le plateau : leurs débuts, milieux ou fins ensemble, ou à côté (avant ou après) avec un écart. Sur Z, après le pose dessus. Le corps est seulement déplacé.",
+          "pickBody": "Cliquez sur le corps à déplacer",
+          "pickReference": "Cliquez sur un corps sur lequel l’aligner, ou laissez-le aligné sur le plateau",
+          "with": "Sur {{name}}",
+          "axis": "Selon {{axis}}",
+          "none": "Non",
+          "before": "Avant",
+          "start": "Début",
+          "center": "Centre",
+          "end": "Fin",
+          "after": "Après",
+          "z_none": "Non",
+          "z_before": "Dessous",
+          "z_start": "Bas",
+          "z_center": "Milieu",
+          "z_end": "Haut",
+          "z_after": "Dessus",
+          "gap": "Écart"
+        },
+        "lay_flat": {
+          "title": "Poser à plat",
+          "help": "Tourne un corps pour que la face cliquée repose sur le plateau, comme on oriente une pièce pour l’imprimer, et le pose sur le plateau.",
+          "pick": "Cliquez sur la face sur laquelle le poser"
+        },
+        "sweep": {
+          "title": "Balayage",
+          "help": "Déplace le contour de l'esquisse le long d'un chemin de points et crée le solide qu'il traverse : un tuyau, une poignée, un rail. L'origine de l'esquisse suit le chemin, dessinez donc le contour autour d'elle ; il part perpendiculaire au chemin au premier point. Lisse trace une courbe par les points, Fermé en fait un anneau.",
+          "path": "Points du chemin (mm)",
+          "addPoint": "Ajouter un point",
+          "removePoint": "Retirer le point {{number}}",
+          "smooth": "Lisse",
+          "closed": "Fermé"
         }
       },
       "imported": {
@@ -3591,7 +3666,82 @@
         "start": "Modifier le design",
         "done": "Terminer la modification"
       },
-      "emptyView": "Demandez à l’IA ci-dessous de créer quelque chose, ou cliquez sur Modifier pour le faire vous-même"
+      "emptyView": "Demandez à l’IA ci-dessous de créer quelque chose, ou cliquez sur Modifier pour le faire vous-même",
+      "thread": {
+        "kind": "Type",
+        "external": "Extérieur",
+        "internal": "Intérieur",
+        "hand": "Sens",
+        "hands": {
+          "right": "À droite",
+          "left": "À gauche"
+        },
+        "chamfer": "Extrémités chanfreinées"
+      },
+      "path": {
+        "title": "Ajouter un tracé",
+        "help": "Données de tracé SVG en millimètres de l'esquisse, x vers la droite et y vers le haut : M, L, H, V, C, S, Q, T, A et Z, chaque sous-tracé étant un contour fermé. Collez-le depuis un logiciel de dessin ou écrivez-le à la main.",
+        "data": "Données du tracé",
+        "fill": "Règle de remplissage",
+        "fills": {
+          "evenodd": "Pair-impair",
+          "nonzero": "Non nul"
+        },
+        "nothing": "Rien à dessiner pour l'instant",
+        "add": "Ajouter"
+      },
+      "parameters": {
+        "title": "Paramètres",
+        "help": "Des nombres nommés que les cotes du design peuvent suivre. Dans n'importe quel champ de cote, tapez = et une formule, comme =wall * 2 + 10. Modifiez un paramètre ici et toutes les formules qui l'utilisent sont recalculées.",
+        "follows": "Suit = {{expression}}",
+        "name": "Nom",
+        "value": "Valeur",
+        "add": "Ajouter un paramètre",
+        "delete": "Supprimer {{name}}",
+        "inUse": "Utilisé : modifiez d'abord les champs qui le suivent",
+        "none": "Aucun paramètre pour l'instant.",
+        "taken": "Ce nom existe déjà",
+        "badName": "Lettres, chiffres et _, sans commencer par un chiffre",
+        "unused": "Inutilisé",
+        "uses_one": "Utilisé par {{count}} champ",
+        "uses_many": "Utilisé par {{count}} champs",
+        "uses_other": "Utilisé par {{count}} champs"
+      },
+      "check": {
+        "title": "Vérifier pour l'impression",
+        "help": "Vérifie chaque corps visible là où il est placé : sur le plateau et dans ses limites, d'une seule pièce, sans chevaucher un autre, sans porte-à-faux nécessitant un support ni paroi trop fine pour être imprimée. C'est la même vérification que l'assistant fait sur son propre travail.",
+        "bed_x": "Plateau X",
+        "bed_y": "Plateau Y",
+        "bed_z": "Plateau Z",
+        "overhangLimit": "Porte-à-faux",
+        "minWall": "Paroi min.",
+        "ready": "Prêt à imprimer",
+        "nothing": "Aucun corps visible à vérifier.",
+        "size": "{{x}} × {{y}} × {{z}} mm",
+        "volume": "{{cm3}} cm³",
+        "empty": "Vide",
+        "tooBig": "Trop grand pour le plateau",
+        "offBed": "Hors du plateau",
+        "floating": "Flotte à {{mm}} mm",
+        "sunk": "Enfoncé de {{mm}} mm",
+        "pieces_one": "{{count}} pièce détachée",
+        "pieces_many": "{{count}} pièces détachées",
+        "pieces_other": "{{count}} pièces détachées",
+        "overhang": "{{area}} mm² de porte-à-faux",
+        "thin": "Parois jusqu'à {{mm}} mm",
+        "overlaps": "Chevauche {{name}}",
+        "open": "Pas un solide fermé",
+        "toBed": "Sur le plateau",
+        "measure": "Mesurer",
+        "measureNeedsTwo": "Ajoutez deux corps pour mesurer entre eux.",
+        "first": "De",
+        "second": "À",
+        "gap": "Écart {{mm}} mm",
+        "touching": "Se touchent",
+        "overlap": "Chevauchement {{cm3}} cm³",
+        "far": "À plus de 1 m",
+        "toBedOf": "Poser {{name}} sur le plateau"
+      }
     }
   },
   "common": {

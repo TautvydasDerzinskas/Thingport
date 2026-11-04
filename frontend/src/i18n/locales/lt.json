@@ -3268,7 +3268,13 @@
         "hole": "Skylė",
         "shell": "Apvalkalas",
         "split": "Padalijimas",
-        "part": "Dalis"
+        "part": "Dalis",
+        "pattern": "Kartotinis",
+        "mirror": "Veidrodis",
+        "hull": "Apvalkalas",
+        "thread": "Sriegis",
+        "loft": "Perėjimas",
+        "sweep": "Tempimas"
       },
       "tree": {
         "heading": "Elementai",
@@ -3299,14 +3305,17 @@
           "torus": "Pridėti torą"
         },
         "revolve": "Sukti",
-        "separate": "Atskirti dalis"
+        "separate": "Atskirti dalis",
+        "hull": "Apgaubti",
+        "loft": "Perėjimas"
       },
       "shapes": {
         "rectangle": "Stačiakampis",
         "circle": "Apskritimas",
         "polygon": "Daugiakampis",
         "text": "Tekstas",
-        "trace": "Apvestas paveikslėlis"
+        "trace": "Apvestas paveikslėlis",
+        "path": "Kontūras"
       },
       "planes": {
         "XY": "Viršus",
@@ -3379,7 +3388,14 @@
           "offset": "Poslinkis",
           "angle": "Kampas",
           "diameter": "Skersmuo",
-          "thickness": "Storis"
+          "thickness": "Storis",
+          "count": "Kiekis",
+          "spacing": "Tarpas",
+          "grid_count": "Eilės",
+          "grid_spacing": "Tarpas tarp eilių",
+          "pitch": "Žingsnis",
+          "length": "Ilgis",
+          "clearance": "Tarpelis"
         },
         "mesh": {
           "source": "Šaltinis",
@@ -3548,7 +3564,9 @@
           "angle": "Kampas",
           "boreDiameter": "Įleidimo skersmuo",
           "boreDepth": "Įleidimo gylis",
-          "sinkDiameter": "Paplatinimo skersmuo"
+          "sinkDiameter": "Paplatinimo skersmuo",
+          "threaded": "Su sriegiu",
+          "threadedAs": "Su sriegiu {{size}}"
         },
         "shell": {
           "title": "Apvalkalas",
@@ -3610,6 +3628,63 @@
           "height": "Aukštis",
           "depth": "Gylis",
           "pick": "Spustelėkite plokščią paviršių, ant kurio rašyti"
+        },
+        "pattern": {
+          "title": "Kartojimas",
+          "help": "Pakartoja kūną eilėje, tinklelyje ar aplink ašį ir sujungia kopijas su juo į vieną kūną. Pakeitus kūną, keičiasi visos kopijos. Norėdami išpjauti daug skylių, pakartokite vienos skylės cilindrą ir atimkite kartotinį.",
+          "style": "Rūšis",
+          "linear": "Eilėje",
+          "circular": "Aplink ašį",
+          "along": "Išilgai",
+          "around": "Aplink",
+          "count": "Kiekis",
+          "spacing": "Tarpas",
+          "grid": "Antra kryptis (tinklelis)",
+          "rows": "Eilės",
+          "rowSpacing": "Tarpas tarp eilių",
+          "angle": "Paskirstyti per",
+          "center": "Centras {{axis}}"
+        },
+        "mirror": {
+          "title": "Veidrodis",
+          "help": "Atspindi kūną per plokštumą – simetriškiems dalykams, kuriamiems po pusę. Palikus originalą, pusė ir jos atspindys tampa vienu kūnu.",
+          "plane": "Per",
+          "keep": "Palikti originalą"
+        },
+        "align": {
+          "title": "Lygiuoti",
+          "help": "Sulygiuoja kūną su kitu kūnu arba su pagrindu: pradžias, vidurius ar galus kartu, arba šalia (prieš ar po) su tarpu. Pagal Z „po“ padeda ant viršaus. Kūnas tik perkeliamas.",
+          "pickBody": "Spustelėkite kūną, kurį perkelti",
+          "pickReference": "Spustelėkite kūną, su kuriuo lygiuoti, arba palikite lygiavimą su pagrindu",
+          "with": "Su {{name}}",
+          "axis": "Pagal {{axis}}",
+          "none": "Ne",
+          "before": "Prieš",
+          "start": "Pradžia",
+          "center": "Centras",
+          "end": "Galas",
+          "after": "Po",
+          "z_none": "Ne",
+          "z_before": "Po apačia",
+          "z_start": "Apačia",
+          "z_center": "Vidurys",
+          "z_end": "Viršus",
+          "z_after": "Ant viršaus",
+          "gap": "Tarpas"
+        },
+        "lay_flat": {
+          "title": "Paguldyti",
+          "help": "Pasuka kūną taip, kad spustelėtas paviršius gulėtų ant pagrindo, kaip dalis pasukama spausdinimui, ir padeda jį ant pagrindo.",
+          "pick": "Spustelėkite paviršių, ant kurio paguldyti"
+        },
+        "sweep": {
+          "title": "Tempimas",
+          "help": "Tempia eskizo kontūrą taškų keliu ir sukuria kūną, pro kurį jis praeina: vamzdį, rankeną, bėgelį. Eskizo pradžios taškas juda keliu, todėl kontūrą pieškite aplink jį; pirmajame taške kontūras statmenas keliui. „Glotnus“ nubrėžia kreivę per taškus, „Uždaras“ sujungia kelią į žiedą.",
+          "path": "Kelio taškai (mm)",
+          "addPoint": "Pridėti tašką",
+          "removePoint": "Pašalinti {{number}} tašką",
+          "smooth": "Glotnus",
+          "closed": "Uždaras"
         }
       },
       "imported": {
@@ -3665,7 +3740,82 @@
         "start": "Redaguoti dizainą",
         "done": "Baigti redaguoti"
       },
-      "emptyView": "Paprašykite DI apačioje ką nors sukurti arba spustelėkite Redaguoti ir kurkite patys"
+      "emptyView": "Paprašykite DI apačioje ką nors sukurti arba spustelėkite Redaguoti ir kurkite patys",
+      "thread": {
+        "kind": "Tipas",
+        "external": "Išorinis",
+        "internal": "Vidinis",
+        "hand": "Kryptis",
+        "hands": {
+          "right": "Dešininis",
+          "left": "Kairinis"
+        },
+        "chamfer": "Nuožulnūs galai"
+      },
+      "path": {
+        "title": "Pridėti kontūrą",
+        "help": "SVG kontūro duomenys eskizo milimetrais, x į dešinę ir y aukštyn: M, L, H, V, C, S, Q, T, A ir Z, kiekvienas pokontūris yra vienas uždaras kontūras. Įklijuokite iš piešimo programos arba parašykite patys.",
+        "data": "Kontūro duomenys",
+        "fill": "Užpildymo taisyklė",
+        "fills": {
+          "evenodd": "Lyginis-nelyginis",
+          "nonzero": "Nenulinis"
+        },
+        "nothing": "Kol kas nėra ko piešti",
+        "add": "Pridėti"
+      },
+      "parameters": {
+        "title": "Parametrai",
+        "help": "Pavadinti skaičiai, pagal kuriuos gali keistis dizaino matmenys. Bet kuriame matmens laukelyje įrašykite = ir formulę, pvz., =wall * 2 + 10. Pakeitus parametrą čia, perskaičiuojamos visos jį naudojančios formulės.",
+        "follows": "Pagal formulę = {{expression}}",
+        "name": "Pavadinimas",
+        "value": "Reikšmė",
+        "add": "Pridėti parametrą",
+        "delete": "Ištrinti {{name}}",
+        "inUse": "Naudojamas: pirmiausia pakeiskite laukelius, kurie nuo jo priklauso",
+        "none": "Parametrų dar nėra.",
+        "taken": "Toks pavadinimas jau yra",
+        "badName": "Raidės, skaitmenys ir _, nepradedant skaitmeniu",
+        "unused": "Nenaudojamas",
+        "uses_one": "Naudoja {{count}} laukelis",
+        "uses_few": "Naudoja {{count}} laukeliai",
+        "uses_other": "Naudoja {{count}} laukelių"
+      },
+      "check": {
+        "title": "Patikrinti spausdinimui",
+        "help": "Patikrina kiekvieną matomą kūną ten, kur jis padėtas: ar jis ant pagrindo ir telpa į jį, ar vientisas, ar nesikerta su kitu, ar nėra iškyšų, kurioms reikia atramų, ir per plonų sienelių. Tą patį patikrinimą asistentas atlieka su savo darbu.",
+        "bed_x": "Pagrindas X",
+        "bed_y": "Pagrindas Y",
+        "bed_z": "Pagrindas Z",
+        "overhangLimit": "Iškyša",
+        "minWall": "Min. sienelė",
+        "ready": "Paruošta spausdinti",
+        "nothing": "Nėra matomų kūnų, kuriuos būtų galima patikrinti.",
+        "size": "{{x}} × {{y}} × {{z}} mm",
+        "volume": "{{cm3}} cm³",
+        "empty": "Tuščias",
+        "tooBig": "Per didelis pagrindui",
+        "offBed": "Už pagrindo ribų",
+        "floating": "Kybo {{mm}} mm aukščiau",
+        "sunk": "Įsmigęs {{mm}} mm",
+        "pieces_one": "{{count}} atskira dalis",
+        "pieces_few": "{{count}} atskiros dalys",
+        "pieces_other": "{{count}} atskirų dalių",
+        "overhang": "{{area}} mm² iškyšų",
+        "thin": "Sienelės iki {{mm}} mm",
+        "overlaps": "Kertasi su {{name}}",
+        "open": "Ne uždaras kūnas",
+        "toBed": "Ant pagrindo",
+        "measure": "Matuoti",
+        "measureNeedsTwo": "Pridėkite du kūnus, kad galėtumėte išmatuoti atstumą tarp jų.",
+        "first": "Nuo",
+        "second": "Iki",
+        "gap": "Tarpas {{mm}} mm",
+        "touching": "Liečiasi",
+        "overlap": "Persidengia {{cm3}} cm³",
+        "far": "Daugiau nei 1 m atstumu",
+        "toBedOf": "Padėti {{name}} ant pagrindo"
+      }
     }
   },
   "common": {

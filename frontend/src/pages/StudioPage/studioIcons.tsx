@@ -204,6 +204,110 @@ export const UnionIcon = (props: SvgIconProps) => <Venn keep="union" {...props} 
 export const SubtractIcon = (props: SvgIconProps) => <Venn keep="subtract" {...props} />;
 export const IntersectIcon = (props: SvgIconProps) => <Venn keep="intersect" {...props} />;
 
+export function PatternIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <rect {...line} x="3" y="9" width="5" height="6" rx="1" />
+      <rect {...line} x="9.5" y="9" width="5" height="6" rx="1" opacity={0.75} />
+      <rect {...line} x="16" y="9" width="5" height="6" rx="1" opacity={0.5} />
+    </SvgIcon>
+  );
+}
+
+export function CircularPatternIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <circle {...line} cx="12" cy="12" r="7" strokeDasharray="1.6 2.4" opacity={0.6} />
+      {[0, 72, 144, 216, 288].map((degrees) => (
+        <circle
+          key={degrees}
+          cx={12 + 7 * Math.sin((degrees * Math.PI) / 180)}
+          cy={12 - 7 * Math.cos((degrees * Math.PI) / 180)}
+          r="2"
+          fill="currentColor"
+        />
+      ))}
+    </SvgIcon>
+  );
+}
+
+export function MirrorIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M12 3v18" strokeDasharray="1.6 2" />
+      <path {...line} d="M9.5 6.5 4 17.5h5.5z" />
+      <path {...line} d="M14.5 6.5 20 17.5h-5.5z" opacity={0.6} />
+    </SvgIcon>
+  );
+}
+
+export function HullIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <circle {...line} cx="7" cy="14" r="3" opacity={0.6} />
+      <circle {...line} cx="17" cy="9" r="2" opacity={0.6} />
+      <path {...line} d="M5.7 11.3 16.1 7.2a2 2 0 0 1 1.8 3.6L8.4 16.8a3 3 0 0 1-2.7-5.5z" />
+    </SvgIcon>
+  );
+}
+
+export function LayFlatIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M3 20.5h18" />
+      <path {...line} d="M7 17.5h10v-4H7z" />
+      <path {...line} d="M15.5 3.5 19 7l-3.5 3.5M19 7h-6a3 3 0 0 0-3 3v1" opacity={0.7} />
+    </SvgIcon>
+  );
+}
+
+/** Where align puts a body (filled) against the one it lines up with (outlined), along x; turned, along z. */
+const ALIGN_AT = { none: null, before: 1, start: 7, center: 9, end: 11, after: 17 } as const;
+
+export function AlignModeIcon({
+  mode,
+  vertical,
+  ...props
+}: SvgIconProps & { mode: keyof typeof ALIGN_AT; vertical?: boolean }) {
+  const at = ALIGN_AT[mode];
+  return (
+    // Turned a quarter anticlockwise, before is below and after is on top.
+    <SvgIcon {...props} sx={{ ...props.sx, transform: vertical ? "rotate(-90deg)" : undefined }}>
+      <rect {...line} x="7" y="5" width="10" height="14" rx="1" strokeDasharray={at === null ? "2 2" : undefined} />
+      {at !== null && <rect x={at} y="9" width="6" height="6" rx="0.75" fill="currentColor" />}
+    </SvgIcon>
+  );
+}
+
+export function ThreadIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M8.5 4h7M9 4v16h6V4" />
+      <path {...line} d="M7.5 7.5 16.5 9M7.5 11 16.5 12.5M7.5 14.5 16.5 16M7.5 18 16.5 19.5" opacity={0.7} />
+    </SvgIcon>
+  );
+}
+
+export function LoftIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <ellipse {...line} cx="12" cy="18" rx="7" ry="2.2" />
+      <path {...line} d="M8.5 4.5h7l-1 2.5h-5z" />
+      <path {...line} d="M5 18 8.8 6M19 18 15.2 6" />
+    </SvgIcon>
+  );
+}
+
+export function SweepIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M4 19c0-8 6-14 14-14" strokeDasharray="1.6 2" opacity={0.6} />
+      <path {...line} d="M3 15.5c2.5-7.5 8-12 15.5-12.5M8 20c1-5.5 5-10 11-10.5" />
+      <ellipse {...line} cx="5.5" cy="17.8" rx="2.6" ry="1.4" transform="rotate(-20 5.5 17.8)" />
+    </SvgIcon>
+  );
+}
+
 export function FeatureIcon({ type, ...props }: SvgIconProps & { type: FeatureType }) {
   if (type === "box") return <BoxIcon {...props} />;
   if (type === "cylinder") return <CylinderIcon {...props} />;
@@ -221,5 +325,10 @@ export function FeatureIcon({ type, ...props }: SvgIconProps & { type: FeatureTy
   if (type === "split") return <SplitIcon {...props} />;
   if (type === "part") return <PartIcon {...props} />;
   if (type === "sketch") return <SketchIcon {...props} />;
+  if (type === "pattern") return <PatternIcon {...props} />;
+  if (type === "hull") return <HullIcon {...props} />;
+  if (type === "thread") return <ThreadIcon {...props} />;
+  if (type === "loft") return <LoftIcon {...props} />;
+  if (type === "sweep") return <SweepIcon {...props} />;
   return <UnionIcon {...props} />;
 }

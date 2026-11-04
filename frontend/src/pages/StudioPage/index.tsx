@@ -38,6 +38,7 @@ import {
   type StudioDocument,
   type Transform,
 } from "../../studio/document";
+import CheckDialog from "./CheckDialog";
 import DesignsDialog from "./DesignsDialog";
 import { designStl } from "./exportStl";
 import FeatureTree from "./FeatureTree";
@@ -50,12 +51,31 @@ import SidePanel from "./SidePanel";
 import StudioToolbar, { type BooleanKind, type Primitive, type StudioPanel } from "./StudioToolbar";
 import StudioViewport, { type SketchTool, type StudioMode, type StudioViewportHandle } from "./StudioViewport";
 import { BoxIcon, ExtrudeIcon, SeparateIcon } from "./studioIcons";
-import { measurePartsInWorker } from "./geometryClient";
+import { measureBoundsInWorker, measurePartsInWorker } from "./geometryClient";
 import { openModelAsDesign, type StudioArrival } from "./openModel";
 import OperationPanel from "./OperationPanel";
+import ParametersDialog from "./ParametersDialog";
+import PathDialog from "./PathDialog";
 import TraceDialog, { type TraceRequest } from "./TraceDialog";
-import { commandOf, pickOf, startOperation, withPick, type Operation, type OperationKind } from "./operations";
-import { addParts, applyCommand, CommandError } from "../../studio/commands";
+import {
+  commandOf,
+  pickOf,
+  startingPath,
+  startOperation,
+  withPick,
+  type Operation,
+  type OperationKind,
+} from "./operations";
+import {
+  addParts,
+  alignBody,
+  alignMeasures,
+  applyCommand,
+  CommandError,
+  layFlat,
+  layFlatTurn,
+  type Bounds,
+} from "../../studio/commands";
 import { useStudioDesign } from "./useStudioDesign";
 import { fontsLoadedFor, loadFontsFor } from "./studioFonts";
 import { useStudioAssistant } from "./useStudioAssistant";
@@ -205,6 +225,9 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [menu, setMenu] = useState<{ id: string; at: { top: number; left: number } } | null>(null);
   const [designsOpen, setDesignsOpen] = useState(false);
   const [tracing, setTracing] = useState(false);
+  const [pathing, setPathing] = useState(false);
+  const [parametersOpen, setParametersOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [renaming, setRenaming] = useState<{ kind: "design" } | { kind: "feature"; id: string } | null>(null);
   // A tool that takes more than a click, while its panel is open, and what making its preview said.
   const [operation, setOperation] = useState<Operation | null>(null);
@@ -352,7 +375,9 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             ? await run("add_cone", { radius_bottom: 10, radius_top: 0, height: 20 })
             : kind === "sphere"
               ? await run("add_sphere", { radius: 10 })
-              : await run("add_torus", { major_radius: 15, minor_radius: 5 });
+              : kind === "thread"
+                ? await run("add_thread", { diameter: 8, length: 20 })
+                : await run("add_torus", { major_radius: 15, minor_radius: 5 });
     selectCreated(created);
   };
 
@@ -367,6 +392,12 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   /** The one top-level body selected, which a tool starts on. */
   const selectedBody = selectedBodies.length === 1 ? selectedBodies[0] : null;
   const begin = (kind: OperationKind, sketchId = extrudable?.id) => {
+    if (kind === "sweep") {
+      const sketchFeature = sketchId && doc ? featureById(doc, sketchId) : undefined;
+      if (sketchFeature?.type === "sketch")
+        setOperation(startOperation(kind, sketchFeature.id, startingPath(sketchFeature)));
+      return;
+    }
     if (kind === "extrude" || kind === "revolve") {
       if (sketchId) setOperation(startOperation(kind, sketchId));
       return;
@@ -399,10 +430,64 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   // The design as the tool would leave it, shown while its panel is open; or why the command refuses it.
   const separating = operation?.kind === "separate" ? operation.target : null;
   const partsFound = measured && measured.doc === doc && measured.target === separating ? measured : null;
-  const measuring = Boolean(separating) && !partsFound;
+  // Align and lay flat move a body by what it measures: the preview measures it here, as the server will.
+  const placing = draft && (draft.name === "align" || draft.name === "lay_flat") ? draft : null;
+  const [boundsFound, setBoundsFound] = useState<{
+    key: string;
+    doc: StudioDocument;
+    bounds: Record<string, Bounds> | null;
+    error: string | null;
+  } | null>(null);
+  const placed = boundsFound && boundsFound.doc === doc && boundsFound.key === draftKey ? boundsFound : null;
+  useEffect(() => {
+    if (!placing || !doc || !design) return;
+    const args = placing.args as Parameters<typeof alignBody>[1] & Parameters<typeof layFlat>[1];
+    let measuring: { subject: StudioDocument; ids: string[] };
+    try {
+      measuring =
+        placing.name === "align"
+          ? { subject: doc, ids: alignMeasures(doc, args) }
+          : { subject: layFlatTurn(doc, args), ids: [args.feature_id] };
+    } catch (error) {
+      setBoundsFound({
+        key: draftKey,
+        doc,
+        bounds: null,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
+    let cancelled = false;
+    measureBoundsInWorker(design.id, measuring.subject, measuring.ids).then(
+      (bounds) => !cancelled && setBoundsFound({ key: draftKey, doc, bounds, error: null }),
+      (error: unknown) =>
+        !cancelled &&
+        setBoundsFound({
+          key: draftKey,
+          doc,
+          bounds: null,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+    );
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey, doc, design?.id]);
+  const measuring = (Boolean(separating) && !partsFound) || (Boolean(placing) && !placed);
   const preview = useMemo(() => {
     if (!draft || !doc || draft.name === "add_sketch") return null;
     try {
+      if (draft.name === "align" || draft.name === "lay_flat") {
+        if (!placed) return null;
+        if (!placed.bounds) return { document: null, created: [], error: placed.error };
+        const args = draft.args as Parameters<typeof alignBody>[1] & Parameters<typeof layFlat>[1];
+        const outcome =
+          draft.name === "align"
+            ? alignBody(doc, args, placed.bounds)
+            : layFlat(doc, args, placed.bounds[args.feature_id]);
+        return { document: outcome.document, created: outcome.created, error: null };
+      }
       // The server finds a body's parts as it separates it; the preview finds them here, with the same code.
       if (draft.name === "separate_parts") {
         if (!partsFound) return null;
@@ -416,7 +501,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       return { document: null, created: [], error: error instanceof CommandError ? error.message : String(error) };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftKey, doc, partsFound, fontsIn]);
+  }, [draftKey, doc, partsFound, placed, fontsIn]);
   useEffect(() => {
     if (!separating || !doc || !design) return;
     let cancelled = false;
@@ -460,7 +545,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       setSketch({ id: created[0], tool: "rectangle" });
       return;
     }
-    if (operation.kind === "extrude" || operation.kind === "revolve") setSketch(null);
+    if (operation.kind === "extrude" || operation.kind === "revolve" || operation.kind === "sweep") setSketch(null);
     selectCreated(created);
   };
 
@@ -494,6 +579,18 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     const [target, ...tools] = selectedBodies;
     if (!target || !tools.length) return;
     selectCreated(await run("boolean", { operation: kind, target_id: target, tool_ids: tools }));
+  };
+
+  // The sketches selected, in the order they were, which a loft goes through.
+  const selectedSketches = doc
+    ? selected.filter((id) => featureById(doc, id)?.type === "sketch" && !consumerOf(doc, id))
+    : [];
+  const loftSelected = async () => {
+    if (selectedSketches.length >= 2) selectCreated(await run("loft", { sketch_ids: selectedSketches }));
+  };
+
+  const hullSelected = async () => {
+    if (selectedBodies.length) selectCreated(await run("hull", { feature_ids: selectedBodies }));
   };
 
   const deleteSelected = async () => {
@@ -776,6 +873,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         canUndo={Boolean(design?.can_undo)}
         canRedo={Boolean(design?.can_redo)}
         canCombine={selectedBodies.length >= 2}
+        canHull={selectedBodies.length >= 1}
+        canLoft={selectedSketches.length >= 2}
+        onLoft={() => void loftSelected()}
+        onHull={() => void hullSelected()}
         canExtrude={Boolean(extrudable)}
         mode={mode}
         panels={panels}
@@ -786,10 +887,13 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         onRenameDesign={() => setRenaming({ kind: "design" })}
         onExport={() => void exportStl()}
         onSaveToLibrary={() => void saveToLibrary()}
+        onParameters={() => setParametersOpen(true)}
+        onCheck={() => setChecking(true)}
         onDeleteDesign={() => void deleteDesign()}
         onAdd={(kind) => void add(kind)}
         onStartSketch={(plane) => void startSketch(plane)}
         onSketchTool={(tool) => setSketch((prev) => (prev ? { ...prev, tool } : prev))}
+        onSketchPath={() => setPathing(true)}
         onSketchText={() =>
           sketch &&
           void run("add_sketch_shape", {
@@ -922,6 +1026,21 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         )}
       </Box>
 
+      {pathing && sketch && (
+        <PathDialog
+          onClose={() => setPathing(false)}
+          onAdd={(d) => void run("add_sketch_shape", { sketch_id: sketch.id, shape: { type: "path", d } })}
+        />
+      )}
+      <ParametersDialog open={parametersOpen} doc={doc} run={run} onClose={() => setParametersOpen(false)} />
+      <CheckDialog
+        open={checking}
+        designId={design?.id ?? null}
+        doc={doc}
+        selected={selected}
+        run={run}
+        onClose={() => setChecking(false)}
+      />
       {tracing && design && (
         <TraceDialog
           designId={design.id}

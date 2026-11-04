@@ -288,6 +288,85 @@ describe("Studio", () => {
     expect(body.version).toBe(6);
   });
 
+  it("places, repeats and checks bodies for an assistant, measuring them on the server", async () => {
+    const token = await mcpToken(alice);
+    const id = (await callTool(token, "studio_create_design", { name: "Stand" })).data.design_id as string;
+    await callTool(token, "studio_add_box", { design_id: id, width: 40, depth: 30, height: 10 });
+    await callTool(token, "studio_add_cylinder", { design_id: id, radius: 4, height: 6, position: [-50, 20, 7] });
+
+    // On top of the box and centred on it: touching, not overlapping, and floating once it's printed alone.
+    const aligned = await callTool(token, "studio_align", {
+      design_id: id,
+      feature_id: "cylinder-2",
+      to_id: "box-1",
+      x: "center",
+      y: "center",
+      z: "after",
+    });
+    expect(aligned.data.problems).toEqual([]);
+    const between = await callTool(token, "studio_measure", { design_id: id, a_id: "cylinder-2", b_id: "box-1" });
+    expect(between.data).toMatchObject({ gap_mm: 0, overlap_mm3: 0, touching: true });
+    expect(between.data["cylinder-2"].min).toEqual([-4, -4, 10]);
+    const floating = await callTool(token, "studio_check_print", { design_id: id });
+    expect(floating.data).toMatchObject({
+      ready: false,
+      problems: [expect.stringMatching(/cylinder-2 is floating 10 mm/)],
+    });
+
+    await callTool(token, "studio_boolean", {
+      design_id: id,
+      operation: "union",
+      target_id: "box-1",
+      tool_ids: ["cylinder-2"],
+    });
+    const joined = await callTool(token, "studio_check_print", { design_id: id, bed: [180, 180, 180] });
+    expect(joined.data).toMatchObject({ ready: true, problems: [] });
+    expect(joined.data.bodies[0]).toMatchObject({ id: "boolean-3", fitsBed: true, pieces: 1 });
+
+    // Four in a row is one body, 3 × 50 mm wider: too wide now for a 180 mm bed, and in four pieces 10 mm apart.
+    await callTool(token, "studio_linear_pattern", { design_id: id, feature_id: "boolean-3", count: 4, spacing: 50 });
+    const row = await callTool(token, "studio_check_print", { design_id: id, bed: [180, 180, 180] });
+    expect(row.data.bodies[0].size[0]).toBeCloseTo(190);
+    expect(row.data.problems).toEqual([
+      expect.stringMatching(/pattern-4 doesn't fit the 180 × 180 × 180 mm bed/),
+      expect.stringMatching(/pattern-4 is in 4 loose pieces/),
+    ]);
+
+    // Laid flat on a tilted face, over REST as the page runs it: the server measures where it comes to rest.
+    const { body: tilted } = await request(app).post("/api/studio/designs").set(auth(alice)).send({});
+    await command(alice, tilted.id, "add_box", {
+      width: 20,
+      depth: 10,
+      height: 6,
+      rotation: [0, 30, 0],
+      position: [5, 0, 8],
+    });
+    const inspected = await callTool(token, "studio_inspect_body", { design_id: tilted.id, feature_id: "box-1" });
+    const face = inspected.data.faces.find(
+      (each: { normal: number[] }) => each.normal[2] < -0.5 && Math.abs(each.normal[1]) < 0.01,
+    );
+    const flat = await command(alice, tilted.id, "lay_flat", {
+      feature_id: "box-1",
+      face: { point: face.point, normal: face.normal },
+    });
+    expect(flat.status).toBe(200);
+    const laid = await callTool(token, "studio_get_design", { design_id: tilted.id });
+    const size = laid.data.bodies[0].size as number[];
+    [20, 10, 6].forEach((side, axis) => expect(size[axis]).toBeCloseTo(side, 2));
+    expect((await callTool(token, "studio_check_print", { design_id: tilted.id })).data.ready).toBe(true);
+
+    // A tapped hole keeps its ISO pitch with it.
+    await command(alice, tilted.id, "hole", {
+      feature_id: "box-1",
+      point: [5, 0, 6],
+      normal: [0, 0, 1],
+      diameter: 5,
+      thread: {},
+    });
+    const tapped = await request(app).get(`/api/studio/designs/${tilted.id}`).set(auth(alice));
+    expect(tapped.body.document.features.at(-1)).toMatchObject({ type: "hole", thread: { pitch: 0.8 } });
+  });
+
   it("offers every command as an MCP tool, off until the user turns Studio on", async () => {
     for (const each of STUDIO_COMMAND_LIST) expect(STUDIO_TOOLS).toContain(`studio_${each.name}`);
     expect(DEFAULT_MCP_TOOL_NAMES.some((name) => name.startsWith("studio_"))).toBe(false);

@@ -24,7 +24,12 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   on the geometry, which `apply` can't see, so the server finds the body's parts first (`measureParts`, in the worker
   thread, outside the design's lock and again if the design changed meanwhile) and adds them with `addParts`. The
   page's preview finds them the same way in its worker. `trace_picture` is an `"import"` command too: the server
-  traces the design's picture in the worker thread (`tracePicture`) and adds the outline with `addTrace`.
+  traces the design's picture in the worker thread (`tracePicture`) and adds the outline with `addTrace`. `align` and
+  `lay_flat` are `"measure"` commands too: where a body ends up depends on its extent, so the server measures the
+  bodies first (`measureBounds`) and the command places them by it. A design's `parameters` are named numbers, and a
+  feature's `expressions` map a field (`width`, `position.x`, `shapes.0.radius`) to a formula over them
+  (`expressions.ts`); `set_parameter` works every formula out again in tree order, and a command that sets a number by
+  hand drops its formula.
 - **`meshAsset.ts`** — that copy's file format. Copies live in `STORAGE/studio/u-<user>/<design>/<asset>.tpsm`; the page
   fetches them from `GET /api/studio/designs/:id/assets/:assetId` and caches them, as an asset never changes.
 - **`geometry.ts`** — the feature tree to solids with manifold, which the page loads from WebAssembly in a web worker
@@ -57,6 +62,20 @@ MCP client ──studio_<command>────▶ /api/mcp (mcp/studioTools.ts) �
   trace shape, which `studio_get_design` shows as a line. The picture itself is kept beside the design as
   `<id>.png` (`POST /api/studio/designs/:id/pictures`), for the prompt and for tracing again. The page's trace dialog
   previews with the same code on a smaller copy.
+- **`svgPath.ts`** — a path shape's SVG path data as outlines, arcs and curves flattened to a tolerance; even-odd by
+  default, so a subpath inside another is a hole whichever way it winds.
+- **`threads.ts`** — ISO metric threads: the pitch for a diameter and the helical solid, a rod or a cutter (larger by
+  its clearance) that a threaded hole subtracts.
+- **`sweep.ts`** — lofts (outlines matched point to point, resampled when their counts differ) and sweeps (the profile
+  carried along the path by a rotation-minimizing frame, mitred at corners, or along a Catmull-Rom curve when smooth).
+  A sweep's profile stays where its sketch is, as CAD sweeps one: the sketch has to be on a plane through the path's
+  first point, square to it, and the profile is read into the path's frame from there.
+  Both build the mesh themselves and refuse one that folds or runs into itself rather than make a broken solid.
+- **`printCheck.ts`** — the print check behind `studio_check_print` and the page's check dialog: bed, pieces,
+  overlaps, overhangs (downward faces steeper than the limit, not on the bed) and thin walls (rays cast inward from a
+  sample of triangles). A threaded body's overhangs and walls are judged on a copy with its threads as plain cylinders
+  (`plainThreads` in `geometry.ts`), as CAD analyses cosmetic threads. `measureBetween` in `geometry.ts` is
+  `studio_measure`.
 - **`shapes2d.ts`** and **`vec.ts`** — outlines (rounded corners, insets that keep their shape) and vector maths.
 
 The page applies a document command locally at once (`useStudioDesign`), then sends it; the server applies it again on

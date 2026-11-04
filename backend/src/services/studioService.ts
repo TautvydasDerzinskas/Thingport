@@ -10,13 +10,18 @@ import {
   addMesh,
   addParts,
   addTrace,
+  alignBody,
+  alignMeasures,
   applyCommand,
+  layFlat,
+  layFlatTurn,
   CommandError,
   parseCommandArgs,
   separableBody,
   studioCommand,
   traceSettings,
   traceTarget,
+  type Bounds,
   type CommandOutcome,
 } from "../studio/commands.generated";
 import type { Traced } from "../studio/trace.generated";
@@ -24,7 +29,8 @@ import { ASSET_ID, emptyDocument, topLevel, type StudioDocument, type Vec3 } fro
 import { resolvePlateFilePath } from "./printCreation";
 import { listPrints } from "./printQuery";
 import { loadFontsFor } from "./studioFonts";
-import { importStudioMesh, measureStudioParts, traceStudioPicture } from "./studioInspect";
+import { importStudioMesh, measureStudioBounds, measureStudioParts, traceStudioPicture } from "./studioInspect";
+import type { StudioWorkerResult } from "./studioWorker";
 
 // Studio's designs: each user's own, changed only by the commands in frontend/src/studio/commands.ts, whether the page
 // or an assistant runs them. Every change to the feature tree is kept as a revision, which is what undo and redo move
@@ -283,22 +289,54 @@ async function traceFor(userId: string, id: string, args: Record<string, unknown
   throw new HttpError(500, "Couldn't trace the picture", "studio_trace_failed");
 }
 
-/** A body's loose parts for separate_parts, found as the design is now and outside its lock: a big mesh takes a while. */
-async function partsFor(userId: string, id: string, featureId: string) {
-  const design = await owned(prisma, userId, id);
-  // The command's own checks first, so a body that can't be separated isn't measured for nothing.
-  separableBody(documentOf(design), featureId);
-  const outcome = await measureStudioParts(documentOf(design), studioAssetDir(userId, id), featureId);
-  if (outcome.status === "measured") return { version: design.version, parts: outcome.parts };
+/** A measurement's failure, said as the HTTP error or the command's refusal it is. */
+function measureFailed(outcome: StudioWorkerResult, what: string): never {
   if (outcome.status === "refused") throw new CommandError(outcome.reason);
   if (outcome.status === "too-complex")
     throw new HttpError(
       422,
-      `The design is too heavy to separate here (about ${outcome.triangles} triangles)`,
+      `The design is too heavy to measure here (about ${outcome.triangles} triangles)`,
       "studio_too_complex",
     );
-  console.error("[studio] finding a body's parts failed", outcome);
-  throw new HttpError(500, "Couldn't find the body's parts", "studio_parts_failed");
+  console.error(`[studio] measuring ${what} failed`, outcome);
+  throw new HttpError(500, `Couldn't measure ${what}`, "studio_measure_failed");
+}
+
+async function boundsIn(doc: StudioDocument, assetDir: string, ids: string[]): Promise<Record<string, Bounds>> {
+  const outcome = await measureStudioBounds(doc, assetDir, ids);
+  if (outcome.status === "bounds") return outcome.bounds;
+  return measureFailed(outcome, "the bodies");
+}
+
+/**
+ * What a "measure" command needs measured (a body's loose parts, bodies' extents), found as the design is now and
+ * outside its lock, as a big body takes a while; and the change it then makes with it. The command's own checks come
+ * first, so nothing is measured for a command that would be refused anyway.
+ */
+async function measuredFor(
+  userId: string,
+  id: string,
+  name: string,
+  args: Record<string, unknown>,
+): Promise<{ version: number; apply: (doc: StudioDocument) => CommandOutcome }> {
+  const design = await owned(prisma, userId, id);
+  const doc = documentOf(design);
+  const assetDir = studioAssetDir(userId, id);
+  const featureId = String(args.feature_id);
+  if (name === "align") {
+    const given = args as Parameters<typeof alignBody>[1];
+    const bounds = await boundsIn(doc, assetDir, alignMeasures(doc, given));
+    return { version: design.version, apply: (now) => alignBody(now, given, bounds) };
+  }
+  if (name === "lay_flat") {
+    const given = args as Parameters<typeof layFlat>[1];
+    const bounds = await boundsIn(layFlatTurn(doc, given), assetDir, [featureId]);
+    return { version: design.version, apply: (now) => layFlat(now, given, bounds[featureId]) };
+  }
+  separableBody(doc, featureId);
+  const outcome = await measureStudioParts(doc, assetDir, featureId);
+  if (outcome.status !== "measured") return measureFailed(outcome, "the body's parts");
+  return { version: design.version, apply: (now) => addParts(now, { feature_id: featureId }, outcome.parts) };
 }
 
 /**
@@ -329,12 +367,10 @@ export async function runStudioCommand(
         imported = await importLibraryFile(userId, id, String(parsed.model_id), parsed.file_id as string | undefined);
       }
     }
-    // separate_parts measures the body outside the lock too, and again if the design changed before the lock was had.
+    // A measuring command measures outside the lock too, and again if the design changed before the lock was had.
     for (let tries = 1; ; tries++) {
       const measured =
-        definition.kind === "measure"
-          ? await partsFor(userId, id, String(parseCommandArgs(definition, args).feature_id))
-          : null;
+        definition.kind === "measure" ? await measuredFor(userId, id, name, parseCommandArgs(definition, args)) : null;
       const done = await prisma.$transaction(async (tx): Promise<StudioCommandOut | null> => {
         await tx.$queryRaw`SELECT id FROM "StudioDesign" WHERE id = ${id} FOR UPDATE`;
         const design = await owned(tx, userId, id);
@@ -372,7 +408,7 @@ export async function runStudioCommand(
         }
 
         const outcome: CommandOutcome = measured
-          ? addParts(documentOf(design), { feature_id: String(parsed.feature_id) }, measured.parts)
+          ? measured.apply(documentOf(design))
           : imported
             ? addMesh(documentOf(design), imported.mesh, parsed)
             : traced
@@ -405,7 +441,7 @@ export async function runStudioCommand(
       });
       if (done) return done;
       if (tries >= MEASURE_TRIES)
-        throw new HttpError(409, "The design kept changing while its parts were being found: try again", "studio_busy");
+        throw new HttpError(409, "The design kept changing while it was being measured: try again", "studio_busy");
     }
   } catch (error) {
     // An import that didn't make it into the design leaves no copy behind.

@@ -18,6 +18,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import PentagonOutlinedIcon from "@mui/icons-material/PentagonOutlined";
 import RectangleOutlinedIcon from "@mui/icons-material/RectangleOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+import GestureOutlinedIcon from "@mui/icons-material/GestureOutlined";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import HelpTip from "../../components/HelpTip";
@@ -28,6 +29,7 @@ import {
   isBody,
   LIMITS,
   type BodyFeature,
+  type PathShape,
   type SketchFeature,
   type SketchShape,
   type StudioDocument,
@@ -36,8 +38,9 @@ import {
 import type { RunCommand } from "./useStudioDesign";
 import { DEFAULT_FONT, type TextShape } from "../../studio/text";
 import type { TraceShape } from "../../studio/trace";
+import { PATH_CHARACTERS } from "../../studio/svgPath";
 import PictureThumb from "./PictureThumb";
-import { EdgeTreatmentField, NumberField, StudioFontField } from "./fields";
+import { EdgeTreatmentField, NumberField, PathPointsField, StudioFontField } from "./fields";
 import { featureLabel } from "./labels";
 import { FeatureIcon, SeparateIcon } from "./studioIcons";
 
@@ -145,8 +148,13 @@ export default function PropertiesPanel({
   }
 
   const id = feature.id;
-  const update = (changes: Record<string, number | string>) =>
+  const update = (changes: Record<string, number | string | boolean | Vec3[]>) =>
     void run("update_feature", { feature_id: id, ...changes });
+  // A field can follow a formula over the design's parameters: "=" and the formula.
+  const follow = (field: string) => ({
+    expression: feature.expressions?.[field],
+    onExpression: (expression: string) => void run("set_expression", { feature_id: id, field, expression }),
+  });
   const dimension = (key: string, value: number, unit = "mm") => (
     <NumberField
       key={key}
@@ -154,6 +162,7 @@ export default function PropertiesPanel({
       value={value}
       unit={unit}
       onCommit={(v) => update({ [key]: v })}
+      {...follow(key)}
     />
   );
   const partOf = consumerOf(document, id);
@@ -353,6 +362,102 @@ export default function PropertiesPanel({
           </Stack>
         </Section>
       )}
+      {feature.type === "pattern" && (
+        <Section title={t(`studio.types.${feature.kind === "mirror" ? "mirror" : "pattern"}`)}>
+          {feature.kind === "mirror" ? (
+            <FormControlLabel
+              sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+              control={
+                <Switch
+                  size="small"
+                  checked={feature.keep_original}
+                  onChange={(event) =>
+                    void run("update_feature", { feature_id: id, keep_original: event.target.checked })
+                  }
+                />
+              }
+              label={t("studio.ops.mirror.keep")}
+            />
+          ) : (
+            <Box sx={pair}>
+              {dimension("count", feature.count, "")}
+              {feature.kind === "linear"
+                ? dimension("spacing", feature.spacing)
+                : dimension("angle", feature.angle, "°")}
+              {feature.kind === "linear" && feature.grid_direction && dimension("grid_count", feature.grid_count, "")}
+              {feature.kind === "linear" && feature.grid_direction && dimension("grid_spacing", feature.grid_spacing)}
+            </Box>
+          )}
+        </Section>
+      )}
+      {feature.type === "hull" && (
+        <Section title={t("studio.types.hull")}>
+          <Stack direction="row" flexWrap="wrap" gap={0.75}>
+            {feature.body_ids.map((part) => {
+              const input = featureById(document, part);
+              return (
+                input && (
+                  <Chip
+                    key={part}
+                    size="small"
+                    variant="outlined"
+                    icon={<FeatureIcon type={input.type} sx={{ fontSize: 16 }} />}
+                    label={featureLabel(input, t)}
+                    onClick={() => onSelect(part)}
+                  />
+                )
+              );
+            })}
+          </Stack>
+        </Section>
+      )}
+      {feature.type === "loft" && (
+        <Section title={t("studio.types.loft")}>
+          <Stack direction="row" flexWrap="wrap" gap={0.75}>
+            {feature.sketch_ids.map((part) => {
+              const input = featureById(document, part);
+              return (
+                input && (
+                  <Chip
+                    key={part}
+                    size="small"
+                    variant="outlined"
+                    icon={<FeatureIcon type={input.type} sx={{ fontSize: 16 }} />}
+                    label={featureLabel(input, t)}
+                    onClick={() => onSelect(part)}
+                  />
+                )
+              );
+            })}
+          </Stack>
+        </Section>
+      )}
+      {feature.type === "sweep" && (
+        <Section title={t("studio.types.sweep")}>
+          <Stack spacing={1}>
+            <PathPointsField path={feature.path} onChange={(path) => update({ path })} />
+            <Stack direction="row" spacing={1}>
+              {(["smooth", "closed"] as const).map((flag) => (
+                <FormControlLabel
+                  key={flag}
+                  sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+                  control={
+                    <Switch
+                      size="small"
+                      checked={feature[flag]}
+                      onChange={(event) => update({ [flag]: event.target.checked })}
+                    />
+                  }
+                  label={t(`studio.ops.sweep.${flag}`)}
+                />
+              ))}
+            </Stack>
+            <Button size="small" startIcon={<EditOutlinedIcon />} onClick={() => onEditSketch(feature.sketch_id)}>
+              {t("studio.actions.editSketch")}
+            </Button>
+          </Stack>
+        </Section>
+      )}
       {feature.type === "revolve" && (
         <Section title={t("studio.ops.revolve.title")}>
           <Stack spacing={1}>
@@ -389,6 +494,49 @@ export default function PropertiesPanel({
           </Stack>
         </Section>
       )}
+      {feature.type === "thread" && (
+        <Section title={t("studio.types.thread")}>
+          <Stack spacing={1}>
+            <Segmented
+              fullWidth
+              label={t("studio.thread.kind")}
+              value={feature.internal ? "internal" : "external"}
+              options={(["external", "internal"] as const).map((kind) => ({
+                value: kind,
+                label: t(`studio.thread.${kind}`),
+              }))}
+              onChange={(kind) => void run("update_feature", { feature_id: id, internal: kind === "internal" })}
+            />
+            <Box sx={pair}>
+              {dimension("diameter", feature.diameter)}
+              {dimension("pitch", feature.pitch)}
+              {dimension("length", feature.length)}
+              {dimension("clearance", feature.clearance)}
+            </Box>
+            <Segmented
+              fullWidth
+              label={t("studio.thread.hand")}
+              value={feature.hand}
+              options={(["right", "left"] as const).map((hand) => ({
+                value: hand,
+                label: t(`studio.thread.hands.${hand}`),
+              }))}
+              onChange={(hand) => void run("update_feature", { feature_id: id, hand })}
+            />
+            <FormControlLabel
+              sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+              control={
+                <Switch
+                  size="small"
+                  checked={feature.chamfer}
+                  onChange={(event) => void run("update_feature", { feature_id: id, chamfer: event.target.checked })}
+                />
+              }
+              label={t("studio.thread.chamfer")}
+            />
+          </Stack>
+        </Section>
+      )}
       {feature.type === "hole" && (
         <Section title={t("studio.ops.hole.title")}>
           <Stack spacing={1}>
@@ -396,6 +544,27 @@ export default function PropertiesPanel({
               {dimension("diameter", feature.diameter)}
               {feature.depth !== null && dimension("depth", feature.depth)}
             </Box>
+            {!feature.counterbore && !feature.countersink && (
+              <FormControlLabel
+                sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
+                control={
+                  <Switch
+                    size="small"
+                    checked={Boolean(feature.thread)}
+                    onChange={(event) =>
+                      void run("update_feature", { feature_id: id, thread: event.target.checked ? {} : null })
+                    }
+                  />
+                }
+                label={
+                  feature.thread
+                    ? t("studio.ops.hole.threadedAs", {
+                        size: `M${feature.diameter}×${feature.thread.pitch}`,
+                      })
+                    : t("studio.ops.hole.threaded")
+                }
+              />
+            )}
             <FormControlLabel
               sx={{ ml: 0, "& .MuiFormControlLabel-label": { fontSize: "0.8rem" } }}
               control={
@@ -554,6 +723,14 @@ function TransformFields({ feature, run }: { feature: BodyFeature; run: RunComma
             value={vector[index]}
             unit={unit}
             onCommit={(v) => set(key, vector, index, v)}
+            expression={feature.expressions?.[`${key}.${axis.toLowerCase()}`]}
+            onExpression={(expression) =>
+              void run("set_expression", {
+                feature_id: feature.id,
+                field: `${key}.${axis.toLowerCase()}`,
+                expression,
+              })
+            }
           />
         ))}
       </Box>
@@ -574,7 +751,34 @@ const SHAPE_ICONS = {
   polygon: PentagonOutlinedIcon,
   text: TextFieldsIcon,
   trace: ImageOutlinedIcon,
+  path: GestureOutlinedIcon,
 };
+
+/** A path's SVG data, and whether loops inside others are holes whatever way they're drawn. */
+function PathShapeFields({ shape, onChange }: { shape: PathShape; onChange: (shape: PathShape) => void }) {
+  const { t } = useTranslation("app");
+  return (
+    <Stack spacing={1}>
+      <TextCommitField
+        label={t("studio.path.data")}
+        value={shape.d}
+        multiline
+        maxLength={PATH_CHARACTERS}
+        onCommit={(d) => d && onChange({ ...shape, d })}
+      />
+      <Segmented
+        fullWidth
+        label={t("studio.path.fill")}
+        value={shape.fill ?? "evenodd"}
+        options={(["evenodd", "nonzero"] as const).map((fill) => ({
+          value: fill,
+          label: t(`studio.path.fills.${fill}`),
+        }))}
+        onChange={(fill) => onChange({ ...shape, fill })}
+      />
+    </Stack>
+  );
+}
 
 /** A traced picture's size, place and how it was traced: each change traces it again. */
 function TraceShapeFields({
@@ -802,7 +1006,10 @@ function SketchProperties({
                   <TraceShapeFields designId={designId} shape={shape} onChange={(next) => retrace(index, next)} />
                 ) : (
                   <>
-                    {shape.type !== "polygon" && (
+                    {shape.type === "path" && (
+                      <PathShapeFields shape={shape} onChange={(next) => change(index, next)} />
+                    )}
+                    {shape.type !== "polygon" && shape.type !== "path" && (
                       <Box sx={pair}>
                         <NumberField
                           label="U"

@@ -12,6 +12,7 @@ export type { Vec2, Vec3 } from "./vec";
 import { applyMatrix, cross, frameMatrix, normalize, type Vec2, type Vec3 } from "./vec";
 import { treatCorners } from "./shapes2d";
 import { textContours, type TextShape } from "./text";
+import { pathContours } from "./svgPath";
 import { traceContours, type TraceShape } from "./trace";
 export { applyMatrix };
 
@@ -26,9 +27,13 @@ export type SketchShape =
   | { type: "circle"; center: Vec2; radius: number; hole?: boolean }
   | { type: "polygon"; points: Vec2[]; corner_radius?: number; hole?: boolean }
   | TextShape
-  | TraceShape;
+  | TraceShape
+  | PathShape;
+/** Outlines drawn as SVG path data, in the sketch's own [u, v] mm (v up). Evenodd, the default, makes a loop inside
+ *  another a hole whichever way it's drawn; nonzero goes by which way each loop winds, as SVG does. */
+export type PathShape = { type: "path"; d: string; fill?: "evenodd" | "nonzero"; hole?: boolean };
 /** The shapes drawn as one closed loop. */
-export type OutlineShape = Exclude<SketchShape, TextShape | TraceShape>;
+export type OutlineShape = Exclude<SketchShape, TextShape | TraceShape | PathShape>;
 
 export type BooleanOperation = "union" | "subtract" | "intersect";
 
@@ -46,6 +51,9 @@ type Common = {
   /** Empty until someone names it; the UI then shows its type and number. */
   name: string;
   visible: boolean;
+  /** Formulas some of its numbers follow, over the design's parameters, by field: "width", "position.x",
+   *  "shapes.0.radius". The numbers themselves are kept in the feature too, worked out again as parameters change. */
+  expressions?: Record<string, string>;
 };
 type Body = Common & { transform: Transform };
 
@@ -68,6 +76,20 @@ export type ConeFeature = Body & {
   bottom_edge?: EdgeTreatment | null;
 };
 export type SphereFeature = Body & { type: "sphere"; radius: number; segments: number };
+/** An ISO metric screw thread along its own Z from its origin, `length` up: a threaded rod, or (internal) the solid a
+ *  matching threaded hole is cut with. `clearance` is taken off a rod's radius and added to a cutter's, so printed
+ *  parts fit together. */
+export type ThreadFeature = Body & {
+  type: "thread";
+  diameter: number;
+  pitch: number;
+  length: number;
+  internal: boolean;
+  clearance: number;
+  hand: "right" | "left";
+  chamfer: boolean;
+  segments: number;
+};
 export type TorusFeature = Body & { type: "torus"; major_radius: number; minor_radius: number; segments: number };
 export type ExtrudeFeature = Body & {
   type: "extrude";
@@ -116,6 +138,8 @@ export type HoleFeature = Body & {
   depth: number | null;
   counterbore?: { diameter: number; depth: number } | null;
   countersink?: { diameter: number; angle: number } | null;
+  /** An ISO metric thread cut in it instead of a plain bore, `diameter` then being its nominal size. */
+  thread?: { pitch: number; clearance: number } | null;
   segments: number;
 };
 export type ShellFeature = Body & { type: "shell"; target_id: string; thickness: number; open_faces: FaceRef[] };
@@ -163,10 +187,41 @@ export type PartFeature = Body & {
   /** Closed, so a boolean can use it; a part of a mesh with gaps may not be. */
   solid: boolean;
 };
+/** How a pattern copies its body: in a row (or a grid), round an axis, or mirrored across a plane, in the world. */
+export type PatternKind =
+  | {
+      kind: "linear";
+      direction: Vec3;
+      count: number;
+      spacing: number;
+      /** A second way, for a grid: null for a row. */
+      grid_direction: Vec3 | null;
+      grid_count: number;
+      grid_spacing: number;
+    }
+  | {
+      kind: "circular";
+      axis_point: Vec3;
+      axis_direction: Vec3;
+      count: number;
+      /** The angle the copies spread over: 360 spaces them evenly all the way round. */
+      angle: number;
+    }
+  | { kind: "mirror"; plane_point: Vec3; plane_normal: Vec3; keep_original: boolean };
+/** Copies of a body made into one body with it, as the body is where it is. */
+export type PatternFeature = Body & { type: "pattern"; source_id: string } & PatternKind;
+/** A solid through two or more sketches' outlines in order, with straight sides between them and flat ends. */
+export type LoftFeature = Body & { type: "loft"; sketch_ids: string[] };
+/** A sketch's shapes pulled along a path of points in the world, square to it all the way, the sketch's origin on it. */
+export type SweepFeature = Body & { type: "sweep"; sketch_id: string; path: Vec3[]; closed: boolean; smooth: boolean };
+/** The smallest convex body around others, as if they were shrink-wrapped together. */
+export type HullFeature = Body & { type: "hull"; body_ids: string[] };
+
 /** A loose part as a body is measured for separate_parts: what its part feature keeps. */
 export type PartMeasure = Pick<PartFeature, "bounds" | "origin" | "solid">;
 
-export type PrimitiveFeature = BoxFeature | CylinderFeature | ConeFeature | SphereFeature | TorusFeature;
+export type PrimitiveFeature =
+  BoxFeature | CylinderFeature | ConeFeature | SphereFeature | TorusFeature | ThreadFeature;
 /** Features that change one body, which they then belong to. */
 export type ModifyFeature = PressPullFeature | FilletFeature | ChamferFeature | HoleFeature | ShellFeature;
 export type BodyFeature =
@@ -177,12 +232,21 @@ export type BodyFeature =
   | BooleanFeature
   | ModifyFeature
   | SplitFeature
-  | PartFeature;
+  | PartFeature
+  | PatternFeature
+  | HullFeature
+  | LoftFeature
+  | SweepFeature;
 export type Feature = BodyFeature | SketchFeature;
 export type FeatureType = Feature["type"];
 
+/** A named number a design's formulas use, such as wall = 2. */
+export type Parameter = { name: string; value: number };
+
 export type StudioDocument = {
   version: typeof DOCUMENT_VERSION;
+  /** Absent in a design that never had one. */
+  parameters?: Parameter[];
   /** In the order they were made, so a feature only ever uses ones before it. */
   features: Feature[];
   /** The number in the next feature's id. Ids are never reused, so an old one can't point at a new feature. */
@@ -208,6 +272,10 @@ export const LIMITS = {
   shellTriangles: 20_000,
   /** The parts one body separates into. */
   partsPerBody: 100,
+  /** The copies one pattern makes, in all. */
+  patternCopies: 200,
+  /** A design's parameters. */
+  parameters: 100,
 } as const;
 
 /** A mesh as a design keeps it: corners shared between triangles, centred on X and Y, standing on Z = 0, in mm. */
@@ -233,7 +301,10 @@ export function inputsOf(feature: Feature): string[] {
   switch (feature.type) {
     case "extrude":
     case "revolve":
+    case "sweep":
       return [feature.sketch_id];
+    case "loft":
+      return feature.sketch_ids;
     case "boolean":
       return [feature.target_id, ...feature.tool_ids];
     case "press_pull":
@@ -245,7 +316,10 @@ export function inputsOf(feature: Feature): string[] {
     case "split":
       return feature.tool_id ? [feature.source_id, feature.tool_id] : [feature.source_id];
     case "part":
+    case "pattern":
       return [feature.source_id];
+    case "hull":
+      return feature.body_ids;
     default:
       return [];
   }
@@ -324,7 +398,13 @@ export function sketchPointToWorld(sketch: Pick<SketchFeature, "plane" | "offset
 export function shapeContours(shape: SketchShape, segments = DEFAULT_SEGMENTS): Vec2[][] {
   if (shape.type === "text") return textContours(shape);
   if (shape.type === "trace") return traceContours(shape);
+  if (shape.type === "path") return pathContours(shape.d);
   return [shapeOutline(shape, segments)];
+}
+
+/** How a shape's outlines are filled: by winding (nonzero), or a path's loops inside others cut out (evenodd). */
+export function shapeFill(shape: SketchShape): "NonZero" | "EvenOdd" {
+  return shape.type === "path" && shape.fill !== "nonzero" ? "EvenOdd" : "NonZero";
 }
 
 /** A one-loop shape's outline as a closed loop of points on its plane. Throws when a corner radius doesn't fit. */
@@ -351,6 +431,54 @@ export function shapeOutline(shape: OutlineShape, segments = DEFAULT_SEGMENTS): 
   }
   const radius = shape.corner_radius ?? 0;
   return radius > 0 ? treatCorners(points, () => ({ type: "fillet", size: radius })) : points;
+}
+
+/** The rotation that turns `from` onto `to`, both unit vectors, by rows. */
+export function turnOnto(from: Vec3, to: Vec3): number[][] {
+  const axis = cross(from, to);
+  const sin = Math.hypot(...axis);
+  const cos = from[0] * to[0] + from[1] * to[1] + from[2] * to[2];
+  if (sin < 1e-9) {
+    if (cos > 0)
+      return [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+      ];
+    // Half a turn, about any axis square to them.
+    const [x, y, z] = normalize(Math.abs(from[0]) < 0.9 ? cross(from, [1, 0, 0]) : cross(from, [0, 1, 0]));
+    return [
+      [2 * x * x - 1, 2 * x * y, 2 * x * z],
+      [2 * x * y, 2 * y * y - 1, 2 * y * z],
+      [2 * x * z, 2 * y * z, 2 * z * z - 1],
+    ];
+  }
+  const [x, y, z] = [axis[0] / sin, axis[1] / sin, axis[2] / sin];
+  const t = 1 - cos;
+  return [
+    [t * x * x + cos, t * x * y - sin * z, t * x * z + sin * y],
+    [t * x * y + sin * z, t * y * y + cos, t * y * z - sin * x],
+    [t * x * z - sin * y, t * y * z + sin * x, t * z * z + cos],
+  ];
+}
+
+/** A rotation, by rows, as a transform's degrees about the world X, then Y, then Z: transformMatrix's, undone. */
+export function rotationDegrees(r: number[][]): Vec3 {
+  const deg = (radians: number) => Number(((radians * 180) / Math.PI).toFixed(4)) + 0;
+  const sy = -r[2][0];
+  // Straight up or down, X and Z turn about the same axis: it's all put on Z.
+  if (Math.abs(sy) > 0.999999) return [0, deg(Math.sign(sy) * (Math.PI / 2)), deg(Math.atan2(-r[0][1], r[1][1]))];
+  return [deg(Math.atan2(r[2][1], r[2][2])), deg(Math.asin(sy)), deg(Math.atan2(r[1][0], r[0][0]))];
+}
+
+/** A transform's rotation alone, by rows. */
+export function rotationRows(rotation: Vec3): number[][] {
+  const m = transformMatrix({ position: [0, 0, 0], rotation, scale: [1, 1, 1] });
+  return [
+    [m[0], m[4], m[8]],
+    [m[1], m[5], m[9]],
+    [m[2], m[6], m[10]],
+  ];
 }
 
 /**

@@ -3145,7 +3145,13 @@
         "hole": "Hole",
         "shell": "Shell",
         "split": "Split",
-        "part": "Part"
+        "part": "Part",
+        "pattern": "Pattern",
+        "mirror": "Mirror",
+        "hull": "Hull",
+        "thread": "Thread",
+        "loft": "Loft",
+        "sweep": "Sweep"
       },
       "tree": {
         "heading": "Features",
@@ -3176,14 +3182,17 @@
           "torus": "Add torus"
         },
         "revolve": "Revolve",
-        "separate": "Separate parts"
+        "separate": "Separate parts",
+        "hull": "Hull",
+        "loft": "Loft"
       },
       "shapes": {
         "rectangle": "Rectangle",
         "circle": "Circle",
         "polygon": "Polygon",
         "text": "Text",
-        "trace": "Traced picture"
+        "trace": "Traced picture",
+        "path": "Path"
       },
       "planes": {
         "XY": "Top",
@@ -3254,7 +3263,14 @@
           "offset": "Offset",
           "angle": "Angle",
           "diameter": "Diameter",
-          "thickness": "Thickness"
+          "thickness": "Thickness",
+          "count": "Count",
+          "spacing": "Spacing",
+          "grid_count": "Rows",
+          "grid_spacing": "Row spacing",
+          "pitch": "Pitch",
+          "length": "Length",
+          "clearance": "Clearance"
         },
         "mesh": {
           "source": "Source",
@@ -3419,7 +3435,9 @@
           "angle": "Angle",
           "boreDiameter": "Bore diameter",
           "boreDepth": "Bore depth",
-          "sinkDiameter": "Sink diameter"
+          "sinkDiameter": "Sink diameter",
+          "threaded": "Tapped",
+          "threadedAs": "Tapped {{size}}"
         },
         "shell": {
           "title": "Shell",
@@ -3477,6 +3495,63 @@
           "height": "Height",
           "depth": "Depth",
           "pick": "Click a flat face to write on"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "help": "Repeats a body in a row, a grid or round an axis, and makes the copies one body with it. Change the body and every copy follows. To cut many holes, pattern one hole's cylinder and subtract the pattern.",
+          "style": "Kind",
+          "linear": "In a row",
+          "circular": "Round an axis",
+          "along": "Along",
+          "around": "Around",
+          "count": "Count",
+          "spacing": "Spacing",
+          "grid": "Second direction (a grid)",
+          "rows": "Rows",
+          "rowSpacing": "Row spacing",
+          "angle": "Spread over",
+          "center": "Centre {{axis}}"
+        },
+        "mirror": {
+          "title": "Mirror",
+          "help": "Mirrors a body across a plane, for something symmetric built one half at a time. Keeping the original makes the half and its mirror image one body.",
+          "plane": "Across",
+          "keep": "Keep the original"
+        },
+        "align": {
+          "title": "Align",
+          "help": "Lines a body up with another body, or with the bed: its starts, middles or ends together, or beside it (before or after) with a gap. On Z, after puts it on top. It only moves the body.",
+          "pickBody": "Click the body to move",
+          "pickReference": "Click a body to line it up with, or leave it lined up with the bed",
+          "with": "With {{name}}",
+          "axis": "Along {{axis}}",
+          "none": "Off",
+          "before": "Before",
+          "start": "Start",
+          "center": "Centre",
+          "end": "End",
+          "after": "After",
+          "z_none": "Off",
+          "z_before": "Below",
+          "z_start": "Bottom",
+          "z_center": "Middle",
+          "z_end": "Top",
+          "z_after": "On top",
+          "gap": "Gap"
+        },
+        "lay_flat": {
+          "title": "Lay flat",
+          "help": "Turns a body so the face you click lies on the bed, as you would turn a part for printing, and sets it down on the bed.",
+          "pick": "Click the face to lay it on"
+        },
+        "sweep": {
+          "title": "Sweep",
+          "help": "Moves the sketch's outline along a path of points and makes the solid it passes through: a pipe, a handle, a rail. The sketch's origin rides on the path, so draw the outline around it; it starts square to the path at the first point. Smooth runs a curve through the points, Closed makes a ring.",
+          "path": "Path points (mm)",
+          "addPoint": "Add point",
+          "removePoint": "Remove point {{number}}",
+          "smooth": "Smooth",
+          "closed": "Closed"
         }
       },
       "imported": {
@@ -3529,7 +3604,80 @@
         "start": "Edit design",
         "done": "Done editing"
       },
-      "emptyView": "Ask AI below to make something, or click Edit to build it yourself"
+      "emptyView": "Ask AI below to make something, or click Edit to build it yourself",
+      "thread": {
+        "kind": "Type",
+        "external": "External",
+        "internal": "Internal",
+        "hand": "Hand",
+        "hands": {
+          "right": "Right-hand",
+          "left": "Left-hand"
+        },
+        "chamfer": "Chamfered ends"
+      },
+      "path": {
+        "title": "Add path",
+        "help": "SVG path data in the sketch's millimetres, x to the right and y up: M, L, H, V, C, S, Q, T, A and Z, each subpath one closed outline. Paste one from a drawing program or write it by hand.",
+        "data": "Path data",
+        "fill": "Fill rule",
+        "fills": {
+          "evenodd": "Even-odd",
+          "nonzero": "Non-zero"
+        },
+        "nothing": "Nothing to draw yet",
+        "add": "Add"
+      },
+      "parameters": {
+        "title": "Parameters",
+        "help": "Named numbers the design's sizes can follow. In any size field, type = and a formula, such as =wall * 2 + 10. Change a parameter here and every formula that uses it is worked out again.",
+        "follows": "Follows = {{expression}}",
+        "name": "Name",
+        "value": "Value",
+        "add": "Add parameter",
+        "delete": "Delete {{name}}",
+        "inUse": "In use: change the fields that follow it first",
+        "none": "No parameters yet.",
+        "taken": "There's one by that name",
+        "badName": "Letters, digits and _, not starting with a digit",
+        "unused": "Not used",
+        "uses_one": "Used by {{count}} field",
+        "uses_other": "Used by {{count}} fields"
+      },
+      "check": {
+        "title": "Check for printing",
+        "help": "Checks each visible body where it's placed: on the bed and within it, in one piece, not overlapping another, with no overhang that needs support and no wall too thin to print. It's the same check the assistant runs on its own work.",
+        "bed_x": "Bed X",
+        "bed_y": "Bed Y",
+        "bed_z": "Bed Z",
+        "overhangLimit": "Overhang",
+        "minWall": "Min wall",
+        "ready": "Ready to print",
+        "nothing": "There are no visible bodies to check.",
+        "size": "{{x}} × {{y}} × {{z}} mm",
+        "volume": "{{cm3}} cm³",
+        "empty": "Empty",
+        "tooBig": "Too big for the bed",
+        "offBed": "Off the bed",
+        "floating": "Floating {{mm}} mm up",
+        "sunk": "Sunk {{mm}} mm",
+        "pieces_one": "{{count}} loose piece",
+        "pieces_other": "{{count}} loose pieces",
+        "overhang": "{{area}} mm² overhang",
+        "thin": "Walls down to {{mm}} mm",
+        "overlaps": "Overlaps {{name}}",
+        "open": "Not a closed solid",
+        "toBed": "Onto bed",
+        "measure": "Measure",
+        "measureNeedsTwo": "Add two bodies to measure between them.",
+        "first": "From",
+        "second": "To",
+        "gap": "Gap {{mm}} mm",
+        "touching": "Touching",
+        "overlap": "Overlap {{cm3}} cm³",
+        "far": "Over 1 m apart",
+        "toBedOf": "Put {{name}} on the bed"
+      }
     }
   },
   "common": {

@@ -13,6 +13,7 @@ import ToggleButton from "@mui/material/ToggleButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import AddBoxOutlinedIcon from "@mui/icons-material/AddBoxOutlined";
+import AlignHorizontalCenterIcon from "@mui/icons-material/AlignHorizontalCenter";
 import AspectRatioIcon from "@mui/icons-material/AspectRatio";
 import CenterFocusStrongOutlinedIcon from "@mui/icons-material/CenterFocusStrongOutlined";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
@@ -20,6 +21,7 @@ import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRenameOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
@@ -30,9 +32,11 @@ import ViewSidebarOutlinedIcon from "@mui/icons-material/ViewSidebarOutlined";
 import PentagonOutlinedIcon from "@mui/icons-material/PentagonOutlined";
 import RectangleOutlinedIcon from "@mui/icons-material/RectangleOutlined";
 import RedoIcon from "@mui/icons-material/Redo";
+import GestureOutlinedIcon from "@mui/icons-material/GestureOutlined";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import WallpaperOutlinedIcon from "@mui/icons-material/WallpaperOutlined";
 import ThreeSixtyIcon from "@mui/icons-material/ThreeSixty";
+import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
 import UndoIcon from "@mui/icons-material/Undo";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
 import HelpTip from "../../components/HelpTip";
@@ -45,6 +49,12 @@ import {
   ChamferIcon,
   FilletIcon,
   HoleIcon,
+  HullIcon,
+  LayFlatIcon,
+  LoftIcon,
+  SweepIcon,
+  MirrorIcon,
+  PatternIcon,
   PressPullIcon,
   RevolveIcon,
   ShellIcon,
@@ -58,11 +68,12 @@ import {
   SketchIcon,
   SphereIcon,
   SubtractIcon,
+  ThreadIcon,
   TorusIcon,
   UnionIcon,
 } from "./studioIcons";
 
-export type Primitive = "box" | "cylinder" | "cone" | "sphere" | "torus";
+export type Primitive = "box" | "cylinder" | "cone" | "sphere" | "torus" | "thread";
 export type StudioPanel = "features" | "properties";
 export type BooleanKind = "union" | "subtract" | "intersect";
 
@@ -75,6 +86,12 @@ type Props = {
   canRedo: boolean;
   /** Booleans need two bodies or more, selected; the first is the one the others act on. */
   canCombine: boolean;
+  /** A hull takes one body or more. */
+  canHull: boolean;
+  /** A loft takes two sketches or more, in the order they were selected. */
+  canLoft: boolean;
+  onLoft: () => void;
+  onHull: () => void;
   canExtrude: boolean;
   mode: StudioMode;
   /** Which side panels show. */
@@ -88,12 +105,18 @@ type Props = {
   onExport: () => void;
   /** Saves the design to the library as a model. */
   onSaveToLibrary: () => void;
+  /** Opens the design's parameters, the named numbers its sizes can follow. */
+  onParameters: () => void;
+  /** Opens the check of whether the design will print, and the measure between two bodies. */
+  onCheck: () => void;
   onDeleteDesign: () => void;
   onAdd: (primitive: Primitive) => void;
   onStartSketch: (plane: Exclude<SketchPlane, "FACE">) => void;
   onSketchTool: (tool: SketchTool) => void;
   /** Adds a text to the sketch being drawn, for its words to be typed in the Properties panel. */
   onSketchText: () => void;
+  /** Opens the dialog that adds a path, as SVG path data, to the sketch being drawn. */
+  onSketchPath: () => void;
   onFinishSketch: () => void;
   onExtrude: () => void;
   /** Opens a tool's panel. */
@@ -115,6 +138,7 @@ const PRIMITIVES: { kind: Primitive; Icon: typeof BoxIcon }[] = [
   { kind: "cone", Icon: ConeIcon },
   { kind: "sphere", Icon: SphereIcon },
   { kind: "torus", Icon: TorusIcon },
+  { kind: "thread", Icon: ThreadIcon },
 ];
 
 const MODIFY: { kind: OperationKind; Icon: React.ComponentType<SvgIconProps> }[] = [
@@ -125,6 +149,10 @@ const MODIFY: { kind: OperationKind; Icon: React.ComponentType<SvgIconProps> }[]
   { kind: "split", Icon: SplitIcon },
   { kind: "separate", Icon: SeparateIcon },
   { kind: "scale", Icon: AspectRatioIcon },
+  { kind: "pattern", Icon: PatternIcon },
+  { kind: "mirror", Icon: MirrorIcon },
+  { kind: "align", Icon: AlignHorizontalCenterIcon },
+  { kind: "lay_flat", Icon: LayFlatIcon },
 ];
 
 const BOOLEANS: { kind: BooleanKind; Icon: typeof BoxIcon }[] = [
@@ -262,6 +290,13 @@ export default function StudioToolbar(props: Props) {
               )}
             {!noDesign &&
               menuItem(
+                <TuneOutlinedIcon fontSize="small" />,
+                t("studio.parameters.title"),
+                props.onParameters,
+                closeDesign,
+              )}
+            {!noDesign &&
+              menuItem(
                 <FileDownloadOutlinedIcon fontSize="small" />,
                 t("studio.design.export"),
                 props.onExport,
@@ -309,6 +344,9 @@ export default function StudioToolbar(props: Props) {
               />
               <Tool label={t("studio.text.add")} onClick={props.onSketchText}>
                 <TextFieldsIcon />
+              </Tool>
+              <Tool label={t("studio.path.title")} onClick={props.onSketchPath}>
+                <GestureOutlinedIcon />
               </Tool>
               <Tool label={t("studio.actions.extrude")} disabled={!props.canExtrude} onClick={props.onExtrude}>
                 <ExtrudeIcon />
@@ -364,6 +402,16 @@ export default function StudioToolbar(props: Props) {
                 onClick={() => props.onOperation("revolve")}
               >
                 <RevolveIcon />
+              </Tool>
+              <Tool
+                label={t("studio.ops.sweep.title")}
+                disabled={!props.canExtrude}
+                onClick={() => props.onOperation("sweep")}
+              >
+                <SweepIcon />
+              </Tool>
+              <Tool label={t("studio.actions.loft")} disabled={!props.canLoft} onClick={props.onLoft}>
+                <LoftIcon />
               </Tool>
               <Tool
                 label={t("studio.ops.hole.title")}
@@ -442,6 +490,9 @@ export default function StudioToolbar(props: Props) {
                   <Icon />
                 </Tool>
               ))}
+              <Tool label={t("studio.actions.hull")} disabled={!props.canHull} onClick={props.onHull}>
+                <HullIcon />
+              </Tool>
               <Gap />
               <Segmented
                 label={t("studio.transform.label")}
@@ -469,6 +520,9 @@ export default function StudioToolbar(props: Props) {
             <RedoIcon />
           </Tool>
           <Box sx={{ flex: 1 }} />
+          <Tool label={t("studio.check.title")} disabled={noDesign} onClick={props.onCheck}>
+            <FactCheckOutlinedIcon />
+          </Tool>
           <HelpTip text={t("studio.view.navigation")} />
           <Tool label={t("studio.panels.label")} onClick={(event) => setPanelMenu(event.currentTarget)}>
             <ViewSidebarOutlinedIcon />

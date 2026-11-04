@@ -1,14 +1,15 @@
 /// <reference lib="webworker" />
 import Module, { type ManifoldToplevel } from "manifold-3d";
 import wasm from "manifold-3d/manifold.wasm?url";
-import type { MeshData, StudioDocument } from "../../studio/document";
-import { evaluateDesign, measureParts } from "../../studio/geometry";
+import type { MeshData } from "../../studio/document";
+import { checkDesign, evaluateDesign, measureBetween, measureBounds, measureParts } from "../../studio/geometry";
 import { analyze } from "../../studio/topology";
 import type { GeometryAnswer, GeometryQuestion, WorkerBody } from "./geometryClient";
 import { loadFontsFor } from "./studioFonts";
 
 // Makes a design's bodies off the page's thread, so a fillet or a shell that takes a second or two doesn't freeze the
-// view, and works out each body's flat faces and straight edges for picking them, and a body's loose parts.
+// view, and works out each body's flat faces and straight edges for picking them; and measures, for separating, placing
+// and checking a design.
 
 let manifold: Promise<ManifoldToplevel> | null = null;
 const reply = (answer: GeometryAnswer, transfer: Transferable[] = []) =>
@@ -17,7 +18,8 @@ const reply = (answer: GeometryAnswer, transfer: Transferable[] = []) =>
 const meshes = new Map<string, MeshData>();
 
 self.addEventListener("message", async (event: MessageEvent<GeometryQuestion>) => {
-  const { id, document, ids, assets, parts } = event.data;
+  const { id, document, ids, assets, parts, bounds, check, between } = event.data;
+  const lookup = (assetId: string) => meshes.get(assetId);
   for (const [assetId, mesh] of Object.entries(assets)) meshes.set(assetId, mesh);
   try {
     manifold ??= Module({ locateFile: () => wasm }).then((module) => {
@@ -26,15 +28,17 @@ self.addEventListener("message", async (event: MessageEvent<GeometryQuestion>) =
     });
     // The design's text needs its fonts here too.
     await loadFontsFor(document);
-    if (parts) {
-      const measured = measureParts(await manifold, document as StudioDocument, parts, (assetId) =>
-        meshes.get(assetId),
-      );
-      return reply({ id, bodies: [], errors: [], parts: measured });
+    if (check)
+      return reply({ id, bodies: [], errors: [], check: checkDesign(await manifold, document, check, lookup) });
+    if (between) {
+      const measured = measureBetween(await manifold, document, between[0], between[1], lookup);
+      return reply({ id, bodies: [], errors: [], between: measured });
     }
-    const evaluation = evaluateDesign(await manifold, document as StudioDocument, ids, (assetId) =>
-      meshes.get(assetId),
-    );
+    if (bounds)
+      return reply({ id, bodies: [], errors: [], bounds: measureBounds(await manifold, document, bounds, lookup) });
+    if (parts)
+      return reply({ id, bodies: [], errors: [], parts: measureParts(await manifold, document, parts, lookup) });
+    const evaluation = evaluateDesign(await manifold, document, ids, lookup);
     const bodies: WorkerBody[] = evaluation.bodies.map((body) => {
       const top = analyze(body.mesh);
       return {

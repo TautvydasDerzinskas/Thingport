@@ -74,6 +74,13 @@ Faces and edges aren't stored as such: a body is a mesh. Name them by where they
   joined come apart too; a boolean on a body that still holds such parts counts their overlap twice, so separate them
   and union them first.
 - boolean: union, subtract or intersect bodies; keep_tools leaves the tools as they are.
+- linear_pattern / circular_pattern / mirror copy a body in a row or grid, round an axis, or across a plane, as one
+  editable body: a row of pegs, bolt holes round a flange (pattern one hole's cylinder, then subtract the pattern), a
+  symmetric part built one half at a time. Prefer them to duplicating and placing copies by hand.
+- hull: the convex body around several (a rounded slot from two cylinders, a smooth handle from spheres).
+- align lines a body up with another's box or the bed (start, center, end, before, after per axis, with a gap): put
+  things on top of, beside or centred on each other without working out coordinates. lay_flat turns a body so a face
+  lies on the bed, for printing.
 - set_transform (absolute) and scale_feature (a factor) move, turn and size a body.
 - update_feature changes any feature's numbers later, e.g. a fillet's radius or a hole's diameter.
 - studio_save_to_library saves the design to the user's library as a new model (an STL, a picture and their requests
@@ -95,6 +102,15 @@ A tray with a lid lip:
 2. add_sketch on XY offset 28 with a rectangle 78 × 58, extrude 2 with operation cut and target_id the shell, for a
    recess the lid sits in.
 
+A flange with six bolt holes:
+1. add_cylinder radius 30, height 5; add_cylinder radius 2, height 20, position [22, 0, -5].
+2. circular_pattern cylinder-2 with count 6; boolean subtract the pattern from cylinder-1.
+
+A bent pipe:
+1. add_sketch on XZ with offset -60, a circle at [0, 40] radius 5 and a hole circle radius 4: the profile, drawn where
+   the path starts and square to it.
+2. sweep sketch-1 along [[0, -60, 40], [0, 0, 40], [0, 0, 100]], smooth false: 60 mm along +Y, then up.
+
 A model cut in two for printing:
 1. import_model the library model; split it with plane { point: [0, 0, h / 2], normal: [0, 0, 1] }.
 2. Optionally hole both parts at matching points for dowel pins.
@@ -102,6 +118,13 @@ A model cut in two for printing:
 A name tag:
 1. add_box 60 × 20 × 3; fillet its four vertical edges with radius 3.
 2. add_text "Ada" size 10, height 1, on the top face ([0, 0, 3], [0, 0, 1]) with target_id the fillet.
+
+Check a part meant for printing with studio_check_print (floating or sunk bodies, overlaps, overhangs, thin walls,
+loose pieces), and a fit or a clearance with studio_measure (the gap between two bodies, or their overlap). As CAD
+does, the check judges a thread as the plain cylinder it's cut on, so its ridges aren't counted as overhang or thin walls.
+
+For a design someone will want to change, set_parameter names its key numbers (wall = 2, hole_d = 5) and
+set_expression makes features follow them (width = wall * 2 + 30): one change to a parameter then changes them all.
 
 Look at the result with studio_view_design (iso, top, front, right...) as you go.
 `;
