@@ -6,7 +6,7 @@ import { resolvePlateFilePath } from "./printCreation";
 import { walkZipEntries } from "../utils/zipReader";
 
 /** Bump when the parser learns new fields, so stored results can be told apart from older ones. */
-export const PLATE_PROFILE_VERSION = 2;
+export const PLATE_PROFILE_VERSION = 3;
 
 export type PlateProfile = {
   title: string | null;
@@ -21,7 +21,17 @@ export type PlateProfile = {
   weight_g: number | null;
   /** Per sliced plate; empty means unknown (no slice_info). A value the plate doesn't give (or 0) is null. */
   plate_stats: PlateStat[];
+  /** Number of wall loops (perimeters); null when the file doesn't say. */
+  walls: number | null;
+  /** Sparse infill density in percent, 0 to 100; null when the file doesn't say. */
+  infill_density_pct: number | null;
+  /** The slicer's key for the sparse infill pattern, lower-case (`gyroid`, `grid`, `zig-zag` ...); null when unknown. */
+  infill_pattern: string | null;
+  /** `none`, `normal` (grid-like) or `tree` supports; null when the file doesn't say. */
+  supports: SupportType | null;
 };
+
+export type SupportType = "none" | "normal" | "tree";
 
 export type PlateStat = {
   /** The plate number as slice_info.config writes it (Bambu Studio counts from 1). */
@@ -44,6 +54,10 @@ const PRINTER_KEYS = ["printer_model", "printer_settings_id", "printer_name"];
 const NOZZLE_KEYS = ["nozzle_diameter", "printer_nozzle_diameter"];
 const LAYER_KEYS = ["layer_height"];
 const MATERIAL_KEYS = ["filament_type"];
+// Bambu Studio / OrcaSlicer first, then PrusaSlicer.
+const WALL_KEYS = ["wall_loops", "perimeters"];
+const INFILL_DENSITY_KEYS = ["sparse_infill_density", "fill_density"];
+const INFILL_PATTERN_KEYS = ["sparse_infill_pattern", "fill_pattern"];
 
 /** Lower-cased key to raw value (a string, or an array of them), from one settings file. */
 type Settings = Map<string, unknown>;
@@ -59,6 +73,10 @@ function emptyProfile(): PlateProfile {
     estimated_seconds: null,
     weight_g: null,
     plate_stats: [],
+    walls: null,
+    infill_density_pct: null,
+    infill_pattern: null,
+    supports: null,
   };
 }
 
@@ -72,7 +90,11 @@ export function hasAnyProfileValue(p: PlateProfile): boolean {
     p.plates !== null ||
     p.estimated_seconds !== null ||
     p.weight_g !== null ||
-    p.plate_stats.length > 0
+    p.plate_stats.length > 0 ||
+    p.walls !== null ||
+    p.infill_density_pct !== null ||
+    p.infill_pattern !== null ||
+    p.supports !== null
   );
 }
 
@@ -120,6 +142,43 @@ function toPositive(text: string | undefined | null): number | null {
   if (text == null) return null;
   const n = parseFloat(text);
   return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** A whole number of walls; the first usable value of the lookup, else null. A huge count is a broken file. */
+function firstWalls(values: string[]): number | null {
+  for (const v of values) {
+    if (!/^\d{1,3}$/.test(v)) continue;
+    return parseInt(v, 10);
+  }
+  return null;
+}
+
+/** `15%` or `15` to 15; 0 is a valid (hollow) density. Anything outside 0..100 is not a density. */
+function firstDensity(values: string[]): number | null {
+  for (const v of values) {
+    const n = Number(v.replace(/%$/, "").trim());
+    if (v.trim() !== "" && Number.isFinite(n) && n >= 0 && n <= 100) return Math.round(n * 100) / 100;
+  }
+  return null;
+}
+
+/** A pattern key such as `gyroid` or `zig-zag`, lower-cased; null for anything that isn't a plain key. */
+function firstPattern(values: unknown[]): string | null {
+  for (const v of values.flatMap(toStrings)) {
+    const key = v.toLowerCase();
+    if (/^[a-z0-9_-]{1,40}$/.test(key)) return key;
+  }
+  return null;
+}
+
+/** Bambu/Orca `enable_support` + `support_type` (`tree(auto)`), or Prusa `support_material` + `support_material_style`. */
+function supportsOf(sources: Settings[]): SupportType | null {
+  const enable = lookup(sources, ["enable_support", "support_material"]).flatMap(toStrings)[0]?.toLowerCase();
+  if (enable === "0" || enable === "false") return "none";
+  if (enable !== "1" && enable !== "true") return null;
+  const type = lookup(sources, ["support_type"]).flatMap(toStrings)[0]?.toLowerCase();
+  const style = lookup(sources, ["support_material_style"]).flatMap(toStrings)[0]?.toLowerCase();
+  return type?.startsWith("tree") || style === "organic" ? "tree" : "normal";
 }
 
 function firstNumber(values: string[]): number | null {
@@ -421,6 +480,11 @@ export async function readPlateProfileChecked(filePath: string): Promise<ReadRes
   profile.estimated_seconds = slice?.seconds ?? null;
   profile.weight_g = slice?.weight ?? null;
   profile.plate_stats = slice?.plateStats ?? [];
+
+  profile.walls = firstWalls(lookup(sources, WALL_KEYS).flatMap(toListItems));
+  profile.infill_density_pct = firstDensity(lookup(sources, INFILL_DENSITY_KEYS).flatMap(toStrings));
+  profile.infill_pattern = firstPattern(lookup(sources, INFILL_PATTERN_KEYS));
+  profile.supports = supportsOf(sources);
   return { profile, complete: entries.complete };
 }
 
@@ -531,6 +595,10 @@ export function plateProfileOut(profileMeta: Prisma.JsonValue | null): PlateProf
             : [{ index, estimated_seconds: num(o.estimated_seconds), weight_g: num(o.weight_g) }];
         })
       : [],
+    walls: num(m.walls),
+    infill_density_pct: num(m.infill_density_pct),
+    infill_pattern: str(m.infill_pattern),
+    supports: m.supports === "none" || m.supports === "normal" || m.supports === "tree" ? m.supports : null,
   };
   return hasAnyProfileValue(profile) ? profile : null;
 }

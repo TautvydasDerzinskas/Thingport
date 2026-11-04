@@ -827,7 +827,8 @@ const listModelFiles: McpToolDefinition = {
     "A model's files: its plates (the 3D files), supporting files and sliced print, each with the id get_model_file " +
     "takes. api_path (on the server's own address) or download_url, when the server knows its address, opens with " +
     "the same token as 'Authorization: Bearer' if it may read Model files. 3MF plates also carry their slicer " +
-    "profile (title, printer, nozzle, layer height, materials, plates, and for a sliced file print time and weight per plate): a single value is null " +
+    "profile (title, printer, nozzle, layer height, materials, plates, and for a sliced file print time and weight per plate; and walls, infill_density_pct (percent), infill_pattern (the slicer's key, such as " +
+    "gyroid) and supports: none, normal or tree): a single value is null " +
     "and materials and plate_stats are empty arrays when the file doesn't say. The whole profile is null when it " +
     "hasn't been read yet or the file says nothing of this. Plates also carry is_default: true for the one file the " +
     "source site itself offers as its default (MakerWorld's default print profile), recorded when the file was " +

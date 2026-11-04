@@ -43,6 +43,24 @@ describe("ProfileDetails", () => {
     expect(html).not.toContain('data-row="type"');
   });
 
+  it("shows walls, infill and supports only when the file gives them", () => {
+    expect(render("a.3mf", profile)).not.toMatch(/data-row="(walls|infill|supports)"/);
+    const html = render("a.3mf", {
+      ...profile,
+      walls: 3,
+      infill_density_pct: 15,
+      infill_pattern: "gyroid",
+      supports: "tree",
+    });
+    expect(html).toMatch(/data-row="walls"[^]*?>3</);
+    expect(html).toContain("15% Gyroid");
+    expect(html).toContain(">Tree<");
+    const none = render("a.3mf", { ...profile, infill_density_pct: 0, supports: "none" });
+    expect(none).toContain(">0%<");
+    expect(none).toContain(">None<");
+    expect(render("a.3mf", { ...profile, infill_pattern: "odd-key" })).toContain(">odd-key<");
+  });
+
   it("leaves out what the file does not say", () => {
     const html = render("a.3mf", { ...profile, printer: null, nozzle_mm: null, estimated_seconds: 0, weight_g: null });
     expect(html).not.toContain('data-row="printer"');

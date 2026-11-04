@@ -3826,12 +3826,34 @@
         "printer": "Imprimante",
         "nozzle": "Buse",
         "layer": "Couche",
+        "walls": "Parois",
+        "infill": "Remplissage",
+        "supports": "Supports",
         "material": "Matériau",
         "time": "Durée",
         "weight": "Poids",
         "plates": "Plateaux",
         "file": "Fichier",
-        "type": "Type"
+        "type": "Type",
+        "supportTypes": {
+          "none": "Aucun",
+          "normal": "Normaux",
+          "tree": "Arborescents"
+        },
+        "infillPatterns": {
+          "gyroid": "Gyroïde",
+          "grid": "Grille",
+          "line": "Lignes",
+          "rectilinear": "Rectiligne",
+          "cubic": "Cubique",
+          "adaptivecubic": "Cubique adaptatif",
+          "triangles": "Triangles",
+          "honeycomb": "Nid d'abeille",
+          "concentric": "Concentrique",
+          "lightning": "Éclair",
+          "crosshatch": "Hachures croisées",
+          "zig-zag": "Zigzag"
+        }
       },
       "internalPlatesDivider_one": "{{count}} plaque dans ce fichier",
       "internalPlatesDivider_many": "{{count}} plaques dans ce fichier",

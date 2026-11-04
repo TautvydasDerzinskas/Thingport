@@ -42,6 +42,10 @@ const NO_VALUES = {
   estimated_seconds: null,
   weight_g: null,
   plate_stats: [],
+  walls: null,
+  infill_density_pct: null,
+  infill_pattern: null,
+  supports: null,
 };
 
 describe("readZipEntryPrefix", () => {
@@ -62,6 +66,10 @@ describe("readPlateProfile", () => {
         nozzle_diameter: ["0.4"],
         layer_height: "0.22",
         filament_type: ["PLA", "PLA"],
+        wall_loops: "2",
+        sparse_infill_density: "10%",
+        sparse_infill_pattern: "grid",
+        enable_support: "0",
       }),
       "Metadata/plate_1.json": "{}",
       "Metadata/plate_2.json": "{}",
@@ -77,6 +85,10 @@ describe("readPlateProfile", () => {
       estimated_seconds: null,
       weight_g: null,
       plate_stats: [],
+      walls: 2,
+      infill_density_pct: 10,
+      infill_pattern: "grid",
+      supports: "none",
     });
   });
 
@@ -259,6 +271,88 @@ describe("readPlateProfile", () => {
         "3D/3dmodel.model": `<model>${'<metadata name="ProfileTitle">'.repeat(BIG / 60)}</model>`,
       });
       expect(profile.title).toBeNull();
+    });
+  });
+
+  describe("walls, infill and supports", () => {
+    const read = async (files: Record<string, string>) => readPlateProfile(await write3mf(files));
+    const bambu = (extra: Record<string, unknown>) => ({
+      "Metadata/project_settings.config": JSON.stringify(extra),
+    });
+
+    it("reads Bambu Studio / Orca keys", async () => {
+      const p = await read(
+        bambu({
+          wall_loops: "3",
+          sparse_infill_density: "15%",
+          sparse_infill_pattern: "gyroid",
+          enable_support: "1",
+          support_type: "tree(auto)",
+        }),
+      );
+      expect(p).toMatchObject({ walls: 3, infill_density_pct: 15, infill_pattern: "gyroid", supports: "tree" });
+      expect(hasAnyProfileValue({ ...NO_VALUES, walls: 2 })).toBe(true);
+    });
+
+    it("reads normal supports and a Bambu zig-zag pattern, and keeps 0 values", async () => {
+      const p = await read(
+        bambu({
+          wall_loops: "0",
+          sparse_infill_density: "0%",
+          sparse_infill_pattern: "Zig-Zag",
+          enable_support: "1",
+          support_type: "normal(manual)",
+        }),
+      );
+      expect(p).toMatchObject({ walls: 0, infill_density_pct: 0, infill_pattern: "zig-zag", supports: "normal" });
+    });
+
+    it("says none when supports are off, whatever the type", async () => {
+      const p = await read(bambu({ enable_support: "0", support_type: "tree(auto)" }));
+      expect(p.supports).toBe("none");
+    });
+
+    it("reads PrusaSlicer keys from the INI trailer", async () => {
+      const p = await read({
+        "Metadata/Slic3r_PE.config":
+          "; perimeters = 2\n; fill_density = 20%\n; fill_pattern = honeycomb\n; support_material = 1\n; support_material_style = organic\n",
+      });
+      expect(p).toMatchObject({ walls: 2, infill_density_pct: 20, infill_pattern: "honeycomb", supports: "tree" });
+      const grid = await read({
+        "Metadata/Slic3r_PE.config": "; support_material = 1\n; support_material_style = grid\n",
+      });
+      expect(grid.supports).toBe("normal");
+    });
+
+    it("leaves them null when the keys are missing or unusable", async () => {
+      expect(await read(bambu({ layer_height: "0.2" }))).toMatchObject({
+        walls: null,
+        infill_density_pct: null,
+        infill_pattern: null,
+        supports: null,
+      });
+      const bad = await read(
+        bambu({
+          wall_loops: "many",
+          sparse_infill_density: "250%",
+          sparse_infill_pattern: "<script>",
+          enable_support: "maybe",
+        }),
+      );
+      expect(bad).toMatchObject({ walls: null, infill_density_pct: null, infill_pattern: null, supports: null });
+    });
+
+    it("stays fast on a huge value", async () => {
+      const start = Date.now();
+      const p = await read(
+        bambu({
+          wall_loops: "9".repeat(800_000),
+          sparse_infill_pattern: "x".repeat(800_000),
+          sparse_infill_density: " ".repeat(800_000),
+        }),
+      );
+      expect(Date.now() - start).toBeLessThan(2000);
+      expect(p).toMatchObject({ walls: null, infill_pattern: null, infill_density_pct: null });
     });
   });
 

@@ -3813,12 +3813,34 @@
         "printer": "Impresora",
         "nozzle": "Boquilla",
         "layer": "Capa",
+        "walls": "Paredes",
+        "infill": "Relleno",
+        "supports": "Soportes",
         "material": "Material",
         "time": "Tiempo",
         "weight": "Peso",
         "plates": "Placas",
         "file": "Archivo",
-        "type": "Tipo"
+        "type": "Tipo",
+        "supportTypes": {
+          "none": "Ninguno",
+          "normal": "Normal",
+          "tree": "Árbol"
+        },
+        "infillPatterns": {
+          "gyroid": "Giroide",
+          "grid": "Rejilla",
+          "line": "Líneas",
+          "rectilinear": "Rectilíneo",
+          "cubic": "Cúbico",
+          "adaptivecubic": "Cúbico adaptativo",
+          "triangles": "Triángulos",
+          "honeycomb": "Panal",
+          "concentric": "Concéntrico",
+          "lightning": "Rayo",
+          "crosshatch": "Entramado",
+          "zig-zag": "Zigzag"
+        }
       },
       "internalPlatesDivider_one": "{{count}} placa en este archivo",
       "internalPlatesDivider_many": "{{count}} placas en este archivo",

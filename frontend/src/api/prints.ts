@@ -23,6 +23,13 @@ export type PlateProfile = {
   weight_g: number | null;
   /** Per sliced plate; empty when unknown. Values the plate doesn't give are null. */
   plate_stats: PlateStat[];
+  /** Wall loops. Optional only so older fixtures stay valid; the API always sends all four. */
+  walls?: number | null;
+  /** Sparse infill density in percent. */
+  infill_density_pct?: number | null;
+  /** The slicer's key for the infill pattern, lower-case (gyroid, grid, zig-zag ...). */
+  infill_pattern?: string | null;
+  supports?: "none" | "normal" | "tree" | null;
 };
 
 export type PlateStat = {
