@@ -25,6 +25,46 @@ export function profileSummary(t: TFunction, profile: PlateProfile, locale: stri
   return parts.length ? parts.join(" · ") : null;
 }
 
+/** Slicer words an auto-generated profile title is made of ("0.2mm layer, 2 walls, 10% infill (modifiers)"). */
+const TITLE_FILLER = new Set([
+  "mm",
+  "layer",
+  "layers",
+  "wall",
+  "walls",
+  "infill",
+  "support",
+  "supports",
+  "modifier",
+  "modifiers",
+]);
+/** Titles longer than this are never a plain numbers recap; also bounds the work on hostile input. */
+const MAX_REDUNDANT_TITLE = 200;
+
+/**
+ * Whether a profile title only repeats the numbers `profileSummary` already shows, in slicer filler words
+ * ("0.275mm layer, 1 walls, 5% infill (modifiers)"). A title with any other number or word ("Draft",
+ * "0.20mm Standard @BBL X1C") carries information and is not redundant. Compares numbers by value, so "0.20" matches 0.2.
+ */
+export function isRedundantTitle(title: string | null | undefined, profile: PlateProfile): boolean {
+  if (!title || title.length > MAX_REDUNDANT_TITLE) return false;
+  const shown = [profile.layer_height_mm, profile.walls, profile.infill_density_pct].filter(
+    (n): n is number => n != null && Number.isFinite(n),
+  );
+  const lower = title.toLowerCase();
+  const numbers = lower.match(/\d+(?:[.,]\d+)?/g);
+  if (!numbers) return false;
+  const known = numbers.every((n) => {
+    const v = Number(n.replace(",", "."));
+    return shown.some((s) => Math.abs(s - v) < 1e-6);
+  });
+  if (!known) return false;
+  return lower
+    .replace(/\d+(?:[.,]\d+)?/g, " ")
+    .split(/[^a-z]+/)
+    .every((w) => !w || TITLE_FILLER.has(w));
+}
+
 /**
  * e.g. "Body" / "File 2 · STL". A 3MF with a slicer profile shows its print settings line
  * (`profileSummary`) and the profile's icon badges instead, the profile title moving to the second line; a title
@@ -39,8 +79,9 @@ export function fileRowText(
 ): { primary: string; secondary: ReactNode } {
   const type = extOf(filename).toUpperCase();
   const stem = stemOf(filename);
-  const title = profile?.title || null;
   const summary = profile ? profileSummary(t, profile, locale) : null;
+  // A title that only repeats the settings line adds nothing, so the file name takes its place.
+  const title = profile?.title && !isRedundantTitle(profile.title, profile) ? profile.title : null;
   const badges = profile && hasProfileBadges(profile) ? <ProfileBadges profile={profile} /> : null;
   const plain = type
     ? t("models:detail.fileMeta", { n: index + 1, type })

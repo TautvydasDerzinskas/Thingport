@@ -14,9 +14,9 @@ import PlateThumbnail from "../../components/media/PlateThumbnail";
 import { fileRowText } from "./fileRowText";
 import type { ModelFile } from "./useOpenInSlicer";
 
-/** Rows visible before the list scrolls, and the height reserved for one (a row with wrapped badges is taller). */
+/** Rows visible before the list scrolls, and the height reserved for one (headline, name line and one badge line). */
 export const VISIBLE_ROWS = 4;
-const ROW_HEIGHT_PX = 60;
+const ROW_HEIGHT_PX = 68;
 const THUMB_PX = 40;
 
 type Props = {

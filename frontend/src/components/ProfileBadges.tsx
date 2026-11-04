@@ -24,6 +24,13 @@ function NozzleIcon() {
   );
 }
 
+/**
+ * Flex per badge in the one-line row: the printer name gives way first, then the materials, and the numbers
+ * (which are short and the point of the row) last. The printer takes only the space left over, so it
+ * may shrink to its icon.
+ */
+const FLEX: Record<string, string> = { printer: "1 1 0px", materials: "0 8 auto" };
+
 type Item = { key: string; icon: ReactNode; text: string; label: string };
 
 /** Whole seconds as "1h 23m" in the user's language, without translation keys. */
@@ -133,11 +140,9 @@ export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
   if (!shown.length) return null;
 
   return (
-    // Badges that don't fit wrap onto the next line, so every value stays whole and visible in a narrow row.
-    <Box
-      component="span"
-      sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 1, rowGap: 0.25, minWidth: 0 }}
-    >
+    // One line: badges that don't fit shrink and end in an ellipsis (the tooltip has the full value), so the
+    // row keeps its height.
+    <Box component="span" sx={{ display: "flex", flexWrap: "nowrap", alignItems: "center", columnGap: 1, minWidth: 0 }}>
       {shown.map((i) => (
         // Without describeChild the tooltip text becomes the badge's aria-label, its name for screen readers.
         <Tooltip key={i.key} title={i.label}>
@@ -155,7 +160,7 @@ export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
               gap: 0.25,
               minWidth: 0,
               // The printer takes the rest of the line once its first few letters fit, then ellipsizes.
-              flex: i.key === "printer" ? "1 1 7ch" : "0 0 auto",
+              flex: FLEX[i.key] ?? "0 1 auto",
               "& .MuiSvgIcon-root": { fontSize: "1.05em", flexShrink: 0 },
             }}
           >

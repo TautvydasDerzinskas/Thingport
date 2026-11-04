@@ -6,7 +6,7 @@ import type { PlateProfile } from "../../api/prints";
 import en from "../../i18n/locales/en.json";
 import fr from "../../i18n/locales/fr.json";
 import lt from "../../i18n/locales/lt.json";
-import { fileRowText, profileSummary } from "./fileRowText";
+import { fileRowText, isRedundantTitle, profileSummary } from "./fileRowText";
 
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", defaultNS: "models", resources: { en: { models: en.models } } });
@@ -190,5 +190,40 @@ describe("profileSummary", () => {
   it("uses the language's number format and plural", () => {
     expect(profileSummary(i18nLt.t.bind(i18nLt), { ...full, walls: 2 }, "lt")).toMatch(/^0,08 mm · 2 sienelės · 40\s%/);
     expect(profileSummary(i18nFr.t.bind(i18nFr), { ...full, walls: 3 }, "fr")).toContain("3 parois");
+  });
+});
+
+describe("isRedundantTitle", () => {
+  const p: PlateProfile = { ...empty, layer_height_mm: 0.275, walls: 1, infill_density_pct: 5 };
+
+  it("flags a title that only repeats the shown numbers", () => {
+    expect(isRedundantTitle("0.275mm layer, 1 walls, 5% infill (modifiers)", p)).toBe(true);
+    expect(isRedundantTitle("0.2750 MM LAYER", p)).toBe(true);
+  });
+
+  it("keeps titles with other numbers or words", () => {
+    expect(isRedundantTitle("0.28mm layer, 1 walls", p)).toBe(false);
+    expect(isRedundantTitle("Draft, 0.275mm", p)).toBe(false);
+    expect(isRedundantTitle("0.275mm Standard @BBL X1C", p)).toBe(false);
+  });
+
+  it("handles empty, number-free and zero cases", () => {
+    expect(isRedundantTitle(null, p)).toBe(false);
+    expect(isRedundantTitle("", p)).toBe(false);
+    expect(isRedundantTitle("layer walls", p)).toBe(false);
+    expect(isRedundantTitle("0 walls", { ...p, walls: 0 })).toBe(true);
+    expect(isRedundantTitle("1 walls", empty)).toBe(false);
+  });
+
+  it("stays fast on hostile input", () => {
+    const start = performance.now();
+    expect(isRedundantTitle("1".repeat(190) + ".".repeat(5), p)).toBe(false);
+    expect(isRedundantTitle("1.".repeat(100_000), p)).toBe(false);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+
+  it("swaps a redundant title for the file name in the row", () => {
+    const profile: PlateProfile = { ...p, title: "0.275mm layer, 1 walls, 5% infill (modifiers)" };
+    expect(secondaryText(profile)).toBe("part|0.275");
   });
 });
