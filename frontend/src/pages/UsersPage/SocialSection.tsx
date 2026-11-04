@@ -82,7 +82,7 @@ export default function SocialSection({ onUnauthorized }: Props) {
     try {
       setSettings(await socialApi.updateSettings({ enabled }));
       // The sidebar's Explore and the collection form's Private/Public follow straight away.
-      refreshSocialStatus();
+      void refreshSocialStatus();
     } catch (err) {
       failed = true;
       setSettings(previous);
@@ -93,8 +93,12 @@ export default function SocialSection({ onUnauthorized }: Props) {
       saves.current += 1;
       setSaving(false);
     }
-    // What was shown before may not be what's saved: another admin may have switched it meanwhile.
-    if (failed) read();
+    // What was shown before may not be what's saved, here or elsewhere in the app: another admin may have switched it
+    // meanwhile, or the save may have gone through after all.
+    if (failed) {
+      void refreshSocialStatus();
+      read();
+    }
   };
 
   const points = (["infoPublic", "infoExplore", "infoCopy", "infoOff"] as const).map((key) =>
@@ -143,22 +147,23 @@ export default function SocialSection({ onUnauthorized }: Props) {
           <Typography variant="body2" color="text.secondary">
             {t("adminSettings.social.summary")}
           </Typography>
-          {(loadFailed || saveError) && (
+          {saveError && (
+            <Alert severity="error" sx={{ mt: 1 }} onClose={() => setSaveError(null)}>
+              {saveError}
+            </Alert>
+          )}
+          {loadFailed && (
             <Alert
               severity="error"
               sx={{ mt: 1 }}
               // A failed read leaves nothing to switch: it offers to read again rather than to be dismissed.
-              {...(loadFailed
-                ? {
-                    action: (
-                      <Button color="inherit" size="small" onClick={read}>
-                        {t("common:retry")}
-                      </Button>
-                    ),
-                  }
-                : { onClose: () => setSaveError(null) })}
+              action={
+                <Button color="inherit" size="small" onClick={read}>
+                  {t("common:retry")}
+                </Button>
+              }
             >
-              {loadFailed ? t("adminSettings.social.loadFailed") : saveError}
+              {t("adminSettings.social.loadFailed")}
             </Alert>
           )}
         </Stack>

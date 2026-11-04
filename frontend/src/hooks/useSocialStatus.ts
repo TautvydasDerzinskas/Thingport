@@ -30,7 +30,7 @@ function load(): Promise<SocialStatus> {
       if (asked === generation && listeners.size) {
         retry ??= setTimeout(() => {
           retry = null;
-          refreshSocialStatus();
+          void refreshSocialStatus();
         }, RETRY_MS);
       }
       return OFF;
@@ -47,8 +47,9 @@ function load(): Promise<SocialStatus> {
   return request;
 }
 
-/** Asks again, as after an admin changed the setting: whatever was asked before doesn't count. */
-export function refreshSocialStatus(): void {
+/** Asks again, as after an admin changed the setting: whatever was asked before doesn't count. Answers with the fresh
+ *  status, for a caller that needs it as well as everything showing it. */
+export function refreshSocialStatus(): Promise<SocialStatus> {
   generation += 1;
   cached = undefined;
   inFlight = null;
@@ -57,7 +58,7 @@ export function refreshSocialStatus(): void {
     clearTimeout(retry);
     retry = null;
   }
-  void load();
+  return load();
 }
 
 /** Hears every answer from now on, the current one first; returns how to stop. */
@@ -77,7 +78,7 @@ export function subscribeSocialStatus(listener: (status: SocialStatus) => void):
 
 function refreshIfStale() {
   if (document.visibilityState !== "visible") return;
-  if (!cached || Date.now() - cached.at > STALE_MS) refreshSocialStatus();
+  if (!cached || Date.now() - cached.at > STALE_MS) void refreshSocialStatus();
 }
 
 /** Null until known. */

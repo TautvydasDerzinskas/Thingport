@@ -74,11 +74,16 @@ describe("social status", () => {
     const { refreshSocialStatus, subscribeSocialStatus } = await freshModule();
     let failOld: (reason: Error) => void = () => undefined;
     status.mockReturnValueOnce(new Promise((_, reject) => (failOld = reject))).mockResolvedValue(ON);
-    subscribeSocialStatus(() => undefined);
-    refreshSocialStatus();
+    const heard: SocialStatus[] = [];
+    subscribeSocialStatus((value) => heard.push(value));
+    const fresh = refreshSocialStatus();
     await vi.advanceTimersByTimeAsync(0);
     failOld(new Error("down"));
     await vi.advanceTimersByTimeAsync(60_000);
     expect(status).toHaveBeenCalledTimes(2);
+    // The failure isn't heard as "off", and the refresh answers with what it found.
+    expect(heard).not.toContainEqual(OFF);
+    expect(heard.at(-1)).toEqual(ON);
+    expect(await fresh).toEqual(ON);
   });
 });

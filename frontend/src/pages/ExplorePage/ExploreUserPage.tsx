@@ -43,7 +43,7 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
   const latest = useRef(0);
 
   const read = useCallback(
-    (asked: string, fresh: boolean) => {
+    function readPage(asked: string, fresh: boolean) {
       const reading = ++latest.current;
       if (fresh) setPage(null);
       setNotFound(false);
@@ -67,8 +67,11 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
           else if (err instanceof SocialOffError) {
             setPage(null);
             setOff(true);
-            // So the status learns they're off too, and hears when they're back.
-            refreshSocialStatus();
+            // So the status learns they're off too. Back on already (switched again meanwhile): read again, unless
+            // another read has started since.
+            void refreshSocialStatus().then((status) => {
+              if (status.enabled && reading === latest.current) readPage(asked, true);
+            });
           } else setFailed(true);
         },
       );
