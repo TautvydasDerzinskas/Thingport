@@ -162,6 +162,7 @@ export default function ModelActionsMenu({
   const customize = useCustomize(print, closeMenu, onUnauthorized);
   const studio = useOpenInStudio(print, onUnauthorized);
   const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
+  const libraryCopyId = print.library_copy_id ?? null;
 
   const openEdit = () => {
     closeMenu();
@@ -332,11 +333,11 @@ export default function ModelActionsMenu({
           </MenuItem>
         )}
         {owner &&
-          (print.library_copy_id ? (
+          (libraryCopyId ? (
             <MenuItem
               onClick={() => {
                 closeMenu();
-                library.openCopy(print.library_copy_id!);
+                library.openCopy(libraryCopyId);
               }}
             >
               <ListItemIcon>

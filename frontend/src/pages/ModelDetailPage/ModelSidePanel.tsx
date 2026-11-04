@@ -121,6 +121,7 @@ export default function ModelSidePanel({
   // Another user's model, from one of their public collections.
   const owner = print.owner ?? null;
   const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
+  const libraryCopyId = print.library_copy_id ?? null;
 
   const goToCategory = () => {
     if (!print.category_id) return;
@@ -429,11 +430,11 @@ export default function ModelSidePanel({
         {owner && (
           // Another user's model: copied into the user's library, or filed into their collections (which copies it).
           <Stack direction="row" spacing={1.5}>
-            {print.library_copy_id ? (
+            {libraryCopyId ? (
               <Button
                 variant="outlined"
                 startIcon={<LibraryAddCheckOutlinedIcon />}
-                onClick={() => library.openCopy(print.library_copy_id!)}
+                onClick={() => library.openCopy(libraryCopyId)}
                 sx={{ flex: 1 }}
               >
                 {t("models:shared.openCopy")}

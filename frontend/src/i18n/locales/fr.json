@@ -5246,7 +5246,9 @@
       "tagsPartlyUpdated_other": "Étiquettes de {{count}} modèles mises à jour, mais les autres ont échoué. Veuillez réessayer.",
       "toolOwned_one": "{{count}} des modèles choisis appartient à un outil : retirez-le pour faire ceci",
       "toolOwned_other": "{{count}} des modèles choisis appartiennent à un outil : retirez-les pour faire ceci",
-      "toolOwned_many": "{{count}} des modèles choisis appartiennent à un outil : retirez-les pour faire ceci"
+      "toolOwned_many": "{{count}} des modèles choisis appartiennent à un outil : retirez-les pour faire ceci",
+      "notFiled_one": "{{count}} modèle n'a pas pu être ajouté : il n'est plus partagé",
+      "notFiled_other": "{{count}} modèles n'ont pas pu être ajoutés : ils ne sont plus partagés"
     },
     "merge": {
       "action": "Fusionner",

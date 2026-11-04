@@ -5233,7 +5233,9 @@
       "tagsPartlyUpdated_other": "Se actualizaron las etiquetas de {{count}} modelos, pero el resto falló. Inténtalo de nuevo.",
       "toolOwned_one": "{{count}} de los modelos elegidos pertenece a una herramienta: déjalo fuera para hacer esto",
       "toolOwned_other": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
-      "toolOwned_many": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto"
+      "toolOwned_many": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
+      "notFiled_one": "No se pudo añadir {{count}} modelo: ya no se comparte",
+      "notFiled_other": "No se pudieron añadir {{count}} modelos: ya no se comparten"
     },
     "merge": {
       "action": "Fusionar",

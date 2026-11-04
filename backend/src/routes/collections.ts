@@ -349,8 +349,14 @@ router.post(
     const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!collection) throw new HttpError(404, "Collection not found");
     const own = await ownModelsFor(req.userId!, body.print_ids, true);
-    await addModelsToCollection(req.userId!, collection.id, [...own.values()]);
-    res.json({ ok: true });
+    const { notFound } = await addModelsToCollection(req.userId!, collection.id, [...own.values()]);
+    // The ones that couldn't be filed, as they were asked for: gone, or another user's no longer shared.
+    const missed = new Set(notFound);
+    const notFiled = [...new Set(body.print_ids)].filter((id) => {
+      const mine = own.get(id);
+      return !mine || missed.has(mine);
+    });
+    res.json({ ok: true, not_found: notFiled });
   }),
 );
 

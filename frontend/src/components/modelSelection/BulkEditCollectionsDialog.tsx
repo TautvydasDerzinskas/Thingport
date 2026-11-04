@@ -100,9 +100,11 @@ export default function BulkEditCollectionsDialog({
     setSaving(true);
     setError(null);
     let done = 0;
+    const notFiled = new Set<string>();
     try {
       for (const row of add) {
-        await collectionsApi.addItems(row.id, printIds);
+        const { not_found } = await collectionsApi.addItems(row.id, printIds);
+        not_found.forEach((id) => notFiled.add(id));
         done++;
       }
       for (const row of remove) {
@@ -110,7 +112,11 @@ export default function BulkEditCollectionsDialog({
         if (row.id === collectionId) onRemovedFromCollection?.(printIds);
         done++;
       }
-      showToast({ message: t("models:selection.collectionsUpdated", { count: done }) });
+      showToast(
+        notFiled.size
+          ? { message: t("models:selection.notFiled", { count: notFiled.size }), severity: "warning" }
+          : { message: t("models:selection.collectionsUpdated", { count: done }) },
+      );
       onClose();
     } catch (err) {
       failed(err, t("models:selection.collectionsFailed"));

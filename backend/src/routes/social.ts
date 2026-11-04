@@ -1,12 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireAdmin, requireAuth } from "../auth";
-import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { createLog } from "../services/auditLog";
-import { addModelsToCollection } from "../services/collectionService";
 import { copyPrintToLibrary } from "../services/modelCopyService";
 import { printOutById } from "../services/printLoader";
 import { getSocialSettings, setSocialSettings } from "../services/settingsService";
@@ -66,19 +64,13 @@ router.get(
   }),
 );
 
-// Another user's model, from one of their public collections, into the user's library; into one of their collections
-// too with `collection_id`. A model they already have isn't copied again: that one is filed instead.
-const copySchema = z.object({ collection_id: z.string().optional() });
+// Another user's model, from one of their public collections, into the user's library. A model they already have isn't
+// copied again: that one comes back. Filing one into a collection goes through the collection's own routes, which copy
+// it first.
 router.post(
   "/print/:id/copy",
   asyncHandler(async (req, res) => {
-    const body = parseBody(copySchema, req.body ?? {});
-    if (body.collection_id) {
-      const collection = await prisma.collection.findFirst({ where: { id: body.collection_id, userId: req.userId } });
-      if (!collection || collection.toolId) throw new HttpError(404, "Collection not found");
-    }
     const { print, copied } = await copyPrintToLibrary(req.userId!, req.params.id);
-    if (body.collection_id) await addModelsToCollection(req.userId!, body.collection_id, [print.id]);
     res.json({ print: await printOutById(req.userId!, print.id), copied });
   }),
 );

@@ -5407,7 +5407,10 @@
       "tagsPartlyUpdated_other": "Atnaujintos {{count}} modelių žymės, bet likusių nepavyko. Bandykite dar kartą.",
       "toolOwned_one": "{{count}} pažymėtas modelis priklauso įrankiui: praleiskite jį, kad tai atliktumėte",
       "toolOwned_few": "{{count}} pažymėti modeliai priklauso įrankiui: praleiskite juos, kad tai atliktumėte",
-      "toolOwned_other": "{{count}} pažymėtų modelių priklauso įrankiui: praleiskite juos, kad tai atliktumėte"
+      "toolOwned_other": "{{count}} pažymėtų modelių priklauso įrankiui: praleiskite juos, kad tai atliktumėte",
+      "notFiled_one": "{{count}} modelio nepavyko pridėti: juo nebesidalijama",
+      "notFiled_few": "{{count}} modelių nepavyko pridėti: jais nebesidalijama",
+      "notFiled_other": "{{count}} modelių nepavyko pridėti: jais nebesidalijama"
     },
     "merge": {
       "action": "Sujungti",

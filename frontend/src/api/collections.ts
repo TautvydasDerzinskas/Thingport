@@ -162,13 +162,17 @@ export const collectionsApi = {
     assertOk(res, "Add to collection failed");
   },
 
-  addItems: async (collectionId: string, printIds: string[]): Promise<void> => {
+  /** `not_found`: those that couldn't be filed, as given -- gone, or another user's no longer shared. Another user's
+   *  shared models are copied into the user's library first. */
+  addItems: async (collectionId: string, printIds: string[]): Promise<{ not_found: string[] }> => {
     const res = await fetch(`${apiBase()}/collection/${collectionId}/items`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ print_ids: printIds }),
     });
     assertOk(res, "Add to collection failed");
+    const body = (await res.json()) as { not_found?: string[] };
+    return { not_found: body.not_found ?? [] };
   },
 
   /** The prints themselves are untouched. */

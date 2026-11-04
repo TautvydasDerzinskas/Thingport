@@ -4,7 +4,8 @@ An API token lets another app, script or dashboard read your Thingport library a
 REST API it can't change anything: it only reads. The only way it can change your library is through the MCP tools you
 turn on for it yourself (see [Connect an AI assistant](#connect-an-ai-assistant)).
 
-Each user has their own token, and it only sees that user's library.
+Each user has their own token, and it sees what that user sees: their own library and, while an admin has social
+features on, the collections other users made public, under the Collections permission.
 
 ## Generate a token
 

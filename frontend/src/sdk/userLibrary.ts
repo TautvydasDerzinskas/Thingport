@@ -162,7 +162,9 @@ export function buildUserLibrary({ openModel }: { openModel: (id: string) => voi
       toCollection(await collectionsApi.create(input)),
     models: (id: string, options: { limit?: number; offset?: number } = {}) =>
       models.list({ ...options, collectionId: id }),
-    add: (id: string, modelIds: string[]) => collectionsApi.addItems(id, modelIds),
+    add: async (id: string, modelIds: string[]) => {
+      await collectionsApi.addItems(id, modelIds);
+    },
     remove: (id: string, modelIds: string[]) => collectionsApi.removeItems(id, modelIds),
   };
 

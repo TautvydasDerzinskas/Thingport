@@ -116,9 +116,22 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
               collection={collection}
               theme={theme}
               previewMode={previewMode}
-              // Another user's, or the viewer's own seen as the others see it: nothing here changes it.
-              onUpdated={() => undefined}
-              onDeleted={() => undefined}
+              // Only the viewer's own has a menu to change it from: a collection made private, or deleted, leaves
+              // the list of what they share.
+              onUpdated={(updated) =>
+                setPage(
+                  (prev) =>
+                    prev && {
+                      ...prev,
+                      collections: updated.is_public
+                        ? prev.collections.map((c) => (c.id === updated.id ? updated : c))
+                        : prev.collections.filter((c) => c.id !== updated.id),
+                    },
+                )
+              }
+              onDeleted={(id) =>
+                setPage((prev) => prev && { ...prev, collections: prev.collections.filter((c) => c.id !== id) })
+              }
               onUnauthorized={onUnauthorized}
             />
           ))}

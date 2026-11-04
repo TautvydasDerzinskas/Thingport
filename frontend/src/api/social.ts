@@ -63,13 +63,12 @@ export const socialApi = {
   user: (userId: string) =>
     getJson<ExploreUserPage>(`/explore/user/${encodeURIComponent(userId)}`, "Failed to load this user"),
 
-  /** Another user's shared model into the user's own library, and into `collectionId` when given. A model they
-   *  already have comes back instead, with `copied` false. */
-  copy: async (printId: string, collectionId?: string): Promise<{ print: Print; copied: boolean }> => {
+  /** Another user's shared model into the user's own library. A model they already have comes back instead, with
+   *  `copied` false. Filing one into a collection copies it too (collectionsApi.addItem). */
+  copy: async (printId: string): Promise<{ print: Print; copied: boolean }> => {
     const res = await fetch(`${apiBase()}/print/${encodeURIComponent(printId)}/copy`, {
       method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(collectionId ? { collection_id: collectionId } : {}),
+      headers: authHeaders(),
     });
     if (res.status === 401) throw new UnauthorizedError();
     await assertOkWithMessage(res, "Failed to copy the model");

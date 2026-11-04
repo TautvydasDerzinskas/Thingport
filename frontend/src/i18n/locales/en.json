@@ -5180,7 +5180,9 @@
       "tagsPartlyUpdated_one": "Updated the tags of {{count}} model, but the rest failed. Please try again.",
       "tagsPartlyUpdated_other": "Updated the tags of {{count}} models, but the rest failed. Please try again.",
       "toolOwned_one": "{{count}} of the models picked belongs to a tool: leave it out to do this",
-      "toolOwned_other": "{{count}} of the models picked belong to a tool: leave them out to do this"
+      "toolOwned_other": "{{count}} of the models picked belong to a tool: leave them out to do this",
+      "notFiled_one": "{{count}} model couldn't be added: it's no longer shared",
+      "notFiled_other": "{{count}} models couldn't be added: they're no longer shared"
     },
     "merge": {
       "action": "Merge",
