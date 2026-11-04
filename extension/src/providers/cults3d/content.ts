@@ -16,18 +16,20 @@ export function cults3dSignedIn(): boolean {
 // A profile link: `/@<nick>`, as the structured data has it, or `/<locale>/users/<nick>`.
 const PROFILE_PATH = /^\/(?:@|[a-z]{2}\/users\/)([^/]+)\/?$/;
 
+/** Not the name beside it, which needn't be the nickname: a wrong one would filter the downloads down to nothing. */
 function nickOf(creator: unknown): string | null {
-  if (!creator || typeof creator !== "object") return null;
-  const { url, name } = creator as { url?: unknown; name?: unknown };
+  const url = (creator as { url?: unknown } | null)?.url;
+  if (typeof url !== "string") return null;
   try {
-    const nick = typeof url === "string" && new URL(url, MANIFESTS.cults3d.site).pathname.match(PROFILE_PATH)?.[1];
-    if (nick) return decodeURIComponent(nick);
-  } catch {}
-  return typeof name === "string" && name.trim() ? name.trim() : null;
+    const nick = new URL(url, MANIFESTS.cults3d.site).pathname.match(PROFILE_PATH)?.[1];
+    return nick ? decodeURIComponent(nick) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** The model's designer, from the page's structured data: the nickname their profile link carries, which the downloads
- *  filter by, or else their name. Null unless it names just one. */
+ *  filter by. Null unless it names just one. */
 export function cults3dDesignerNick(structuredData: string[]): string | null {
   const nicks = new Set<string>();
   for (const text of structuredData) {

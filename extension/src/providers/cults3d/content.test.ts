@@ -49,7 +49,7 @@ describe("cults3dDownloadsHave", () => {
 });
 
 describe("cults3dDesignerNick", () => {
-  it("takes the nickname from the designer's profile link, or else their name", () => {
+  it("takes the nickname from the designer's profile link, never their name", () => {
     expect(cults3dDesignerNick([BY_RODMUZAC])).toBe("RodMuzac");
     expect(cults3dDesignerNick([mediaObject({ name: "Rod Muzac", url: "https://cults3d.com/@RodMuzac" })])).toBe(
       "RodMuzac",
@@ -57,13 +57,17 @@ describe("cults3dDesignerNick", () => {
     expect(cults3dDesignerNick([mediaObject({ name: "X", url: "https://cults3d.com/en/users/Rod.M-z" })])).toBe(
       "Rod.M-z",
     );
-    expect(cults3dDesignerNick([mediaObject({ name: "RodMuzac" })])).toBe("RodMuzac");
+    // The name needn't be the nickname, so without a profile link there's nothing to filter by.
+    expect(cults3dDesignerNick([mediaObject({ name: "RodMuzac" })])).toBeNull();
+    const elsewhere = mediaObject({ name: "Rod Muzac", url: "https://cults3d.com/en/users/RodMuzac/likes" });
+    expect(cults3dDesignerNick([elsewhere])).toBeNull();
   });
 
   it("names no one when the page names nobody, or more than one", () => {
     expect(cults3dDesignerNick([])).toBeNull();
     expect(cults3dDesignerNick(["not json", JSON.stringify({ "@type": "WebSite" })])).toBeNull();
-    expect(cults3dDesignerNick([JSON.stringify({ creator: { name: "Cults" } }), BY_RODMUZAC])).toBeNull();
+    const byCults = JSON.stringify({ creator: { name: "Cults", url: "https://cults3d.com/@Cults" } });
+    expect(cults3dDesignerNick([byCults, BY_RODMUZAC])).toBeNull();
     // The same designer twice is still one.
     expect(cults3dDesignerNick([BY_RODMUZAC, JSON.stringify([JSON.parse(BY_RODMUZAC)])])).toBe("RodMuzac");
   });
