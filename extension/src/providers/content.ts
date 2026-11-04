@@ -118,8 +118,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   // (owlcad/background.ts), not on the page the panel is shown on.
   owlcad: {},
   cults3d: {
-    async blockReason() {
-      return isUnboughtCults3dModel()
+    async blockReason(url) {
+      return (await isUnboughtCults3dModel(url))
         ? {
             title: "Paid model",
             hint: "Buy it on Cults3D first. Once it's in your downloads, Thingport imports it from there.",
