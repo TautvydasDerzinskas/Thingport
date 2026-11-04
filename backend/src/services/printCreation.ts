@@ -135,7 +135,7 @@ async function thumbnailAndSniff(plateId: string, filename: string, mime: string
     await saveThumbFromFile(plateId, effectivePath);
   } else if (ext === ".3mf") {
     try {
-      await storePlateProfile(plateId, effectivePath);
+      await storePlateProfile(plateId, filename, effectivePath);
     } catch (err) {
       console.error(`Reading the 3MF profile of plate ${plateId} failed:`, err);
     }

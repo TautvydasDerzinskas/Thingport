@@ -118,7 +118,9 @@ export type PlateOut = {
   /** The file carries colours of its own -- a painted project, or a script's `color()` calls. True once the
    *  render found them, so its picture of the model is a colour one rather than the grey cards tint. */
   own_colors: boolean;
-  /** What the 3MF says about its slicer profile; null for other files and 3MFs that say nothing. */
+  /** What the 3MF says about its slicer profile; null for other files and 3MFs that say nothing. For a 3MF it can
+   *  also mean "not read yet": a single model and the bounded lookups (search, collection covers, bulk actions) read
+   *  it on first use, but the model list (GET /prints) never does, since that could read the whole library. */
   profile: PlateProfile | null;
 };
 

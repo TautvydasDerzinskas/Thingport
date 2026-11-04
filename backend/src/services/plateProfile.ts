@@ -442,17 +442,23 @@ async function fileStamp(filePath: string): Promise<FileStamp> {
  * Reads the file's profile and saves it on the plate. Null, and nothing saved, when the file couldn't be read as a
  * whole: a profile that missed values for that reason would be taken for the file's real one and never read again.
  */
-export async function storePlateProfile(plateId: string, filePath: string): Promise<StoredPlateProfile | null> {
+export async function storePlateProfile(
+  plateId: string,
+  filename: string,
+  filePath: string,
+): Promise<StoredPlateProfile | null> {
   // Taken before reading, so a change while reading shows up as a difference next time.
   const file = await fileStamp(filePath);
   const { profile, complete } = await readPlateProfileChecked(filePath);
   if (!complete) return null;
   const stored: StoredPlateProfile = { ...profile, version: PLATE_PROFILE_VERSION, file };
-  await prisma.plate.update({
-    where: { id: plateId },
+  // Only while the plate still has the name it had when the file was read: a rename during the read must not get the
+  // old 3MF's profile.
+  const { count } = await prisma.plate.updateMany({
+    where: { id: plateId, filename },
     data: { profileMeta: stored as unknown as Prisma.InputJsonValue },
   });
-  return stored;
+  return count ? stored : null;
 }
 
 function isCurrentVersion(value: Prisma.JsonValue | null): value is Prisma.JsonObject {
@@ -486,7 +492,7 @@ export async function ensurePlateProfiles<
         const now = await fileStamp(filePath);
         if (now.size === stamp.size && now.mtime_ms === stamp.mtime_ms) continue;
       }
-      const stored = await storePlateProfile(plate.id, filePath);
+      const stored = await storePlateProfile(plate.id, plate.filename, filePath);
       if (stored) plate.profileMeta = stored as unknown as Prisma.JsonValue;
       // The file changed and can't be read now: the old profile describes a file that is gone.
       else if (stamp) plate.profileMeta = null;

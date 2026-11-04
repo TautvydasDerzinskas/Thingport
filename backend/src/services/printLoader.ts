@@ -73,6 +73,8 @@ export async function printOutsByIds(userId: string, printIds: string[]): Promis
     aiCategoryPaths(userId),
     aiSuggestionsShown(),
   ]);
+  // Callers pass a bounded id list (search results, cover ids, at most 500 bulk ids), and each plate is read once.
+  await ensurePlateProfiles(plates);
   const platesByPrint = groupByPrintId(plates);
   const filesByPrint = groupByPrintId(files);
   const previewsByPrint = groupByPrintId(previewImages);

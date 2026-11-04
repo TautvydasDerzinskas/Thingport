@@ -8,6 +8,8 @@ import { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { createPrint, resolvePlateFilePath } from "../src/services/printCreation";
+import { printOutsByIds } from "../src/services/printLoader";
+import { storePlateProfile } from "../src/services/plateProfile";
 import { nonce, register } from "./helpers/fileReuse";
 
 const app = createApp();
@@ -139,5 +141,24 @@ describe("the 3MF profile of a plate", () => {
     const { printId, plateId } = await makePlate("model.3mf", await threeMf(false));
     expect((await getPrint(printId)).profile).toBeNull();
     expect((await stored(plateId)).profileMeta).toMatchObject({ version: 2, title: null, materials: [] });
+  });
+
+  it("reads an unread 3MF profile on the bounded lookup by ids", async () => {
+    const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
+    await prisma.plate.update({ where: { id: plateId }, data: { profileMeta: Prisma.JsonNull } });
+    const outs = await printOutsByIds(userId, [printId]);
+    expect(outs.get(printId)!.plates[0].profile?.title).toBe(TITLE);
+    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2, title: TITLE } });
+  });
+
+  it("does not store a profile read for a name the plate no longer has", async () => {
+    const { plateId } = await makePlate("model.3mf", await threeMf(true));
+    await prisma.plate.update({
+      where: { id: plateId },
+      data: { profileMeta: Prisma.JsonNull, filename: "notes.txt" },
+    });
+    const filePath = resolvePlateFilePath(await stored(plateId))!;
+    expect(await storePlateProfile(plateId, "model.3mf", filePath)).toBeNull();
+    expect((await stored(plateId)).profileMeta).toBeNull();
   });
 });
