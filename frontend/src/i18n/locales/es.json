@@ -95,7 +95,8 @@
       "tags": "Etiquetas",
       "downloads": "Descargas",
       "bookmarks": "Marcadores",
-      "tools": "Herramientas"
+      "tools": "Herramientas",
+      "studio": "Estudio"
     },
     "uploadBar": {
       "uploading": "Subiendo…",
@@ -354,7 +355,13 @@
           "writeConfirmTitle": "¿Dejar que el asistente use «{{tool}}»?",
           "writeConfirmMessage": "Esta herramienta cambia tu biblioteca. Un asistente conectado con este token podrá usarla sin preguntarte cada vez. Nada de lo que haga elimina modelos.",
           "writeConfirm": "Activar",
-          "reads": "Lee tu biblioteca"
+          "reads": "Lee tu biblioteca",
+          "studio": {
+            "heading": "Estudio",
+            "title": "Diseños de Estudio",
+            "description": "Leer, crear y cambiar tus diseños de Estudio, paso a paso, como puedes hacerlo en la página.",
+            "confirm": "Un asistente conectado con este token podrá crear, cambiar y eliminar tus diseños de Estudio sin preguntarte cada vez. No puede cambiar tus modelos."
+          }
         },
         "rest": {
           "heading": "Permisos",
@@ -1790,7 +1797,9 @@
           "modelsNeedKey": "Escribe la clave de API para ver los modelos que puede usar.",
           "effortClaude": "Esfuerzo",
           "effortClaudeHint": "Cuánto piensa Claude antes de responder. Menos es más rápido y barato, y estas tareas rara vez necesitan más que Bajo.",
-          "effortClaudeDefault": "Predeterminado del modelo (no enviar nada)"
+          "effortClaudeDefault": "Predeterminado del modelo (no enviar nada)",
+          "vision": "Ve imágenes",
+          "visionHelp": "Si este modelo admite imágenes en una petición. El asistente de Studio solo ofrece adjuntar imágenes a una IA que las admite. Una IA nueva empieza según lo que indica el nombre de su modelo (Claude, GPT-4o y posteriores, Gemini, Qwen-VL, LLaVA, Gemma 3…): cámbialo para que coincida con el modelo."
         }
       },
       "aiFeatures": {
@@ -1809,7 +1818,9 @@
         "manage": "Gestionar",
         "descriptions": "Descripciones mejoradas",
         "descriptionsDescription": "Limpia las descripciones de los modelos con IA, al importarlos o en una ejecución: elimina la autopromoción, las traduce y las ordena, para que las revises o para aplicarlas de inmediato.",
-        "privacy": "Con una API de terceros, los títulos, las descripciones y las etiquetas de los modelos salen de este servidor. Las imágenes solo se envían si está activado."
+        "privacy": "Con una API de terceros, los títulos, las descripciones y las etiquetas de los modelos salen de este servidor. Las imágenes solo se envían si está activado.",
+        "studio": "Asistente de Estudio",
+        "studioDescription": "Permite pedir a una IA, en el cuadro de Estudio, que construya y cambie los diseños paso a paso, con las IA que ofrezcas."
       },
       "aiCategorization": {
         "heading": "Categorización por IA",
@@ -2450,6 +2461,18 @@
           "off": "Las herramientas propias de los usuarios están desactivadas.",
           "by": "{{name}} · {{email}}"
         }
+      },
+      "studioAssistant": {
+        "offered": "Modelos disponibles",
+        "offeredHelp": "Se elige entre estos en el cuadro de Estudio. Una IA nueva no se ofrece hasta que la actives aquí. Con una IA en la nube, cada petición se cobra a su cuenta. Compacto da a un modelo local pequeño una docena de herramientas básicas (formas, mover, combinar, agujeros) en una décima parte de la petición; los redondeos, vaciados y bocetos necesitan Todas. Claude las recibe todas y busca las que necesita.",
+        "offerAria": "Ofrecer {{model}} en Estudio",
+        "default": "Modelo predeterminado",
+        "noneOffered": "Activa al menos un modelo para que se pueda elegir.",
+        "save": "Guardar",
+        "failed": "No se pudieron cargar o guardar los ajustes del asistente de Estudio.",
+        "toolsAll": "Todas",
+        "toolsCompact": "Compacto",
+        "toolsAria": "Herramientas que recibe {{model}}"
       }
     },
     "download": {
@@ -3125,6 +3148,686 @@
           "Quitando el polvo del estante vacío…",
           "Despidiendo a los fantasmas…"
         ]
+      }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Herramientas de Estudio",
+        "shapes": "Formas",
+        "modify": "Modificar"
+      },
+      "emptyDesign": "Añade una forma desde la barra de herramientas o empieza un boceto",
+      "types": {
+        "box": "Caja",
+        "cylinder": "Cilindro",
+        "cone": "Cono",
+        "sphere": "Esfera",
+        "torus": "Toro",
+        "extrude": "Extrusión",
+        "boolean": "Combinación",
+        "sketch": "Boceto",
+        "mesh": "Malla",
+        "revolve": "Revolución",
+        "press_pull": "Empujar/tirar",
+        "fillet": "Redondeo",
+        "chamfer": "Chaflán",
+        "hole": "Agujero",
+        "shell": "Vaciado",
+        "split": "División",
+        "part": "Pieza",
+        "pattern": "Patrón",
+        "mirror": "Simetría",
+        "hull": "Envolvente",
+        "thread": "Rosca",
+        "loft": "Transición",
+        "sweep": "Barrido"
+      },
+      "tree": {
+        "heading": "Elementos",
+        "empty": "Aún no hay nada",
+        "expand": "Expandir",
+        "collapse": "Contraer"
+      },
+      "actions": {
+        "sketch": "Boceto",
+        "extrude": "Extruir",
+        "editSketch": "Editar boceto",
+        "drawOnSketch": "Dibujar en el boceto",
+        "union": "Unir",
+        "subtract": "Restar",
+        "intersect": "Intersecar",
+        "undo": "Deshacer",
+        "redo": "Rehacer",
+        "rename": "Cambiar nombre",
+        "duplicate": "Duplicar",
+        "delete": "Eliminar",
+        "hide": "Ocultar",
+        "show": "Mostrar",
+        "add": {
+          "box": "Añadir caja",
+          "cylinder": "Añadir cilindro",
+          "cone": "Añadir cono",
+          "sphere": "Añadir esfera",
+          "torus": "Añadir toro"
+        },
+        "revolve": "Revolucionar",
+        "separate": "Separar piezas",
+        "hull": "Envolver",
+        "loft": "Transición"
+      },
+      "shapes": {
+        "rectangle": "Rectángulo",
+        "circle": "Círculo",
+        "polygon": "Polígono",
+        "text": "Texto",
+        "trace": "Imagen calcada",
+        "path": "Trazado",
+        "line": "Línea",
+        "arc": "Arco"
+      },
+      "planes": {
+        "XY": "Superior",
+        "XZ": "Frontal",
+        "YZ": "Derecho",
+        "FACE": "Sobre una cara",
+        "faceHint": "Elige una cara plana"
+      },
+      "sketch": {
+        "on": "Boceto en el plano {{plane}}",
+        "tool": "Herramienta de dibujo",
+        "finish": "Terminar",
+        "hint": {
+          "rectangle": "Arrastra para dibujar un rectángulo",
+          "circle": "Arrastra desde el centro para dibujar un círculo",
+          "polygon": "Haz clic para añadir vértices; un doble clic, Intro o el primer vértice lo cierran",
+          "line": "Haz clic para añadir puntos. Cambia a Arco para una curva; ciérrala en el primer punto, con doble clic o Intro",
+          "arc": "Haz clic donde termina el arco y luego en un punto por el que pasa. Cambia a Línea para lados rectos; ciérrala en el primer punto o con Intro"
+        }
+      },
+      "transform": {
+        "label": "Manipulador",
+        "translate": "Mover",
+        "rotate": "Rotar",
+        "scale": "Escalar",
+        "select": "Seleccionar"
+      },
+      "view": {
+        "label": "Vistas",
+        "iso": "Isométrica",
+        "top": "Superior",
+        "front": "Frontal",
+        "right": "Derecha",
+        "fit": "Ajustar a la vista",
+        "navigation": "Arrastrar con el botón derecho gira la vista, con el central (o Mayús + derecho) la desplaza, la rueda acerca. Arrastrar con el izquierdo dibuja un cuadro de selección: de izquierda a derecha toma lo que queda dentro por completo, de derecha a izquierda también lo que toca. Mayús añade a la selección."
+      },
+      "properties": {
+        "heading": "Propiedades",
+        "none": "Selecciona un elemento para editarlo.",
+        "selectedCount_one": "{{count}} seleccionado",
+        "selectedCount_many": "{{count}} seleccionados",
+        "selectedCount_other": "{{count}} seleccionados",
+        "partOf": "Parte de",
+        "name": "Nombre",
+        "size": "Tamaño",
+        "extrude": "Extrusión",
+        "extrudeHelp": "Cuánto se extruye el boceto, en mm. Una distancia negativa va en sentido contrario.",
+        "operation": "Operación",
+        "position": "Posición",
+        "rotation": "Rotación",
+        "scale": "Escala",
+        "plane": "Plano",
+        "planeHelp": "Superior (XY) extruye hacia arriba, Frontal (XZ) hacia delante, Derecho (YZ) hacia la derecha. El desplazamiento mueve el plano en ese sentido.",
+        "shapes": "Formas",
+        "noShapes": "Aún ninguna: dibuja en el boceto.",
+        "removeShape": "Quitar forma",
+        "hole": "Agujero",
+        "points_one": "{{count}} punto",
+        "points_many": "{{count}} puntos",
+        "points_other": "{{count}} puntos",
+        "fields": {
+          "width": "Ancho",
+          "depth": "Profundidad",
+          "height": "Alto",
+          "radius": "Radio",
+          "segments": "Segmentos",
+          "radius_bottom": "Radio inferior",
+          "radius_top": "Radio superior",
+          "major_radius": "Radio del anillo",
+          "minor_radius": "Radio del tubo",
+          "distance": "Distancia",
+          "offset": "Desplazamiento",
+          "angle": "Ángulo",
+          "diameter": "Diámetro",
+          "thickness": "Grosor",
+          "count": "Cantidad",
+          "spacing": "Separación",
+          "grid_count": "Filas",
+          "grid_spacing": "Separación entre filas",
+          "pitch": "Paso",
+          "length": "Longitud",
+          "clearance": "Holgura"
+        },
+        "mesh": {
+          "source": "Origen",
+          "triangles_one": "{{count}} triángulo",
+          "triangles_many": "{{count}} triángulos",
+          "triangles_other": "{{count}} triángulos",
+          "importedSize": "Importado a {{size}} mm",
+          "solid": "Sólido cerrado",
+          "open": "No es un sólido cerrado",
+          "openHelp": "Tiene huecos, así que se puede mover, escalar y exportar, pero no combinar con otros cuerpos.",
+          "parts_one": "{{count}} pieza",
+          "parts_many": "{{count}} piezas separadas",
+          "parts_other": "{{count}} piezas separadas"
+        },
+        "cornerRadius": "Radio de las esquinas"
+      },
+      "design": {
+        "none": "Sin diseño",
+        "new": "Nuevo diseño",
+        "open": "Abrir…",
+        "openTitle": "Abrir un diseño",
+        "rename": "Cambiar nombre del diseño",
+        "export": "Descargar STL",
+        "delete": "Eliminar diseño",
+        "deleteTitle": "¿Eliminar «{{name}}»?",
+        "deleteMessage": "El diseño y su historial se eliminan para siempre.",
+        "empty": "Aún no hay diseños.",
+        "emptyTitle": "Aún no hay diseños",
+        "emptyHint": "Empieza uno y constrúyelo con formas y bocetos.",
+        "untitled": "Diseño sin título",
+        "nothingToExport": "No hay nada visible que descargar",
+        "features_one": "{{count}} elemento",
+        "features_many": "{{count}} elementos",
+        "features_other": "{{count}} elementos",
+        "saveToLibrary": "Guardar en Thingport",
+        "saving": "Guardando en Thingport…",
+        "saved": "«{{name}}» guardado en tu biblioteca",
+        "openSaved": "Abrir"
+      },
+      "prompt": {
+        "title": "Preguntar a la IA",
+        "open": "Abrir Preguntar a la IA",
+        "help": "Describe una pieza o un cambio en el diseño abierto, y la IA lo construye paso a paso con las mismas herramientas que la barra. Verás llegar cada paso, y Deshacer los revierte de uno en uno. Un administrador elige qué IA se ofrecen. Una IA que ve imágenes admite hasta 4: una foto o un dibujo del que partir, o un logotipo que calcar.",
+        "model": "Modelo de IA",
+        "addModel": "Añadir modelo de IA",
+        "noModels": "Aún no se ofrece ninguna IA para Estudio.",
+        "minimize": "Minimizar",
+        "placeholder": "Describe una pieza o un cambio en esta",
+        "send": "Enviar",
+        "chooseModels": "Elegir los modelos disponibles",
+        "off": "El asistente de Estudio está desactivado.",
+        "turnOn": "Activarlo",
+        "stop": "Detener",
+        "working": "Trabajando…",
+        "clear": "Borrar la conversación",
+        "clearTitle": "¿Borrar la conversación?",
+        "clearMessage": "El asistente olvida lo que se dijo sobre este diseño. El diseño se queda como está.",
+        "steps_one": "{{count}} paso",
+        "steps_many": "{{count}} pasos",
+        "steps_other": "{{count}} pasos",
+        "stopped": "Detenido.",
+        "limit": "Detenido tras {{count}} pasos.",
+        "failed": "No pudo terminar: {{error}}",
+        "showConversation": "Mostrar la conversación",
+        "hideConversation": "Ocultar la conversación",
+        "live": "Paso {{number}}: {{step}}",
+        "attach": "Adjuntar imágenes",
+        "picture": "Imagen {{number}}",
+        "removePicture": "Quitar la imagen {{number}}",
+        "noVision": "Esta IA no ve imágenes. Elige una que las vea, o quítalas."
+      },
+      "panels": {
+        "label": "Paneles",
+        "features": "Elementos",
+        "properties": "Propiedades",
+        "hide": "Ocultar {{panel}}",
+        "show": "Mostrar {{panel}}"
+      },
+      "viewCube": {
+        "label": "Cubo de vista: haz clic en una cara, arista o esquina para mirar desde ahí, arrástralo para girar la vista",
+        "home": "Vista inicial",
+        "top": "SUPERIOR",
+        "bottom": "INFERIOR",
+        "front": "FRONTAL",
+        "back": "POSTERIOR",
+        "left": "IZQUIERDA",
+        "right": "DERECHA"
+      },
+      "open": {
+        "designs": "Diseños",
+        "library": "Biblioteca",
+        "search": "Busca tus modelos",
+        "help": "Los archivos STL, 3MF, STEP, OBJ y GLB entran como cuerpos de malla, a su propio tamaño. El diseño guarda su propia copia, así que los cambios posteriores en el modelo no le llegan.",
+        "open": "Abrir",
+        "openHelp": "Como un diseño nuevo",
+        "insert": "Insertar",
+        "insertHelp": "En este diseño",
+        "noMatches": "Ningún modelo con un archivo 3D coincide",
+        "emptyLibrary": "Tu biblioteca aún no tiene archivos STL, 3MF, STEP, OBJ ni GLB",
+        "loadMore": "Cargar más"
+      },
+      "working": "Calculando…",
+      "edges": {
+        "none": "Viva",
+        "fillet": "Redondeo",
+        "chamfer": "Chaflán",
+        "radius": "Radio",
+        "distance": "Distancia"
+      },
+      "ops": {
+        "cancel": "Cancelar",
+        "ok": "Aceptar",
+        "pickBody": "Haz clic en un cuerpo",
+        "combine": {
+          "label": "Resultado",
+          "new": "Nuevo",
+          "join": "Unir",
+          "cut": "Cortar",
+          "intersect": "Intersecar"
+        },
+        "extrude": {
+          "title": "Extrusión",
+          "help": "Convierte el boceto en un sólido. La conicidad inclina los lados hacia el extremo (un desmoldeo); las aristas de los extremos se pueden redondear o achaflanar. Unir, cortar o intersecar lo combina con otro cuerpo.",
+          "taper": "Conicidad",
+          "startOffset": "Desfase inicial",
+          "symmetric": "En ambos sentidos",
+          "topEdge": "Extremo lejano",
+          "bottomEdge": "Extremo cercano",
+          "topRim": "Borde superior",
+          "bottomRim": "Borde inferior"
+        },
+        "revolve": {
+          "title": "Revolución",
+          "help": "Gira el boceto alrededor de uno de sus ejes. Todas sus formas deben estar a un lado del eje.",
+          "axis": "Eje",
+          "axisU": "Horizontal (u)",
+          "axisV": "Vertical (v)",
+          "angle": "Ángulo"
+        },
+        "press_pull": {
+          "title": "Empujar/tirar",
+          "help": "Mueve una cara plana hacia fuera (añade) o hacia dentro (corta), manteniendo su contorno.",
+          "pick": "Haz clic en una cara plana"
+        },
+        "fillet": {
+          "title": "Redondeo",
+          "help": "Redondea aristas rectas entre caras planas. Las exteriores se redondean, las interiores se rellenan. Haz clic en aristas para añadirlas o quitarlas.",
+          "pick": "Haz clic en las aristas a redondear"
+        },
+        "chamfer": {
+          "title": "Chaflán",
+          "help": "Achaflana aristas rectas entre caras planas, recortando la misma distancia en ambas. Haz clic en aristas para añadirlas o quitarlas.",
+          "pick": "Haz clic en las aristas a achaflanar"
+        },
+        "hole": {
+          "title": "Agujero",
+          "help": "Taladra un agujero redondo donde haces clic, hacia dentro de la superficie. El avellanado y el escariado dejan sitio a la cabeza del tornillo.",
+          "pick": "Haz clic donde taladrar",
+          "diameter": "Diámetro",
+          "depth": "Profundidad",
+          "through": "Pasante",
+          "style": "Tipo",
+          "simple": "Simple",
+          "counterbore": "Escariado",
+          "countersink": "Avellanado",
+          "angle": "Ángulo",
+          "boreDiameter": "Diámetro del escariado",
+          "boreDepth": "Profundidad del escariado",
+          "sinkDiameter": "Diámetro del avellanado",
+          "threaded": "Roscado",
+          "threadedAs": "Roscado {{size}}"
+        },
+        "shell": {
+          "title": "Vaciado",
+          "help": "Vacía el cuerpo, con paredes de este grosor. Haz clic en caras planas para dejarlas abiertas, como la parte de arriba de una bandeja.",
+          "thickness": "Grosor de pared",
+          "pick": "Haz clic en las caras a dejar abiertas",
+          "open_one": "{{count}} cara abierta",
+          "open_many": "{{count}} caras abiertas",
+          "open_other": "{{count}} caras abiertas"
+        },
+        "split": {
+          "title": "División",
+          "help": "Divide el cuerpo en dos: por un plano, el plano de una cara plana u otro cuerpo. Ambas partes siguen siendo editables.",
+          "by": "Dividir por",
+          "plane": "Plano",
+          "face": "Cara",
+          "body": "Cuerpo",
+          "pickFace": "Haz clic en una cara plana",
+          "facePicked": "Cara elegida",
+          "pickTool": "Haz clic en el cuerpo con el que dividir",
+          "keep": "Parte",
+          "front": "Delantera",
+          "back": "Trasera",
+          "inside": "Interior",
+          "outside": "Exterior"
+        },
+        "scale": {
+          "title": "Escala",
+          "help": "Escala el cuerpo respecto a su propio origen.",
+          "factor": "Factor"
+        },
+        "sketch_face": {
+          "title": "Boceto sobre una cara",
+          "help": "Empieza un boceto sobre la cara plana en la que haces clic.",
+          "pick": "Haz clic en una cara plana para el boceto"
+        },
+        "edges_one": "{{count}} arista",
+        "edges_many": "{{count}} aristas",
+        "edges_other": "{{count}} aristas",
+        "separate": {
+          "title": "Separar piezas",
+          "help": "Convierte cada pieza suelta del cuerpo, cada trozo que no toca al resto, en un cuerpo propio. Un hueco dentro de una pieza se queda con ella; las piezas que se solapan sin estar unidas quedan separadas, aquí cada una de su color. Al borrar todas las piezas vuelve el cuerpo.",
+          "count_one": "{{count}} pieza",
+          "count_many": "{{count}} piezas",
+          "count_other": "{{count}} piezas",
+          "open_one": "{{count}} tiene huecos: se puede mover y exportar, no combinar",
+          "open_many": "{{count}} tienen huecos: se pueden mover y exportar, no combinar",
+          "open_other": "{{count}} tienen huecos: se pueden mover y exportar, no combinar"
+        },
+        "text": {
+          "title": "Texto",
+          "help": "Convierte palabras en un sólido: letras en relieve sobre un plano, o en relieve o grabadas en una cara plana de un cuerpo. La altura de letra es la de una mayúscula; 6 mm o más se imprime bien. Las palabras, la fuente y el tamaño siguen editables en su boceto.",
+          "on": "Dónde",
+          "onPlane": "En un plano",
+          "onFace": "En una cara",
+          "style": "Estilo",
+          "raised": "En relieve",
+          "engraved": "Grabado",
+          "height": "Altura",
+          "depth": "Profundidad",
+          "pick": "Haz clic en una cara plana donde escribir"
+        },
+        "pattern": {
+          "title": "Patrón",
+          "help": "Repite un cuerpo en fila, en cuadrícula o alrededor de un eje, y une las copias con él en un solo cuerpo. Si cambias el cuerpo, cambian todas las copias. Para cortar muchos agujeros, repite el cilindro de uno y resta el patrón.",
+          "style": "Tipo",
+          "linear": "En fila",
+          "circular": "Alrededor de un eje",
+          "along": "A lo largo de",
+          "around": "Alrededor de",
+          "count": "Cantidad",
+          "spacing": "Separación",
+          "grid": "Segunda dirección (cuadrícula)",
+          "rows": "Filas",
+          "rowSpacing": "Separación entre filas",
+          "angle": "Repartir en",
+          "center": "Centro {{axis}}"
+        },
+        "mirror": {
+          "title": "Simetría",
+          "help": "Refleja un cuerpo respecto a un plano, para algo simétrico hecho mitad por mitad. Si conservas el original, la mitad y su reflejo forman un solo cuerpo.",
+          "plane": "Respecto a",
+          "keep": "Conservar el original"
+        },
+        "align": {
+          "title": "Alinear",
+          "help": "Alinea un cuerpo con otro, o con la cama: sus inicios, centros o finales juntos, o al lado (antes o después) con un hueco. En Z, después lo pone encima. Solo mueve el cuerpo.",
+          "pickBody": "Haz clic en el cuerpo que quieres mover",
+          "pickReference": "Haz clic en un cuerpo con el que alinearlo, o déjalo alineado con la cama",
+          "with": "Con {{name}}",
+          "axis": "En {{axis}}",
+          "none": "No",
+          "before": "Antes",
+          "start": "Inicio",
+          "center": "Centro",
+          "end": "Final",
+          "after": "Después",
+          "z_none": "No",
+          "z_before": "Debajo",
+          "z_start": "Base",
+          "z_center": "Medio",
+          "z_end": "Arriba",
+          "z_after": "Encima",
+          "gap": "Hueco"
+        },
+        "lay_flat": {
+          "title": "Apoyar",
+          "help": "Gira un cuerpo para que la cara en la que haces clic quede sobre la cama, como se orienta una pieza para imprimirla, y lo apoya en la cama.",
+          "pick": "Haz clic en la cara sobre la que apoyarlo"
+        },
+        "sweep": {
+          "title": "Barrido",
+          "help": "Lleva el contorno del boceto a lo largo de un recorrido de puntos y crea el sólido por el que pasa: un tubo, un asa, un riel. El origen del boceto va sobre el recorrido, así que dibuja el contorno a su alrededor; empieza perpendicular al recorrido en el primer punto. Suave traza una curva por los puntos y Cerrado forma un anillo.",
+          "path": "Puntos del recorrido (mm)",
+          "addPoint": "Añadir punto",
+          "removePoint": "Quitar el punto {{number}}",
+          "smooth": "Suave",
+          "closed": "Cerrado"
+        }
+      },
+      "imported": {
+        "parts_one": "El modelo se importó como un solo cuerpo de {{count}} pieza",
+        "parts_many": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",
+        "parts_other": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",
+        "separate": "Separar"
+      },
+      "text": {
+        "words": "Texto",
+        "font": "Fuente",
+        "size": "Altura de letra",
+        "spacing": "Espaciado entre letras",
+        "align": "Alinear",
+        "aligns": {
+          "left": "Izquierda",
+          "center": "Centro",
+          "right": "Derecha"
+        },
+        "placeholder": "Texto",
+        "newLine": "Mayús+Intro empieza una línea nueva",
+        "add": "Añadir texto"
+      },
+      "trace": {
+        "title": "Calcar imagen",
+        "help": "Convierte las formas de una imagen en un contorno para hacerlo sólido: un logotipo, una silueta, un rótulo, un dibujo. Se calcan las formas oscuras sobre fondo claro (Invertir para claras sobre oscuro; lo transparente cuenta como claro), y los agujeros siguen siendo agujeros. Una imagen limpia y con buen contraste se calca mejor.",
+        "picture": "Imagen",
+        "drop": "Suelta una imagen aquí o pégala",
+        "choose": "Elegir una imagen",
+        "another": "Otra imagen",
+        "resultEmpty": "Aquí se verá el contorno calcado",
+        "threshold": "Umbral",
+        "auto": "Encontrarlo",
+        "invert": "Invertir",
+        "detail": "Detalle",
+        "details": {
+          "low": "Bajo",
+          "medium": "Medio",
+          "high": "Alto"
+        },
+        "found_one": "{{count}} forma",
+        "found_many": "{{count}} formas",
+        "found_other": "{{count}} formas",
+        "holes_one": "{{count}} agujero",
+        "holes_many": "{{count}} agujeros",
+        "holes_other": "{{count}} agujeros",
+        "make": "Crear",
+        "solid": "Sólido",
+        "sketch": "Solo boceto",
+        "ok": "Calcar"
+      },
+      "edit": {
+        "start": "Editar diseño",
+        "done": "Terminar de editar"
+      },
+      "emptyView": "Pide a la IA abajo que haga algo, o haz clic en Editar para crearlo tú",
+      "thread": {
+        "kind": "Tipo",
+        "external": "Exterior",
+        "internal": "Interior",
+        "hand": "Sentido",
+        "hands": {
+          "right": "A derechas",
+          "left": "A izquierdas"
+        },
+        "chamfer": "Extremos achaflanados"
+      },
+      "path": {
+        "title": "Añadir trazado",
+        "help": "Datos de trazado SVG en milímetros del boceto, x hacia la derecha e y hacia arriba: M, L, H, V, C, S, Q, T, A y Z, cada subtrazado un contorno cerrado. Pégalo desde un programa de dibujo o escríbelo a mano.",
+        "data": "Datos del trazado",
+        "fill": "Regla de relleno",
+        "fills": {
+          "evenodd": "Par-impar",
+          "nonzero": "No nulo"
+        },
+        "nothing": "Aún no hay nada que dibujar",
+        "add": "Añadir"
+      },
+      "parameters": {
+        "title": "Parámetros",
+        "help": "Números con nombre que pueden seguir las medidas del diseño. En cualquier campo de medida, escribe = y una fórmula, como =wall * 2 + 10. Al cambiar aquí un parámetro, se vuelven a calcular todas las fórmulas que lo usan.",
+        "follows": "Sigue = {{expression}}",
+        "name": "Nombre",
+        "value": "Valor",
+        "add": "Añadir parámetro",
+        "delete": "Eliminar {{name}}",
+        "inUse": "En uso: cambia primero los campos que lo siguen",
+        "none": "Aún no hay parámetros.",
+        "taken": "Ya hay uno con ese nombre",
+        "badName": "Letras, dígitos y _, sin empezar por un dígito",
+        "unused": "Sin usar",
+        "uses_one": "Lo usa {{count}} campo",
+        "uses_many": "Lo usan {{count}} campos",
+        "uses_other": "Lo usan {{count}} campos",
+        "noUnit": "Ninguna",
+        "unit": "Unidad",
+        "unitOf": "Unidad de {{name}}"
+      },
+      "check": {
+        "title": "Comprobar para imprimir",
+        "help": "Comprueba cada cuerpo visible donde está colocado: sobre la cama y dentro de ella, en una sola pieza, sin solaparse con otro, sin voladizos que necesiten soporte y sin paredes demasiado finas para imprimir. Es la misma comprobación que el asistente hace con su propio trabajo.",
+        "bed_x": "Cama X",
+        "bed_y": "Cama Y",
+        "bed_z": "Cama Z",
+        "overhangLimit": "Voladizo",
+        "minWall": "Pared mín.",
+        "ready": "Listo para imprimir",
+        "nothing": "No hay cuerpos visibles que comprobar.",
+        "empty": "Vacío",
+        "tooBig": "Demasiado grande para la cama",
+        "offBed": "Fuera de la cama",
+        "floating": "Flota {{value}} por encima",
+        "sunk": "Hundido {{value}}",
+        "pieces_one": "{{count}} pieza suelta",
+        "pieces_many": "{{count}} piezas sueltas",
+        "pieces_other": "{{count}} piezas sueltas",
+        "overhang": "{{value}} de voladizo",
+        "thin": "Paredes de hasta {{value}}",
+        "overlaps": "Se solapa con {{name}}",
+        "open": "No es un sólido cerrado",
+        "toBed": "A la cama",
+        "measure": "Medir",
+        "measureNeedsTwo": "Añade dos cuerpos para medir entre ellos.",
+        "first": "Desde",
+        "second": "Hasta",
+        "gap": "Separación {{value}}",
+        "touching": "Se tocan",
+        "overlap": "Solape {{value}}",
+        "far": "A más de 1 m",
+        "toBedOf": "Poner {{name}} sobre la cama"
+      },
+      "status": {
+        "label": "Medidas del diseño",
+        "design": "Diseño",
+        "selection": "Selección",
+        "bodiesLabel": "Cuerpos",
+        "size": "Tamaño",
+        "volume": "Volumen",
+        "openMeshes": "Las mallas abiertas no tienen volumen, así que no se cuentan",
+        "units": "Unidades"
+      },
+      "measure": {
+        "title": "Medir",
+        "help": "Selecciona puntos, aristas, caras o cuerpos. Una selección muestra su propio tamaño: la posición de un punto, la longitud de una arista, el área de una cara, el tamaño y el volumen de un cuerpo. Dos muestran la distancia más corta entre ellos, cuánto es a lo largo de X, Y y Z, y el ángulo entre ellos. Las medidas están en las unidades de la barra de estado, y medir no cambia el diseño.",
+        "filter": "Qué seleccionar",
+        "clear": "Borrar",
+        "done": "Listo",
+        "again": "Haz clic de nuevo para empezar otra vez",
+        "kinds": {
+          "point": "Punto",
+          "edge": "Arista",
+          "face": "Cara",
+          "body": "Cuerpo"
+        },
+        "pickFirst": {
+          "point": "Haz clic en un punto para medirlo",
+          "edge": "Haz clic en una arista para medirla",
+          "face": "Haz clic en una cara para medirla",
+          "body": "Haz clic en un cuerpo para medirlo"
+        },
+        "pickSecond": {
+          "point": "Haz clic en un segundo punto para medir entre ambos",
+          "edge": "Haz clic en una segunda arista para medir entre ambas",
+          "face": "Haz clic en una segunda cara para medir entre ambas",
+          "body": "Haz clic en un segundo cuerpo para medir entre ambos"
+        },
+        "readings": {
+          "distance": "Distancia",
+          "length": "Longitud",
+          "gap": "Separación",
+          "area": "Área",
+          "volume": "Volumen",
+          "overlap": "Solape",
+          "angle": "Ángulo",
+          "size": "Tamaño",
+          "touching": "Se tocan",
+          "far": "A más de 1 m",
+          "openMesh": "Una malla abierta no tiene volumen",
+          "measuring": "Midiendo…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Ajustes de Studio",
+        "sections": {
+          "assistant": "Preguntar a la IA",
+          "units": "Unidades",
+          "grid": "Cuadrícula"
+        },
+        "assistantIntro": "Dónde muestra su conversación Preguntar a la IA.",
+        "layout": "Disposición",
+        "layoutHelp": "Barra: bajo la vista, una línea mientras la IA trabaja y el resto al abrirla. Panel lateral: junto a la vista, para que nada tape el modelo.",
+        "layouts": {
+          "bar": "Barra",
+          "panel": "Panel lateral"
+        },
+        "failed": "No se pudo guardar el ajuste.",
+        "unitsIntro": "En qué se muestran y escriben las medidas. Las medidas no cambian; solo cómo se leen.",
+        "designUnits": "Este diseño",
+        "designUnitsHelp": "Se guarda con el diseño y se deshace como cualquier cambio. Una medida escrita sin unidad está en estas; una con unidad, como 2 in o 5 mm, en esa.",
+        "newUnits": "Diseños nuevos",
+        "newUnitsHelp": "Las unidades con las que empieza un diseño nuevo. Se guardan en tu cuenta, así que valen en todos tus dispositivos.",
+        "unitNames": {
+          "mm": "Milímetros",
+          "cm": "Centímetros",
+          "in": "Pulgadas"
+        },
+        "grid": {
+          "intro": "Cómo se dibuja la cuadrícula tras el diseño y a qué se ajustan los puntos.",
+          "show": "Mostrar la cuadrícula",
+          "spacing": "Espaciado",
+          "spacingHelp": "Adaptable sigue el zoom, como la cuadrícula de un CAD: al acercarte aparecen líneas más finas, en pasos de diez (de cuatro en pulgadas), y cada décima (cuarta) línea es más oscura. Fijo mantiene el espaciado que indiques.",
+          "spacings": {
+            "adaptive": "Adaptable",
+            "fixed": "Fijo"
+          },
+          "density": "Densidad",
+          "densities": {
+            "coarse": "Amplia",
+            "normal": "Normal",
+            "fine": "Fina"
+          },
+          "major": "Líneas principales cada",
+          "subdivisions": "Dividida en",
+          "snap": "Ajustar a la cuadrícula",
+          "snapHelp": "Los puntos del boceto y los cuerpos que mueves se ajustan a las líneas más finas que se ven. Desactivado, van donde apuntas."
+        }
       }
     }
   },
@@ -3869,6 +4572,7 @@
         "images": "imágenes de vista previa"
       },
       "openInSlicer": "Abrir en {{slicer}}",
+      "openInStudio": "Abrir en Thingport Studio",
       "openNormalizedInSlicer": "Abrir versión normalizada en {{slicer}}",
       "normalizedInfo": "Los archivos de MakerWorld son proyectos de Bambu Studio, que {{slicer}} a menudo abre sin sus colores ni sus ajustes de impresión. Esta opción abre una copia convertida que conserva los colores pintados, los colores del filamento, las placas y los ajustes del diseñador (paredes, altura de capa, relleno, soportes). Atención: los objetos con varias piezas pueden fusionarse en uno, se pierden los ajustes específicos por objeto y los cambios de color por capa, y debes elegir tu propio perfil de impresora. El archivo guardado no se modifica.",
       "normalizePreparing": "Preparando el archivo normalizado…",

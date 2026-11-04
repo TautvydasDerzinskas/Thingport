@@ -95,7 +95,8 @@
       "tags": "Étiquettes",
       "downloads": "Téléchargements",
       "bookmarks": "Favoris",
-      "tools": "Outils"
+      "tools": "Outils",
+      "studio": "Studio"
     },
     "uploadBar": {
       "uploading": "Téléversement…",
@@ -354,7 +355,13 @@
           "writeConfirmTitle": "Laisser l'assistant utiliser « {{tool}} » ?",
           "writeConfirmMessage": "Cet outil modifie votre bibliothèque. Un assistant connecté avec ce jeton pourra l'utiliser sans vous demander à chaque fois. Rien de ce qu'il fait ne supprime de modèles.",
           "writeConfirm": "Activer",
-          "reads": "Lit votre bibliothèque"
+          "reads": "Lit votre bibliothèque",
+          "studio": {
+            "heading": "Studio",
+            "title": "Conceptions du Studio",
+            "description": "Lire, créer et modifier vos conceptions du Studio, étape par étape, comme vous le pouvez sur la page.",
+            "confirm": "Un assistant connecté avec ce jeton pourra créer, modifier et supprimer vos conceptions du Studio sans vous demander à chaque fois. Il ne peut pas modifier vos modèles."
+          }
         },
         "rest": {
           "heading": "Autorisations",
@@ -1790,7 +1797,9 @@
           "modelsNeedKey": "Saisissez la clé d’API pour voir les modèles qu’elle peut utiliser.",
           "effortClaude": "Effort",
           "effortClaudeHint": "Combien Claude réfléchit avant de répondre. Moins, c’est plus rapide et moins cher, et ces tâches demandent rarement plus que Faible.",
-          "effortClaudeDefault": "Valeur par défaut du modèle (ne rien envoyer)"
+          "effortClaudeDefault": "Valeur par défaut du modèle (ne rien envoyer)",
+          "vision": "Voit les images",
+          "visionHelp": "Si ce modèle accepte des images dans une demande. L’assistant de Studio ne propose de joindre des images qu’à une IA qui les accepte. Une nouvelle IA commence selon ce que suggère le nom de son modèle (Claude, GPT-4o et suivants, Gemini, Qwen-VL, LLaVA, Gemma 3…) : changez-le pour qu’il corresponde au modèle."
         }
       },
       "aiFeatures": {
@@ -1809,7 +1818,9 @@
         "manage": "Gérer",
         "descriptions": "Descriptions améliorées",
         "descriptionsDescription": "Nettoie les descriptions de modèles grâce à l’IA, lors de l’importation ou lors d’une exécution : supprime l’autopromotion, les traduit et les met en forme, pour validation de votre part ou application immédiate.",
-        "privacy": "Avec une API tierce, les titres, descriptions et étiquettes des modèles quittent ce serveur. Les images ne sont envoyées que si cette option est activée."
+        "privacy": "Avec une API tierce, les titres, descriptions et étiquettes des modèles quittent ce serveur. Les images ne sont envoyées que si cette option est activée.",
+        "studio": "Assistant de Studio",
+        "studioDescription": "Permet de demander à une IA, dans le champ de Studio, de construire et modifier les conceptions étape par étape, avec les IA que vous proposez."
       },
       "aiCategorization": {
         "heading": "Catégorisation par IA",
@@ -2450,6 +2461,18 @@
           "off": "Les outils des utilisateurs sont désactivés.",
           "by": "{{name}} · {{email}}"
         }
+      },
+      "studioAssistant": {
+        "offered": "Modèles proposés",
+        "offeredHelp": "C’est parmi eux que l’on choisit dans le champ de Studio. Une nouvelle IA n’est proposée qu’une fois activée ici. Avec une IA dans le cloud, chaque demande est facturée à son compte. Compact donne à un petit modèle local une douzaine d’outils de base (formes, déplacement, combinaison, trous) en un dixième de la demande ; congés, coques et esquisses demandent Tous les outils. Claude les reçoit tous et trouve ceux qu’il lui faut par recherche.",
+        "offerAria": "Proposer {{model}} dans Studio",
+        "default": "Modèle par défaut",
+        "noneOffered": "Activez au moins un modèle parmi lesquels choisir.",
+        "save": "Enregistrer",
+        "failed": "Impossible de charger ou d’enregistrer les réglages de l’assistant de Studio.",
+        "toolsAll": "Tous les outils",
+        "toolsCompact": "Compact",
+        "toolsAria": "Outils donnés à {{model}}"
       }
     },
     "download": {
@@ -3138,6 +3161,686 @@
           "On dépoussière l'étagère vide…",
           "On dit au revoir aux fantômes…"
         ]
+      }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Outils du Studio",
+        "shapes": "Formes",
+        "modify": "Modifier"
+      },
+      "emptyDesign": "Ajoutez une forme depuis la barre d’outils ou commencez une esquisse",
+      "types": {
+        "box": "Boîte",
+        "cylinder": "Cylindre",
+        "cone": "Cône",
+        "sphere": "Sphère",
+        "torus": "Tore",
+        "extrude": "Extrusion",
+        "boolean": "Combinaison",
+        "sketch": "Esquisse",
+        "mesh": "Maillage",
+        "revolve": "Révolution",
+        "press_pull": "Pousser/tirer",
+        "fillet": "Congé",
+        "chamfer": "Chanfrein",
+        "hole": "Trou",
+        "shell": "Coque",
+        "split": "Division",
+        "part": "Pièce",
+        "pattern": "Répétition",
+        "mirror": "Miroir",
+        "hull": "Enveloppe",
+        "thread": "Filetage",
+        "loft": "Lissage",
+        "sweep": "Balayage"
+      },
+      "tree": {
+        "heading": "Éléments",
+        "empty": "Rien pour l’instant",
+        "expand": "Déplier",
+        "collapse": "Replier"
+      },
+      "actions": {
+        "sketch": "Esquisse",
+        "extrude": "Extruder",
+        "editSketch": "Modifier l’esquisse",
+        "drawOnSketch": "Dessiner sur l’esquisse",
+        "union": "Unir",
+        "subtract": "Soustraire",
+        "intersect": "Intersecter",
+        "undo": "Annuler",
+        "redo": "Rétablir",
+        "rename": "Renommer",
+        "duplicate": "Dupliquer",
+        "delete": "Supprimer",
+        "hide": "Masquer",
+        "show": "Afficher",
+        "add": {
+          "box": "Ajouter une boîte",
+          "cylinder": "Ajouter un cylindre",
+          "cone": "Ajouter un cône",
+          "sphere": "Ajouter une sphère",
+          "torus": "Ajouter un tore"
+        },
+        "revolve": "Révolution",
+        "separate": "Séparer les pièces",
+        "hull": "Envelopper",
+        "loft": "Lissage"
+      },
+      "shapes": {
+        "rectangle": "Rectangle",
+        "circle": "Cercle",
+        "polygon": "Polygone",
+        "text": "Texte",
+        "trace": "Image décalquée",
+        "path": "Tracé",
+        "line": "Ligne",
+        "arc": "Arc"
+      },
+      "planes": {
+        "XY": "Dessus",
+        "XZ": "Face",
+        "YZ": "Droite",
+        "FACE": "Sur une face",
+        "faceHint": "Choisissez une face plane"
+      },
+      "sketch": {
+        "on": "Esquisse sur le plan {{plane}}",
+        "tool": "Outil de dessin",
+        "finish": "Terminer",
+        "hint": {
+          "rectangle": "Faites glisser pour dessiner un rectangle",
+          "circle": "Faites glisser depuis le centre pour dessiner un cercle",
+          "polygon": "Cliquez pour ajouter des sommets ; un double-clic, Entrée ou le premier sommet le ferme",
+          "line": "Cliquez pour ajouter des points. Passez à Arc pour une courbe ; fermez sur le premier point, par double-clic ou Entrée",
+          "arc": "Cliquez où l’arc se termine, puis sur un point par lequel il passe. Passez à Ligne pour des côtés droits ; fermez sur le premier point ou avec Entrée"
+        }
+      },
+      "transform": {
+        "label": "Manipulateur",
+        "translate": "Déplacer",
+        "rotate": "Pivoter",
+        "scale": "Mettre à l’échelle",
+        "select": "Sélectionner"
+      },
+      "view": {
+        "label": "Vues",
+        "iso": "Isométrique",
+        "top": "Dessus",
+        "front": "Face",
+        "right": "Droite",
+        "fit": "Ajuster à la vue",
+        "navigation": "Glisser avec le bouton droit fait pivoter la vue, avec le bouton du milieu (ou Maj + droit) la déplace, la molette zoome. Glisser avec le bouton gauche trace un cadre de sélection : de gauche à droite il prend ce qui est entièrement dedans, de droite à gauche aussi ce qu’il touche. Maj ajoute à la sélection."
+      },
+      "properties": {
+        "heading": "Propriétés",
+        "none": "Sélectionnez un élément pour le modifier.",
+        "selectedCount_one": "{{count}} sélectionné",
+        "selectedCount_many": "{{count}} sélectionnés",
+        "selectedCount_other": "{{count}} sélectionnés",
+        "partOf": "Fait partie de",
+        "name": "Nom",
+        "size": "Taille",
+        "extrude": "Extrusion",
+        "extrudeHelp": "Distance d’extrusion de l’esquisse, en mm. Une distance négative va dans l’autre sens.",
+        "operation": "Opération",
+        "position": "Position",
+        "rotation": "Rotation",
+        "scale": "Échelle",
+        "plane": "Plan",
+        "planeHelp": "Dessus (XY) extrude vers le haut, Face (XZ) vers l’avant, Droite (YZ) vers la droite. Le décalage déplace le plan dans ce sens.",
+        "shapes": "Formes",
+        "noShapes": "Aucune pour l’instant : dessinez sur l’esquisse.",
+        "removeShape": "Retirer la forme",
+        "hole": "Trou",
+        "points_one": "{{count}} point",
+        "points_many": "{{count}} points",
+        "points_other": "{{count}} points",
+        "fields": {
+          "width": "Largeur",
+          "depth": "Profondeur",
+          "height": "Hauteur",
+          "radius": "Rayon",
+          "segments": "Segments",
+          "radius_bottom": "Rayon du bas",
+          "radius_top": "Rayon du haut",
+          "major_radius": "Rayon de l’anneau",
+          "minor_radius": "Rayon du tube",
+          "distance": "Distance",
+          "offset": "Décalage",
+          "angle": "Angle",
+          "diameter": "Diamètre",
+          "thickness": "Épaisseur",
+          "count": "Nombre",
+          "spacing": "Espacement",
+          "grid_count": "Rangées",
+          "grid_spacing": "Espacement des rangées",
+          "pitch": "Pas",
+          "length": "Longueur",
+          "clearance": "Jeu"
+        },
+        "mesh": {
+          "source": "Source",
+          "triangles_one": "{{count}} triangle",
+          "triangles_many": "{{count}} triangles",
+          "triangles_other": "{{count}} triangles",
+          "importedSize": "Importé à {{size}} mm",
+          "solid": "Solide fermé",
+          "open": "Pas un solide fermé",
+          "openHelp": "Il a des trous : il peut être déplacé, mis à l’échelle et exporté, mais pas combiné avec d’autres corps.",
+          "parts_one": "{{count}} pièce",
+          "parts_many": "{{count}} pièces séparées",
+          "parts_other": "{{count}} pièces séparées"
+        },
+        "cornerRadius": "Rayon des coins"
+      },
+      "design": {
+        "none": "Aucune conception",
+        "new": "Nouvelle conception",
+        "open": "Ouvrir…",
+        "openTitle": "Ouvrir une conception",
+        "rename": "Renommer la conception",
+        "export": "Télécharger le STL",
+        "delete": "Supprimer la conception",
+        "deleteTitle": "Supprimer « {{name}} » ?",
+        "deleteMessage": "La conception et son historique sont supprimés définitivement.",
+        "empty": "Aucune conception pour l’instant.",
+        "emptyTitle": "Aucune conception pour l’instant",
+        "emptyHint": "Commencez-en une, puis construisez-la avec des formes et des esquisses.",
+        "untitled": "Conception sans titre",
+        "nothingToExport": "Rien de visible à télécharger",
+        "features_one": "{{count}} élément",
+        "features_many": "{{count}} éléments",
+        "features_other": "{{count}} éléments",
+        "saveToLibrary": "Enregistrer dans Thingport",
+        "saving": "Enregistrement dans Thingport…",
+        "saved": "« {{name}} » enregistré dans votre bibliothèque",
+        "openSaved": "Ouvrir"
+      },
+      "prompt": {
+        "title": "Demander à l’IA",
+        "open": "Ouvrir Demander à l’IA",
+        "help": "Décrivez une pièce, ou une modification de la conception ouverte, et l’IA la construit étape par étape avec les mêmes outils que la barre. Vous voyez chaque étape arriver, et Annuler les défait une à une. Un administrateur choisit les IA proposées. Une IA qui voit les images en accepte jusqu’à 4 : une photo ou un dessin dont partir, ou un logo à décalquer.",
+        "model": "Modèle d’IA",
+        "addModel": "Ajouter un modèle d’IA",
+        "noModels": "Aucune IA n’est encore proposée pour Studio.",
+        "minimize": "Réduire",
+        "placeholder": "Décrivez une pièce, ou une modification de celle-ci",
+        "send": "Envoyer",
+        "chooseModels": "Choisir les modèles proposés",
+        "off": "L’assistant de Studio est désactivé.",
+        "turnOn": "L’activer",
+        "stop": "Arrêter",
+        "working": "En cours…",
+        "clear": "Effacer la conversation",
+        "clearTitle": "Effacer la conversation ?",
+        "clearMessage": "L’assistant oublie ce qui a été dit sur cette conception. La conception reste telle quelle.",
+        "steps_one": "{{count}} étape",
+        "steps_many": "{{count}} étapes",
+        "steps_other": "{{count}} étapes",
+        "stopped": "Arrêté.",
+        "limit": "Arrêté après {{count}} étapes.",
+        "failed": "Impossible de terminer : {{error}}",
+        "showConversation": "Afficher la conversation",
+        "hideConversation": "Masquer la conversation",
+        "live": "Étape {{number}} : {{step}}",
+        "attach": "Joindre des images",
+        "picture": "Image {{number}}",
+        "removePicture": "Retirer l’image {{number}}",
+        "noVision": "Cette IA ne voit pas les images. Choisissez-en une qui les voit, ou retirez-les."
+      },
+      "panels": {
+        "label": "Panneaux",
+        "features": "Éléments",
+        "properties": "Propriétés",
+        "hide": "Masquer {{panel}}",
+        "show": "Afficher {{panel}}"
+      },
+      "viewCube": {
+        "label": "Cube de vue : cliquez sur une face, une arête ou un coin pour regarder de là, faites-le glisser pour tourner la vue",
+        "home": "Vue d’accueil",
+        "top": "DESSUS",
+        "bottom": "DESSOUS",
+        "front": "FACE",
+        "back": "ARRIÈRE",
+        "left": "GAUCHE",
+        "right": "DROITE"
+      },
+      "open": {
+        "designs": "Conceptions",
+        "library": "Bibliothèque",
+        "search": "Recherchez vos modèles",
+        "help": "Les fichiers STL, 3MF, STEP, OBJ et GLB arrivent comme corps maillés, à leur propre taille. La conception garde sa propre copie : les changements ultérieurs du modèle ne l’atteignent pas.",
+        "open": "Ouvrir",
+        "openHelp": "Comme nouvelle conception",
+        "insert": "Insérer",
+        "insertHelp": "Dans cette conception",
+        "noMatches": "Aucun modèle avec un fichier 3D ne correspond",
+        "emptyLibrary": "Votre bibliothèque n’a pas encore de fichier STL, 3MF, STEP, OBJ ou GLB",
+        "loadMore": "Charger plus"
+      },
+      "working": "Calcul…",
+      "edges": {
+        "none": "Vive",
+        "fillet": "Congé",
+        "chamfer": "Chanfrein",
+        "radius": "Rayon",
+        "distance": "Distance"
+      },
+      "ops": {
+        "cancel": "Annuler",
+        "ok": "OK",
+        "pickBody": "Cliquez sur un corps",
+        "combine": {
+          "label": "Résultat",
+          "new": "Nouveau",
+          "join": "Joindre",
+          "cut": "Couper",
+          "intersect": "Intersecter"
+        },
+        "extrude": {
+          "title": "Extrusion",
+          "help": "Tire l’esquisse en un solide. La dépouille incline les côtés vers l’extrémité ; les arêtes des extrémités peuvent être arrondies ou chanfreinées. Joindre, couper ou intersecter le combine à un autre corps.",
+          "taper": "Dépouille",
+          "startOffset": "Décalage de départ",
+          "symmetric": "Des deux côtés",
+          "topEdge": "Extrémité",
+          "bottomEdge": "Départ",
+          "topRim": "Bord supérieur",
+          "bottomRim": "Bord inférieur"
+        },
+        "revolve": {
+          "title": "Révolution",
+          "help": "Fait tourner l’esquisse autour d’un de ses axes. Toutes ses formes doivent être d’un même côté de l’axe.",
+          "axis": "Axe",
+          "axisU": "En travers (u)",
+          "axisV": "Vers le haut (v)",
+          "angle": "Angle"
+        },
+        "press_pull": {
+          "title": "Pousser/tirer",
+          "help": "Déplace une face plane tout droit vers l’extérieur (ajoute) ou l’intérieur (enlève), en gardant son contour.",
+          "pick": "Cliquez sur une face plane"
+        },
+        "fillet": {
+          "title": "Congé",
+          "help": "Arrondit les arêtes droites entre faces planes. Les arêtes extérieures sont arrondies, les intérieures comblées. Cliquez sur des arêtes pour les ajouter ou les retirer.",
+          "pick": "Cliquez sur les arêtes à arrondir"
+        },
+        "chamfer": {
+          "title": "Chanfrein",
+          "help": "Chanfreine les arêtes droites entre faces planes, en reculant de la même distance sur les deux. Cliquez sur des arêtes pour les ajouter ou les retirer.",
+          "pick": "Cliquez sur les arêtes à chanfreiner"
+        },
+        "hole": {
+          "title": "Trou",
+          "help": "Perce un trou rond là où vous cliquez, dans la surface. Le lamage et la fraisure font de la place à la tête de vis.",
+          "pick": "Cliquez où percer",
+          "diameter": "Diamètre",
+          "depth": "Profondeur",
+          "through": "Débouchant",
+          "style": "Type",
+          "simple": "Simple",
+          "counterbore": "Lamage",
+          "countersink": "Fraisure",
+          "angle": "Angle",
+          "boreDiameter": "Diamètre du lamage",
+          "boreDepth": "Profondeur du lamage",
+          "sinkDiameter": "Diamètre de la fraisure",
+          "threaded": "Taraudé",
+          "threadedAs": "Taraudé {{size}}"
+        },
+        "shell": {
+          "title": "Coque",
+          "help": "Évide le corps, avec des parois de cette épaisseur. Cliquez sur des faces planes pour les laisser ouvertes, comme le dessus d’un bac.",
+          "thickness": "Épaisseur des parois",
+          "pick": "Cliquez sur les faces à laisser ouvertes",
+          "open_one": "{{count}} face ouverte",
+          "open_many": "{{count}} faces ouvertes",
+          "open_other": "{{count}} faces ouvertes"
+        },
+        "split": {
+          "title": "Division",
+          "help": "Divise le corps en deux : par un plan, le plan d’une face plane ou un autre corps. Les deux parties restent modifiables.",
+          "by": "Diviser par",
+          "plane": "Plan",
+          "face": "Face",
+          "body": "Corps",
+          "pickFace": "Cliquez sur une face plane",
+          "facePicked": "Face choisie",
+          "pickTool": "Cliquez sur le corps avec lequel diviser",
+          "keep": "Partie",
+          "front": "Avant",
+          "back": "Arrière",
+          "inside": "Intérieur",
+          "outside": "Extérieur"
+        },
+        "scale": {
+          "title": "Échelle",
+          "help": "Met le corps à l’échelle autour de sa propre origine.",
+          "factor": "Facteur"
+        },
+        "sketch_face": {
+          "title": "Esquisse sur une face",
+          "help": "Commence une esquisse sur la face plane cliquée.",
+          "pick": "Cliquez sur une face plane pour l’esquisse"
+        },
+        "edges_one": "{{count}} arête",
+        "edges_many": "{{count}} arêtes",
+        "edges_other": "{{count}} arêtes",
+        "separate": {
+          "title": "Séparer les pièces",
+          "help": "Fait de chaque pièce détachée du corps, chaque morceau qui ne touche pas le reste, un corps à part. Un creux à l’intérieur d’une pièce reste avec elle ; les pièces qui se chevauchent sans être jointes restent séparées, ici chacune de sa couleur. Supprimer toutes les pièces rend le corps.",
+          "count_one": "{{count}} pièce",
+          "count_many": "{{count}} pièces",
+          "count_other": "{{count}} pièces",
+          "open_one": "{{count}} a des trous : elle peut être déplacée et exportée, pas combinée",
+          "open_many": "{{count}} ont des trous : elles peuvent être déplacées et exportées, pas combinées",
+          "open_other": "{{count}} ont des trous : elles peuvent être déplacées et exportées, pas combinées"
+        },
+        "text": {
+          "title": "Texte",
+          "help": "Transforme des mots en solide : lettres en relief sur un plan, ou en relief ou gravées sur une face plane d’un corps. La hauteur des lettres est celle d’une majuscule ; 6 mm ou plus s’imprime bien. Les mots, la police et la taille restent modifiables dans son esquisse.",
+          "on": "Où",
+          "onPlane": "Sur un plan",
+          "onFace": "Sur une face",
+          "style": "Style",
+          "raised": "En relief",
+          "engraved": "Gravé",
+          "height": "Hauteur",
+          "depth": "Profondeur",
+          "pick": "Cliquez sur une face plane où écrire"
+        },
+        "pattern": {
+          "title": "Répétition",
+          "help": "Répète un corps en ligne, en grille ou autour d’un axe, et en fait un seul corps avec lui. Modifiez le corps et toutes les copies suivent. Pour percer de nombreux trous, répétez le cylindre d’un trou et soustrayez la répétition.",
+          "style": "Type",
+          "linear": "En ligne",
+          "circular": "Autour d’un axe",
+          "along": "Le long de",
+          "around": "Autour de",
+          "count": "Nombre",
+          "spacing": "Espacement",
+          "grid": "Seconde direction (grille)",
+          "rows": "Rangées",
+          "rowSpacing": "Espacement des rangées",
+          "angle": "Réparties sur",
+          "center": "Centre {{axis}}"
+        },
+        "mirror": {
+          "title": "Miroir",
+          "help": "Reflète un corps par rapport à un plan, pour un objet symétrique construit moitié par moitié. En gardant l’original, la moitié et son reflet forment un seul corps.",
+          "plane": "Par rapport à",
+          "keep": "Garder l’original"
+        },
+        "align": {
+          "title": "Aligner",
+          "help": "Aligne un corps sur un autre, ou sur le plateau : leurs débuts, milieux ou fins ensemble, ou à côté (avant ou après) avec un écart. Sur Z, après le pose dessus. Le corps est seulement déplacé.",
+          "pickBody": "Cliquez sur le corps à déplacer",
+          "pickReference": "Cliquez sur un corps sur lequel l’aligner, ou laissez-le aligné sur le plateau",
+          "with": "Sur {{name}}",
+          "axis": "Selon {{axis}}",
+          "none": "Non",
+          "before": "Avant",
+          "start": "Début",
+          "center": "Centre",
+          "end": "Fin",
+          "after": "Après",
+          "z_none": "Non",
+          "z_before": "Dessous",
+          "z_start": "Bas",
+          "z_center": "Milieu",
+          "z_end": "Haut",
+          "z_after": "Dessus",
+          "gap": "Écart"
+        },
+        "lay_flat": {
+          "title": "Poser à plat",
+          "help": "Tourne un corps pour que la face cliquée repose sur le plateau, comme on oriente une pièce pour l’imprimer, et le pose sur le plateau.",
+          "pick": "Cliquez sur la face sur laquelle le poser"
+        },
+        "sweep": {
+          "title": "Balayage",
+          "help": "Déplace le contour de l'esquisse le long d'un chemin de points et crée le solide qu'il traverse : un tuyau, une poignée, un rail. L'origine de l'esquisse suit le chemin, dessinez donc le contour autour d'elle ; il part perpendiculaire au chemin au premier point. Lisse trace une courbe par les points, Fermé en fait un anneau.",
+          "path": "Points du chemin (mm)",
+          "addPoint": "Ajouter un point",
+          "removePoint": "Retirer le point {{number}}",
+          "smooth": "Lisse",
+          "closed": "Fermé"
+        }
+      },
+      "imported": {
+        "parts_one": "Le modèle a été importé en un seul corps de {{count}} pièce",
+        "parts_many": "Le modèle a été importé en un seul corps de {{count}} pièces séparées",
+        "parts_other": "Le modèle a été importé en un seul corps de {{count}} pièces séparées",
+        "separate": "Séparer"
+      },
+      "text": {
+        "words": "Texte",
+        "font": "Police",
+        "size": "Hauteur des lettres",
+        "spacing": "Espacement des lettres",
+        "align": "Alignement",
+        "aligns": {
+          "left": "Gauche",
+          "center": "Centre",
+          "right": "Droite"
+        },
+        "placeholder": "Texte",
+        "newLine": "Maj+Entrée commence une nouvelle ligne",
+        "add": "Ajouter du texte"
+      },
+      "trace": {
+        "title": "Décalquer une image",
+        "help": "Transforme les formes d’une image en contour à rendre solide : un logo, une silhouette, un lettrage, un dessin. Les formes sombres sur fond clair sont décalquées (Inverser pour du clair sur fond sombre ; le transparent compte comme clair), et les trous restent des trous. Une image nette et bien contrastée se décalque le mieux.",
+        "picture": "Image",
+        "drop": "Déposez une image ici, ou collez-la",
+        "choose": "Choisir une image",
+        "another": "Une autre image",
+        "resultEmpty": "Le contour décalqué s’affiche ici",
+        "threshold": "Seuil",
+        "auto": "Le trouver",
+        "invert": "Inverser",
+        "detail": "Détail",
+        "details": {
+          "low": "Faible",
+          "medium": "Moyen",
+          "high": "Élevé"
+        },
+        "found_one": "{{count}} forme",
+        "found_many": "{{count}} formes",
+        "found_other": "{{count}} formes",
+        "holes_one": "{{count}} trou",
+        "holes_many": "{{count}} trous",
+        "holes_other": "{{count}} trous",
+        "make": "Créer",
+        "solid": "Solide",
+        "sketch": "Esquisse seule",
+        "ok": "Décalquer"
+      },
+      "edit": {
+        "start": "Modifier le design",
+        "done": "Terminer la modification"
+      },
+      "emptyView": "Demandez à l’IA ci-dessous de créer quelque chose, ou cliquez sur Modifier pour le faire vous-même",
+      "thread": {
+        "kind": "Type",
+        "external": "Extérieur",
+        "internal": "Intérieur",
+        "hand": "Sens",
+        "hands": {
+          "right": "À droite",
+          "left": "À gauche"
+        },
+        "chamfer": "Extrémités chanfreinées"
+      },
+      "path": {
+        "title": "Ajouter un tracé",
+        "help": "Données de tracé SVG en millimètres de l'esquisse, x vers la droite et y vers le haut : M, L, H, V, C, S, Q, T, A et Z, chaque sous-tracé étant un contour fermé. Collez-le depuis un logiciel de dessin ou écrivez-le à la main.",
+        "data": "Données du tracé",
+        "fill": "Règle de remplissage",
+        "fills": {
+          "evenodd": "Pair-impair",
+          "nonzero": "Non nul"
+        },
+        "nothing": "Rien à dessiner pour l'instant",
+        "add": "Ajouter"
+      },
+      "parameters": {
+        "title": "Paramètres",
+        "help": "Des nombres nommés que les cotes du design peuvent suivre. Dans n'importe quel champ de cote, tapez = et une formule, comme =wall * 2 + 10. Modifiez un paramètre ici et toutes les formules qui l'utilisent sont recalculées.",
+        "follows": "Suit = {{expression}}",
+        "name": "Nom",
+        "value": "Valeur",
+        "add": "Ajouter un paramètre",
+        "delete": "Supprimer {{name}}",
+        "inUse": "Utilisé : modifiez d'abord les champs qui le suivent",
+        "none": "Aucun paramètre pour l'instant.",
+        "taken": "Ce nom existe déjà",
+        "badName": "Lettres, chiffres et _, sans commencer par un chiffre",
+        "unused": "Inutilisé",
+        "uses_one": "Utilisé par {{count}} champ",
+        "uses_many": "Utilisé par {{count}} champs",
+        "uses_other": "Utilisé par {{count}} champs",
+        "noUnit": "Aucune",
+        "unit": "Unité",
+        "unitOf": "Unité de {{name}}"
+      },
+      "check": {
+        "title": "Vérifier pour l'impression",
+        "help": "Vérifie chaque corps visible là où il est placé : sur le plateau et dans ses limites, d'une seule pièce, sans chevaucher un autre, sans porte-à-faux nécessitant un support ni paroi trop fine pour être imprimée. C'est la même vérification que l'assistant fait sur son propre travail.",
+        "bed_x": "Plateau X",
+        "bed_y": "Plateau Y",
+        "bed_z": "Plateau Z",
+        "overhangLimit": "Porte-à-faux",
+        "minWall": "Paroi min.",
+        "ready": "Prêt à imprimer",
+        "nothing": "Aucun corps visible à vérifier.",
+        "empty": "Vide",
+        "tooBig": "Trop grand pour le plateau",
+        "offBed": "Hors du plateau",
+        "floating": "Flotte à {{value}}",
+        "sunk": "Enfoncé de {{value}}",
+        "pieces_one": "{{count}} pièce détachée",
+        "pieces_many": "{{count}} pièces détachées",
+        "pieces_other": "{{count}} pièces détachées",
+        "overhang": "{{value}} de porte-à-faux",
+        "thin": "Parois jusqu'à {{value}}",
+        "overlaps": "Chevauche {{name}}",
+        "open": "Pas un solide fermé",
+        "toBed": "Sur le plateau",
+        "measure": "Mesurer",
+        "measureNeedsTwo": "Ajoutez deux corps pour mesurer entre eux.",
+        "first": "De",
+        "second": "À",
+        "gap": "Écart {{value}}",
+        "touching": "Se touchent",
+        "overlap": "Chevauchement {{value}}",
+        "far": "À plus de 1 m",
+        "toBedOf": "Poser {{name}} sur le plateau"
+      },
+      "status": {
+        "label": "Mesures du design",
+        "design": "Design",
+        "selection": "Sélection",
+        "bodiesLabel": "Corps",
+        "size": "Taille",
+        "volume": "Volume",
+        "openMeshes": "Les maillages ouverts n'ont pas de volume : ils ne sont pas comptés",
+        "units": "Unités"
+      },
+      "measure": {
+        "title": "Mesurer",
+        "help": "Sélectionnez des points, des arêtes, des faces ou des corps. Une sélection affiche sa propre taille : la position d'un point, la longueur d'une arête, l'aire d'une face, la taille et le volume d'un corps. Deux affichent la plus courte distance entre eux, ce qu'elle fait le long de X, Y et Z, et l'angle entre eux. Les mesures sont dans les unités de la barre d'état, et mesurer ne modifie pas le design.",
+        "filter": "Quoi sélectionner",
+        "clear": "Effacer",
+        "done": "Terminé",
+        "again": "Cliquez à nouveau pour recommencer",
+        "kinds": {
+          "point": "Point",
+          "edge": "Arête",
+          "face": "Face",
+          "body": "Corps"
+        },
+        "pickFirst": {
+          "point": "Cliquez sur un point pour le mesurer",
+          "edge": "Cliquez sur une arête pour la mesurer",
+          "face": "Cliquez sur une face pour la mesurer",
+          "body": "Cliquez sur un corps pour le mesurer"
+        },
+        "pickSecond": {
+          "point": "Cliquez sur un deuxième point pour mesurer entre les deux",
+          "edge": "Cliquez sur une deuxième arête pour mesurer entre les deux",
+          "face": "Cliquez sur une deuxième face pour mesurer entre les deux",
+          "body": "Cliquez sur un deuxième corps pour mesurer entre les deux"
+        },
+        "readings": {
+          "distance": "Distance",
+          "length": "Longueur",
+          "gap": "Écart",
+          "area": "Aire",
+          "volume": "Volume",
+          "overlap": "Chevauchement",
+          "angle": "Angle",
+          "size": "Taille",
+          "touching": "Se touchent",
+          "far": "À plus de 1 m",
+          "openMesh": "Un maillage ouvert n'a pas de volume",
+          "measuring": "Mesure…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Réglages du Studio",
+        "sections": {
+          "assistant": "Demander à l’IA",
+          "units": "Unités",
+          "grid": "Grille"
+        },
+        "assistantIntro": "Où « Demander à l’IA » affiche sa conversation.",
+        "layout": "Disposition",
+        "layoutHelp": "Barre : sous la vue, une ligne pendant que l'IA travaille, le reste en l'ouvrant. Panneau latéral : à côté de la vue, pour que rien ne cache le modèle.",
+        "layouts": {
+          "bar": "Barre",
+          "panel": "Panneau latéral"
+        },
+        "failed": "Impossible d'enregistrer le réglage.",
+        "unitsIntro": "Dans quelles unités les cotes sont affichées et saisies. Les cotes ne changent pas ; seule leur lecture change.",
+        "designUnits": "Ce design",
+        "designUnitsHelp": "Enregistré avec le design et annulable comme toute modification. Une cote saisie sans unité est dans celles-ci ; avec une unité, comme 2 in ou 5 mm, dans celle-là.",
+        "newUnits": "Nouveaux designs",
+        "newUnitsHelp": "Les unités dans lesquelles un nouveau design commence. Gardées sur votre compte, donc sur tous vos appareils.",
+        "unitNames": {
+          "mm": "Millimètres",
+          "cm": "Centimètres",
+          "in": "Pouces"
+        },
+        "grid": {
+          "intro": "Comment la grille derrière le design est dessinée, et sur quoi les points s’accrochent.",
+          "show": "Afficher la grille",
+          "spacing": "Espacement",
+          "spacingHelp": "Adaptative suit le zoom, comme la grille d’un CAO : des lignes plus fines apparaissent en zoomant, par pas de dix (de quatre en pouces), une ligne sur dix (sur quatre) plus foncée. Fixe garde l’espacement choisi.",
+          "spacings": {
+            "adaptive": "Adaptative",
+            "fixed": "Fixe"
+          },
+          "density": "Densité",
+          "densities": {
+            "coarse": "Large",
+            "normal": "Normale",
+            "fine": "Fine"
+          },
+          "major": "Lignes principales tous les",
+          "subdivisions": "Divisée en",
+          "snap": "Accrocher à la grille",
+          "snapHelp": "Les points d’esquisse et les corps déplacés s’accrochent aux lignes les plus fines visibles. Désactivé, ils vont là où vous pointez."
+        }
       }
     }
   },
@@ -3882,6 +4585,7 @@
         "images": "images d’aperçu"
       },
       "openInSlicer": "Ouvrir dans {{slicer}}",
+      "openInStudio": "Ouvrir dans Thingport Studio",
       "openNormalizedInSlicer": "Ouvrir la version normalisée dans {{slicer}}",
       "normalizedInfo": "Les fichiers MakerWorld sont des projets Bambu Studio, que {{slicer}} ouvre souvent sans leurs couleurs ni leurs réglages d’impression. Cette option ouvre une copie convertie qui conserve les couleurs peintes, les couleurs de filament, les plateaux et les réglages du créateur (parois, hauteur de couche, remplissage, supports). Attention : les objets en plusieurs pièces peuvent être fusionnés en un seul, les réglages propres à chaque objet et les changements de couleur par couche sont perdus, et vous choisissez votre propre profil d’imprimante. Le fichier enregistré n’est pas modifié.",
       "normalizePreparing": "Préparation du fichier normalisé…",

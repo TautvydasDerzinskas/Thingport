@@ -36,16 +36,18 @@ type Props = {
   /** Reloads the list after a change. */
   onChanged: () => void;
   onUnauthorized?: () => void;
+  /** Opens the Add dialog at once: the page was opened to add an AI, from Studio's prompt. */
+  startAdding?: boolean;
 };
 
 // Long enough for the second click of a double-click to cancel the first one's "make default".
 const DOUBLE_CLICK_MS = 250;
 
 /** The instance's AIs as app icons: click one to make it the default, double-click to edit it. */
-export default function AiConnectionsSection({ connections, onChanged, onUnauthorized }: Props) {
+export default function AiConnectionsSection({ connections, onChanged, onUnauthorized, startAdding }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
-  const [editing, setEditing] = useState<AiConnection | "new" | null>(null);
+  const [editing, setEditing] = useState<AiConnection | "new" | null>(() => (startAdding ? "new" : null));
   const [menu, setMenu] = useState<{ connection: AiConnection; top: number; left: number } | null>(null);
   const [notice, setNotice] = useState<{ severity: "success" | "error"; text: string } | null>(null);
   const [testing, setTesting] = useState<string | null>(null);

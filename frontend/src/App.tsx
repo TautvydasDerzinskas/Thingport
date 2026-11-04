@@ -37,6 +37,7 @@ import AuthSettingsPage from "./pages/AdminSettingsPage/AuthPage";
 import DashboardAdminPage from "./pages/DashboardAdminPage";
 import ToolsAdminPage from "./pages/ToolsAdminPage";
 import ToolsPage from "./pages/ToolsPage";
+import { useStudioEnabled } from "./hooks/useStudioEnabled";
 import UsersPage from "./pages/UsersPage";
 import LogsPage from "./pages/LogsPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -62,12 +63,28 @@ import {
 import { useResolvedTheme } from "./hooks/useResolvedTheme";
 import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./hooks/useAccentColor";
 import { resetCardPreview } from "./hooks/useCardPreview";
+import { resetStudioSettings } from "./hooks/useStudioSettings";
 import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
 import { resetCustomWidgets } from "./hooks/useCustomWidgets";
 import { resetTools } from "./hooks/useTools";
 import { resetToolsView } from "./hooks/useToolsView";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
+
+// Behind STUDIO_ENABLED, and heavy (three.js, its gizmos, zod), so only fetched by someone who opens it.
+const StudioPage = React.lazy(() => import("./pages/StudioPage"));
+
+/** /studio while Studio is on; home while it's off, once that's known. */
+function StudioRoute({ isAdmin, onUnauthorized }: { isAdmin: boolean; onUnauthorized: () => void }) {
+  const enabled = useStudioEnabled();
+  if (enabled === null) return null;
+  if (!enabled) return <Navigate to="/" replace />;
+  return (
+    <React.Suspense fallback={null}>
+      <StudioPage isAdmin={isAdmin} onUnauthorized={onUnauthorized} />
+    </React.Suspense>
+  );
+}
 
 // Renewed this far into its life, or this long before it runs out, whichever is sooner.
 const REFRESH_AT_FRACTION = 0.8;
@@ -278,6 +295,7 @@ function AppShell({
         <Route path="/connect-grab" element={<ConnectGrabPage user={user} onUnauthorized={onUnauthorized} />} />
         <Route path="/downloads" element={<DownloadPage />} />
         <Route path="/tools" element={<ToolsPage isAdmin={isAdmin} onUnauthorized={onUnauthorized} />} />
+        <Route path="/studio" element={<StudioRoute isAdmin={isAdmin} onUnauthorized={onUnauthorized} />} />
         {/* The bookmarklet's link: AddMenu opens the import dialog with it and moves on to the home page. */}
         <Route path={IMPORT_PATH} element={null} />
         <Route path="/notifications" element={<NotificationsPage onUnauthorized={onUnauthorized} />} />
@@ -426,6 +444,7 @@ export default function App() {
   // The token's lifetime is read from the token itself.
   const handleLogin = (tok: string, _expiresIn: number, loggedInUser: AuthUser) => {
     resetCardPreview();
+    resetStudioSettings();
     resetHoverSlideshowEnabled();
     resetCustomWidgets();
     resetTools();

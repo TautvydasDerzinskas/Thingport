@@ -110,6 +110,9 @@ function useRouteChrome() {
   } else if (path === "/downloads") {
     title = t("sidebar.downloads");
     onBack = () => navigate("/");
+  } else if (path === "/studio") {
+    title = t("sidebar.studio");
+    onBack = () => navigate("/");
   } else if (path === "/admin") {
     title = t("sidebar.administration");
     onBack = () => navigate("/");

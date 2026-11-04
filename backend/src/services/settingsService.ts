@@ -538,6 +538,65 @@ export async function setAiDescriptionPrefs(
   return next;
 }
 
+/** Studio's assistant: whether people may prompt it, which AIs they may pick, and which is picked first. A new AI
+ *  isn't offered until an admin adds it here, as each prompt may cost money. */
+export type StudioAssistantPrefs = {
+  enabled: boolean;
+  aiConnectionIds: string[];
+  /** One of aiConnectionIds; null picks the first of them. */
+  defaultAiConnectionId: string | null;
+  /** Offered AIs given the compact tool set: a few basic tools, briefly described, for small local models. */
+  compactAiConnectionIds: string[];
+};
+
+const STUDIO_ASSISTANT_KEY = "studio_assistant";
+export const DEFAULT_STUDIO_ASSISTANT_PREFS: StudioAssistantPrefs = {
+  enabled: false,
+  aiConnectionIds: [],
+  defaultAiConnectionId: null,
+  compactAiConnectionIds: [],
+};
+
+export async function getStudioAssistantPrefs(): Promise<StudioAssistantPrefs> {
+  const row = await prisma.setting.findUnique({ where: { key: STUDIO_ASSISTANT_KEY } });
+  const raw = (row?.value && typeof row.value === "object" && !Array.isArray(row.value) ? row.value : {}) as Record<
+    string,
+    unknown
+  >;
+  const ids = Array.isArray(raw.aiConnectionIds)
+    ? raw.aiConnectionIds.filter((id): id is string => typeof id === "string")
+    : [];
+  const fallback = typeof raw.defaultAiConnectionId === "string" ? raw.defaultAiConnectionId : null;
+  const compact = Array.isArray(raw.compactAiConnectionIds) ? raw.compactAiConnectionIds : [];
+  return {
+    enabled: typeof raw.enabled === "boolean" ? raw.enabled : DEFAULT_STUDIO_ASSISTANT_PREFS.enabled,
+    aiConnectionIds: ids,
+    defaultAiConnectionId: fallback && ids.includes(fallback) ? fallback : (ids[0] ?? null),
+    compactAiConnectionIds: ids.filter((id) => compact.includes(id)),
+  };
+}
+
+export async function setStudioAssistantPrefs(patch: Partial<StudioAssistantPrefs>): Promise<StudioAssistantPrefs> {
+  const current = await getStudioAssistantPrefs();
+  const ids = [...new Set(patch.aiConnectionIds ?? current.aiConnectionIds)];
+  const wanted =
+    patch.defaultAiConnectionId !== undefined ? patch.defaultAiConnectionId : current.defaultAiConnectionId;
+  const compact = patch.compactAiConnectionIds ?? current.compactAiConnectionIds;
+  const next: StudioAssistantPrefs = {
+    enabled: patch.enabled ?? current.enabled,
+    aiConnectionIds: ids,
+    // The default is always one on offer: the first, when the one asked for isn't.
+    defaultAiConnectionId: wanted && ids.includes(wanted) ? wanted : (ids[0] ?? null),
+    compactAiConnectionIds: ids.filter((id) => compact.includes(id)),
+  };
+  await prisma.setting.upsert({
+    where: { key: STUDIO_ASSISTANT_KEY },
+    create: { key: STUDIO_ASSISTANT_KEY, value: next as unknown as Prisma.InputJsonValue },
+    update: { value: next as unknown as Prisma.InputJsonValue },
+  });
+  return next;
+}
+
 const AUTH_TOKEN_TTL_KEY = "auth_token_ttl_seconds";
 const DEFAULT_AUTH_TOKEN_TTL_SECONDS = 43200;
 

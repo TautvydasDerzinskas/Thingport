@@ -31,6 +31,7 @@ import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { importProviderInfo } from "../../constants/importProviders";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
+import { useOpenInStudio } from "./useOpenInStudio";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
 import ModelFileSelect from "./ModelFileSelect";
@@ -105,6 +106,10 @@ export default function ModelSidePanel({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const selectedFile = files.find((file) => file.key === selectedKey) ?? files[0] ?? null;
   const normalizedTarget = normalizedTargetFor(selectedFile);
+
+  // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
+  const studio = useOpenInStudio(print, onUnauthorized);
+  const studioPlate = studio.files.find((plate) => plate.id === selectedFile?.plate?.id) ?? null;
   const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
   // Opened from the button below rather than a menu, so there is no menu to close.
   const customize = useCustomize(print, () => {}, onUnauthorized);
@@ -355,6 +360,8 @@ export default function ModelSidePanel({
             zipCount={files.filter((file) => file.plate).length}
             onDownloadZip={() => void downloadAllZip()}
             onCustomize={customize.available ? customize.start : undefined}
+            onOpenInStudio={studioPlate ? () => void studio.open(studioPlate) : undefined}
+            openingInStudio={studio.opening}
           />
         )}
         {slicerOption && normalizedTarget && (

@@ -95,7 +95,8 @@
       "tags": "Žymos",
       "downloads": "Atsisiuntimai",
       "bookmarks": "Įsimintos",
-      "tools": "Įrankiai"
+      "tools": "Įrankiai",
+      "studio": "Studija"
     },
     "uploadBar": {
       "uploading": "Įkeliama…",
@@ -355,7 +356,13 @@
           "adminOff": "Administratorius šiame Thingport išjungė MCP.",
           "adminReadOnly": "Administratorius leidžia tik skaitančius įrankius.",
           "copyCommand": "Kopijuoti komandą",
-          "reads": "Skaito biblioteką"
+          "reads": "Skaito biblioteką",
+          "studio": {
+            "heading": "Studija",
+            "title": "Studijos projektai",
+            "description": "Skaityti, kurti ir keisti jūsų Studijos projektus žingsnis po žingsnio, kaip galite puslapyje.",
+            "confirm": "Su šiuo raktu prijungtas asistentas galės kurti, keisti ir trinti jūsų Studijos projektus kiekvieną kartą jūsų neklausdamas. Jūsų modelių jis keisti negali."
+          }
         },
         "rest": {
           "heading": "Leidimai",
@@ -1808,7 +1815,9 @@
           "modelsNeedKey": "Įveskite API raktą, kad pamatytumėte, kuriuos modelius jis gali naudoti.",
           "effortClaude": "Pastangos",
           "effortClaudeHint": "Kiek Claude mąsto prieš atsakydamas. Žemesnis lygis greitesnis ir pigesnis, o šioms užduotims retai reikia daugiau nei „Žemas“.",
-          "effortClaudeDefault": "Modelio numatytasis (nieko nesiųsti)"
+          "effortClaudeDefault": "Modelio numatytasis (nieko nesiųsti)",
+          "vision": "Mato paveikslėlius",
+          "visionHelp": "Ar šis modelis priima paveikslėlius užklausoje. Studio asistentas siūlo pridėti paveikslėlių tik tokiam DI. Naujas DI pradeda pagal tai, ką rodo jo modelio pavadinimas (Claude, GPT-4o ir naujesni, Gemini, Qwen-VL, LLaVA, Gemma 3…): pakeiskite, kad atitiktų modelį."
         }
       },
       "aiFeatures": {
@@ -1827,7 +1836,9 @@
         "manage": "Valdymas",
         "descriptions": "Patobulinti aprašymai",
         "descriptionsDescription": "Naudodamas DI sutvarko modelių aprašymus importuojant arba paleidus: pašalina savireklamą, išverčia ir sutvarko juos, kad peržiūrėtumėte arba iš karto pritaiko.",
-        "privacy": "Naudojant trečiosios šalies API, modelių pavadinimai, aprašymai ir žymos perduodami už šio serverio ribų. Paveikslėliai siunčiami tik įjungus šią parinktį."
+        "privacy": "Naudojant trečiosios šalies API, modelių pavadinimai, aprašymai ir žymos perduodami už šio serverio ribų. Paveikslėliai siunčiami tik įjungus šią parinktį.",
+        "studio": "Studijos asistentas",
+        "studioDescription": "Leidžia Studijos lauke paprašyti DI kurti ir keisti projektus žingsnis po žingsnio, naudojant jūsų siūlomus DI."
       },
       "aiCategorization": {
         "heading": "DI kategorizavimas",
@@ -2498,6 +2509,18 @@
           "off": "Naudotojų įrankiai išjungti.",
           "by": "{{name}} · {{email}}"
         }
+      },
+      "studioAssistant": {
+        "offered": "Siūlomi modeliai",
+        "offeredHelp": "Iš jų renkamasi Studijos lauke. Naujas DI nesiūlomas, kol jo čia neįjungsite. Naudojant debesų DI, kiekviena užklausa apmokestinama jo paskyrai. „Kompaktiškas“ mažam vietiniam modeliui duoda keliolika pagrindinių įrankių (formos, perkėlimas, sujungimas, skylės) dešimtadaliu užklausos dydžio; užapvalinimams, apvalkalams ir eskizams reikia „Visų įrankių“. Claude gauna juos visus, o reikiamus susiranda paieška.",
+        "offerAria": "Siūlyti {{model}} Studijoje",
+        "default": "Numatytasis modelis",
+        "noneOffered": "Įjunkite bent vieną modelį, iš kurio būtų galima rinktis.",
+        "save": "Išsaugoti",
+        "failed": "Nepavyko įkelti ar išsaugoti Studijos asistento nustatymų.",
+        "toolsAll": "Visi įrankiai",
+        "toolsCompact": "Kompaktiškas",
+        "toolsAria": "Įrankiai, kuriuos gauna {{model}}"
       }
     },
     "download": {
@@ -3212,6 +3235,686 @@
           "Nušluostoma tuščia lentyna…",
           "Atsisveikinama su šmėklomis…"
         ]
+      }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Studijos įrankiai",
+        "shapes": "Formos",
+        "modify": "Keisti"
+      },
+      "emptyDesign": "Pridėkite formą iš įrankių juostos arba pradėkite eskizą",
+      "types": {
+        "box": "Dėžė",
+        "cylinder": "Cilindras",
+        "cone": "Kūgis",
+        "sphere": "Sfera",
+        "torus": "Toras",
+        "extrude": "Išstūmimas",
+        "boolean": "Derinys",
+        "sketch": "Eskizas",
+        "mesh": "Tinklelis",
+        "revolve": "Sukimas",
+        "press_pull": "Stūmimas/traukimas",
+        "fillet": "Užapvalinimas",
+        "chamfer": "Nuožula",
+        "hole": "Skylė",
+        "shell": "Apvalkalas",
+        "split": "Padalijimas",
+        "part": "Dalis",
+        "pattern": "Kartotinis",
+        "mirror": "Veidrodis",
+        "hull": "Apvalkalas",
+        "thread": "Sriegis",
+        "loft": "Perėjimas",
+        "sweep": "Tempimas"
+      },
+      "tree": {
+        "heading": "Elementai",
+        "empty": "Kol kas nieko nėra",
+        "expand": "Išskleisti",
+        "collapse": "Suskleisti"
+      },
+      "actions": {
+        "sketch": "Eskizas",
+        "extrude": "Išstumti",
+        "editSketch": "Redaguoti eskizą",
+        "drawOnSketch": "Piešti eskize",
+        "union": "Sujungti",
+        "subtract": "Atimti",
+        "intersect": "Sankirta",
+        "undo": "Atšaukti",
+        "redo": "Grąžinti",
+        "rename": "Pervadinti",
+        "duplicate": "Dubliuoti",
+        "delete": "Ištrinti",
+        "hide": "Slėpti",
+        "show": "Rodyti",
+        "add": {
+          "box": "Pridėti dėžę",
+          "cylinder": "Pridėti cilindrą",
+          "cone": "Pridėti kūgį",
+          "sphere": "Pridėti sferą",
+          "torus": "Pridėti torą"
+        },
+        "revolve": "Sukti",
+        "separate": "Atskirti dalis",
+        "hull": "Apgaubti",
+        "loft": "Perėjimas"
+      },
+      "shapes": {
+        "rectangle": "Stačiakampis",
+        "circle": "Apskritimas",
+        "polygon": "Daugiakampis",
+        "text": "Tekstas",
+        "trace": "Apvestas paveikslėlis",
+        "path": "Kontūras",
+        "line": "Linija",
+        "arc": "Lankas"
+      },
+      "planes": {
+        "XY": "Viršus",
+        "XZ": "Priekis",
+        "YZ": "Dešinė",
+        "FACE": "Ant sienos",
+        "faceHint": "Pasirinkite plokščią sieną"
+      },
+      "sketch": {
+        "on": "Eskizas: {{plane}}",
+        "tool": "Piešimo įrankis",
+        "finish": "Baigti",
+        "hint": {
+          "rectangle": "Vilkite, kad nupieštumėte stačiakampį",
+          "circle": "Vilkite nuo centro, kad nupieštumėte apskritimą",
+          "polygon": "Spustelėkite, kad pridėtumėte kampų; dvigubas spustelėjimas, Enter arba pirmasis kampas jį uždaro",
+          "line": "Spustelėkite, kad pridėtumėte taškus. Kreivei perjunkite į „Lankas“; uždarykite pirmuoju tašku, dukart spustelėdami arba Enter",
+          "arc": "Spustelėkite, kur lankas baigiasi, tada tašką, pro kurį jis eina. Tiesioms kraštinėms perjunkite į „Linija“; uždarykite pirmuoju tašku arba Enter"
+        }
+      },
+      "transform": {
+        "label": "Valdiklis",
+        "translate": "Perkelti",
+        "rotate": "Pasukti",
+        "scale": "Keisti mastelį",
+        "select": "Žymėti"
+      },
+      "view": {
+        "label": "Vaizdai",
+        "iso": "Izometrinis",
+        "top": "Iš viršaus",
+        "front": "Iš priekio",
+        "right": "Iš dešinės",
+        "fit": "Talpinti į vaizdą",
+        "navigation": "Vilkdami dešiniuoju mygtuku sukate vaizdą, viduriniu (arba Shift + dešiniuoju) – stumiate, ratuku – artinate. Vilkdami kairiuoju brėžiate žymėjimo rėmelį: iš kairės į dešinę jis pažymi tai, kas visiškai viduje, iš dešinės į kairę – ir tai, ką paliečia. Shift prideda prie pažymėtų."
+      },
+      "properties": {
+        "heading": "Savybės",
+        "none": "Pasirinkite elementą, kad jį redaguotumėte.",
+        "selectedCount_one": "Pasirinktas {{count}}",
+        "selectedCount_few": "Pasirinkti {{count}}",
+        "selectedCount_other": "Pasirinkta {{count}}",
+        "partOf": "Dalis:",
+        "name": "Pavadinimas",
+        "size": "Dydis",
+        "extrude": "Išstūmimas",
+        "extrudeHelp": "Kiek toli eskizas ištraukiamas, mm. Neigiamas atstumas – į kitą pusę.",
+        "operation": "Veiksmas",
+        "position": "Padėtis",
+        "rotation": "Pasukimas",
+        "scale": "Mastelis",
+        "plane": "Plokštuma",
+        "planeHelp": "Viršus (XY) išstumia aukštyn, priekis (XZ) – į priekį, dešinė (YZ) – į dešinę. Poslinkis perkelia plokštumą ta kryptimi.",
+        "shapes": "Formos",
+        "noShapes": "Kol kas nėra: pieškite eskize.",
+        "removeShape": "Pašalinti formą",
+        "hole": "Skylė",
+        "points_one": "{{count}} taškas",
+        "points_few": "{{count}} taškai",
+        "points_other": "{{count}} taškų",
+        "fields": {
+          "width": "Plotis",
+          "depth": "Gylis",
+          "height": "Aukštis",
+          "radius": "Spindulys",
+          "segments": "Segmentai",
+          "radius_bottom": "Apatinis spindulys",
+          "radius_top": "Viršutinis spindulys",
+          "major_radius": "Žiedo spindulys",
+          "minor_radius": "Vamzdžio spindulys",
+          "distance": "Atstumas",
+          "offset": "Poslinkis",
+          "angle": "Kampas",
+          "diameter": "Skersmuo",
+          "thickness": "Storis",
+          "count": "Kiekis",
+          "spacing": "Tarpas",
+          "grid_count": "Eilės",
+          "grid_spacing": "Tarpas tarp eilių",
+          "pitch": "Žingsnis",
+          "length": "Ilgis",
+          "clearance": "Tarpelis"
+        },
+        "mesh": {
+          "source": "Šaltinis",
+          "triangles_one": "{{count}} trikampis",
+          "triangles_few": "{{count}} trikampiai",
+          "triangles_other": "{{count}} trikampių",
+          "importedSize": "Įkeltas {{size}} mm dydžio",
+          "solid": "Uždaras kūnas",
+          "open": "Ne uždaras kūnas",
+          "openHelp": "Jame yra tarpų, todėl jį galima perkelti, keisti mastelį ir eksportuoti, bet ne sujungti su kitais kūnais.",
+          "parts_one": "{{count}} atskira dalis",
+          "parts_few": "{{count}} atskiros dalys",
+          "parts_other": "{{count}} atskirų dalių"
+        },
+        "cornerRadius": "Kampų spindulys"
+      },
+      "design": {
+        "none": "Nėra projekto",
+        "new": "Naujas projektas",
+        "open": "Atidaryti…",
+        "openTitle": "Atidaryti projektą",
+        "rename": "Pervadinti projektą",
+        "export": "Atsisiųsti STL",
+        "delete": "Ištrinti projektą",
+        "deleteTitle": "Ištrinti „{{name}}“?",
+        "deleteMessage": "Projektas ir jo istorija bus ištrinti visam laikui.",
+        "empty": "Kol kas nėra projektų.",
+        "emptyTitle": "Kol kas nėra projektų",
+        "emptyHint": "Pradėkite naują ir kurkite jį iš formų bei eskizų.",
+        "untitled": "Projektas be pavadinimo",
+        "nothingToExport": "Nėra matomų elementų atsisiųsti",
+        "features_one": "{{count}} elementas",
+        "features_few": "{{count}} elementai",
+        "features_other": "{{count}} elementų",
+        "saveToLibrary": "Išsaugoti į Thingport",
+        "saving": "Išsaugoma į Thingport…",
+        "saved": "„{{name}}“ išsaugotas jūsų bibliotekoje",
+        "openSaved": "Atidaryti"
+      },
+      "prompt": {
+        "title": "Klausti DI",
+        "open": "Atverti „Klausti DI“",
+        "help": "Aprašykite detalę arba atidaryto projekto pakeitimą, ir DI jį sukurs žingsnis po žingsnio tais pačiais įrankiais kaip įrankių juosta. Matysite kiekvieną žingsnį, o „Atšaukti“ juos atšaukia po vieną. Kuriuos DI siūlyti, renkasi administratorius. DI, kuris mato paveikslėlius, priima iki 4: nuotrauką ar brėžinį, pagal kurį kurti, arba logotipą, kurį apvesti.",
+        "model": "DI modelis",
+        "addModel": "Pridėti DI modelį",
+        "noModels": "Studijai dar nesiūlomas joks DI.",
+        "minimize": "Sumažinti",
+        "placeholder": "Aprašykite detalę arba šios detalės pakeitimą",
+        "send": "Siųsti",
+        "chooseModels": "Pasirinkti siūlomus modelius",
+        "off": "Studijos asistentas išjungtas.",
+        "turnOn": "Įjungti",
+        "stop": "Sustabdyti",
+        "working": "Dirba…",
+        "clear": "Išvalyti pokalbį",
+        "clearTitle": "Išvalyti pokalbį?",
+        "clearMessage": "Asistentas pamirš, kas buvo pasakyta apie šį projektą. Projektas liks toks, koks yra.",
+        "steps_one": "{{count}} žingsnis",
+        "steps_few": "{{count}} žingsniai",
+        "steps_other": "{{count}} žingsnių",
+        "stopped": "Sustabdyta.",
+        "limit": "Sustabdyta po {{count}} žingsnių.",
+        "failed": "Nepavyko užbaigti: {{error}}",
+        "showConversation": "Rodyti pokalbį",
+        "hideConversation": "Slėpti pokalbį",
+        "live": "Žingsnis {{number}}: {{step}}",
+        "attach": "Pridėti paveikslėlių",
+        "picture": "Paveikslėlis {{number}}",
+        "removePicture": "Pašalinti paveikslėlį {{number}}",
+        "noVision": "Šis DI nemato paveikslėlių. Pasirinkite tokį, kuris mato, arba juos pašalinkite."
+      },
+      "panels": {
+        "label": "Skydeliai",
+        "features": "Elementai",
+        "properties": "Savybės",
+        "hide": "Slėpti: {{panel}}",
+        "show": "Rodyti: {{panel}}"
+      },
+      "viewCube": {
+        "label": "Vaizdo kubas: spustelėkite sieną, briauną ar kampą, kad žiūrėtumėte iš ten, vilkite jį, kad pasuktumėte vaizdą",
+        "home": "Pradinis vaizdas",
+        "top": "VIRŠUS",
+        "bottom": "APAČIA",
+        "front": "PRIEKIS",
+        "back": "GALAS",
+        "left": "KAIRĖ",
+        "right": "DEŠINĖ"
+      },
+      "open": {
+        "designs": "Projektai",
+        "library": "Biblioteka",
+        "search": "Ieškokite savo modelių",
+        "help": "STL, 3MF, STEP, OBJ ir GLB failai įkeliami kaip tinklelio kūnai, savo tikru dydžiu. Projektas pasilieka savo kopiją, todėl vėlesni modelio pakeitimai jos nepaliečia.",
+        "open": "Atidaryti",
+        "openHelp": "Kaip naują projektą",
+        "insert": "Įterpti",
+        "insertHelp": "Į šį projektą",
+        "noMatches": "Nėra atitinkančių modelių su 3D failu",
+        "emptyLibrary": "Jūsų bibliotekoje dar nėra STL, 3MF, STEP, OBJ ar GLB failų",
+        "loadMore": "Įkelti daugiau"
+      },
+      "working": "Skaičiuojama…",
+      "edges": {
+        "none": "Aštri",
+        "fillet": "Apvali",
+        "chamfer": "Nuožula",
+        "radius": "Spindulys",
+        "distance": "Atstumas"
+      },
+      "ops": {
+        "cancel": "Atšaukti",
+        "ok": "Gerai",
+        "pickBody": "Spustelėkite kūną",
+        "combine": {
+          "label": "Rezultatas",
+          "new": "Naujas",
+          "join": "Sujungti",
+          "cut": "Išpjauti",
+          "intersect": "Sankirta"
+        },
+        "extrude": {
+          "title": "Išstūmimas",
+          "help": "Ištraukia eskizą į kūną. Nuolydis palenkia šonus į tolimąjį galą; galų briaunas galima užapvalinti ar nusklembti. Sujungimas, išpjovimas ar sankirta įdeda jį į kitą kūną.",
+          "taper": "Nuolydis",
+          "startOffset": "Pradžios poslinkis",
+          "symmetric": "Į abi puses",
+          "topEdge": "Tolimasis galas",
+          "bottomEdge": "Artimasis galas",
+          "topRim": "Viršutinis kraštas",
+          "bottomRim": "Apatinis kraštas"
+        },
+        "revolve": {
+          "title": "Sukimas",
+          "help": "Pasuka eskizą apie vieną jo ašį. Visos jo formos turi būti vienoje ašies pusėje.",
+          "axis": "Ašis",
+          "axisU": "Skersai (u)",
+          "axisV": "Aukštyn (v)",
+          "angle": "Kampas"
+        },
+        "press_pull": {
+          "title": "Stūmimas/traukimas",
+          "help": "Pastumia plokščią sieną tiesiai į išorę (prideda) ar į vidų (išpjauna), išlaikydamas jos kontūrą.",
+          "pick": "Spustelėkite plokščią sieną"
+        },
+        "fillet": {
+          "title": "Užapvalinimas",
+          "help": "Užapvalina tiesias briaunas tarp plokščių sienų. Išorinės briaunos nuapvalinamos, vidinės užpildomos. Spustelėkite briaunas, kad jas pridėtumėte ar pašalintumėte.",
+          "pick": "Spustelėkite briaunas užapvalinti"
+        },
+        "chamfer": {
+          "title": "Nuožula",
+          "help": "Nusklembia tiesias briaunas tarp plokščių sienų, nupjaudama vienodą atstumą abiejose. Spustelėkite briaunas, kad jas pridėtumėte ar pašalintumėte.",
+          "pick": "Spustelėkite briaunas nusklembti"
+        },
+        "hole": {
+          "title": "Skylė",
+          "help": "Išgręžia apvalią skylę ten, kur spustelite, į paviršių. Įleidimas ir paplatinimas palieka vietos varžto galvutei.",
+          "pick": "Spustelėkite, kur gręžti",
+          "diameter": "Skersmuo",
+          "depth": "Gylis",
+          "through": "Kiaurai",
+          "style": "Tipas",
+          "simple": "Paprasta",
+          "counterbore": "Įleidimas",
+          "countersink": "Paplatinimas",
+          "angle": "Kampas",
+          "boreDiameter": "Įleidimo skersmuo",
+          "boreDepth": "Įleidimo gylis",
+          "sinkDiameter": "Paplatinimo skersmuo",
+          "threaded": "Su sriegiu",
+          "threadedAs": "Su sriegiu {{size}}"
+        },
+        "shell": {
+          "title": "Apvalkalas",
+          "help": "Išskaptuoja kūną, palikdamas tokio storio sieneles. Spustelėkite plokščias sienas, kad jos liktų atviros, kaip dėžutės viršus.",
+          "thickness": "Sienelių storis",
+          "pick": "Spustelėkite sienas, kurias palikti atviras",
+          "open_one": "{{count}} siena atvira",
+          "open_few": "{{count}} sienos atviros",
+          "open_other": "{{count}} sienų atvira"
+        },
+        "split": {
+          "title": "Padalijimas",
+          "help": "Padalija kūną į dvi dalis: plokštuma, plokščios sienos plokštuma ar kitu kūnu. Abi dalys lieka redaguojamos.",
+          "by": "Dalyti pagal",
+          "plane": "Plokštumą",
+          "face": "Sieną",
+          "body": "Kūną",
+          "pickFace": "Spustelėkite plokščią sieną",
+          "facePicked": "Siena pasirinkta",
+          "pickTool": "Spustelėkite kūną, pagal kurį dalyti",
+          "keep": "Dalis",
+          "front": "Priekinė",
+          "back": "Galinė",
+          "inside": "Vidinė",
+          "outside": "Išorinė"
+        },
+        "scale": {
+          "title": "Mastelis",
+          "help": "Keičia kūno mastelį apie jo paties pradžios tašką.",
+          "factor": "Koeficientas"
+        },
+        "sketch_face": {
+          "title": "Eskizas ant sienos",
+          "help": "Pradeda eskizą ant spustelėtos plokščios sienos.",
+          "pick": "Spustelėkite plokščią sieną eskizui"
+        },
+        "edges_one": "{{count}} briauna",
+        "edges_few": "{{count}} briaunos",
+        "edges_other": "{{count}} briaunų",
+        "separate": {
+          "title": "Atskirti dalis",
+          "help": "Kiekvieną laisvą kūno dalį, kiekvieną gabalą, kuris neliečia kitų, paverčia atskiru kūnu. Ertmė dalies viduje lieka su ja; persidengiančios, bet nesujungtos dalys lieka atskiros, čia kiekviena savo spalva. Ištrynus visas dalis, kūnas grąžinamas.",
+          "count_one": "{{count}} dalis",
+          "count_few": "{{count}} dalys",
+          "count_other": "{{count}} dalių",
+          "open_one": "{{count}} turi tarpų: ją galima perkelti ir eksportuoti, bet ne sujungti",
+          "open_few": "{{count}} turi tarpų: jas galima perkelti ir eksportuoti, bet ne sujungti",
+          "open_other": "{{count}} turi tarpų: jas galima perkelti ir eksportuoti, bet ne sujungti"
+        },
+        "text": {
+          "title": "Tekstas",
+          "help": "Paverčia žodžius kietu kūnu: iškiliomis raidėmis plokštumoje arba iškiliai ar įgilintai ant plokščio kūno paviršiaus. Raidžių aukštis – didžiosios raidės aukštis; 6 mm ar daugiau gerai atsispausdina. Žodžius, šriftą ir dydį vėliau galima keisti jo eskize.",
+          "on": "Kur",
+          "onPlane": "Plokštumoje",
+          "onFace": "Ant paviršiaus",
+          "style": "Stilius",
+          "raised": "Iškilios",
+          "engraved": "Įgilintos",
+          "height": "Aukštis",
+          "depth": "Gylis",
+          "pick": "Spustelėkite plokščią paviršių, ant kurio rašyti"
+        },
+        "pattern": {
+          "title": "Kartojimas",
+          "help": "Pakartoja kūną eilėje, tinklelyje ar aplink ašį ir sujungia kopijas su juo į vieną kūną. Pakeitus kūną, keičiasi visos kopijos. Norėdami išpjauti daug skylių, pakartokite vienos skylės cilindrą ir atimkite kartotinį.",
+          "style": "Rūšis",
+          "linear": "Eilėje",
+          "circular": "Aplink ašį",
+          "along": "Išilgai",
+          "around": "Aplink",
+          "count": "Kiekis",
+          "spacing": "Tarpas",
+          "grid": "Antra kryptis (tinklelis)",
+          "rows": "Eilės",
+          "rowSpacing": "Tarpas tarp eilių",
+          "angle": "Paskirstyti per",
+          "center": "Centras {{axis}}"
+        },
+        "mirror": {
+          "title": "Veidrodis",
+          "help": "Atspindi kūną per plokštumą – simetriškiems dalykams, kuriamiems po pusę. Palikus originalą, pusė ir jos atspindys tampa vienu kūnu.",
+          "plane": "Per",
+          "keep": "Palikti originalą"
+        },
+        "align": {
+          "title": "Lygiuoti",
+          "help": "Sulygiuoja kūną su kitu kūnu arba su pagrindu: pradžias, vidurius ar galus kartu, arba šalia (prieš ar po) su tarpu. Pagal Z „po“ padeda ant viršaus. Kūnas tik perkeliamas.",
+          "pickBody": "Spustelėkite kūną, kurį perkelti",
+          "pickReference": "Spustelėkite kūną, su kuriuo lygiuoti, arba palikite lygiavimą su pagrindu",
+          "with": "Su {{name}}",
+          "axis": "Pagal {{axis}}",
+          "none": "Ne",
+          "before": "Prieš",
+          "start": "Pradžia",
+          "center": "Centras",
+          "end": "Galas",
+          "after": "Po",
+          "z_none": "Ne",
+          "z_before": "Po apačia",
+          "z_start": "Apačia",
+          "z_center": "Vidurys",
+          "z_end": "Viršus",
+          "z_after": "Ant viršaus",
+          "gap": "Tarpas"
+        },
+        "lay_flat": {
+          "title": "Paguldyti",
+          "help": "Pasuka kūną taip, kad spustelėtas paviršius gulėtų ant pagrindo, kaip dalis pasukama spausdinimui, ir padeda jį ant pagrindo.",
+          "pick": "Spustelėkite paviršių, ant kurio paguldyti"
+        },
+        "sweep": {
+          "title": "Tempimas",
+          "help": "Tempia eskizo kontūrą taškų keliu ir sukuria kūną, pro kurį jis praeina: vamzdį, rankeną, bėgelį. Eskizo pradžios taškas juda keliu, todėl kontūrą pieškite aplink jį; pirmajame taške kontūras statmenas keliui. „Glotnus“ nubrėžia kreivę per taškus, „Uždaras“ sujungia kelią į žiedą.",
+          "path": "Kelio taškai (mm)",
+          "addPoint": "Pridėti tašką",
+          "removePoint": "Pašalinti {{number}} tašką",
+          "smooth": "Glotnus",
+          "closed": "Uždaras"
+        }
+      },
+      "imported": {
+        "parts_one": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskiros dalies",
+        "parts_few": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
+        "parts_other": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
+        "separate": "Atskirti"
+      },
+      "text": {
+        "words": "Tekstas",
+        "font": "Šriftas",
+        "size": "Raidžių aukštis",
+        "spacing": "Tarpai tarp raidžių",
+        "align": "Lygiuoti",
+        "aligns": {
+          "left": "Kairėje",
+          "center": "Centre",
+          "right": "Dešinėje"
+        },
+        "placeholder": "Tekstas",
+        "newLine": "Shift+Enter pradeda naują eilutę",
+        "add": "Pridėti tekstą"
+      },
+      "trace": {
+        "title": "Apvesti paveikslėlį",
+        "help": "Paverčia paveikslėlio figūras kontūru, iš kurio daromas kietas kūnas: logotipą, siluetą, užrašą, piešinį. Apvedamos tamsios figūros šviesiame fone (Invertuoti – šviesios tamsiame; permatoma laikoma šviesia), o skylės lieka skylėmis. Geriausiai apvedamas švarus, kontrastingas paveikslėlis.",
+        "picture": "Paveikslėlis",
+        "drop": "Numeskite paveikslėlį čia arba įklijuokite",
+        "choose": "Pasirinkti paveikslėlį",
+        "another": "Kitas paveikslėlis",
+        "resultEmpty": "Čia matysite apvestą kontūrą",
+        "threshold": "Slenkstis",
+        "auto": "Rasti",
+        "invert": "Invertuoti",
+        "detail": "Detalumas",
+        "details": {
+          "low": "Mažas",
+          "medium": "Vidutinis",
+          "high": "Didelis"
+        },
+        "found_one": "{{count}} figūra",
+        "found_few": "{{count}} figūros",
+        "found_other": "{{count}} figūrų",
+        "holes_one": "{{count}} skylė",
+        "holes_few": "{{count}} skylės",
+        "holes_other": "{{count}} skylių",
+        "make": "Sukurti",
+        "solid": "Kūną",
+        "sketch": "Tik eskizą",
+        "ok": "Apvesti"
+      },
+      "edit": {
+        "start": "Redaguoti dizainą",
+        "done": "Baigti redaguoti"
+      },
+      "emptyView": "Paprašykite DI apačioje ką nors sukurti arba spustelėkite Redaguoti ir kurkite patys",
+      "thread": {
+        "kind": "Tipas",
+        "external": "Išorinis",
+        "internal": "Vidinis",
+        "hand": "Kryptis",
+        "hands": {
+          "right": "Dešininis",
+          "left": "Kairinis"
+        },
+        "chamfer": "Nuožulnūs galai"
+      },
+      "path": {
+        "title": "Pridėti kontūrą",
+        "help": "SVG kontūro duomenys eskizo milimetrais, x į dešinę ir y aukštyn: M, L, H, V, C, S, Q, T, A ir Z, kiekvienas pokontūris yra vienas uždaras kontūras. Įklijuokite iš piešimo programos arba parašykite patys.",
+        "data": "Kontūro duomenys",
+        "fill": "Užpildymo taisyklė",
+        "fills": {
+          "evenodd": "Lyginis-nelyginis",
+          "nonzero": "Nenulinis"
+        },
+        "nothing": "Kol kas nėra ko piešti",
+        "add": "Pridėti"
+      },
+      "parameters": {
+        "title": "Parametrai",
+        "help": "Pavadinti skaičiai, pagal kuriuos gali keistis dizaino matmenys. Bet kuriame matmens laukelyje įrašykite = ir formulę, pvz., =wall * 2 + 10. Pakeitus parametrą čia, perskaičiuojamos visos jį naudojančios formulės.",
+        "follows": "Pagal formulę = {{expression}}",
+        "name": "Pavadinimas",
+        "value": "Reikšmė",
+        "add": "Pridėti parametrą",
+        "delete": "Ištrinti {{name}}",
+        "inUse": "Naudojamas: pirmiausia pakeiskite laukelius, kurie nuo jo priklauso",
+        "none": "Parametrų dar nėra.",
+        "taken": "Toks pavadinimas jau yra",
+        "badName": "Raidės, skaitmenys ir _, nepradedant skaitmeniu",
+        "unused": "Nenaudojamas",
+        "uses_one": "Naudoja {{count}} laukelis",
+        "uses_few": "Naudoja {{count}} laukeliai",
+        "uses_other": "Naudoja {{count}} laukelių",
+        "noUnit": "Nėra",
+        "unit": "Vienetas",
+        "unitOf": "{{name}} vienetas"
+      },
+      "check": {
+        "title": "Patikrinti spausdinimui",
+        "help": "Patikrina kiekvieną matomą kūną ten, kur jis padėtas: ar jis ant pagrindo ir telpa į jį, ar vientisas, ar nesikerta su kitu, ar nėra iškyšų, kurioms reikia atramų, ir per plonų sienelių. Tą patį patikrinimą asistentas atlieka su savo darbu.",
+        "bed_x": "Pagrindas X",
+        "bed_y": "Pagrindas Y",
+        "bed_z": "Pagrindas Z",
+        "overhangLimit": "Iškyša",
+        "minWall": "Min. sienelė",
+        "ready": "Paruošta spausdinti",
+        "nothing": "Nėra matomų kūnų, kuriuos būtų galima patikrinti.",
+        "empty": "Tuščias",
+        "tooBig": "Per didelis pagrindui",
+        "offBed": "Už pagrindo ribų",
+        "floating": "Kybo {{value}} aukščiau",
+        "sunk": "Įsmigęs {{value}}",
+        "pieces_one": "{{count}} atskira dalis",
+        "pieces_few": "{{count}} atskiros dalys",
+        "pieces_other": "{{count}} atskirų dalių",
+        "overhang": "{{value}} iškyšų",
+        "thin": "Sienelės iki {{value}}",
+        "overlaps": "Kertasi su {{name}}",
+        "open": "Ne uždaras kūnas",
+        "toBed": "Ant pagrindo",
+        "measure": "Matuoti",
+        "measureNeedsTwo": "Pridėkite du kūnus, kad galėtumėte išmatuoti atstumą tarp jų.",
+        "first": "Nuo",
+        "second": "Iki",
+        "gap": "Tarpas {{value}}",
+        "touching": "Liečiasi",
+        "overlap": "Persidengia {{value}}",
+        "far": "Daugiau nei 1 m atstumu",
+        "toBedOf": "Padėti {{name}} ant pagrindo"
+      },
+      "status": {
+        "label": "Dizaino matmenys",
+        "design": "Dizainas",
+        "selection": "Pasirinkta",
+        "bodiesLabel": "Kūnai",
+        "size": "Dydis",
+        "volume": "Tūris",
+        "openMeshes": "Atviri tinkleliai neturi tūrio, todėl neįskaičiuojami",
+        "units": "Vienetai"
+      },
+      "measure": {
+        "title": "Matuoti",
+        "help": "Pasirinkite taškus, briaunas, paviršius arba kūnus. Vienas pasirinkimas parodo jo paties dydį: taško padėtį, briaunos ilgį, paviršiaus plotą, kūno dydį ir tūrį. Du parodo trumpiausią atstumą tarp jų, kiek tai sudaro pagal X, Y ir Z, ir kampą tarp jų. Reikšmės rodomos būsenos juostos vienetais, o matavimas dizaino nekeičia.",
+        "filter": "Ką pasirinkti",
+        "clear": "Išvalyti",
+        "done": "Baigti",
+        "again": "Spustelėkite dar kartą, kad pradėtumėte iš naujo",
+        "kinds": {
+          "point": "Taškas",
+          "edge": "Briauna",
+          "face": "Paviršius",
+          "body": "Kūnas"
+        },
+        "pickFirst": {
+          "point": "Spustelėkite tašką, kurį norite matuoti",
+          "edge": "Spustelėkite briauną, kurią norite matuoti",
+          "face": "Spustelėkite paviršių, kurį norite matuoti",
+          "body": "Spustelėkite kūną, kurį norite matuoti"
+        },
+        "pickSecond": {
+          "point": "Spustelėkite antrą tašką, kad išmatuotumėte atstumą tarp jų",
+          "edge": "Spustelėkite antrą briauną, kad išmatuotumėte atstumą tarp jų",
+          "face": "Spustelėkite antrą paviršių, kad išmatuotumėte atstumą tarp jų",
+          "body": "Spustelėkite antrą kūną, kad išmatuotumėte atstumą tarp jų"
+        },
+        "readings": {
+          "distance": "Atstumas",
+          "length": "Ilgis",
+          "gap": "Tarpas",
+          "area": "Plotas",
+          "volume": "Tūris",
+          "overlap": "Persidengimas",
+          "angle": "Kampas",
+          "size": "Dydis",
+          "touching": "Liečiasi",
+          "far": "Daugiau nei 1 m atstumu",
+          "openMesh": "Atviras tinklelis neturi tūrio",
+          "measuring": "Matuojama…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Studijos nustatymai",
+        "sections": {
+          "assistant": "Klausti DI",
+          "units": "Vienetai",
+          "grid": "Tinklelis"
+        },
+        "assistantIntro": "Kur „Klausti DI“ rodo pokalbį.",
+        "layout": "Išdėstymas",
+        "layoutHelp": "Juosta: po vaizdu, viena eilutė, kol DI dirba, likusi dalis atsidaro paspaudus. Šoninis skydelis: šalia vaizdo, kad niekas neuždengtų modelio.",
+        "layouts": {
+          "bar": "Juosta",
+          "panel": "Šoninis skydelis"
+        },
+        "failed": "Nepavyko išsaugoti nustatymo.",
+        "unitsIntro": "Kokiais vienetais rodomi ir įvedami dydžiai. Patys dydžiai nesikeičia, keičiasi tik tai, kaip jie užrašomi.",
+        "designUnits": "Šis dizainas",
+        "designUnitsHelp": "Išsaugoma su dizainu ir atšaukiama kaip bet kuris pakeitimas. Dydis be vieneto įvedamas šiais vienetais; su vienetu, pvz., 2 in ar 5 mm, – tuo vienetu.",
+        "newUnits": "Nauji dizainai",
+        "newUnitsHelp": "Kokiais vienetais pradedamas naujas dizainas. Saugoma jūsų paskyroje, todėl galioja visuose įrenginiuose.",
+        "unitNames": {
+          "mm": "Milimetrai",
+          "cm": "Centimetrai",
+          "in": "Coliai"
+        },
+        "grid": {
+          "intro": "Kaip piešiamas tinklelis po dizainu ir prie ko pritraukiami taškai.",
+          "show": "Rodyti tinklelį",
+          "spacing": "Tankis",
+          "spacingHelp": "Prisitaikantis keičiasi su priartinimu, kaip CAD tinklelis: priartinus atsiranda smulkesnės linijos, kas dešimt kartų (coliais – kas keturis), kas dešimta (ketvirta) linija tamsesnė. Pastovus išlaiko jūsų nustatytą žingsnį.",
+          "spacings": {
+            "adaptive": "Prisitaikantis",
+            "fixed": "Pastovus"
+          },
+          "density": "Tankumas",
+          "densities": {
+            "coarse": "Retas",
+            "normal": "Įprastas",
+            "fine": "Tankus"
+          },
+          "major": "Pagrindinės linijos kas",
+          "subdivisions": "Padalyta į",
+          "snap": "Pritraukti prie tinklelio",
+          "snapHelp": "Eskizo taškai ir perkeliami kūnai pritraukiami prie smulkiausių matomų tinklelio linijų. Išjungus jie atsiduria ten, kur rodote."
+        }
       }
     }
   },
@@ -3959,6 +4662,7 @@
         "images": "peržiūros nuotraukos"
       },
       "openInSlicer": "Atverti su {{slicer}}",
+      "openInStudio": "Atidaryti „Thingport Studio“",
       "openNormalizedInSlicer": "Atverti normalizuotą su {{slicer}}",
       "normalizedInfo": "MakerWorld failai yra Bambu Studio projektai, kuriuos {{slicer}} dažnai atveria be spalvų ar spausdinimo nustatymų. Ši parinktis atveria konvertuotą kopiją, kurioje išlieka nudažytos spalvos, gijų spalvos, plokštės ir autoriaus nustatymai (sienelės, sluoksnio aukštis, užpildas, atramos). Atkreipkite dėmesį: kelių dalių objektai gali būti sujungti į vieną, atskirų objektų nustatymai ir spalvų keitimai tarp sluoksnių pašalinami, o spausdintuvo profilį pasirenkate patys. Saugomas failas nekeičiamas.",
       "normalizePreparing": "Ruošiamas normalizuotas failas…",

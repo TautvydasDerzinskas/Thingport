@@ -9,7 +9,7 @@ import { providerNames } from "../providers/names";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";
 import { HttpError, sanitizeFilename } from "../utils/fileUtils";
-import { IMPORT_MAX_BYTES } from "../config";
+import { IMPORT_MAX_BYTES, STUDIO_ENABLED } from "../config";
 import type { McpAccess } from "../services/settingsService";
 import {
   addModelsToCollection,
@@ -57,6 +57,8 @@ import { CATEGORY_KINDS, createCategory, type CategoryKind } from "../services/c
 import { createLog } from "../services/auditLog";
 import { normalizeTags } from "../utils/tagNormalization";
 import BUILTIN_ICONS from "./builtinIcons.json";
+import { WithImages, type McpToolContext, type McpToolDefinition } from "./toolTypes";
+import { STUDIO_MCP_TOOLS } from "./studioTools";
 
 // The tools /api/mcp offers. Each runs as the token's user, through the same services as the REST
 // API, so it sees exactly that user's library. Outputs are trimmed to what an assistant can use:
@@ -65,36 +67,7 @@ import BUILTIN_ICONS from "./builtinIcons.json";
 // A token reaches only the tools its user ticked (see routes/mcp.ts). A tool that writes must say so with
 // `readOnly: false`: it's then off for a new token until its user turns it on, unless it's `defaultOn`.
 
-export type McpToolContext = {
-  userId: string;
-  /** The instance's address as an admin set it, "" when unset: see getPublicUrl. */
-  publicUrl: string;
-};
-
-export type McpToolDefinition = {
-  name: string;
-  title: string;
-  description: string;
-  readOnly: boolean;
-  /** A write tool a new token gets anyway, for writes that stay in the user's own space. */
-  defaultOn?: boolean;
-  /** Changes or removes something already there, rather than only adding: MCP's destructiveHint. */
-  destructive?: boolean;
-  /** Calling it again with the same arguments changes nothing more. */
-  idempotent?: boolean;
-  /** Reaches outside this Thingport, e.g. a provider's site. */
-  openWorld?: boolean;
-  inputSchema: z.ZodRawShape;
-  run: (ctx: McpToolContext, args: Record<string, unknown>) => Promise<unknown>;
-};
-
-/** A result that also shows the assistant pictures, beside its JSON. */
-export class WithImages {
-  constructor(
-    readonly data: unknown,
-    readonly images: { data: string; mimeType: string }[],
-  ) {}
-}
+export { WithImages, type McpToolContext, type McpToolDefinition } from "./toolTypes";
 
 const MAX_PAGE = 50;
 const DEFAULT_PAGE = 20;
@@ -1489,6 +1462,7 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
   saveToolTool,
   listIconsTool,
   uploadIcon,
+  ...STUDIO_MCP_TOOLS,
 ];
 
 export const MCP_TOOL_NAMES = MCP_TOOLS.map((tool) => tool.name);
@@ -1496,7 +1470,9 @@ export const MCP_TOOL_NAMES = MCP_TOOLS.map((tool) => tool.name);
 /** The tools the instance's MCP access lets a token reach, ticked or not. */
 export function mcpToolsFor(access: McpAccess): readonly McpToolDefinition[] {
   if (access === "off") return [];
-  return access === "read" ? MCP_TOOLS.filter((tool) => tool.readOnly) : MCP_TOOLS;
+  // Studio's are left out while it's off, though a token keeps them ticked for when it's on.
+  const offered = STUDIO_ENABLED ? MCP_TOOLS : MCP_TOOLS.filter((tool) => tool.group !== "studio");
+  return access === "read" ? offered.filter((tool) => tool.readOnly) : offered;
 }
 
 /** What the profile page offers to tick under this access. */
@@ -1506,10 +1482,12 @@ export function mcpToolCatalog(access: McpAccess) {
     title: tool.title,
     description: tool.description,
     read_only: tool.readOnly,
+    group: tool.group ?? null,
   }));
 }
 
-/** What a new token gets when its user doesn't choose: every tool that only reads, and the `defaultOn` ones. */
-export const DEFAULT_MCP_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly || tool.defaultOn).map(
-  (tool) => tool.name,
-);
+/** What a new token gets when its user doesn't choose: every tool that only reads, and the `defaultOn` ones. Studio's
+ *  stay off until the user turns on its one permission, which is all of them. */
+export const DEFAULT_MCP_TOOL_NAMES = MCP_TOOLS.filter(
+  (tool) => tool.group !== "studio" && (tool.readOnly || tool.defaultOn),
+).map((tool) => tool.name);

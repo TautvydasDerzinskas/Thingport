@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Role } from "@prisma/client";
-import { STORAGE } from "../config";
+import { STORAGE, STUDIO_ASSETS } from "../config";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { deleteAllPrintsForUser } from "./adminService";
@@ -78,6 +78,8 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
   await removeUserIcons(target.id);
   // Model files live under u-<id>; anything left there (a file the database lost track of) goes too.
   await fs.rm(path.join(STORAGE, `u-${target.id}`), { recursive: true, force: true });
+  // And the meshes their Studio designs imported, which the designs' rows took with them.
+  await fs.rm(path.join(STUDIO_ASSETS, `u-${target.id}`), { recursive: true, force: true });
   await prisma.user.delete({ where: { id: target.id } });
   // Their models went with the account, so an author only they had is now an author of nothing.
   for (const authorId of authorIds) await deleteAuthorIfOrphaned(authorId);

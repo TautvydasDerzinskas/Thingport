@@ -22,6 +22,7 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AutoFixNormalIcon from "@mui/icons-material/AutoFixNormal";
 import LaunchIcon from "@mui/icons-material/Launch";
 import AddLinkIcon from "@mui/icons-material/AddLink";
+import DesignServicesOutlinedIcon from "@mui/icons-material/DesignServicesOutlined";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, PrintApiError, printsApi } from "../../api/prints";
@@ -36,6 +37,8 @@ import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders"
 import LinkSourceDialog from "../../components/linkSource/LinkSourceDialog";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
+import { useOpenInStudio } from "./useOpenInStudio";
+import StudioFileMenu from "./StudioFileMenu";
 import SlicerFileMenu, { type MenuAnchor } from "./SlicerFileMenu";
 import NormalizeInfoIcon from "./NormalizeInfoIcon";
 import { useNormalizedOpen } from "./useNormalizedOpen";
@@ -118,6 +121,7 @@ export default function ModelActionsMenu({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [slicerMenuAnchor, setSlicerMenuAnchor] = useState<MenuAnchor>(null);
   const [normalizedMenuAnchor, setNormalizedMenuAnchor] = useState<MenuAnchor>(null);
+  const [studioMenuAnchor, setStudioMenuAnchor] = useState<MenuAnchor>(null);
   const [deleting, setDeleting] = useState(false);
   const [removingFromCollection, setRemovingFromCollection] = useState(false);
   const [addToCollectionOpen, setAddToCollectionOpen] = useState(false);
@@ -150,6 +154,7 @@ export default function ModelActionsMenu({
   };
 
   const customize = useCustomize(print, closeMenu, onUnauthorized);
+  const studio = useOpenInStudio(print, onUnauthorized);
 
   const openEdit = () => {
     closeMenu();
@@ -426,6 +431,26 @@ export default function ModelActionsMenu({
             <ListItemText>{normalizedMenuLabel(slicerOption.label)}</ListItemText>
           </MenuItem>
         )}
+        {studio.files.length > 0 && (
+          // One file opens straight away; several hand over to a picker, as the slicer's do.
+          <MenuItem
+            disabled={studio.opening}
+            onClick={() => {
+              if (studio.files.length > 1) {
+                setStudioMenuAnchor(menuAnchor);
+                closeMenu();
+                return;
+              }
+              closeMenu();
+              void studio.open(studio.files[0]);
+            }}
+          >
+            <ListItemIcon>
+              {studio.opening ? <CircularProgress size={18} /> : <DesignServicesOutlinedIcon fontSize="small" />}
+            </ListItemIcon>
+            <ListItemText>{t("models:detail.openInStudio")}</ListItemText>
+          </MenuItem>
+        )}
         {canLink && (
           <MenuItem
             onClick={() => {
@@ -482,6 +507,13 @@ export default function ModelActionsMenu({
           onOpen={recordUse}
         />
       )}
+
+      <StudioFileMenu
+        anchorEl={studioMenuAnchor}
+        onClose={() => setStudioMenuAnchor(null)}
+        files={studio.files}
+        onOpen={(plate) => void studio.open(plate)}
+      />
 
       {customize.window}
 

@@ -95,7 +95,8 @@
       "tags": "Tags",
       "downloads": "Downloads",
       "bookmarks": "Bookmarks",
-      "tools": "Tools"
+      "tools": "Tools",
+      "studio": "Studio"
     },
     "uploadBar": {
       "uploading": "Uploading…",
@@ -354,7 +355,13 @@
           "adminOff": "An admin has turned MCP off on this Thingport.",
           "adminReadOnly": "An admin allows only the tools that read.",
           "copyCommand": "Copy command",
-          "reads": "Reads your library"
+          "reads": "Reads your library",
+          "studio": {
+            "heading": "Studio",
+            "title": "Studio designs",
+            "description": "Read, make and change your Studio designs, step by step, as you can on the page.",
+            "confirm": "An assistant connected with this token will be able to create, change and delete your Studio designs without asking you each time. It can't change your models."
+          }
         },
         "rest": {
           "heading": "Permissions",
@@ -1763,7 +1770,9 @@
           "modelsNeedKey": "Enter the API key to list the models it may use.",
           "effortClaude": "Effort",
           "effortClaudeHint": "How much Claude thinks before it answers. Lower is faster and cheaper, and these tasks rarely need more than Low.",
-          "effortClaudeDefault": "Model's default (send nothing)"
+          "effortClaudeDefault": "Model's default (send nothing)",
+          "vision": "Sees pictures",
+          "visionHelp": "Whether this model takes pictures in a prompt. Studio's assistant only offers to attach pictures to an AI that does. A new AI starts as its model's name suggests (Claude, GPT-4o and later, Gemini, Qwen-VL, LLaVA, Gemma 3…): switch it to match the model."
         }
       },
       "aiFeatures": {
@@ -1782,7 +1791,9 @@
         "manage": "Manage",
         "descriptions": "Improved descriptions",
         "descriptionsDescription": "Cleans up model descriptions with AI, on import or in a run: drops self-promotion, translates and tidies them, for you to review or applied at once.",
-        "privacy": "With a third-party API, model titles, descriptions and tags leave this server. Images are sent only when enabled."
+        "privacy": "With a third-party API, model titles, descriptions and tags leave this server. Images are sent only when enabled.",
+        "studio": "Studio assistant",
+        "studioDescription": "Lets people ask an AI in Studio's prompt to build and change their designs, step by step, with the AIs you offer."
       },
       "aiCategorization": {
         "heading": "AI Categorization",
@@ -2416,6 +2427,18 @@
           "off": "Users' own tools are off.",
           "by": "{{name}} · {{email}}"
         }
+      },
+      "studioAssistant": {
+        "offered": "Available models",
+        "offeredHelp": "People pick from these in Studio's prompt. A new AI isn't offered until you switch it on here. With a cloud AI, every prompt is billed to its account. Compact gives a small local model a dozen basic tools (shapes, moving, combining, holes) in a tenth of the prompt; fillets, shells and sketches need All tools. Claude gets them all, finding the ones it needs by search.",
+        "offerAria": "Offer {{model}} in Studio",
+        "default": "Default model",
+        "noneOffered": "Switch on at least one model for people to pick from.",
+        "save": "Save",
+        "failed": "Couldn't load or save the Studio assistant's settings.",
+        "toolsAll": "All tools",
+        "toolsCompact": "Compact",
+        "toolsAria": "Tools {{model}} gets"
       }
     },
     "download": {
@@ -3089,6 +3112,671 @@
           "Dusting the empty shelf…",
           "Saying goodbye to the ghosts…"
         ]
+      }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Studio tools",
+        "shapes": "Shapes",
+        "modify": "Modify"
+      },
+      "emptyDesign": "Add a shape from the toolbar, or start a sketch",
+      "types": {
+        "box": "Box",
+        "cylinder": "Cylinder",
+        "cone": "Cone",
+        "sphere": "Sphere",
+        "torus": "Torus",
+        "extrude": "Extrude",
+        "boolean": "Combine",
+        "sketch": "Sketch",
+        "mesh": "Mesh",
+        "revolve": "Revolve",
+        "press_pull": "Press/pull",
+        "fillet": "Fillet",
+        "chamfer": "Chamfer",
+        "hole": "Hole",
+        "shell": "Shell",
+        "split": "Split",
+        "part": "Part",
+        "pattern": "Pattern",
+        "mirror": "Mirror",
+        "hull": "Hull",
+        "thread": "Thread",
+        "loft": "Loft",
+        "sweep": "Sweep"
+      },
+      "tree": {
+        "heading": "Features",
+        "empty": "Nothing here yet",
+        "expand": "Expand",
+        "collapse": "Collapse"
+      },
+      "actions": {
+        "sketch": "Sketch",
+        "extrude": "Extrude",
+        "editSketch": "Edit sketch",
+        "drawOnSketch": "Draw on sketch",
+        "union": "Union",
+        "subtract": "Subtract",
+        "intersect": "Intersect",
+        "undo": "Undo",
+        "redo": "Redo",
+        "rename": "Rename",
+        "duplicate": "Duplicate",
+        "delete": "Delete",
+        "hide": "Hide",
+        "show": "Show",
+        "add": {
+          "box": "Add box",
+          "cylinder": "Add cylinder",
+          "cone": "Add cone",
+          "sphere": "Add sphere",
+          "torus": "Add torus"
+        },
+        "revolve": "Revolve",
+        "separate": "Separate parts",
+        "hull": "Hull",
+        "loft": "Loft"
+      },
+      "shapes": {
+        "rectangle": "Rectangle",
+        "circle": "Circle",
+        "polygon": "Polygon",
+        "text": "Text",
+        "trace": "Traced picture",
+        "path": "Path",
+        "line": "Line",
+        "arc": "Arc"
+      },
+      "planes": {
+        "XY": "Top",
+        "XZ": "Front",
+        "YZ": "Right",
+        "FACE": "On a face",
+        "faceHint": "Pick a flat face"
+      },
+      "sketch": {
+        "on": "Sketch on {{plane}}",
+        "tool": "Drawing tool",
+        "finish": "Finish",
+        "hint": {
+          "rectangle": "Drag to draw a rectangle",
+          "circle": "Drag from the centre to draw a circle",
+          "polygon": "Click to add corners; double-click, Enter or the first corner closes it",
+          "line": "Click to add points. Switch to Arc for a curve; close on the first point, by double-click or Enter",
+          "arc": "Click where the arc ends, then a point it passes through. Switch to Line for straight edges; close on the first point or Enter"
+        }
+      },
+      "transform": {
+        "label": "Gizmo",
+        "translate": "Move",
+        "rotate": "Rotate",
+        "scale": "Scale",
+        "select": "Select"
+      },
+      "view": {
+        "label": "Views",
+        "iso": "Isometric",
+        "top": "Top",
+        "front": "Front",
+        "right": "Right",
+        "fit": "Fit to view",
+        "navigation": "Right-drag turns the view, middle-drag (or Shift + right-drag) moves it, the wheel zooms. Left-drag draws a box to select: from left to right it takes what's wholly inside, from right to left also what it touches. Shift adds to the selection."
+      },
+      "properties": {
+        "heading": "Properties",
+        "none": "Select a feature to edit it.",
+        "selectedCount_one": "{{count}} selected",
+        "selectedCount_other": "{{count}} selected",
+        "partOf": "Part of",
+        "name": "Name",
+        "size": "Size",
+        "extrude": "Extrude",
+        "extrudeHelp": "How far the sketch is pulled, in mm. A negative distance goes the other way.",
+        "operation": "Operation",
+        "position": "Position",
+        "rotation": "Rotation",
+        "scale": "Scale",
+        "plane": "Plane",
+        "planeHelp": "Top (XY) extrudes up, Front (XZ) towards the front, Right (YZ) to the right. Offset moves the plane that way.",
+        "shapes": "Shapes",
+        "noShapes": "None yet: draw on the sketch.",
+        "removeShape": "Remove shape",
+        "hole": "Hole",
+        "points_one": "{{count}} point",
+        "points_other": "{{count}} points",
+        "fields": {
+          "width": "Width",
+          "depth": "Depth",
+          "height": "Height",
+          "radius": "Radius",
+          "segments": "Segments",
+          "radius_bottom": "Bottom radius",
+          "radius_top": "Top radius",
+          "major_radius": "Ring radius",
+          "minor_radius": "Tube radius",
+          "distance": "Distance",
+          "offset": "Offset",
+          "angle": "Angle",
+          "diameter": "Diameter",
+          "thickness": "Thickness",
+          "count": "Count",
+          "spacing": "Spacing",
+          "grid_count": "Rows",
+          "grid_spacing": "Row spacing",
+          "pitch": "Pitch",
+          "length": "Length",
+          "clearance": "Clearance"
+        },
+        "mesh": {
+          "source": "Source",
+          "triangles_one": "{{count}} triangle",
+          "triangles_other": "{{count}} triangles",
+          "importedSize": "Imported at {{size}} mm",
+          "solid": "Closed solid",
+          "open": "Not a closed solid",
+          "openHelp": "It has gaps, so it can be moved, scaled and exported, but not combined with other bodies.",
+          "parts_one": "{{count}} part",
+          "parts_other": "{{count}} separate parts"
+        },
+        "cornerRadius": "Corner radius"
+      },
+      "design": {
+        "none": "No design",
+        "new": "New design",
+        "open": "Open…",
+        "openTitle": "Open a design",
+        "rename": "Rename design",
+        "export": "Download STL",
+        "delete": "Delete design",
+        "deleteTitle": "Delete “{{name}}”?",
+        "deleteMessage": "The design and its history are deleted for good.",
+        "empty": "No designs yet.",
+        "emptyTitle": "No designs yet",
+        "emptyHint": "Start one, then build it from shapes and sketches.",
+        "untitled": "Untitled design",
+        "nothingToExport": "Nothing visible to download",
+        "features_one": "{{count}} feature",
+        "features_other": "{{count}} features",
+        "saveToLibrary": "Save to Thingport",
+        "saving": "Saving to Thingport…",
+        "saved": "Saved “{{name}}” to your library",
+        "openSaved": "Open"
+      },
+      "prompt": {
+        "title": "Ask AI",
+        "open": "Open Ask AI",
+        "help": "Describe a part, or a change to the open design, and the AI builds it step by step with the same tools as the toolbar. You see each step land, and Undo takes them back one at a time. An admin chooses which AIs are offered. An AI that sees pictures takes up to 4: a photo or drawing to build from, or a logo to trace.",
+        "model": "AI model",
+        "addModel": "Add AI model",
+        "noModels": "No AI is offered for Studio yet.",
+        "minimize": "Minimise",
+        "placeholder": "Describe a part, or a change to this one",
+        "send": "Send",
+        "chooseModels": "Choose available models",
+        "off": "The Studio assistant is off.",
+        "turnOn": "Turn it on",
+        "stop": "Stop",
+        "working": "Working…",
+        "clear": "Clear conversation",
+        "clearTitle": "Clear the conversation?",
+        "clearMessage": "The assistant forgets what was said about this design. The design stays as it is.",
+        "steps_one": "{{count}} step",
+        "steps_other": "{{count}} steps",
+        "stopped": "Stopped.",
+        "limit": "Stopped after {{count}} steps.",
+        "failed": "Couldn't finish: {{error}}",
+        "showConversation": "Show the conversation",
+        "hideConversation": "Hide the conversation",
+        "live": "Step {{number}}: {{step}}",
+        "attach": "Attach pictures",
+        "picture": "Picture {{number}}",
+        "removePicture": "Remove picture {{number}}",
+        "noVision": "This AI doesn't see pictures. Pick one that does, or remove them."
+      },
+      "panels": {
+        "label": "Panels",
+        "features": "Features",
+        "properties": "Properties",
+        "hide": "Hide {{panel}}",
+        "show": "Show {{panel}}"
+      },
+      "viewCube": {
+        "label": "View cube: click a face, edge or corner to look from there, drag it to turn the view",
+        "home": "Home view",
+        "top": "TOP",
+        "bottom": "BOTTOM",
+        "front": "FRONT",
+        "back": "BACK",
+        "left": "LEFT",
+        "right": "RIGHT"
+      },
+      "open": {
+        "designs": "Designs",
+        "library": "Library",
+        "search": "Search your models",
+        "help": "STL, 3MF, STEP, OBJ and GLB files come in as mesh bodies, at their own size. The design keeps its own copy, so later changes to the model don't reach it.",
+        "open": "Open",
+        "openHelp": "As a new design",
+        "insert": "Insert",
+        "insertHelp": "Into this design",
+        "noMatches": "No models with a 3D file match",
+        "emptyLibrary": "Your library has no STL, 3MF, STEP, OBJ or GLB files yet",
+        "loadMore": "Load more"
+      },
+      "working": "Working…",
+      "edges": {
+        "none": "Sharp",
+        "fillet": "Round",
+        "chamfer": "Bevel",
+        "radius": "Radius",
+        "distance": "Distance"
+      },
+      "ops": {
+        "cancel": "Cancel",
+        "ok": "OK",
+        "pickBody": "Click a body",
+        "combine": {
+          "label": "Result",
+          "new": "New",
+          "join": "Join",
+          "cut": "Cut",
+          "intersect": "Intersect"
+        },
+        "extrude": {
+          "title": "Extrude",
+          "help": "Pulls the sketch into a solid. Taper leans the sides in towards the far end (a draft); the ends' edges can be rounded or bevelled. Join, cut or intersect works it into another body.",
+          "taper": "Taper",
+          "startOffset": "Start offset",
+          "symmetric": "Both ways",
+          "topEdge": "Far end",
+          "bottomEdge": "Near end",
+          "topRim": "Top rim",
+          "bottomRim": "Bottom rim"
+        },
+        "revolve": {
+          "title": "Revolve",
+          "help": "Turns the sketch about one of its axes. Its shapes must all be on one side of the axis.",
+          "axis": "Axis",
+          "axisU": "Across (u)",
+          "axisV": "Up (v)",
+          "angle": "Angle"
+        },
+        "press_pull": {
+          "title": "Press/pull",
+          "help": "Moves a flat face straight out (adds) or in (cuts), keeping its outline.",
+          "pick": "Click a flat face"
+        },
+        "fillet": {
+          "title": "Fillet",
+          "help": "Rounds straight edges between flat faces. Outside edges are rounded off, inside edges filled. Click edges to add or remove them.",
+          "pick": "Click edges to round"
+        },
+        "chamfer": {
+          "title": "Chamfer",
+          "help": "Bevels straight edges between flat faces, cutting back the same distance on both. Click edges to add or remove them.",
+          "pick": "Click edges to bevel"
+        },
+        "hole": {
+          "title": "Hole",
+          "help": "Drills a round hole where you click, into the surface. Counterbore and countersink make room for a screw head.",
+          "pick": "Click where to drill",
+          "diameter": "Diameter",
+          "depth": "Depth",
+          "through": "Through all",
+          "style": "Type",
+          "simple": "Simple",
+          "counterbore": "Counterbore",
+          "countersink": "Countersink",
+          "angle": "Angle",
+          "boreDiameter": "Bore diameter",
+          "boreDepth": "Bore depth",
+          "sinkDiameter": "Sink diameter",
+          "threaded": "Tapped",
+          "threadedAs": "Tapped {{size}}"
+        },
+        "shell": {
+          "title": "Shell",
+          "help": "Hollows the body, with walls of this thickness. Click flat faces to leave them open, like a tray's top.",
+          "thickness": "Wall thickness",
+          "pick": "Click faces to leave open",
+          "open_one": "{{count}} face open",
+          "open_other": "{{count}} faces open"
+        },
+        "split": {
+          "title": "Split",
+          "help": "Splits the body in two: by a plane, a flat face's plane, or another body. Both parts stay editable.",
+          "by": "Split by",
+          "plane": "Plane",
+          "face": "Face",
+          "body": "Body",
+          "pickFace": "Click a flat face",
+          "facePicked": "Face picked",
+          "pickTool": "Click the body to split by",
+          "keep": "Part",
+          "front": "Front",
+          "back": "Back",
+          "inside": "Inside",
+          "outside": "Outside"
+        },
+        "scale": {
+          "title": "Scale",
+          "help": "Scales the body about its own origin.",
+          "factor": "Factor"
+        },
+        "sketch_face": {
+          "title": "Sketch on a face",
+          "help": "Starts a sketch on the flat face you click.",
+          "pick": "Click a flat face to sketch on"
+        },
+        "edges_one": "{{count}} edge",
+        "edges_other": "{{count}} edges",
+        "separate": {
+          "title": "Separate parts",
+          "help": "Makes each loose part of the body, each piece that doesn't touch the rest, a body of its own. A hollow inside a part stays with it; parts that overlap without being joined stay apart, each in its own colour here. Deleting all the parts gives the body back.",
+          "count_one": "{{count}} part",
+          "count_other": "{{count}} parts",
+          "open_one": "{{count}} has gaps: it can be moved and exported, not combined",
+          "open_other": "{{count}} have gaps: they can be moved and exported, not combined"
+        },
+        "text": {
+          "title": "Text",
+          "help": "Writes words as a solid: raised letters on a plane, or embossed or engraved on a body's flat face. Letter height is a capital's height; 6 mm or more prints well. The words, font and size stay editable on its sketch.",
+          "on": "Where",
+          "onPlane": "On a plane",
+          "onFace": "On a face",
+          "style": "Style",
+          "raised": "Raised",
+          "engraved": "Engraved",
+          "height": "Height",
+          "depth": "Depth",
+          "pick": "Click a flat face to write on"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "help": "Repeats a body in a row, a grid or round an axis, and makes the copies one body with it. Change the body and every copy follows. To cut many holes, pattern one hole's cylinder and subtract the pattern.",
+          "style": "Kind",
+          "linear": "In a row",
+          "circular": "Round an axis",
+          "along": "Along",
+          "around": "Around",
+          "count": "Count",
+          "spacing": "Spacing",
+          "grid": "Second direction (a grid)",
+          "rows": "Rows",
+          "rowSpacing": "Row spacing",
+          "angle": "Spread over",
+          "center": "Centre {{axis}}"
+        },
+        "mirror": {
+          "title": "Mirror",
+          "help": "Mirrors a body across a plane, for something symmetric built one half at a time. Keeping the original makes the half and its mirror image one body.",
+          "plane": "Across",
+          "keep": "Keep the original"
+        },
+        "align": {
+          "title": "Align",
+          "help": "Lines a body up with another body, or with the bed: its starts, middles or ends together, or beside it (before or after) with a gap. On Z, after puts it on top. It only moves the body.",
+          "pickBody": "Click the body to move",
+          "pickReference": "Click a body to line it up with, or leave it lined up with the bed",
+          "with": "With {{name}}",
+          "axis": "Along {{axis}}",
+          "none": "Off",
+          "before": "Before",
+          "start": "Start",
+          "center": "Centre",
+          "end": "End",
+          "after": "After",
+          "z_none": "Off",
+          "z_before": "Below",
+          "z_start": "Bottom",
+          "z_center": "Middle",
+          "z_end": "Top",
+          "z_after": "On top",
+          "gap": "Gap"
+        },
+        "lay_flat": {
+          "title": "Lay flat",
+          "help": "Turns a body so the face you click lies on the bed, as you would turn a part for printing, and sets it down on the bed.",
+          "pick": "Click the face to lay it on"
+        },
+        "sweep": {
+          "title": "Sweep",
+          "help": "Moves the sketch's outline along a path of points and makes the solid it passes through: a pipe, a handle, a rail. The sketch's origin rides on the path, so draw the outline around it; it starts square to the path at the first point. Smooth runs a curve through the points, Closed makes a ring.",
+          "path": "Path points (mm)",
+          "addPoint": "Add point",
+          "removePoint": "Remove point {{number}}",
+          "smooth": "Smooth",
+          "closed": "Closed"
+        }
+      },
+      "imported": {
+        "parts_one": "The model came in as one body of {{count}} part",
+        "parts_other": "The model came in as one body of {{count}} separate parts",
+        "separate": "Separate"
+      },
+      "text": {
+        "words": "Text",
+        "font": "Font",
+        "size": "Letter height",
+        "spacing": "Letter spacing",
+        "align": "Line up",
+        "aligns": {
+          "left": "Left",
+          "center": "Centre",
+          "right": "Right"
+        },
+        "placeholder": "Text",
+        "newLine": "Shift+Enter starts a new line",
+        "add": "Add text"
+      },
+      "trace": {
+        "title": "Trace picture",
+        "help": "Turns a picture's shapes into an outline to make solid: a logo, a silhouette, lettering, a drawing. Dark shapes on a light background are traced (Invert for light on dark; see-through counts as light), and holes stay holes. A clean picture with strong contrast traces best.",
+        "picture": "Picture",
+        "drop": "Drop a picture here, or paste one",
+        "choose": "Choose a picture",
+        "another": "Another picture",
+        "resultEmpty": "The traced outline shows here",
+        "threshold": "Threshold",
+        "auto": "Find it",
+        "invert": "Invert",
+        "detail": "Detail",
+        "details": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        },
+        "found_one": "{{count}} shape",
+        "found_other": "{{count}} shapes",
+        "holes_one": "{{count}} hole",
+        "holes_other": "{{count}} holes",
+        "make": "Make",
+        "solid": "Solid",
+        "sketch": "Sketch only",
+        "ok": "Trace"
+      },
+      "edit": {
+        "start": "Edit design",
+        "done": "Done editing"
+      },
+      "emptyView": "Ask AI below to make something, or click Edit to build it yourself",
+      "thread": {
+        "kind": "Type",
+        "external": "External",
+        "internal": "Internal",
+        "hand": "Hand",
+        "hands": {
+          "right": "Right-hand",
+          "left": "Left-hand"
+        },
+        "chamfer": "Chamfered ends"
+      },
+      "path": {
+        "title": "Add path",
+        "help": "SVG path data in the sketch's millimetres, x to the right and y up: M, L, H, V, C, S, Q, T, A and Z, each subpath one closed outline. Paste one from a drawing program or write it by hand.",
+        "data": "Path data",
+        "fill": "Fill rule",
+        "fills": {
+          "evenodd": "Even-odd",
+          "nonzero": "Non-zero"
+        },
+        "nothing": "Nothing to draw yet",
+        "add": "Add"
+      },
+      "parameters": {
+        "title": "Parameters",
+        "help": "Named numbers the design's sizes can follow. In any size field, type = and a formula, such as =wall * 2 + 10. Change a parameter here and every formula that uses it is worked out again.",
+        "follows": "Follows = {{expression}}",
+        "name": "Name",
+        "value": "Value",
+        "add": "Add parameter",
+        "delete": "Delete {{name}}",
+        "inUse": "In use: change the fields that follow it first",
+        "none": "No parameters yet.",
+        "taken": "There's one by that name",
+        "badName": "Letters, digits and _, not starting with a digit",
+        "unused": "Not used",
+        "uses_one": "Used by {{count}} field",
+        "uses_other": "Used by {{count}} fields",
+        "noUnit": "None",
+        "unit": "Unit",
+        "unitOf": "{{name}}'s unit"
+      },
+      "check": {
+        "title": "Check for printing",
+        "help": "Checks each visible body where it's placed: on the bed and within it, in one piece, not overlapping another, with no overhang that needs support and no wall too thin to print. It's the same check the assistant runs on its own work.",
+        "bed_x": "Bed X",
+        "bed_y": "Bed Y",
+        "bed_z": "Bed Z",
+        "overhangLimit": "Overhang",
+        "minWall": "Min wall",
+        "ready": "Ready to print",
+        "nothing": "There are no visible bodies to check.",
+        "empty": "Empty",
+        "tooBig": "Too big for the bed",
+        "offBed": "Off the bed",
+        "floating": "Floating {{value}} up",
+        "sunk": "Sunk {{value}}",
+        "pieces_one": "{{count}} loose piece",
+        "pieces_other": "{{count}} loose pieces",
+        "overhang": "{{value}} overhang",
+        "thin": "Walls down to {{value}}",
+        "overlaps": "Overlaps {{name}}",
+        "open": "Not a closed solid",
+        "toBed": "Onto bed",
+        "measure": "Measure",
+        "measureNeedsTwo": "Add two bodies to measure between them.",
+        "first": "From",
+        "second": "To",
+        "gap": "Gap {{value}}",
+        "touching": "Touching",
+        "overlap": "Overlap {{value}}",
+        "far": "Over 1 m apart",
+        "toBedOf": "Put {{name}} on the bed"
+      },
+      "status": {
+        "label": "Design measurements",
+        "design": "Design",
+        "selection": "Selection",
+        "bodiesLabel": "Bodies",
+        "size": "Size",
+        "volume": "Volume",
+        "openMeshes": "Open meshes hold no volume, so they're left out",
+        "units": "Units"
+      },
+      "measure": {
+        "title": "Measure",
+        "help": "Pick points, edges, faces or bodies. One pick shows its own size: a point's position, an edge's length, a face's area, a body's size and volume. Two show the shortest distance between them, how far apart that is along X, Y and Z, and the angle between them. Readings are in the status bar's units, and measuring doesn't change the design.",
+        "filter": "What to pick",
+        "clear": "Clear",
+        "done": "Done",
+        "again": "Click again to start over",
+        "kinds": {
+          "point": "Point",
+          "edge": "Edge",
+          "face": "Face",
+          "body": "Body"
+        },
+        "pickFirst": {
+          "point": "Click a point to measure",
+          "edge": "Click an edge to measure",
+          "face": "Click a face to measure",
+          "body": "Click a body to measure"
+        },
+        "pickSecond": {
+          "point": "Click a second point to measure between them",
+          "edge": "Click a second edge to measure between them",
+          "face": "Click a second face to measure between them",
+          "body": "Click a second body to measure between them"
+        },
+        "readings": {
+          "distance": "Distance",
+          "length": "Length",
+          "gap": "Gap",
+          "area": "Area",
+          "volume": "Volume",
+          "overlap": "Overlap",
+          "angle": "Angle",
+          "size": "Size",
+          "touching": "Touching",
+          "far": "Over 1 m apart",
+          "openMesh": "An open mesh holds no volume",
+          "measuring": "Measuring…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Studio settings",
+        "sections": {
+          "assistant": "Ask AI",
+          "units": "Units",
+          "grid": "Grid"
+        },
+        "assistantIntro": "Where Ask AI shows its conversation.",
+        "layout": "Layout",
+        "layoutHelp": "Bar: under the view, one line while the AI works, the rest when you open it. Side panel: beside the view, so nothing covers the model.",
+        "layouts": {
+          "bar": "Bar",
+          "panel": "Side panel"
+        },
+        "failed": "Couldn't save the setting.",
+        "unitsIntro": "What sizes are shown and typed in. Sizes stay exactly as they are; only how they read changes.",
+        "designUnits": "This design",
+        "designUnitsHelp": "Saved with the design and undone like any change. A size typed without a unit is in these; one typed with a unit, such as 2 in or 5 mm, is in that.",
+        "newUnits": "New designs",
+        "newUnitsHelp": "The units a new design starts in. Kept on your account, so every device has them.",
+        "unitNames": {
+          "mm": "Millimetres",
+          "cm": "Centimetres",
+          "in": "Inches"
+        },
+        "grid": {
+          "intro": "How the grid behind a design is drawn, and what a point snaps to.",
+          "show": "Show the grid",
+          "spacing": "Spacing",
+          "spacingHelp": "Adaptive follows the zoom, as a CAD grid does: finer lines fade in as you zoom in, in steps of ten (of four in inches), every tenth (fourth) line darker. Fixed keeps the spacing you set.",
+          "spacings": {
+            "adaptive": "Adaptive",
+            "fixed": "Fixed"
+          },
+          "density": "Density",
+          "densities": {
+            "coarse": "Coarse",
+            "normal": "Normal",
+            "fine": "Fine"
+          },
+          "major": "Major lines every",
+          "subdivisions": "Divided into",
+          "snap": "Snap to grid",
+          "snapHelp": "Sketch points and moved bodies snap to the finest grid lines that show. Off, they go where you point."
+        }
       }
     }
   },
@@ -3833,6 +4521,7 @@
         "images": "preview images"
       },
       "openInSlicer": "Open in {{slicer}}",
+      "openInStudio": "Open in Thingport Studio",
       "openNormalizedInSlicer": "Open normalized in {{slicer}}",
       "normalizedInfo": "MakerWorld files are Bambu Studio projects, which {{slicer}} often opens without their colors or print settings. This opens a converted copy that keeps painted colors, filament colors, plates and the designer's settings (walls, layer height, infill, supports). Heads up: multi-part objects may be merged into one, per-object overrides and layer color changes are dropped, and you pick your own printer profile. The stored file isn't changed.",
       "normalizePreparing": "Preparing normalized file…",

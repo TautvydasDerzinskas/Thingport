@@ -46,6 +46,9 @@ import {
   setAiDescriptionPrefs,
   type AiCategorizationPrefs,
   type AiDescriptionPrefs,
+  getStudioAssistantPrefs,
+  setStudioAssistantPrefs,
+  type StudioAssistantPrefs,
   getWidgetSources,
   getMcpAccess,
   setWidgetSources,
@@ -1076,6 +1079,51 @@ router.patch(
   }),
 );
 
+function studioAssistantPrefsOut(prefs: StudioAssistantPrefs) {
+  return {
+    enabled: prefs.enabled,
+    ai_connection_ids: prefs.aiConnectionIds,
+    default_ai_connection_id: prefs.defaultAiConnectionId,
+    compact_ai_connection_ids: prefs.compactAiConnectionIds,
+  };
+}
+
+router.get(
+  "/settings/studio-assistant",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json(studioAssistantPrefsOut(await getStudioAssistantPrefs()));
+  }),
+);
+
+const studioAssistantPrefsSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    // The AIs people may pick in Studio's prompt; any not offered here are refused, whatever the page sends.
+    ai_connection_ids: z.array(z.string().min(1)).max(100).optional(),
+    default_ai_connection_id: z.string().nullable().optional(),
+    // Of those, the ones given the compact tool set, for small local models.
+    compact_ai_connection_ids: z.array(z.string().min(1)).max(100).optional(),
+  })
+  .strict();
+router.patch(
+  "/settings/studio-assistant",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(studioAssistantPrefsSchema, req.body);
+    for (const id of body.ai_connection_ids ?? []) await getAiConnection(id);
+    const prefs = await setStudioAssistantPrefs({
+      ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
+      ...(body.ai_connection_ids !== undefined ? { aiConnectionIds: body.ai_connection_ids } : {}),
+      ...(body.default_ai_connection_id !== undefined ? { defaultAiConnectionId: body.default_ai_connection_id } : {}),
+      ...(body.compact_ai_connection_ids !== undefined
+        ? { compactAiConnectionIds: body.compact_ai_connection_ids }
+        : {}),
+    });
+    res.json(studioAssistantPrefsOut(prefs));
+  }),
+);
+
 function aiConnectionOut(connection: AiConnection) {
   return {
     id: connection.id,
@@ -1086,6 +1134,7 @@ function aiConnectionOut(connection: AiConnection) {
     timeout_ms: connection.timeoutMs,
     concurrency: connection.concurrency,
     reasoning_effort: connection.reasoningEffort,
+    vision: connection.vision,
     is_default: connection.isDefault,
   };
 }
@@ -1109,6 +1158,8 @@ const aiConnectionFields = {
   concurrency: z.number().int().min(1).max(4),
   // Null sends no reasoning_effort at all.
   reasoning_effort: z.enum(["none", "low", "medium", "high"]).nullable(),
+  // It takes pictures in a prompt; a new one left without it is guessed from its model.
+  vision: z.boolean(),
 };
 
 /** A saved AI (or the defaults, for a new one) with the form's values on top. */
@@ -1153,6 +1204,7 @@ const aiConnectionCreateSchema = z
     timeout_ms: aiConnectionFields.timeout_ms.optional(),
     concurrency: aiConnectionFields.concurrency.optional(),
     reasoning_effort: aiConnectionFields.reasoning_effort.optional(),
+    vision: aiConnectionFields.vision.optional(),
   })
   .strict();
 router.post(
@@ -1170,6 +1222,7 @@ router.post(
       timeoutMs: provider.timeoutMs,
       reasoningEffort: provider.reasoningEffort,
       concurrency: body.concurrency ?? DEFAULT_AI_PROVIDER.concurrency,
+      vision: body.vision,
     });
     res.status(201).json(aiConnectionOut(connection));
   }),
@@ -1182,7 +1235,7 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(aiConnectionUpdateSchema, req.body);
     const provider = await providerFrom(req.params.id, body);
-    // Concurrency and reasoning effort don't change whether it answers.
+    // Concurrency, reasoning effort and pictures don't change whether it answers.
     if (
       body.kind !== undefined ||
       body.base_url !== undefined ||
@@ -1200,6 +1253,7 @@ router.patch(
       ...(body.timeout_ms !== undefined ? { timeoutMs: body.timeout_ms } : {}),
       ...(body.concurrency !== undefined ? { concurrency: body.concurrency } : {}),
       ...(body.reasoning_effort !== undefined ? { reasoningEffort: body.reasoning_effort } : {}),
+      ...(body.vision !== undefined ? { vision: body.vision } : {}),
     });
     res.json(aiConnectionOut(connection));
   }),
@@ -1210,6 +1264,12 @@ router.delete(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await deleteAiConnection(req.params.id);
+    // Studio's assistant stops offering it; its default, if it was, moves to the next one offered.
+    const assistant = await getStudioAssistantPrefs();
+    if (assistant.aiConnectionIds.includes(req.params.id))
+      await setStudioAssistantPrefs({
+        aiConnectionIds: assistant.aiConnectionIds.filter((id) => id !== req.params.id),
+      });
     // With no model left every feature switches off, so adding one later doesn't quietly start them again.
     if (!(await listAiConnections()).length) {
       await setAiCategorizationPrefs({ enabled: false, aiConnectionId: null });

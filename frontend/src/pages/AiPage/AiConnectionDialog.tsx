@@ -8,15 +8,18 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import { UnauthorizedError } from "../../api/client";
 import {
   AI_KINDS,
   aiConnectionsApi,
   CLAUDE_BASE_URL,
+  guessVision,
   REASONING_EFFORTS,
   type AiConnection,
   type AiConnectionInput,
@@ -25,6 +28,7 @@ import {
 } from "../../api/aiConnections";
 import { useConfirm } from "../../components/ConfirmProvider";
 import Segmented from "../../components/controls/Segmented";
+import HelpTip from "../../components/HelpTip";
 import { AiLogo } from "./aiLogos";
 
 type Props = {
@@ -36,7 +40,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-type Draft = Omit<AiConnectionInput, "api_key"> & { api_key: string };
+type Draft = Omit<AiConnectionInput, "api_key" | "vision"> & { api_key: string; vision: boolean };
 
 const draftOf = (connection: AiConnection | null): Draft => ({
   kind: connection?.kind ?? "openai",
@@ -46,6 +50,7 @@ const draftOf = (connection: AiConnection | null): Draft => ({
   timeout_ms: connection?.timeout_ms ?? 60000,
   concurrency: connection?.concurrency ?? 1,
   reasoning_effort: connection?.reasoning_effort ?? null,
+  vision: connection?.vision ?? false,
 });
 
 /** Adds or edits one AI. Saving tests it first, as the backend only keeps an AI that answers. */
@@ -54,6 +59,9 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
   const confirm = useConfirm();
   const [draft, setDraft] = useState<Draft>(() => draftOf(connection));
   const [clearKey, setClearKey] = useState(false);
+  // A new AI's pictures switch follows its model's name until the admin sets it.
+  const [visionSet, setVisionSet] = useState(Boolean(connection));
+  const vision = visionSet ? draft.vision : guessVision(draft.kind, draft.model.trim());
   const [busy, setBusy] = useState<"save" | "test" | "delete" | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -135,6 +143,7 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
       timeout_ms: Number(draft.timeout_ms),
       concurrency: Number(draft.concurrency),
       reasoning_effort: draft.reasoning_effort,
+      vision,
     };
     try {
       if (connection) {
@@ -355,6 +364,23 @@ export default function AiConnectionDialog({ connection, onClose, onChanged, onU
               </MenuItem>
             ))}
           </TextField>
+          <Stack direction="row" alignItems="center">
+            <FormControlLabel
+              sx={{ ml: 0, mr: 0.5 }}
+              control={
+                <Switch
+                  checked={vision}
+                  disabled={disabled}
+                  onChange={(event) => {
+                    setVisionSet(true);
+                    update("vision", event.target.checked);
+                  }}
+                />
+              }
+              label={t("adminSettings.ai.connection.vision")}
+            />
+            <HelpTip text={t("adminSettings.ai.connection.visionHelp")} />
+          </Stack>
           {status && <Alert severity="success">{status}</Alert>}
           {error && <Alert severity="error">{error}</Alert>}
         </Stack>

@@ -23,6 +23,8 @@ export type AiConnection = {
   timeout_ms: number;
   concurrency: number;
   reasoning_effort: ReasoningEffort | null;
+  /** It takes pictures in a prompt, as an admin says. */
+  vision: boolean;
   is_default: boolean;
 };
 
@@ -35,7 +37,19 @@ export type AiConnectionInput = {
   timeout_ms: number;
   concurrency: number;
   reasoning_effort: ReasoningEffort | null;
+  /** Left out of a new one, it's guessed from the model. */
+  vision?: boolean;
 };
+
+// Models whose names say they take pictures, as the backend guesses for a new AI (guessVision in
+// aiConnectionService.ts): Claude, OpenAI's multimodal ones, Gemini, and the open vision models.
+const VISION_MODELS =
+  /(gpt-4o|gpt-4\.1|gpt-4-turbo|gpt-5|^o[134](?:[-_]|$)|gemini|claude|llava|vision|vl(?:[-_:.]|$)|gemma-?3|minicpm-v|pixtral|llama-?4|mistral-small-?3\.[12]|moondream|internvl|multimodal|omni)/i;
+
+/** Whether an AI takes pictures, as far as its kind and model name tell. */
+export function guessVision(kind: AiKind, model: string): boolean {
+  return kind === "anthropic" || VISION_MODELS.test(model);
+}
 
 export type AiConnectionTest = { ok: boolean; latency_ms?: number; model?: string; error?: string };
 export type AiModelList = { ok: true; models: string[] } | { ok: false; error: string };

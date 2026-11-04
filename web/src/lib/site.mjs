@@ -356,6 +356,15 @@ export const DOCS = [
       "Small apps that open in a window from the Tools page: planners, generators and calculators that work with your library.",
   },
   {
+    slug: "guides/studio",
+    source: "docs/guides/studio.md",
+    group: "Integrations",
+    title: "Studio",
+    nav: "Studio",
+    description:
+      "Design printable parts from shapes and sketches in a small CAD page, which an AI assistant can work on too, step by step.",
+  },
+  {
     slug: "developers",
     source: "docs/developers/overview.md",
     group: "Build for Thingport",

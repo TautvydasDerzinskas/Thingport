@@ -66,9 +66,40 @@ export default function McpPermissionsSection({ info, onChange, onUnauthorized }
     }
   };
 
+  // Studio's tools are one permission: every step of a design, or none.
+  const studioTools = info.available_mcp_tools.filter((tool) => tool.group === "studio");
+  const studioOn = studioTools.length > 0 && studioTools.every((tool) => enabled.has(tool.name));
+  const toggleStudio = async (on: boolean) => {
+    const writes = studioTools.some((tool) => !tool.read_only);
+    if (on && writes) {
+      const ok = await confirm({
+        title: t("profile.apiToken.mcp.writeConfirmTitle", { tool: t("profile.apiToken.mcp.studio.title") }),
+        message: t("profile.apiToken.mcp.studio.confirm"),
+        confirmLabel: t("profile.apiToken.mcp.writeConfirm"),
+      });
+      if (!ok) return;
+    }
+    const names = new Set(studioTools.map((tool) => tool.name));
+    const next = info.available_mcp_tools
+      .map((available) => available.name)
+      .filter((other) => (names.has(other) ? on : enabled.has(other)));
+    setSelected(next);
+    setSaving("studio");
+    try {
+      onChange(await authApi.setApiTokenMcpTools(next));
+    } catch (err) {
+      setSelected(info.mcp_tools);
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else toast({ message: t("profile.apiToken.mcp.failed"), severity: "error" });
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const ungrouped = info.available_mcp_tools.filter((tool) => !tool.group);
   const groups = [
-    { key: "reads", tools: info.available_mcp_tools.filter((tool) => tool.read_only) },
-    { key: "writes", tools: info.available_mcp_tools.filter((tool) => !tool.read_only) },
+    { key: "reads", tools: ungrouped.filter((tool) => tool.read_only) },
+    { key: "writes", tools: ungrouped.filter((tool) => !tool.read_only) },
   ].filter((group) => group.tools.length);
 
   return (
@@ -109,6 +140,19 @@ export default function McpPermissionsSection({ info, onChange, onUnauthorized }
               ))}
             </Box>
           ))}
+          {studioTools.length > 0 && (
+            <Box>
+              <SectionLabel>{t("profile.apiToken.mcp.studio.heading")}</SectionLabel>
+              <PermissionRow
+                name="studio"
+                title={t("profile.apiToken.mcp.studio.title")}
+                description={t("profile.apiToken.mcp.studio.description")}
+                allowed={studioOn}
+                disabled={saving !== null}
+                onChange={(on) => void toggleStudio(on)}
+              />
+            </Box>
+          )}
           {info.mcp_access === "read" && (
             <Typography variant="caption" color="text.secondary">
               {t("profile.apiToken.mcp.adminReadOnly")}

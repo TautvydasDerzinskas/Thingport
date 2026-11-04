@@ -18,7 +18,19 @@ export type AiConnectionInput = {
   timeoutMs: number;
   concurrency: number;
   reasoningEffort: ReasoningEffort | null;
+  /** Takes pictures in a prompt; guessed from the model when not given. */
+  vision?: boolean;
 };
+
+// Models whose names say they take pictures: Claude, OpenAI's multimodal ones, Gemini, and the open vision models. The
+// migration that brought the setting in starts the AIs already saved on the same guess.
+const VISION_MODELS =
+  /(gpt-4o|gpt-4\.1|gpt-4-turbo|gpt-5|^o[134](?:[-_]|$)|gemini|claude|llava|vision|vl(?:[-_:.]|$)|gemma-?3|minicpm-v|pixtral|llama-?4|mistral-small-?3\.[12]|moondream|internvl|multimodal|omni)/i;
+
+/** Whether an AI takes pictures, as far as its kind and model name tell: what a new one starts with. */
+export function guessVision(kind: AiProviderKind, model: string): boolean {
+  return kind === "anthropic" || VISION_MODELS.test(model);
+}
 
 export const DEFAULT_AI_PROVIDER: Omit<AiProvider, "baseUrl" | "model"> = {
   kind: "openai",
@@ -86,6 +98,7 @@ export async function createAiConnection(input: AiConnectionInput): Promise<AiCo
     return tx.aiConnection.create({
       data: {
         ...input,
+        vision: input.vision ?? guessVision(input.kind ?? DEFAULT_AI_PROVIDER.kind, input.model),
         baseUrl: normalizeAiBaseUrl(input.baseUrl, input.kind) ?? input.baseUrl,
         isDefault: !hasDefault,
         position: last ? last.position + 1 : 0,

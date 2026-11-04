@@ -88,6 +88,12 @@ model User {
   dashboardTemplates       Json?
   // What model cards lead with, one of CARD_PREVIEWS; null means "images".
   cardPreview              String?
+  // Where Studio's assistant shows its conversation, one of STUDIO_PROMPT_LAYOUTS; null means "bar".
+  studioPromptLayout       String?
+  // The units a new Studio design starts in, one of STUDIO_UNITS; null means "mm".
+  studioUnits              String?
+  // How Studio's grid is drawn and snapped to (StudioGrid); null, or anything left out, is its default.
+  studioGrid               Json?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.
   weatherLocation          Json?
   authorPreviewEnabled     Boolean              @default(true)
@@ -105,6 +111,7 @@ model User {
   tools                    Tool[]
   toolData                 ToolData[]
   icons                    UserIcon[]
+  studioDesigns            StudioDesign[]
   collectionSyncs          CollectionSync[]
   providerListings         ProviderListing[]
   importJobs               ImportJob[]
@@ -701,6 +708,66 @@ model Tool {
   @@index([userId])
 }
 
+/// A design made in Studio: a parametric feature tree, as frontend/src/studio/document.ts describes it.
+model StudioDesign {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  document  Json
+  /// Goes up with every change, undo and redo too, so an open page can tell the design changed under it.
+  version   Int              @default(0)
+  /// Which revision `document` is: undo moves it back one, redo forward.
+  position  Int              @default(0)
+  revisions StudioRevision[]
+  messages  StudioMessage[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+/// A design as one command left it, for undo and redo, and a record of who changed what.
+model StudioRevision {
+  id        String       @id @default(cuid())
+  designId  String
+  design    StudioDesign @relation(fields: [designId], references: [id], onDelete: Cascade)
+  position  Int
+  document  Json
+  /// The command that made it, null for the design's start.
+  command   String?
+  args      Json?
+  summary   String?
+  /// "user" from the page, "mcp" from an assistant connected with an API token, "assistant" from Studio's own.
+  actor     String
+  createdAt DateTime     @default(now())
+
+  @@unique([designId, position])
+}
+
+/// The conversation with Studio's assistant about one design: what was asked, what it answered and the steps it took,
+/// so a later prompt can build on it. Text only: the AI's own working, tool payloads and thinking aren't kept.
+model StudioMessage {
+  id        String       @id @default(cuid())
+  designId  String
+  design    StudioDesign @relation(fields: [designId], references: [id], onDelete: Cascade)
+  /// "user" or "assistant".
+  role      String
+  text      String
+  /// An answer's steps, [{ tool, title, summary, ok }], and how its run ended: done, stopped, limit or failed.
+  steps     Json?
+  outcome   String?
+  /// Why a failed run stopped, in the provider's words.
+  error     String?
+  /// The AI that answered, as it was named then.
+  model     String?
+  /// A prompt's pictures, [{ id, width, height }], kept beside the design as <id>.png.
+  pictures  Json?
+  createdAt DateTime     @default(now())
+
+  @@index([designId, createdAt])
+}
+
 /// What a tool keeps for a user through `thingport.storage`: JSON values by key.
 model ToolData {
   id        String   @id @default(cuid())
@@ -750,6 +817,8 @@ model AiConnection {
   concurrency     Int              @default(1)
   /// Sent as reasoning_effort. Null sends nothing, leaving it to the provider.
   reasoningEffort ReasoningEffort?
+  /// The model takes pictures in a prompt, which an admin says; features that send pictures only send them where it does.
+  vision          Boolean          @default(false)
   isDefault       Boolean          @default(false)
   position        Int              @default(0)
   createdAt       DateTime         @default(now())

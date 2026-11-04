@@ -23,6 +23,7 @@ import BookmarkIcon from "@mui/icons-material/Bookmark";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import DownloadIcon from "@mui/icons-material/Download";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
+import DesignServicesOutlinedIcon from "@mui/icons-material/DesignServicesOutlined";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -48,6 +49,7 @@ import Wordmark from "../../Wordmark";
 import BrandMark from "../../BrandMark";
 import { type BookmarkEntry, bookmarksApi } from "../../../api/bookmarks";
 import { useTools } from "../../../hooks/useTools";
+import { useStudioEnabled } from "../../../hooks/useStudioEnabled";
 
 const SIDEBAR_WIDTH = 240;
 export const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -237,6 +239,9 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
   // Shown to whoever may use tools, once there's one to open or they may make their own.
   const tools = useTools();
   const showTools = Boolean(tools?.access.canUse && (tools.tools.length > 0 || tools.access.canCreate));
+  // Under Tools, for everyone, while the instance has it switched on (STUDIO_ENABLED).
+  const showStudio = useStudioEnabled() === true;
+  const onStudio = location.pathname === "/studio";
   const onAdmin = location.pathname.startsWith("/admin");
   // Administration opens its own menu beside this one, so this one folds to icons there, whatever the user chose.
   const collapsed = !mobile && (collapsedByUser || onAdmin);
@@ -397,26 +402,6 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
             </ListItemButton>
           )}
 
-          {collapsed ? (
-            <CollapsedNavIcon
-              icon={<DownloadIcon fontSize="small" />}
-              label={t("sidebar.downloads")}
-              selected={onDownload}
-              onClick={() => navigate("/downloads")}
-            />
-          ) : (
-            <ListItemButton
-              selected={onDownload}
-              onClick={() => navigate("/downloads")}
-              sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onDownload) }}
-            >
-              <ListItemIcon sx={{ minWidth: 30 }}>
-                <DownloadIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={t("sidebar.downloads")} primaryTypographyProps={{ variant: "body2" }} />
-            </ListItemButton>
-          )}
-
           {showTools &&
             (collapsed ? (
               <CollapsedNavIcon
@@ -437,6 +422,47 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
                 <ListItemText primary={t("sidebar.tools")} primaryTypographyProps={{ variant: "body2" }} />
               </ListItemButton>
             ))}
+
+          {showStudio &&
+            (collapsed ? (
+              <CollapsedNavIcon
+                icon={<DesignServicesOutlinedIcon fontSize="small" />}
+                label={t("sidebar.studio")}
+                selected={onStudio}
+                onClick={() => navigate("/studio")}
+              />
+            ) : (
+              <ListItemButton
+                selected={onStudio}
+                onClick={() => navigate("/studio")}
+                sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onStudio) }}
+              >
+                <ListItemIcon sx={{ minWidth: 30 }}>
+                  <DesignServicesOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("sidebar.studio")} primaryTypographyProps={{ variant: "body2" }} />
+              </ListItemButton>
+            ))}
+
+          {collapsed ? (
+            <CollapsedNavIcon
+              icon={<DownloadIcon fontSize="small" />}
+              label={t("sidebar.downloads")}
+              selected={onDownload}
+              onClick={() => navigate("/downloads")}
+            />
+          ) : (
+            <ListItemButton
+              selected={onDownload}
+              onClick={() => navigate("/downloads")}
+              sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onDownload) }}
+            >
+              <ListItemIcon sx={{ minWidth: 30 }}>
+                <DownloadIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary={t("sidebar.downloads")} primaryTypographyProps={{ variant: "body2" }} />
+            </ListItemButton>
+          )}
 
           {/* Bookmarked tags + collections, interleaved in the user's own manual order -- only
               once any exist, so an empty section never shows just a bare divider with nothing
