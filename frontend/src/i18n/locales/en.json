@@ -2446,21 +2446,15 @@
         "toolsAria": "Tools {{model}} gets"
       },
       "social": {
-        "heading": "Social",
-        "featuresHeading": "Social features",
-        "subtitle": "Let this instance's users share collections with each other.",
         "label": "Social features",
-        "helpOn": "On: collections can be made public, and Explore shows them to everyone.",
-        "helpOff": "Off: every collection stays private to its owner.",
+        "summary": "Turns on the Explore page and public collections, so this instance's users can share models with each other.",
         "infoTitle": "What social features do",
         "infoPublic": "A collection's form gets a Private / Public choice. New collections start private.",
         "infoExplore": "Explore appears in the sidebar once there is more than one user. It lists the people who share, their latest models and collections, and what gets copied most.",
         "infoCopy": "Others can open, download and slice a public collection's models, and add them to their own collections. That makes a copy of their own, which stays if the original is changed, made private or deleted.",
         "infoOff": "Turning this off hides everything shared again. Each collection keeps its Public or Private setting for when it's back on.",
         "loadFailed": "Couldn't load the social settings.",
-        "saveFailed": "Couldn't save the social settings.",
-        "illustrationShares": "Shares",
-        "illustrationCollects": "Collects"
+        "saveFailed": "Couldn't save the social settings."
       }
     },
     "download": {

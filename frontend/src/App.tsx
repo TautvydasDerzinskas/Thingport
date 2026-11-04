@@ -44,7 +44,6 @@ import NotificationsPage from "./pages/NotificationsPage";
 import TriggersPage from "./pages/TriggersPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import CaptchaPage from "./pages/CaptchaPage";
-import SocialAdminPage from "./pages/SocialAdminPage";
 import ExplorePage from "./pages/ExplorePage";
 import ExploreUserPage from "./pages/ExplorePage/ExploreUserPage";
 import RenderingPage from "./pages/RenderingPage";
@@ -385,10 +384,6 @@ function AppShell({
         <Route
           path="/admin-users"
           element={isAdmin ? <UsersPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/admin-social"
-          element={isAdmin ? <SocialAdminPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/admin-logs"

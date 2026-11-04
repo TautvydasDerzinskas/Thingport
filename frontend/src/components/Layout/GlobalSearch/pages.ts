@@ -21,7 +21,6 @@ export type PageId =
   | "adminTools"
   | "adminAi"
   | "adminUsers"
-  | "adminSocial"
   | "adminLogs"
   | "adminTriggers"
   | "adminConnections"
@@ -145,13 +144,10 @@ export const SEARCH_PAGES: SearchPage[] = [
     "roles",
     "accounts",
     "invite",
-  ]),
-  adminPage("adminSocial", "/admin-social", "app:adminSettings.social.heading", [
     "social",
     "explore",
     "public collections",
     "sharing",
-    "community",
   ]),
   adminPage("adminLogs", "/admin-logs", "app:adminSettings.logs.heading", ["logs", "audit", "events"]),
   adminPage("adminTriggers", "/admin-triggers", "app:adminSettings.triggers.heading", [

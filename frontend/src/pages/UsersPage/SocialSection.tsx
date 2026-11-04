@@ -11,16 +11,16 @@ import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
 import { socialApi, type SocialSettings } from "../../api/social";
 import HelpTip from "../../components/HelpTip";
-import SectionHeader from "../../components/SectionHeader";
+import SharingAnimation from "../../components/adminAnimations/SharingAnimation";
+import { AnimatedTile } from "../../components/storageAnimations/parts";
 import { refreshSocialStatus } from "../../hooks/useSocialStatus";
-import SocialIllustration from "./SocialIllustration";
 
 type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Administration > Social. Saves as soon as it's switched. */
-export default function SocialAdminPage({ onUnauthorized }: Props) {
+/** Social features, at the top of Users: Explore and public collections for the instance's users. Saves as switched. */
+export default function SocialSection({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [settings, setSettings] = React.useState<SocialSettings | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -64,7 +64,6 @@ export default function SocialAdminPage({ onUnauthorized }: Props) {
   const points = (["infoPublic", "infoExplore", "infoCopy", "infoOff"] as const).map((key) =>
     t(`adminSettings.social.${key}`),
   );
-  const infoText = [t("adminSettings.social.infoTitle"), ...points].join(" ");
   const info = (
     <>
       <Typography variant="subtitle2" component="div" sx={{ mb: 0.5 }}>
@@ -80,44 +79,41 @@ export default function SocialAdminPage({ onUnauthorized }: Props) {
   const enabled = settings?.enabled ?? false;
 
   return (
-    <Stack spacing={3} sx={{ maxWidth: 720 }}>
-      <SectionHeader title={t("adminSettings.social.featuresHeading")} subtitle={t("adminSettings.social.subtitle")} />
-      <Paper variant="outlined" sx={{ p: 2.5 }}>
-        <Stack spacing={2}>
-          <Stack spacing={2.5} alignItems="flex-start">
-            <SocialIllustration />
-            <Stack direction="row" spacing={1} alignItems="center">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={enabled}
-                    disabled={settings === null || saving}
-                    onChange={(e) => void toggle(e.target.checked)}
-                  />
-                }
-                label={
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>
-                      {t("adminSettings.social.label")}
-                      <HelpTip text={infoText} content={info} />
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {t(enabled ? "adminSettings.social.helpOn" : "adminSettings.social.helpOff")}
-                    </Typography>
-                  </Box>
-                }
-                sx={{ alignItems: "flex-start", m: 0, "& .MuiSwitch-root": { mt: -0.5 } }}
-              />
-              {saving && <CircularProgress size={16} />}
-            </Stack>
+    <Paper variant="outlined" sx={{ p: 2 }}>
+      <Stack direction="row" spacing={2} alignItems="center">
+        <AnimatedTile size={72}>
+          <SharingAnimation key={String(enabled)} size={64} on={enabled} />
+        </AnimatedTile>
+        <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={enabled}
+                  disabled={settings === null || saving}
+                  onChange={(e) => void toggle(e.target.checked)}
+                />
+              }
+              label={
+                <Typography variant="body2" fontWeight={600} component="span">
+                  {t("adminSettings.social.label")}
+                  <HelpTip text={[t("adminSettings.social.infoTitle"), ...points].join(" ")} content={info} />
+                </Typography>
+              }
+              sx={{ m: 0 }}
+            />
+            {saving && <CircularProgress size={16} />}
           </Stack>
+          <Typography variant="body2" color="text.secondary">
+            {t("adminSettings.social.summary")}
+          </Typography>
           {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
+            <Alert severity="error" onClose={() => setError(null)} sx={{ mt: 1 }}>
               {error}
             </Alert>
           )}
         </Stack>
-      </Paper>
-    </Stack>
+      </Stack>
+    </Paper>
   );
 }

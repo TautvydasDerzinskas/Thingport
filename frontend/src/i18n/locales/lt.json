@@ -2528,21 +2528,15 @@
         "toolsAria": "Įrankiai, kuriuos gauna {{model}}"
       },
       "social": {
-        "heading": "Bendrinimas",
-        "featuresHeading": "Socialinės funkcijos",
-        "subtitle": "Leiskite šio serverio naudotojams dalytis kolekcijomis tarpusavyje.",
         "label": "Socialinės funkcijos",
-        "helpOn": "Įjungta: kolekcijas galima padaryti viešas, o skiltis Naršyti jas rodo visiems.",
-        "helpOff": "Išjungta: kiekviena kolekcija lieka privati jos savininkui.",
+        "summary": "Įjungia skiltį Naršyti ir viešas kolekcijas, kad šio serverio naudotojai galėtų dalytis modeliais tarpusavyje.",
         "infoTitle": "Ką daro socialinės funkcijos",
         "infoPublic": "Kolekcijos formoje atsiranda pasirinkimas Privati / Vieša. Naujos kolekcijos būna privačios.",
         "infoExplore": "Kai naudotojų yra daugiau nei vienas, šoniniame meniu atsiranda Naršyti. Joje matyti besidalijantys žmonės, jų naujausi modeliai ir kolekcijos bei tai, kas kopijuojama dažniausiai.",
         "infoCopy": "Kiti gali atidaryti, atsisiųsti ir pjaustyti viešos kolekcijos modelius bei įsidėti juos į savo kolekcijas. Taip sukuriama jų pačių kopija, kuri lieka, net jei originalas pakeičiamas, padaromas privačiu ar ištrinamas.",
         "infoOff": "Išjungus vėl paslepiama viskas, kuo dalijamasi. Kiekviena kolekcija išsaugo savo nustatymą Vieša ar Privati tam kartui, kai vėl įjungsite.",
         "loadFailed": "Nepavyko įkelti socialinių nustatymų.",
-        "saveFailed": "Nepavyko išsaugoti socialinių nustatymų.",
-        "illustrationShares": "Dalijasi",
-        "illustrationCollects": "Kaupia"
+        "saveFailed": "Nepavyko išsaugoti socialinių nustatymų."
       }
     },
     "download": {

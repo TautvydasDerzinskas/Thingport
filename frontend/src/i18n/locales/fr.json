@@ -2480,21 +2480,15 @@
         "toolsAria": "Outils donnés à {{model}}"
       },
       "social": {
-        "heading": "Social",
-        "featuresHeading": "Fonctions sociales",
-        "subtitle": "Permettez aux utilisateurs de cette instance de partager des collections entre eux.",
         "label": "Fonctions sociales",
-        "helpOn": "Activé : les collections peuvent être rendues publiques, et Explorer les montre à tous.",
-        "helpOff": "Désactivé : chaque collection reste privée pour son propriétaire.",
+        "summary": "Active la page Explorer et les collections publiques, pour que les utilisateurs de cette instance partagent des modèles entre eux.",
         "infoTitle": "Ce que font les fonctions sociales",
         "infoPublic": "Le formulaire d'une collection propose Privée / Publique. Les nouvelles collections sont privées.",
         "infoExplore": "Explorer apparaît dans la barre latérale dès qu'il y a plus d'un utilisateur. On y voit qui partage, leurs derniers modèles et collections, et ce qui est le plus copié.",
         "infoCopy": "Les autres peuvent ouvrir, télécharger et trancher les modèles d'une collection publique, et les ajouter à leurs propres collections. Ils en obtiennent ainsi leur propre copie, qui reste même si l'original est modifié, rendu privé ou supprimé.",
         "infoOff": "Désactiver masque de nouveau tout ce qui est partagé. Chaque collection garde son réglage Publique ou Privée pour le jour où c'est réactivé.",
         "loadFailed": "Impossible de charger les réglages sociaux.",
-        "saveFailed": "Impossible d'enregistrer les réglages sociaux.",
-        "illustrationShares": "Partage",
-        "illustrationCollects": "Collectionne"
+        "saveFailed": "Impossible d'enregistrer les réglages sociaux."
       }
     },
     "download": {

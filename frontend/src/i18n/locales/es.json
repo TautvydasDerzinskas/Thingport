@@ -2480,21 +2480,15 @@
         "toolsAria": "Herramientas que recibe {{model}}"
       },
       "social": {
-        "heading": "Social",
-        "featuresHeading": "Funciones sociales",
-        "subtitle": "Permite que los usuarios de esta instancia compartan colecciones entre sí.",
         "label": "Funciones sociales",
-        "helpOn": "Activado: las colecciones pueden hacerse públicas y Explorar las muestra a todos.",
-        "helpOff": "Desactivado: cada colección sigue siendo privada para su propietario.",
+        "summary": "Activa la página Explorar y las colecciones públicas, para que los usuarios de esta instancia compartan modelos entre sí.",
         "infoTitle": "Qué hacen las funciones sociales",
         "infoPublic": "El formulario de una colección incluye la opción Privada / Pública. Las colecciones nuevas empiezan como privadas.",
         "infoExplore": "Explorar aparece en la barra lateral cuando hay más de un usuario. Muestra a quienes comparten, sus modelos y colecciones más recientes y lo que más se copia.",
         "infoCopy": "Los demás pueden abrir, descargar y laminar los modelos de una colección pública, y añadirlos a sus propias colecciones. Así obtienen su propia copia, que se conserva aunque el original cambie, se haga privado o se elimine.",
         "infoOff": "Al desactivarlo, todo lo compartido vuelve a ocultarse. Cada colección conserva su ajuste Pública o Privada para cuando se vuelva a activar.",
         "loadFailed": "No se pudieron cargar los ajustes sociales.",
-        "saveFailed": "No se pudieron guardar los ajustes sociales.",
-        "illustrationShares": "Comparte",
-        "illustrationCollects": "Colecciona"
+        "saveFailed": "No se pudieron guardar los ajustes sociales."
       }
     },
     "download": {
