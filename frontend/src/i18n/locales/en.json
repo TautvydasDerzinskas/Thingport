@@ -5182,7 +5182,9 @@
       "toolOwned_one": "{{count}} of the models picked belongs to a tool: leave it out to do this",
       "toolOwned_other": "{{count}} of the models picked belong to a tool: leave them out to do this",
       "notFiled_one": "{{count}} model couldn't be added: it's no longer shared",
-      "notFiled_other": "{{count}} models couldn't be added: they're no longer shared"
+      "notFiled_other": "{{count}} models couldn't be added: they're no longer shared",
+      "notFiledNames_one": "Couldn't add {{names}}: it's no longer shared",
+      "notFiledNames_other": "Couldn't add {{names}}: they're no longer shared"
     },
     "merge": {
       "action": "Merge",

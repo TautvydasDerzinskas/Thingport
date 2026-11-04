@@ -10,15 +10,19 @@ const STALE_MS = 60_000;
 const RETRY_MS = 30_000;
 let cached: { status: SocialStatus; at: number } | undefined;
 let inFlight: Promise<SocialStatus> | null = null;
+// Each refresh starts a new request; an answer to one asked before it is from before the change, and is dropped.
+let generation = 0;
 let retry: ReturnType<typeof setTimeout> | null = null;
 const listeners = new Set<(status: SocialStatus) => void>();
 
 function load(): Promise<SocialStatus> {
   if (cached) return Promise.resolve(cached.status);
-  inFlight ??= socialApi
+  if (inFlight) return inFlight;
+  const asked = generation;
+  const request: Promise<SocialStatus> = socialApi
     .status()
     .then((status) => {
-      cached = { status, at: Date.now() };
+      if (asked === generation) cached = { status, at: Date.now() };
       return status;
     })
     .catch(() => {
@@ -29,19 +33,32 @@ function load(): Promise<SocialStatus> {
       return OFF;
     })
     .then((status) => {
+      if (asked !== generation) return load();
       listeners.forEach((listener) => listener(status));
       return status;
     })
     .finally(() => {
-      inFlight = null;
+      if (inFlight === request) inFlight = null;
     });
-  return inFlight;
+  inFlight = request;
+  return request;
 }
 
-/** Asks again, as after an admin changed the setting. */
+/** Asks again, as after an admin changed the setting: whatever was asked before doesn't count. */
 export function refreshSocialStatus(): void {
+  generation += 1;
   cached = undefined;
+  inFlight = null;
   void load();
+}
+
+/** Hears every answer from now on, the current one first; returns how to stop. */
+export function subscribeSocialStatus(listener: (status: SocialStatus) => void): () => void {
+  listeners.add(listener);
+  void load().then((status) => {
+    if (listeners.has(listener)) listener(status);
+  });
+  return () => listeners.delete(listener);
 }
 
 function refreshIfStale() {
@@ -53,19 +70,13 @@ function refreshIfStale() {
 export function useSocialStatus(): SocialStatus | null {
   const [status, setStatus] = useState<SocialStatus | null>(cached?.status ?? null);
   useEffect(() => {
-    let active = true;
-    const listener = (next: SocialStatus) => {
-      if (active) setStatus(next);
-    };
-    listeners.add(listener);
-    void load().then(listener);
+    const stop = subscribeSocialStatus(setStatus);
     // Each its own, so one going doesn't take the others' with it; they share the one request anyway.
     const onReturn = () => refreshIfStale();
     window.addEventListener("focus", onReturn);
     document.addEventListener("visibilitychange", onReturn);
     return () => {
-      active = false;
-      listeners.delete(listener);
+      stop();
       window.removeEventListener("focus", onReturn);
       document.removeEventListener("visibilitychange", onReturn);
     };

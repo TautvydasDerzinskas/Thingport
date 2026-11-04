@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Paper from "@mui/material/Paper";
@@ -21,32 +22,55 @@ type Props = {
 
 /** Social features, at the top of Users: Explore and public collections for the instance's users. Saves as switched. */
 export default function SocialSection({ onUnauthorized }: Props) {
-  const { t } = useTranslation("app");
+  const { t } = useTranslation(["app", "common"]);
   const [settings, setSettings] = React.useState<SocialSettings | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = React.useState(false);
+  // A read answering after a save started (or after the page went) would put back what was there before.
+  const savingRef = React.useRef(false);
+  const live = React.useRef(true);
 
-  React.useEffect(() => {
-    let active = true;
+  const read = React.useCallback(() => {
     socialApi.getSettings().then(
       (value) => {
-        if (active) setSettings(value);
+        if (!live.current || savingRef.current) return;
+        setSettings(value);
+        setLoadFailed(false);
+        setError(null);
       },
       (err) => {
-        if (!active) return;
+        if (!live.current) return;
         if (err instanceof UnauthorizedError) onUnauthorized?.();
-        else setError(t("adminSettings.social.loadFailed"));
+        else {
+          setLoadFailed(true);
+          setError(t("adminSettings.social.loadFailed"));
+        }
       },
     );
-    return () => {
-      active = false;
-    };
   }, [onUnauthorized, t]);
+
+  // Read on opening, and again when the tab comes back: another admin may have switched it meanwhile.
+  React.useEffect(() => {
+    live.current = true;
+    read();
+    const onReturn = () => {
+      if (document.visibilityState === "visible" && !savingRef.current) read();
+    };
+    window.addEventListener("focus", onReturn);
+    document.addEventListener("visibilitychange", onReturn);
+    return () => {
+      live.current = false;
+      window.removeEventListener("focus", onReturn);
+      document.removeEventListener("visibilitychange", onReturn);
+    };
+  }, [read]);
 
   const toggle = async (enabled: boolean) => {
     const previous = settings;
     setSettings({ ...(settings ?? { enabled }), enabled });
     setSaving(true);
+    savingRef.current = true;
     setError(null);
     try {
       setSettings(await socialApi.updateSettings({ enabled }));
@@ -57,6 +81,7 @@ export default function SocialSection({ onUnauthorized }: Props) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : t("adminSettings.social.saveFailed"));
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -108,7 +133,20 @@ export default function SocialSection({ onUnauthorized }: Props) {
             {t("adminSettings.social.summary")}
           </Typography>
           {error && (
-            <Alert severity="error" onClose={() => setError(null)} sx={{ mt: 1 }}>
+            <Alert
+              severity="error"
+              sx={{ mt: 1 }}
+              // A failed read leaves nothing to switch: it offers to read again rather than to be dismissed.
+              {...(loadFailed
+                ? {
+                    action: (
+                      <Button color="inherit" size="small" onClick={read}>
+                        {t("common:retry")}
+                      </Button>
+                    ),
+                  }
+                : { onClose: () => setError(null) })}
+            >
               {error}
             </Alert>
           )}

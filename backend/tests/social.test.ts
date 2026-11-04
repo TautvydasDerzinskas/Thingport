@@ -401,6 +401,42 @@ describe("copying, more closely", () => {
     expect((await request(app).get(`/api/print/${thirdsCopy}`).set(auth(viewer))).body.library_copy_id).toBe(mine);
   });
 
+  it("still knows the model after its original is deleted", async () => {
+    const originalId = await sharedModel(owner, `orphaned-${Date.now()}`);
+    const mine = (await request(app).post(`/api/print/${originalId}/copy`).set(auth(viewer))).body.print.id;
+    const adminsCopy = (await request(app).post(`/api/print/${originalId}/copy`).set(auth(admin))).body.print.id;
+    await shareModel(admin, adminsCopy);
+    await request(app).delete(`/api/print/${originalId}`).set(auth(owner));
+
+    const res = await request(app).post(`/api/print/${adminsCopy}/copy`).set(auth(viewer));
+    expect(res.body).toMatchObject({ copied: false, print: { id: mine } });
+  });
+
+  it("copies nothing into a tool's collection, which takes no models", async () => {
+    const sharedId = await sharedModel(owner, `tooled-${Date.now()}`);
+    const tool = await prisma.tool.create({
+      data: {
+        source: "own",
+        scope: viewer.id,
+        slug: `social-${Date.now()}`,
+        userId: viewer.id,
+        manifest: {},
+        script: "",
+        sha: "x",
+      },
+    });
+    const toolCollection = await prisma.collection.create({
+      data: { userId: viewer.id, name: `Tool ${Date.now()}`, nameNormalized: `tool ${Date.now()}`, toolId: tool.id },
+    });
+
+    const res = await request(app)
+      .post(`/api/collection/${toolCollection.id}/items`)
+      .set(auth(viewer))
+      .send({ print_ids: [sharedId] });
+    expect(res.status).toBe(403);
+    expect(await prisma.print.count({ where: { userId: viewer.id, copiedFromId: sharedId } })).toBe(0);
+  });
+
   it("says which models a bulk add couldn't file", async () => {
     const sharedId = await sharedModel(owner, `bulk-${Date.now()}`);
     const hidden = await request(app)

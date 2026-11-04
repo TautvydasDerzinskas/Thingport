@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -32,15 +32,21 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
   const navigate = useNavigate();
   const [page, setPage] = useState<UserPage | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const shownFor = useRef<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
     let active = true;
-    setPage(null);
-    setNotFound(false);
+    // Someone else's page starts from the skeleton; the same one's stays while it's read again.
+    if (shownFor.current !== userId) {
+      setPage(null);
+      setNotFound(false);
+    }
     socialApi.user(userId).then(
       (value) => {
-        if (active) setPage(value);
+        if (!active) return;
+        shownFor.current = userId;
+        setPage(value);
       },
       (err) => {
         if (!active) return;
@@ -52,6 +58,19 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
       active = false;
     };
   }, [userId, onUnauthorized]);
+
+  // Read again, in place, after the viewer changed one of their own collections here: the counts follow. Dropped if
+  // another user's page has been shown since.
+  const refresh = () => {
+    if (!userId) return;
+    const asked = userId;
+    socialApi.user(asked).then(
+      (value) => {
+        if (shownFor.current === asked) setPage(value);
+      },
+      () => undefined,
+    );
+  };
 
   usePageHeader({
     title: page?.user.display_name,
@@ -118,7 +137,7 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
               previewMode={previewMode}
               // Only the viewer's own has a menu to change it from: a collection made private, or deleted, leaves
               // the list of what they share.
-              onUpdated={(updated) =>
+              onUpdated={(updated) => {
                 setPage(
                   (prev) =>
                     prev && {
@@ -127,11 +146,13 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
                         ? prev.collections.map((c) => (c.id === updated.id ? updated : c))
                         : prev.collections.filter((c) => c.id !== updated.id),
                     },
-                )
-              }
-              onDeleted={(id) =>
-                setPage((prev) => prev && { ...prev, collections: prev.collections.filter((c) => c.id !== id) })
-              }
+                );
+                refresh();
+              }}
+              onDeleted={(id) => {
+                setPage((prev) => prev && { ...prev, collections: prev.collections.filter((c) => c.id !== id) });
+                refresh();
+              }}
               onUnauthorized={onUnauthorized}
             />
           ))}

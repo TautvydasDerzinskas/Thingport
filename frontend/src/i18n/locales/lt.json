@@ -5410,7 +5410,10 @@
       "toolOwned_other": "{{count}} pažymėtų modelių priklauso įrankiui: praleiskite juos, kad tai atliktumėte",
       "notFiled_one": "{{count}} modelio nepavyko pridėti: juo nebesidalijama",
       "notFiled_few": "{{count}} modelių nepavyko pridėti: jais nebesidalijama",
-      "notFiled_other": "{{count}} modelių nepavyko pridėti: jais nebesidalijama"
+      "notFiled_other": "{{count}} modelių nepavyko pridėti: jais nebesidalijama",
+      "notFiledNames_one": "Nepavyko pridėti {{names}}: juo nebesidalijama",
+      "notFiledNames_few": "Nepavyko pridėti {{names}}: jais nebesidalijama",
+      "notFiledNames_other": "Nepavyko pridėti {{names}}: jais nebesidalijama"
     },
     "merge": {
       "action": "Sujungti",

@@ -5,7 +5,6 @@ import path from "node:path";
 import { Prisma, type Print, type PrintFile } from "@prisma/client";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
-import { createKeyedLock } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { createLog } from "./auditLog";
 import { descriptionImagePath, saveDescriptionImage } from "./descriptionImageService";
@@ -24,17 +23,10 @@ const log = createLogger("model-copy");
 const DESCRIPTION_IMAGE = /!\[([^\]]*)\]\(\/description-image\/([a-z0-9]+)\)/g;
 const DESCRIPTION_IMAGE_REF = /\/description-image\/([a-z0-9]+)/g;
 
-// One copy at a time for each user, so two requests at once (a double click, a menu and a dialog) can't both find no
-// copy yet and make one each. By user rather than model: the check also matches copies of the original made by others.
-// In-process, as the storage lock is.
-const perUser = createKeyedLock();
-
-/** `copied` is false when `userId` already has the model -- their own, or a copy from before -- which comes back as is. */
-export function copyPrintToLibrary(userId: string, printId: string): Promise<{ print: Print; copied: boolean }> {
-  return perUser(userId, () => copyNow(userId, printId));
-}
-
-async function copyNow(userId: string, printId: string): Promise<{ print: Print; copied: boolean }> {
+/** `copied` is false when `userId` already has the model -- their own, or a copy from before -- which comes back as is.
+ *  Two requests at once, in any process, make one copy: a user has one per original (Print.originalId), and the second
+ *  to write its row finds the first's. */
+export async function copyPrintToLibrary(userId: string, printId: string): Promise<{ print: Print; copied: boolean }> {
   const source = await prisma.print.findFirst({
     where: { id: printId, AND: [await readablePrintWhere(userId)] },
     include: {
@@ -69,7 +61,8 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
       userId,
       {
         title: source.title,
-        notes: source.notes,
+        // Not pointing at the original's images even for a moment: the copy's own replace them once they're stored.
+        notes: describedWithImages(source, new Map()),
         tags: source.tags,
         creator: source.creator,
         authorId: source.authorId,
@@ -77,6 +70,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
         sourceExternalId: source.sourceExternalId,
         generatorScriptWithheld: source.generatorScriptWithheld,
         copiedFromId: source.id,
+        originalId: source.originalId ?? source.id,
       },
       source.name,
       plates.flatMap(({ plate, from }) =>
@@ -95,7 +89,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
       { describe: false },
     );
   } catch (err) {
-    // The same imported model, arrived another way (an import) since the check above: that one is the user's copy.
+    // The same model, copied by another request (or imported) since the check above: that one is the user's copy.
     if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
     const arrived = await libraryCopyOf(userId, source);
     if (!arrived) throw err;
@@ -180,15 +174,37 @@ async function copyPictures(printId: string, source: PictureSource) {
   }
 }
 
-/** Each image gets a new id with the copy, so the description is pointed at those. One that couldn't be copied points
+type DescribedSource = Pick<Print, "assetsPath" | "notes"> & {
+  descriptionImages: { id: string; mime: string; sourceUrl: string | null }[];
+};
+
+/** The original's description pointed at the copy's images, `renamed` from the original's. One without a copy points
  *  back at where it was downloaded from, or goes: left pointing at the original's, it would break the day the original
  *  goes private or is deleted. */
-async function copyDescriptionImages(
-  printId: string,
-  source: Pick<Print, "assetsPath" | "notes"> & {
-    descriptionImages: { id: string; mime: string; sourceUrl: string | null }[];
-  },
-) {
+function describedWithImages(source: DescribedSource, renamed: Map<string, string>): string | null {
+  if (!source.notes?.includes("/description-image/")) return source.notes;
+  const downloadedFrom = new Map(source.descriptionImages.map((image) => [image.id, image.sourceUrl]));
+  const copies = new Set(renamed.values());
+  return (
+    source.notes
+      .replace(DESCRIPTION_IMAGE, (_, alt: string, id: string) => {
+        const next = renamed.get(id);
+        if (next) return `![${alt}](/description-image/${next})`;
+        const url = downloadedFrom.get(id);
+        return url ? `![${alt}](${url})` : "";
+      })
+      // Anywhere else, as in an HTML image; the copy's own, just written above, stay as they are.
+      .replace(DESCRIPTION_IMAGE_REF, (ref, id: string) => {
+        if (copies.has(id)) return ref;
+        const next = renamed.get(id);
+        return next ? `/description-image/${next}` : (downloadedFrom.get(id) ?? "");
+      })
+  );
+}
+
+/** Each image gets a new id with the copy, and the description is pointed at those. Until then, and if this fails, it
+ *  has the one it was made with (describedWithImages with none), which doesn't depend on the original. */
+async function copyDescriptionImages(printId: string, source: DescribedSource) {
   if (!source.notes?.includes("/description-image/")) return;
   const renamed = new Map<string, string>();
   for (const image of source.descriptionImages) {
@@ -200,20 +216,6 @@ async function copyDescriptionImages(
       log.warn("couldn't copy a description image", { print: printId, image: image.id, error });
     }
   }
-  const downloadedFrom = new Map(source.descriptionImages.map((image) => [image.id, image.sourceUrl]));
-  const copies = new Set(renamed.values());
-  const notes = source.notes
-    .replace(DESCRIPTION_IMAGE, (_, alt: string, id: string) => {
-      const next = renamed.get(id);
-      if (next) return `![${alt}](/description-image/${next})`;
-      const url = downloadedFrom.get(id);
-      return url ? `![${alt}](${url})` : "";
-    })
-    // Anywhere else, as in an HTML image; the copy's own, just written above, stay as they are.
-    .replace(DESCRIPTION_IMAGE_REF, (ref, id: string) => {
-      if (copies.has(id)) return ref;
-      const next = renamed.get(id);
-      return next ? `/description-image/${next}` : (downloadedFrom.get(id) ?? "");
-    });
-  await prisma.print.update({ where: { id: printId }, data: { notes } });
+  if (!renamed.size) return;
+  await prisma.print.update({ where: { id: printId }, data: { notes: describedWithImages(source, renamed) } });
 }

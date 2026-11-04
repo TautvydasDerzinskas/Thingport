@@ -60,79 +60,40 @@ export async function userCards(userIds: string[]): Promise<Map<string, UserCard
 
 type CopySource = {
   id: string;
-  copiedFromId: string | null;
+  originalId: string | null;
   sourceProvider: string | null;
   sourceExternalId: string | null;
 };
 
-// A copy can be copied in turn; past this many steps back, a chain is taken to end there.
-const MAX_LINEAGE = 16;
+/** The model a copy, or a copy of a copy, was first copied from; a model that's no copy is its own. */
+const originalOf = (print: Pick<CopySource, "id" | "originalId">) => print.originalId ?? print.id;
 
-/** The model each one was first copied from, following copies of copies back, or the model itself when it's no copy.
- *  Two with the same first original are the same model. One query per step back, for all of them at once. */
-async function originals(prints: { id: string; copiedFromId: string | null }[]): Promise<Map<string, string>> {
-  const parentOf = new Map(prints.map((print) => [print.id, print.copiedFromId]));
-  const unread = (ids: (string | null)[]) => [...new Set(ids.flatMap((id) => (id && !parentOf.has(id) ? [id] : [])))];
-  let frontier = unread(prints.map((print) => print.copiedFromId));
-  for (let step = 0; frontier.length && step < MAX_LINEAGE; step++) {
-    const rows = await prisma.print.findMany({
-      where: { id: { in: frontier } },
-      select: { id: true, copiedFromId: true },
-    });
-    for (const row of rows) parentOf.set(row.id, row.copiedFromId);
-    frontier = unread(rows.map((row) => row.copiedFromId));
-  }
-  return new Map(
-    prints.map((print) => {
-      let at = print.id;
-      const seen = new Set([at]);
-      for (
-        let parent = parentOf.get(at);
-        parent && !seen.has(parent) && seen.size <= MAX_LINEAGE;
-        parent = parentOf.get(at)
-      ) {
-        at = parent;
-        seen.add(at);
-      }
-      return [print.id, at];
-    }),
-  );
-}
-
-/** For each model, `userId`'s own copy of it, where they have one: a model of theirs leading back to the same original
- *  -- the original itself, a copy of it, or a copy of a copy, whichever way round they were made -- or the same model
- *  imported from the same source. */
+/** For each model, `userId`'s own copy of it, where they have one: a model of theirs with the same original -- the
+ *  original itself, or a copy of it however many copies along -- or the same model imported from the same source. */
 export async function libraryCopyIds(userId: string, sources: CopySource[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   if (!sources.length) return out;
-  const sourceOriginals = await originals(sources);
+  const originals = [...new Set(sources.map(originalOf))];
   const pairs = sources.flatMap((source) =>
     source.sourceProvider && source.sourceExternalId
       ? [{ sourceProvider: source.sourceProvider, sourceExternalId: source.sourceExternalId }]
       : [],
   );
-  // Every copy in the user's library, to follow back, and the originals themselves where they're theirs.
   const mine = await prisma.print.findMany({
-    where: { userId, OR: [{ copiedFromId: { not: null } }, { id: { in: [...sourceOriginals.values()] } }, ...pairs] },
-    select: { id: true, copiedFromId: true, sourceProvider: true, sourceExternalId: true },
+    where: { userId, OR: [{ id: { in: originals } }, { originalId: { in: originals } }, ...pairs] },
+    select: { id: true, originalId: true, sourceProvider: true, sourceExternalId: true },
   });
-  const mineOriginals = await originals(mine);
-  const byOriginal = new Map<string, string>();
-  for (const print of mine) {
-    const original = mineOriginals.get(print.id) ?? print.id;
-    if (!byOriginal.has(original)) byOriginal.set(original, print.id);
-  }
   for (const source of sources) {
     const copy =
-      byOriginal.get(sourceOriginals.get(source.id) ?? source.id) ??
+      mine.find((print) => originalOf(print) === originalOf(source)) ??
       mine.find(
         (print) =>
           source.sourceProvider !== null &&
           source.sourceExternalId !== null &&
           print.sourceProvider === source.sourceProvider &&
           print.sourceExternalId === source.sourceExternalId,
-      )?.id;
-    if (copy) out.set(source.id, copy);
+      );
+    if (copy) out.set(source.id, copy.id);
   }
   return out;
 }
@@ -171,7 +132,7 @@ export async function withOwners(viewerId: string, outs: PrintOut[]): Promise<Pr
   if (!outs.length) return outs;
   const rows = await prisma.print.findMany({
     where: { id: { in: outs.map((out) => out.id) }, userId: { not: viewerId } },
-    select: { id: true, userId: true, copiedFromId: true, sourceProvider: true, sourceExternalId: true },
+    select: { id: true, userId: true, originalId: true, sourceProvider: true, sourceExternalId: true },
   });
   if (!rows.length) return outs;
   const [owners, copies] = await Promise.all([
@@ -255,7 +216,7 @@ async function people(userIds: string[]): Promise<ExplorePersonOut[]> {
 }
 
 export type ExploreOut = {
-  /** The other users with a public collection, those who shared most recently first. */
+  /** The other users with a public collection, those who shared most recently first; the most recent few dozen. */
   people: ExplorePersonOut[];
   /** The models most recently put in another user's public collection. */
   recent_models: PrintOut[];
@@ -265,6 +226,7 @@ export type ExploreOut = {
   most_collected: { model: PrintOut; copies: number }[];
 };
 
+const PEOPLE = 48;
 const RECENT_MODELS = 12;
 const RECENT_COLLECTIONS = 8;
 const MOST_COLLECTED = 12;
@@ -282,13 +244,14 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
       GROUP BY c.id
       ORDER BY GREATEST(c."updatedAt", COALESCE(MAX(i."createdAt"), c."updatedAt")) DESC, c.id
       LIMIT ${RECENT_COLLECTIONS}`,
-    // Everyone who shares, by when they last did.
+    // Those who share, by when they last did.
     prisma.$queryRaw<{ userId: string }[]>`
       SELECT c."userId" FROM "Collection" c
       LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
       WHERE c."isPublic" AND c."userId" <> ${viewerId}
       GROUP BY c."userId"
-      ORDER BY MAX(GREATEST(c."updatedAt", COALESCE(i."createdAt", c."updatedAt"))) DESC, c."userId"`,
+      ORDER BY MAX(GREATEST(c."updatedAt", COALESCE(i."createdAt", c."updatedAt"))) DESC, c."userId"
+      LIMIT ${PEOPLE}`,
     // Each model once, by when it was last filed: one filed in many collections doesn't fill the row.
     prisma.collectionItem.groupBy({
       by: ["printId"],
@@ -306,7 +269,8 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
   ]);
 
   const collectionIds = recentCollectionIds.map((row) => row.id);
-  const recentCollections = await prisma.collection.findMany({ where: { id: { in: collectionIds } } });
+  // Still public: one made private since it was ranked isn't shown.
+  const recentCollections = await prisma.collection.findMany({ where: { id: { in: collectionIds }, ...othersPublic } });
   const byChange = collectionIds.flatMap((id) => recentCollections.find((collection) => collection.id === id) ?? []);
 
   const [peopleOut, recentModels, recentCollectionOuts, collectedModels] = await Promise.all([

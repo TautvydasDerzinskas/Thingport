@@ -5248,7 +5248,9 @@
       "toolOwned_other": "{{count}} des modèles choisis appartiennent à un outil : retirez-les pour faire ceci",
       "toolOwned_many": "{{count}} des modèles choisis appartiennent à un outil : retirez-les pour faire ceci",
       "notFiled_one": "{{count}} modèle n'a pas pu être ajouté : il n'est plus partagé",
-      "notFiled_other": "{{count}} modèles n'ont pas pu être ajoutés : ils ne sont plus partagés"
+      "notFiled_other": "{{count}} modèles n'ont pas pu être ajoutés : ils ne sont plus partagés",
+      "notFiledNames_one": "Impossible d'ajouter {{names}} : il n'est plus partagé",
+      "notFiledNames_other": "Impossible d'ajouter {{names}} : ils ne sont plus partagés"
     },
     "merge": {
       "action": "Fusionner",

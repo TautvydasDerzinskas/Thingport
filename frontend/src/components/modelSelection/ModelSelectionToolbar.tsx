@@ -320,6 +320,7 @@ export default function ModelSelectionToolbar({
             open={addOpen}
             onClose={() => setAddOpen(false)}
             printIds={ids}
+            printNames={Object.fromEntries(selected.map((print) => [print.id, print.title || print.name]))}
             collectionId={collectionId}
             onRemovedFromCollection={onRemovedFromCollection}
             onUnauthorized={onUnauthorized}

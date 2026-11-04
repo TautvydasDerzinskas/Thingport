@@ -57,6 +57,12 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const onRenderUnavailable = useCallback(() => setRenderUnavailable(true), []);
   const [previewOpen, setPreviewOpen] = useState(false);
   const { quality, outcome } = useQualityCheck(printId ?? "", onUnauthorized);
+  // The header's menu stays across models, so an answer for the one before (a copy finishing, say) can arrive here
+  // after another has opened: it's dropped rather than shown as this one.
+  const updatePrint = useCallback(
+    (updated: Print) => setPrint((prev) => (prev && prev.id !== updated.id ? prev : updated)),
+    [],
+  );
 
   // Returns wherever the user came from; useSmartBack skips same-route history entries.
   const goBack = useSmartBack();
@@ -67,12 +73,12 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     actions: print ? (
       <Stack direction="row" alignItems="center" spacing={0.5}>
         {/* Another user's model is theirs to favourite; the viewer copies it instead (the side panel). */}
-        {!print.owner && <FavoriteButton print={print} onUpdated={setPrint} onUnauthorized={onUnauthorized} />}
+        {!print.owner && <FavoriteButton print={print} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />}
         <ModelActionsMenu
           print={print}
           onUnauthorized={onUnauthorized}
           onDeleted={goBack}
-          onUpdated={setPrint}
+          onUpdated={updatePrint}
           onCollectionCountChange={setCollectionCount}
           viewer={viewer}
           offerLink
@@ -396,7 +402,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               >
                 {t("models:detail.description")}
               </Typography>
-              <AiDescriptionChip print={print} onUpdated={setPrint} onUnauthorized={onUnauthorized} />
+              <AiDescriptionChip print={print} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />
             </Stack>
             {print.notes?.trim() ? (
               <MarkdownDescription markdown={print.notes} />
@@ -405,7 +411,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                 {t("models:detail.noDescription")}
               </Typography>
             )}
-            <AiDescriptionReview print={print} onUpdated={setPrint} onUnauthorized={onUnauthorized} />
+            <AiDescriptionReview print={print} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />
 
             <Typography
               variant="subtitle1"
@@ -456,7 +462,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
             onCollectionCountChange={setCollectionCount}
             onSelectCategory={onSelectCategory}
             onUnauthorized={onUnauthorized}
-            onUpdated={setPrint}
+            onUpdated={updatePrint}
             viewer={viewer}
           />
         </Box>

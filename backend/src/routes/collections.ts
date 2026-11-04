@@ -75,7 +75,7 @@ async function ownModelFor(userId: string, printId: string, copy: boolean): Prom
   if (own) return own.id;
   const shared = await prisma.print.findFirst({
     where: { id: printId, AND: [await readablePrintWhere(userId)] },
-    select: { id: true, copiedFromId: true, sourceProvider: true, sourceExternalId: true },
+    select: { id: true, originalId: true, sourceProvider: true, sourceExternalId: true },
   });
   if (!shared) return null;
   if (copy) return (await copyPrintToLibrary(userId, shared.id)).print.id;

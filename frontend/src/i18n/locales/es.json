@@ -5235,7 +5235,9 @@
       "toolOwned_other": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
       "toolOwned_many": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
       "notFiled_one": "No se pudo añadir {{count}} modelo: ya no se comparte",
-      "notFiled_other": "No se pudieron añadir {{count}} modelos: ya no se comparten"
+      "notFiled_other": "No se pudieron añadir {{count}} modelos: ya no se comparten",
+      "notFiledNames_one": "No se pudo añadir {{names}}: ya no se comparte",
+      "notFiledNames_other": "No se pudieron añadir {{names}}: ya no se comparten"
     },
     "merge": {
       "action": "Fusionar",

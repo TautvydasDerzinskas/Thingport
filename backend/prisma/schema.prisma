@@ -233,6 +233,9 @@ model Print {
   copiedFromId             String?
   copiedFrom               Print?                   @relation("PrintCopies", fields: [copiedFromId], references: [id], onDelete: SetNull)
   copies                   Print[]                  @relation("PrintCopies")
+  // The first original of that chain: what a copy of a copy is a copy of. No relation, so it outlasts the original's
+  // deletion, and with it the knowledge that the user already has the model. One copy per user and original.
+  originalId               String?
   createdAt                DateTime                 @default(now())
   updatedAt                DateTime                 @updatedAt
   // Generated column (name A, tags B, notes C, creator D) created with its GIN index in a
@@ -242,6 +245,7 @@ model Print {
   @@unique([userId, categoryId, nameNormalized])
   @@unique([userId, sourceProvider, sourceExternalId])
   @@unique([userId, toolId, toolKey])
+  @@unique([userId, originalId])
   @@index([userId, categoryId, name])
   @@index([tags], type: Gin)
   @@index([authorId])
