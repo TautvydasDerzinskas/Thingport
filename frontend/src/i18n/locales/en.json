@@ -3769,6 +3769,10 @@
       "profileWeight": "Filament {{value}}",
       "profilePlates_one": "{{count}} plate",
       "profilePlates_other": "{{count}} plates",
+      "summaryWalls_one": "{{count}} wall",
+      "summaryWalls_other": "{{count}} walls",
+      "summarySupportsNormal": "Normal supports",
+      "summarySupportsTree": "Tree supports",
       "plateLabel": "Plate {{n}}",
       "details": {
         "title": "Details",

@@ -67,7 +67,7 @@ function FileThumb({ file }: { file: ModelFile }) {
  * the same row, only as information.
  */
 export default function ModelFileList({ files, selected, onSelect }: Props) {
-  const { t } = useTranslation(["models"]);
+  const { t, i18n } = useTranslation(["models"]);
   const selectable = files.length > 1;
   const selectedIndex = Math.max(
     0,
@@ -84,7 +84,7 @@ export default function ModelFileList({ files, selected, onSelect }: Props) {
 
   const textOf = (file: ModelFile) =>
     file.plate
-      ? fileRowText(t, file.filename, file.index, file.plate.profile)
+      ? fileRowText(t, file.filename, file.index, file.plate.profile, i18n.resolvedLanguage ?? i18n.language)
       : { primary: t("models:detail.preparedPrintFile"), secondary: file.filename };
 
   const onKeyDown = (e: KeyboardEvent) => {

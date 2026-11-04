@@ -41,7 +41,7 @@ export default function SlicerFileMenu({
   normalized,
   matchAnchorWidth = false,
 }: Props) {
-  const { t } = useTranslation(["models"]);
+  const { t, i18n } = useTranslation(["models"]);
   const paperSx =
     matchAnchorWidth && anchorEl instanceof HTMLElement ? { width: anchorEl.offsetWidth } : { maxWidth: 360 };
   return (
@@ -60,7 +60,7 @@ export default function SlicerFileMenu({
       </ListSubheader>
       {targets.map((target) => {
         const text = target.plate
-          ? fileRowText(t, target.filename, target.index, target.plate.profile)
+          ? fileRowText(t, target.filename, target.index, target.plate.profile, i18n.resolvedLanguage ?? i18n.language)
           : { primary: t("models:detail.preparedPrintFile"), secondary: target.filename };
         const state = normalized?.stateOf(target) ?? "idle";
         if (state === "preparing") text.secondary = t("models:detail.normalizePreparingShort");

@@ -33,7 +33,7 @@ export default function DownloadPickerDialog({
   downloadAllZip,
   downloadPlate,
 }: Props) {
-  const { t } = useTranslation(["models", "common"]);
+  const { t, i18n } = useTranslation(["models", "common"]);
   return (
     <Dialog open={open} onClose={() => !downloading && onClose()} fullWidth maxWidth="xs">
       <DialogTitle>{t("models:detail.downloadPickerTitle")}</DialogTitle>
@@ -61,7 +61,7 @@ export default function DownloadPickerDialog({
                   <PlateThumbnail plate={plate} size={48} />
                 </ListItemIcon>
                 <ListItemText
-                  {...fileRowText(t, plate.filename, idx, plate.profile)}
+                  {...fileRowText(t, plate.filename, idx, plate.profile, i18n.resolvedLanguage ?? i18n.language)}
                   primaryTypographyProps={{ noWrap: true }}
                   secondaryTypographyProps={{ noWrap: true }}
                 />

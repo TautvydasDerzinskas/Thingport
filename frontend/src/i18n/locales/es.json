@@ -3806,6 +3806,11 @@
       "profilePlates_one": "{{count}} placa",
       "profilePlates_many": "{{count}} placas",
       "profilePlates_other": "{{count}} placas",
+      "summaryWalls_one": "{{count}} perímetro",
+      "summaryWalls_many": "{{count}} perímetros",
+      "summaryWalls_other": "{{count}} perímetros",
+      "summarySupportsNormal": "Soportes normales",
+      "summarySupportsTree": "Soportes de árbol",
       "plateLabel": "Placa {{n}}",
       "details": {
         "title": "Detalles",

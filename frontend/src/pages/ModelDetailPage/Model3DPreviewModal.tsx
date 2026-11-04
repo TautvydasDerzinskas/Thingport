@@ -18,7 +18,7 @@ import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { type Print, printsApi } from "../../api/prints";
+import { type PlateProfile, type Print, printsApi } from "../../api/prints";
 import { MODEL_EXTS } from "../../constants/fileTypes";
 import { extOf, stemOf } from "../../utils/fileExtensions";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
@@ -29,6 +29,7 @@ import ModelViewer, {
   type RenderStyle,
 } from "../../components/media/ModelViewer";
 import type { PlateSummary } from "../../utils/bambuThreeMf";
+import { profileSummary } from "./fileRowText";
 import PreviewToolbar from "./PreviewToolbar";
 import type { RenderColor } from "../../constants/settingsOptions";
 import { useRenderColor } from "../../hooks/useAccentColor";
@@ -46,7 +47,14 @@ const overlayButtonSx = {
 };
 
 // The profile of the active file sits below in ProfileDetails, so a row only needs to tell the files apart.
-function compactFileText(t: TFunction, filename: string, index: number, title?: string | null) {
+function compactFileText(
+  t: TFunction,
+  filename: string,
+  index: number,
+  profile: PlateProfile | null | undefined,
+  locale: string,
+) {
+  const title = (profile && profileSummary(t, profile, locale)) || profile?.title || null;
   const stem = stemOf(filename);
   const type = extOf(filename).toUpperCase();
   const plain = type
@@ -185,7 +193,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                     <PlateThumbnail plate={plate} />
                   </ListItemIcon>
                   <ListItemText
-                    {...compactFileText(t, plate.filename, idx, plate.profile?.title)}
+                    {...compactFileText(t, plate.filename, idx, plate.profile, locale)}
                     primaryTypographyProps={{ variant: "body2", noWrap: true }}
                     secondaryTypographyProps={{ variant: "caption", noWrap: true }}
                   />
@@ -203,7 +211,8 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                   </Typography>
                 </Divider>
               )}
-              <List disablePadding sx={{ ...scrollListSx, maxHeight: 168, flex: "0 1 auto" }}>
+              {/* Four rows fit whole; more scroll with the next row peeking out (168 hid the 4th plate completely, B-16). */}
+              <List disablePadding sx={{ ...scrollListSx, flex: "0 1 auto" }}>
                 {internalPlates.map((plate) => (
                   <ListItemButton
                     key={plate.index}

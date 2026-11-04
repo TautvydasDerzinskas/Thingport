@@ -3819,6 +3819,11 @@
       "profilePlates_one": "{{count}} plaque",
       "profilePlates_many": "{{count}} plaques",
       "profilePlates_other": "{{count}} plaques",
+      "summaryWalls_one": "{{count}} paroi",
+      "summaryWalls_many": "{{count}} parois",
+      "summaryWalls_other": "{{count}} parois",
+      "summarySupportsNormal": "Supports normaux",
+      "summarySupportsTree": "Supports arborescents",
       "plateLabel": "Plateau {{n}}",
       "details": {
         "title": "Détails",

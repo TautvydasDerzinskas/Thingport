@@ -6,7 +6,7 @@ import type { PlateProfile } from "../../api/prints";
 import en from "../../i18n/locales/en.json";
 import fr from "../../i18n/locales/fr.json";
 import lt from "../../i18n/locales/lt.json";
-import { fileRowText } from "./fileRowText";
+import { fileRowText, profileSummary } from "./fileRowText";
 
 const i18n = i18next.createInstance();
 await i18n.init({ lng: "en", defaultNS: "models", resources: { en: { models: en.models } } });
@@ -62,8 +62,28 @@ describe("fileRowText", () => {
       estimated_seconds: 4980,
       weight_g: 12.34,
     };
-    expect(fileRowText(t, "part.3mf", 0, profile).primary).toBe("0.22mm layer, 2 walls, 10% infill");
-    expect(secondaryText(profile)).toBe("part|0.4|0.22|PLA|3|1h 23m|12g|Bambu Lab A1 mini");
+    expect(fileRowText(t, "part.3mf", 0, profile).primary).toBe("0.22 mm");
+    expect(secondaryText(profile)).toBe(
+      "0.22mm layer, 2 walls, 10% infill|0.4|0.22|PLA|3|1h 23m|12g|Bambu Lab A1 mini",
+    );
+  });
+
+  it("builds the headline from the fields and keeps the file name as hover text", () => {
+    const profile: PlateProfile = { ...empty, title: "Draft", layer_height_mm: 0.08, walls: 6, supports: "tree" };
+    expect(fileRowText(t, "part.3mf", 0, profile).primary).toBe("0.08 mm · 6 walls · Tree supports");
+    expect(secondaryHtml(profile)).toContain('title="part · File 1 · 3MF"');
+  });
+
+  it("shows the file name under the headline when the profile has no title", () => {
+    const profile: PlateProfile = { ...empty, layer_height_mm: 0.2, nozzle_mm: 0.4 };
+    expect(fileRowText(t, "part.3mf", 0, profile).primary).toBe("0.2 mm");
+    expect(secondaryText(profile)).toBe("part|0.4|0.2");
+  });
+
+  it("keeps the title as headline when there are no print settings", () => {
+    const profile: PlateProfile = { ...empty, title: "Draft", printer: "MK4" };
+    expect(fileRowText(t, "part.3mf", 0, profile).primary).toBe("Draft");
+    expect(secondaryText(profile)).toBe("part|MK4");
   });
 
   it("falls back to the file name when only badges are known", () => {
@@ -81,7 +101,7 @@ describe("fileRowText", () => {
   });
 
   it("drops trailing zeros from numbers", () => {
-    expect(secondaryText({ ...empty, nozzle_mm: 0.4, layer_height_mm: 0.2 })).toBe("0.4|0.2");
+    expect(secondaryText({ ...empty, nozzle_mm: 0.4, layer_height_mm: 0.2 })).toBe("part|0.4|0.2");
   });
 
   it("shows time and weight alone", () => {
@@ -140,5 +160,35 @@ describe("fileRowText", () => {
     const text = html.replace(/\s/g, " ");
     expect(text).toContain(`>${time}<`);
     expect(text).toContain(`>${weight}<`);
+  });
+});
+
+describe("profileSummary", () => {
+  const full: PlateProfile = {
+    ...empty,
+    layer_height_mm: 0.08,
+    walls: 6,
+    infill_density_pct: 40,
+    infill_pattern: "gyroid",
+    supports: "tree",
+  };
+
+  it("joins layer, walls, infill and supports in a fixed order", () => {
+    expect(profileSummary(t, full, "en")).toBe("0.08 mm · 6 walls · 40% Gyroid · Tree supports");
+  });
+
+  it("leaves out what the file doesn't say", () => {
+    expect(profileSummary(t, { ...empty, walls: 1, infill_pattern: "grid" }, "en")).toBe("1 wall · Grid");
+    expect(profileSummary(t, { ...empty, supports: "normal" }, "en")).toBe("Normal supports");
+  });
+
+  it("is null when nothing is known, and ignores 'no supports' and the title", () => {
+    expect(profileSummary(t, empty, "en")).toBeNull();
+    expect(profileSummary(t, { ...empty, supports: "none", walls: 0, title: "0.2mm, 3 walls" }, "en")).toBeNull();
+  });
+
+  it("uses the language's number format and plural", () => {
+    expect(profileSummary(i18nLt.t.bind(i18nLt), { ...full, walls: 2 }, "lt")).toMatch(/^0,08 mm · 2 sienelės · 40\s%/);
+    expect(profileSummary(i18nFr.t.bind(i18nFr), { ...full, walls: 3 }, "fr")).toContain("3 parois");
   });
 });

@@ -3895,6 +3895,11 @@
       "profilePlates_one": "{{count}} plokštė",
       "profilePlates_few": "{{count}} plokštės",
       "profilePlates_other": "{{count}} plokščių",
+      "summaryWalls_one": "{{count}} sienelė",
+      "summaryWalls_few": "{{count}} sienelės",
+      "summaryWalls_other": "{{count}} sienelių",
+      "summarySupportsNormal": "Įprastos atramos",
+      "summarySupportsTree": "Medžio atramos",
       "plateLabel": "Plokštė {{n}}",
       "details": {
         "title": "Informacija",
