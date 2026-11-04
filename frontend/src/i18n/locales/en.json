@@ -2479,7 +2479,8 @@
           "infoNotify": "Someone who isn't reading a chat sees its new messages in the sidebar and as a notification. Messages arrive within a few seconds, not instantly.",
           "infoOff": "Turning this off hides every chat. Nothing is deleted, and it's all back when chats are turned on again.",
           "onHint": "On: Chats is in everyone's sidebar.",
-          "offHint": "Off by default. Turn on to let users message each other."
+          "offHint": "Off by default. Turn on to let users message each other.",
+          "infoModels": "A model sent in a chat can be opened, downloaded and copied by everyone who can read that chat, for as long as the message stays."
         }
       }
     },
@@ -3913,7 +3914,42 @@
       "readingRoom": "You're reading this room. Join it to write and be notified.",
       "recipientGone": "This person's account has been deleted, so messages can't be sent.",
       "emptyRoom": "Nothing's been said here yet.",
-      "emptyDirect": "Say hello to {{name}}."
+      "emptyDirect": "Say hello to {{name}}.",
+      "emoji": "Emoji",
+      "attachModel": "Attach a model",
+      "attachTitle": "Attach models",
+      "attach": "Attach",
+      "attachLimit": "Up to {{count}} models in one message",
+      "removeAttachment": "Remove {{name}}",
+      "modelUnavailable": "No longer available",
+      "modelFrom": "From {{name}}",
+      "yourModel": "Your model",
+      "openModel": "Open {{name}}",
+      "sentModels_one": "📎 {{name}}",
+      "sentModels_other": "📎 {{count}} models",
+      "emojiPicker": {
+        "search": "Search emoji",
+        "clear": "Clear",
+        "categories": {
+          "suggested": "Recently used",
+          "smileys_people": "Smileys & people",
+          "animals_nature": "Animals & nature",
+          "food_drink": "Food & drink",
+          "travel_places": "Travel & places",
+          "activities": "Activities",
+          "objects": "Objects",
+          "symbols": "Symbols",
+          "flags": "Flags"
+        }
+      }
+    },
+    "modelPicker": {
+      "search": "Search your library",
+      "limit_one": "Pick up to {{count}}",
+      "limit_other": "Pick up to {{count}}",
+      "noMatch": "No models match.",
+      "emptyLibrary": "Your library has no models yet.",
+      "loadFailed": "Couldn't load your models."
     }
   },
   "common": {

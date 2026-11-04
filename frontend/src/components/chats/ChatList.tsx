@@ -89,6 +89,11 @@ function ChatRow({
   const { t, i18n } = useTranslation("app");
   const last = chat.last_message;
   const unread = chat.joined && chat.unread > 0;
+  // A message that's only models says which.
+  const said =
+    last && !last.body && last.attachments.length
+      ? t("chats.sentModels", { count: last.attachments.length, name: last.attachments[0].name })
+      : (last?.body ?? "");
   const preview = !last
     ? chat.kind === "room"
       ? chat.description || (chat.is_public ? t("chats.publicRoom") : t("chats.privateRoom"))
@@ -96,10 +101,10 @@ function ChatRow({
     : last.deleted
       ? t("chats.messageDeleted")
       : last.sender?.id === viewerId
-        ? t("chats.youWrote", { body: last.body })
+        ? t("chats.youWrote", { body: said })
         : chat.kind === "room"
-          ? `${last.sender?.display_name ?? t("chats.deletedUser")}: ${last.body}`
-          : last.body;
+          ? `${last.sender?.display_name ?? t("chats.deletedUser")}: ${said}`
+          : said;
   return (
     <ListItemButton
       selected={selected}

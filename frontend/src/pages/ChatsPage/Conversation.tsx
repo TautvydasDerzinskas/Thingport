@@ -37,6 +37,7 @@ import { copyText } from "../../utils/clipboard";
 import { newLocalId } from "../../utils/localId";
 import Composer from "./Composer";
 import MessageList, { type ShownMessage } from "./MessageList";
+import type { Print } from "../../api/prints";
 
 // While a chat is open in front of the user, it asks for what's new every few seconds; hidden, it waits.
 const POLL_MS = 3_000;
@@ -65,12 +66,23 @@ function firstUnread(messages: ChatMessage[], viewerId: string, unread: number):
 }
 
 /** The user's message as shown until the server has it. */
-function pendingMessage(chatId: string, viewerId: string, body: string): ShownMessage {
+/** What of a model goes with a message: enough to show it until the server answers, and to send it again. */
+type Outgoing = Pick<Print, "id" | "name" | "title" | "thumb_url">;
+
+function pendingMessage(chatId: string, viewerId: string, body: string, models: Outgoing[]): ShownMessage {
   return {
     id: `local-${newLocalId()}`,
     chat_id: chatId,
     sender: { id: viewerId, display_name: "", avatar_url: null },
     body,
+    attachments: models.map((model) => {
+      const name = model.title || model.name;
+      return {
+        id: `local-${model.id}`,
+        name,
+        model: { id: model.id, name, thumb_url: model.thumb_url ?? null, owner: null },
+      };
+    }),
     deleted: false,
     created_at: new Date().toISOString(),
     pending: "sending",
@@ -146,7 +158,7 @@ export default function Conversation({ chatId, mobile, onUnauthorized }: Props) 
       for (const message of page.messages) byId.set(message.id, message);
       for (const id of page.deleted_ids) {
         const message = byId.get(id);
-        if (message) byId.set(id, { ...message, deleted: true, body: "" });
+        if (message) byId.set(id, { ...message, deleted: true, body: "", attachments: [] });
       }
       return [...byId.values()].toSorted(byTime);
     });
@@ -260,13 +272,17 @@ export default function Conversation({ chatId, mobile, onUnauthorized }: Props) 
     }
   };
 
-  const send = async (body: string) => {
+  const send = async (body: string, models: Outgoing[] = []) => {
     if (!chat) return;
-    const local = pendingMessage(chatId, viewerId, body);
+    const local = pendingMessage(chatId, viewerId, body, models);
     setMessages((previous) => [...previous, local]);
     setFirstUnreadId(null);
     try {
-      const saved = await chatsApi.send(chatId, body);
+      const saved = await chatsApi.send(
+        chatId,
+        body,
+        models.map((model) => model.id),
+      );
       setMessages((previous) =>
         [...previous.filter((message) => message.id !== local.id && message.id !== saved.id), saved].toSorted(byTime),
       );
@@ -296,7 +312,9 @@ export default function Conversation({ chatId, mobile, onUnauthorized }: Props) 
     if (!ok) return;
     try {
       await chatsApi.deleteMessage(chatId, message.id);
-      setMessages((previous) => previous.map((m) => (m.id === message.id ? { ...m, deleted: true, body: "" } : m)));
+      setMessages((previous) =>
+        previous.map((m) => (m.id === message.id ? { ...m, deleted: true, body: "", attachments: [] } : m)),
+      );
       // The list may be showing it as the latest; read afresh rather than patched, as another may have come meanwhile.
       void refreshList();
     } catch (err) {
@@ -308,7 +326,14 @@ export default function Conversation({ chatId, mobile, onUnauthorized }: Props) 
 
   const retry = (message: ShownMessage) => {
     setMessages((previous) => previous.filter((m) => m.id !== message.id));
-    void send(message.body);
+    void send(
+      message.body,
+      message.attachments.flatMap((attachment) =>
+        attachment.model
+          ? [{ id: attachment.model.id, name: attachment.name, title: null, thumb_url: attachment.model.thumb_url }]
+          : [],
+      ),
+    );
   };
 
   const copy = (message: ShownMessage) => {
@@ -432,7 +457,11 @@ export default function Conversation({ chatId, mobile, onUnauthorized }: Props) 
           {t("chats.recipientGone")}
         </Typography>
       ) : (
-        <Composer placeholder={t("chats.writeTo", { name })} onSend={(text) => void send(text)} />
+        <Composer
+          placeholder={t("chats.writeTo", { name })}
+          onSend={(text, models) => void send(text, models)}
+          onUnauthorized={onUnauthorized}
+        />
       );
     body = (
       <>

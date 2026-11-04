@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { notifyRecipient } from "../src/services/chatService";
@@ -459,5 +462,119 @@ describe("review findings", () => {
     await setSocialSettings({ enabled: false, chats: false });
     await Promise.all([setSocialSettings({ enabled: true }), setSocialSettings({ chats: true })]);
     expect(await getSocialSettings()).toEqual({ enabled: true, chats: true });
+  });
+});
+
+describe("models sent in a chat", () => {
+  let chatId: string;
+  let printId: string;
+  // Their own pair: the earlier direct messages between Ana and Ben are muted by now.
+  let sender: Account;
+  let receiver: Account;
+
+  async function upload(account: Account, name: string): Promise<string> {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-chats-"));
+    const file = path.join(dir, `${name}.stl`);
+    fs.writeFileSync(file, `solid ${name} endsolid`);
+    const res = await request(app).post("/api/upload").set(auth(account)).attach("files", file);
+    if (res.status !== 200) throw new Error(`Couldn't upload: ${res.status} ${JSON.stringify(res.body)}`);
+    return res.body.prints[0].id;
+  }
+
+  beforeAll(async () => {
+    await setSocialSettings({ enabled: true, chats: true });
+    sender = await register("Sender");
+    receiver = await register("Receiver");
+    chatId = (await request(app).post("/api/chats/direct").set(auth(sender)).send({ user_id: receiver.id })).body.id;
+    printId = await upload(sender, `benchy-${RUN}`);
+  });
+
+  it("can't be opened by someone it wasn't sent to, before or after", async () => {
+    expect((await request(app).get(`/api/print/${printId}`).set(auth(receiver))).status).toBe(404);
+  });
+
+  it("only come from the sender's own library", async () => {
+    const res = await request(app)
+      .post(`/api/chats/${chatId}/messages`)
+      .set(auth(receiver))
+      .send({ body: "", print_ids: [printId] });
+    expect([res.status, res.body.code]).toEqual([400, "not_own_model"]);
+  });
+
+  it("open, download and copy for whoever can read the chat", async () => {
+    const sent = await request(app)
+      .post(`/api/chats/${chatId}/messages`)
+      .set(auth(sender))
+      .send({ body: "", print_ids: [printId] });
+    expect(sent.status).toBe(200);
+    expect(sent.body.attachments).toEqual([
+      expect.objectContaining({ name: `benchy-${RUN}`, model: expect.objectContaining({ id: printId, owner: null }) }),
+    ]);
+
+    const page = await request(app).get(`/api/chats/${chatId}/messages`).set(auth(receiver));
+    const got = page.body.messages.find((m: { id: string }) => m.id === sent.body.id);
+    expect(got.attachments[0].model).toMatchObject({ id: printId, owner: { id: sender.id } });
+
+    expect((await request(app).get(`/api/print/${printId}`).set(auth(receiver))).status).toBe(200);
+    expect((await request(app).get(`/api/print/${printId}`).set(auth(cleo))).status).toBe(404);
+    const copy = await request(app).post(`/api/print/${printId}/copy`).set(auth(receiver));
+    expect(copy.status).toBe(200);
+    expect(copy.body.print.id).not.toBe(printId);
+
+    const [notification] = await chatNotifications(receiver, chatId, 1);
+    expect(notification.body).toBe(`Sent "benchy-${RUN}"`);
+    const listed = (await request(app).get("/api/chats").set(auth(receiver))).body.chats.find(
+      (c: { id: string }) => c.id === chatId,
+    );
+    expect(listed.last_message.attachments).toEqual([expect.objectContaining({ name: `benchy-${RUN}`, model: null })]);
+  });
+
+  it("stop opening once the message is deleted, or chats are off", async () => {
+    const other = await upload(sender, `gear-${RUN}`);
+    const sent = await request(app)
+      .post(`/api/chats/${chatId}/messages`)
+      .set(auth(sender))
+      .send({ body: "And this", print_ids: [other] });
+    expect((await request(app).get(`/api/print/${other}`).set(auth(receiver))).status).toBe(200);
+
+    await setSocialSettings({ chats: false });
+    expect((await request(app).get(`/api/print/${other}`).set(auth(receiver))).status).toBe(404);
+    await setSocialSettings({ chats: true });
+
+    await request(app).delete(`/api/chats/${chatId}/messages/${sent.body.id}`).set(auth(sender));
+    expect((await request(app).get(`/api/print/${other}`).set(auth(receiver))).status).toBe(404);
+    const page = await request(app).get(`/api/chats/${chatId}/messages`).set(auth(receiver));
+    expect(page.body.messages.find((m: { id: string }) => m.id === sent.body.id).attachments).toEqual([]);
+  });
+
+  it("open for anyone in a public room, joined or not", async () => {
+    const room = (
+      await request(app)
+        .post("/api/chats/rooms")
+        .set(auth(admin))
+        .send({ name: `Show-off ${RUN}`, is_public: true })
+    ).body;
+    await request(app).post(`/api/chats/${room.id}/join`).set(auth(sender));
+    const shown = await upload(sender, `vase-${RUN}`);
+    await request(app)
+      .post(`/api/chats/${room.id}/messages`)
+      .set(auth(sender))
+      .send({ body: "Look", print_ids: [shown] });
+    expect((await request(app).get(`/api/print/${shown}`).set(auth(cleo))).status).toBe(200);
+    await request(app).delete(`/api/chats/rooms/${room.id}`).set(auth(admin));
+    expect((await request(app).get(`/api/print/${shown}`).set(auth(cleo))).status).toBe(404);
+  });
+
+  it("keep their name once the model itself is deleted", async () => {
+    const gone = await upload(sender, `doomed-${RUN}`);
+    const sent = await request(app)
+      .post(`/api/chats/${chatId}/messages`)
+      .set(auth(sender))
+      .send({ body: "", print_ids: [gone] });
+    await prisma.print.delete({ where: { id: gone } });
+    const page = await request(app).get(`/api/chats/${chatId}/messages`).set(auth(receiver));
+    expect(page.body.messages.find((m: { id: string }) => m.id === sent.body.id).attachments).toEqual([
+      expect.objectContaining({ name: `doomed-${RUN}`, model: null }),
+    ]);
   });
 });

@@ -40,7 +40,7 @@ export default function SocialSettingsDialog({
 }: Props) {
   const { t } = useTranslation("app");
   const [section, setSection] = React.useState<Section>("chats");
-  const points = (["infoDirect", "infoRooms", "infoNotify", "infoOff"] as const).map((key) =>
+  const points = (["infoDirect", "infoRooms", "infoModels", "infoNotify", "infoOff"] as const).map((key) =>
     t(`adminSettings.social.chats.${key}`),
   );
 

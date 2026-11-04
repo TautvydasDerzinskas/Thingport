@@ -21,6 +21,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { ChatMessage } from "../../api/chats";
 import { clockTime, dayLabel, sameDay } from "../../components/chats/chatFormat";
 import UserAvatar from "../../components/UserAvatar";
+import AttachmentCard from "./AttachmentCard";
 import MessageText from "./MessageText";
 
 /** A message as the conversation holds it: one still on its way, or one that didn't make it, is the user's own. */
@@ -145,6 +146,8 @@ export default function MessageList({
   }, [messages, otherReadAt, room, viewerId]);
 
   const canDelete = (message: ShownMessage) => !message.deleted && (message.sender?.id === viewerId || canDeleteAny);
+  // Copy needs text; a message of only someone else's models may have nothing to offer.
+  const hasActions = (message: ShownMessage) => !message.pending && (Boolean(message.body) || canDelete(message));
 
   return (
     <Box sx={{ position: "relative", flex: 1, minHeight: 0, display: "flex" }}>
@@ -208,7 +211,7 @@ export default function MessageList({
                   "&:hover .message-more, &:focus-within .message-more": { opacity: 1 },
                 }}
                 onContextMenu={(event) => {
-                  if (message.pending || message.deleted) return;
+                  if (!hasActions(message)) return;
                   event.preventDefault();
                   setMenu({ message, anchor: { top: event.clientY, left: event.clientX } });
                 }}
@@ -223,57 +226,79 @@ export default function MessageList({
                       ))}
                   </Box>
                 )}
-                {mine && !message.pending && !message.deleted && (
+                {mine && hasActions(message) && (
                   <MoreButton
                     onClick={(el) => setMenu({ message, anchor: { el } })}
                     label={t("chats.messageActions")}
                   />
                 )}
-                <Box sx={{ maxWidth: { xs: "85%", md: "70%" }, minWidth: 0 }}>
+                <Box
+                  sx={{
+                    maxWidth: { xs: "85%", md: "70%" },
+                    minWidth: 0,
+                    // Each part hugs its own width, a short line over wide model cards included.
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: mine ? "flex-end" : "flex-start",
+                  }}
+                >
                   {showName && (
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", ml: 1, mb: 0.25 }}>
                       {message.sender?.display_name ?? t("chats.deletedUser")}
                     </Typography>
                   )}
-                  <Tooltip
-                    title={new Date(message.created_at).toLocaleString(i18n.language)}
-                    placement={mine ? "left" : "right"}
-                    enterDelay={600}
-                  >
-                    <Box
-                      sx={(theme) => ({
-                        px: 1.25,
-                        py: 0.75,
-                        borderRadius: "14px",
-                        ...(mine
-                          ? { borderBottomRightRadius: endsGroup ? "4px" : "14px" }
-                          : { borderBottomLeftRadius: endsGroup ? "4px" : "14px" }),
-                        bgcolor: message.deleted
-                          ? "transparent"
-                          : mine
-                            ? theme.palette.primary.main
-                            : alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.1 : 0.06),
-                        color: message.deleted
-                          ? "text.secondary"
-                          : mine
-                            ? theme.palette.primary.contrastText
-                            : "text.primary",
-                        border: message.deleted ? `1px dashed ${theme.palette.divider}` : "none",
-                        opacity: message.pending === "sending" ? 0.7 : 1,
-                        transition: "opacity 150ms",
-                        whiteSpace: "pre-wrap",
-                        overflowWrap: "anywhere",
-                      })}
+                  {(message.deleted || message.body) && (
+                    <Tooltip
+                      title={new Date(message.created_at).toLocaleString(i18n.language)}
+                      placement={mine ? "left" : "right"}
+                      enterDelay={600}
                     >
-                      <Typography
-                        variant="body2"
-                        component="div"
-                        sx={{ fontStyle: message.deleted ? "italic" : undefined }}
+                      <Box
+                        sx={(theme) => ({
+                          px: 1.25,
+                          py: 0.75,
+                          borderRadius: "14px",
+                          ...(mine
+                            ? { borderBottomRightRadius: endsGroup ? "4px" : "14px" }
+                            : { borderBottomLeftRadius: endsGroup ? "4px" : "14px" }),
+                          bgcolor: message.deleted
+                            ? "transparent"
+                            : mine
+                              ? theme.palette.primary.main
+                              : alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.1 : 0.06),
+                          color: message.deleted
+                            ? "text.secondary"
+                            : mine
+                              ? theme.palette.primary.contrastText
+                              : "text.primary",
+                          border: message.deleted ? `1px dashed ${theme.palette.divider}` : "none",
+                          opacity: message.pending === "sending" ? 0.7 : 1,
+                          transition: "opacity 150ms",
+                          whiteSpace: "pre-wrap",
+                          overflowWrap: "anywhere",
+                        })}
                       >
-                        {message.deleted ? t("chats.messageDeleted") : <MessageText body={message.body} />}
-                      </Typography>
-                    </Box>
-                  </Tooltip>
+                        <Typography
+                          variant="body2"
+                          component="div"
+                          sx={{ fontStyle: message.deleted ? "italic" : undefined }}
+                        >
+                          {message.deleted ? t("chats.messageDeleted") : <MessageText body={message.body} />}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  )}
+                  {message.attachments.length > 0 && (
+                    <Stack
+                      spacing={0.5}
+                      alignItems={mine ? "flex-end" : "flex-start"}
+                      sx={{ mt: message.body ? 0.5 : 0, opacity: message.pending === "sending" ? 0.7 : 1 }}
+                    >
+                      {message.attachments.map((attachment) => (
+                        <AttachmentCard key={attachment.id} attachment={attachment} />
+                      ))}
+                    </Stack>
+                  )}
                   {message.pending === "failed" ? (
                     <Stack
                       direction="row"
@@ -313,7 +338,7 @@ export default function MessageList({
                     )
                   )}
                 </Box>
-                {!mine && !message.deleted && (
+                {!mine && hasActions(message) && (
                   <MoreButton
                     onClick={(el) => setMenu({ message, anchor: { el } })}
                     label={t("chats.messageActions")}
@@ -353,20 +378,22 @@ export default function MessageList({
               anchorPosition: menu?.anchor as { top: number; left: number },
             })}
       >
-        <MenuItem
-          onClick={() => {
-            if (menu) onCopy(menu.message);
-            setMenu(null);
-          }}
-        >
-          <ListItemIcon>
-            <ContentCopyIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t("chats.copyMessage")}</ListItemText>
-        </MenuItem>
+        {menu?.message.body && (
+          <MenuItem
+            onClick={() => {
+              onCopy(menu.message);
+              setMenu(null);
+            }}
+          >
+            <ListItemIcon>
+              <ContentCopyIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("chats.copyMessage")}</ListItemText>
+          </MenuItem>
+        )}
         {menu &&
           canDelete(menu.message) && [
-            <Divider key="divider" />,
+            menu.message.body ? <Divider key="divider" /> : null,
             <MenuItem
               key="delete"
               onClick={() => {

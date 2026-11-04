@@ -2513,7 +2513,8 @@
           "infoNotify": "Quien no está leyendo un chat ve sus mensajes nuevos en la barra lateral y como notificación. Los mensajes llegan en unos segundos, no al instante.",
           "infoOff": "Al desactivarlo se ocultan todos los chats. No se elimina nada, y todo vuelve cuando se reactivan.",
           "onHint": "Activado: Chats está en la barra lateral de todos.",
-          "offHint": "Desactivado por defecto. Actívalo para que los usuarios se escriban."
+          "offHint": "Desactivado por defecto. Actívalo para que los usuarios se escriban.",
+          "infoModels": "Un modelo enviado en un chat lo puede abrir, descargar y copiar cualquiera que pueda leer ese chat, mientras el mensaje siga ahí."
         }
       }
     },
@@ -3964,7 +3965,42 @@
       "readingRoom": "Estás leyendo esta sala. Únete para escribir y recibir avisos.",
       "recipientGone": "La cuenta de esta persona se eliminó, así que no se pueden enviar mensajes.",
       "emptyRoom": "Aquí aún no se ha dicho nada.",
-      "emptyDirect": "Saluda a {{name}}."
+      "emptyDirect": "Saluda a {{name}}.",
+      "emoji": "Emoji",
+      "attachModel": "Adjuntar un modelo",
+      "attachTitle": "Adjuntar modelos",
+      "attach": "Adjuntar",
+      "attachLimit": "Hasta {{count}} modelos por mensaje",
+      "removeAttachment": "Quitar {{name}}",
+      "modelUnavailable": "Ya no está disponible",
+      "modelFrom": "De {{name}}",
+      "yourModel": "Tu modelo",
+      "openModel": "Abrir {{name}}",
+      "sentModels_one": "📎 {{name}}",
+      "sentModels_other": "📎 {{count}} modelos",
+      "emojiPicker": {
+        "search": "Buscar emoji",
+        "clear": "Borrar",
+        "categories": {
+          "suggested": "Usados recientemente",
+          "smileys_people": "Caras y personas",
+          "animals_nature": "Animales y naturaleza",
+          "food_drink": "Comida y bebida",
+          "travel_places": "Viajes y lugares",
+          "activities": "Actividades",
+          "objects": "Objetos",
+          "symbols": "Símbolos",
+          "flags": "Banderas"
+        }
+      }
+    },
+    "modelPicker": {
+      "search": "Buscar en tu biblioteca",
+      "limit_one": "Elige hasta {{count}}",
+      "limit_other": "Elige hasta {{count}}",
+      "noMatch": "Ningún modelo coincide.",
+      "emptyLibrary": "Tu biblioteca aún no tiene modelos.",
+      "loadFailed": "No se pudieron cargar tus modelos."
     }
   },
   "common": {

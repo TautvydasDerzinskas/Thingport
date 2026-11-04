@@ -2513,7 +2513,8 @@
           "infoNotify": "Qui ne lit pas une discussion voit ses nouveaux messages dans la barre latérale et en notification. Les messages arrivent en quelques secondes, pas instantanément.",
           "infoOff": "Désactiver masque toutes les discussions. Rien n'est supprimé, et tout revient quand elles sont réactivées.",
           "onHint": "Activé : Discussions est dans la barre latérale de chacun.",
-          "offHint": "Désactivé par défaut. Activez-le pour que les utilisateurs s'écrivent."
+          "offHint": "Désactivé par défaut. Activez-le pour que les utilisateurs s'écrivent.",
+          "infoModels": "Un modèle envoyé dans une discussion peut être ouvert, téléchargé et copié par tous ceux qui peuvent la lire, tant que le message reste."
         }
       }
     },
@@ -3977,7 +3978,42 @@
       "readingRoom": "Vous lisez ce salon. Rejoignez-le pour écrire et être notifié.",
       "recipientGone": "Le compte de cette personne a été supprimé : impossible d'envoyer des messages.",
       "emptyRoom": "Rien n'a encore été dit ici.",
-      "emptyDirect": "Dites bonjour à {{name}}."
+      "emptyDirect": "Dites bonjour à {{name}}.",
+      "emoji": "Emoji",
+      "attachModel": "Joindre un modèle",
+      "attachTitle": "Joindre des modèles",
+      "attach": "Joindre",
+      "attachLimit": "Jusqu'à {{count}} modèles par message",
+      "removeAttachment": "Retirer {{name}}",
+      "modelUnavailable": "N'est plus disponible",
+      "modelFrom": "De {{name}}",
+      "yourModel": "Votre modèle",
+      "openModel": "Ouvrir {{name}}",
+      "sentModels_one": "📎 {{name}}",
+      "sentModels_other": "📎 {{count}} modèles",
+      "emojiPicker": {
+        "search": "Rechercher un emoji",
+        "clear": "Effacer",
+        "categories": {
+          "suggested": "Utilisés récemment",
+          "smileys_people": "Smileys et personnes",
+          "animals_nature": "Animaux et nature",
+          "food_drink": "Nourriture et boissons",
+          "travel_places": "Voyages et lieux",
+          "activities": "Activités",
+          "objects": "Objets",
+          "symbols": "Symboles",
+          "flags": "Drapeaux"
+        }
+      }
+    },
+    "modelPicker": {
+      "search": "Rechercher dans votre bibliothèque",
+      "limit_one": "Jusqu'à {{count}}",
+      "limit_other": "Jusqu'à {{count}}",
+      "noMatch": "Aucun modèle ne correspond.",
+      "emptyLibrary": "Votre bibliothèque n'a pas encore de modèles.",
+      "loadFailed": "Impossible de charger vos modèles."
     }
   },
   "common": {

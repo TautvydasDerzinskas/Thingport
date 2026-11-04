@@ -2563,7 +2563,8 @@
           "infoNotify": "Kas neskaito pokalbio, jo naujas žinutes mato šoninėje juostoje ir kaip pranešimą. Žinutės ateina per kelias sekundes, ne akimirksniu.",
           "infoOff": "Išjungus paslepiami visi pokalbiai. Niekas neištrinama – įjungus vėl viskas sugrįžta.",
           "onHint": "Įjungta: Pokalbiai yra visų šoninėje juostoje.",
-          "offHint": "Iš pradžių išjungta. Įjunkite, kad naudotojai galėtų susirašinėti."
+          "offHint": "Iš pradžių išjungta. Įjunkite, kad naudotojai galėtų susirašinėti.",
+          "infoModels": "Pokalbyje išsiųstą modelį gali atidaryti, atsisiųsti ir nusikopijuoti visi, kas gali skaityti tą pokalbį, kol žinutė lieka."
         }
       }
     },
@@ -4057,7 +4058,46 @@
       "readingRoom": "Skaitote šį kambarį. Prisijunkite, kad galėtumėte rašyti ir gautumėte pranešimus.",
       "recipientGone": "Šio žmogaus paskyra ištrinta, todėl žinučių siųsti negalima.",
       "emptyRoom": "Čia dar niekas nieko neparašė.",
-      "emptyDirect": "Pasisveikinkite su {{name}}."
+      "emptyDirect": "Pasisveikinkite su {{name}}.",
+      "emoji": "Jaustukai",
+      "attachModel": "Pridėti modelį",
+      "attachTitle": "Pridėti modelius",
+      "attach": "Pridėti",
+      "attachLimit": "Vienoje žinutėje – iki {{count}} modelių",
+      "removeAttachment": "Pašalinti {{name}}",
+      "modelUnavailable": "Nebepasiekiamas",
+      "modelFrom": "Nuo {{name}}",
+      "yourModel": "Jūsų modelis",
+      "openModel": "Atidaryti {{name}}",
+      "sentModels_one": "📎 {{name}}",
+      "sentModels_few": "📎 {{count}} modeliai",
+      "sentModels_many": "📎 {{count}} modelio",
+      "sentModels_other": "📎 {{count}} modelių",
+      "emojiPicker": {
+        "search": "Ieškoti jaustukų",
+        "clear": "Išvalyti",
+        "categories": {
+          "suggested": "Neseniai naudoti",
+          "smileys_people": "Šypsenėlės ir žmonės",
+          "animals_nature": "Gyvūnai ir gamta",
+          "food_drink": "Maistas ir gėrimai",
+          "travel_places": "Kelionės ir vietos",
+          "activities": "Veikla",
+          "objects": "Daiktai",
+          "symbols": "Simboliai",
+          "flags": "Vėliavos"
+        }
+      }
+    },
+    "modelPicker": {
+      "search": "Ieškoti savo bibliotekoje",
+      "limit_one": "Galima pasirinkti iki {{count}}",
+      "limit_few": "Galima pasirinkti iki {{count}}",
+      "limit_many": "Galima pasirinkti iki {{count}}",
+      "limit_other": "Galima pasirinkti iki {{count}}",
+      "noMatch": "Atitinkančių modelių nėra.",
+      "emptyLibrary": "Jūsų bibliotekoje kol kas nėra modelių.",
+      "loadFailed": "Nepavyko įkelti jūsų modelių."
     }
   },
   "common": {

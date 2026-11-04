@@ -246,6 +246,8 @@ model Print {
   // Generated column (name A, tags B, notes C, creator D) created with its GIN index in a
   // hand-written migration, since Prisma can't express a generated tsvector.
   searchVector             Unsupported("tsvector")?
+  // Sent in chats: whoever can read one of those chats can open it (socialService's readablePrintWhere).
+  chatAttachments          ChatAttachment[]
 
   @@unique([userId, categoryId, nameNormalized])
   @@unique([userId, sourceProvider, sourceExternalId])
@@ -1034,19 +1036,37 @@ model ChatMember {
 }
 
 model ChatMessage {
-  id        String    @id @default(cuid())
-  chatId    String
-  chat      Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  id          String           @id @default(cuid())
+  chatId      String
+  chat        Chat             @relation(fields: [chatId], references: [id], onDelete: Cascade)
   /// Null once the sender's account is gone: what they said stays, from a deleted user.
-  senderId  String?
-  sender    User?     @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  senderId    String?
+  sender      User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
   /// Emptied when it's deleted.
-  body      String
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
+  body        String
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  attachments ChatAttachment[]
 
   @@index([chatId, createdAt])
   // For polls asking what was deleted since they last looked.
   @@index([chatId, deletedAt])
   @@index([senderId])
+}
+
+/// A model of the sender's own, sent in a chat message. Whoever can read the chat can open, download and copy it while
+/// the message stays.
+model ChatAttachment {
+  id        String      @id @default(cuid())
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  /// Null once the model's deleted: the message still says what was sent.
+  printId   String?
+  print     Print?      @relation(fields: [printId], references: [id], onDelete: SetNull)
+  /// The model's name when it was sent.
+  name      String
+  position  Int         @default(0)
+
+  @@index([messageId])
+  @@index([printId])
 }

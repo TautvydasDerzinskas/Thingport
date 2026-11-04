@@ -6,13 +6,24 @@ import type { UserCard } from "./social";
  *  minutes. */
 export type ChatPerson = UserCard & { online: boolean };
 
+export type ChatAttachment = {
+  id: string;
+  /** What the model was called when it was sent. */
+  name: string;
+  /** The model as the user may open it: whose (null for their own) and its picture. Null once it's deleted, and in a
+   *  chat list's last message, which only names it. */
+  model: { id: string; name: string; thumb_url: string | null; owner: UserCard | null } | null;
+};
+
 export type ChatMessage = {
   id: string;
   chat_id: string;
   /** Null once their account is gone. */
   sender: UserCard | null;
-  /** Empty once deleted. */
+  /** Empty once deleted, and when the message is only models. */
   body: string;
+  /** Models of the sender's that came with it. None once it's deleted. */
+  attachments: ChatAttachment[];
   deleted: boolean;
   created_at: string;
 };
@@ -144,8 +155,14 @@ export const chatsApi = {
     return get<MessagePage>(`${chatPath(chatId)}/messages${query ? `?${query}` : ""}`, "Failed to load messages");
   },
 
-  send: (chatId: string, body: string) =>
-    send<ChatMessage>("POST", `${chatPath(chatId)}/messages`, { body }, "Failed to send the message"),
+  /** Text, models from the user's own library (whoever can read the chat can then open them), or both. */
+  send: (chatId: string, body: string, printIds: string[] = []) =>
+    send<ChatMessage>(
+      "POST",
+      `${chatPath(chatId)}/messages`,
+      { body, ...(printIds.length ? { print_ids: printIds } : {}) },
+      "Failed to send the message",
+    ),
 
   deleteMessage: (chatId: string, messageId: string) =>
     send<{ ok: true }>(

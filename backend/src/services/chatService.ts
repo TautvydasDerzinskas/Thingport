@@ -1,11 +1,11 @@
-import { Prisma, type Chat, type ChatMember, type ChatMessage } from "@prisma/client";
+import { Prisma, type Chat, type ChatAttachment, type ChatMember, type ChatMessage } from "@prisma/client";
 import { prisma } from "../db";
 import type { UserCardOut } from "../dto";
 import { createKeyedLock } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { createNotification } from "./notificationService";
 import { getSocialSettings } from "./settingsService";
-import { userCards } from "./socialService";
+import { readablePrintOuts, userCards } from "./socialService";
 
 // Chats, while an admin has them on under social features: direct messages between two of the instance's users, and
 // rooms an admin makes, public (anyone may read and join) or private (only the users the admin picked). Nothing is
@@ -16,6 +16,8 @@ export const MESSAGE_MAX_LENGTH = 4000;
 export const ROOM_NAME_MAX_LENGTH = 80;
 export const ROOM_DESCRIPTION_MAX_LENGTH = 300;
 export const MESSAGE_PAGE_SIZE = 50;
+/** Models one message can carry. */
+export const MAX_ATTACHMENTS = 5;
 const POLL_PAGE_SIZE = 200;
 const MAX_DELETED_IDS = 500;
 const MAX_DIRECT_CHATS = 200;
@@ -36,13 +38,24 @@ export type Viewer = { id: string; isAdmin: boolean };
 
 export type ChatPersonOut = UserCardOut & { online: boolean };
 
+export type ChatAttachmentOut = {
+  id: string;
+  /** What the model was called when it was sent. */
+  name: string;
+  /** The model as the viewer may open it: whose (null for their own), its picture. Null once it's deleted, and in a
+   *  chat list's last message, which only names it. */
+  model: { id: string; name: string; thumb_url: string | null; owner: UserCardOut | null } | null;
+};
+
 export type ChatMessageOut = {
   id: string;
   chat_id: string;
   /** Null once their account is gone. */
   sender: UserCardOut | null;
-  /** Empty once deleted. */
+  /** Empty once deleted, and when the message is only models. */
   body: string;
+  /** Models of the sender's that came with it, in order. None once it's deleted. */
+  attachments: ChatAttachmentOut[];
   deleted: boolean;
   created_at: string;
 };
@@ -114,20 +127,43 @@ export async function touchSeen(userId: string): Promise<void> {
   });
 }
 
-function messageOut(message: ChatMessage, senders: Map<string, UserCardOut>): ChatMessageOut {
-  return {
+/** Messages as `viewerId` sees them, with their models; without a viewer, the models are only named (a list's last
+ *  message, polled often, where reading each model whole would cost too much). */
+async function messageOuts(messages: ChatMessage[], viewerId?: string): Promise<ChatMessageOut[]> {
+  const ids = messages.filter((message) => !message.deletedAt).map((message) => message.id);
+  const [senders, attachments] = await Promise.all([
+    userCards(messages.flatMap((message) => message.senderId ?? [])),
+    ids.length
+      ? prisma.chatAttachment.findMany({
+          where: { messageId: { in: ids } },
+          orderBy: [{ position: "asc" }, { id: "asc" }],
+        })
+      : ([] as ChatAttachment[]),
+  ]);
+  const printIds = [...new Set(attachments.flatMap((attachment) => attachment.printId ?? []))];
+  const models = new Map(
+    viewerId && printIds.length ? (await readablePrintOuts(viewerId, printIds)).map((out) => [out.id, out]) : [],
+  );
+  return messages.map((message) => ({
     id: message.id,
     chat_id: message.chatId,
     sender: message.senderId ? (senders.get(message.senderId) ?? null) : null,
     body: message.deletedAt ? "" : message.body,
+    attachments: attachments
+      .filter((attachment) => attachment.messageId === message.id)
+      .map((attachment) => {
+        const model = attachment.printId ? models.get(attachment.printId) : undefined;
+        return {
+          id: attachment.id,
+          name: attachment.name,
+          model: model
+            ? { id: model.id, name: model.title || model.name, thumb_url: model.thumb_url, owner: model.owner ?? null }
+            : null,
+        };
+      }),
     deleted: message.deletedAt !== null,
     created_at: message.createdAt.toISOString(),
-  };
-}
-
-async function messageOuts(messages: ChatMessage[]): Promise<ChatMessageOut[]> {
-  const senders = await userCards(messages.flatMap((message) => message.senderId ?? []));
-  return messages.map((message) => messageOut(message, senders));
+  }));
 }
 
 // Writing a chat notification for someone, and everything that would make it stale -- their reading the chat, leaving
@@ -366,7 +402,7 @@ export async function listMessages(
   ]);
   if (options.seen && chat.members.length) await markRead(viewer.id, chatId, now);
   return {
-    messages: await messageOuts(messages),
+    messages: await messageOuts(messages, viewer.id),
     has_more: hasMore,
     deleted_ids: deleted.slice(0, MAX_DELETED_IDS).map((message) => message.id),
     deleted_more: deleted.length > MAX_DELETED_IDS,
@@ -392,17 +428,45 @@ async function memberOf(viewer: Viewer, chatId: string): Promise<ChatRow> {
   return chat;
 }
 
-export async function postMessage(viewer: Viewer, chatId: string, text: string): Promise<ChatMessageOut> {
+/** A message: text, models from the sender's own library (whoever can read the chat can then open them), or both. */
+export async function postMessage(
+  viewer: Viewer,
+  chatId: string,
+  text: string,
+  printIds: string[] = [],
+): Promise<ChatMessageOut> {
   const body = text.trim();
-  if (!body) throw new HttpError(400, "A message needs something in it");
+  const wanted = [...new Set(printIds)];
+  if (!body && !wanted.length) throw new HttpError(400, "A message needs something in it");
   if (body.length > MESSAGE_MAX_LENGTH)
     throw new HttpError(400, `A message is at most ${MESSAGE_MAX_LENGTH} characters`);
+  if (wanted.length > MAX_ATTACHMENTS) throw new HttpError(400, `A message carries at most ${MAX_ATTACHMENTS} models`);
   const chat = await memberOf(viewer, chatId);
   if (chat.kind === "DIRECT" && chat._count.members < 2) {
     throw new HttpError(409, "This person's account is gone", "recipient_gone");
   }
+  // Only their own: someone else's model, shared with them, could be made private again while still sent on.
+  const models = wanted.length
+    ? await prisma.print.findMany({
+        where: { id: { in: wanted }, userId: viewer.id },
+        select: { id: true, name: true, title: true },
+      })
+    : [];
+  if (models.length !== wanted.length) {
+    throw new HttpError(400, "Only models in your own library can be sent", "not_own_model");
+  }
+  const nameOf = new Map(models.map((model) => [model.id, model.title || model.name]));
   const message = await prisma.$transaction(async (tx) => {
-    const created = await tx.chatMessage.create({ data: { chatId, senderId: viewer.id, body } });
+    const created = await tx.chatMessage.create({
+      data: {
+        chatId,
+        senderId: viewer.id,
+        body,
+        attachments: {
+          create: wanted.map((printId, position) => ({ printId, name: nameOf.get(printId) ?? "", position })),
+        },
+      },
+    });
     // Only forward: two messages a moment apart can be saved in either order.
     await tx.chat.updateMany({
       where: { id: chatId, lastMessageAt: { lt: created.createdAt } },
@@ -411,7 +475,7 @@ export async function postMessage(viewer: Viewer, chatId: string, text: string):
     return created;
   });
   void notifyMessage(chat, message).catch((err) => console.error("Failed to notify about a chat message:", err));
-  return (await messageOuts([message]))[0];
+  return (await messageOuts([message], viewer.id))[0];
 }
 
 /** Their own message, or for an admin any message in a room. Its text goes; that there was one stays. */
@@ -422,7 +486,11 @@ export async function deleteMessage(viewer: Viewer, chatId: string, messageId: s
   const own = message.senderId === viewer.id && chat.members.length > 0;
   if (!own && !(chat.kind === "ROOM" && viewer.isAdmin)) throw new HttpError(403, "Only its sender can delete it");
   if (message.deletedAt) return;
-  await prisma.chatMessage.update({ where: { id: messageId }, data: { body: "", deletedAt: new Date() } });
+  // Its models with it: whoever could open them through it no longer can.
+  await prisma.$transaction([
+    prisma.chatMessage.update({ where: { id: messageId }, data: { body: "", deletedAt: new Date() } }),
+    prisma.chatAttachment.deleteMany({ where: { messageId } }),
+  ]);
   await unquote(messageId);
 }
 
@@ -636,13 +704,18 @@ export async function unreadSummary(userId: string): Promise<ChatUnreadOut> {
   ]);
   const newest = latest[0];
   if (!newest) return { unread: totals[0]?.unread ?? 0, latest: null };
-  const sender = newest.senderId ? (await userCards([newest.senderId])).get(newest.senderId) : undefined;
+  const [senders, names] = await Promise.all([
+    newest.senderId ? userCards([newest.senderId]) : new Map<string, UserCardOut>(),
+    modelNamesOf(newest.id),
+  ]);
+  const sender = newest.senderId ? senders.get(newest.senderId) : undefined;
   const { title, body } = notificationText(
     newest.kind,
     newest.name,
     sender?.display_name ?? "Deleted user",
     newest.body,
     1,
+    names,
   );
   return {
     unread: totals[0]?.unread ?? 0,
@@ -661,19 +734,35 @@ function notificationText(
   senderName: string,
   body: string,
   count: number,
+  modelNames: string[] = [],
 ) {
+  // A message that's only models says which.
+  const said = body.trim()
+    ? preview(body)
+    : modelNames.length === 1
+      ? `Sent "${modelNames[0]}"`
+      : `Sent ${modelNames.length} models`;
   if (kind === "DIRECT") {
     return {
       title: count === 1 ? `New message from ${senderName}` : `${count} new messages from ${senderName}`,
-      body: preview(body),
+      body: said,
     };
   }
   const room = roomName ?? "a room";
   return {
     title: count === 1 ? `New message in ${room}` : `${count} new messages in ${room}`,
-    body: `${senderName}: ${preview(body)}`,
+    body: `${senderName}: ${said}`,
   };
 }
+
+const modelNamesOf = async (messageId: string) =>
+  (
+    await prisma.chatAttachment.findMany({
+      where: { messageId },
+      orderBy: { position: "asc" },
+      select: { name: true },
+    })
+  ).map((attachment) => attachment.name);
 
 /** `messageId` and `at` are the newest message it quotes. */
 type ChatGroup = { key: "chat"; chatId: string; messageId: string; at: string; count: number };
@@ -694,9 +783,12 @@ async function notifyMessage(chat: Chat, message: ChatMessage): Promise<void> {
     select: { userId: true },
   });
   if (!recipients.length) return;
-  const sender = message.senderId ? (await userCards([message.senderId])).get(message.senderId) : undefined;
-  const senderName = sender?.display_name ?? "Deleted user";
-  for (const { userId } of recipients) await notifyRecipient(chat, message, userId, senderName);
+  const [senders, names] = await Promise.all([
+    message.senderId ? userCards([message.senderId]) : new Map<string, UserCardOut>(),
+    modelNamesOf(message.id),
+  ]);
+  const senderName = (message.senderId && senders.get(message.senderId)?.display_name) || "Deleted user";
+  for (const { userId } of recipients) await notifyRecipient(chat, message, userId, senderName, names);
   // Deleted while these were written: deleteMessage's own pass may have come before the last of them.
   const after = await prisma.chatMessage.findUnique({ where: { id: message.id }, select: { deletedAt: true } });
   if (!after || after.deletedAt) await unquote(message.id);
@@ -704,7 +796,13 @@ async function notifyMessage(chat: Chat, message: ChatMessage): Promise<void> {
 
 /** Tells one recipient, in their turn, unless that's no longer theirs to hear. Exported for tests, which run it after
  *  what notifyMessage's list of recipients didn't see coming. */
-export async function notifyRecipient(chat: Chat, message: ChatMessage, userId: string, senderName: string) {
+export async function notifyRecipient(
+  chat: Chat,
+  message: ChatMessage,
+  userId: string,
+  senderName: string,
+  modelNames: string[] = [],
+) {
   await withUserLock(userId, async () => {
     // Asked again in turn: since the recipients were read, they may have read the chat, muted it, left it or lost it,
     // and the message may be gone.
@@ -722,7 +820,7 @@ export async function notifyRecipient(chat: Chat, message: ChatMessage, userId: 
     const folded = readChatGroup(existing?.group);
     const count = (folded?.count ?? 0) + 1;
     const at = message.createdAt.toISOString();
-    const text = notificationText(chat.kind, chat.name, senderName, message.body, count);
+    const text = notificationText(chat.kind, chat.name, senderName, message.body, count, modelNames);
     const group: ChatGroup = { key: "chat", chatId: chat.id, messageId: message.id, at, count };
     if (existing && folded) {
       // Two messages a moment apart can get here in either order: it goes on quoting the newer.

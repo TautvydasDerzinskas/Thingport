@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { parseBody } from "../utils/validate";
 import { createLog } from "../services/auditLog";
 import {
+  MAX_ATTACHMENTS,
   MESSAGE_MAX_LENGTH,
   ROOM_DESCRIPTION_MAX_LENGTH,
   ROOM_NAME_MAX_LENGTH,
@@ -158,12 +159,19 @@ router.get(
   }),
 );
 
-const messageSchema = z.object({ body: z.string().max(MESSAGE_MAX_LENGTH * 2) });
+// Text, models from the sender's own library (print_ids), or both.
+const messageSchema = z.object({
+  body: z
+    .string()
+    .max(MESSAGE_MAX_LENGTH * 2)
+    .default(""),
+  print_ids: z.array(z.string()).max(MAX_ATTACHMENTS).optional(),
+});
 router.post(
   "/chats/:id/messages",
   asyncHandler(async (req, res) => {
-    const { body } = parseBody(messageSchema, req.body);
-    res.json(await postMessage(viewerOf(req), req.params.id, body));
+    const { body, print_ids } = parseBody(messageSchema, req.body);
+    res.json(await postMessage(viewerOf(req), req.params.id, body, print_ids));
   }),
 );
 
