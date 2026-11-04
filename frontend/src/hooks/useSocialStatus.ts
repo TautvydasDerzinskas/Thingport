@@ -77,7 +77,8 @@ export function subscribeSocialStatus(listener: (status: SocialStatus) => void):
 }
 
 function refreshIfStale() {
-  if (document.visibilityState !== "visible") return;
+  // An answer already on its way will do: asking again would only throw it away.
+  if (document.visibilityState !== "visible" || inFlight) return;
   if (!cached || Date.now() - cached.at > STALE_MS) void refreshSocialStatus();
 }
 

@@ -35,6 +35,8 @@ export default function SocialSection({ onUnauthorized }: Props) {
   const saves = React.useRef(0);
   // Only the latest read counts: two at once (opening, then the tab coming back) can answer in either order.
   const reads = React.useRef(0);
+  // What the server last said: a read that finds it changed (another admin switched it) tells the rest of the app too.
+  const known = React.useRef<boolean | null>(null);
 
   const read = React.useCallback(() => {
     const reading = ++reads.current;
@@ -45,6 +47,8 @@ export default function SocialSection({ onUnauthorized }: Props) {
         if (!current()) return;
         setSettings(value);
         setLoadFailed(false);
+        if (known.current !== null && known.current !== value.enabled) void refreshSocialStatus();
+        known.current = value.enabled;
       },
       (err) => {
         if (!current()) return;
@@ -80,7 +84,9 @@ export default function SocialSection({ onUnauthorized }: Props) {
     setLoadFailed(false);
     let failed = false;
     try {
-      setSettings(await socialApi.updateSettings({ enabled }));
+      const saved = await socialApi.updateSettings({ enabled });
+      setSettings(saved);
+      known.current = saved.enabled;
       // The sidebar's Explore and the collection form's Private/Public follow straight away.
       void refreshSocialStatus();
     } catch (err) {
