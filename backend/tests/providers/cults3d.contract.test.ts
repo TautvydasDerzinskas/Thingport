@@ -33,7 +33,7 @@ vi.mock("node:dns/promises", () => ({
 // Cults3D end to end, two doors. Its GraphQL API (the user's nickname and API key, 401 when it turns them down) reads the
 // model, the orders and likes; the files come from the site's own pages with the browser's sign-in and Cloudflare
 // clearance: a free model not yet in the user's orders is ordered first, a paid one is refused, and the order's download
-// page redirects to a signed CloudFront link. Answers are the recorded shapes in fixtures/providers/cults3d.
+// page redirects to a signed link to its files. Answers are the recorded shapes in fixtures/providers/cults3d.
 
 const SLUG = "ghostship-benchy";
 const MODEL_URL = `https://cults3d.com/en/3d-model/art/${SLUG}`;
@@ -45,6 +45,8 @@ const BROWSER = {
   userAgent: "Mozilla/5.0 X",
 };
 const SIGNED_ZIP = `https://download.cults3d.com/uploads/creation_zip/file/263230/${SLUG}.zip?Expires=1&Signature=s&Key-Pair-Id=k`;
+// A bought model's download went to the designer's own upload instead, on a host of its own.
+const SIGNED_UPLOAD = `https://downloader.cults3d.com/uploaders/15745893/blueprint-file/c1/${SLUG}-paid.zip?Expires=1&Signature=s&Key-Pair-Id=k`;
 
 /** Scenarios beyond the contract's "ok" (a free model, ordered on the way), "rejected" and "list":
  *  - "owned": the model is in the user's orders already, so nothing is ordered;
@@ -84,6 +86,9 @@ function handlerFor(scenario: string): FetchHandler {
       return binary(
         await zip("cults3d-model", { [`${SLUG}.stl`]: stl("benchy"), [`${SLUG}-base.stl`]: stl("benchy-base") }),
       );
+    }
+    if (url.hostname === "downloader.cults3d.com") {
+      return binary(await zip("cults3d-upload", { [`${SLUG}-paid.stl`]: stl("benchy-paid") }));
     }
     if (url.hostname !== "cults3d.com") return undefined;
     if (url.pathname === "/graphql") {
@@ -129,7 +134,7 @@ function handlerFor(scenario: string): FetchHandler {
     }
     if (url.pathname === "/en/downloads/1") {
       if (scenario === "session-ended") return redirect("/en/users/sign-in");
-      return redirect(SIGNED_ZIP);
+      return redirect(scenario === "paid-owned" ? SIGNED_UPLOAD : SIGNED_ZIP);
     }
     return text("not found", 404);
   };
@@ -278,6 +283,8 @@ describe("Cults3D specifics", () => {
       const res = await ctx.importUrl();
       expectStatus(res, 200);
       expect(siteCalls(stub.calls).map((call) => call.url.pathname)).toEqual(["/en/downloads/1"]);
+      // Issue #232: from the designer's upload, which Thingport turned away as somewhere unexpected.
+      expect(res.body.plates.map((plate: { filename: string }) => plate.filename)).toEqual([`${SLUG}-paid.stl`]);
     });
   });
 
