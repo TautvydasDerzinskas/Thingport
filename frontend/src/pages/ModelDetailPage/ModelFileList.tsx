@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
@@ -11,6 +10,7 @@ import { alpha } from "@mui/material/styles";
 import PrintIcon from "@mui/icons-material/Print";
 import HelpTip from "../../components/HelpTip";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import DefaultFileChip from "./DefaultFileChip";
 import { fileRowText } from "./fileRowText";
 import type { ModelFile } from "./useOpenInSlicer";
 
@@ -179,7 +179,7 @@ export default function ModelFileList({ files, selected, onSelect }: Props) {
               </Tooltip>
               {file.plate?.is_default && (
                 <Box sx={{ display: "inline-flex", alignItems: "center", flexShrink: 0, mt: 0.25 }}>
-                  <Chip size="small" variant="outlined" color="primary" label={t("models:detail.defaultFile")} />
+                  <DefaultFileChip />
                   <HelpTip text={t("models:detail.defaultFileHelp")} />
                 </Box>
               )}

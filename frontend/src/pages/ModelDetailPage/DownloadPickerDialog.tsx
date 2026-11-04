@@ -10,10 +10,12 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import DownloadIcon from "@mui/icons-material/Download";
 import type { Plate } from "../../api/prints";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import DefaultFileChip, { defaultFirst } from "./DefaultFileChip";
 import { fileRowText } from "./fileRowText";
 
 type Props = {
@@ -49,7 +51,10 @@ export default function DownloadPickerDialog({
           </Button>
           <Divider>{t("models:detail.orDownloadOne")}</Divider>
           <List disablePadding>
-            {sortedPlates.map((plate, idx) => (
+            {defaultFirst(
+              sortedPlates.map((plate, idx) => ({ plate, idx })),
+              ({ plate }) => plate.is_default === true,
+            ).map(({ plate, idx }) => (
               <ListItemButton
                 key={plate.id}
                 onClick={() => downloadPlate(plate)}
@@ -64,7 +69,13 @@ export default function DownloadPickerDialog({
                   {...fileRowText(t, plate.filename, idx, plate.profile, i18n.resolvedLanguage ?? i18n.language)}
                   primaryTypographyProps={{ noWrap: true }}
                   secondaryTypographyProps={{ noWrap: true }}
+                  sx={{ minWidth: 0 }}
                 />
+                {plate.is_default && (
+                  <Box sx={{ flexShrink: 0, ml: 1 }}>
+                    <DefaultFileChip />
+                  </Box>
+                )}
               </ListItemButton>
             ))}
           </List>
