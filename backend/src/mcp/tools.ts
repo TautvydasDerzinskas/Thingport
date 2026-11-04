@@ -824,7 +824,8 @@ const listModelFiles: McpToolDefinition = {
     "takes. api_path (on the server's own address) or download_url, when the server knows its address, opens with " +
     "the same token as 'Authorization: Bearer' if it may read Model files. 3MF plates also carry their slicer " +
     "profile (title, printer, nozzle, layer height, materials, plates, and for a sliced file print time and weight per plate): a single value is null " +
-    "and materials and plate_stats are empty arrays when the file doesn't say.",
+    "and materials and plate_stats are empty arrays when the file doesn't say. The whole profile is null when it " +
+    "hasn't been read yet or the file says nothing of this.",
   readOnly: true,
   inputSchema: { model_id: z.string().min(1).describe("The model's id, from search_models or list_models.") },
   async run(ctx, args) {

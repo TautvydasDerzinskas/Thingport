@@ -105,6 +105,13 @@ describe("the 3MF profile of a plate", () => {
     expect((await getPrint(printId)).profile.title).toBe("changed");
   });
 
+  it("drops the old profile when the changed file can't be read", async () => {
+    const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
+    const filePath = resolvePlateFilePath(await stored(plateId))!;
+    fs.writeFileSync(filePath, "not a zip any more");
+    expect((await getPrint(printId)).profile).toBeNull();
+  });
+
   it("does not re-read a current profile stored without a file stamp", async () => {
     const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
     await prisma.plate.update({ where: { id: plateId }, data: { profileMeta: { version: 2, title: "kept" } } });

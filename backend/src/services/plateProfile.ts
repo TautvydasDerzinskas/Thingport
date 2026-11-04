@@ -326,6 +326,8 @@ async function readEntries(
   const names: string[] = [];
   const texts = new Map<string, string>();
   let complete = true;
+  let requested = 0;
+  let opened = 0;
   const isModel = (key: string) => key === MODEL_ENTRY.toLowerCase();
   await walkZipEntries(
     filePath,
@@ -337,9 +339,11 @@ async function readEntries(
         complete = false;
         return false;
       }
+      requested += 1;
       return true;
     },
     async (entry, stream) => {
+      opened += 1;
       const key = entry.name.toLowerCase();
       try {
         // Only the start of the model file is wanted; any other entry over the cap isn't read.
@@ -351,6 +355,8 @@ async function readEntries(
       }
     },
   );
+  // An entry whose stream can't be opened (an unsupported compression, say) is skipped by the walker unseen.
+  if (opened < requested) complete = false;
   return { names, texts, complete };
 }
 
@@ -410,7 +416,7 @@ export async function readPlateProfileChecked(filePath: string): Promise<ReadRes
 
   const plateJson = entryNames.filter((n) => /^Metadata\/plate_\d+\.json$/i.test(n)).length;
   const platePng = entryNames.filter((n) => /^Metadata\/plate_\d+\.png$/i.test(n)).length;
-  profile.plates = plateJson || platePng || null;
+  profile.plates = plateJson || platePng || (slice && slice.plateStats.length > 0 ? slice.plateStats.length : null);
 
   profile.estimated_seconds = slice?.seconds ?? null;
   profile.weight_g = slice?.weight ?? null;
@@ -482,6 +488,8 @@ export async function ensurePlateProfiles<
       }
       const stored = await storePlateProfile(plate.id, filePath);
       if (stored) plate.profileMeta = stored as unknown as Prisma.JsonValue;
+      // The file changed and can't be read now: the old profile describes a file that is gone.
+      else if (stamp) plate.profileMeta = null;
     } catch (err) {
       console.error(`Reading the 3MF profile of plate ${plate.id} failed:`, err);
     }

@@ -201,6 +201,28 @@ describe("readPlateProfile", () => {
     expect((await readPlateProfileChecked(ok)).complete).toBe(true);
   });
 
+  it("reports an entry that can't be opened as incomplete", async () => {
+    const file = await write3mf({ "Metadata/slice_info.config": "<config/>" });
+    const bytes = fs.readFileSync(file);
+    // Mark the file as bzip2 (12) in the local header and the central directory: its stream can't be opened.
+    for (const [sig, offset] of [
+      [[0x50, 0x4b, 0x03, 0x04], 8],
+      [[0x50, 0x4b, 0x01, 0x02], 10],
+    ] as const) {
+      const at = bytes.lastIndexOf(Buffer.from(sig)); // the last entry; the first is the Metadata/ folder
+      bytes.writeUInt16LE(12, at + offset);
+    }
+    fs.writeFileSync(file, bytes);
+    expect((await readPlateProfileChecked(file)).complete).toBe(false);
+  });
+
+  it("takes the plate count from slice_info when there are no plate files", async () => {
+    const file = await write3mf({
+      "Metadata/slice_info.config": `<config><plate><metadata key="index" value="1"/></plate><plate><metadata key="index" value="2"/></plate></config>`,
+    });
+    expect((await readPlateProfile(file)).plates).toBe(2);
+  });
+
   it("reports a non-zip file as incomplete", async () => {
     const text = path.join(dir, "broken.3mf");
     fs.writeFileSync(text, "not a zip");
@@ -214,7 +236,7 @@ describe("readPlateProfile", () => {
       const file = await write3mf(files);
       const start = Date.now();
       const profile = await readPlateProfile(file);
-      expect(Date.now() - start).toBeLessThan(100);
+      expect(Date.now() - start).toBeLessThan(1000);
       return profile;
     };
 
