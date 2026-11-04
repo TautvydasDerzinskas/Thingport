@@ -52,6 +52,11 @@ export function refreshSocialStatus(): void {
   generation += 1;
   cached = undefined;
   inFlight = null;
+  // This is the asking again a failure had put off.
+  if (retry) {
+    clearTimeout(retry);
+    retry = null;
+  }
   void load();
 }
 

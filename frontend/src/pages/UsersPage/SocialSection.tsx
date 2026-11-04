@@ -32,10 +32,13 @@ export default function SocialSection({ onUnauthorized }: Props) {
   // Moved on as a save starts and as it ends: a read sent before either is from before the save, and its answer --
   // the old value, or a failure the save has since made moot -- is dropped.
   const saves = React.useRef(0);
+  // Only the latest read counts: two at once (opening, then the tab coming back) can answer in either order.
+  const reads = React.useRef(0);
 
   const read = React.useCallback(() => {
+    const reading = ++reads.current;
     const sent = saves.current;
-    const current = () => live.current && sent === saves.current && !savingRef.current;
+    const current = () => live.current && reading === reads.current && sent === saves.current && !savingRef.current;
     socialApi.getSettings().then(
       (value) => {
         if (!current()) return;

@@ -384,7 +384,8 @@ describe("copying, more closely", () => {
       data: {
         notes:
           `One ![a](/description-image/${fromWeb.id}) two ![b](/description-image/${ownPicture.id}) end ` +
-          "[elsewhere](https://example.test/description-image/abc)",
+          "[elsewhere](https://example.test/description-image/abc) " +
+          "[viewer](https://example.test/view?image=/description-image/abc)",
       },
     });
 
@@ -392,7 +393,8 @@ describe("copying, more closely", () => {
     const copy = await prisma.print.findUniqueOrThrow({ where: { id: res.body.print.id } });
     // Another site's link that only looks like one of ours is left alone.
     expect(copy.notes).toBe(
-      "One ![a](https://example.com/step.png) two  end [elsewhere](https://example.test/description-image/abc)",
+      "One ![a](https://example.com/step.png) two  end [elsewhere](https://example.test/description-image/abc) " +
+        "[viewer](https://example.test/view?image=/description-image/abc)",
     );
   });
 
@@ -445,6 +447,33 @@ describe("copying, more closely", () => {
       .send({ print_ids: [sharedId] });
     expect(res.status).toBe(403);
     expect(await prisma.print.count({ where: { userId: viewer.id, copiedFromId: sharedId } })).toBe(0);
+  });
+
+  it("covers each collection with its own first four models", async () => {
+    const sharer = await register("Sharer");
+    const covers: string[][] = [];
+    for (const shelf of ["first", "second"]) {
+      const collection = await request(app)
+        .post("/api/collections")
+        .set(auth(sharer))
+        .send({ name: `${shelf} ${Date.now()}`, is_public: true });
+      const ids: string[] = [];
+      for (let n = 0; n < 5; n++) {
+        const upload = await request(app)
+          .post("/api/upload")
+          .set(auth(sharer))
+          .attach("files", tmpFile(`${shelf}-${n}.stl`, `solid ${shelf}${n} endsolid`));
+        ids.push(upload.body.prints[0].id);
+        await request(app).post(`/api/collection/${collection.body.id}/items/${ids[n]}`).set(auth(sharer));
+      }
+      covers.push(ids.slice(0, 4));
+    }
+    const page = await request(app).get(`/api/explore/user/${sharer.id}`).set(auth(viewer));
+    const byName = (prefix: string) =>
+      page.body.collections
+        .find((c: { name: string }) => c.name.startsWith(prefix))
+        .cover_items.map((p: { id: string }) => p.id);
+    expect([byName("first"), byName("second")]).toEqual(covers);
   });
 
   it("says which models a bulk add couldn't file", async () => {

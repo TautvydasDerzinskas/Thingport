@@ -59,4 +59,14 @@ describe("social status", () => {
     await vi.advanceTimersByTimeAsync(120_000);
     expect(status).toHaveBeenCalledTimes(1);
   });
+  it("doesn't ask again for a failure a refresh has already answered", async () => {
+    vi.useFakeTimers();
+    const { refreshSocialStatus, subscribeSocialStatus } = await freshModule();
+    status.mockRejectedValueOnce(new Error("down")).mockResolvedValue(ON);
+    subscribeSocialStatus(() => undefined);
+    await vi.advanceTimersByTimeAsync(0);
+    refreshSocialStatus();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(status).toHaveBeenCalledTimes(2);
+  });
 });

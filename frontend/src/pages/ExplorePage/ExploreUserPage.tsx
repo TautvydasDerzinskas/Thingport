@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
 import { type PreviewMode } from "../../api/settings";
-import { socialApi, type ExploreUserPage as UserPage } from "../../api/social";
+import { SocialOffError, socialApi, type ExploreUserPage as UserPage } from "../../api/social";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
@@ -35,6 +35,8 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
   const [notFound, setNotFound] = useState(false);
   // A read that failed: in place of the page when there's none yet, above it when it was only read again.
   const [failed, setFailed] = useState(false);
+  // Social features were switched off: there's no Explore to show anyone's page in.
+  const [off, setOff] = useState(false);
   const shownFor = useRef<string | null>(null);
   // Only the latest read's answer counts: one asked for earlier, or for a page left since, is dropped.
   const latest = useRef(0);
@@ -45,10 +47,13 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
       if (fresh) setPage(null);
       setNotFound(false);
       setFailed(false);
+      setOff(false);
       socialApi.user(asked).then(
         (value) => {
           if (reading !== latest.current) return;
           if (!value) {
+            // Not under the header of whoever was shown before.
+            setPage(null);
             setNotFound(true);
             return;
           }
@@ -58,7 +63,10 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
         (err) => {
           if (reading !== latest.current) return;
           if (err instanceof UnauthorizedError) onUnauthorized?.();
-          else setFailed(true);
+          else if (err instanceof SocialOffError) {
+            setPage(null);
+            setOff(true);
+          } else setFailed(true);
         },
       );
     },
@@ -88,6 +96,14 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
         })
       : undefined,
   });
+
+  if (off) {
+    return (
+      <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
+        <Typography variant="body2">{t("models:explore.unavailable")}</Typography>
+      </Stack>
+    );
+  }
 
   if (failed && !page) {
     return (

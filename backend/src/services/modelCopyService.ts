@@ -23,16 +23,31 @@ const log = createLogger("model-copy");
 
 const DESCRIPTION_IMAGE = /!\[([^\]]*)\]\(\/description-image\/([a-z0-9]+)\)/g;
 // A local one only: what a reference to some other site's /description-image/ path is, it isn't the model's.
-const DESCRIPTION_IMAGE_REF = /(?<=^|[\s"'(<=])\/description-image\/([a-z0-9]+)/g;
+const DESCRIPTION_IMAGE_REF = /(?<=^|[\s"'(<])\/description-image\/([a-z0-9]+)/g;
 
-// One copy at a time for each user, so a second request for the same model waits for the first to finish and finds a
-// whole copy, rather than the first's row while its files are still coming (or one about to be discarded). In-process,
-// as the storage lock is; across processes, the database's one copy per user and original keeps it to one.
-const perUser = createKeyedLock();
+// One copy of a model at a time for each user, so a second request for it waits for the first to finish and finds a
+// whole copy, rather than the first's row while its files are still coming (or one about to be discarded). Copies of
+// other models don't wait on it. In-process, as the storage lock is; across processes, the database's one copy per user
+// and original keeps it to one.
+const perModel = createKeyedLock();
 
 /** `copied` is false when `userId` already has the model -- their own, or a copy from before -- which comes back as is. */
-export function copyPrintToLibrary(userId: string, printId: string): Promise<{ print: Print; copied: boolean }> {
-  return perUser(userId, () => copyNow(userId, printId));
+export async function copyPrintToLibrary(userId: string, printId: string): Promise<{ print: Print; copied: boolean }> {
+  return perModel(await modelKey(userId, printId), () => copyNow(userId, printId));
+}
+
+/** What the model is, as libraryCopyIds tells two apart: the same imported model has its source wherever it's been
+ *  copied, and any other its first original. */
+async function modelKey(userId: string, printId: string): Promise<string> {
+  const print = await prisma.print.findUnique({
+    where: { id: printId },
+    select: { originalId: true, sourceProvider: true, sourceExternalId: true },
+  });
+  const model =
+    print?.sourceProvider && print.sourceExternalId
+      ? `${print.sourceProvider}:${print.sourceExternalId}`
+      : (print?.originalId ?? printId);
+  return `${userId}:${model}`;
 }
 
 async function copyNow(userId: string, printId: string): Promise<{ print: Print; copied: boolean }> {

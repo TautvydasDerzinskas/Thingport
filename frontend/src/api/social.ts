@@ -11,6 +11,13 @@ export type UserCard = {
   avatar_url: string | null;
 };
 
+/** Asked for something of Explore while an admin has social features off. */
+export class SocialOffError extends Error {
+  constructor() {
+    super("Social features are off");
+  }
+}
+
 export type SocialStatus = {
   /** An admin has social features on: collections can be made public. */
   enabled: boolean;
@@ -64,7 +71,11 @@ export const socialApi = {
   user: async (userId: string): Promise<ExploreUserPage | null> => {
     const res = await fetch(`${apiBase()}/explore/user/${encodeURIComponent(userId)}`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
-    if (res.status === 404) return null;
+    if (res.status === 404) {
+      const body = (await res.json().catch(() => ({}))) as { code?: string };
+      if (body.code === "social_off") throw new SocialOffError();
+      return null;
+    }
     await assertOkWithMessage(res, "Failed to load this user");
     return res.json();
   },
