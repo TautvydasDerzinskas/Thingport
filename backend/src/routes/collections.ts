@@ -31,6 +31,8 @@ import { relocatePrintsForToken } from "../services/printService";
 import { createLog } from "../services/auditLog";
 import { toCollectionOut, type PrintOut } from "../dto";
 import { syncToolModelsSoon } from "../services/toolsService";
+import { collectionOutsFor, libraryCopyIds, readableCollection, readablePrintWhere } from "../services/socialService";
+import { copyPrintToLibrary } from "../services/modelCopyService";
 
 const router = Router();
 router.use(requireAuth);
@@ -39,6 +41,8 @@ const collectionSchema = z.object({
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).nullable().optional(),
   tags: z.array(z.string()).default([]),
+  // Left as it is when not sent. Kept while social features are off, and only shown to others while they're on.
+  is_public: z.boolean().optional(),
 });
 
 const COVER_ITEM_LIMIT = 4;
@@ -61,6 +65,31 @@ async function coverPrints(userId: string, collectionId: string): Promise<PrintO
 async function collectionPrintIds(collectionId: string): Promise<string[]> {
   const items = await prisma.collectionItem.findMany({ where: { collectionId }, select: { printId: true } });
   return items.map((item) => item.printId);
+}
+
+/** The user's own model for `printId`: it, or for another user's shared model (services/socialService.ts) the user's
+ *  copy of it, which `copy` makes when there's none yet. Null when there's no such model, or no copy and no `copy`.
+ *  What lets "Add to collection" work on a model that isn't the user's: it files their copy. */
+async function ownModelFor(userId: string, printId: string, copy: boolean): Promise<string | null> {
+  const own = await prisma.print.findFirst({ where: { id: printId, userId }, select: { id: true } });
+  if (own) return own.id;
+  const shared = await prisma.print.findFirst({
+    where: { id: printId, AND: [await readablePrintWhere(userId)] },
+    select: { id: true, copiedFromId: true, sourceProvider: true, sourceExternalId: true },
+  });
+  if (!shared) return null;
+  if (copy) return (await copyPrintToLibrary(userId, shared.id)).print.id;
+  return (await libraryCopyIds(userId, [shared])).get(shared.id) ?? null;
+}
+
+/** ownModelFor for each, leaving out those with none. In order, as each copy is made one at a time. */
+async function ownModelsFor(userId: string, printIds: string[], copy: boolean): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  for (const printId of new Set(printIds)) {
+    const own = await ownModelFor(userId, printId, copy);
+    if (own) out.set(printId, own);
+  }
+  return out;
 }
 
 router.get(
@@ -103,7 +132,7 @@ router.post(
   "/collections",
   asyncHandler(async (req, res) => {
     const body = parseBody(collectionSchema, req.body);
-    const collection = await createCollection(req.userId!, body);
+    const collection = await createCollection(req.userId!, { ...body, isPublic: body.is_public });
     res.json(toCollectionOut(collection, 0, [], false));
   }),
 );
@@ -174,7 +203,13 @@ router.get(
       where: { id: req.params.id, userId: req.userId },
       include: { _count: { select: { items: true } }, sync: true },
     });
-    if (!collection) throw new HttpError(404, "Collection not found");
+    if (!collection) {
+      // Another user's public one, while social features are on.
+      const shared = await readableCollection(req.userId!, req.params.id);
+      if (!shared) throw new HttpError(404, "Collection not found");
+      res.json((await collectionOutsFor(req.userId!, [shared]))[0]);
+      return;
+    }
     const bookmarked = Boolean(
       await prisma.bookmark.findFirst({
         where: { userId: req.userId, type: "COLLECTION", collectionId: collection.id },
@@ -210,6 +245,7 @@ router.patch(
         nameNormalized: normalizeCollectionName(body.name),
         description: body.description?.trim() || null,
         tags: normalizeTags(body.tags),
+        isPublic: body.is_public ?? collection.isPublic,
       },
     });
     if (renamed) await relocatePrintsForToken("collection", await collectionPrintIds(updated.id));
@@ -224,7 +260,10 @@ router.patch(
       userId: req.userId!,
       action: "collection_edited",
       targetId: updated.id,
-      details: { name: updated.name },
+      details: {
+        name: updated.name,
+        ...(updated.isPublic !== collection.isPublic ? { is_public: updated.isPublic } : {}),
+      },
     });
   }),
 );
@@ -259,7 +298,8 @@ router.delete(
     }
     const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!collection) throw new HttpError(404, "Collection not found");
-    const print = await prisma.print.findFirst({ where: { id: req.params.printId, userId: req.userId } });
+    const ownId = await ownModelFor(req.userId!, req.params.printId, false);
+    const print = ownId && (await prisma.print.findFirst({ where: { id: ownId, userId: req.userId } }));
     if (!print) throw new HttpError(404, "Print not found");
     await prisma.collectionItem.deleteMany({ where: { collectionId: collection.id, printId: print.id } });
     await relocatePrintsForToken("collection", [print.id]);
@@ -281,10 +321,12 @@ router.post(
     }
     const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!collection) throw new HttpError(404, "Collection not found");
-    const print = await prisma.print.findFirst({ where: { id: req.params.printId, userId: req.userId } });
+    const ownId = await ownModelFor(req.userId!, req.params.printId, true);
+    const print = ownId && (await prisma.print.findFirst({ where: { id: ownId, userId: req.userId } }));
     if (!print) throw new HttpError(404, "Print not found");
     await addPrintsToCollection(collection.id, [print.id]);
-    res.json({ ok: true });
+    // Where another user's model was given, the copy filed in its place.
+    res.json({ ok: true, print_id: print.id });
     void createLog({
       userId: req.userId!,
       action: "collection_item_added",
@@ -296,12 +338,18 @@ router.post(
 
 const addItemsSchema = z.object({ print_ids: z.array(z.string()).max(10_000) });
 
-// Many at once, e.g. Thingport Grab filing a provider collection's already-imported models.
+// Many at once, e.g. Thingport Grab filing a provider collection's already-imported models. Another user's shared
+// models among them are copied first, as for one.
 router.post(
   "/collection/:id/items",
   asyncHandler(async (req, res) => {
     const body = parseBody(addItemsSchema, req.body);
-    await addModelsToCollection(req.userId!, req.params.id, body.print_ids);
+    // Refused before anything is copied, rather than after: a copy made for nowhere would stay in the library.
+    if (isSystemCollectionId(req.params.id)) throw new HttpError(400, "This collection can't be edited");
+    const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
+    if (!collection) throw new HttpError(404, "Collection not found");
+    const own = await ownModelsFor(req.userId!, body.print_ids, true);
+    await addModelsToCollection(req.userId!, collection.id, [...own.values()]);
     res.json({ ok: true });
   }),
 );
@@ -311,7 +359,8 @@ router.delete(
   "/collection/:id/items",
   asyncHandler(async (req, res) => {
     const body = parseBody(addItemsSchema, req.body);
-    const { removed } = await removeModelsFromCollection(req.userId!, req.params.id, body.print_ids);
+    const own = await ownModelsFor(req.userId!, body.print_ids, false);
+    const { removed } = await removeModelsFromCollection(req.userId!, req.params.id, [...own.values()]);
     res.json({ removed: removed.length });
   }),
 );
@@ -342,17 +391,23 @@ router.delete(
   }),
 );
 
-// Real collections only, flagged with whether `printId` is a member.
+// Real collections only, flagged with whether `printId` is a member. For another user's shared model, whether the
+// user's copy of it is.
 router.get(
   "/print/:id/collections",
   asyncHandler(async (req, res) => {
-    const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!print) throw new HttpError(404, "Print not found");
+    const readable = await prisma.print.findFirst({
+      where: { id: req.params.id, AND: [await readablePrintWhere(req.userId!)] },
+      select: { id: true },
+    });
+    if (!readable) throw new HttpError(404, "Print not found");
+    // No copy yet: in none of them.
+    const ownId = (await ownModelFor(req.userId!, readable.id, false)) ?? "";
     // Not a tool's: nothing can be put in or taken out of one.
     const collections = await prisma.collection.findMany({
       where: { userId: req.userId, toolId: null },
       orderBy: { createdAt: "desc" },
-      include: { items: { where: { printId: print.id }, select: { id: true } } },
+      include: { items: { where: { printId: ownId }, select: { id: true } } },
     });
     res.json(collections.map((c) => ({ id: c.id, name: c.name, in_collection: c.items.length > 0 })));
   }),
@@ -364,6 +419,7 @@ router.post(
   "/prints/collections",
   asyncHandler(async (req, res) => {
     const body = parseBody(membershipSchema, req.body);
+    const own = await ownModelsFor(req.userId!, body.print_ids, false);
     const [collections, items] = await Promise.all([
       prisma.collection.findMany({
         where: { userId: req.userId, toolId: null },
@@ -371,7 +427,7 @@ router.post(
         select: { id: true, name: true },
       }),
       prisma.collectionItem.findMany({
-        where: { printId: { in: body.print_ids }, print: { userId: req.userId } },
+        where: { printId: { in: [...own.values()] }, print: { userId: req.userId } },
         select: { collectionId: true },
       }),
     ]);

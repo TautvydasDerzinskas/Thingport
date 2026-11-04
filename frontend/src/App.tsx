@@ -44,6 +44,9 @@ import NotificationsPage from "./pages/NotificationsPage";
 import TriggersPage from "./pages/TriggersPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import CaptchaPage from "./pages/CaptchaPage";
+import SocialAdminPage from "./pages/SocialAdminPage";
+import ExplorePage from "./pages/ExplorePage";
+import ExploreUserPage from "./pages/ExplorePage/ExploreUserPage";
 import RenderingPage from "./pages/RenderingPage";
 import AiPage from "./pages/AiPage";
 import { healthApi, type HealthInfo } from "./api/health";
@@ -274,6 +277,46 @@ function AppShell({
             />
           }
         />
+        {/* Other users' public collections and models, while an admin has social features on. Their own pages, under
+            Explore rather than the user's library, though the same views draw them. */}
+        <Route
+          path="/explore"
+          element={
+            <ExplorePage
+              theme={resolvedTheme}
+              previewMode={previewMode}
+              onUnauthorized={onUnauthorized}
+              viewer={user}
+            />
+          }
+        />
+        <Route
+          path="/explore/users/:userId"
+          element={<ExploreUserPage theme={resolvedTheme} previewMode={previewMode} onUnauthorized={onUnauthorized} />}
+        />
+        <Route
+          path="/explore/collections/:collectionId"
+          element={
+            <CollectionDetailPage
+              theme={resolvedTheme}
+              previewMode={previewMode}
+              onUnauthorized={onUnauthorized}
+              onBookmarksChanged={handleBookmarksChanged}
+              viewer={user}
+            />
+          }
+        />
+        <Route
+          path="/explore/models/:printId"
+          element={
+            <ModelDetailPage
+              theme={resolvedTheme}
+              onSelectCategory={setCategoryId}
+              onUnauthorized={onUnauthorized}
+              viewer={user}
+            />
+          }
+        />
         <Route
           path="/authors/:authorId"
           element={
@@ -342,6 +385,10 @@ function AppShell({
         <Route
           path="/admin-users"
           element={isAdmin ? <UsersPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/admin-social"
+          element={isAdmin ? <SocialAdminPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/admin-logs"

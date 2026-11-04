@@ -25,6 +25,7 @@ import importsRoutes from "./routes/imports";
 import importQueueRoutes from "./routes/importQueue";
 import providerRoutes, { providerBodyLimits } from "./providers/routes";
 import collectionsRoutes from "./routes/collections";
+import socialRoutes from "./routes/social";
 import collectionSyncsRoutes from "./routes/collectionSyncs";
 import providerCollectionsRoutes from "./routes/providerCollections";
 import bookmarksRoutes from "./routes/bookmarks";
@@ -94,6 +95,7 @@ export function createApp(): Express {
   app.use("/api", importsRoutes);
   app.use("/api", importQueueRoutes);
   app.use("/api", collectionsRoutes);
+  app.use("/api", socialRoutes);
   app.use("/api", collectionSyncsRoutes);
   app.use("/api", providerCollectionsRoutes);
   app.use("/api", bookmarksRoutes);

@@ -1,6 +1,7 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, assertOkWithMessage, readErrorMessage } from "./client";
 import { BULK_LIMIT, type Print } from "./prints";
+import type { UserCard } from "./social";
 
 export type SystemCollectionKey = "favorites" | "history";
 
@@ -44,12 +45,18 @@ export type Collection = {
   sync: CollectionSync | null;
   /** Set on the collection of a tool's models: it can be opened and bookmarked, not edited, and goes with the tool. */
   tool_id: string | null;
+  /** Shown to the instance's other users while an admin has social features on. */
+  is_public?: boolean;
+  /** Set on another user's public collection: whose it is. Null on the viewer's own. */
+  owner?: UserCard | null;
 };
 
 export type CollectionInput = {
   name: string;
   description?: string | null;
   tags?: string[];
+  /** Left as it is when not given. */
+  is_public?: boolean;
 };
 
 export type CollectionMembership = {

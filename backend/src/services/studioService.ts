@@ -27,6 +27,7 @@ import {
 import type { Traced } from "../studio/trace.generated";
 import { ASSET_ID, emptyDocument, topLevel, type StudioDocument, type Vec3 } from "../studio/document.generated";
 import { resolvePlateFilePath } from "./printCreation";
+import { readablePrintWhere } from "./socialService";
 import { listPrints } from "./printQuery";
 import { loadFontsFor } from "./studioFonts";
 import { importStudioMesh, measureStudioBounds, measureStudioParts, traceStudioPicture } from "./studioInspect";
@@ -236,10 +237,11 @@ export async function listStudioLibrary(userId: string, q: string | undefined, o
   };
 }
 
-/** Makes the design's own copy of a library model's 3D file, and says what it is. */
+/** Makes the design's own copy of a library model's 3D file, and says what it is. Another user's shared model too
+ *  (services/socialService.ts): the design's copy is the user's own. */
 async function importLibraryFile(userId: string, designId: string, modelId: string, fileId: string | undefined) {
   const print = await prisma.print.findFirst({
-    where: { id: modelId, userId },
+    where: { id: modelId, AND: [await readablePrintWhere(userId)] },
     include: { plates: { orderBy: { position: "asc" } } },
   });
   if (!print) throw new HttpError(404, "Model not found", "studio_model_not_found");

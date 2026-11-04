@@ -19,6 +19,9 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import PrintIcon from "@mui/icons-material/Print";
+import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
+import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutlined";
+import CircularProgress from "@mui/material/CircularProgress";
 import type { Print } from "../../api/prints";
 import { aiCategorizationApi } from "../../api/aiCategorization";
 import { UnauthorizedError } from "../../api/client";
@@ -41,6 +44,8 @@ import AddToCollectionModal from "./AddToCollectionModal";
 import RollingNumber from "../../components/RollingNumber";
 import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
+import UserAvatar from "../../components/UserAvatar";
+import { useCopyToLibrary } from "./useCopyToLibrary";
 
 const statChipSx = { flex: 1, px: 0.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 };
 
@@ -113,6 +118,9 @@ export default function ModelSidePanel({
   const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
   // Opened from the button below rather than a menu, so there is no menu to close.
   const customize = useCustomize(print, () => {}, onUnauthorized);
+  // Another user's model, from one of their public collections.
+  const owner = print.owner ?? null;
+  const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
 
   const goToCategory = () => {
     if (!print.category_id) return;
@@ -125,8 +133,11 @@ export default function ModelSidePanel({
     ? new Date(print.created_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
     : null;
 
-  const showViewerAsAuthor =
-    !print.author?.name && !print.author?.handle && !print.creator && !print.source_provider && Boolean(viewer);
+  // A direct upload is its uploader's: the viewer's own, or on another user's model its owner's, whom "Shared by"
+  // already names.
+  const unauthored = !print.author?.name && !print.author?.handle && !print.creator && !print.source_provider;
+  const showViewerAsAuthor = unauthored && !owner && Boolean(viewer);
+  const showAuthor = !(unauthored && owner);
   const authorName =
     print.author?.name || print.author?.handle || print.creator || (showViewerAsAuthor ? viewer!.display_name : null);
   const authorAvatarUrl = print.author?.avatar_url || (showViewerAsAuthor ? viewerAvatarUrl : undefined);
@@ -134,6 +145,52 @@ export default function ModelSidePanel({
     typeof collectionCount === "number" && collectionCount > 0
       ? t("models:detail.addToCollectionAlreadyIn", { count: collectionCount })
       : t("models:detail.addToCollection");
+
+  // The model's collections: which of the user's hold it, or for another user's model, the user's copy of it.
+  const collectionsChip = (extraSx: Record<string, unknown> = {}) => (
+    <Tooltip title={collectionsLabel}>
+      <ButtonBase
+        onClick={() => setCollectionsOpen(true)}
+        aria-label={collectionsLabel}
+        aria-busy={collectionCount === "loading"}
+        sx={{
+          ...statChipSx,
+          ...extraSx,
+          gap: 0.75,
+          transition: (muiTheme) => muiTheme.transitions.create("background-color", { duration: 150 }),
+          "&:hover": { bgcolor: "action.hover" },
+          "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
+        }}
+      >
+        {collectionCount === "loading" ? (
+          <>
+            <BookmarkLoader />
+            <Skeleton
+              variant="text"
+              width={8}
+              sx={{
+                fontSize: "0.875rem",
+                "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+              }}
+            />
+          </>
+        ) : (
+          <>
+            {typeof collectionCount === "number" && collectionCount > 0 ? (
+              <BookmarkIcon fontSize="small" color="primary" />
+            ) : (
+              <BookmarkBorderIcon fontSize="small" sx={{ color: "text.secondary" }} />
+            )}
+            {typeof collectionCount === "number" && (
+              <Typography variant="body2" fontWeight={600}>
+                <RollingNumber value={collectionCount} />
+              </Typography>
+            )}
+          </>
+        )}
+      </ButtonBase>
+    </Tooltip>
+  );
 
   return (
     <Paper
@@ -161,42 +218,70 @@ export default function ModelSidePanel({
           </Typography>
         </Box>
 
-        <Box>
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
-            {t("models:detail.author")}
-          </Typography>
-          <AuthorHoverCard
-            authorId={print.author ? print.author.id : SELF_AUTHOR_ID}
-            viewer={viewer}
-            disabled={!print.author && !showViewerAsAuthor}
-          >
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
+        {owner && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+              {t("models:shared.sharedByLabel")}
+            </Typography>
+            <ButtonBase
+              onClick={() => navigate(`/explore/users/${owner.id}`)}
               sx={{
-                width: "fit-content",
-                cursor: print.author || showViewerAsAuthor ? "pointer" : "default",
+                borderRadius: 1,
+                px: 0.5,
+                py: 0.25,
+                mx: -0.5,
+                gap: 1,
                 color: (muiTheme) => muiTheme.thingport.headingText,
-                ...(print.author || showViewerAsAuthor ? { "&:hover": { color: "primary.main" } } : undefined),
-              }}
-              onClick={() => {
-                if (print.author) navigate(`/authors/${print.author.id}`);
-                else if (showViewerAsAuthor) navigate(`/authors/${SELF_AUTHOR_ID}`);
+                "&:hover": { color: "primary.main" },
+                "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main" },
               }}
             >
-              <Avatar
-                src={authorAvatarUrl || undefined}
-                sx={{ width: 28, height: 28, fontSize: 13, color: "inherit !important" }}
-              >
-                {(authorName || "?").slice(0, 1).toUpperCase()}
-              </Avatar>
-              <Typography variant="body2" sx={{ color: "inherit" }}>
-                {authorName || t("models:card.unknownAuthor")}
+              <UserAvatar user={owner} size={28} />
+              <Typography variant="body2" fontWeight={600}>
+                {owner.display_name}
               </Typography>
-            </Stack>
-          </AuthorHoverCard>
-        </Box>
+            </ButtonBase>
+          </Box>
+        )}
+
+        {showAuthor && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+              {t("models:detail.author")}
+            </Typography>
+            <AuthorHoverCard
+              authorId={print.author ? print.author.id : SELF_AUTHOR_ID}
+              viewer={viewer}
+              disabled={!print.author && !showViewerAsAuthor}
+            >
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{
+                  width: "fit-content",
+                  cursor: print.author || showViewerAsAuthor ? "pointer" : "default",
+                  color: (muiTheme) => muiTheme.thingport.headingText,
+                  ...(print.author || showViewerAsAuthor ? { "&:hover": { color: "primary.main" } } : undefined),
+                }}
+                onClick={() => {
+                  if (print.author) navigate(`/authors/${print.author.id}`);
+                  else if (showViewerAsAuthor) navigate(`/authors/${SELF_AUTHOR_ID}`);
+                }}
+              >
+                <Avatar
+                  src={authorAvatarUrl || undefined}
+                  sx={{ width: 28, height: 28, fontSize: 13, color: "inherit !important" }}
+                >
+                  {(authorName || "?").slice(0, 1).toUpperCase()}
+                </Avatar>
+                <Typography variant="body2" sx={{ color: "inherit" }}>
+                  {authorName || t("models:card.unknownAuthor")}
+                </Typography>
+              </Stack>
+            </AuthorHoverCard>
+          </Box>
+        )}
 
         {print.category_id && print.category_name && (
           <Box>
@@ -341,6 +426,35 @@ export default function ModelSidePanel({
           </Box>
         )}
 
+        {owner && (
+          // Another user's model: copied into the user's library, or filed into their collections (which copies it).
+          <Stack direction="row" spacing={1.5}>
+            {print.library_copy_id ? (
+              <Button
+                variant="outlined"
+                startIcon={<LibraryAddCheckOutlinedIcon />}
+                onClick={() => library.openCopy(print.library_copy_id!)}
+                sx={{ flex: 1 }}
+              >
+                {t("models:shared.openCopy")}
+              </Button>
+            ) : (
+              <Button
+                variant="outlined"
+                disabled={library.copying}
+                startIcon={
+                  library.copying ? <CircularProgress size={16} color="inherit" /> : <LibraryAddOutlinedIcon />
+                }
+                onClick={() => void library.copy()}
+                sx={{ flex: 1 }}
+              >
+                {t("models:shared.copy")}
+              </Button>
+            )}
+            {collectionsChip({ flex: "0 0 auto", px: 1.75 })}
+          </Stack>
+        )}
+
         {selectedFile && files.length > 1 && (
           <ModelFileSelect files={files} selected={selectedFile} onSelect={(file) => setSelectedKey(file.key)} />
         )}
@@ -374,61 +488,24 @@ export default function ModelSidePanel({
           />
         )}
 
-        <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
-          <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
-            <VisibilityIcon fontSize="small" sx={{ color: "text.secondary" }} />
-            <Typography variant="body2" fontWeight={600}>
-              {print.view_count}
-            </Typography>
+        {/* Another user's model counts their views and prints, not the viewer's: its collections sit by the copy. */}
+        {!owner && (
+          <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
+              <VisibilityIcon fontSize="small" sx={{ color: "text.secondary" }} />
+              <Typography variant="body2" fontWeight={600}>
+                {print.view_count}
+              </Typography>
+            </Stack>
+            {collectionsChip()}
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
+              <PrintIcon fontSize="small" sx={{ color: "text.secondary" }} />
+              <Typography variant="body2" fontWeight={600}>
+                <RollingNumber value={print.print_count} />
+              </Typography>
+            </Stack>
           </Stack>
-          <Tooltip title={collectionsLabel}>
-            <ButtonBase
-              onClick={() => setCollectionsOpen(true)}
-              aria-label={collectionsLabel}
-              aria-busy={collectionCount === "loading"}
-              sx={{
-                ...statChipSx,
-                gap: 0.75,
-                transition: (muiTheme) => muiTheme.transitions.create("background-color", { duration: 150 }),
-                "&:hover": { bgcolor: "action.hover" },
-                "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
-              }}
-            >
-              {collectionCount === "loading" ? (
-                <>
-                  <BookmarkLoader />
-                  <Skeleton
-                    variant="text"
-                    width={8}
-                    sx={{
-                      fontSize: "0.875rem",
-                      "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  {typeof collectionCount === "number" && collectionCount > 0 ? (
-                    <BookmarkIcon fontSize="small" color="primary" />
-                  ) : (
-                    <BookmarkBorderIcon fontSize="small" sx={{ color: "text.secondary" }} />
-                  )}
-                  {typeof collectionCount === "number" && (
-                    <Typography variant="body2" fontWeight={600}>
-                      <RollingNumber value={collectionCount} />
-                    </Typography>
-                  )}
-                </>
-              )}
-            </ButtonBase>
-          </Tooltip>
-          <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
-            <PrintIcon fontSize="small" sx={{ color: "text.secondary" }} />
-            <Typography variant="body2" fontWeight={600}>
-              <RollingNumber value={print.print_count} />
-            </Typography>
-          </Stack>
-        </Stack>
+        )}
 
         {importedDate && (
           <Typography variant="caption" sx={{ textAlign: "right", fontSize: 12, color: "text.secondary" }}>

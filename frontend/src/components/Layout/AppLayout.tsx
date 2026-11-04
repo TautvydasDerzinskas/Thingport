@@ -90,6 +90,12 @@ function useRouteChrome() {
   } else if (path === "/models") {
     title = t("models:pageTitle");
     onBack = () => navigate("/");
+  } else if (path === "/explore") {
+    title = t("sidebar.explore");
+    onBack = () => navigate("/");
+  } else if (path.startsWith("/explore/")) {
+    title = t("sidebar.explore");
+    onBack = goBack;
   } else if (path.startsWith("/authors/")) {
     title = t("models:author.pageTitle");
     onBack = goBack;
@@ -133,6 +139,9 @@ function useRouteChrome() {
     onBack = () => navigate("/admin");
   } else if (path.startsWith("/admin-users")) {
     title = t("adminSettings.users.heading");
+    onBack = () => navigate("/admin");
+  } else if (path.startsWith("/admin-social")) {
+    title = t("adminSettings.social.heading");
     onBack = () => navigate("/admin");
   } else if (path.startsWith("/admin-logs")) {
     title = t("adminSettings.logs.heading");

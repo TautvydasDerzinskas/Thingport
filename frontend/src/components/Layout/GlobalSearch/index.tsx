@@ -49,6 +49,7 @@ import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import HistoryIcon from "@mui/icons-material/History";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PeopleIcon from "@mui/icons-material/People";
+import Diversity3OutlinedIcon from "@mui/icons-material/Diversity3Outlined";
 import PublicIcon from "@mui/icons-material/Public";
 import QueueIcon from "@mui/icons-material/Queue";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
@@ -150,6 +151,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   adminTools: <HandymanOutlinedIcon />,
   adminAi: <AutoAwesomeIcon />,
   adminUsers: <PeopleIcon />,
+  adminSocial: <Diversity3OutlinedIcon />,
   adminLogs: <HistoryIcon />,
   adminTriggers: <BoltIcon />,
   adminConnections: <CableIcon />,

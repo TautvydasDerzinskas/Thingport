@@ -66,7 +66,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     subtitle: print ? t("models:detail.subtitle") : undefined,
     actions: print ? (
       <Stack direction="row" alignItems="center" spacing={0.5}>
-        <FavoriteButton print={print} onUpdated={setPrint} onUnauthorized={onUnauthorized} />
+        {/* Another user's model is theirs to favourite; the viewer copies it instead (the side panel). */}
+        {!print.owner && <FavoriteButton print={print} onUpdated={setPrint} onUnauthorized={onUnauthorized} />}
         <ModelActionsMenu
           print={print}
           onUnauthorized={onUnauthorized}
@@ -186,7 +187,9 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const canPreview3d = Boolean(firstPlate) && MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
   // With no preview image yet, show the live 3D view and generate a snapshot in the background.
   // The server's render doesn't need one: it saves its own picture.
+  // Only for the owner, whose picture it saves.
   const needsGeneratedPreview =
+    !print.owner &&
     print.preview_images.length === 0 &&
     !showRender &&
     Boolean(firstPlate) &&
@@ -419,7 +422,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                     label={tag}
                     size="small"
                     variant="outlined"
-                    onClick={() => navigate(`/models/tags/${encodeURIComponent(tag)}`)}
+                    // A tag's page lists the user's own library, which another user's tags say nothing about.
+                    onClick={print.owner ? undefined : () => navigate(`/models/tags/${encodeURIComponent(tag)}`)}
                     sx={{
                       bgcolor: "background.paper",
                       borderColor: "divider",

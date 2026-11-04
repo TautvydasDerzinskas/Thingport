@@ -53,7 +53,7 @@ and under **Permissions** set each kind of data to **Allow** or **Deny**:
 | Models          | `/api/prints`, the sites they came from, the files check, `/api/print/{id}` and its print quality report                                                                              |
 | Dashboard       | `/api/dashboard/...`: library totals, most viewed, printed and recently added, top authors, the featured model, and the weather, feeds, monitors and trending models its widgets show |
 | Activity        | `/api/activity` and `/api/activity/feed`                                                                                                                                              |
-| Collections     | `/api/collections`, `/api/collection/{id}`, a model's collections and your bookmarks                                                                                                  |
+| Collections     | `/api/collections`, `/api/collection/{id}`, a model's collections, your bookmarks and Explore (`/api/explore`)                                                                        |
 | Tags            | `/api/tags`, `/api/tags/summary` and your bookmarked tags                                                                                                                             |
 | Categories      | `/api/categories`                                                                                                                                                                     |
 | Authors         | `/api/author/{id}` and the author profiles linked to you                                                                                                                              |

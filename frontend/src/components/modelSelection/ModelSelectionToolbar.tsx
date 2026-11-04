@@ -50,6 +50,9 @@ type Props = {
   onRemovedFromCollection?: (ids: string[]) => void;
   /** Every model in the grid belongs to a tool, as in a tool's collection: what would change them isn't offered. */
   toolOwned?: boolean;
+  /** Every model in the grid is another user's, as in their public collection: only filing them into the user's own
+   *  collections, which copies them, and downloading are offered. */
+  shared?: boolean;
   /** The grid shows the Folders view, where uploads get organized: offers linking one to its page on a provider,
    *  merging several, and assigning them a category. */
   foldersView?: boolean;
@@ -70,9 +73,12 @@ export default function ModelSelectionToolbar({
   onUnauthorized,
   collectionId,
   onRemovedFromCollection,
-  toolOwned = false,
+  toolOwned: toolOwnedGrid = false,
+  shared = false,
   foldersView = false,
 }: Props) {
+  // Neither kind may be changed here; a shared grid's models aren't the user's to favourite either.
+  const toolOwned = toolOwnedGrid || shared;
   const { t } = useTranslation(["models", "common"]);
   const confirm = useConfirm();
   const showToast = useToast();
@@ -373,17 +379,18 @@ export default function ModelSelectionToolbar({
         )}
       {!toolOwned &&
         action(t("models:selection.editTags"), <LocalOfferIcon fontSize="small" />, () => setTagsOpen(true), toolHint)}
-      {action(
-        favoriteLabel,
-        busy === "favorite" ? (
-          <CircularProgress size={18} />
-        ) : allFavorite ? (
-          <StarIcon fontSize="small" sx={{ color: "warning.main" }} />
-        ) : (
-          <StarBorderIcon fontSize="small" />
-        ),
-        () => void toggleFavorite(),
-      )}
+      {!shared &&
+        action(
+          favoriteLabel,
+          busy === "favorite" ? (
+            <CircularProgress size={18} />
+          ) : allFavorite ? (
+            <StarIcon fontSize="small" sx={{ color: "warning.main" }} />
+          ) : (
+            <StarBorderIcon fontSize="small" />
+          ),
+          () => void toggleFavorite(),
+        )}
       {action(t("common:download"), <DownloadIcon fontSize="small" />, () => setDownloadOpen(true))}
       {foldersView &&
         !toolOwned &&

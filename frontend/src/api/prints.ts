@@ -1,5 +1,6 @@
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
+import type { UserCard } from "./social";
 
 export type PreparedPrint = {
   printer?: string | null;
@@ -114,6 +115,11 @@ export type Print = {
   source_url?: string | null;
   /** Null from list endpoints, which can't tell an images gap. */
   source_gaps?: SourceGap[] | null;
+  /** Set on another user's model, from one of their public collections: whose it is. It can be opened, downloaded and
+   *  copied, not changed. Null on the viewer's own. */
+  owner?: UserCard | null;
+  /** On another user's model: the viewer's own copy of it, once they have one. */
+  library_copy_id?: string | null;
 };
 
 export type ListPrintsResult = {

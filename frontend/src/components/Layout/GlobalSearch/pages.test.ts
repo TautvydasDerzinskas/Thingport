@@ -19,6 +19,7 @@ const EN: Record<PageId, string> = {
   adminTools: "Tools",
   adminAi: "AI",
   adminUsers: "Users",
+  adminSocial: "Social",
   adminLogs: "Logs",
   adminTriggers: "Triggers",
   adminConnections: "Connections",

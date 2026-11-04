@@ -29,6 +29,7 @@ import {
   canRenderModelImage,
 } from "../services/modelPreviewCache";
 import { getPreviewMode } from "../services/settingsService";
+import { readablePrintWhere } from "../services/socialService";
 
 const router = Router();
 router.use(requireAuth);
@@ -111,7 +112,7 @@ router.get(
   "/plate/:plateId/thumb.jpg",
   asyncHandler(async (req, res) => {
     const plate = await prisma.plate.findFirst({
-      where: { id: req.params.plateId, print: { userId: req.userId } },
+      where: { id: req.params.plateId, print: await readablePrintWhere(req.userId!) },
       include: { print: { select: { assetsPath: true } } },
     });
     if (!plate) throw new HttpError(404, "Not found");
@@ -127,7 +128,7 @@ router.get(
   "/plate/:plateId/preview.glb",
   asyncHandler(async (req, res) => {
     const plate = await prisma.plate.findFirst({
-      where: { id: req.params.plateId, print: { userId: req.userId } },
+      where: { id: req.params.plateId, print: await readablePrintWhere(req.userId!) },
     });
     if (!plate) throw new HttpError(404, "Not found");
     const glbPath = modelPreviewGlbPath(plate.id);
@@ -162,7 +163,7 @@ router.get(
 function modelPictureHandler(kind: ModelImageKind) {
   return asyncHandler(async (req, res) => {
     const plate = await prisma.plate.findFirst({
-      where: { id: req.params.plateId, print: { userId: req.userId } },
+      where: { id: req.params.plateId, print: await readablePrintWhere(req.userId!) },
       include: { print: { select: { assetsPath: true } } },
     });
     if (!plate) throw new HttpError(404, "Not found");
