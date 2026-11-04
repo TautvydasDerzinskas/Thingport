@@ -69,4 +69,16 @@ describe("social status", () => {
     await vi.advanceTimersByTimeAsync(60_000);
     expect(status).toHaveBeenCalledTimes(2);
   });
+  it("doesn't retry a request a refresh replaced, when it fails afterwards", async () => {
+    vi.useFakeTimers();
+    const { refreshSocialStatus, subscribeSocialStatus } = await freshModule();
+    let failOld: (reason: Error) => void = () => undefined;
+    status.mockReturnValueOnce(new Promise((_, reject) => (failOld = reject))).mockResolvedValue(ON);
+    subscribeSocialStatus(() => undefined);
+    refreshSocialStatus();
+    await vi.advanceTimersByTimeAsync(0);
+    failOld(new Error("down"));
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(status).toHaveBeenCalledTimes(2);
+  });
 });

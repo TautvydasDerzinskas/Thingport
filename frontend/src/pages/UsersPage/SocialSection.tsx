@@ -25,7 +25,8 @@ export default function SocialSection({ onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const [settings, setSettings] = React.useState<SocialSettings | null>(null);
   const [saving, setSaving] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  // Kept apart: reading the setting again after a failed save fixes the switch, not what the save said.
+  const [saveError, setSaveError] = React.useState<string | null>(null);
   const [loadFailed, setLoadFailed] = React.useState(false);
   const savingRef = React.useRef(false);
   const live = React.useRef(true);
@@ -44,18 +45,14 @@ export default function SocialSection({ onUnauthorized }: Props) {
         if (!current()) return;
         setSettings(value);
         setLoadFailed(false);
-        setError(null);
       },
       (err) => {
         if (!current()) return;
         if (err instanceof UnauthorizedError) onUnauthorized?.();
-        else {
-          setLoadFailed(true);
-          setError(t("adminSettings.social.loadFailed"));
-        }
+        else setLoadFailed(true);
       },
     );
-  }, [onUnauthorized, t]);
+  }, [onUnauthorized]);
 
   // Read on opening, and again when the tab comes back: another admin may have switched it meanwhile.
   React.useEffect(() => {
@@ -79,21 +76,25 @@ export default function SocialSection({ onUnauthorized }: Props) {
     setSaving(true);
     savingRef.current = true;
     saves.current += 1;
-    setError(null);
+    setSaveError(null);
     setLoadFailed(false);
+    let failed = false;
     try {
       setSettings(await socialApi.updateSettings({ enabled }));
       // The sidebar's Explore and the collection form's Private/Public follow straight away.
       refreshSocialStatus();
     } catch (err) {
+      failed = true;
       setSettings(previous);
       if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setError(err instanceof Error ? err.message : t("adminSettings.social.saveFailed"));
+      else setSaveError(err instanceof Error ? err.message : t("adminSettings.social.saveFailed"));
     } finally {
       savingRef.current = false;
       saves.current += 1;
       setSaving(false);
     }
+    // What was shown before may not be what's saved: another admin may have switched it meanwhile.
+    if (failed) read();
   };
 
   const points = (["infoPublic", "infoExplore", "infoCopy", "infoOff"] as const).map((key) =>
@@ -142,7 +143,7 @@ export default function SocialSection({ onUnauthorized }: Props) {
           <Typography variant="body2" color="text.secondary">
             {t("adminSettings.social.summary")}
           </Typography>
-          {error && (
+          {(loadFailed || saveError) && (
             <Alert
               severity="error"
               sx={{ mt: 1 }}
@@ -155,9 +156,9 @@ export default function SocialSection({ onUnauthorized }: Props) {
                       </Button>
                     ),
                   }
-                : { onClose: () => setError(null) })}
+                : { onClose: () => setSaveError(null) })}
             >
-              {error}
+              {loadFailed ? t("adminSettings.social.loadFailed") : saveError}
             </Alert>
           )}
         </Stack>

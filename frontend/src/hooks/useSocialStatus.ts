@@ -26,8 +26,8 @@ function load(): Promise<SocialStatus> {
       return status;
     })
     .catch(() => {
-      // Only while something shows it: signed out, nothing does.
-      if (listeners.size) {
+      // Only while something shows it (signed out, nothing does), and not for a request a refresh has replaced.
+      if (asked === generation && listeners.size) {
         retry ??= setTimeout(() => {
           retry = null;
           refreshSocialStatus();

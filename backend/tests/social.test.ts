@@ -347,6 +347,14 @@ describe("copying, more closely", () => {
     expect(await prisma.print.count({ where: { userId: viewer.id, copiedFromId: sourceId } })).toBe(0);
   });
 
+  it("refuses a model left with no files", async () => {
+    const sourceId = await sharedModel(owner, `emptied-${Date.now()}`);
+    await prisma.plate.deleteMany({ where: { printId: sourceId } });
+    const res = await request(app).post(`/api/print/${sourceId}/copy`).set(auth(viewer));
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe("copy_no_plates");
+  });
+
   it("keeps each file's role: a prepared print, and a supporting file named like one", async () => {
     const sourceId = await sharedModel(owner, `prepared-${Date.now()}`);
     const source = await prisma.print.findUniqueOrThrow({ where: { id: sourceId }, include: { plates: true } });

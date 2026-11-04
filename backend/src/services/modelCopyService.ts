@@ -65,6 +65,8 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
   const existing = await libraryCopyOf(userId, source);
   if (existing) return { print: existing, copied: false };
 
+  // A model left without a file to its name (a replacement of its files that failed halfway) has nothing to copy.
+  if (!source.plates.length) throw new HttpError(409, "This model can't be copied: it has no files", "copy_no_plates");
   // All of it or nothing: a copy missing a file would quietly be a different model.
   const plates = source.plates.map((plate) => ({ plate, from: resolvePlateFilePath(plate) }));
   const missing = [

@@ -11,6 +11,7 @@ import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../api/client";
 import { type PreviewMode } from "../../api/settings";
 import { SocialOffError, socialApi, type ExploreUserPage as UserPage } from "../../api/social";
+import { refreshSocialStatus, useSocialStatus } from "../../hooks/useSocialStatus";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
@@ -66,6 +67,8 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
           else if (err instanceof SocialOffError) {
             setPage(null);
             setOff(true);
+            // So the status learns they're off too, and hears when they're back.
+            refreshSocialStatus();
           } else setFailed(true);
         },
       );
@@ -81,6 +84,15 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
       latest.current += 1;
     };
   }, [userId, read]);
+
+  // Shown while social features were off: read again once they're switched back on -- on the change, not whenever
+  // the status says on, which may be from before they went off.
+  const socialOn = useSocialStatus()?.enabled === true;
+  const wasOn = useRef(socialOn);
+  useEffect(() => {
+    if (socialOn && !wasOn.current && off && userId) read(userId, true);
+    wasOn.current = socialOn;
+  }, [socialOn, off, userId, read]);
 
   // Read again, in place, after the viewer changed one of their own collections here: the counts follow.
   const refresh = () => {
