@@ -326,7 +326,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               )}
               <QualityBadge quality={quality} isAdmin={viewer?.role === "ADMIN"} />
             </Stack>
-            <QualityScanOverlay key={print.id} quality={quality} outcome={outcome} />
+            <QualityScanOverlay key={`scan-${print.id}`} quality={quality} outcome={outcome} />
           </Box>
           <ProviderBadge
             provider={print.source_provider}
