@@ -388,6 +388,35 @@ describe("the tools", () => {
     expect(data.files.find((f: { kind: string }) => f.kind === "supporting")).not.toHaveProperty("profile");
   });
 
+  it("list_model_files marks the source's default plate with is_default, and only plates carry it", async () => {
+    const temps = ["a", "b"].map((name) => {
+      const file = path.join(os.tmpdir(), `mcp-default-${name}-${Date.now()}.stl`);
+      fs.writeFileSync(file, `solid ${name}\nendsolid ${name}\n`);
+      return file;
+    });
+    const { print } = await createPrint(alice.userId, { title: "Defaulted" }, "defaulted", [
+      { filename: "a.stl", tempFilePath: temps[0], sourceInstanceId: "1" },
+      { filename: "b.stl", tempFilePath: temps[1], sourceInstanceId: "2", isSourceDefault: true },
+    ]);
+    await prisma.printFile.create({
+      data: {
+        printId: print.id,
+        filename: "notes.txt",
+        mime: "text/plain",
+        size: 1,
+        role: "SUPPORTING",
+        storagePath: `mcp-default/${Date.now()}.txt`,
+      },
+    });
+    const { data } = await callTool(alice.token, "list_model_files", { model_id: print.id });
+    const plates = data.files.filter((f: { kind: string }) => f.kind === "plate");
+    expect(plates.map((f: { name: string; is_default: boolean }) => [f.name, f.is_default])).toEqual([
+      ["a.stl", false],
+      ["b.stl", true],
+    ]);
+    expect(data.files.find((f: { kind: string }) => f.kind === "supporting")).not.toHaveProperty("is_default");
+  });
+
   it("get_model_file won't read another user's model, nor a file of another model", async () => {
     const theirs = await callTool(alice.token, "list_model_files", { model_id: bobSecretId });
     expect(theirs.isError).toBe(true);

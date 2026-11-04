@@ -122,6 +122,9 @@ export type PlateOut = {
    *  also mean "not read yet": a single model and the bounded lookups (search, collection covers, bulk actions) read
    *  it on first use, but the model list (GET /prints) never does, since that could read the whole library. */
   profile: PlateProfile | null;
+  /** The source site itself offers this file as its default (MakerWorld's default print profile). Set when the file is
+   *  imported, so false for models imported before it was recorded, and always false for other providers and uploads. */
+  is_default: boolean;
 };
 
 export type PrintFileOut = {
@@ -268,6 +271,7 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     render_url: renderUrl(plate, home),
     own_colors: modelColorImagePath(plate.id, home) !== null,
     profile: plateProfileOut(plate.profileMeta),
+    is_default: plate.isSourceDefault,
   };
 }
 

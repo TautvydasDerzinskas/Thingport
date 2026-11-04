@@ -771,6 +771,8 @@ type ModelFile = {
   diskPath: () => string | null;
   /** Set on plates only. */
   profile?: PlateProfile | null;
+  /** Set on plates only. */
+  isDefault?: boolean;
 };
 
 /** Every file of one of the user's models: its plates, supporting files and sliced print. */
@@ -790,6 +792,7 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
     apiPath: `/print/${print.id}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
     diskPath: () => resolvePlateFilePath(plate),
     profile: plateProfileOut(plate.profileMeta),
+    isDefault: plate.isSourceDefault,
   }));
   const others = print.files.map((file): ModelFile => ({
     id: file.id,
@@ -813,6 +816,7 @@ function fileOut(ctx: McpToolContext, file: ModelFile) {
     api_path: `/api${file.apiPath}`,
     download_url: ctx.publicUrl ? `${ctx.publicUrl}/api${file.apiPath}` : null,
     ...(file.profile !== undefined && { profile: file.profile }),
+    ...(file.isDefault !== undefined && { is_default: file.isDefault }),
   };
 }
 
@@ -825,7 +829,9 @@ const listModelFiles: McpToolDefinition = {
     "the same token as 'Authorization: Bearer' if it may read Model files. 3MF plates also carry their slicer " +
     "profile (title, printer, nozzle, layer height, materials, plates, and for a sliced file print time and weight per plate): a single value is null " +
     "and materials and plate_stats are empty arrays when the file doesn't say. The whole profile is null when it " +
-    "hasn't been read yet or the file says nothing of this.",
+    "hasn't been read yet or the file says nothing of this. Plates also carry is_default: true for the one file the " +
+    "source site itself offers as its default (MakerWorld's default print profile), recorded when the file was " +
+    "imported; false for every other plate, including models imported before this was recorded and ones from other sites.",
   readOnly: true,
   inputSchema: { model_id: z.string().min(1).describe("The model's id, from search_models or list_models.") },
   async run(ctx, args) {

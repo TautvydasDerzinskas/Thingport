@@ -536,6 +536,9 @@ model Plate {
   // The MakerWorld profile ("instance") this file came from. Each profile's 3MF has its own print
   // settings, so each gets its own Plate.
   sourceInstanceId String?
+  // This is the file the source site itself offers as the default (MakerWorld's defaultInstanceId), set when the
+  // file is imported. False for every other provider, for uploads and for files imported before the column existed.
+  isSourceDefault  Boolean  @default(false)
   // SHA-256 of the file, recorded when it's stored (with file reuse on) or when first needed. The file may be edited
   // outside Thingport, so this is checked against the file before it's relied on.
   contentSha256    String?

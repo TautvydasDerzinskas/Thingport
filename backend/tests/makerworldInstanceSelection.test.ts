@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { makerworldInstanceCover, makerworldInstanceIdFromNextData } from "../src/providers/makerworld/pageData";
+import {
+  makerworldDefaultInstanceId,
+  makerworldInstanceCover,
+  makerworldInstanceIdFromNextData,
+} from "../src/providers/makerworld/pageData";
 
 function nextData(design: Record<string, unknown>) {
   return { props: { pageProps: { design } } };
@@ -47,5 +51,22 @@ describe("makerworldInstanceCover", () => {
     expect(makerworldInstanceCover(design, null)).toBeNull();
     expect(makerworldInstanceCover(design, "3")).toBeNull();
     expect(makerworldInstanceCover({}, "1")).toBeNull();
+  });
+});
+
+describe("makerworldDefaultInstanceId", () => {
+  it("answers the design's default profile when the design has it", () => {
+    expect(makerworldDefaultInstanceId({ defaultInstanceId: 2, instances: [{ id: 1 }, { id: 2 }] })).toBe("2");
+    expect(makerworldDefaultInstanceId({ defaultInstanceId: "1", instances: [{ id: 1 }] })).toBe("1");
+  });
+
+  it("answers null for a missing, empty or stale default, and never falls back to the first profile", () => {
+    expect(makerworldDefaultInstanceId({ instances: [{ id: 7 }] })).toBeNull();
+    expect(makerworldDefaultInstanceId({ defaultInstanceId: null, instances: [{ id: 7 }] })).toBeNull();
+    expect(makerworldDefaultInstanceId({ defaultInstanceId: "", instances: [{ id: 7 }] })).toBeNull();
+    expect(makerworldDefaultInstanceId({ defaultInstanceId: 1102432, instances: [{ id: 1113369 }] })).toBeNull();
+    expect(makerworldDefaultInstanceId({ defaultInstanceId: 5 })).toBeNull();
+    expect(makerworldDefaultInstanceId(null)).toBeNull();
+    expect(makerworldDefaultInstanceId("design")).toBeNull();
   });
 });

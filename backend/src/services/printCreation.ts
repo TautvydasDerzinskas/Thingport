@@ -48,6 +48,8 @@ export type NewPlateInput = {
   copyFromPath?: string; // copied into managed storage, source left intact
   sourcePath?: string; // no-copy: file stays at this path, storagePath is still rendered/recorded
   sourceInstanceId?: string | null;
+  /** The source site marks this file as its default (MakerWorld's default profile). Stored as given; false if unset. */
+  isSourceDefault?: boolean;
 };
 
 /** A file that is a script a model can be generated from, rather than geometry to print. */
@@ -199,6 +201,7 @@ async function createPlateAtPosition(
         storagePath,
         sourcePath: input.sourcePath ?? null,
         sourceInstanceId: input.sourceInstanceId ?? null,
+        isSourceDefault: input.isSourceDefault ?? false,
         contentSha256,
         ...marker,
       },

@@ -123,12 +123,20 @@ describe("importing several MakerWorld print profiles", () => {
   });
 
   /** `sameName`: every profile's file comes named alike, as MakerWorld often does. */
-  function mockMakerworld(designId: string, { sameName = false } = {}) {
+  function mockMakerworld(
+    designId: string,
+    { sameName = false, defaultInstanceId }: { sameName?: boolean; defaultInstanceId?: number | null } = {},
+  ) {
     const fetched: string[] = [];
     global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
       const url = String(input);
       fetched.push(url);
-      if (url === `https://api.bambulab.com/v1/design-service/design/${designId}`) return json(design(designId));
+      if (url === `https://api.bambulab.com/v1/design-service/design/${designId}`) {
+        // undefined: the fixture's own default (instance 2); null: the design names none.
+        if (defaultInstanceId === undefined) return json(design(designId));
+        const { defaultInstanceId: _fixture, ...withoutDefault } = design(designId);
+        return json(defaultInstanceId === null ? withoutDefault : { ...withoutDefault, defaultInstanceId });
+      }
       const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/iot-service\/api\/user\/profile\/(\d+)/);
       if (profile)
         return json({
@@ -200,6 +208,7 @@ describe("importing several MakerWorld print profiles", () => {
       ["2", "phoenix-102.stl"],
       ["1", "phoenix-101.stl"],
     ]);
+    expect(print.plates.map((p) => p.isSourceDefault)).toEqual([true, false]);
     // Each profile's file shows that profile's own picture, not the model's cover.
     const [blue, red] = await Promise.all(print.plates.map((p) => thumbColour(p.id)));
     expect(blue[2]).toBeGreaterThan(200);
@@ -215,6 +224,60 @@ describe("importing several MakerWorld print profiles", () => {
     expect(job).toMatchObject({ status: "DONE", total: 4, imported: 2, already_in_library: 2, failed_count: 0 });
     const plates = await prisma.plate.findMany({ where: { printId: job.result_print_id } });
     expect(plates.map((p) => p.sourceInstanceId).toSorted()).toEqual(["1", "2", "3", "4"]);
+    // Only the default profile, however many profiles later join the model.
+    expect(plates.filter((p) => p.isSourceDefault).map((p) => p.sourceInstanceId)).toEqual(["2"]);
+  });
+
+  /** One profile by link, as a single import with the user's MakerWorld cookie does. */
+  async function importByLink(designId: string, profileId: number) {
+    const res = await request(app)
+      .post("/api/import")
+      .set(auth())
+      .send({
+        url: `https://makerworld.com/en/models/${designId}-articulated-phoenix#profileId-${profileId}`,
+        makerworld_cookie: "token=test-bearer",
+      });
+    expect(res.status).toBe(200);
+    return res.body.id as string;
+  }
+  const flagsOf = async (printId: string) =>
+    (await prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } })).map((p) => [
+      p.sourceInstanceId,
+      p.isSourceDefault,
+    ]);
+
+  it("marks the default profile when the link names another one, and when it is added later", async () => {
+    const designId = String((stamp % 1_000_000_000) + 200);
+    mockMakerworld(designId);
+    const printId = await importByLink(designId, 1);
+    expect(await flagsOf(printId)).toEqual([["1", false]]);
+    expect(await importByLink(designId, 2)).toBe(printId);
+    expect(await flagsOf(printId)).toEqual([
+      ["1", false],
+      ["2", true],
+    ]);
+    expect(await importByLink(designId, 3)).toBe(printId);
+    expect((await flagsOf(printId)).filter(([, isDefault]) => isDefault)).toEqual([["2", true]]);
+  });
+
+  it("marks nothing when the design names no default profile", async () => {
+    const designId = String((stamp % 1_000_000_000) + 201);
+    mockMakerworld(designId, { defaultInstanceId: null });
+    const job = await runJob(designId, "all");
+    expect(job).toMatchObject({ status: "DONE", failed_count: 0 });
+    const plates = await prisma.plate.findMany({ where: { printId: job.result_print_id } });
+    expect(plates).toHaveLength(4);
+    expect(plates.some((p) => p.isSourceDefault)).toBe(false);
+  });
+
+  it("marks nothing when the design's default profile is no longer one of its profiles", async () => {
+    const designId = String((stamp % 1_000_000_000) + 202);
+    mockMakerworld(designId, { defaultInstanceId: 999 });
+    const job = await runJob(designId, "designer");
+    expect(job).toMatchObject({ status: "DONE", failed_count: 0 });
+    const plates = await prisma.plate.findMany({ where: { printId: job.result_print_id } });
+    expect(plates).toHaveLength(2);
+    expect(plates.some((p) => p.isSourceDefault)).toBe(false);
   });
 
   it("names profile files that come named alike after their profiles", async () => {
@@ -286,6 +349,43 @@ describe("adding a profile the extension already resolved", () => {
     expect(second.status).toBe(200);
     expect(second.body.import_outcome).toBe("profile_added");
     expect(fetched.filter((u) => u.startsWith("https://makerworld.com/en/models/")).length).toBe(pageFetchesAfterFirst);
+  });
+
+  it("marks the default profile from the design the extension sent", async () => {
+    const designId = String((stamp % 1_000_000_000) + 51);
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      const url = String(input);
+      if (url.startsWith(`https://makerworld.com/en/models/${designId}`)) {
+        return new Response("<html><head><title>Phoenix</title></head><body></body></html>", {
+          headers: { "content-type": "text/html" },
+        });
+      }
+      const file = url.match(/^https:\/\/s3\.example\.com\/ext-(\d+)\.stl$/);
+      if (file) return new Response(`solid ext-${file[1]}\nendsolid\n`);
+      return new Response("not found", { status: 404 });
+    }) as unknown as typeof fetch;
+    const makerworldDesign = { id: Number(designId), defaultInstanceId: 22, instances: [{ id: 21 }, { id: 22 }] };
+    const importProfile = (instanceId: string) =>
+      request(app)
+        .post("/api/import")
+        .set({ ...auth(), "X-Thingport-Client": "grab" })
+        .send({
+          url: `https://makerworld.com/en/models/${designId}-phoenix`,
+          resolved_download_url: `https://s3.example.com/ext-${instanceId}.stl`,
+          resolved_instance_id: instanceId,
+          makerworld_design: makerworldDesign,
+        });
+    const first = await importProfile("21");
+    expect(first.status).toBe(200);
+    expect((await importProfile("22")).body.import_outcome).toBe("profile_added");
+    const plates = await prisma.plate.findMany({
+      where: { printId: first.body.id },
+      orderBy: { position: "asc" },
+    });
+    expect(plates.map((p) => [p.sourceInstanceId, p.isSourceDefault])).toEqual([
+      ["21", false],
+      ["22", true],
+    ]);
   });
 });
 

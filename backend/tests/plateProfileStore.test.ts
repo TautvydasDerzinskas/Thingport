@@ -94,6 +94,13 @@ describe("the 3MF profile of a plate", () => {
     expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2, plate_stats: [] } });
   });
 
+  it("stamps a profile that was stored without one when it is re-read", async () => {
+    const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
+    await prisma.plate.update({ where: { id: plateId }, data: { profileMeta: { version: 1, title: "old" } } });
+    expect((await getPrint(printId)).profile.title).toBe(TITLE);
+    expect(await stored(plateId)).toMatchObject({ profileMeta: { version: 2, file: { size: expect.any(Number) } } });
+  });
+
   it("re-reads a plate whose file changed since the profile was stored", async () => {
     const { printId, plateId } = await makePlate("model.3mf", await threeMf(true));
     expect(await stored(plateId)).toMatchObject({ profileMeta: { file: { size: expect.any(Number) } } });

@@ -12,6 +12,7 @@ import {
 } from "../../services/importResolvers";
 import {
   makerworldAuthorFromDesignCreator,
+  makerworldDefaultInstanceId,
   makerworldInstanceCover,
   makerworldInstanceTitles,
   makerworldMetaFromDesign,
@@ -486,6 +487,7 @@ export async function resolveMakerworldViaCloudApi(
       parametricSource,
       makerworldProfile: {
         instanceId: selected.id != null ? String(selected.id) : null,
+        defaultInstanceId: makerworldDefaultInstanceId(design),
         coverUrl: makerworldInstanceCover(design, selected.id != null ? String(selected.id) : null),
         titles: makerworldInstanceTitles(design),
       },
