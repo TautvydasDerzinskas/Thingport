@@ -21,6 +21,8 @@ type Props = {
   open: boolean;
   onClose: () => void;
   printIds: string[];
+  /** Their names by id, so a model that couldn't be filed is named in the warning. */
+  printNames?: Record<string, string>;
   /** The collection the grid shows, if any: models taken out of it leave the grid. */
   collectionId?: string;
   onRemovedFromCollection?: (ids: string[]) => void;
@@ -34,11 +36,12 @@ export default function BulkEditCollectionsDialog({
   open,
   onClose,
   printIds,
+  printNames,
   collectionId,
   onRemovedFromCollection,
   onUnauthorized,
 }: Props) {
-  const { t } = useTranslation(["models", "common"]);
+  const { t, i18n } = useTranslation(["models", "common"]);
   const showToast = useToast();
   const total = printIds.length;
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -96,13 +99,26 @@ export default function BulkEditCollectionsDialog({
     listRef.current?.scrollTo({ top: 0 });
   };
 
+  // By name where the grid gave them, as the merge dialog lists them; a count otherwise.
+  const notFiledMessage = (ids: string[]) => {
+    const names = ids.flatMap((id) => printNames?.[id] ?? []);
+    if (names.length !== ids.length) return t("models:selection.notFiled", { count: ids.length });
+    const quoted = names.map((name) => t("models:merge.quoted", { name }));
+    const shown =
+      quoted.length > 3 ? [...quoted.slice(0, 2), t("models:merge.andMore", { count: quoted.length - 2 })] : quoted;
+    const list = new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(shown);
+    return t("models:selection.notFiledNames", { names: list, count: ids.length });
+  };
+
   const save = async () => {
     setSaving(true);
     setError(null);
     let done = 0;
+    const notFiled = new Set<string>();
     try {
       for (const row of add) {
-        await collectionsApi.addItems(row.id, printIds);
+        const { not_found } = await collectionsApi.addItems(row.id, printIds);
+        not_found.forEach((id) => notFiled.add(id));
         done++;
       }
       for (const row of remove) {
@@ -110,7 +126,11 @@ export default function BulkEditCollectionsDialog({
         if (row.id === collectionId) onRemovedFromCollection?.(printIds);
         done++;
       }
-      showToast({ message: t("models:selection.collectionsUpdated", { count: done }) });
+      showToast(
+        notFiled.size
+          ? { message: notFiledMessage([...notFiled]), severity: "warning", autoHideMs: 8000 }
+          : { message: t("models:selection.collectionsUpdated", { count: done }) },
+      );
       onClose();
     } catch (err) {
       failed(err, t("models:selection.collectionsFailed"));

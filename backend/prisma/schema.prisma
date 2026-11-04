@@ -228,6 +228,14 @@ model Print {
   tool                     Tool?                    @relation(fields: [toolId], references: [id], onDelete: SetNull)
   // Which of the tool's models it is, from the tool's metadata.
   toolKey                  String?
+  // The model this one was copied from, out of another user's public collection (services/modelCopyService.ts). The
+  // copy is the user's own: the original changing, going private or being deleted leaves it as it is.
+  copiedFromId             String?
+  copiedFrom               Print?                   @relation("PrintCopies", fields: [copiedFromId], references: [id], onDelete: SetNull)
+  copies                   Print[]                  @relation("PrintCopies")
+  // The first original of that chain: what a copy of a copy is a copy of. No relation, so it outlasts the original's
+  // deletion, and with it the knowledge that the user already has the model. One copy per user and original.
+  originalId               String?
   createdAt                DateTime                 @default(now())
   updatedAt                DateTime                 @updatedAt
   // Generated column (name A, tags B, notes C, creator D) created with its GIN index in a
@@ -237,12 +245,14 @@ model Print {
   @@unique([userId, categoryId, nameNormalized])
   @@unique([userId, sourceProvider, sourceExternalId])
   @@unique([userId, toolId, toolKey])
+  @@unique([userId, originalId])
   @@index([userId, categoryId, name])
   @@index([tags], type: Gin)
   @@index([authorId])
   @@index([userId, favoritedAt])
   @@index([userId, lastViewedAt])
   @@index([toolId])
+  @@index([copiedFromId])
 }
 
 /// A user-curated group of models. Collection imports reuse a row by nameNormalized.
@@ -260,6 +270,9 @@ model Collection {
   // Set on the collection a tool keeps its models in: fixed, listed last, and gone with the tool.
   toolId         String?
   tool           Tool?                    @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  // Shown to the instance's other users, on Explore, while an admin has social features on (services/socialService.ts):
+  // its models can then be opened, downloaded and copied by them. Private unless its owner says otherwise.
+  isPublic       Boolean                  @default(false)
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
   // Generated column (name A, tags B, description C); see Print.searchVector.
@@ -268,6 +281,7 @@ model Collection {
   @@unique([userId, nameNormalized])
   @@index([tags], type: Gin)
   @@index([toolId])
+  @@index([isPublic])
 }
 
 /// Keeps a collection in step with one on a provider: models added there later are imported into

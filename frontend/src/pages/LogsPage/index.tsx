@@ -58,6 +58,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   model_deleted: "error",
   models_merged: "warning",
   models_repaired: "warning",
+  model_copied: "success",
   collection_created: "success",
   collection_edited: "warning",
   collection_deleted: "error",
@@ -77,6 +78,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   sign_in_disconnected: "default",
   grab_connected: "info",
   grab_disconnected: "default",
+  social_settings_changed: "warning",
 };
 
 function isoDateOnly(d: Date): string {
@@ -140,6 +142,7 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "model_uploaded":
       case "model_imported":
       case "model_deleted":
+      case "model_copied":
       case "collection_created":
       case "collection_edited":
       case "collection_deleted":
@@ -150,6 +153,10 @@ export default function LogsPage({ onUnauthorized }: Props) {
         return typeof d.name === "string" ? d.name : "";
       case "user_invited":
         return typeof d.email === "string" ? d.email : "";
+      case "social_settings_changed":
+        return typeof d.enabled === "boolean"
+          ? t(d.enabled ? "adminSettings.logs.socialOn" : "adminSettings.logs.socialOff")
+          : "";
       case "descriptions_refetched":
         return t("adminSettings.logs.descriptionsRefetched", {
           email: typeof d.email === "string" ? d.email : "",

@@ -22,6 +22,7 @@ import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
 import CollectionActionsMenu from "./CollectionActionsMenu";
 import CollectionBookmarkButton from "./CollectionBookmarkButton";
 import CollectionSyncDialog from "./CollectionSyncDialog";
+import SharedCollectionActions from "./SharedCollectionActions";
 import CollectionSyncIndicator from "../../components/CollectionSyncIndicator";
 import InfoBanner from "../../components/InfoBanner";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
@@ -83,14 +84,25 @@ export default function CollectionDetailPage({
   };
 
   const goBack = () => navigate("/models/collections");
+  // Another user's public collection: theirs to change. Its models can be opened, downloaded and filed into the
+  // user's own collections, which copies them.
+  const owner = collection?.owner ?? null;
+  const ownCollectionId =
+    collection && !collection.system_key && !collection.tool_id && !owner ? collection.id : undefined;
 
   usePageHeader({
     title: collection
       ? t("models:collections.detail.title", { name: collectionDisplayName(collection, t) })
       : undefined,
-    subtitle: collection ? t("models:collections.detail.subtitle") : undefined,
+    subtitle: collection
+      ? owner
+        ? t("models:shared.collectionSubtitle", { name: owner.display_name })
+        : t("models:collections.detail.subtitle")
+      : undefined,
     actions:
-      collection && !collection.system_key ? (
+      collection && owner ? (
+        <SharedCollectionActions collection={collection} owner={owner} onUnauthorized={onUnauthorized} />
+      ) : collection && !collection.system_key ? (
         <Stack direction="row" alignItems="center" spacing={0.5}>
           <CollectionBookmarkButton
             collectionId={collection.id}
@@ -226,8 +238,9 @@ export default function CollectionDetailPage({
             )
           }
           onUnauthorized={onUnauthorized}
-          collectionId={collection.system_key || collection.tool_id ? undefined : collection.id}
+          collectionId={ownCollectionId}
           toolOwned={Boolean(collection.tool_id)}
+          shared={Boolean(owner)}
           onRemovedFromCollection={(ids) => setItems((prev) => prev.filter((i) => !ids.includes(i.id)))}
         />
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -264,7 +277,7 @@ export default function CollectionDetailPage({
                       : prev.map((i) => (i.id === updated.id ? updated : i)),
                   )
                 }
-                collectionId={collection && !collection.system_key && !collection.tool_id ? collection.id : undefined}
+                collectionId={ownCollectionId}
                 onRemovedFromCollection={(removedId) => setItems((prev) => prev.filter((i) => i.id !== removedId))}
                 onUpdated={(updated) => setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))}
                 onUnauthorized={onUnauthorized}

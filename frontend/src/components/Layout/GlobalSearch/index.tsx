@@ -36,6 +36,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import HubIcon from "@mui/icons-material/Hub";
 import LayersIcon from "@mui/icons-material/Layers";
 import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
+import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
 import DownloadIcon from "@mui/icons-material/Download";
 import PersonIcon from "@mui/icons-material/Person";
 import WebAssetIcon from "@mui/icons-material/WebAsset";
@@ -66,6 +67,7 @@ import type { ConfigurationTab } from "../ConfigurationDialog";
 import Keys, { chipBg, MOD_KEY, SHIFT_KEY, isMac } from "./Keys";
 import { SearchTwoToneIcon, topBarButtonSx } from "../topBarIcons";
 import { useTools } from "../../../hooks/useTools";
+import { useSocialStatus } from "../../../hooks/useSocialStatus";
 import ToolIcon from "../../tools/ToolIcon";
 import { bangArgument, bangText, isBangQuery, matchBang, type Command } from "./commands";
 import { bestScore, minScoreFor } from "./match";
@@ -135,6 +137,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   dashboard: <SpaceDashboardIcon />,
   models: <ViewInArIcon />,
   collections: <CollectionsIcon />,
+  explore: <ExploreOutlinedIcon />,
   tags: <LocalOfferIcon />,
   downloads: <DownloadIcon />,
   tools: <HandymanOutlinedIcon />,
@@ -205,6 +208,8 @@ export default function GlobalSearch({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   // The tools the user may open; null while they're still loading, which is only the first moment.
   const tools = useTools();
+  // Explore is a page to find only while the sidebar offers it.
+  const explore = useSocialStatus()?.explore === true;
   // Until the user arrows away, the selection tracks the top row, so results that arrive late take it.
   const userMovedRef = useRef(false);
   // Where focus was before the search took it; Escape hands it back, as a dialog does.
@@ -502,15 +507,16 @@ export default function GlobalSearch({
     const matched = matchBang(trimmedQuery, commands);
     if (matched.length) sections.push(commandsSection(matched));
   } else if (!trimmedQuery) {
-    if (recents.length) {
+    const shown = recents
+      // Kept, not dropped, while the viewer isn't known to be an admin yet.
+      .filter((entry) => entry.kind !== "page" || pageFor(entry, pagesFor(isAdmin, explore)))
+      .slice(0, RECENTS_SHOWN);
+    // Not a heading over nothing, where every recent one was a page no longer offered.
+    if (shown.length) {
       sections.push({
         id: "recent",
         label: t("app:search.sectionRecent"),
-        items: recents
-          // Kept, not dropped, while the viewer isn't known to be an admin yet.
-          .filter((entry) => entry.kind !== "page" || pageFor(entry, pagesFor(isAdmin)))
-          .slice(0, RECENTS_SHOWN)
-          .map((entry) => entryItem(entry, kindLabel(entry.kind))),
+        items: shown.map((entry) => entryItem(entry, kindLabel(entry.kind))),
       });
     }
     // Suggests whichever of light and dark isn't picked.
@@ -606,7 +612,7 @@ export default function GlobalSearch({
       PageId,
       string
     >;
-    const pages = matchPages(trimmedQuery, pageLabels, isAdmin).map(pageItem);
+    const pages = matchPages(trimmedQuery, pageLabels, isAdmin, explore).map(pageItem);
     if (pages.length) sections.push({ id: "pages", label: t("app:search.sectionPages"), items: pages });
     const matched = commands
       .map((command) => ({ command, score: bestScore(trimmedQuery, command.label, command.keywords) }))

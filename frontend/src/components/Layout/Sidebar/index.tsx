@@ -19,6 +19,7 @@ import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -50,6 +51,7 @@ import BrandMark from "../../BrandMark";
 import { type BookmarkEntry, bookmarksApi } from "../../../api/bookmarks";
 import { useTools } from "../../../hooks/useTools";
 import { useStudioEnabled } from "../../../hooks/useStudioEnabled";
+import { useSocialStatus } from "../../../hooks/useSocialStatus";
 
 const SIDEBAR_WIDTH = 240;
 export const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -242,6 +244,9 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
   // Under Tools, for everyone, while the instance has it switched on (STUDIO_ENABLED).
   const showStudio = useStudioEnabled() === true;
   const onStudio = location.pathname === "/studio";
+  // While an admin has social features on and there's someone else on the instance to explore.
+  const showExplore = useSocialStatus()?.explore === true;
+  const onExplore = location.pathname === "/explore" || location.pathname.startsWith("/explore/");
   const onAdmin = location.pathname.startsWith("/admin");
   // Administration opens its own menu beside this one, so this one folds to icons there, whatever the user chose.
   const collapsed = !mobile && (collapsedByUser || onAdmin);
@@ -381,6 +386,27 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
               <ListItemText primary={t("sidebar.collections")} primaryTypographyProps={{ variant: "body2" }} />
             </ListItemButton>
           )}
+
+          {showExplore &&
+            (collapsed ? (
+              <CollapsedNavIcon
+                icon={<ExploreOutlinedIcon fontSize="small" />}
+                label={t("sidebar.explore")}
+                selected={onExplore}
+                onClick={() => navigate("/explore")}
+              />
+            ) : (
+              <ListItemButton
+                selected={onExplore}
+                onClick={() => navigate("/explore")}
+                sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onExplore) }}
+              >
+                <ListItemIcon sx={{ minWidth: 30 }}>
+                  <ExploreOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("sidebar.explore")} primaryTypographyProps={{ variant: "body2" }} />
+              </ListItemButton>
+            ))}
 
           {collapsed ? (
             <CollapsedNavIcon

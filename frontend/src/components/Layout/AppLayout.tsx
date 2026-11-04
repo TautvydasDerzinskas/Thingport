@@ -90,6 +90,12 @@ function useRouteChrome() {
   } else if (path === "/models") {
     title = t("models:pageTitle");
     onBack = () => navigate("/");
+  } else if (path === "/explore") {
+    title = t("sidebar.explore");
+    onBack = () => navigate("/");
+  } else if (path.startsWith("/explore/")) {
+    title = t("sidebar.explore");
+    onBack = goBack;
   } else if (path.startsWith("/authors/")) {
     title = t("models:author.pageTitle");
     onBack = goBack;

@@ -96,7 +96,8 @@
       "downloads": "Atsisiuntimai",
       "bookmarks": "Įsimintos",
       "tools": "Įrankiai",
-      "studio": "Studija"
+      "studio": "Studija",
+      "explore": "Naršyti"
     },
     "uploadBar": {
       "uploading": "Įkeliama…",
@@ -393,7 +394,7 @@
             },
             "collections": {
               "title": "Kolekcijos",
-              "description": "Jūsų kolekcijos ir kas jose yra."
+              "description": "Jūsų kolekcijos ir kas jose yra, ir tos, kuriomis dalijasi kiti."
             },
             "tags": {
               "title": "Žymos",
@@ -2134,7 +2135,9 @@
           "custom_widgets_changed": "Pakeista, kurie pasirinktiniai valdikliai leidžiami",
           "tool_installed": "Įrankis įdiegtas",
           "tool_uninstalled": "Įrankis pašalintas",
-          "tools_access_changed": "Pakeista prieiga prie įrankių"
+          "tools_access_changed": "Pakeista prieiga prie įrankių",
+          "model_copied": "Modelis nukopijuotas",
+          "social_settings_changed": "Pakeistos socialinės funkcijos"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -2154,7 +2157,9 @@
         "aiRunStopped": "(sustabdyta)",
         "viaProvider": "per {{provider}}",
         "merged": "{{merged}} → {{name}}",
-        "repairSummary": "{{action}}: pataisyta {{repaired}}, ištrinta {{deleted}}, nepavyko {{failed}}"
+        "repairSummary": "{{action}}: pataisyta {{repaired}}, ištrinta {{deleted}}, nepavyko {{failed}}",
+        "socialOn": "Įjungta",
+        "socialOff": "Išjungta"
       },
       "rendering": {
         "heading": "Atvaizdavimas",
@@ -2521,6 +2526,17 @@
         "toolsAll": "Visi įrankiai",
         "toolsCompact": "Kompaktiškas",
         "toolsAria": "Įrankiai, kuriuos gauna {{model}}"
+      },
+      "social": {
+        "label": "Socialinės funkcijos",
+        "summary": "Įjungia skiltį Naršyti ir viešas kolekcijas, kad šio serverio naudotojai galėtų dalytis modeliais tarpusavyje.",
+        "infoTitle": "Ką daro socialinės funkcijos",
+        "infoPublic": "Kolekcijos formoje atsiranda pasirinkimas Privati / Vieša. Naujos kolekcijos būna privačios.",
+        "infoExplore": "Kai naudotojų yra daugiau nei vienas, šoniniame meniu atsiranda Naršyti. Joje matyti besidalijantys žmonės, jų naujausi modeliai ir kolekcijos bei tai, kas kopijuojama dažniausiai.",
+        "infoCopy": "Kiti gali atidaryti, atsisiųsti ir pjaustyti viešos kolekcijos modelius bei įsidėti juos į savo kolekcijas. Taip sukuriama jų pačių kopija, kuri lieka, net jei originalas pakeičiamas, padaromas privačiu ar ištrinamas.",
+        "infoOff": "Išjungus vėl paslepiama viskas, kuo dalijamasi. Kiekviena kolekcija išsaugo savo nustatymą Vieša ar Privati tam kartui, kai vėl įjungsite.",
+        "loadFailed": "Nepavyko įkelti socialinių nustatymų.",
+        "saveFailed": "Nepavyko išsaugoti socialinių nustatymų."
       }
     },
     "download": {
@@ -4949,7 +4965,10 @@
         "empty": "Kol kas nėra modelių",
         "itemCount_one": "{{count}} modelis",
         "itemCount_few": "{{count}} modeliai",
-        "itemCount_other": "{{count}} modelių"
+        "itemCount_other": "{{count}} modelių",
+        "ownerAndCount_one": "{{name}} · {{count}} modelis",
+        "ownerAndCount_few": "{{name}} · {{count}} modeliai",
+        "ownerAndCount_other": "{{name}} · {{count}} modelių"
       },
       "form": {
         "createTitle": "Nauja kolekcija",
@@ -4959,7 +4978,11 @@
         "tagsLabel": "Žymos",
         "tagsPlaceholder": "Pridėti žymų",
         "create": "Sukurti",
-        "saveFailed": "Nepavyko išsaugoti kolekcijos. Bandykite dar kartą."
+        "saveFailed": "Nepavyko išsaugoti kolekcijos. Bandykite dar kartą.",
+        "visibilityLabel": "Matomumas",
+        "visibilityHelp": "Viešos kolekcijos rodomos skiltyje Naršyti: kiti šio serverio naudotojai gali atidaryti, atsisiųsti ir kopijuoti jų modelius. Privačios matomos tik jums.",
+        "private": "Privati",
+        "public": "Vieša"
       },
       "detail": {
         "title": "{{name}}",
@@ -5100,7 +5123,8 @@
         "openTool": "Atidaryti „{{tool}}“",
         "openToolUnknown": "Atidaryti įrankį",
         "cantSelect": "Įrankio kolekcijos negalima sujungti ar ištrinti"
-      }
+      },
+      "publicHint": "Vieša: rodoma kitiems skiltyje Naršyti"
     },
     "tags": {
       "pageTitle": "Žymos",
@@ -5383,7 +5407,13 @@
       "tagsPartlyUpdated_other": "Atnaujintos {{count}} modelių žymės, bet likusių nepavyko. Bandykite dar kartą.",
       "toolOwned_one": "{{count}} pažymėtas modelis priklauso įrankiui: praleiskite jį, kad tai atliktumėte",
       "toolOwned_few": "{{count}} pažymėti modeliai priklauso įrankiui: praleiskite juos, kad tai atliktumėte",
-      "toolOwned_other": "{{count}} pažymėtų modelių priklauso įrankiui: praleiskite juos, kad tai atliktumėte"
+      "toolOwned_other": "{{count}} pažymėtų modelių priklauso įrankiui: praleiskite juos, kad tai atliktumėte",
+      "notFiled_one": "{{count}} modelio nepavyko pridėti: juo nebesidalijama",
+      "notFiled_few": "{{count}} modelių nepavyko pridėti: jais nebesidalijama",
+      "notFiled_other": "{{count}} modelių nepavyko pridėti: jais nebesidalijama",
+      "notFiledNames_one": "Nepavyko pridėti {{names}}: juo nebesidalijama",
+      "notFiledNames_few": "Nepavyko pridėti {{names}}: jais nebesidalijama",
+      "notFiledNames_other": "Nepavyko pridėti {{names}}: jais nebesidalijama"
     },
     "merge": {
       "action": "Sujungti",
@@ -5483,6 +5513,48 @@
       "noneSelected": "Neįjungta nė viena svetainė, tad nėra ko rodyti.",
       "noMatch": "Nė vienas čia esantis modelis neatitinka filtrų.",
       "clear": "Išvalyti filtrus"
+    },
+    "shared": {
+      "sharedBy": "Dalijasi {{name}}",
+      "sharedByLabel": "Dalijasi",
+      "inLibrary": "Yra jūsų bibliotekoje",
+      "copy": "Kopijuoti į mano biblioteką",
+      "openCopy": "Atidaryti mano kopiją",
+      "copied": "„{{name}}“ nukopijuotas į jūsų biblioteką",
+      "alreadyInLibrary": "„{{name}}“ jau yra jūsų bibliotekoje",
+      "copyFailed": "Nepavyko nukopijuoti modelio",
+      "moreFrom": "Daugiau iš naudotojo {{name}}",
+      "collectionSubtitle": "Dalijasi {{name}}"
+    },
+    "explore": {
+      "people": "Žmonės",
+      "peopleHelp": "Šio serverio naudotojai, kurie dalijasi kolekcijomis. Atidarykite, kad pamatytumėte visas.",
+      "recentModels": "Nauji modeliai",
+      "recentModelsHelp": "Modeliai, neseniai įdėti į kieno nors viešą kolekciją.",
+      "recentCollections": "Neseniai atnaujintos kolekcijos",
+      "recentCollectionsHelp": "Viešos kolekcijos: pirmiausia neseniai paviešintos ar papildytos.",
+      "mostCollected": "Dažniausiai kaupiami",
+      "mostCollectedHelp": "Bendrinami modeliai, kuriuos žmonės dažniausiai kopijavo į savo bibliotekas.",
+      "copies_one": "Įsidėjo {{count}} žmogus",
+      "copies_few": "Įsidėjo {{count}} žmonės",
+      "copies_other": "Įsidėjo {{count}} žmonių",
+      "personCounts": "{{collections}} · {{models}}",
+      "collectionCount_one": "{{count}} kolekcija",
+      "collectionCount_few": "{{count}} kolekcijos",
+      "collectionCount_other": "{{count}} kolekcijų",
+      "modelCount_one": "{{count}} modelis",
+      "modelCount_few": "{{count}} modeliai",
+      "modelCount_other": "{{count}} modelių",
+      "emptyTitle": "Kol kas niekuo nesidalijama",
+      "emptyHint": "Kai kas nors padarys kolekciją viešą, ji atsiras čia.",
+      "emptyAction": "Eiti į mano kolekcijas",
+      "unavailable": "Naršyti šiuo metu nepasiekiama.",
+      "userNotFound": "Šis naudotojas niekuo nesidalija.",
+      "backToExplore": "Grįžti į Naršyti",
+      "joined": "Prisijungė {{date}}",
+      "ownEmpty": "Dar nepadarėte jokios kolekcijos viešos.",
+      "loadFailed": "Nepavyko įkelti šio puslapio.",
+      "refreshFailed": "Nepavyko įkelti naujausių skaičių."
     }
   },
   "providers": {

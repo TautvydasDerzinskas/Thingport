@@ -98,6 +98,24 @@ export async function setToolsAccess(patch: Partial<ToolsAccess>): Promise<Tools
   return value;
 }
 
+// Social features (services/socialService.ts): the instance's users seeing, opening and copying each other's public
+// collections on Explore. Off until an admin turns them on. One object, so what comes next joins it.
+export type SocialSettings = { enabled: boolean };
+const SOCIAL_KEY = "social";
+
+export async function getSocialSettings(): Promise<SocialSettings> {
+  const row = await prisma.setting.findUnique({ where: { key: SOCIAL_KEY } });
+  const value = (row?.value ?? {}) as Partial<SocialSettings>;
+  return { enabled: typeof value.enabled === "boolean" ? value.enabled : false };
+}
+
+/** Changes only what's given. */
+export async function setSocialSettings(patch: Partial<SocialSettings>): Promise<SocialSettings> {
+  const value = { ...(await getSocialSettings()), ...patch };
+  await prisma.setting.upsert({ where: { key: SOCIAL_KEY }, create: { key: SOCIAL_KEY, value }, update: { value } });
+  return value;
+}
+
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";
 
 export async function getAllowRegistrations(fallback: boolean): Promise<boolean> {

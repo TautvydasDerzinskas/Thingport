@@ -67,7 +67,7 @@ export async function addPrintsToCollection(collectionId: string, printIds: stri
 /** A new, empty collection. Shared by POST /collections and the MCP create_collection tool. */
 export async function createCollection(
   userId: string,
-  input: { name: string; description?: string | null; tags?: string[] },
+  input: { name: string; description?: string | null; tags?: string[]; isPublic?: boolean },
 ): Promise<Collection> {
   await assertCollectionNameAvailable(userId, input.name);
   const collection = await prisma.collection.create({
@@ -77,6 +77,7 @@ export async function createCollection(
       nameNormalized: normalizeCollectionName(input.name),
       description: input.description?.trim() || null,
       tags: normalizeTags(input.tags ?? []),
+      isPublic: input.isPublic ?? false,
     },
   });
   void createLog({ userId, action: "collection_created", targetId: collection.id, details: { name: collection.name } });

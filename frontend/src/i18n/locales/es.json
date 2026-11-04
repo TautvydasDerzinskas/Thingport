@@ -96,7 +96,8 @@
       "downloads": "Descargas",
       "bookmarks": "Marcadores",
       "tools": "Herramientas",
-      "studio": "Estudio"
+      "studio": "Estudio",
+      "explore": "Explorar"
     },
     "uploadBar": {
       "uploading": "Subiendo…",
@@ -392,7 +393,7 @@
             },
             "collections": {
               "title": "Colecciones",
-              "description": "Tus colecciones y lo que contienen."
+              "description": "Tus colecciones y lo que contienen, y las que comparten otros."
             },
             "tags": {
               "title": "Etiquetas",
@@ -2103,7 +2104,9 @@
           "custom_widgets_changed": "Cambió qué widgets personalizados se permiten",
           "tool_installed": "Herramienta instalada",
           "tool_uninstalled": "Herramienta desinstalada",
-          "tools_access_changed": "Cambió el acceso a las herramientas"
+          "tools_access_changed": "Cambió el acceso a las herramientas",
+          "model_copied": "Modelo copiado",
+          "social_settings_changed": "Funciones sociales cambiadas"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -2119,7 +2122,9 @@
         "aiRunStopped": "(detenida)",
         "viaProvider": "mediante {{provider}}",
         "merged": "{{merged}} → {{name}}",
-        "repairSummary": "{{action}}: {{repaired}} reparados, {{deleted}} eliminados, {{failed}} fallidos"
+        "repairSummary": "{{action}}: {{repaired}} reparados, {{deleted}} eliminados, {{failed}} fallidos",
+        "socialOn": "Activadas",
+        "socialOff": "Desactivadas"
       },
       "rendering": {
         "heading": "Renderizado",
@@ -2473,6 +2478,17 @@
         "toolsAll": "Todas",
         "toolsCompact": "Compacto",
         "toolsAria": "Herramientas que recibe {{model}}"
+      },
+      "social": {
+        "label": "Funciones sociales",
+        "summary": "Activa la página Explorar y las colecciones públicas, para que los usuarios de esta instancia compartan modelos entre sí.",
+        "infoTitle": "Qué hacen las funciones sociales",
+        "infoPublic": "El formulario de una colección incluye la opción Privada / Pública. Las colecciones nuevas empiezan como privadas.",
+        "infoExplore": "Explorar aparece en la barra lateral cuando hay más de un usuario. Muestra a quienes comparten, sus modelos y colecciones más recientes y lo que más se copia.",
+        "infoCopy": "Los demás pueden abrir, descargar y laminar los modelos de una colección pública, y añadirlos a sus propias colecciones. Así obtienen su propia copia, que se conserva aunque el original cambie, se haga privado o se elimine.",
+        "infoOff": "Al desactivarlo, todo lo compartido vuelve a ocultarse. Cada colección conserva su ajuste Pública o Privada para cuando se vuelva a activar.",
+        "loadFailed": "No se pudieron cargar los ajustes sociales.",
+        "saveFailed": "No se pudieron guardar los ajustes sociales."
       }
     },
     "download": {
@@ -4849,7 +4865,9 @@
       "card": {
         "empty": "Aún no hay modelos",
         "itemCount_one": "{{count}} modelo",
-        "itemCount_other": "{{count}} modelos"
+        "itemCount_other": "{{count}} modelos",
+        "ownerAndCount_one": "{{name}} · {{count}} modelo",
+        "ownerAndCount_other": "{{name}} · {{count}} modelos"
       },
       "form": {
         "createTitle": "Nueva colección",
@@ -4859,7 +4877,11 @@
         "tagsLabel": "Etiquetas",
         "tagsPlaceholder": "Añadir etiquetas",
         "create": "Crear",
-        "saveFailed": "No se pudo guardar la colección. Inténtalo de nuevo."
+        "saveFailed": "No se pudo guardar la colección. Inténtalo de nuevo.",
+        "visibilityLabel": "Visibilidad",
+        "visibilityHelp": "Las colecciones públicas aparecen en Explorar: los demás usuarios de la instancia pueden abrir, descargar y copiar sus modelos. Las privadas son solo tuyas.",
+        "private": "Privada",
+        "public": "Pública"
       },
       "detail": {
         "title": "{{name}}",
@@ -4974,7 +4996,8 @@
         "openTool": "Abrir {{tool}}",
         "openToolUnknown": "Abrir la herramienta",
         "cantSelect": "La colección de una herramienta no se puede combinar ni eliminar"
-      }
+      },
+      "publicHint": "Pública: se muestra a los demás en Explorar"
     },
     "tags": {
       "pageTitle": "Etiquetas",
@@ -5210,7 +5233,11 @@
       "tagsPartlyUpdated_other": "Se actualizaron las etiquetas de {{count}} modelos, pero el resto falló. Inténtalo de nuevo.",
       "toolOwned_one": "{{count}} de los modelos elegidos pertenece a una herramienta: déjalo fuera para hacer esto",
       "toolOwned_other": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
-      "toolOwned_many": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto"
+      "toolOwned_many": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
+      "notFiled_one": "No se pudo añadir {{count}} modelo: ya no se comparte",
+      "notFiled_other": "No se pudieron añadir {{count}} modelos: ya no se comparten",
+      "notFiledNames_one": "No se pudo añadir {{names}}: ya no se comparte",
+      "notFiledNames_other": "No se pudieron añadir {{names}}: ya no se comparten"
     },
     "merge": {
       "action": "Fusionar",
@@ -5282,6 +5309,45 @@
       "noneSelected": "No hay ningún sitio activado, así que no hay nada que mostrar.",
       "noMatch": "Ningún modelo de aquí coincide con los filtros.",
       "clear": "Quitar filtros"
+    },
+    "shared": {
+      "sharedBy": "Compartido por {{name}}",
+      "sharedByLabel": "Compartido por",
+      "inLibrary": "En tu biblioteca",
+      "copy": "Copiar a mi biblioteca",
+      "openCopy": "Abrir mi copia",
+      "copied": "«{{name}}» copiado a tu biblioteca",
+      "alreadyInLibrary": "«{{name}}» ya está en tu biblioteca",
+      "copyFailed": "No se pudo copiar el modelo",
+      "moreFrom": "Más de {{name}}",
+      "collectionSubtitle": "Compartida por {{name}}"
+    },
+    "explore": {
+      "people": "Personas",
+      "peopleHelp": "Los usuarios de la instancia que comparten colecciones. Abre uno para verlas todas.",
+      "recentModels": "Modelos nuevos",
+      "recentModelsHelp": "Los modelos añadidos más recientemente a la colección pública de alguien.",
+      "recentCollections": "Colecciones actualizadas recientemente",
+      "recentCollectionsHelp": "Colecciones públicas, primero las que se hicieron públicas o se ampliaron más recientemente.",
+      "mostCollected": "Más coleccionados",
+      "mostCollectedHelp": "Los modelos compartidos que más se han copiado a otras bibliotecas.",
+      "copies_one": "Coleccionado por {{count}} persona",
+      "copies_other": "Coleccionado por {{count}} personas",
+      "personCounts": "{{collections}} · {{models}}",
+      "collectionCount_one": "{{count}} colección",
+      "collectionCount_other": "{{count}} colecciones",
+      "modelCount_one": "{{count}} modelo",
+      "modelCount_other": "{{count}} modelos",
+      "emptyTitle": "Aún no se comparte nada",
+      "emptyHint": "Cuando alguien haga pública una colección, aparecerá aquí.",
+      "emptyAction": "Ir a mis colecciones",
+      "unavailable": "Explorar no está disponible ahora mismo.",
+      "userNotFound": "Este usuario no comparte nada.",
+      "backToExplore": "Volver a Explorar",
+      "joined": "Se unió en {{date}}",
+      "ownEmpty": "Aún no has hecho pública ninguna colección.",
+      "loadFailed": "No se pudo cargar esta página.",
+      "refreshFailed": "No se pudieron cargar los recuentos más recientes."
     }
   },
   "providers": {

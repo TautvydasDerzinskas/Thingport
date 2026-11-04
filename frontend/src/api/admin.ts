@@ -72,6 +72,7 @@ export type LogAction =
   | "model_deleted"
   | "models_merged"
   | "models_repaired"
+  | "model_copied"
   | "collection_created"
   | "collection_edited"
   | "collection_deleted"
@@ -90,7 +91,8 @@ export type LogAction =
   | "sign_in_connected"
   | "sign_in_disconnected"
   | "grab_connected"
-  | "grab_disconnected";
+  | "grab_disconnected"
+  | "social_settings_changed";
 
 export type LogEntry = {
   id: string;

@@ -19,12 +19,14 @@ import { adminApi, type AdminUser } from "../../api/admin";
 import UserActionsMenu from "./UserActionsMenu";
 import RoleIcon, { roleKind, useRoleLabel, type UserRoleKind } from "./RoleIcon";
 import { TableRowSkeletons } from "../../components/ListSkeleton";
+import SocialSection from "./SocialSection";
 
 type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Every account; admins promote, demote and delete from each row's menu. */
+/** Every account, under the switch for what they share with each other; admins promote, demote and delete from each
+ *  row's menu. */
 export default function UsersPage({ onUnauthorized }: Props) {
   const { t, i18n } = useTranslation(["app", "common"]);
   const [users, setUsers] = React.useState<AdminUser[]>([]);
@@ -60,6 +62,7 @@ export default function UsersPage({ onUnauthorized }: Props) {
 
   return (
     <Stack spacing={3}>
+      <SocialSection onUnauthorized={onUnauthorized} />
       {error && (
         <Alert severity="error" onClose={() => setError(null)}>
           {error}
