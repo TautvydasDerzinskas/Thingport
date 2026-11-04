@@ -49,4 +49,14 @@ describe("social status", () => {
     await vi.advanceTimersByTimeAsync(30_000);
     expect(heard.at(-1)).toEqual(ON);
   });
+  it("stops asking again once nothing shows it", async () => {
+    vi.useFakeTimers();
+    const { subscribeSocialStatus } = await freshModule();
+    status.mockRejectedValue(new Error("down"));
+    const stop = subscribeSocialStatus(() => undefined);
+    await vi.advanceTimersByTimeAsync(0);
+    stop();
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(status).toHaveBeenCalledTimes(1);
+  });
 });

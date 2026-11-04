@@ -27,20 +27,24 @@ export default function SocialSection({ onUnauthorized }: Props) {
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loadFailed, setLoadFailed] = React.useState(false);
-  // A read answering after a save started (or after the page went) would put back what was there before.
   const savingRef = React.useRef(false);
   const live = React.useRef(true);
+  // Moved on as a save starts and as it ends: a read sent before either is from before the save, and its answer --
+  // the old value, or a failure the save has since made moot -- is dropped.
+  const saves = React.useRef(0);
 
   const read = React.useCallback(() => {
+    const sent = saves.current;
+    const current = () => live.current && sent === saves.current && !savingRef.current;
     socialApi.getSettings().then(
       (value) => {
-        if (!live.current || savingRef.current) return;
+        if (!current()) return;
         setSettings(value);
         setLoadFailed(false);
         setError(null);
       },
       (err) => {
-        if (!live.current) return;
+        if (!current()) return;
         if (err instanceof UnauthorizedError) onUnauthorized?.();
         else {
           setLoadFailed(true);
@@ -71,7 +75,9 @@ export default function SocialSection({ onUnauthorized }: Props) {
     setSettings({ ...(settings ?? { enabled }), enabled });
     setSaving(true);
     savingRef.current = true;
+    saves.current += 1;
     setError(null);
+    setLoadFailed(false);
     try {
       setSettings(await socialApi.updateSettings({ enabled }));
       // The sidebar's Explore and the collection form's Private/Public follow straight away.
@@ -82,6 +88,7 @@ export default function SocialSection({ onUnauthorized }: Props) {
       else setError(err instanceof Error ? err.message : t("adminSettings.social.saveFailed"));
     } finally {
       savingRef.current = false;
+      saves.current += 1;
       setSaving(false);
     }
   };

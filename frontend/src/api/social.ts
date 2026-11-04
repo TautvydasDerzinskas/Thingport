@@ -60,8 +60,14 @@ export const socialApi = {
 
   explore: () => getJson<ExploreOverview>("/explore", "Failed to load Explore"),
 
-  user: (userId: string) =>
-    getJson<ExploreUserPage>(`/explore/user/${encodeURIComponent(userId)}`, "Failed to load this user"),
+  /** Null for someone who shares nothing (or no such user): told apart from a request that failed. */
+  user: async (userId: string): Promise<ExploreUserPage | null> => {
+    const res = await fetch(`${apiBase()}/explore/user/${encodeURIComponent(userId)}`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (res.status === 404) return null;
+    await assertOkWithMessage(res, "Failed to load this user");
+    return res.json();
+  },
 
   /** Another user's shared model into the user's own library. A model they already have comes back instead, with
    *  `copied` false. Filing one into a collection copies it too (collectionsApi.addItem). */

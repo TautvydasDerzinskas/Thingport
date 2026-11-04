@@ -5,6 +5,7 @@ import path from "node:path";
 import { Prisma, type Print, type PrintFile } from "@prisma/client";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
+import { createKeyedLock } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { createLog } from "./auditLog";
 import { descriptionImagePath, saveDescriptionImage } from "./descriptionImageService";
@@ -21,12 +22,20 @@ import { libraryCopyOf, readablePrintWhere } from "./socialService";
 const log = createLogger("model-copy");
 
 const DESCRIPTION_IMAGE = /!\[([^\]]*)\]\(\/description-image\/([a-z0-9]+)\)/g;
-const DESCRIPTION_IMAGE_REF = /\/description-image\/([a-z0-9]+)/g;
+// A local one only: what a reference to some other site's /description-image/ path is, it isn't the model's.
+const DESCRIPTION_IMAGE_REF = /(?<=^|[\s"'(<=])\/description-image\/([a-z0-9]+)/g;
 
-/** `copied` is false when `userId` already has the model -- their own, or a copy from before -- which comes back as is.
- *  Two requests at once, in any process, make one copy: a user has one per original (Print.originalId), and the second
- *  to write its row finds the first's. */
-export async function copyPrintToLibrary(userId: string, printId: string): Promise<{ print: Print; copied: boolean }> {
+// One copy at a time for each user, so a second request for the same model waits for the first to finish and finds a
+// whole copy, rather than the first's row while its files are still coming (or one about to be discarded). In-process,
+// as the storage lock is; across processes, the database's one copy per user and original keeps it to one.
+const perUser = createKeyedLock();
+
+/** `copied` is false when `userId` already has the model -- their own, or a copy from before -- which comes back as is. */
+export function copyPrintToLibrary(userId: string, printId: string): Promise<{ print: Print; copied: boolean }> {
+  return perUser(userId, () => copyNow(userId, printId));
+}
+
+async function copyNow(userId: string, printId: string): Promise<{ print: Print; copied: boolean }> {
   const source = await prisma.print.findFirst({
     where: { id: printId, AND: [await readablePrintWhere(userId)] },
     include: {

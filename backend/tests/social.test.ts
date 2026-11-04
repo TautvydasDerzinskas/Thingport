@@ -102,6 +102,7 @@ describe("another user's public collection", () => {
     const collection = await request(app).get(`/api/collection/${collectionId}`).set(auth(viewer));
     expect(collection.status).toBe(200);
     expect(collection.body.owner).toMatchObject({ id: owner.id, display_name: "Owner" });
+    expect(collection.body.cover_items.map((p: { id: string }) => p.id)).toEqual([printId]);
     expect(collection.body.owner.email).toBeUndefined();
 
     const list = await request(app).get("/api/prints").set(auth(viewer)).query({ collection_id: collectionId });
@@ -321,6 +322,8 @@ describe("copying, more closely", () => {
     const [first, second] = await both;
     expect([first.status, second.status]).toEqual([200, 200]);
     expect(first.body.print.id).toBe(second.body.print.id);
+    // Whole, for whichever came second too: not the first's row while its files were still being copied.
+    expect([first.body.print.plates.length, second.body.print.plates.length]).toEqual([1, 1]);
     const copies = await prisma.print.count({
       where: { userId: viewer.id, copiedFromId: { in: [originalId, renamedId] } },
     });
@@ -378,12 +381,19 @@ describe("copying, more closely", () => {
     for (const image of [fromWeb, ownPicture]) fs.rmSync(descriptionImagePath(image, assetsPath));
     await prisma.print.update({
       where: { id: sourceId },
-      data: { notes: `One ![a](/description-image/${fromWeb.id}) two ![b](/description-image/${ownPicture.id}) end` },
+      data: {
+        notes:
+          `One ![a](/description-image/${fromWeb.id}) two ![b](/description-image/${ownPicture.id}) end ` +
+          "[elsewhere](https://example.test/description-image/abc)",
+      },
     });
 
     const res = await request(app).post(`/api/print/${sourceId}/copy`).set(auth(viewer));
     const copy = await prisma.print.findUniqueOrThrow({ where: { id: res.body.print.id } });
-    expect(copy.notes).toBe("One ![a](https://example.com/step.png) two  end");
+    // Another site's link that only looks like one of ours is left alone.
+    expect(copy.notes).toBe(
+      "One ![a](https://example.com/step.png) two  end [elsewhere](https://example.test/description-image/abc)",
+    );
   });
 
   it("knows a copy of a copy is the model the user copied already", async () => {
@@ -406,7 +416,7 @@ describe("copying, more closely", () => {
     const mine = (await request(app).post(`/api/print/${originalId}/copy`).set(auth(viewer))).body.print.id;
     const adminsCopy = (await request(app).post(`/api/print/${originalId}/copy`).set(auth(admin))).body.print.id;
     await shareModel(admin, adminsCopy);
-    await request(app).delete(`/api/print/${originalId}`).set(auth(owner));
+    expect((await request(app).delete(`/api/print/${originalId}`).set(auth(owner))).status).toBe(200);
 
     const res = await request(app).post(`/api/print/${adminsCopy}/copy`).set(auth(viewer));
     expect(res.body).toMatchObject({ copied: false, print: { id: mine } });

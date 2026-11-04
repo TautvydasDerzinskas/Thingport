@@ -507,15 +507,16 @@ export default function GlobalSearch({
     const matched = matchBang(trimmedQuery, commands);
     if (matched.length) sections.push(commandsSection(matched));
   } else if (!trimmedQuery) {
-    if (recents.length) {
+    const shown = recents
+      // Kept, not dropped, while the viewer isn't known to be an admin yet.
+      .filter((entry) => entry.kind !== "page" || pageFor(entry, pagesFor(isAdmin, explore)))
+      .slice(0, RECENTS_SHOWN);
+    // Not a heading over nothing, where every recent one was a page no longer offered.
+    if (shown.length) {
       sections.push({
         id: "recent",
         label: t("app:search.sectionRecent"),
-        items: recents
-          // Kept, not dropped, while the viewer isn't known to be an admin yet.
-          .filter((entry) => entry.kind !== "page" || pageFor(entry, pagesFor(isAdmin, explore)))
-          .slice(0, RECENTS_SHOWN)
-          .map((entry) => entryItem(entry, kindLabel(entry.kind))),
+        items: shown.map((entry) => entryItem(entry, kindLabel(entry.kind))),
       });
     }
     // Suggests whichever of light and dark isn't picked.

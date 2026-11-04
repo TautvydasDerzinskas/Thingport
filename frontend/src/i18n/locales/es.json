@@ -5345,7 +5345,9 @@
       "userNotFound": "Este usuario no comparte nada.",
       "backToExplore": "Volver a Explorar",
       "joined": "Se unió en {{date}}",
-      "ownEmpty": "Aún no has hecho pública ninguna colección."
+      "ownEmpty": "Aún no has hecho pública ninguna colección.",
+      "loadFailed": "No se pudo cargar esta página.",
+      "refreshFailed": "No se pudieron cargar los recuentos más recientes."
     }
   },
   "providers": {

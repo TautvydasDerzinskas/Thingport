@@ -5358,7 +5358,9 @@
       "userNotFound": "Cet utilisateur ne partage rien.",
       "backToExplore": "Retour à Explorer",
       "joined": "Inscrit en {{date}}",
-      "ownEmpty": "Vous n'avez encore rendu aucune collection publique."
+      "ownEmpty": "Vous n'avez encore rendu aucune collection publique.",
+      "loadFailed": "Impossible de charger cette page.",
+      "refreshFailed": "Impossible de charger les derniers chiffres."
     }
   },
   "providers": {

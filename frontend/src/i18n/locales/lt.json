@@ -5552,7 +5552,9 @@
       "userNotFound": "Šis naudotojas niekuo nesidalija.",
       "backToExplore": "Grįžti į Naršyti",
       "joined": "Prisijungė {{date}}",
-      "ownEmpty": "Dar nepadarėte jokios kolekcijos viešos."
+      "ownEmpty": "Dar nepadarėte jokios kolekcijos viešos.",
+      "loadFailed": "Nepavyko įkelti šio puslapio.",
+      "refreshFailed": "Nepavyko įkelti naujausių skaičių."
     }
   },
   "providers": {

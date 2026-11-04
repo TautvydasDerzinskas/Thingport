@@ -26,10 +26,13 @@ function load(): Promise<SocialStatus> {
       return status;
     })
     .catch(() => {
-      retry ??= setTimeout(() => {
-        retry = null;
-        refreshSocialStatus();
-      }, RETRY_MS);
+      // Only while something shows it: signed out, nothing does.
+      if (listeners.size) {
+        retry ??= setTimeout(() => {
+          retry = null;
+          refreshSocialStatus();
+        }, RETRY_MS);
+      }
       return OFF;
     })
     .then((status) => {
@@ -58,7 +61,13 @@ export function subscribeSocialStatus(listener: (status: SocialStatus) => void):
   void load().then((status) => {
     if (listeners.has(listener)) listener(status);
   });
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+    if (!listeners.size && retry) {
+      clearTimeout(retry);
+      retry = null;
+    }
+  };
 }
 
 function refreshIfStale() {

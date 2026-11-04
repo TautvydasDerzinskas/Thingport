@@ -1,4 +1,4 @@
-import type { Collection, Prisma, Print } from "@prisma/client";
+import { Prisma, type Collection, type Print } from "@prisma/client";
 import { prisma } from "../db";
 import { toCollectionOut, type CollectionOut, type PrintOut, type UserCardOut } from "../dto";
 import { printOutById, printOutsByIds } from "./printLoader";
@@ -168,17 +168,16 @@ export async function collectionOutsFor(viewerId: string, collections: Collectio
   const ids = collections.map((collection) => collection.id);
   const [counts, items, owners] = await Promise.all([
     prisma.collectionItem.groupBy({ by: ["collectionId"], where: { collectionId: { in: ids } }, _count: true }),
-    // A few more than a cover needs from each, without reading every model of a big collection.
-    Promise.all(
-      ids.map((collectionId) =>
-        prisma.collectionItem.findMany({
-          where: { collectionId },
-          orderBy: { position: "asc" },
-          take: COVER_ITEM_LIMIT,
-          select: { collectionId: true, printId: true },
-        }),
-      ),
-    ).then((lists) => lists.flat()),
+    // The first few of each, as a cover shows them, in one query and without reading every model of a big collection.
+    prisma.$queryRaw<{ collectionId: string; printId: string }[]>`
+      SELECT "collectionId", "printId" FROM (
+        SELECT "collectionId", "printId", position,
+          ROW_NUMBER() OVER (PARTITION BY "collectionId" ORDER BY position, id) AS place
+        FROM "CollectionItem"
+        WHERE "collectionId" IN (${Prisma.join(ids)})
+      ) ranked
+      WHERE place <= ${COVER_ITEM_LIMIT}
+      ORDER BY "collectionId", place`,
     userCards(collections.filter((c) => c.userId !== viewerId).map((c) => c.userId)),
   ]);
   const covers = new Map(
@@ -287,7 +286,8 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
   ]);
   const copiesOf = new Map(collected.map((print) => [print.id, print._count.copies]));
   return {
-    people: peopleOut,
+    // Someone who stopped sharing since they were listed.
+    people: peopleOut.filter((person) => person.collection_count > 0),
     recent_models: recentModels,
     recent_collections: recentCollectionOuts,
     most_collected: collectedModels.map((model) => ({ model, copies: copiesOf.get(model.id) ?? 0 })),

@@ -5292,7 +5292,9 @@
       "userNotFound": "This user doesn't share anything.",
       "backToExplore": "Back to Explore",
       "joined": "Joined {{date}}",
-      "ownEmpty": "You haven't made any collection public yet."
+      "ownEmpty": "You haven't made any collection public yet.",
+      "loadFailed": "Couldn't load this page.",
+      "refreshFailed": "Couldn't load the latest counts."
     }
   },
   "providers": {

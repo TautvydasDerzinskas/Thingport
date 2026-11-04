@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
@@ -32,44 +33,50 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
   const navigate = useNavigate();
   const [page, setPage] = useState<UserPage | null>(null);
   const [notFound, setNotFound] = useState(false);
+  // A read that failed: in place of the page when there's none yet, above it when it was only read again.
+  const [failed, setFailed] = useState(false);
   const shownFor = useRef<string | null>(null);
+  // Only the latest read's answer counts: one asked for earlier, or for a page left since, is dropped.
+  const latest = useRef(0);
+
+  const read = useCallback(
+    (asked: string, fresh: boolean) => {
+      const reading = ++latest.current;
+      if (fresh) setPage(null);
+      setNotFound(false);
+      setFailed(false);
+      socialApi.user(asked).then(
+        (value) => {
+          if (reading !== latest.current) return;
+          if (!value) {
+            setNotFound(true);
+            return;
+          }
+          shownFor.current = asked;
+          setPage(value);
+        },
+        (err) => {
+          if (reading !== latest.current) return;
+          if (err instanceof UnauthorizedError) onUnauthorized?.();
+          else setFailed(true);
+        },
+      );
+    },
+    [onUnauthorized],
+  );
 
   useEffect(() => {
     if (!userId) return;
-    let active = true;
     // Someone else's page starts from the skeleton; the same one's stays while it's read again.
-    if (shownFor.current !== userId) {
-      setPage(null);
-      setNotFound(false);
-    }
-    socialApi.user(userId).then(
-      (value) => {
-        if (!active) return;
-        shownFor.current = userId;
-        setPage(value);
-      },
-      (err) => {
-        if (!active) return;
-        if (err instanceof UnauthorizedError) onUnauthorized?.();
-        else setNotFound(true);
-      },
-    );
+    read(userId, shownFor.current !== userId);
     return () => {
-      active = false;
+      latest.current += 1;
     };
-  }, [userId, onUnauthorized]);
+  }, [userId, read]);
 
-  // Read again, in place, after the viewer changed one of their own collections here: the counts follow. Dropped if
-  // another user's page has been shown since.
+  // Read again, in place, after the viewer changed one of their own collections here: the counts follow.
   const refresh = () => {
-    if (!userId) return;
-    const asked = userId;
-    socialApi.user(asked).then(
-      (value) => {
-        if (shownFor.current === asked) setPage(value);
-      },
-      () => undefined,
-    );
+    if (userId) read(userId, false);
   };
 
   usePageHeader({
@@ -81,6 +88,17 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
         })
       : undefined,
   });
+
+  if (failed && !page) {
+    return (
+      <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
+        <Typography variant="body2">{t("models:explore.loadFailed")}</Typography>
+        <Button size="small" onClick={() => userId && read(userId, true)}>
+          {t("common:retry")}
+        </Button>
+      </Stack>
+    );
+  }
 
   if (notFound) {
     return (
@@ -99,6 +117,18 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized }: 
 
   return (
     <Stack spacing={3} sx={{ maxWidth: "1920px", mx: "auto" }}>
+      {failed && (
+        <Alert
+          severity="warning"
+          action={
+            <Button color="inherit" size="small" onClick={refresh}>
+              {t("common:retry")}
+            </Button>
+          }
+        >
+          {t("models:explore.refreshFailed")}
+        </Alert>
+      )}
       <Paper
         variant="outlined"
         sx={{ p: 2.5, borderRadius: "12px", borderColor: dividerBorderColor, display: "flex", gap: 2.5 }}
