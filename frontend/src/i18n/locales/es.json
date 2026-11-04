@@ -3221,7 +3221,9 @@
         "polygon": "Polígono",
         "text": "Texto",
         "trace": "Imagen calcada",
-        "path": "Trazado"
+        "path": "Trazado",
+        "line": "Línea",
+        "arc": "Arco"
       },
       "planes": {
         "XY": "Superior",
@@ -3237,7 +3239,9 @@
         "hint": {
           "rectangle": "Arrastra para dibujar un rectángulo",
           "circle": "Arrastra desde el centro para dibujar un círculo",
-          "polygon": "Haz clic para añadir vértices; un doble clic, Intro o el primer vértice lo cierran"
+          "polygon": "Haz clic para añadir vértices; un doble clic, Intro o el primer vértice lo cierran",
+          "line": "Haz clic para añadir puntos. Cambia a Arco para una curva; ciérrala en el primer punto, con doble clic o Intro",
+          "arc": "Haz clic donde termina el arco y luego en un punto por el que pasa. Cambia a Línea para lados rectos; ciérrala en el primer punto o con Intro"
         }
       },
       "transform": {
@@ -3783,7 +3787,8 @@
         "title": "Ajustes de Studio",
         "sections": {
           "assistant": "Preguntar a la IA",
-          "units": "Unidades"
+          "units": "Unidades",
+          "grid": "Cuadrícula"
         },
         "assistantIntro": "Dónde muestra su conversación Preguntar a la IA.",
         "layout": "Disposición",
@@ -3802,6 +3807,26 @@
           "mm": "Milímetros",
           "cm": "Centímetros",
           "in": "Pulgadas"
+        },
+        "grid": {
+          "intro": "Cómo se dibuja la cuadrícula tras el diseño y a qué se ajustan los puntos.",
+          "show": "Mostrar la cuadrícula",
+          "spacing": "Espaciado",
+          "spacingHelp": "Adaptable sigue el zoom, como la cuadrícula de un CAD: al acercarte aparecen líneas más finas, en pasos de diez (de cuatro en pulgadas), y cada décima (cuarta) línea es más oscura. Fijo mantiene el espaciado que indiques.",
+          "spacings": {
+            "adaptive": "Adaptable",
+            "fixed": "Fijo"
+          },
+          "density": "Densidad",
+          "densities": {
+            "coarse": "Amplia",
+            "normal": "Normal",
+            "fine": "Fina"
+          },
+          "major": "Líneas principales cada",
+          "subdivisions": "Dividida en",
+          "snap": "Ajustar a la cuadrícula",
+          "snapHelp": "Los puntos del boceto y los cuerpos que mueves se ajustan a las líneas más finas que se ven. Desactivado, van donde apuntas."
         }
       }
     }

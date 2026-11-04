@@ -21,21 +21,27 @@ for when it's back.
 ## Designing
 
 Studio opens on the design and the **Ask AI** box alone. The **Edit** button (the pencil) at the top brings in the
-toolbar and the side panels, and turns them off again. Out of edit mode you can still turn the view, select bodies for
-Ask AI, and undo or redo. The **Features** and **Properties** panels each fold away to their side with the arrow in
-their header, leaving a tab with their name there that opens them again; the panel button in the toolbar does the same.
+toolbar, with undo and redo first, the side panels and the status bar, and turns them off again. Out of edit mode you
+can still turn the view, select bodies for Ask AI, and undo or redo (<kbd>⌘</kbd><kbd>Z</kbd>). The **Features** and
+**Properties** panels each fold away to their side with the arrow in their header, leaving a tab with their name there
+that opens them again; the panels button at the right of the status bar does the same, beside the print check and
+**Studio settings**.
 
 A design is a list of features, built in order:
 
 - **Shapes**: box, cylinder, cone, sphere, torus and thread, from the toolbar. Each starts at the middle of the bed,
   standing on it. A thread is ISO metric (an M8 has a 1.25 mm pitch unless you change it): **External** is a threaded
   rod, **Internal** the solid to subtract for a nut's thread, a little larger by its clearance so a printed rod fits.
-- **Sketches**: pick **Sketch** and a plane (top, front or right) or **On a face** of a body, then draw rectangles,
-  circles and polygons on it; a rectangle or polygon can have rounded corners. A shape marked as a **hole** is cut out
-  of the others. **Extrude** pulls the sketch into a solid: a distance, both ways or from an offset, with sides that
-  taper and ends rounded or bevelled. **Revolve** turns it round one of the sketch's axes, all the way or part of it.
-  Either can make a new body, or join, cut or intersect one you click. **Add path** puts an SVG path among a sketch's
-  shapes, pasted from a drawing program or typed, in the sketch's millimetres with y up.
+- **Sketches**: pick **Sketch** and a plane (top, front or right) or **On a face** of a body, then draw on it. **Line**
+  and **Arc** draw one outline between them, as in other CAD: click from point to point, switch to Arc for a curve
+  (click where it ends, then a point it passes through) and back to Line, and close it on its first point, by
+  double-click or with <kbd>Enter</kbd>; <kbd>Backspace</kbd> takes back the last click. An outline of only lines is a
+  polygon, so its corners can be rounded. Rectangles, circles and polygons draw in one go; a rectangle or polygon can
+  have rounded corners. A shape marked as a **hole** is cut out of the others. **Extrude** pulls the sketch into a
+  solid: a distance, both ways or from an offset, with sides that taper and ends rounded or bevelled. **Revolve** turns
+  it round one of the sketch's axes, all the way or part of it. Either can make a new body, or join, cut or intersect
+  one you click. **Add path** puts an SVG path among a sketch's shapes, pasted from a drawing program or typed, in the
+  sketch's millimetres with y up.
 - **Loft** and **Sweep**: select two sketches or more and **Loft** makes the solid that passes through their outlines in
   the order you selected them, as a bottle from a square base to a round neck. **Sweep** pulls a sketch's outline along
   a path of points (a pipe, a handle, a rail). As in other CAD, the profile stays where you drew it: the path starts on
@@ -76,13 +82,21 @@ Typing a plain number into the field lets its formula go.
 
 ## Units
 
-As in other CAD, each design has its own units, **mm**, **cm** or **in**, switched in the status bar along the bottom
-or in **Studio settings** (the gear at the top right), and undone like any change. Every size field shows and takes
-them: a bare number is in the design's units, and one typed with its own (`2 in`, `5 mm`, `3"`) is converted. The
-status bar, Measure and the print check read out in them, sketches snap to whole millimetres or sixteenths of an inch,
-and the bed's grid is in centimetres or half inches. Switching units changes no size: a design is kept in millimetres,
-and so are its commands and what an assistant reads, which then talks to you in your units. **Studio settings** also
-sets the units new designs start in, kept on your account.
+As in other CAD, each design has its own units, **mm**, **cm** or **in**, switched in the status bar along the bottom or
+in **Studio settings** (the gear at the right of the status bar), and undone like any change. Every size field shows and
+takes them: a bare number is in the design's units, and one typed with its own (`2 in`, `5 mm`, `3"`) is converted. The
+status bar, Measure and the print check read out in them, and the grid steps in them. Switching units changes no size: a
+design is kept in millimetres, and so are its commands and what an assistant reads, which then talks to you in your
+units. **Studio settings** also sets the units new designs start in, kept on your account.
+
+## The grid
+
+The grid behind a design works as in other CAD. **Adaptive** (the default), it follows the zoom: finer lines fade in as
+you zoom in and out as you zoom out, stepping by tens (1 mm, 1 cm, 10 cm) or, in inches, by fours (1/16, 1/4, 1 in),
+with every tenth (fourth) line darker; it fades away towards the horizon. **Fixed**, it keeps the spacing you set: major
+lines so far apart, divided into 2, 4, 5 or 10. Sketch points and moved bodies snap to the finest lines that show, so
+zooming in snaps finer. The **Grid** section of **Studio settings** turns the grid and snapping on or off, and sets the
+spacing and how dense an adaptive grid is; it's kept on your account.
 
 ## Changing a body
 
@@ -125,14 +139,15 @@ The mouse works as in most CAD:
 **Select** only picks; **Move**, **Rotate** and **Scale** put a gizmo on the body selected. You can also type exact
 values in the panel on the right. Units are millimetres, and Z is up, as on a printer's bed.
 
-| Key                                                             | Does                                                                               |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| <kbd>Q</kbd> <kbd>W</kbd> <kbd>E</kbd> <kbd>R</kbd>             | Select, move, rotate, scale                                                        |
-| <kbd>⌘</kbd><kbd>Z</kbd> / <kbd>⇧</kbd><kbd>⌘</kbd><kbd>Z</kbd> | Undo / redo (Ctrl on Windows)                                                      |
-| <kbd>Delete</kbd>                                               | Delete what's selected                                                             |
-| <kbd>F</kbd>                                                    | Fit the view to the design                                                         |
-| <kbd>I</kbd>                                                    | Measure                                                                            |
-| <kbd>Esc</kbd>                                                  | Drop a shape half drawn or a selection box, finish the sketch, clear the selection |
+| Key                                                              | Does                                                                               |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| <kbd>Q</kbd> <kbd>W</kbd> <kbd>E</kbd> <kbd>R</kbd>              | Select, move, rotate, scale                                                        |
+| <kbd>L</kbd> <kbd>A</kbd> <kbd>R</kbd> <kbd>C</kbd> <kbd>P</kbd> | In a sketch: line, arc, rectangle, circle, polygon                                 |
+| <kbd>⌘</kbd><kbd>Z</kbd> / <kbd>⇧</kbd><kbd>⌘</kbd><kbd>Z</kbd>  | Undo / redo (Ctrl on Windows)                                                      |
+| <kbd>Delete</kbd>                                                | Delete what's selected                                                             |
+| <kbd>F</kbd>                                                     | Fit the view to the design                                                         |
+| <kbd>I</kbd>                                                     | Measure                                                                            |
+| <kbd>Esc</kbd>                                                   | Drop a shape half drawn or a selection box, finish the sketch, clear the selection |
 
 While editing, the **status bar** along the bottom gives how many bodies there are, how big they are together and how
 much they hold: the selected bodies, or the whole design when nothing is selected. Its **mm / cm / in** switch sets
@@ -144,12 +159,12 @@ size and volume. A second shows the shortest distance between them, drawn as a d
 along X, Y and Z, and the angle between edges or faces; between two bodies, the gap or how much they overlap. A third
 click starts again. Measuring changes nothing in the design.
 
-**Check for printing** (the checklist at the right of the toolbar) checks each visible body where it is placed: on the
-bed and within it, in one piece, not overlapping another, no overhang that needs support and no wall too thin to print,
-for the bed size, overhang angle and thinnest wall you set. A floating body has **Onto bed** to put it down. Below it,
-**Measure** gives the gap or the overlap between two bodies, to check a fit or a clearance. Ask AI and an assistant over
-MCP run the same check on their own work. As in other CAD, a thread is judged as the plain cylinder it's cut on, so its
-ridges don't count as overhang or thin walls.
+**Check for printing** (the checklist at the right of the status bar) checks each visible body where it is placed: on
+the bed and within it, in one piece, not overlapping another, no overhang that needs support and no wall too thin to
+print, for the bed size, overhang angle and thinnest wall you set. A floating body has **Onto bed** to put it down.
+Below it, **Measure** gives the gap or the overlap between two bodies, to check a fit or a clearance. Ask AI and an
+assistant over MCP run the same check on their own work. As in other CAD, a thread is judged as the plain cylinder it's
+cut on, so its ridges don't count as overhang or thin walls.
 
 **Download STL** in the design's menu saves the visible bodies as one STL for your slicer. **Save to Thingport** makes a
 model of them in your library instead: the STL, a picture of the view as you see it, and what you asked Ask AI about
@@ -187,5 +202,5 @@ that's open, and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> start
 
 The box stays small so you can watch the design change: while the AI works, one line says the step it's on, and then
 its answer; the conversation opens from the box's header. The view keeps the design above the box. If you'd rather
-read the conversation as it goes, pick **Side panel** under **Ask AI** in **Studio settings** (the gear at the top
-right of Studio): it then shows beside the view, and the box keeps only the prompt.
+read the conversation as it goes, pick **Side panel** under **Ask AI** in **Studio settings** (the gear at the right
+of the status bar, while editing): it then shows beside the view, and the box keeps only the prompt.

@@ -92,6 +92,8 @@ model User {
   studioPromptLayout       String?
   // The units a new Studio design starts in, one of STUDIO_UNITS; null means "mm".
   studioUnits              String?
+  // How Studio's grid is drawn and snapped to (StudioGrid); null, or anything left out, is its default.
+  studioGrid               Json?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.
   weatherLocation          Json?
   authorPreviewEnabled     Boolean              @default(true)

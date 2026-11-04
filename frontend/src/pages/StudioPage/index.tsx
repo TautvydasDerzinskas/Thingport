@@ -35,6 +35,7 @@ import {
   type SketchFeature,
   type SketchPlane,
   type OutlineShape,
+  type PathShape,
   type StudioDocument,
   type Transform,
 } from "../../studio/document";
@@ -110,6 +111,8 @@ const fromLeft = keyframes`from { opacity: 0; transform: translateX(-12px); }`;
 const fromRight = keyframes`from { opacity: 0; transform: translateX(12px); }`;
 
 /** Which side panels this browser last showed. */
+const SKETCH_KEYS: Record<string, SketchTool> = { l: "line", a: "arc", r: "rectangle", c: "circle", p: "polygon" };
+
 function storedPanels(): Record<StudioPanel, boolean> {
   try {
     const value: unknown = JSON.parse(window.localStorage.getItem(PANELS_KEY) ?? "null");
@@ -753,6 +756,9 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     } else if ((event.key === "Delete" || event.key === "Backspace") && !sketch && selected.length) {
       event.preventDefault();
       void deleteSelected();
+    } else if (sketch && SKETCH_KEYS[key]) {
+      // A sketch's tools by their CAD letters.
+      setSketch({ ...sketch, tool: SKETCH_KEYS[key] });
     } else if (!sketch && (key === "q" || key === "w" || key === "e" || key === "r")) {
       setMode(key === "q" ? "select" : key === "w" ? "translate" : key === "e" ? "rotate" : "scale");
     } else if (key === "f") {
@@ -845,7 +851,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onTransform={(id: string, transform: Transform) =>
             void run("set_transform", { feature_id: id, ...transform })
           }
-          onShape={(sketchId: string, shape: OutlineShape) =>
+          onShape={(sketchId: string, shape: OutlineShape | PathShape) =>
             void run("add_sketch_shape", { sketch_id: sketchId, shape })
           }
           onContextMenu={(id, at) => {
@@ -873,6 +879,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onPick={operation ? onPick : onMeasurePick}
           onBusy={setBusy}
           onStats={setStats}
+          grid={studioSettings.grid}
           tinted={operation?.kind === "separate" ? own : undefined}
           bottomInset={promptInset}
         />
@@ -984,7 +991,6 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onHull={() => void hullSelected()}
           canExtrude={Boolean(extrudable)}
           mode={mode}
-          panels={panels}
           sketch={sketch && sketchFeature?.type === "sketch" ? { plane: sketchFeature.plane, tool: sketch.tool } : null}
           busy={!doc}
           onNewDesign={() => void newDesign()}
@@ -993,8 +999,6 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onExport={() => void exportStl()}
           onSaveToLibrary={() => void saveToLibrary()}
           onParameters={() => setParametersOpen(true)}
-          onCheck={() => setChecking(true)}
-          onSettings={() => setSettingsOpen(true)}
           measuring={Boolean(measureTool)}
           onMeasure={toggleMeasure}
           onDeleteDesign={() => void deleteDesign()}
@@ -1015,7 +1019,6 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onTrace={() => setTracing(true)}
           onCombine={(kind) => void combine(kind)}
           onMode={setMode}
-          onTogglePanel={togglePanel}
           onUndo={() => void run("undo", {})}
           onRedo={() => void run("redo", {})}
           onView={(view) => viewport.current?.view(view)}
@@ -1139,6 +1142,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             selected={selected}
             format={format}
             onUnit={(next) => void run("set_units", { units: next })}
+            panels={panels}
+            onTogglePanel={togglePanel}
+            onCheck={() => setChecking(true)}
+            onSettings={() => setSettingsOpen(true)}
           />
         )}
 

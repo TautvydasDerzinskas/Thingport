@@ -13,6 +13,7 @@ import {
   setStudioSettings,
   STUDIO_PROMPT_LAYOUTS,
   STUDIO_UNITS,
+  studioGridSchema,
   type StudioSettings,
 } from "../services/studioSettingsService";
 import { ASSET_ID } from "../studio/document.generated";
@@ -57,6 +58,7 @@ router.get("/studio/status", requireAuth, (_req, res) => {
 const studioSettingsOut = (settings: StudioSettings) => ({
   prompt_layout: settings.promptLayout,
   units: settings.units,
+  grid: settings.grid,
 });
 router.get(
   "/studio/settings",
@@ -67,7 +69,11 @@ router.get(
 );
 
 const studioSettingsSchema = z
-  .object({ prompt_layout: z.enum(STUDIO_PROMPT_LAYOUTS).optional(), units: z.enum(STUDIO_UNITS).optional() })
+  .object({
+    prompt_layout: z.enum(STUDIO_PROMPT_LAYOUTS).optional(),
+    units: z.enum(STUDIO_UNITS).optional(),
+    grid: studioGridSchema.partial().optional(),
+  })
   .strict();
 router.patch(
   "/studio/settings",
@@ -75,7 +81,9 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(studioSettingsSchema, req.body);
     res.json(
-      studioSettingsOut(await setStudioSettings(req.userId!, { promptLayout: body.prompt_layout, units: body.units })),
+      studioSettingsOut(
+        await setStudioSettings(req.userId!, { promptLayout: body.prompt_layout, units: body.units, grid: body.grid }),
+      ),
     );
   }),
 );

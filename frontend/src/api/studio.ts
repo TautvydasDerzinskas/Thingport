@@ -97,13 +97,25 @@ const design = (id: string) => `/studio/designs/${encodeURIComponent(id)}`;
 
 /** Where Studio's assistant shows: the bar under the view, or a panel beside it. */
 export type StudioPromptLayout = "bar" | "panel";
+/** How the grid behind a design is drawn and snapped to, as a CAD program's grid settings: adaptive, it follows the zoom
+ *  at a density; fixed, it's `major` mm apart with `subdivisions` minor lines between. */
+export type StudioGridSettings = {
+  show: boolean;
+  spacing: "adaptive" | "fixed";
+  density: "coarse" | "normal" | "fine";
+  major: number;
+  subdivisions: number;
+  snap: boolean;
+};
 /** A person's own Studio settings, kept on the account. */
-export type StudioSettings = { prompt_layout: StudioPromptLayout; units: "mm" | "cm" | "in" };
+export type StudioSettings = { prompt_layout: StudioPromptLayout; units: "mm" | "cm" | "in"; grid: StudioGridSettings };
 
 export const studioApi = {
   status: () => request<{ enabled: boolean }>("/studio/status"),
   settings: () => request<StudioSettings>("/studio/settings"),
-  updateSettings: (changes: Partial<StudioSettings>) => request<StudioSettings>("/studio/settings", "PATCH", changes),
+  /** `grid` takes only what changes, as the rest do. */
+  updateSettings: (changes: Partial<Omit<StudioSettings, "grid">> & { grid?: Partial<StudioGridSettings> }) =>
+    request<StudioSettings>("/studio/settings", "PATCH", changes),
   aiModels: () => request<StudioAiModels>("/studio/ai-models"),
   list: () => request<StudioDesignSummary[]>("/studio/designs"),
   library: (q: string, offset = 0) =>

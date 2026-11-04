@@ -1,10 +1,22 @@
 import { useEffect, useState } from "react";
-import { studioApi, type StudioSettings } from "../api/studio";
+import { studioApi, type StudioGridSettings, type StudioSettings } from "../api/studio";
 
-// The person's Studio settings, saved on the account so every device has them: where the assistant shows, and the units
-// a new design starts in. Shared by Studio's settings dialog and the page so there's one request, and a change shows in
+// The person's Studio settings, saved on the account so every device has them: where the assistant shows, the units a
+// new design starts in, and the grid. Shared by Studio's settings dialog and the page so there's one request, and a change shows in
 // both at once.
-const DEFAULTS: StudioSettings = { prompt_layout: "bar", units: "mm" };
+/** An adaptive grid at normal density, snapped to; fixed, 10 mm with 1 mm between. */
+export const GRID_DEFAULTS: StudioGridSettings = {
+  show: true,
+  spacing: "adaptive",
+  density: "normal",
+  major: 10,
+  subdivisions: 10,
+  snap: true,
+};
+const DEFAULTS: StudioSettings = { prompt_layout: "bar", units: "mm", grid: GRID_DEFAULTS };
+
+/** A change: any of the settings, the grid's one by one. */
+export type StudioSettingsChange = Partial<Omit<StudioSettings, "grid">> & { grid?: Partial<StudioGridSettings> };
 let cached: StudioSettings | undefined;
 let inFlight: Promise<StudioSettings> | null = null;
 // Bumped on sign-in, so an answer still on its way for the previous account is dropped.
@@ -45,7 +57,7 @@ export function resetStudioSettings() {
 
 /** The defaults until the saved settings say otherwise. The setter shows a change straight away, puts it back if the
  *  latest save fails, and rejects with that save's error. */
-export function useStudioSettings(): [StudioSettings, (changes: Partial<StudioSettings>) => Promise<void>] {
+export function useStudioSettings(): [StudioSettings, (changes: StudioSettingsChange) => Promise<void>] {
   const [value, setValue] = useState<StudioSettings>(cached ?? DEFAULTS);
 
   useEffect(() => {
@@ -60,11 +72,11 @@ export function useStudioSettings(): [StudioSettings, (changes: Partial<StudioSe
     };
   }, []);
 
-  const update = async (changes: Partial<StudioSettings>) => {
+  const update = async (changes: StudioSettingsChange) => {
     const previous = cached ?? DEFAULTS;
     const save = ++latestSave;
     const forAccount = account;
-    publish({ ...previous, ...changes });
+    publish({ ...previous, ...changes, grid: { ...previous.grid, ...changes.grid } });
     const request = saving.then(() => (forAccount === account ? studioApi.updateSettings(changes) : undefined));
     saving = request.catch(() => undefined);
     try {

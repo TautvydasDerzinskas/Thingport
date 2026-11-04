@@ -22,13 +22,16 @@ import {
   topLevel,
   type BodyFeature,
   type OutlineShape,
+  type PathShape,
   type SketchFeature,
   type StudioDocument,
   type Transform,
   type Vec2,
   type Vec3,
 } from "../../studio/document";
-import type { LengthUnit } from "../../studio/expressions";
+import { arcPoints, chainPoints, chainShape, type ChainPiece } from "./sketchChain";
+import { AdaptiveGrid } from "./grid";
+import type { StudioGridSettings } from "../../api/studio";
 import { evaluateInWorker, type WorkerBody } from "./geometryClient";
 import { createViewCube, type ViewCube, type ViewCubeStyle } from "./viewCube";
 
@@ -40,7 +43,8 @@ import { createViewCube, type ViewCube, type ViewCubeStyle } from "./viewCube";
 
 /** "select" only picks; the others also put the gizmo on the one body selected. */
 export type StudioMode = "select" | "translate" | "rotate" | "scale";
-export type SketchTool = "rectangle" | "circle" | "polygon";
+/** Line and Arc draw one chain between them, as CAD's do: switching tools carries on from where it ended. */
+export type SketchTool = "rectangle" | "circle" | "polygon" | "line" | "arc";
 export type CameraView = "iso" | "top" | "front" | "right";
 
 /** A face, by a point on it and its outward normal; an edge by its ends; all in the world. */
@@ -90,7 +94,7 @@ type Props = {
   /** What a selection box took in. */
   onBoxSelect: (ids: string[], additive: boolean) => void;
   onTransform: (id: string, transform: Transform) => void;
-  onShape: (sketchId: string, shape: OutlineShape) => void;
+  onShape: (sketchId: string, shape: OutlineShape | PathShape) => void;
   onContextMenu: (id: string, at: { top: number; left: number }) => void;
   /** The bodies that couldn't be made, by id, each time that changes. */
   onErrors: (errors: Record<string, string>) => void;
@@ -101,6 +105,8 @@ type Props = {
   onBusy: (busy: boolean) => void;
   /** Each top-level body's extent and volume, each time a body is made or moved. */
   onStats?: (stats: BodyStats[]) => void;
+  /** How the grid is drawn and snapped to. */
+  grid: StudioGridSettings;
   /** Bodies a tool's preview tells apart, each in a colour of its own: the parts a body would separate into. */
   tinted?: readonly string[];
   /** How much of the bottom of the view something covers, in px (Ask AI's bar): the view's middle, and fitting the
@@ -114,15 +120,6 @@ const CLICK_PX = 4;
 // Where a polygon's last click closes it, near its first point.
 const CLOSE_PX = 10;
 const CREASE = (30 * Math.PI) / 180;
-/** What a sketch's points and a moved body snap to, and the bed's and a sketch's grids, in the design's units as in
- *  CAD: whole millimetres, or sixteenths of an inch; grid squares of 1 cm or half an inch, and a sketch's of a quarter. */
-const SNAP: Record<LengthUnit, number> = { mm: 1, cm: 1, in: 25.4 / 16 };
-const GRID: Record<LengthUnit, number> = { mm: 10, cm: 10, in: 12.7 };
-/** A grid of `step` squares about as wide as the bed: an even count of them, so a line runs through the origin. */
-const gridOf = (step: number, color: THREE.Color) => {
-  const squares = 2 * Math.round(BED / 2 / step);
-  return new THREE.GridHelper(squares * step, squares, color, color);
-};
 const CAMERA_MS = 280;
 // A hair off straight up or down, so the camera's up (Z) is never along the way it looks.
 const off = (direction: THREE.Vector3) =>
@@ -179,7 +176,10 @@ type BodyObject = {
   volume: number;
 };
 type Drawing =
-  { tool: "rectangle" | "circle"; start: Vec2; end: Vec2 } | { tool: "polygon"; points: Vec2[]; hover: Vec2 | null };
+  | { tool: "rectangle" | "circle"; start: Vec2; end: Vec2 }
+  | { tool: "polygon"; points: Vec2[]; hover: Vec2 | null }
+  /** Line and Arc's chain; `arcEnd` where an arc's end is clicked and the point it passes through is next. */
+  | { tool: "chain"; start: Vec2; pieces: ChainPiece[]; arcEnd: Vec2 | null; hover: Vec2 | null };
 type Pointer = { x: number; y: number; button: number; boxing: boolean };
 
 const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioViewport(props, ref) {
@@ -209,6 +209,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     sketches: THREE.Group;
     bed: THREE.Group;
     sketchGrid: THREE.Group;
+    /** The bed's grid, and the sketch being drawn's. */
+    grids: { bed: AdaptiveGrid; sketch: AdaptiveGrid };
+    /** Spaces the grids for the view as it is now, as every frame does before it's drawn. */
+    updateGrids: () => void;
     preview: THREE.Group;
     /** What picking shows: what's under the pointer, and what's been picked. */
     hoverLayer: THREE.Group;
@@ -288,6 +292,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
+        updateGrids();
         renderer.render(scene, camera);
         cube?.sync(camera);
       });
@@ -358,7 +363,6 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     });
 
     const gizmo = new TransformControls(camera, renderer.domElement);
-    gizmo.setTranslationSnap(SNAP[latest.current.document.units ?? "mm"]);
     gizmo.setRotationSnap(THREE.MathUtils.degToRad(5));
     gizmo.setScaleSnap(0.05);
     gizmo.addEventListener("change", render);
@@ -385,6 +389,26 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const hoverLayer = new THREE.Group();
     const chosenLayer = new THREE.Group();
     scene.add(bed, sketches, sketchGrid, preview, hoverLayer, chosenLayer);
+    const grids = { bed: new AdaptiveGrid(), sketch: new AdaptiveGrid() };
+    grids.bed.setPlane(
+      new THREE.Vector3(),
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(0, 0, 1),
+    );
+    scene.add(grids.bed.mesh);
+    sketchGrid.add(grids.sketch.mesh);
+    // Each frame's grids follow the zoom; a moved body snaps to the bed's finest lines that show.
+    const updateGrids = () => {
+      const { grid, sketch } = latest.current;
+      const units = latest.current.document.units ?? "mm";
+      const height = renderer.domElement.clientHeight || 1;
+      grids.bed.mesh.visible = grid.show;
+      grids.sketch.mesh.visible = grid.show && Boolean(sketch);
+      grids.bed.update(camera, orbit.target, height, grid, units);
+      grids.sketch.update(camera, orbit.target, height, grid, units);
+      gizmo.setTranslationSnap(grid.snap ? grids.bed.snap : null);
+    };
 
     // Kept to half the view, so a short one still shows something.
     const inset = () => Math.min(latest.current.bottomInset ?? 0, container.clientHeight / 2);
@@ -417,6 +441,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       sketches,
       bed,
       sketchGrid,
+      grids,
+      updateGrids,
       preview,
       hoverLayer,
       chosenLayer,
@@ -466,18 +492,13 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colorKey, i18n.language]);
 
-  // The bed: a grid of 1 cm or half-inch squares, X and Y drawn in their axis colours.
-  const units = props.document.units ?? "mm";
+  // The bed: its grid, and X and Y drawn in their axis colours.
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
-    s.gizmo.setTranslationSnap(SNAP[units]);
     clear(s.bed);
-    const grid = gridOf(GRID[units], colors.grid);
-    grid.rotation.x = Math.PI / 2;
-    (grid.material as THREE.LineBasicMaterial).transparent = true;
-    (grid.material as THREE.LineBasicMaterial).opacity = theme.palette.mode === "dark" ? 0.18 : 0.22;
-    s.bed.add(grid);
+    s.grids.bed.setStyle(colors.grid, theme.palette.mode === "dark" ? 0.32 : 0.38);
+    s.grids.sketch.setStyle(colors.accent, 0.4);
     const axis = (to: THREE.Vector3, color: THREE.Color) =>
       new THREE.Line(
         new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), to]),
@@ -486,7 +507,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     s.bed.add(axis(new THREE.Vector3(BED / 2, 0, 0.01), colors.x), axis(new THREE.Vector3(0, BED / 2, 0.01), colors.y));
     s.render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorKey, units]);
+  }, [colorKey]);
+  // A grid setting changed, or the design's units: drawn again with them.
+  useEffect(() => {
+    stage.current?.render();
+  }, [props.grid, props.document.units]);
 
   // --- Bodies: made again only when their shape changed; moving one only moves it ---
   useEffect(() => {
@@ -839,6 +864,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       s.camera.updateProjectionMatrix();
       s.camera.updateMatrixWorld();
       // Drawn now and read straight away, before the browser clears what WebGL drew.
+      s.updateGrids();
       s.renderer.render(s.scene, s.camera);
       const canvas = s.renderer.domElement;
       const covered = Math.round(s.inset() * (canvas.height / (canvas.clientHeight || 1)));
@@ -869,13 +895,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
   // --- Sketch mode: the plane faces the camera, the left button draws ---
   const sketchFeature = activeSketch ? featureById(props.document, activeSketch) : undefined;
   const sketchPlaneKey =
-    sketchFeature?.type === "sketch"
-      ? `${sketchFeature.id}|${sketchFeature.plane}|${sketchFeature.offset}|${props.document.units ?? "mm"}`
-      : null;
+    sketchFeature?.type === "sketch" ? `${sketchFeature.id}|${sketchFeature.plane}|${sketchFeature.offset}` : null;
   useEffect(() => {
     const s = stage.current;
     if (!s) return;
-    clear(s.sketchGrid);
     clear(s.preview);
     s.drawing = null;
     const sketch = sketchFeature?.type === "sketch" ? sketchFeature : null;
@@ -884,16 +907,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       return;
     }
     const { u, v, n } = sketchFrame(sketch);
-    const grid = gridOf(GRID[units] / 2, colors.accent);
-    (grid.material as THREE.LineBasicMaterial).transparent = true;
-    (grid.material as THREE.LineBasicMaterial).opacity = 0.16;
-    // GridHelper lies in XZ: turn its X and Z onto the plane's u and v.
-    grid.matrixAutoUpdate = false;
     const origin = new THREE.Vector3(...sketchPointToWorld(sketch, [0, 0]));
-    grid.matrix
-      .makeBasis(new THREE.Vector3(...u), new THREE.Vector3(...n), new THREE.Vector3(...v))
-      .setPosition(origin);
-    s.sketchGrid.add(grid);
+    s.grids.sketch.setPlane(origin, new THREE.Vector3(...u), new THREE.Vector3(...v), new THREE.Vector3(...n));
     // Square on to the sketch, from the side it extrudes towards.
     frame(
       off(new THREE.Vector3(...n)),
@@ -987,6 +1002,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     };
 
     /** Where the pointer is on the sketch's plane, in its own [u, v] mm, snapped to the millimetre. */
+    // Onto the sketch grid's finest lines that show, where snapping's on, as CAD snaps to its grid.
+    const snapped = (value: number) => tidy(latest.current.grid.snap ? round(value, s.grids.sketch.snap) : value);
+
     const onPlane = (event: PointerEvent | MouseEvent, sketch: SketchFeature): Vec2 | null => {
       const { u, v, n } = sketchFrame(sketch);
       const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
@@ -996,13 +1014,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       raycaster.setFromCamera(ndc(event), s.camera);
       const hit = raycaster.ray.intersectPlane(plane, new THREE.Vector3());
       if (!hit) return null;
-      return [
-        tidy(round(hit.dot(new THREE.Vector3(...u)), SNAP[latest.current.document.units ?? "mm"])),
-        tidy(round(hit.dot(new THREE.Vector3(...v)), SNAP[latest.current.document.units ?? "mm"])),
-      ];
+      return [snapped(hit.dot(new THREE.Vector3(...u))), snapped(hit.dot(new THREE.Vector3(...v)))];
     };
 
     const shapeOf = (drawing: Drawing, closing = false): OutlineShape | null => {
+      if (drawing.tool === "chain") return null;
       if (drawing.tool === "polygon") {
         const points = closing || !drawing.hover ? drawing.points : [...drawing.points, drawing.hover];
         return points.length >= (closing ? 3 : 2) ? { type: "polygon", points } : null;
@@ -1022,6 +1038,22 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       clear(s.preview);
       const sketch = activeSketchFeature();
       if (!s.drawing || !sketch) return s.render();
+      if (s.drawing.tool === "chain") {
+        const { start, pieces, arcEnd, hover } = s.drawing;
+        const drawn = chainPoints(start, pieces);
+        const last = drawn[drawn.length - 1];
+        // What the next click would add: a straight piece, an arc's chord, or the arc through the pointer.
+        const next = arcEnd ? arcPoints(last, hover ?? arcEnd, arcEnd) : hover ? [hover] : [];
+        s.preview.add(
+          new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(
+              [...drawn, ...next].map((point) => new THREE.Vector3(...sketchPointToWorld(sketch, point))),
+            ),
+            new THREE.LineBasicMaterial({ color: colors.accent }),
+          ),
+        );
+        return s.render();
+      }
       const shape = shapeOf(s.drawing);
       if (shape) {
         const points = shapeOutline(shape).map((point) => new THREE.Vector3(...sketchPointToWorld(sketch, point)));
@@ -1046,6 +1078,58 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       if (shape) latest.current.onShape(sketch.id, shape);
     };
 
+    const finishChain = () => {
+      const sketch = activeSketchFeature();
+      if (s.drawing?.tool !== "chain" || !sketch) return;
+      const shape = chainShape(s.drawing.start, s.drawing.pieces);
+      s.drawing = null;
+      clear(s.preview);
+      s.render();
+      if (shape) latest.current.onShape(sketch.id, shape);
+    };
+
+    /** Whether a click is on a sketch point, as the screen shows it. */
+    const onPoint = (event: PointerEvent, sketch: SketchFeature, point: Vec2) => {
+      const at = new THREE.Vector3(...sketchPointToWorld(sketch, point)).project(s.camera);
+      const rect = canvas.getBoundingClientRect();
+      const dx = ((at.x + 1) / 2) * rect.width + rect.left - event.clientX;
+      const dy = ((1 - at.y) / 2) * rect.height + rect.top - event.clientY;
+      return Math.hypot(dx, dy) < CLOSE_PX;
+    };
+
+    /** A Line or Arc click: a piece from where the chain ended, or its first point. Back on that first point, it closes. */
+    const chainClick = (event: PointerEvent, sketch: SketchFeature, tool: "line" | "arc", at: Vec2) => {
+      if (s.drawing?.tool !== "chain") {
+        s.drawing = { tool: "chain", start: at, pieces: [], arcEnd: null, hover: null };
+        return;
+      }
+      const chain = s.drawing;
+      const drawn = chainPoints(chain.start, chain.pieces);
+      const last = drawn[drawn.length - 1];
+      const target = onPoint(event, sketch, chain.start) ? chain.start : at;
+      const same = (a: Vec2, b: Vec2) => a[0] === b[0] && a[1] === b[1];
+      if (tool === "line" || !chain.arcEnd) {
+        // An arc's end left behind by switching to Line is let go.
+        chain.arcEnd = null;
+        if (same(target, last)) return;
+        if (tool === "arc") {
+          chain.arcEnd = target;
+          return;
+        }
+        chain.pieces.push({ to: target });
+      } else {
+        if (same(at, last) || same(at, chain.arcEnd)) return;
+        chain.pieces.push({ to: chain.arcEnd, through: at });
+        chain.arcEnd = null;
+      }
+      const end = chain.pieces[chain.pieces.length - 1].to;
+      if (same(end, chain.start)) {
+        // Back where it began: done, if it encloses something; otherwise that piece is taken back.
+        if (chainShape(chain.start, chain.pieces)) finishChain();
+        else chain.pieces.pop();
+      }
+    };
+
     const onPointerDown = (event: PointerEvent) => {
       s.settleCamera();
       s.pointer = { x: event.clientX, y: event.clientY, button: event.button, boxing: false };
@@ -1054,7 +1138,9 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       if (!sketch || !tool || event.button !== 0) return;
       const at = onPlane(event, sketch);
       if (!at) return;
-      if (tool === "polygon") {
+      if (tool === "line" || tool === "arc") {
+        chainClick(event, sketch, tool, at);
+      } else if (tool === "polygon") {
         if (s.drawing?.tool !== "polygon") s.drawing = { tool, points: [at], hover: null };
         else {
           // A click back on the first point closes it.
@@ -1195,7 +1281,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       if (s.drawing && sketch) {
         const at = onPlane(event, sketch);
         if (!at) return;
-        if (s.drawing.tool === "polygon") s.drawing.hover = at;
+        if (s.drawing.tool === "polygon" || s.drawing.tool === "chain") s.drawing.hover = at;
         else s.drawing.end = at;
         return drawPreview();
       }
@@ -1226,7 +1312,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const start = s.pointer;
       s.pointer = null;
       const sketch = activeSketchFeature();
-      if (sketch && s.drawing && s.drawing.tool !== "polygon") {
+      if (sketch && s.drawing && s.drawing.tool !== "polygon" && s.drawing.tool !== "chain") {
         const shape = shapeOf(s.drawing);
         s.drawing = null;
         clear(s.preview);
@@ -1270,12 +1356,29 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       paint();
     };
 
-    const onDoubleClick = () => finishPolygon();
+    const onDoubleClick = () => {
+      finishPolygon();
+      finishChain();
+    };
 
     // macOS sends this as the right button goes down, before any drag: the menu waits for it to come up instead.
     const onContextMenu = (event: MouseEvent) => event.preventDefault();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (s.drawing?.tool === "chain") {
+        // Enter closes it straight back to its start; Backspace takes back the last click.
+        if (event.key === "Enter") {
+          event.preventDefault();
+          finishChain();
+        } else if (event.key === "Backspace") {
+          event.preventDefault();
+          if (s.drawing.arcEnd) s.drawing.arcEnd = null;
+          else if (s.drawing.pieces.length) s.drawing.pieces.pop();
+          else s.drawing = null;
+          drawPreview();
+        }
+        return;
+      }
       if (s.drawing?.tool !== "polygon") return;
       if (event.key === "Enter") {
         event.preventDefault();

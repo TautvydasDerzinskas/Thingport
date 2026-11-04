@@ -3185,7 +3185,9 @@
         "polygon": "Polygon",
         "text": "Text",
         "trace": "Traced picture",
-        "path": "Path"
+        "path": "Path",
+        "line": "Line",
+        "arc": "Arc"
       },
       "planes": {
         "XY": "Top",
@@ -3201,7 +3203,9 @@
         "hint": {
           "rectangle": "Drag to draw a rectangle",
           "circle": "Drag from the centre to draw a circle",
-          "polygon": "Click to add corners; double-click, Enter or the first corner closes it"
+          "polygon": "Click to add corners; double-click, Enter or the first corner closes it",
+          "line": "Click to add points. Switch to Arc for a curve; close on the first point, by double-click or Enter",
+          "arc": "Click where the arc ends, then a point it passes through. Switch to Line for straight edges; close on the first point or Enter"
         }
       },
       "transform": {
@@ -3732,7 +3736,8 @@
         "title": "Studio settings",
         "sections": {
           "assistant": "Ask AI",
-          "units": "Units"
+          "units": "Units",
+          "grid": "Grid"
         },
         "assistantIntro": "Where Ask AI shows its conversation.",
         "layout": "Layout",
@@ -3751,6 +3756,26 @@
           "mm": "Millimetres",
           "cm": "Centimetres",
           "in": "Inches"
+        },
+        "grid": {
+          "intro": "How the grid behind a design is drawn, and what a point snaps to.",
+          "show": "Show the grid",
+          "spacing": "Spacing",
+          "spacingHelp": "Adaptive follows the zoom, as a CAD grid does: finer lines fade in as you zoom in, in steps of ten (of four in inches), every tenth (fourth) line darker. Fixed keeps the spacing you set.",
+          "spacings": {
+            "adaptive": "Adaptive",
+            "fixed": "Fixed"
+          },
+          "density": "Density",
+          "densities": {
+            "coarse": "Coarse",
+            "normal": "Normal",
+            "fine": "Fine"
+          },
+          "major": "Major lines every",
+          "subdivisions": "Divided into",
+          "snap": "Snap to grid",
+          "snapHelp": "Sketch points and moved bodies snap to the finest grid lines that show. Off, they go where you point."
         }
       }
     }

@@ -3234,7 +3234,9 @@
         "polygon": "Polygone",
         "text": "Texte",
         "trace": "Image décalquée",
-        "path": "Tracé"
+        "path": "Tracé",
+        "line": "Ligne",
+        "arc": "Arc"
       },
       "planes": {
         "XY": "Dessus",
@@ -3250,7 +3252,9 @@
         "hint": {
           "rectangle": "Faites glisser pour dessiner un rectangle",
           "circle": "Faites glisser depuis le centre pour dessiner un cercle",
-          "polygon": "Cliquez pour ajouter des sommets ; un double-clic, Entrée ou le premier sommet le ferme"
+          "polygon": "Cliquez pour ajouter des sommets ; un double-clic, Entrée ou le premier sommet le ferme",
+          "line": "Cliquez pour ajouter des points. Passez à Arc pour une courbe ; fermez sur le premier point, par double-clic ou Entrée",
+          "arc": "Cliquez où l’arc se termine, puis sur un point par lequel il passe. Passez à Ligne pour des côtés droits ; fermez sur le premier point ou avec Entrée"
         }
       },
       "transform": {
@@ -3796,7 +3800,8 @@
         "title": "Réglages du Studio",
         "sections": {
           "assistant": "Demander à l’IA",
-          "units": "Unités"
+          "units": "Unités",
+          "grid": "Grille"
         },
         "assistantIntro": "Où « Demander à l’IA » affiche sa conversation.",
         "layout": "Disposition",
@@ -3815,6 +3820,26 @@
           "mm": "Millimètres",
           "cm": "Centimètres",
           "in": "Pouces"
+        },
+        "grid": {
+          "intro": "Comment la grille derrière le design est dessinée, et sur quoi les points s’accrochent.",
+          "show": "Afficher la grille",
+          "spacing": "Espacement",
+          "spacingHelp": "Adaptative suit le zoom, comme la grille d’un CAO : des lignes plus fines apparaissent en zoomant, par pas de dix (de quatre en pouces), une ligne sur dix (sur quatre) plus foncée. Fixe garde l’espacement choisi.",
+          "spacings": {
+            "adaptive": "Adaptative",
+            "fixed": "Fixe"
+          },
+          "density": "Densité",
+          "densities": {
+            "coarse": "Large",
+            "normal": "Normale",
+            "fine": "Fine"
+          },
+          "major": "Lignes principales tous les",
+          "subdivisions": "Divisée en",
+          "snap": "Accrocher à la grille",
+          "snapHelp": "Les points d’esquisse et les corps déplacés s’accrochent aux lignes les plus fines visibles. Désactivé, ils vont là où vous pointez."
         }
       }
     }

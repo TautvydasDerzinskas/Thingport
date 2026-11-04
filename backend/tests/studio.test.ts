@@ -265,12 +265,39 @@ describe("Studio", () => {
 
   it("keeps each person's Studio settings: where the assistant shows, and the units new designs start in", async () => {
     const settings = (session: string) => request(app).get("/api/studio/settings").set(auth(session));
-    expect((await settings(bob)).body).toEqual({ prompt_layout: "bar", units: "mm" });
+    const grid = { show: true, spacing: "adaptive", density: "normal", major: 10, subdivisions: 10, snap: true };
+    expect((await settings(bob)).body).toEqual({ prompt_layout: "bar", units: "mm", grid });
     const set = await request(app).patch("/api/studio/settings").set(auth(bob)).send({ prompt_layout: "panel" });
-    expect(set.body).toEqual({ prompt_layout: "panel", units: "mm" });
+    expect(set.body).toMatchObject({ prompt_layout: "panel", units: "mm" });
     await request(app).patch("/api/studio/settings").set(auth(bob)).send({ units: "in" });
-    expect((await settings(bob)).body).toEqual({ prompt_layout: "panel", units: "in" });
-    expect((await settings(alice)).body).toEqual({ prompt_layout: "bar", units: "mm" });
+    expect((await settings(bob)).body).toMatchObject({ prompt_layout: "panel", units: "in" });
+    expect((await settings(alice)).body).toEqual({ prompt_layout: "bar", units: "mm", grid });
+    // The grid's settings change one by one, each keeping the rest.
+    await request(app)
+      .patch("/api/studio/settings")
+      .set(auth(bob))
+      .send({ grid: { spacing: "fixed", major: 25.4 } });
+    await request(app)
+      .patch("/api/studio/settings")
+      .set(auth(bob))
+      .send({ grid: { snap: false } });
+    expect((await settings(bob)).body.grid).toEqual({ ...grid, spacing: "fixed", major: 25.4, snap: false });
+    expect(
+      (
+        await request(app)
+          .patch("/api/studio/settings")
+          .set(auth(bob))
+          .send({ grid: { subdivisions: 0 } })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await request(app)
+          .patch("/api/studio/settings")
+          .set(auth(bob))
+          .send({ grid: { density: "dense" } })
+      ).status,
+    ).toBe(400);
     expect((await request(app).patch("/api/studio/settings").set(auth(bob)).send({ units: "ft" })).status).toBe(400);
     expect((await request(app).patch("/api/studio/settings").set(auth(bob)).send({ layout: "panel" })).status).toBe(
       400,
@@ -298,7 +325,7 @@ describe("Studio", () => {
     expect(followed.body.summary).toBe("box-1's width follows side + 0.5 in: it's 38.1");
     const state = await callTool(token, "studio_get_design", { design_id: inches.id });
     expect(state.data.parameters).toEqual([{ name: "side", value: 1, unit: "in" }]);
-    await request(app).patch("/api/studio/settings").set(auth(bob)).send({ prompt_layout: "bar", units: "mm" });
+    await request(app).patch("/api/studio/settings").set(auth(bob)).send({ prompt_layout: "bar", units: "mm", grid });
   });
 
   it("applies commands sent at once one after another, so none is lost", async () => {

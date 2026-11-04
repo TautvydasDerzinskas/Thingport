@@ -21,21 +21,18 @@ import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineOutlinedIcon from "@mui/icons-material/DriveFileRenameOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import HighlightAltOutlinedIcon from "@mui/icons-material/HighlightAltOutlined";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
-import ViewSidebarOutlinedIcon from "@mui/icons-material/ViewSidebarOutlined";
 import PentagonOutlinedIcon from "@mui/icons-material/PentagonOutlined";
 import RectangleOutlinedIcon from "@mui/icons-material/RectangleOutlined";
 import RedoIcon from "@mui/icons-material/Redo";
 import GestureOutlinedIcon from "@mui/icons-material/GestureOutlined";
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import WallpaperOutlinedIcon from "@mui/icons-material/WallpaperOutlined";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StraightenOutlinedIcon from "@mui/icons-material/StraightenOutlined";
 import ThreeSixtyIcon from "@mui/icons-material/ThreeSixty";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
@@ -73,6 +70,8 @@ import {
   ThreadIcon,
   TorusIcon,
   UnionIcon,
+  ArcToolIcon,
+  LineToolIcon,
 } from "./studioIcons";
 
 export type Primitive = "box" | "cylinder" | "cone" | "sphere" | "torus" | "thread";
@@ -96,8 +95,6 @@ type Props = {
   onHull: () => void;
   canExtrude: boolean;
   mode: StudioMode;
-  /** Which side panels show. */
-  panels: Record<StudioPanel, boolean>;
   /** While a sketch is being drawn: its plane, and the tool drawing it. */
   sketch: { plane: SketchPlane; tool: SketchTool } | null;
   busy: boolean;
@@ -109,10 +106,6 @@ type Props = {
   onSaveToLibrary: () => void;
   /** Opens the design's parameters, the named numbers its sizes can follow. */
   onParameters: () => void;
-  /** Opens the check of whether the design will print, and the measure between two bodies. */
-  onCheck: () => void;
-  /** Opens Studio's own settings: where Ask AI shows, and units. */
-  onSettings: () => void;
   /** Whether the measure tool is on, and turns it on or off. */
   measuring: boolean;
   onMeasure: () => void;
@@ -132,7 +125,6 @@ type Props = {
   onTrace: () => void;
   onCombine: (kind: BooleanKind) => void;
   onMode: (mode: StudioMode) => void;
-  onTogglePanel: (panel: StudioPanel) => void;
   onUndo: () => void;
   onRedo: () => void;
   onView: (view: CameraView) => void;
@@ -215,7 +207,6 @@ export default function StudioToolbar(props: Props) {
   const [designMenu, setDesignMenu] = useState<HTMLElement | null>(null);
   const [sketchMenu, setSketchMenu] = useState<HTMLElement | null>(null);
   const [viewMenu, setViewMenu] = useState<HTMLElement | null>(null);
-  const [panelMenu, setPanelMenu] = useState<HTMLElement | null>(null);
   const [shapesMenu, setShapesMenu] = useState<HTMLElement | null>(null);
   const [modifyMenu, setModifyMenu] = useState<HTMLElement | null>(null);
   const noDesign = props.designName === null;
@@ -278,6 +269,18 @@ export default function StudioToolbar(props: Props) {
             "@media (prefers-reduced-motion: reduce)": { animation: "none" },
           }}
         >
+          <Tool label={t("studio.actions.undo")} shortcut={`${mod}Z`} disabled={!props.canUndo} onClick={props.onUndo}>
+            <UndoIcon />
+          </Tool>
+          <Tool
+            label={t("studio.actions.redo")}
+            shortcut={isMac ? "⇧⌘Z" : "Ctrl+Y"}
+            disabled={!props.canRedo}
+            onClick={props.onRedo}
+          >
+            <RedoIcon />
+          </Tool>
+          <Gap />
           <Button
             size="small"
             color="inherit"
@@ -353,9 +356,11 @@ export default function StudioToolbar(props: Props) {
                 label={t("studio.sketch.tool")}
                 value={props.sketch.tool}
                 options={[
-                  { value: "rectangle", label: t("studio.shapes.rectangle"), icon: <RectangleOutlinedIcon /> },
-                  { value: "circle", label: t("studio.shapes.circle"), icon: <CircleOutlinedIcon /> },
-                  { value: "polygon", label: t("studio.shapes.polygon"), icon: <PentagonOutlinedIcon /> },
+                  { value: "line", label: `${t("studio.shapes.line")} (L)`, icon: <LineToolIcon /> },
+                  { value: "arc", label: `${t("studio.shapes.arc")} (A)`, icon: <ArcToolIcon /> },
+                  { value: "rectangle", label: `${t("studio.shapes.rectangle")} (R)`, icon: <RectangleOutlinedIcon /> },
+                  { value: "circle", label: `${t("studio.shapes.circle")} (C)`, icon: <CircleOutlinedIcon /> },
+                  { value: "polygon", label: `${t("studio.shapes.polygon")} (P)`, icon: <PentagonOutlinedIcon /> },
                 ]}
                 onChange={props.onSketchTool}
               />
@@ -524,18 +529,6 @@ export default function StudioToolbar(props: Props) {
               />
             </>
           )}
-          <Gap />
-          <Tool label={t("studio.actions.undo")} shortcut={`${mod}Z`} disabled={!props.canUndo} onClick={props.onUndo}>
-            <UndoIcon />
-          </Tool>
-          <Tool
-            label={t("studio.actions.redo")}
-            shortcut={isMac ? "⇧⌘Z" : "Ctrl+Y"}
-            disabled={!props.canRedo}
-            onClick={props.onRedo}
-          >
-            <RedoIcon />
-          </Tool>
           <Box sx={{ flex: 1 }} />
           <Tool
             label={t("studio.measure.title")}
@@ -546,26 +539,7 @@ export default function StudioToolbar(props: Props) {
           >
             <StraightenOutlinedIcon />
           </Tool>
-          <Tool label={t("studio.check.title")} disabled={noDesign} onClick={props.onCheck}>
-            <FactCheckOutlinedIcon />
-          </Tool>
           <HelpTip text={t("studio.view.navigation")} />
-          <Tool label={t("studio.panels.label")} onClick={(event) => setPanelMenu(event.currentTarget)}>
-            <ViewSidebarOutlinedIcon />
-          </Tool>
-          <Menu anchorEl={panelMenu} open={Boolean(panelMenu)} onClose={() => setPanelMenu(null)}>
-            {(["features", "properties"] as const).map((panel) => (
-              <MenuItem
-                key={panel}
-                role="menuitemcheckbox"
-                aria-checked={props.panels[panel]}
-                onClick={() => props.onTogglePanel(panel)}
-              >
-                <ListItemIcon>{props.panels[panel] && <CheckRoundedIcon fontSize="small" />}</ListItemIcon>
-                <ListItemText>{t(`studio.panels.${panel}`)}</ListItemText>
-              </MenuItem>
-            ))}
-          </Menu>
           <Tool label={t("studio.view.label")} onClick={(event) => setViewMenu(event.currentTarget)}>
             <VideocamOutlinedIcon />
           </Tool>
@@ -587,11 +561,6 @@ export default function StudioToolbar(props: Props) {
           </Tool>
         </Box>
       )}
-      {/* In view mode too: where Ask AI shows is a setting of the view. */}
-      {!props.editing && <Box sx={{ flex: 1 }} />}
-      <Tool label={t("studio.settings.title")} onClick={props.onSettings}>
-        <SettingsOutlinedIcon />
-      </Tool>
     </Box>
   );
 }

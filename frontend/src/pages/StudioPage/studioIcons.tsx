@@ -279,6 +279,29 @@ export function AlignModeIcon({
   );
 }
 
+/** A sketch's Line tool: a straight piece between two points. */
+export function LineToolIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M5.5 18.5 18.5 5.5" />
+      <circle cx="5.5" cy="18.5" r="1.9" fill="currentColor" />
+      <circle cx="18.5" cy="5.5" r="1.9" fill="currentColor" />
+    </SvgIcon>
+  );
+}
+
+/** A sketch's Arc tool: an arc between its ends, through a third point. */
+export function ArcToolIcon(props: SvgIconProps) {
+  return (
+    <SvgIcon {...props}>
+      <path {...line} d="M4.5 17a7.5 7.5 0 0 1 15 0" />
+      <circle cx="4.5" cy="17" r="1.9" fill="currentColor" />
+      <circle cx="19.5" cy="17" r="1.9" fill="currentColor" />
+      <circle cx="12" cy="9.5" r="1.4" fill="currentColor" />
+    </SvgIcon>
+  );
+}
+
 export function ThreadIcon(props: SvgIconProps) {
   return (
     <SvgIcon {...props}>

@@ -86,6 +86,11 @@ The page applies a document command locally at once (`useStudioDesign`), then se
 the stored design, one command at a time per design, and keeps a revision, which undo and redo move between. An open
 page polls the design's version, so what an assistant does shows up while you watch.
 
+The grid (`StudioPage/grid.ts`) is a shader on a plane, the bed's and a sketch's, spaced again before every frame from
+how many millimetres a pixel is where the view looks (`gridLevels`): three levels at once, the finest fading, so a step
+never jumps. What a point snaps to is the finest that shows. Its settings are the person's (`/api/studio/settings`),
+not the design's, as the Ask AI layout and the units new designs start in are.
+
 A tool that takes more than a click (fillet, hole, shell, an extrude's options and so on) is an `Operation` in
 `StudioPage/operations.ts`: what it has been given so far, what the view should let the user pick next (`pickOf`), and
 the one command it makes (`commandOf`). Its panel (`OperationPanel.tsx`) edits it, the page previews that command with

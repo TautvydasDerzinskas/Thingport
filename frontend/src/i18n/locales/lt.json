@@ -3308,7 +3308,9 @@
         "polygon": "Daugiakampis",
         "text": "Tekstas",
         "trace": "Apvestas paveikslėlis",
-        "path": "Kontūras"
+        "path": "Kontūras",
+        "line": "Linija",
+        "arc": "Lankas"
       },
       "planes": {
         "XY": "Viršus",
@@ -3324,7 +3326,9 @@
         "hint": {
           "rectangle": "Vilkite, kad nupieštumėte stačiakampį",
           "circle": "Vilkite nuo centro, kad nupieštumėte apskritimą",
-          "polygon": "Spustelėkite, kad pridėtumėte kampų; dvigubas spustelėjimas, Enter arba pirmasis kampas jį uždaro"
+          "polygon": "Spustelėkite, kad pridėtumėte kampų; dvigubas spustelėjimas, Enter arba pirmasis kampas jį uždaro",
+          "line": "Spustelėkite, kad pridėtumėte taškus. Kreivei perjunkite į „Lankas“; uždarykite pirmuoju tašku, dukart spustelėdami arba Enter",
+          "arc": "Spustelėkite, kur lankas baigiasi, tada tašką, pro kurį jis eina. Tiesioms kraštinėms perjunkite į „Linija“; uždarykite pirmuoju tašku arba Enter"
         }
       },
       "transform": {
@@ -3870,7 +3874,8 @@
         "title": "Studijos nustatymai",
         "sections": {
           "assistant": "Klausti DI",
-          "units": "Vienetai"
+          "units": "Vienetai",
+          "grid": "Tinklelis"
         },
         "assistantIntro": "Kur „Klausti DI“ rodo pokalbį.",
         "layout": "Išdėstymas",
@@ -3889,6 +3894,26 @@
           "mm": "Milimetrai",
           "cm": "Centimetrai",
           "in": "Coliai"
+        },
+        "grid": {
+          "intro": "Kaip piešiamas tinklelis po dizainu ir prie ko pritraukiami taškai.",
+          "show": "Rodyti tinklelį",
+          "spacing": "Tankis",
+          "spacingHelp": "Prisitaikantis keičiasi su priartinimu, kaip CAD tinklelis: priartinus atsiranda smulkesnės linijos, kas dešimt kartų (coliais – kas keturis), kas dešimta (ketvirta) linija tamsesnė. Pastovus išlaiko jūsų nustatytą žingsnį.",
+          "spacings": {
+            "adaptive": "Prisitaikantis",
+            "fixed": "Pastovus"
+          },
+          "density": "Tankumas",
+          "densities": {
+            "coarse": "Retas",
+            "normal": "Įprastas",
+            "fine": "Tankus"
+          },
+          "major": "Pagrindinės linijos kas",
+          "subdivisions": "Padalyta į",
+          "snap": "Pritraukti prie tinklelio",
+          "snapHelp": "Eskizo taškai ir perkeliami kūnai pritraukiami prie smulkiausių matomų tinklelio linijų. Išjungus jie atsiduria ten, kur rodote."
         }
       }
     }
