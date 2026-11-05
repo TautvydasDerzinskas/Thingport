@@ -180,6 +180,12 @@ function notePrint(job: MakerworldJob, printId: string | undefined): void {
   if (printId && !(job.printIds ?? []).includes(printId)) job.printIds = [...(job.printIds ?? []), printId];
 }
 
+/** Ends a step the run has left while it waited on the page or the library -- aborted, or moved past with Import
+ *  next -- so nothing more is clicked or imported for it. advanceJob lets the error go quietly. */
+async function stayAtStep(tabId: number, job: MakerworldJob): Promise<void> {
+  if (!(await isStillAtStep(tabId, stepOf(job)))) throw new Error("The run has moved on from this model.");
+}
+
 /** What the page resolved with its own session. Null lets the backend resolve it; the content script only answers
  *  with an error for a CAPTCHA or the daily download limit, which the backend would hit too, so those are thrown. */
 async function resolvedInPage(
@@ -193,6 +199,7 @@ async function resolvedInPage(
 /** The profile the page shows, as every model came in before profiles could be chosen. */
 async function importPageProfile(tabId: number, job: MakerworldJob): Promise<void> {
   const resolved = await resolvedInPage(sendToTab(tabId, "RESOLVE_MAKERWORLD_DOWNLOAD_URL"));
+  await stayAtStep(tabId, job);
   const print = await importSingle(
     { url: job.urls[job.index], collectionId: job.collectionId, resolved },
     { notify: false },
@@ -239,13 +246,14 @@ async function importProfileStep(tabId: number, job: MakerworldJob): Promise<voi
           "already brought in are only checked for the profiles they lack.",
       );
     }
+    await stayAtStep(tabId, job);
     if (!ids.length) {
       await importPageProfile(tabId, job);
       return;
     }
     const missing = await missingProfiles(modelUrl, ids);
-    // Aborted, or moved past with Import next, while the library was asked: keeping the plan would bring the run back.
-    if (!(await isStillAtStep(tabId, stepOf(job)))) throw new Error("The run has moved on from this model.");
+    // Kept only for a run still here: saving it for one aborted meanwhile would bring that run back.
+    await stayAtStep(tabId, job);
     job.profiles = { ids: missing, done: 0, total: missing.length };
     // Kept, so a CAPTCHA or a background woken afresh carries on with this plan rather than asking again.
     await setJob(job);
@@ -253,6 +261,7 @@ async function importProfileStep(tabId: number, job: MakerworldJob): Promise<voi
   }
   const instanceId = job.profiles.ids[0];
   const resolved = await resolvedInPage(sendToTab(tabId, "RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD", { instanceId }));
+  await stayAtStep(tabId, job);
   const print = await importSingle(
     { url: profileUrl(modelUrl, instanceId), collectionId: job.collectionId, resolved },
     { notify: false },

@@ -14,7 +14,7 @@ const store: Record<string, unknown> = {};
 const sent: { type: string; payload: unknown }[] = [];
 const visited: string[] = [];
 /** What the page answers, by message. */
-let page: Record<string, (payload: { instanceId?: string }) => Reply<unknown>>;
+let page: Record<string, (payload: { instanceId?: string }) => Reply<unknown> | Promise<Reply<unknown>>>;
 /** Profile links the library already holds. */
 const held = new Set<string>();
 const imported: { url: string; resolved: unknown }[] = [];
@@ -54,7 +54,7 @@ vi.stubGlobal("chrome", {
     reload: async () => undefined,
     sendMessage: async (_tabId: number, { type, payload }: { type: string; payload: { instanceId?: string } }) => {
       sent.push({ type, payload });
-      return page[type]?.(payload) ?? { ok: true, data: null };
+      return (await page[type]?.(payload)) ?? { ok: true, data: null };
     },
   },
 });
@@ -221,6 +221,31 @@ describe("the guided MakerWorld collection import", () => {
 
     expect(job()).toBeUndefined();
     expect(imported).toEqual([]);
+    expect(visited).toEqual([ORIGIN]);
+  });
+
+  it.each([
+    ["a design without print profiles, while its page is asked for them", "designer", "READ_MAKERWORLD_PROFILES", []],
+    ["the page's own profile, while the page resolves it", "url", "RESOLVE_MAKERWORLD_DOWNLOAD_URL", null],
+    ["a print profile, while the page picks and resolves it", "designer", "RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD", null],
+  ] as const)("imports nothing more of %s, once aborted meanwhile", async (_what, scope, waitingOn, answer) => {
+    let letThrough!: () => void;
+    const gate = new Promise<void>((resolve) => (letThrough = resolve));
+    const answering = page[waitingOn];
+    page[waitingOn] = async (payload) => {
+      await gate;
+      return answer === null ? answering(payload) : { ok: true, data: answer };
+    };
+    await start([MODEL_A, MODEL_B], scope);
+    const running = step();
+    await vi.waitFor(() => expect(sent.map(({ type }) => type)).toContain(waitingOn));
+
+    await abortJob(TAB);
+    letThrough();
+    await running;
+
+    expect(imported).toEqual([]);
+    expect(job()).toBeUndefined();
     expect(visited).toEqual([ORIGIN]);
   });
 });
