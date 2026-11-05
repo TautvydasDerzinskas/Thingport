@@ -18,6 +18,9 @@ export const STORAGE_KEYS = {
   thingiverseHideAds: "thingiverseHideAds",
   // From the last login: admins get "Add to the queue" in the import panel.
   isAdmin: "isAdmin",
+  // Whether the instance gives everyone an import queue of their own, as its health check said at the last sign-in:
+  // everyone gets "Add to the queue" there. Unset until it has answered.
+  importQueue: "importQueue",
   token: "token",
   tokenExpiresAt: "tokenExpiresAt",
   // Last successful sign-in; the connection check signs in again once it's a few minutes old.
@@ -50,6 +53,7 @@ export type StoredConfig = {
   thingiverseDark?: boolean;
   thingiverseHideAds?: boolean;
   isAdmin?: boolean;
+  importQueue?: boolean;
   token?: string;
   tokenExpiresAt?: number;
   loginVerifiedAt?: number;
@@ -104,6 +108,7 @@ export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.disabled,
   STORAGE_KEYS.normalizeMakerworld,
   STORAGE_KEYS.isAdmin,
+  STORAGE_KEYS.importQueue,
 ];
 
 export function normalizeInstanceUrl(raw: string | undefined | null): string {

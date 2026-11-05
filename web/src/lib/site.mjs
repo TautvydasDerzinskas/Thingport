@@ -273,7 +273,7 @@ export const DOCS = [
     title: "Multi-user",
     nav: "Multi-user",
     description:
-      "Separate libraries for everyone, with open or invite-only registration, email verification, captcha and single sign-on.",
+      "Separate libraries for everyone, collections and chats to share once an admin allows it, and open or invite-only registration, email verification, captcha and single sign-on.",
   },
   {
     slug: "features/administration",
@@ -309,7 +309,7 @@ export const DOCS = [
     title: "AI categorization and descriptions",
     nav: "AI features",
     description:
-      "Sort models into your categories and clean up their descriptions with AI, on a local model through Ollama or a cloud API.",
+      "Sort models into your categories, clean up their descriptions and design parts in Studio with AI, on a local model through Ollama, a cloud API or Claude.",
   },
   {
     slug: "guides/single-sign-on",
@@ -336,7 +336,7 @@ export const DOCS = [
     title: "Connect an AI assistant with MCP",
     nav: "AI assistant (MCP)",
     description:
-      "Let Claude and other AI assistants search and read your library, write you a widget or a tool, and import models if you allow it, over the Model Context Protocol.",
+      "Let Claude and other AI assistants search and read your library, import models, write you a widget or a tool, and design parts in Studio, as far as you allow, over the Model Context Protocol.",
   },
   {
     slug: "guides/custom-widgets",
@@ -354,6 +354,15 @@ export const DOCS = [
     nav: "Tools",
     description:
       "Small apps that open in a window from the Tools page: planners, generators and calculators that work with your library.",
+  },
+  {
+    slug: "guides/studio",
+    source: "docs/guides/studio.md",
+    group: "Integrations",
+    title: "Studio",
+    nav: "Studio",
+    description:
+      "A CAD page built for an AI to drive: describe a part, or a change to a model you have, and watch it designed step by step. Or build it yourself from shapes and sketches.",
   },
   {
     slug: "developers",

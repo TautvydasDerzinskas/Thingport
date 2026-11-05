@@ -20,7 +20,7 @@ under **Administration → Storage → Consume Folder**, and it imports whatever
 Libraries tend to be organized one of two ways, and Thingport handles both.
 
 - **One model per file.** A folder like `Miniatures/Dragons/` full of separate STLs, where each file is its own thing.
-  Choose **Each model file is a separate model**. Every STL, 3MF, STEP or OBJ becomes a model, and every directory
+  Choose **Each model file is a separate model**. Every STL, 3MF, STEP, OBJ or glTF becomes a model, and every directory
   becomes a folder in Thingport.
 - **One model per folder.** A folder like `Printer Upgrades/Fan Duct/` holding `duct.stl`, `clip.stl`, a photo and a
   readme, the way most downloads unpack. Choose **Each folder is one model**. The folder becomes a single model named

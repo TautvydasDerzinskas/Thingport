@@ -136,8 +136,8 @@ function mockCloud(design: unknown, rawFiles: () => Response): string[] {
     fetched.push(url);
     if (url.includes(SOURCES_PATH)) return rawFiles();
     if (url.includes("/design-service/design/")) return jsonResponse(200, design);
-    if (url.includes("/iot-service/api/user/profile/")) {
-      return jsonResponse(200, { message: "success", url: "https://example.com/profile.3mf" });
+    if (url.includes("/design-service/instance/")) {
+      return jsonResponse(200, { url: "https://example.com/profile.3mf" });
     }
     return jsonResponse(404, {});
   }) as unknown as typeof fetch;

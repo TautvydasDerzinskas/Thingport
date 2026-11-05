@@ -1,0 +1,14 @@
+{
+  "code": "OK",
+  "requestId": "Root=1-6aecae77-28c0d949689bc22326998551",
+  "result": {
+    "tier": "free",
+    "renewAt": 0,
+    "cancelAt": 0,
+    "refillAt": 1796083200000,
+    "trialEligible": false,
+    "firstMonthProCouponEligible": true,
+    "referralInviteeCouponEligible": false,
+    "referralInviteeRewardCredits": 0
+  }
+}

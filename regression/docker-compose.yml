@@ -30,6 +30,11 @@ services:
       - FLARESOLVERR_URL=
       # Low, so the consume folder's size cap is testable with a small file.
       - IMPORT_MAX_MB=1
+      # Link imports are answered inside the backend rather than by MakerWorld, so the run stays offline. No pacing is
+      # needed between calls that go nowhere. The gates let a test hold an import where it is.
+      - NODE_OPTIONS=--require /regression-fixtures/fake-provider.cjs
+      - FAKE_PROVIDER_GATES=/fake-provider-gates
+      - IMPORT_MAKERWORLD_CALL_DELAY_MS=0
       # The host user, so the backend can empty the bind-mounted consume folder (set by run.sh).
       - PUID=${REGRESSION_PUID:-1000}
       - PGID=${REGRESSION_PGID:-1000}
@@ -37,6 +42,8 @@ services:
       - /app/storage
     volumes:
       - ./consume:/app/consume
+      - ./fixtures:/regression-fixtures:ro
+      - ./fake-provider-gates:/fake-provider-gates:ro
     depends_on:
       db:
         condition: service_healthy

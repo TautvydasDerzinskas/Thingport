@@ -8,7 +8,11 @@ import { listen, send, type ContentMessages } from "../shared/messages";
 import { CONFIG_CHANGE_KEYS } from "../shared/storage";
 import { classifyUrl } from "../shared/urls";
 import { setContext, type LibraryState } from "./context";
-import { isMakerworldBlockingError, resolveMakerworldDownloadUrl } from "../providers/makerworld/downloadResolver";
+import {
+  isMakerworldBlockingError,
+  resolveMakerworldDownloadUrl,
+  resolveMakerworldProfileDownload,
+} from "../providers/makerworld/downloadResolver";
 import { offerNormalizedDownload, unmountNormalizedDownload } from "../providers/makerworld/normalizedDownload";
 import { mountJobOverlay, mountPausedJobOverlay } from "./overlays";
 import { loadPanel } from "./panels";
@@ -17,7 +21,7 @@ import { providerEnabled } from "./providerSettings";
 import { CONTENT_MODULES } from "../providers/content";
 import { trackViewedModel } from "./recentlyViewed";
 import { errorHtml } from "./panels/results";
-import { api } from "./runtime";
+import { api, isOwnNavigation } from "./runtime";
 import { closeSetupModal, openSetupModal } from "./setupModal";
 import {
   SHARED_SCRIPT_EXPLAINER,
@@ -184,7 +188,8 @@ async function init(): Promise<void> {
     instanceUrl: stateRes.data.instanceUrl,
     classification,
     library,
-    canQueue: stateRes.data.isAdmin,
+    canQueue: stateRes.data.canQueue,
+    importQueue: stateRes.data.importQueue,
   });
   const root = mountHost();
   const togglePanel = mountPanel(root, () => void loadPanel());
@@ -231,6 +236,7 @@ function installNavigationWatcher(): void {
   const onLocationChange = () => {
     if (location.href === lastHref) return;
     lastHref = location.href;
+    if (isOwnNavigation()) return;
     // Said again because the browser treats this as a navigation and drops what it knows about the tab, the note
     // the popup features the site from included (background/providerTab.ts).
     reportProviderSite();
@@ -255,6 +261,13 @@ if (!window.thingportGrabInjected) {
     // say so.
     RESOLVE_MAKERWORLD_DOWNLOAD_URL: () =>
       resolveMakerworldDownloadUrl(location.href).catch((err) => {
+        if (isMakerworldBlockingError(err)) throw err;
+        return null;
+      }),
+    READ_MAKERWORLD_PROFILES: async ({ scope }) =>
+      (await CONTENT_MODULES.makerworld.loadProfiles?.(location.href))?.(scope) ?? null,
+    RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD: ({ instanceId }) =>
+      resolveMakerworldProfileDownload(location.href, instanceId).catch((err) => {
         if (isMakerworldBlockingError(err)) throw err;
         return null;
       }),

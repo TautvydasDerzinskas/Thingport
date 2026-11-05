@@ -3,6 +3,7 @@
 // it. So Grab is the only one that renews, for the browser and Thingport both: it writes the new tokens back into the
 // browser's cookies, where the site picks them up, and sends the access token on. Thingport never renews it itself.
 
+import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { OPTIONAL_SITES, siteEnabled } from "../../shared/optionalSites";
 import type { SessionSource } from "../../background/sessionSync";
 import { MANIFESTS } from "../index.generated";
@@ -64,7 +65,7 @@ async function renew(): Promise<string | null> {
   // Read right before it's spent: a tab of the site may have just renewed it.
   const refresh = await readCookie(REFRESH_COOKIE);
   if (!refresh) return null;
-  const res = await fetch(TOKEN_URL, {
+  const res = await providerCredentialRequest("snapmaker-id", TOKEN_URL, {
     method: "POST",
     headers: {
       Authorization: CLIENT_AUTH,

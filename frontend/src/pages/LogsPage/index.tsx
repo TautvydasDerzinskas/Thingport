@@ -42,6 +42,10 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   file_reuse_changed: "info",
   file_reuse_backfill_started: "info",
   custom_widgets_changed: "warning",
+  tool_installed: "info",
+  // Takes the data it kept for everyone with it.
+  tool_uninstalled: "error",
+  tools_access_changed: "warning",
   user_invited: "info",
   authors_linked: "success",
   descriptions_refetched: "warning",
@@ -50,8 +54,11 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   import_completed: "info",
   model_edited: "warning",
   model_reimported: "info",
+  model_linked: "info",
   model_deleted: "error",
+  models_merged: "warning",
   models_repaired: "warning",
+  model_copied: "success",
   collection_created: "success",
   collection_edited: "warning",
   collection_deleted: "error",
@@ -71,6 +78,10 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   sign_in_disconnected: "default",
   grab_connected: "info",
   grab_disconnected: "default",
+  social_settings_changed: "warning",
+  chat_room_created: "info",
+  chat_room_edited: "default",
+  chat_room_deleted: "error",
 };
 
 function isoDateOnly(d: Date): string {
@@ -134,6 +145,7 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "model_uploaded":
       case "model_imported":
       case "model_deleted":
+      case "model_copied":
       case "collection_created":
       case "collection_edited":
       case "collection_deleted":
@@ -144,6 +156,22 @@ export default function LogsPage({ onUnauthorized }: Props) {
         return typeof d.name === "string" ? d.name : "";
       case "user_invited":
         return typeof d.email === "string" ? d.email : "";
+      case "social_settings_changed":
+        // One change can carry both.
+        return [
+          typeof d.enabled === "boolean"
+            ? t(d.enabled ? "adminSettings.logs.socialOn" : "adminSettings.logs.socialOff")
+            : null,
+          typeof d.chats === "boolean"
+            ? t(d.chats ? "adminSettings.logs.chatsOn" : "adminSettings.logs.chatsOff")
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+      case "chat_room_created":
+      case "chat_room_edited":
+      case "chat_room_deleted":
+        return typeof d.name === "string" ? d.name : "";
       case "descriptions_refetched":
         return t("adminSettings.logs.descriptionsRefetched", {
           email: typeof d.email === "string" ? d.email : "",
@@ -155,6 +183,7 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "model_edited":
         return typeof d.field === "string" ? t("adminSettings.logs.editedField", { field: d.field }) : "";
       case "model_reimported":
+      case "model_linked":
         return typeof d.source_url === "string" ? d.source_url : "";
       case "models_repaired": {
         // The run's own word for what it did, rather than the action as it is stored.
@@ -192,6 +221,7 @@ export default function LogsPage({ onUnauthorized }: Props) {
         });
       case "collections_merged":
       case "tags_merged":
+      case "models_merged":
         return t("adminSettings.logs.merged", {
           name: typeof d.name === "string" ? d.name : "",
           merged: Array.isArray(d.merged) ? d.merged.join(", ") : "",

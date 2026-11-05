@@ -10,6 +10,7 @@ export default {
   site: "https://pinshape.com",
   docsSlug: "pinshape",
   hosts: ["pinshape.com"],
+  credentialHosts: { "pinshape-session": { exact: ["pinshape.com"] } },
   endpoints: { files: "https://mh-pinshape-private.s3.amazonaws.com" },
   brand: {
     logo: {

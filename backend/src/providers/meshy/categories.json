@@ -1,0 +1,20 @@
+{
+  "Art/Sculptures": ["art-abstract"],
+  "Art/Other Art Models": ["culture-history"],
+  "Education/Engineering": ["science-technology"],
+  "Fashion/Other Fashion Models": ["fashion-style"],
+  "Hobby & DIY/Electronics": ["electronics"],
+  "Hobby & DIY/Music": ["music"],
+  "Hobby & DIY/Sport & Outdoors": ["sports-fitness"],
+  "Hobby & DIY/Vehicles": ["vehicles"],
+  "Household/Decor": ["furniture-home"],
+  "Household/Garden": ["nature-plants"],
+  "Household/Other Household Models": ["food-drink"],
+  "Miniatures/Animals": ["animals"],
+  "Miniatures/Architecture": ["architecture", "places-travel"],
+  "Miniatures/Creatures": ["fantasy-mythology"],
+  "Miniatures/Other Miniatures": ["sci-fi"],
+  "Props & Cosplays/Cosplay Weapons": ["weapons-military"],
+  "Toys & Games/Characters": ["characters", "anime-manga"],
+  "Toys & Games/Other Toys & Games": ["gaming"]
+}

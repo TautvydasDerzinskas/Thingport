@@ -42,6 +42,8 @@ export const PREVIEWS = path.join(STORAGE, "previews");
 export const DESCRIPTION_IMAGES = path.join(STORAGE, "description-images");
 // 3D previews, and the failure markers of renders.
 export const MODEL_PREVIEWS = path.join(STORAGE, "model-previews");
+// Studio's copies of the meshes its designs imported, as studio/u-<user>/<design>/<asset>.tpsm.
+export const STUDIO_ASSETS = path.join(STORAGE, "studio");
 // One picture per tag for the Tags page, built from its models' pictures.
 export const TAG_MOSAICS = path.join(STORAGE, "tag-mosaics");
 // Icons users uploaded, by id; see services/iconService.ts.
@@ -68,9 +70,19 @@ export const PUBLIC_URL = (process.env.PUBLIC_URL || "").trim().replace(/\/+$/, 
 export const AUTH_SECRET = process.env.AUTH_SECRET || "changeme-secret";
 export const AUTH_ALGO = "HS256" as const;
 
-export const IMPORT_ALLOWED_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".lbrn", ".lbrn2", ".zip"]);
+export const IMPORT_ALLOWED_EXTS = new Set([
+  ".stl",
+  ".3mf",
+  ".step",
+  ".stp",
+  ".obj",
+  ".glb",
+  ".lbrn",
+  ".lbrn2",
+  ".zip",
+]);
 // Mirrors frontend's MODEL_EXTS. Other files in a multi-file upload become SUPPORTING files.
-export const RENDERABLE_MODEL_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj"]);
+export const RENDERABLE_MODEL_EXTS = new Set([".stl", ".3mf", ".step", ".stp", ".obj", ".glb"]);
 // The script a model is generated from, kept so it can be generated again with other parameters. It holds no
 // geometry until something runs it, so it is never a plate: it comes along as a SUPPORTING file.
 export const PARAMETRIC_SOURCE_EXTS = new Set([".scad"]);
@@ -88,6 +100,9 @@ export const UPLOADABLE_EXTS = new Set([
   ".stp",
   ".3mf",
   ".obj",
+  ".glb",
+  // Packed into a .glb with the files it points at (services/gltfPacker.ts).
+  ".gltf",
   ".f3d",
   ".lbrn",
   ".lbrn2",
@@ -129,6 +144,8 @@ export const IMPORT_DOWNLOAD_RETRY_DELAY_MS = envInt("IMPORT_DOWNLOAD_RETRY_DELA
 // MakerWorld request (listing pages, each resolution step, each image), not just each model.
 // MakerWorld's pacing against its CAPTCHA, here with the other settings an admin can set by environment variable.
 export const IMPORT_MAKERWORLD_CALL_DELAY_MS = envInt("IMPORT_MAKERWORLD_CALL_DELAY_MS", 5000);
+// How long a job in the import queue may show no sign of life before the line moves on without it.
+export const IMPORT_STALL_LIMIT_MINUTES = Math.max(1, envInt("IMPORT_STALL_LIMIT_MINUTES", 60));
 // Synced collections are checked on each one's own interval; "false" turns the scheduled sync off
 // ("Sync now" still works).
 export const COLLECTION_SYNC_ENABLED = (process.env.COLLECTION_SYNC_ENABLED ?? "").trim().toLowerCase() !== "false";
@@ -140,6 +157,8 @@ export const IMPORT_BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36";
 
 export const FLARESOLVERR_URL = (process.env.FLARESOLVERR_URL || "").trim();
+// Opt-in: once every setup can, plaintext HTTP is refused for any solver but the local ones (System Health says when).
+export const FLARESOLVERR_REQUIRE_HTTPS = process.env.FLARESOLVERR_REQUIRE_HTTPS === "true";
 export const FLARESOLVERR_TIMEOUT_MS = envInt("FLARESOLVERR_TIMEOUT_MS", 60000);
 export const FLARESOLVERR_SESSION_TTL_MS = envInt("FLARESOLVERR_SESSION_TTL_MS", 15 * 60 * 1000);
 

@@ -8,6 +8,7 @@ import { HttpError } from "../utils/fileUtils";
 import { writeZip, type ZipEntryDescriptor } from "../utils/zipWriter";
 import { resolvePlateFilePath } from "./printCreation";
 import { managedPrintFilePath } from "./printFileService";
+import { readableCollection, readablePrintWhere } from "./socialService";
 import type { Category, Plate, Print, Prisma } from "@prisma/client";
 
 type PrintWithPlatesAndCategory = Print & { plates: Plate[]; category: Category | null };
@@ -21,19 +22,24 @@ export type DownloadZipFilter = {
 };
 
 /** `tag` is applied in JS since tags aren't a filterable column. Throws 404 for a collection that
- *  isn't the user's. */
+ *  isn't the user's, or another user's public one (services/socialService.ts). Models picked by id may be shared ones
+ *  too; a category and a tag are the user's own library's. */
 export async function resolvePrintsForDownload(
   userId: string,
   filter: DownloadZipFilter,
 ): Promise<PrintWithPlatesAndCategory[]> {
-  const where: Prisma.PrintWhereInput = { userId };
-  if (filter.print_ids?.length) where.id = { in: filter.print_ids };
-  if (filter.category_id) where.categoryId = filter.category_id;
+  let owner = userId;
+  const where: Prisma.PrintWhereInput = {};
   if (filter.collection_id) {
-    const collection = await prisma.collection.findFirst({ where: { id: filter.collection_id, userId } });
+    const collection = await readableCollection(userId, filter.collection_id);
     if (!collection) throw new HttpError(404, "Collection not found");
+    owner = collection.userId;
     where.collectionItems = { some: { collectionId: filter.collection_id } };
   }
+  const byIdOnly = Boolean(filter.print_ids?.length) && !filter.category_id && !filter.collection_id;
+  where.AND = [byIdOnly ? await readablePrintWhere(userId) : { userId: owner }];
+  if (filter.print_ids?.length) where.id = { in: filter.print_ids };
+  if (filter.category_id) where.categoryId = filter.category_id;
   let prints = await prisma.print.findMany({
     where,
     include: { plates: { orderBy: { position: "asc" } }, category: true },

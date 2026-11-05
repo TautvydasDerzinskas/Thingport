@@ -354,7 +354,12 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
                 overflow: "hidden",
               }}
             >
-              <ToolRunner key={preview.sha} tool={preview} onClose={() => setPart("details")} />
+              <ToolRunner
+                key={preview.sha}
+                tool={preview}
+                onClose={() => setPart("details")}
+                onUnauthorized={onUnauthorized}
+              />
             </Box>
           </Box>
         )}

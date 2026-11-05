@@ -1,7 +1,13 @@
 import { parseMakerworldModelUrl } from "./urls.generated";
 
 export type MakerworldCreator = { uid?: string | number; name?: string };
-export type MakerworldInstance = { id?: string | number; title?: string; instanceCreator?: MakerworldCreator };
+export type MakerworldInstance = {
+  id?: string | number;
+  /** In the address of the profile's pictures, which is how the page's list of profiles can be told apart. */
+  profileId?: string | number;
+  title?: string;
+  instanceCreator?: MakerworldCreator;
+};
 export type MakerworldDesign = {
   id?: string | number;
   defaultInstanceId?: string | number;

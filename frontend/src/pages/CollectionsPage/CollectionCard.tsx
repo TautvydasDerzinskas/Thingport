@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 import type { Theme } from "@mui/material/styles";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import LockIcon from "@mui/icons-material/Lock";
+import PublicIcon from "@mui/icons-material/Public";
 import { type Collection } from "../../api/collections";
 import { type PreviewMode } from "../../api/settings";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
@@ -21,6 +22,9 @@ import CollectionSyncDialog from "../CollectionDetailPage/CollectionSyncDialog";
 import { useCardContextMenu } from "../../components/Layout/ConfigurationDialog/AppTiles";
 import SelectionCheck from "../../components/selection/SelectionCheck";
 import { ToolCollectionBadge, ToolCollectionMenu } from "../../components/tools/ToolCollectionBadge";
+import UserAvatar from "../../components/UserAvatar";
+import { useSocialStatus } from "../../hooks/useSocialStatus";
+import { collectionPath, modelPath } from "../../utils/sharedPaths";
 
 type Props = {
   collection: Collection;
@@ -61,7 +65,7 @@ function CoverTile({
         interactive
           ? (e) => {
               e.stopPropagation();
-              navigate(`/models/${print.id}`);
+              navigate(modelPath(print));
             }
           : undefined
       }
@@ -116,12 +120,16 @@ export default function CollectionCard({
   const extraCount = collection.item_count > COVER_TILE_LIMIT ? collection.item_count - COVER_TILE_LIMIT : 0;
   const displayName = collectionDisplayName(collection, t);
   // With a single model, go straight to it.
-  const soleModelId = collection.item_count === 1 ? coverItems[0]?.id : undefined;
-  const openTarget = soleModelId ? `/models/${soleModelId}` : `/models/collections/${collection.id}`;
+  const soleModel = collection.item_count === 1 ? coverItems[0] : undefined;
+  const openTarget = soleModel ? modelPath(soleModel) : collectionPath(collection);
+  // Another user's public collection: theirs to change, so no menu, and whose it is where the count goes.
+  const owner = collection.owner ?? null;
+  // Only said while it means something: with social features off, nobody else sees it anyway.
+  const showPublic = useSocialStatus()?.enabled === true && Boolean(collection.is_public) && !owner;
   const [syncOpen, setSyncOpen] = useState(false);
   const contextMenu = useCardContextMenu();
   // A tool's collection is as fixed as a built-in one: no menu, and left out of merging and deleting.
-  const system = Boolean(collection.system_key || collection.tool_id);
+  const system = Boolean(collection.system_key || collection.tool_id || owner);
   // Built-in ones can't be merged or deleted, so in select mode they step back and do nothing.
   const sittingOut = selectMode && system;
   const toggleSelect = (event: React.MouseEvent | React.KeyboardEvent) => onToggleSelect?.(event.shiftKey);
@@ -166,7 +174,7 @@ export default function CollectionCard({
         <Paper
           variant="outlined"
           // Built-in collections have no menu, so they keep the browser's; a tool's has one of its own.
-          onContextMenu={collection.system_key || selectMode ? undefined : contextMenu.onContextMenu}
+          onContextMenu={collection.system_key || owner || selectMode ? undefined : contextMenu.onContextMenu}
           {...(selectMode &&
             !system && {
               onClick: toggleSelect,
@@ -301,12 +309,34 @@ export default function CollectionCard({
                   </Typography>
                 </Stack>
                 <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, color: "#858585" }}>
-                  <Inventory2OutlinedIcon sx={{ fontSize: 14 }} />
-                  <Typography variant="caption">
-                    {t("models:collections.card.itemCount", { count: collection.item_count })}
-                  </Typography>
+                  {owner ? (
+                    <>
+                      <UserAvatar user={owner} size={16} />
+                      <Typography variant="caption" noWrap sx={{ minWidth: 0 }}>
+                        {t("models:collections.card.ownerAndCount", {
+                          name: owner.display_name,
+                          count: collection.item_count,
+                        })}
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <Inventory2OutlinedIcon sx={{ fontSize: 14 }} />
+                      <Typography variant="caption">
+                        {t("models:collections.card.itemCount", { count: collection.item_count })}
+                      </Typography>
+                    </>
+                  )}
                 </Stack>
               </Box>
+              {showPublic && (
+                <Tooltip title={t("models:collections.publicHint")}>
+                  <PublicIcon
+                    aria-label={t("models:collections.publicHint")}
+                    sx={{ fontSize: 18, color: "text.secondary", flexShrink: 0 }}
+                  />
+                </Tooltip>
+              )}
               {collection.tool_id && <ToolCollectionBadge toolId={collection.tool_id} />}
               {collection.sync && (
                 <CollectionSyncBadge
@@ -323,7 +353,7 @@ export default function CollectionCard({
             name={displayName}
             at={contextMenu.at}
             onClose={contextMenu.close}
-            onOpenCollection={() => navigate(`/models/collections/${collection.id}`)}
+            onOpenCollection={() => navigate(collectionPath(collection))}
           />
         )}
         {syncOpen && collection.sync && (

@@ -9,6 +9,7 @@ export default {
   site: "https://www.printables.com",
   docsSlug: "printables",
   hosts: ["printables.com"],
+  credentialHosts: { "printables-api": { exact: ["api.printables.com"] } },
   endpoints: { graphql: "https://api.printables.com/graphql/", media: "https://media.printables.com/" },
   brand: {
     logo: { color: "#FA6831", path: "M3.678 4.8 12 9.6v9.6l8.322-4.8V4.8L12 0ZM12 19.2l-8.322-4.8V24Z" },
@@ -19,6 +20,7 @@ export default {
   auth: [],
   modelNoun: "models",
   helpers: { grab: "optional", flaresolverr: "recommended" },
+  solverRoutes: [{ host: "www.printables.com", path: /^(?:\/[a-z]{2})?\/model\/\d+(?:-[\w%-]+)?\/?$/, query: [] }],
   slicers: ["prusaslicer"],
   capabilities: {
     collections: true,

@@ -130,9 +130,10 @@ const SECTIONS: FeatureSection[] = [
     title: "Connect an AI model",
     intro: "Add the AI models Thingport may use, then switch on the features you want.",
     points: [
-      "Any OpenAI-compatible API: Ollama, LM Studio or vLLM on your own hardware, or OpenAI, OpenRouter, Gemini and others.",
+      "Any OpenAI-compatible API: Ollama, LM Studio or vLLM on your own hardware, or OpenAI, OpenRouter, Gemini and others. Claude too, through Anthropic's own API.",
       "Test a connection before saving it, keep several models, and pick which one each feature uses.",
       "AI categorization and Improved descriptions, each with its own mode, import setting and image sharing.",
+      "The Studio assistant, with the AIs it offers and the one picked first, and a compact tool set for a small local model.",
       "A Manage tab per feature to run it over the library and review what it suggested.",
     ],
     link: { label: "AI categorization and descriptions", href: url("docs/guides/ai/") },
@@ -151,6 +152,7 @@ const SECTIONS: FeatureSection[] = [
       "Make members admins. Only the instance owner, the first account, can take that back.",
       "See how each person signs in, with a warning for anyone left with no way in.",
       "Delete an account with all its models, after typing its email to confirm.",
+      "Turn on social features, so people can share collections and find them on Explore, and chats behind its cog.",
     ],
     image: users,
     dark: usersDark,
@@ -175,7 +177,7 @@ const SECTIONS: FeatureSection[] = [
 const MORE = [
   {
     title: "Import queue",
-    text: "Links sent from Thingport Grab and imports waiting to run, to start, pause, retry or clear.",
+    text: "The dialog everyone has for their own imports, opened on everyone's: by person, to start, hold, pause, retry or delete.",
     image: importQueue,
     dark: importQueueDark,
   },

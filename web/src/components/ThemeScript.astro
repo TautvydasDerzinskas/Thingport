@@ -1,13 +1,25 @@
 ---
-// Light unless the visitor chose dark (ThemeToggle.astro). Inline in the <head> of every page, the docs' included
-// (starlight/ThemeProvider.astro), so it's set before the first paint and a returning visitor never sees a flash.
-import { THEME_KEY } from "../lib/theme.mjs";
+// The system's theme unless the visitor chose one (ThemeToggle.astro). Inline in the <head> of every page, the docs'
+// included (starlight/ThemeProvider.astro), so it's set before the first paint and a visitor never sees a flash.
+// Without JavaScript the page stays light and the toggle, which couldn't do anything, is hidden.
+import { THEME_COLORS, THEME_KEY } from "../lib/theme.mjs";
 ---
 
-<script is:inline define:vars={{ key: THEME_KEY }}>
+<script is:inline define:vars={{ key: THEME_KEY, colors: THEME_COLORS }}>
+  let theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   try {
-    document.documentElement.dataset.theme = localStorage.getItem(key) === "dark" ? "dark" : "light";
+    const stored = localStorage.getItem(key);
+    if (stored === "light" || stored === "dark") theme = stored;
   } catch {
-    document.documentElement.dataset.theme = "light";
+    /* storage blocked: follow the system */
   }
+  document.documentElement.dataset.theme = theme;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors[theme]);
 </script>
+<noscript
+  ><style is:inline>
+    [data-theme-toggle] {
+      display: none !important;
+    }
+  </style></noscript
+>

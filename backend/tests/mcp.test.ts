@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
+import type { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS, mcpImportTiming } from "../src/mcp/tools";
@@ -16,7 +17,8 @@ const app = createApp();
 
 // The write tools a new token gets without asking; every other default only reads.
 const DEFAULT_ON_WRITES = ["save_widget", "save_tool", "upload_icon"];
-const READ_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly).map((tool) => tool.name);
+// Studio's are left out: a new token doesn't get them (tests/studio.test.ts has them).
+const READ_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly && tool.group !== "studio").map((tool) => tool.name);
 
 type Account = { session: string; userId: string; token: string };
 
@@ -70,6 +72,16 @@ async function callTool(token: string, name: string, args: Record<string, unknow
   const result = res.body.result as { isError?: boolean; content: { type: string; text: string }[] };
   const text = result.content[0]?.text ?? "";
   return { isError: Boolean(result.isError), text, data: result.isError ? null : JSON.parse(text) };
+}
+
+/** Audit log rows, once `ready` says they're all there: they're written after the response, so poll briefly. */
+async function logsWhen(where: Prisma.LogWhereInput, ready: (count: number) => boolean, timeoutMs = 2000) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const logs = await prisma.log.findMany({ where, orderBy: { createdAt: "asc" } });
+    if (ready(logs.length) || Date.now() > deadline) return logs;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
 }
 
 async function toolNames(token: string): Promise<string[]> {
@@ -206,10 +218,8 @@ describe("choosing a token's tools", () => {
     // Duplicates collapse.
     expect(res.body.mcp_tools).toEqual(["get_model", "list_tags"]);
     expect(await toolNames(token)).toEqual(["get_model", "list_tags"]);
-    const log = await prisma.log.findFirst({
-      where: { userId: user.userId, action: "api_token_mcp_tools_changed" },
-    });
-    expect(log).toBeTruthy();
+    const logs = await logsWhen({ userId: user.userId, action: "api_token_mcp_tools_changed" }, (count) => count > 0);
+    expect(logs).toHaveLength(1);
   });
 
   it("refuses a tool name it doesn't know instead of dropping it", async () => {
@@ -474,10 +484,10 @@ describe("the tools that write", () => {
     expect(second.data.added).toEqual([]);
     expect(second.data.already_in).toEqual([own]);
     // Logged once, for the one model actually added.
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const logs = await prisma.log.findMany({
-      where: { userId: writer.userId, action: "collection_item_added", targetId: collection.id },
-    });
+    const logs = await logsWhen(
+      { userId: writer.userId, action: "collection_item_added", targetId: collection.id },
+      (count) => count > 0,
+    );
     expect(logs.map((log) => (log.details as { count: number }).count)).toEqual([1]);
   });
 
@@ -728,11 +738,7 @@ describe("the tools that write", () => {
     expect(result.data.changed).toEqual(["title", "category"]);
     const print = await prisma.print.findUniqueOrThrow({ where: { id } });
     expect(print).toMatchObject({ name: "clip", categoryId: category.id, categorySource: "MANUAL" });
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const fields = await prisma.log.findMany({
-      where: { action: "model_edited", targetId: id },
-      select: { details: true },
-    });
+    const fields = await logsWhen({ action: "model_edited", targetId: id }, (count) => count >= 2);
     expect(fields.map((log) => (log.details as { field: string }).field).toSorted()).toEqual(["category", "meta"]);
   });
 

@@ -67,6 +67,9 @@ export type PrintMetaInput = {
   sourceExternalId?: string | null;
   /** The source has the script this model is generated from, but its creator chose not to share it. */
   generatorScriptWithheld?: boolean;
+  /** Another user's model this one is a copy of (services/modelCopyService.ts), and the first original behind it. */
+  copiedFromId?: string | null;
+  originalId?: string | null;
 };
 
 /** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
@@ -288,6 +291,8 @@ export async function createPrint(
       sourceProvider: meta.sourceProvider ?? null,
       sourceExternalId: meta.sourceExternalId ?? null,
       generatorScriptWithheld: meta.generatorScriptWithheld ?? false,
+      copiedFromId: meta.copiedFromId ?? null,
+      originalId: meta.originalId ?? null,
     },
   });
   // Chosen now, though nothing is in it yet, so a null assetsPath only ever means a model from before (see

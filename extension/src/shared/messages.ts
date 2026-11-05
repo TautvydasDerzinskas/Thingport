@@ -6,12 +6,15 @@ import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
 import type { Provider } from "./urls";
 import type { MANIFESTS, ProviderId } from "../providers/index.generated";
+import type { MakerworldProfileScope } from "../providers/makerworld/pageData";
 
 export type ExtensionState = {
   configured: boolean;
   disabled: boolean;
-  /** Admins can send an import to the instance's paused import queue instead. */
-  isAdmin: boolean;
+  /** "Add to the queue" is on offer: to admins anywhere, to everyone where the instance has `importQueue`. */
+  canQueue: boolean;
+  /** The instance gives everyone an import queue of their own. False on an older one, where only an admin starts it. */
+  importQueue: boolean;
   instanceUrl: string;
   email: string;
   /** Connected by approving Grab in Thingport, not with a saved password. */
@@ -106,6 +109,7 @@ export type MakerworldJob = {
   collectionId: string | null;
   urls: string[];
   index: number;
+  /** Models done, a model already in the library that lacked no profile among them: "imported" from before profiles. */
   imported: number;
   total: number;
   awaitingLoad: boolean;
@@ -117,9 +121,20 @@ export type MakerworldJob = {
   paused: boolean;
   /** The models imported so far, for the run's one notification. Missing on a run saved by an older version. */
   printIds?: string[];
+  /** Tells this run's steps from those of an earlier run in the same tab. Missing on a run saved by an older version. */
+  runId?: string;
+  /** Which of each model's print profiles come in. Missing on a run saved by an older version: the page's own. */
+  profileScope?: MakerworldProfileScope;
+  /** The current model's profiles still to import, each a step of its own after the wait, once its page has said
+   *  which it has and the library which it lacks. Null before that. */
+  profiles?: { ids: string[]; done: number; total: number } | null;
 };
 
 export type MakerworldJobError = { message: string; imported: number; total: number };
+
+/** IMPORT_SINGLE's error for a job that stopped without finishing. A reply carries nothing but words, so the panel goes
+ *  by these to show it as paused rather than failed. */
+export const IMPORT_PAUSED = "This import was paused before it finished.";
 
 export type ApiCallPayload = { method: string; path: string; body?: unknown };
 
@@ -177,7 +192,13 @@ export type BackgroundMessages = {
   IMPORT_SINGLE: { payload: ImportSinglePayload; result: Print | null };
   QUEUE_IMPORT: { payload: QueueImportPayload; result: QueueImportResult };
   START_MAKERWORLD_COLLECTION_JOB: {
-    payload: { urls: string[]; collectionId: string | null; originalUrl: string; stepDelayMs: number };
+    payload: {
+      urls: string[];
+      collectionId: string | null;
+      originalUrl: string;
+      stepDelayMs: number;
+      profileScope: MakerworldProfileScope;
+    };
     result: null;
   };
   ABORT_MAKERWORLD_COLLECTION_JOB: { payload: void; result: null };
@@ -192,6 +213,10 @@ export type BackgroundMessages = {
 
 export type ContentMessages = {
   RESOLVE_MAKERWORLD_DOWNLOAD_URL: { payload: void; result: ResolvedDownload | null };
+  /** The page's print profiles a scope brings, its selected one first. Null when the page can't say. */
+  READ_MAKERWORLD_PROFILES: { payload: { scope: MakerworldProfileScope }; result: string[] | null };
+  /** Selects the profile on the page and downloads it with the page's own button. */
+  RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD: { payload: { instanceId: string }; result: ResolvedDownload | null };
   /** The guided import paused on this page; it re-renders. */
   MAKERWORLD_JOB_UPDATED: { payload: void; result: null };
 };
@@ -225,8 +250,9 @@ export async function request<K extends BackgroundType>(
 export async function sendToTab<K extends keyof ContentMessages>(
   tabId: number,
   type: K,
+  ...payload: PayloadArgs<ContentMessages[K]["payload"]>
 ): Promise<Reply<ContentMessages[K]["result"]> | undefined> {
-  return chrome.tabs.sendMessage(tabId, { type, payload: undefined });
+  return chrome.tabs.sendMessage(tabId, { type, payload: payload[0] });
 }
 
 type Handler<M extends AnyMessages, K extends keyof M> = (

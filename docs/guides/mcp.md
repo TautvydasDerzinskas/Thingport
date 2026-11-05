@@ -15,10 +15,11 @@ you open Thingport at, and the assistant signs in with your [API token](api-toke
 3. Click the cog next to the token to open **Token permissions**, and under **MCP permissions** set each tool to **Allow** or
    **Deny**. Changes apply at once, to the token you already have.
 
-A new token gets every tool that only reads, plus `save_widget`, `save_tool` and `upload_icon`, so an assistant can
-make you a dashboard widget or a tool straight away. The other tools that change your library are marked **Changes your library**, stay off
-until you turn them on, and ask you to confirm when you do. The token still can't change anything over the REST API,
-and an MCP tool is only reachable if it's allowed here. Regenerating the token sets its tools back to these defaults.
+A new token gets every tool that only reads, apart from [Studio's](#the-tools), plus `save_widget`, `save_tool` and
+`upload_icon`, so an assistant can make you a dashboard widget or a tool straight away. The other tools that change your
+library are marked **Changes your library**, stay off until you turn them on, and ask you to confirm when you do. The
+token still can't change anything over the REST API, and an MCP tool is only reachable if it's allowed here.
+Regenerating the token sets its tools back to these defaults.
 
 ## 2. Add Thingport to your assistant
 
@@ -65,23 +66,23 @@ These read your library, and are on for a new token:
 These change your library. `save_widget`, `save_tool` and `upload_icon` are on for a new token; the rest are off until
 you turn them on:
 
-| Tool                     | What it does                                                                                                 |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `import_model`           | Imports a model from its page on a supported site, as **+ Add > Import** does, optionally into a collection. |
-| `upload_model`           | Adds a model made from your own files, as **+ Add > Upload files** does, with pictures and a collection.     |
-| `edit_model`             | Changes a model's title, description, creator, tags, category and whether it's a favourite.                  |
-| `edit_model_images`      | Adds pictures to a model, removes some, or reorders them; the first is its cover.                            |
-| `add_model_files`        | Adds plates, supporting files or a sliced print to one of your models.                                       |
-| `remove_model_file`      | Deletes one of a model's files: a plate (not its only one), a supporting file or its sliced print.           |
-| `rename_model_file`      | Renames one of a model's plates.                                                                             |
-| `delete_model`           | Deletes a model with its files and pictures, as its page's **Delete** does.                                  |
-| `create_category`        | Creates a category or folder, e.g. to file a model under with `edit_model`.                                  |
-| `create_collection`      | Creates a new, empty collection.                                                                             |
-| `add_to_collection`      | Adds models from your library to one of your collections.                                                    |
-| `remove_from_collection` | Takes models out of one of your collections; they stay in your library.                                      |
-| `save_widget`            | Creates one of your own [dashboard widgets](custom-widgets.md), or replaces one it or you saved earlier.     |
-| `save_tool`              | Creates one of your own [tools](tools.md), or replaces one it or you saved earlier.                          |
-| `upload_icon`            | Adds an image (an SVG, or a PNG, JPEG or WebP) to your icons, as the icon browser's **Upload** does.         |
+| Tool                     | What it does                                                                                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `import_model`           | Imports a model from its page on a supported site, as **Add > Import** does, optionally into a collection. |
+| `upload_model`           | Adds a model made from your own files, as **Add > Upload files** does, with pictures and a collection.     |
+| `edit_model`             | Changes a model's title, description, creator, tags, category and whether it's a favourite.                |
+| `edit_model_images`      | Adds pictures to a model, removes some, or reorders them; the first is its cover.                          |
+| `add_model_files`        | Adds plates, supporting files or a sliced print to one of your models.                                     |
+| `remove_model_file`      | Deletes one of a model's files: a plate (not its only one), a supporting file or its sliced print.         |
+| `rename_model_file`      | Renames one of a model's plates.                                                                           |
+| `delete_model`           | Deletes a model with its files and pictures, as its page's **Delete** does.                                |
+| `create_category`        | Creates a category or folder, e.g. to file a model under with `edit_model`.                                |
+| `create_collection`      | Creates a new, empty collection.                                                                           |
+| `add_to_collection`      | Adds models from your library to one of your collections.                                                  |
+| `remove_from_collection` | Takes models out of one of your collections; they stay in your library.                                    |
+| `save_widget`            | Creates one of your own [dashboard widgets](custom-widgets.md), or replaces one it or you saved earlier.   |
+| `save_tool`              | Creates one of your own [tools](tools.md), or replaces one it or you saved earlier.                        |
+| `upload_icon`            | Adds an image (an SVG, or a PNG, JPEG or WebP) to your icons, as the icon browser's **Upload** does.       |
 
 Only `import_model`, `upload_model`, `create_category`, `create_collection`, `add_to_collection` and `upload_icon` just
 add. The rest change or take away what's there, so they're marked as destructive and an assistant's app may ask you
@@ -90,13 +91,22 @@ good, `add_model_files` replaces a model's sliced print, `edit_model` and `renam
 `remove_from_collection` takes models out of a collection (not your library), and `save_widget` and `save_tool` replace
 a widget or a tool with the same folder name.
 
-An import runs the same checks as **+ Add > Import** (a provider an admin turned off stays off, and a model already in
+**Studio designs** is one permission for all of [Studio](studio.md)'s tools:
+`studio_guide`, which an assistant reads first for how Studio works, `studio_list_designs`, `studio_get_design` and
+`studio_view_design` to read and look at a design, `studio_inspect_body` for a body's faces and edges as the tools name
+them, `studio_create_design` and `studio_delete_design`, and one tool for each step you can take on the page, from
+`studio_add_box` and `studio_extrude` to `studio_fillet`, `studio_shell` and `studio_undo`. `studio_import_model` brings in one of your library models'
+3D files, so an assistant can find a model with `search_models` and work on it, and `studio_separate_parts` makes each
+piece of a model of several its own body. It's off for a new token. They change only your Studio designs,
+never your models.
+
+An import runs the same checks as **Add > Import** (a provider an admin turned off stays off, and a model already in
 your library isn't imported twice) and shows up in your notifications and the admin logs the same way. It doesn't ask for a captcha, even when imports do in the app: like Thingport Grab, an
 assistant has nowhere to show one. Most imports finish within the call; a long one carries on in the background, and the
 assistant follows it with `get_import_status`.
 
 `upload_model` takes the files and pictures as base64 in the call, up to 24 MB in all, and makes one model of them: the
-3D files (STL, 3MF, STEP, OBJ) become its plates and anything else a supporting file; if none is a 3D file, every file
+3D files (STL, 3MF, STEP, OBJ, glTF) become its plates and anything else a supporting file; if none is a 3D file, every file
 becomes a plate. It shows up in your notifications
 and the admin logs as an upload from the app does.
 

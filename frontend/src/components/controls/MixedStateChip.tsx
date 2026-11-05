@@ -22,6 +22,12 @@ const appear = keyframes`
   to { opacity: 1; transform: scale(1); }
 `;
 
+/** For a chip just added to its list, so it pops in. */
+export const freshChipSx = {
+  animation: `${appear} 180ms ease-out`,
+  "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+};
+
 type Props = {
   label: string;
   /** How many of the `total` selected items have it now. */
@@ -72,10 +78,7 @@ export default function MixedStateChip({ label, has, total, state, onClick, some
       sx={{
         fontWeight: state !== startMixedState(has, total) ? 600 : undefined,
         ...(removing && { textDecoration: "line-through", color: "text.disabled" }),
-        ...(fresh && {
-          animation: `${appear} 180ms ease-out`,
-          "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-        }),
+        ...(fresh && freshChipSx),
       }}
     />
   );

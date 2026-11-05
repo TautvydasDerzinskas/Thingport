@@ -1,5 +1,5 @@
+import { browserCredentialRequest } from "../credentialRequest";
 import { IMPORT_DOWNLOAD_RETRY_DELAY_MS, IMPORT_TIMEOUT_SECONDS } from "../../config";
-import { browserFetch } from "../../utils/browserFetch";
 import { sleep } from "../../utils/concurrency";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
@@ -109,7 +109,7 @@ async function fetchApi(
 ): Promise<ApiResult> {
   const url = `${API_BASE}${path}`;
   const send = () =>
-    browserFetch(url, {
+    browserCredentialRequest("thangs-api", url, {
       method,
       body: body === undefined ? undefined : JSON.stringify(body),
       headers: {
@@ -185,7 +185,7 @@ export function decodeThangsJwt(token: string): ThangsJwt | null {
 /** A new access token from a refresh token, which Thangs keeps as it is. Throws ThangsAuthError when it's turned
  *  down. */
 export async function refreshThangsToken(refreshToken: string): Promise<{ token: string; expiresAt: Date | null }> {
-  const res = await browserFetch(`${API_BASE}/auth/v2/refresh-tokens`, {
+  const res = await browserCredentialRequest("thangs-api", `${API_BASE}/auth/v2/refresh-tokens`, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json", Cookie: `refreshToken=${refreshToken}` },
     timeoutMs: API_TIMEOUT_MS,

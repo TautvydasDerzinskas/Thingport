@@ -11,6 +11,7 @@ export default {
   site: "https://makeitreal.eufymake.com",
   docsSlug: "eufymake",
   hosts: ["makeitreal.eufymake.com"],
+  credentialHosts: { "eufymake-api": { exact: ["aiot-wapi-eu.ankermake.com"] } },
   endpoints: { api: "https://aiot-wapi-eu.ankermake.com/web/modelbase" },
   brand: {
     logo: {

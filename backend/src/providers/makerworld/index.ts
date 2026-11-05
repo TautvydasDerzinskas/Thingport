@@ -13,9 +13,7 @@
 //   variable.
 // - services/adminService.ts and routes/admin.ts: whether a user has its cookie, a column of the admin's users list
 //   from before Configuration → Providers showed every provider (the app's pages/UsersPage too).
-// - The app: utils/settings.ts mirrors its cookie, which App.tsx hands through AppLayout, TopBar, ConfigurationDialog
-//   and ProvidersPanel to AddMenu and useUploadImport, for the same link import; utils/translateCategoryDisplay.ts
-//   names the starter categories by its ids, as they're its tree.
+// - The app: utils/translateCategoryDisplay.ts names the starter categories by its ids, as they're its tree.
 // - Grab: background/api.ts adds the browser's cookie to an import of its links, as every call to the instance passes
 //   there; content/index.ts and content/panels/single.ts resolve its downloads in the page at steps of every
 //   provider's import flow, and content/panels/index.ts opens its guided collection panel; shared/storage.ts keeps its

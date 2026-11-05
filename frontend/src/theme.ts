@@ -284,3 +284,20 @@ export function subtleTextColor(id: ResolvedTheme): string {
 export function dividerBorderColor(theme: Theme): string {
   return theme.palette.mode === "dark" ? "transparent" : "divider";
 }
+
+export type StatusTone = "error" | "warning" | "info" | "success";
+
+/** A status's soft background, and the text that reads on it. */
+export function statusTint(theme: Theme, tone: StatusTone): { background: string; text: string } {
+  const color = theme.palette[tone];
+  const dark = theme.palette.mode === "dark";
+  // MUI's dark orange is too light to read small on a light panel.
+  const lightText = tone === "warning" ? darken(color.main, 0.3) : color.dark;
+  return { background: alpha(color.main, dark ? 0.14 : 0.1), text: dark ? color.light : lightText };
+}
+
+/** The same for what has no status of its own: pills and tiles set off from the panel. */
+export function neutralTint(theme: Theme): string {
+  const dark = theme.palette.mode === "dark";
+  return alpha(dark ? theme.palette.common.white : theme.palette.common.black, dark ? 0.08 : 0.06);
+}

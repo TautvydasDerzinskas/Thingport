@@ -5,9 +5,10 @@
 // same wall.
 
 import type { ResolvedDownload } from "../../shared/messages";
+import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { send } from "../../shared/messages";
 import { parseMakerworldModelUrl } from "./urls.generated";
-import { sleep } from "../../content/runtime";
+import { holdingNavigation, sleep } from "../../content/runtime";
 import { DOWNLOAD_3MF, DOWNLOAD_ALL, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
 import {
   loadMakerworldDesignForPage,
@@ -96,7 +97,7 @@ async function fetchMakerworldApiJson(url: string, nonce: string | null): Promis
   try {
     const headers: Record<string, string> = { Accept: "application/json", ...MAKERWORLD_CLIENT_HEADERS };
     if (nonce) headers["X-Nonce"] = nonce;
-    const res = await fetch(url, { headers, signal: controller.signal });
+    const res = await providerCredentialRequest("makerworld-extension", url, { headers, signal: controller.signal });
     if (res.status === 418) throw new MakerworldCaptchaError();
     const data: unknown = await res.json();
     if (extractDownloadUrl(data)) return data;
@@ -204,7 +205,10 @@ function closeFilesDialog(): void {
  *  starts is captured and cancelled (see background/downloadCapture.ts). Null means try the API
  *  fallback -- also what a CAPTCHA looks like here, since MakerWorld shows it instead of
  *  downloading. */
-async function captureViaRealClick(profileOnly: boolean): Promise<{ url: string; isProfile: boolean } | null> {
+async function captureViaRealClick(
+  profileOnly: boolean,
+  stillWanted?: () => boolean,
+): Promise<{ url: string; isProfile: boolean } | null> {
   const arrow = findMenuArrow();
   arrow?.click();
   const fileItem = () => findByLabel(DOWNLOAD_3MF) ?? (profileOnly ? null : findByLabel(DOWNLOAD_STL));
@@ -217,6 +221,13 @@ async function captureViaRealClick(profileOnly: boolean): Promise<{ url: string;
   const link = interceptFileLink(CAPTURE_TIMEOUT_MS);
   if (!(await armCapture())) {
     link.stop();
+    return null;
+  }
+  // The menu downloads for whichever model and profile the page shows when it's clicked: ones the user went to
+  // meanwhile would be taken for those asked for.
+  if (stillWanted && !stillWanted()) {
+    link.stop();
+    void send("DISARM_DOWNLOAD_CAPTURE");
     return null;
   }
   item.click();
@@ -256,13 +267,14 @@ async function fetchInstanceDownloadUrl(design: MakerworldDesign, instanceId: st
   return extractDownloadUrl(await fetchMakerworldApiJson(apiUrl, null));
 }
 
-/** Same two steps as the backend: instance-scoped endpoint, then model-scoped. */
-async function resolveFromPageApi(pageUrl: string): Promise<ResolvedDownload | null> {
+/** Same two steps as the backend: instance-scoped endpoint, then model-scoped. `picked` is the profile the page showed,
+ *  which its link needn't name. */
+async function resolveFromPageApi(pageUrl: string, picked: string | null = null): Promise<ResolvedDownload | null> {
   // Fetched when the tab's own page data is stale, i.e. after clicking through MakerWorld.
   const page = await loadMakerworldDesignForPage(pageUrl);
   if (!page) return null; // the backend resolves from the URL
   const { design, nonce } = page;
-  const instanceId = pickMakerworldInstanceId(design, page.requestedInstanceId);
+  const instanceId = picked ?? pickMakerworldInstanceId(design, page.requestedInstanceId);
   if (instanceId) {
     const downloadUrl = await fetchInstanceDownloadUrl(design, instanceId);
     if (downloadUrl) return { downloadUrl, instanceId, design: makerworldDesignForImport(design) };
@@ -275,43 +287,118 @@ async function resolveFromPageApi(pageUrl: string): Promise<ResolvedDownload | n
     : null;
 }
 
+/** The page open now shows `pageUrl`'s model. One the user went on to has profiles of its own, perhaps named alike. */
+function onModelOf(pageUrl: string): boolean {
+  const wanted = parseMakerworldModelUrl(pageUrl)?.designId;
+  return Boolean(wanted && parseMakerworldModelUrl(location.href)?.designId === wanted);
+}
+
 /** `pageUrl` is captured by the caller before any await. */
 /** `profileOnly` skips the raw-files zip, for callers that need the 3MF itself. */
 export async function resolveMakerworldDownloadUrl(
   pageUrl: string,
   { profileOnly = false } = {},
 ): Promise<ResolvedDownload | null> {
-  const viaClick = await captureViaRealClick(profileOnly).catch(() => null);
+  // "Download 3MF" gives the page's selected profile, which follows the URL hash, so it's read before the click and
+  // held to; the raw-files zip belongs to no profile. Only on the model's own page: another has its own.
+  const page = readMakerworldDesignForPage(pageUrl);
+  const onModel = () => onModelOf(pageUrl);
+  const picked = page && onModel() ? pageSelectedInstanceId(page.design) : null;
+  const stillWanted = () => onModel() && (!page || !picked || pageSelectedInstanceId(page.design) === picked);
+  const viaClick = onModel() ? await captureViaRealClick(profileOnly, stillWanted).catch(() => null) : null;
   if (viaClick) {
-    // "Download 3MF" gives the page's selected profile, which follows the URL hash; the raw-files
-    // zip belongs to no profile.
-    const page = readMakerworldDesignForPage(pageUrl);
     const requested = parseMakerworldModelUrl(pageUrl)?.requestedInstanceId ?? null;
     const instanceId = !viaClick.isProfile
       ? null
       : page
-        ? pickMakerworldInstanceId(page.design, page.requestedInstanceId)
+        ? (picked ?? pickMakerworldInstanceId(page.design, page.requestedInstanceId))
         : requested;
     return page
       ? { downloadUrl: viaClick.url, instanceId, design: makerworldDesignForImport(page.design) }
       : { downloadUrl: viaClick.url, instanceId };
   }
-  return resolveFromPageApi(pageUrl).catch((err) => {
+  return resolveFromPageApi(pageUrl, picked).catch((err) => {
     if (isMakerworldBlockingError(err)) throw err;
     return null;
   });
 }
 
-/** The Download button only gives the selected profile, so other profiles resolve via the API. */
+// How long a clicked profile's card may take to show as picked, on a slow page.
+const PROFILE_SELECT_WAIT_MS = 4000;
+
+/** The title of the profile's card in the page's list of print profiles. `config_title` is the page's own class name,
+ *  unlike its hashed ones. Matched by the card's picture, whose address carries the profile id, and by its title only
+ *  where no other card shares it. */
+function findProfileTitle(design: MakerworldDesign, instanceId: string): HTMLElement | null {
+  const instance = design.instances?.find((inst) => inst && String(inst.id) === instanceId);
+  if (!instance) return null;
+  const picturePath = instance.profileId != null ? `/${instance.profileId}/instance/` : null;
+  const titles = [...document.querySelectorAll<HTMLElement>(".config_title")];
+  const byPicture = picturePath
+    ? titles.find((title) => cardOf(title)?.querySelector(`img[src*="${picturePath}"]`))
+    : undefined;
+  if (byPicture) return byPicture;
+  const named = titles.filter((title) => (title.textContent || "").trim() === (instance.title || "").trim());
+  return named.length === 1 ? named[0] : null;
+}
+
+/** A card is the closest box holding its picture as well as its title. */
+function cardOf(title: HTMLElement): HTMLElement | null {
+  for (let el = title.parentElement; el; el = el.parentElement) {
+    if (el.querySelector("img")) return el;
+  }
+  return null;
+}
+
+/** The profile the page shows picked, by its card. On an address naming none, MakerWorld picks the first it lists,
+ *  which needn't be the design's `defaultInstanceId`. Read afresh: the page may render the list again on a pick. */
+function pageSelectedInstanceId(design: MakerworldDesign): string | null {
+  const picked = design.instances?.find((inst) => {
+    if (!inst || inst.id == null) return false;
+    const title = findProfileTitle(design, String(inst.id));
+    return Boolean(title && cardOf(title)?.classList.contains("active"));
+  });
+  return picked ? String(picked.id) : null;
+}
+
+/** Clicks the profile in the page's list, as a person picking it would, unless it's the one already picked. False
+ *  when the page doesn't list it, or doesn't take the click. */
+async function selectProfileOnPage(design: MakerworldDesign, instanceId: string): Promise<boolean> {
+  const title = findProfileTitle(design, instanceId);
+  if (!title) return false;
+  const selected = () => pageSelectedInstanceId(design) === instanceId;
+  if (selected()) return true;
+  title.scrollIntoView({ block: "nearest" });
+  title.click();
+  return Boolean(await waitFor(() => (selected() ? true : null), PROFILE_SELECT_WAIT_MS));
+}
+
+/**
+ * Picks the profile on the page as a person would, then downloads it with the page's own "Download 3MF". Where the page
+ * doesn't list it (a community profile behind "more") or won't pick it, the request that button sends instead.
+ */
 export async function resolveMakerworldProfileDownload(
   pageUrl: string,
   instanceId: string,
 ): Promise<ResolvedDownload | null> {
   const page = await loadMakerworldDesignForPage(pageUrl);
   if (!page) return null;
+  const design = makerworldDesignForImport(page.design);
+  // On another model's page, a card named like this profile would be one of that model's.
+  const onModel = () => onModelOf(pageUrl);
+  const viaClick = onModel()
+    ? await holdingNavigation(async () =>
+        (await selectProfileOnPage(page.design, instanceId))
+          ? captureViaRealClick(true, () => onModel() && pageSelectedInstanceId(page.design) === instanceId).catch(
+              () => null,
+            )
+          : null,
+      )
+    : null;
+  if (viaClick) return { downloadUrl: viaClick.url, instanceId, design };
   const downloadUrl = await fetchInstanceDownloadUrl(page.design, instanceId).catch((err) => {
-    if (err instanceof MakerworldDownloadLimitError) throw err;
+    if (isMakerworldBlockingError(err)) throw err;
     return null;
   });
-  return downloadUrl ? { downloadUrl, instanceId, design: makerworldDesignForImport(page.design) } : null;
+  return downloadUrl ? { downloadUrl, instanceId, design } : null;
 }

@@ -456,6 +456,7 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
         tool={running}
         onClose={() => setRunning(null)}
         onAbout={running ? () => setAbout(running) : undefined}
+        onUnauthorized={onUnauthorized}
       />
       <ToolAboutDialog
         tool={about}

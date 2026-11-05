@@ -52,10 +52,21 @@ function design(designId: string) {
     tags: ["phoenix"],
     coverUrl: "https://makerworld.bblmw.com/phoenix/cover.jpg",
     designCreator: DESIGNER,
-    defaultInstanceId: 2,
+    // Unique across designs: a profile's download is asked for by its instance id alone.
+    defaultInstanceId: Number(`2${designId}`),
     instances: [
-      { id: 1, profileId: Number(`1${designId}`), title: "Single-colour version", instanceCreator: DESIGNER },
-      { id: 2, profileId: Number(`2${designId}`), title: "multi-colored version", instanceCreator: DESIGNER },
+      {
+        id: Number(`1${designId}`),
+        profileId: Number(`1${designId}`),
+        title: "Single-colour version",
+        instanceCreator: DESIGNER,
+      },
+      {
+        id: Number(`2${designId}`),
+        profileId: Number(`2${designId}`),
+        title: "multi-colored version",
+        instanceCreator: DESIGNER,
+      },
     ],
   };
 }
@@ -99,12 +110,11 @@ function mockFetch() {
         headers: { server: "cloudflare", "cf-mitigated": "challenge" },
       });
     }
-    const profile = url.match(
-      /^https:\/\/api\.bambulab\.com\/v1\/iot-service\/api\/user\/profile\/(\d+)\?model_id=US(\d+)/,
-    );
+    // The fixture's instance ids are the design id with a profile's digit in front.
+    const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/design-service\/instance\/(\d(\d+))\/f3mf/);
     if (profile) {
       if (limited.has(profile[2])) return json({ code: -1, error: "You've reached your daily download limit." }, 400);
-      return json({ message: "success", url: `https://s3.example.com/phoenix-${profile[1]}.stl`, filename: "p.stl" });
+      return json({ url: `https://s3.example.com/phoenix-${profile[1]}.stl`, name: "p.stl" });
     }
     const file = url.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl$/);
     if (file) {
@@ -494,8 +504,12 @@ describe("synced collections", () => {
     const running = await prisma.importJob.create({
       data: { userId, type: "LINKS", status: "RUNNING", sourceUrl: "https://example.com" },
     });
+    const upToDate = { where: { userId, title: `"Flock ${cid}" is up to date` } };
+    const answered = await prisma.notification.count(upToDate);
     try {
-      expect((await run()).status).toBe(409);
+      // Not refused: only an import from the same provider holds a sync back, and it just waits for that.
+      expect((await run()).status).toBe(202);
+      await vi.waitFor(async () => expect(await prisma.notification.count(upToDate)).toBe(answered + 1));
     } finally {
       await prisma.importJob.delete({ where: { id: running.id } });
     }
@@ -675,12 +689,12 @@ describe("synced collections", () => {
     expect(await prisma.print.findFirst({ where: { userId, sourceExternalId: added } })).not.toBeNull();
   });
 
-  it("waits while another import of the user's is running", async () => {
+  it("waits while an import from the same provider is running", async () => {
     const cid = newId();
     collections.set(cid, []);
     const enabled = await enable({ url: collectionUrl(cid), title: `Flock ${cid}`, known_ids: [] });
     const running = await prisma.importJob.create({
-      data: { userId, type: "LINKS", status: "RUNNING", sourceUrl: "https://example.com" },
+      data: { userId, type: "LINKS", status: "RUNNING", sourceUrl: `https://makerworld.com/en/models/${newId()}` },
     });
     try {
       collections.set(cid, [newId()]);
@@ -847,7 +861,7 @@ describe("synced collections", () => {
     const after = await syncOf(collectionId);
     expect(after.knownIds).not.toContain(first);
     expect(after.knownIds).not.toContain(second);
-    expect(after.lastError).toBe("Cloudflare blocked MakerWorld and FlareSolverr didn't get past it");
+    expect(after.lastError).toBe("Cloudflare blocked MakerWorld and FlareSolverr couldn't help");
     const job = await prisma.importJob.findFirstOrThrow({ where: { collectionSyncId: sync.id } });
     expect(await prisma.importJobItem.count({ where: { jobId: job.id } })).toBe(0);
     expect((await latestNotification()).body).toContain(

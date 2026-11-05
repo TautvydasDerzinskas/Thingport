@@ -26,8 +26,11 @@ function formatWait(ms: number): string {
 
 function progressHtml(job: MakerworldJob): string {
   const percent = job.total ? Math.round((job.imported / job.total) * 100) : 0;
-  return `<div class="tg-overlay__count">${job.imported} / ${job.total} models imported (${percent}%)</div>
-     <div class="tg-progress"><div class="tg-progress__bar" style="width:${percent}%"></div></div>`;
+  const profiles = job.profiles?.total
+    ? `<div class="tg-overlay__count">Print profile ${Math.min(job.profiles.done + 1, job.profiles.total)} of ${job.profiles.total}</div>`
+    : "";
+  return `<div class="tg-overlay__count">${job.imported} / ${job.total} models done (${percent}%)</div>
+     <div class="tg-progress"><div class="tg-progress__bar" style="width:${percent}%"></div></div>${profiles}`;
 }
 
 function wireAbort(overlay: HTMLElement): void {
@@ -76,7 +79,7 @@ export function mountJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
   waitEl.hidden = false;
   const tick = () => {
     const remaining = job.startAt - Date.now();
-    waitEl.textContent = `Next model in ${formatWait(remaining)}`;
+    waitEl.textContent = `${job.profiles?.ids.length ? "Next print profile" : "Next model"} in ${formatWait(remaining)}`;
     if (remaining > 0) return;
     clearInterval(timer);
     waitEl.hidden = true;

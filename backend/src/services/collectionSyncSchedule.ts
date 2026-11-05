@@ -43,7 +43,8 @@ export function isSyncDue(sync: { lastCheckedAt: Date | null; intervalHours: num
 }
 
 /** Roughly when the scheduler gets to this collection next, or null with scheduled sync off.
- *  Collections are checked one at a time, so it can start a little after this. */
+ *  Collections are checked one at a time, and give way to an import from the same provider, so it
+ *  can start a little after this. */
 export function nextSyncAt(sync: { lastCheckedAt: Date | null; intervalHours: number }, now = Date.now()): Date | null {
   if (firstTickAt === null) return null;
   return new Date(nextTick(Math.max(syncDueAt(sync, now), now)));

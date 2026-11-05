@@ -46,6 +46,8 @@ type Props = {
   running: boolean;
   onToggle: (enabled: boolean) => void;
   onOpen: (section: FeatureSection) => void;
+  /** Whether it has a Manage section, with runs and results; Studio's assistant has only settings. */
+  manage?: boolean;
 };
 
 /** An AI feature as a tile: click it for its settings, switch it underneath, right-click for the rest. */
@@ -61,6 +63,7 @@ export default function FeatureTile({
   running,
   onToggle,
   onOpen,
+  manage = true,
 }: Props) {
   const { t } = useTranslation("app");
   const [menu, setMenu] = useState<{ top: number; left: number } | null>(null);
@@ -170,12 +173,14 @@ export default function FeatureTile({
           </ListItemIcon>
           <ListItemText>{t("adminSettings.aiFeatures.settings")}</ListItemText>
         </MenuItem>
-        <MenuItem disabled={!ready || !enabled} onClick={() => open("manage")}>
-          <ListItemIcon>
-            <AutoAwesomeOutlinedIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>{t("adminSettings.aiFeatures.manage")}</ListItemText>
-        </MenuItem>
+        {manage && (
+          <MenuItem disabled={!ready || !enabled} onClick={() => open("manage")}>
+            <ListItemIcon>
+              <AutoAwesomeOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("adminSettings.aiFeatures.manage")}</ListItemText>
+          </MenuItem>
+        )}
       </Menu>
     </Stack>
   );

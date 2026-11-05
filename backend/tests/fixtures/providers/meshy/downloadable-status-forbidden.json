@@ -1,0 +1,10 @@
+{
+  "code": "OK",
+  "requestId": "Root=1-6aecae37-23ab2c5d728e8dbd6333233e",
+  "result": {
+    "count": 0,
+    "premiumQuota": 0,
+    "totalLimit": "0",
+    "downloadableStatus": "Forbidden"
+  }
+}

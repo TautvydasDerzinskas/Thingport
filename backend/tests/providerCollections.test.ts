@@ -245,7 +245,8 @@ describe("Thingiverse likes in the Browse tab", () => {
     await setThingiverseAccessToken("challenged-token");
     const list = await request(app).get("/api/provider-collections").query({ provider: "thingiverse" }).set(auth());
     expect(list.status).toBe(429);
-    expect(list.body.detail).toMatch(/Cloudflare.*Setting up FlareSolverr/);
+    expect(list.body.detail).toMatch(/Cloudflare.*wait, then try again/);
+    expect(list.body.detail).not.toContain("FlareSolverr");
     await setThingiverseAccessToken("test-token");
   });
 });

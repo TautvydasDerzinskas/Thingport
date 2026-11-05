@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type React from "react";
 import { notificationsApi } from "../../api/notifications";
 import { UnauthorizedError } from "../../api/client";
+import { useUnreadBadge } from "../notifications/useUnreadBadge";
 
 type NotificationsContextValue = {
   unreadCount: number;
@@ -12,7 +13,7 @@ type NotificationsContextValue = {
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null);
 
-// Only catches notifications from other tabs/devices; the tracked import job refreshes directly.
+// Only catches notifications from other tabs/devices; a finished import refreshes directly.
 const POLL_INTERVAL_MS = 45_000;
 
 /** The unread count for the bell's badge. The lists themselves load per tab (useNotificationFeed). */
@@ -24,6 +25,7 @@ export function NotificationsProvider({
   children: React.ReactNode;
 }) {
   const [unreadCount, setUnreadCount] = useState(0);
+  useUnreadBadge(unreadCount);
 
   const refresh = useCallback(async () => {
     try {

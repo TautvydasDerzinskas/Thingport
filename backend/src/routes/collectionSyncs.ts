@@ -12,7 +12,6 @@ import {
   updateSyncSettings,
 } from "../services/collectionSyncService";
 import { releaseSync, reserveSync, runManualSync } from "../services/collectionSyncRunner";
-import { getActiveJob } from "../services/importJobService";
 import { SYNC_INTERVAL_HOURS, syncNowAvailableAt, type SyncIntervalHours } from "../services/collectionSyncSchedule";
 import { toCollectionSyncOut } from "../dto";
 import { enableSyncFromApp } from "../services/providerCollectionsService";
@@ -126,9 +125,6 @@ router.post(
       if (availableAt && availableAt.getTime() > Date.now()) {
         const minutes = Math.ceil((availableAt.getTime() - Date.now()) / 60_000);
         throw new HttpError(429, `It was checked a moment ago. Sync now is available again in ${minutes} min.`);
-      }
-      if (await getActiveJob(req.userId!)) {
-        throw new HttpError(409, "An import is already in progress. Try again once it's done.");
       }
       // Marked checked as it starts, so the cool-down runs from the click.
       started = await prisma.collectionSync.update({ where: { id: sync.id }, data: { lastCheckedAt: new Date() } });

@@ -9,7 +9,12 @@ export default {
   site: "https://cults3d.com",
   docsSlug: "cults3d",
   hosts: ["cults3d.com"],
-  endpoints: { downloads: "https://download.cults3d.com" },
+  credentialHosts: {
+    "cults3d-api": { exact: ["cults3d.com"] },
+    "cults3d-session": { exact: ["cults3d.com"] },
+  },
+  // Where its download pages send the files: zips it makes of a model's files, and the designers' own uploads.
+  endpoints: { downloads: "https://download.cults3d.com", uploads: "https://downloader.cults3d.com" },
   brand: {
     logo: {
       viewBox: "0 0 260 260",
@@ -36,6 +41,7 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "none" },
+  solverRoutes: [{ host: "cults3d.com", path: /^\/[a-z]{2}\/3d-model\/[\w%-]+\/[\w%-]+\/?$/, query: [] }],
   capabilities: {
     collections: true,
     likes: true,

@@ -38,7 +38,7 @@ const withUserLock = createKeyedLock();
 export async function notifySingleImport(
   userId: string,
   url: string,
-  result: { printId: string; name: string; outcome: ImportOutcome } | { error: string },
+  result: { printId: string; name: string; outcome: ImportOutcome } | { error: string; internalPath?: string },
 ): Promise<void> {
   if ("error" in result) {
     await createNotification(userId, {
@@ -46,6 +46,7 @@ export async function notifySingleImport(
       title: "Couldn't import a model",
       body: result.error,
       externalUrl: url,
+      internalPath: result.internalPath,
     });
     return;
   }

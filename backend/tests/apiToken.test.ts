@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { API_TOKEN_SCOPE_IDS, scopeForPath } from "../src/services/apiTokenScopes";
+import { API_TOKEN_SCOPE_IDS, DEFAULT_API_TOKEN_SCOPE_IDS, scopeForPath } from "../src/services/apiTokenScopes";
 
 const app = createApp();
 let session: string;
@@ -119,9 +119,10 @@ describe("API token", () => {
     }
   });
 
-  it("reads every REST scope when new, and only the allowed ones once narrowed", async () => {
+  it("reads every REST scope but chats when new, and only the allowed ones once narrowed", async () => {
     const { body } = await request(app).post("/api/profile/api-token").set(auth(session));
-    expect(body.rest_scopes).toEqual(API_TOKEN_SCOPE_IDS);
+    expect(body.rest_scopes).toEqual(DEFAULT_API_TOKEN_SCOPE_IDS);
+    expect(body.rest_scopes).not.toContain("chats");
 
     const narrowed = await request(app)
       .put("/api/profile/api-token/rest-scopes")
@@ -138,6 +139,22 @@ describe("API token", () => {
     expect((await request(app).get("/api/notifications").set(auth(body.token))).status).toBe(403);
     // The token's session-signed-in owner is unaffected.
     expect((await request(app).get("/api/dashboard/summary").set(auth(session))).status).toBe(200);
+  });
+
+  it("reads the import queue under the imports scope", async () => {
+    const { body } = await request(app).post("/api/profile/api-token").set(auth(session));
+    const scoped = (rest_scopes: string[]) =>
+      request(app).put("/api/profile/api-token/rest-scopes").set(auth(session)).send({ rest_scopes });
+
+    await scoped(["imports"]);
+    const allowed = await request(app).get("/api/import/queue").set(auth(body.token));
+    expect(allowed.status).toBe(200);
+    expect(allowed.body.jobs).toEqual([]);
+
+    await scoped(["search"]);
+    const denied = await request(app).get("/api/import/queue").set(auth(body.token));
+    expect(denied.status).toBe(403);
+    expect(denied.body.scope).toBe("imports");
   });
 
   it("refuses an unknown REST scope, and a change made with the token itself", async () => {
@@ -169,6 +186,8 @@ describe("scopeForPath", () => {
     expect(scopeForPath("/plate/p1/preview.glb")).toBe("files");
     expect(scopeForPath("/tags/summary")).toBe("tags");
     expect(scopeForPath("/tags/benchy/mosaic.webp")).toBe("images");
+    expect(scopeForPath("/import/queue")).toBe("imports");
+    expect(scopeForPath("/import/jobs/j1/items")).toBe("imports");
   });
 
   it("puts anything unlisted under other", () => {

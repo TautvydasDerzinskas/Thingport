@@ -35,6 +35,7 @@ type Props = {
   context?: ToolContext;
   /** Closes the window it runs in; the tool's `thingport.close()`. */
   onClose: () => void;
+  onUnauthorized?: () => void;
 };
 
 /**
@@ -42,7 +43,7 @@ type Props = {
  * default export is called with `thingport` (toolSdk.ts), and what it returns is called as its cleanup when the window
  * closes, the theme changes or the script does.
  */
-export default function ToolRunner({ tool, context, onClose }: Props) {
+export default function ToolRunner({ tool, context, onClose, onUnauthorized }: Props) {
   const { t, i18n } = useTranslation("app");
   const muiTheme = useTheme();
   const navigate = useNavigate();
@@ -179,6 +180,7 @@ export default function ToolRunner({ tool, context, onClose }: Props) {
       <CollectionPickerDialog
         open={Boolean(picker)}
         title={picker?.title}
+        onUnauthorized={onUnauthorized}
         onClose={(picked) => {
           picker?.resolve(picked);
           setPicker(null);

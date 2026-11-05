@@ -578,6 +578,30 @@ const pictures: Record<string, () => React.ReactNode> = {
       </Box>
     </>
   ),
+  // Studio: a sketch on the plane, pulled up into a solid and back.
+  studio: () => (
+    <>
+      <Box
+        sx={{
+          ...at(9, 26, 22, 6),
+          borderRadius: "2px",
+          border: 1.5,
+          borderStyle: "dashed",
+          borderColor: "text.disabled",
+        }}
+      />
+      <Box
+        sx={{
+          ...at(11, 10, 18, 18),
+          borderRadius: "3px",
+          bgcolor: "primary.main",
+          opacity: 0.85,
+          transformOrigin: "bottom",
+          animation: run(grow, 2),
+        }}
+      />
+    </>
+  ),
   activity: () => (
     <>
       {Array.from({ length: 12 }, (_, i) => (
@@ -592,6 +616,20 @@ const pictures: Record<string, () => React.ReactNode> = {
           }}
         />
       ))}
+    </>
+  ),
+  // Two speech bubbles, one answering the other.
+  chats: () => (
+    <>
+      <Box sx={{ ...at(7, 9, 18, 12), bgcolor: "primary.main", borderRadius: "5px", animation: run(bob, 1.6) }} />
+      <Box
+        sx={{
+          ...at(16, 19, 17, 11),
+          bgcolor: "text.disabled",
+          borderRadius: "5px",
+          animation: run(bob, 1.6, "0.8s"),
+        }}
+      />
     </>
   ),
   other: () => (

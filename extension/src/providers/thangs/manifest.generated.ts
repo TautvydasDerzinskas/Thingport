@@ -9,6 +9,10 @@ export default {
   site: "https://thangs.com",
   docsSlug: "thangs",
   hosts: ["thangs.com"],
+  credentialHosts: {
+    "thangs-api": { exact: ["thangs.com"] },
+    "thangs-site": { exact: ["thangs.com", "www.thangs.com"] },
+  },
   brand: {
     logo: {
       color: "#FFBC00",
@@ -28,7 +32,14 @@ export default {
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "optional" },
-  browserFetch: true,
+  solverRoutes: [
+    {
+      host: "thangs.com",
+      path: /^\/(?:m\/\d+|designer\/[\w%-]+\/3d-model\/[\w%-]+|api\/(?:models\/v2\/\d+|users\/v4\/[\w%-]+\/likes|collections\/\d+|landing\/models\/v8\/root))$/,
+      query: ["likes", "page", "pageSize", "sortBy", "costType", "showContent", "category", "tags", "range", "sortDir"],
+    },
+  ],
+  browserFetchOrigins: ["https://thangs.com", "https://www.thangs.com"],
   capabilities: {
     collections: true,
     likes: true,

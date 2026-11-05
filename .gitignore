@@ -46,6 +46,7 @@ regression/.auth/
 regression/test-results/
 regression/playwright-report/
 regression/consume/
+regression/fake-provider-gates/
 
 # A local page for running a tool against the real SDK while working on it; never part of a build.
 frontend/tool-harness.html

@@ -57,7 +57,7 @@ const { name, id: categoryId } = GISCUS.categories[category];
 }
 
 <script>
-  // giscus draws the thread in an iframe from giscus.app, themed like the site and re-themed when the toggle switches.
+  // giscus draws the thread in an iframe from giscus.app, themed like the site and re-themed when its theme changes.
   const ORIGIN = "https://giscus.app";
   const theme = () => (document.documentElement.dataset.theme === "dark" ? "transparent_dark" : "light");
 

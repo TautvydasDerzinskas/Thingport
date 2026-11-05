@@ -151,9 +151,14 @@ linked:
 
 - **On a schedule.** Each synced collection is checked on its own interval, once a day unless you change it. A check
   compares the provider's collection with the models Thingport has already seen there.
-- **New models only.** A model that's already in your library is just added to the collection. The rest are queued and
-  imported one at a time, a minute apart, so the provider isn't flooded with requests. You get a notification when
-  they're in.
+- **New models only.** A model that's already in your library is just added to the collection. The rest are imported
+  one at a time, a minute apart, so the provider isn't flooded with requests. You get a notification when they're in.
+- **A lane of its own.** Synced collections don't wait in the [import queue](../features/importing.md#the-import-queue)'s
+  line or hold it up: they run beside it. A sync gives way while an import from the same provider is running, since both
+  reach the provider from the same server, and carries on by itself afterwards.
+- **In your import queue.** A running sync is listed under **Importing** with a **SYNC** tag. The top bar's ring and
+  number are only for imports you started. With only a sync going, the icon's tooltip says a synced collection is
+  updating, and a sync reaches its badge only when it fails or stops.
 - **Seen once, decided once.** A model Thingport has seen in the collection is never brought back by the sync, whether
   you left it unticked or deleted it from your library later.
 - **Renames are fine.** The link follows the provider's collection id, so renaming the collection on either side keeps
@@ -161,11 +166,14 @@ linked:
 - **One to one.** A provider collection syncs with one Thingport collection, and the other way round. If a collection
   with the same name already follows another source, the new one gets its own name, such as "Things (MakerWorld)".
 - **Rate limits pause it.** If the provider stops the imports, for example with a MakerWorld CAPTCHA or daily download
-  limit, the remaining models wait, paused, in **Administration → Import queue** until you start them again.
+  limit, the remaining models wait, on hold, in your [import queue](../features/importing.md#the-import-queue) until
+  you start them again. They then go back to this lane, not the line.
+- **Restarts don't lose it.** A sync a server restart cut off carries on by itself. With scheduled checks off (below),
+  it stays on hold until you start it or click **Sync now**.
 - **Deleted collections.** If the provider's collection can't be found on two checks in a row, the Thingport collection
   is unsynced and you get a notification. Its models stay. Deleting the Thingport collection removes the sync with it.
 - **Sync now** is available again 5 minutes after the last check. Its notification also tells you when there was
-  nothing new.
+  nothing new. While an import from the same provider is running, it waits for that first.
 
 ## Turn sync off
 
@@ -176,11 +184,13 @@ sync configuration. The collection and its models stay in Thingport. You can tur
 
 Two optional settings, added to the `backend` service's `environment` in `docker-compose.yml`:
 
-- `COLLECTION_SYNC_ENABLED=false` turns off the scheduled checks for every user. **Sync now** still works.
+- `COLLECTION_SYNC_ENABLED=false` turns off the scheduled checks for every user. **Sync now** still works, and a sync
+  that someone started again from the import queue, or that gave way to an import, still finishes by itself.
 - `COLLECTION_SYNC_ITEM_DELAY_MS` sets the pause between the models a sync imports, in milliseconds. The default is
   `60000`, one minute.
 
-Checks run one collection at a time across all users, since they all reach the providers from the same server.
+Checks run one collection at a time across all users, since they all reach the providers from the same server. One that
+has to give way hands its turn to the next, so syncs from other providers carry on.
 
 Turning a provider off under **Administration → Providers** pauses every collection synced from it, for every user.
 They pick up again once it's back on.

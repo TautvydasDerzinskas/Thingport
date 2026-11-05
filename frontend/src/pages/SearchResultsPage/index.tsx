@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -11,6 +11,8 @@ import { type PreviewMode } from "../../api/settings";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
+import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
+import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import ModelCard from "../ModelsPage/ModelCard";
@@ -43,6 +45,10 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
   const [loadingMore, setLoadingMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const finishedVersion = useFinishedVersion();
+  const isBackgroundReload = useBackgroundReload(finishedVersion);
+  // A page on its way when the list reloads belongs to the old list, and is dropped.
+  const listRun = useRef(0);
   const selection = useModelSelection(items);
   const sortModeParam = searchParams.get("orderBy");
   const sortMode: PrintSortMode =
@@ -79,6 +85,8 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
   };
 
   useEffect(() => {
+    const background = isBackgroundReload();
+    listRun.current += 1;
     if (!query) {
       setItems([]);
       setHasMore(false);
@@ -86,7 +94,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    if (!background) setLoading(true);
     (async () => {
       try {
         const result = await printsApi.list({
@@ -94,7 +102,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
           generative: generative || undefined,
           hide_providers: hiddenProviders,
           order_by: sortMode,
-          limit: PAGE_SIZE,
+          limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
           offset: 0,
         });
         if (cancelled) return;
@@ -103,7 +111,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
         setHasMore(result.hasMore);
       } catch (err) {
         if (cancelled) return;
-        handleError(err, t("models:errors.loadFailed"));
+        handleError(err, background ? undefined : t("models:errors.loadFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -112,10 +120,11 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, sortMode, generative, hiddenProviders]);
+  }, [query, sortMode, generative, hiddenProviders, finishedVersion]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !query) return;
+    const run = listRun.current;
     setLoadingMore(true);
     try {
       const result = await printsApi.list({
@@ -126,6 +135,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
         limit: PAGE_SIZE,
         offset,
       });
+      if (run !== listRun.current) return;
       setItems((prev) => [...prev, ...result.items]);
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);

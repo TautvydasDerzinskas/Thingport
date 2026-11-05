@@ -34,8 +34,9 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const settle = (result: ConfirmResult) => {
-    pending?.resolve(result);
+    // In this order, so focus has gone back where it was before whoever asked carries on, and perhaps turns that off.
     setPending(null);
+    pending?.resolve(result);
   };
 
   return (

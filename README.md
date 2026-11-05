@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/logos/thingport-lockup-compact-on-dark.svg">
-  <img src="frontend/src/assets/logos/thingport-lockup-compact-color.svg" alt="Thingport" width="320">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/thingport-ascii-dark.gif">
+  <img src=".github/assets/thingport-ascii-light.gif" alt="Thingport" width="320">
 </picture>
 
 <h3>Your personal 3D model library.</h3>
@@ -185,6 +185,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-thingport}:${POSTGRES_PASSWORD:-thingport}@db:5432/${POSTGRES_DB:-thingport}?schema=public
       - CORS_ORIGINS=${CORS_ORIGINS:-}
       - FLARESOLVERR_URL=${FLARESOLVERR_URL:-http://flaresolverr:8191/v1}
+      - FLARESOLVERR_REQUIRE_HTTPS=${FLARESOLVERR_REQUIRE_HTTPS:-false}
     depends_on:
       db:
         condition: service_healthy
@@ -249,6 +250,8 @@ SMTP_PASS=
 SMTP_FROM=Thingport <no-reply@localhost>
 # first-run default only; once Thingport has started, change it in Administration -> Connections -> FlareSolverr
 FLARESOLVERR_URL=http://flaresolverr:8191/v1
+# true refuses a plain HTTP FlareSolverr unless it runs locally (flaresolverr, localhost); System Health says when it's safe
+FLARESOLVERR_REQUIRE_HTTPS=false
 TZ=UTC
 ```
 
@@ -300,7 +303,8 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 
 ## Features
 
-- **[Import from 17 sites](docs/features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader and GrabCAD
+- **[Import from 18 sites](docs/features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD and Meshy
+- **[Your own import queue, in one line that survives a restart](docs/features/importing.md#the-import-queue)**
 - **[Import bookmarklet](docs/guides/bookmarklet.md)**
 - **[Synced collections](docs/guides/synced-collections.md)**
 - **[Bring your existing library](docs/guides/existing-library.md)**
@@ -308,7 +312,8 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[3D previews](docs/features/3d-previews.md)**
 - **[Multicolour models in their own colours](docs/features/3d-previews.md)**
 - **[Print quality checks](docs/features/print-quality.md)**
-- **[AI categorization and descriptions](docs/guides/ai.md)**
+- **[Studio: design parts with an AI, or by hand](docs/guides/studio.md)**
+- **[AI categorization and descriptions, on a local model or Claude](docs/guides/ai.md)**
 - **[Organize, search and bulk-edit](docs/features/organize-and-search.md)**
 - **[Dashboard](docs/features/dashboard.md)**
 - **[Profile and activity](docs/features/profile-and-activity.md)**
@@ -321,6 +326,7 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[Plain files on your disk](docs/features/storage.md)**
 - **[Repair models whose files are gone](docs/features/storage.md#when-the-files-are-gone)**
 - **[Multi-user](docs/features/multi-user.md)**
+- **[Share collections and chat with your household](docs/features/multi-user.md#sharing-with-each-other)**
 - **[Single sign-on](docs/guides/single-sign-on.md)**
 - **[Administration](docs/features/administration.md)**
 - **[System Health](docs/guides/system-health.md)**
@@ -337,11 +343,11 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 Thingport ships two small companion apps, each downloadable from the in-app **Downloads** page or GitHub Releases:
 
 - **[Thingport Bridge](bridge/README.md)** — a lightweight desktop helper that makes "Open in {Slicer}" work for slicers (Bambu Studio, PrusaSlicer, Cura, Anycubic Slicer Next) whose own URL-protocol handlers won't accept a link from a self-hosted domain.
-- **[Thingport Grab](extension/README.md)** — a browser extension for Chrome, Edge and Firefox that imports models from all 17 sites straight from their own pages, without leaving the site (see the screenshots above), and hands Thingport your sign-in on the sites that need one as you use them. **Pair with Thingport** connects it to your instance: Thingport opens in a tab to approve the browser, and no password is saved in the extension. Even without a Thingport instance, it adds a "Download normalized" button to MakerWorld model pages that converts Bambu Studio projects into 3MFs other slicers open with their colours and settings. Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee), [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/thingport-grab/) or [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol).
+- **[Thingport Grab](extension/README.md)** — a browser extension for Chrome, Edge and Firefox that imports models from all 18 sites straight from their own pages, without leaving the site (see the screenshots above), and hands Thingport your sign-in on the sites that need one as you use them. **Pair with Thingport** connects it to your instance: Thingport opens in a tab to approve the browser, and no password is saved in the extension. Even without a Thingport instance, it adds a "Download normalized" button to MakerWorld model pages that converts Bambu Studio projects into 3MFs other slicers open with their colours and settings. Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee), [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/thingport-grab/) or [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol).
 
 ## Provider Setup
 
-MakerWorld needs each user's session cookie, Printables works with no setup, and Thingiverse needs an App Token an admin sets once for the whole instance. Most of the others need a sign-in or key of their own, usually handed over by [Thingport Grab](extension/README.md); OwlCAD needs none at all, and eufyMake, MakerOnline and Makerables only for your likes or saved projects. MakerOnline's files come only through Grab, and so do OwlCAD's CAD projects. Printables, Thingiverse and MyMiniFactory work best with FlareSolverr, and CGTrader needs Grab or FlareSolverr to get its downloads past AWS's bot check. Connect them under **Configuration → Providers** (from the user menu): right-click a provider to connect it, or choose **About** for what it needs. All 17 are on by default; admins can turn any of them off for the whole instance under **Administration → Providers**. See **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for a comparison of them all, and a setup page for each.
+MakerWorld needs each user's session cookie, Printables works with no setup, and Thingiverse needs an App Token an admin sets once for the whole instance. Most of the others need a sign-in or key of their own, usually handed over by [Thingport Grab](extension/README.md); OwlCAD needs none at all, and eufyMake, MakerOnline and Makerables only for your likes or saved projects. MakerOnline's files come only through Grab, and so do OwlCAD's CAD projects. Printables, Thingiverse and MyMiniFactory work best with FlareSolverr, and CGTrader needs Grab or FlareSolverr to get its downloads past AWS's bot check. Connect them under **Configuration → Providers** (from the user menu): right-click a provider to connect it, or choose **About** for what it needs. All 18 are on by default; admins can turn any of them off for the whole instance under **Administration → Providers**. See **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for a comparison of them all, and a setup page for each.
 
 ## Contributing
 
@@ -361,6 +367,11 @@ Thingport locally with hot reload. Adding a model site is in
       <a href="https://github.com/Ruivalim"><img src="docs/assets/icons/github.svg" width="16" height="16" alt="GitHub"></a>&nbsp;
       <a href="https://ruivalim.com.br"><img src="docs/assets/icons/website.svg" width="16" height="16" alt="Website"></a>&nbsp;
       <a href="https://www.linkedin.com/in/rui-valim/"><img src="docs/assets/icons/linkedin.svg" width="16" height="16" alt="LinkedIn"></a>
+    </td>
+    <td align="center" width="140">
+      <a href="https://github.com/kreativmonkey"><img src="https://avatars.githubusercontent.com/u/8607439?v=4&s=160" width="80" height="80" alt="Sebastian"></a><br>
+      <sub><b>kreativmonkey</b></sub><br>
+      <a href="https://github.com/kreativmonkey"><img src="docs/assets/icons/github.svg" width="16" height="16" alt="GitHub"></a>
     </td>
   </tr>
 </table>

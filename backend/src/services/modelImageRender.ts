@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import { loadThreeMfGroup, simplifyGroupMeshes, type PreviewRefusal } from "./modelPreviewRender";
 import { loadStepMeshes } from "./stepLoader";
 import { writeRgbaPng } from "./imageProcessing";
+import { loadGlbScene } from "./gltfScene";
 
 // A small picture of a model: one colour, simple light, transparent background. A software
 // rasterizer rather than WebGL, so it runs anywhere Node does, with no GPU or native deps.
@@ -51,7 +52,11 @@ const normalize = (a: Vec): Vec => {
 type Geometry = { triangles: Float32Array; colors: Uint8Array | null };
 
 /** Every triangle as 9 floats, in a Y-up world; `wantColors` also reads the colour each was drawn in. */
-async function loadTriangles(srcPath: string, ext: string, wantColors: boolean): Promise<Geometry | PreviewRefusal> {
+export async function loadTriangles(
+  srcPath: string,
+  ext: string,
+  wantColors: boolean,
+): Promise<Geometry | PreviewRefusal> {
   const THREE = await import("three");
   let root: import("three").Object3D;
   if (ext === ".3mf") {
@@ -89,6 +94,11 @@ async function loadTriangles(srcPath: string, ext: string, wantColors: boolean):
     root = group;
     // CAD files are Z-up, as print files are.
     root.rotateX(-Math.PI / 2);
+  } else if (ext === ".glb") {
+    // Already Y-up.
+    const scene = await loadGlbScene(srcPath);
+    if (typeof scene === "string") return scene;
+    root = scene;
   } else {
     return "unsupported";
   }
@@ -194,6 +204,31 @@ export async function renderModelImage(
   if (triangles.length === 0) return "unsupported";
   const faceColors = colorDestPath ? geometry.colors : null;
 
+  const { min, max, center } = boundsOf(triangles);
+  const flat = max[1] - min[1] < FLAT_RATIO * Math.max(max[0] - min[0], max[2] - min[2]);
+  // Towards the camera: straight from the front, or front and above for a flat model.
+  const toCamera: Vec =
+    view === "threeQuarter" ? (flat ? FLAT_THREE_QUARTER_VIEW : THREE_QUARTER_VIEW) : flat ? [0, 1, 1] : [0, 0, 1];
+  const compose = rasterize(triangles, faceColors, center, { toCamera, up: [0, 1, 0] }, { size, color, ambient, fill });
+  await writeRgbaPng(compose(false), size, destPath);
+  if (faceColors && colorDestPath) await writeRgbaPng(compose(true), size, colorDestPath);
+  return { status: "ok", colored: Boolean(faceColors && colorDestPath) };
+}
+
+/** Where a picture is taken from: the way towards the camera, and which way is up in it (needn't be square to it). */
+export type RenderCamera = { toCamera: Vec; up: Vec };
+
+/** A picture of triangles (nine floats each) seen from `camera`, as RGBA pixels: Studio's designs are Z-up and are
+ *  seen from more sides than a model's picture. */
+export function renderTrianglesRgba(
+  triangles: Float32Array,
+  camera: RenderCamera,
+  { size, color, ambient = 0.3, fill = 0 }: Omit<ModelImageOptions, "view">,
+): Buffer {
+  return rasterize(triangles, null, boundsOf(triangles).center, camera, { size, color, ambient, fill })(false);
+}
+
+function boundsOf(triangles: Float32Array): { min: Vec; max: Vec; center: Vec } {
   const min: Vec = [Infinity, Infinity, Infinity];
   const max: Vec = [-Infinity, -Infinity, -Infinity];
   for (let i = 0; i < triangles.length; i += 3) {
@@ -202,13 +237,22 @@ export async function renderModelImage(
       max[axis] = Math.max(max[axis], triangles[i + axis]);
     }
   }
-  const center: Vec = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
-  const flat = max[1] - min[1] < FLAT_RATIO * Math.max(max[0] - min[0], max[2] - min[2]);
-  // Towards the camera: straight from the front, or front and above for a flat model.
-  const toCamera = normalize(
-    view === "threeQuarter" ? (flat ? FLAT_THREE_QUARTER_VIEW : THREE_QUARTER_VIEW) : flat ? [0, 1, 1] : [0, 0, 1],
-  );
-  const right = normalize(cross([0, 1, 0], toCamera));
+  return { min, max, center: [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2] };
+}
+
+/**
+ * Projects and rasterizes the triangles once, and hands back how to average the samples into pixels: in the one
+ * colour, or in each face's own where `faceColors` gives them.
+ */
+function rasterize(
+  triangles: Float32Array,
+  faceColors: Uint8Array | null,
+  center: Vec,
+  camera: RenderCamera,
+  { size, color, ambient, fill }: Required<Omit<ModelImageOptions, "view">>,
+): (useColor: boolean) => Buffer {
+  const toCamera = normalize(camera.toCamera);
+  const right = normalize(cross(camera.up, toCamera));
   const up = cross(toCamera, right);
   // From above and to the left of the camera, so faces turned towards it still differ in shade.
   const light = normalize([
@@ -321,8 +365,5 @@ export async function renderModelImage(
     }
     return pixels;
   };
-
-  await writeRgbaPng(compose(false), size, destPath);
-  if (sampleColor && colorDestPath) await writeRgbaPng(compose(true), size, colorDestPath);
-  return { status: "ok", colored: Boolean(sampleColor && colorDestPath) };
+  return compose;
 }

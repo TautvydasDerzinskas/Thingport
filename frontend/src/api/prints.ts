@@ -1,5 +1,6 @@
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
+import type { UserCard } from "./social";
 
 export type PreparedPrint = {
   printer?: string | null;
@@ -85,6 +86,8 @@ export type Print = {
     reason: string;
     model: string;
     created_at: string;
+    /** Set when it's the category this provider's own maps to, rather than AI's answer. */
+    provider?: string | null;
   } | null;
   created_at: string;
   storage_path?: string | null;
@@ -112,6 +115,11 @@ export type Print = {
   source_url?: string | null;
   /** Null from list endpoints, which can't tell an images gap. */
   source_gaps?: SourceGap[] | null;
+  /** Set on another user's model, from one of their public collections: whose it is. It can be opened, downloaded and
+   *  copied, not changed. Null on the viewer's own. */
+  owner?: UserCard | null;
+  /** On another user's model: the viewer's own copy of it, once they have one. */
+  library_copy_id?: string | null;
 };
 
 export type ListPrintsResult = {
@@ -549,6 +557,17 @@ export const printsApi = {
     return res.json();
   },
 
+  linkSource: async (id: string, url: string): Promise<Print> => {
+    const res = await fetch(`${apiBase()}/print/${id}/link-source`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ url }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Linking this model failed"));
+    return ((await res.json()) as { print: Print }).print;
+  },
+
   delete: async (id: string) => {
     const res = await fetch(`${apiBase()}/print/${id}`, { method: "DELETE", headers: authHeaders() });
     assertOk(res, "Delete print failed");
@@ -569,6 +588,50 @@ export const printsApi = {
       const part = (await res.json()) as { deleted: string[]; failed: number };
       result.deleted.push(...part.deleted);
       result.failed += part.failed;
+    }
+    return result;
+  },
+
+  /** Moves the others' files, pictures and descriptions into `primaryId` and deletes them. `print` is null when the
+   *  merge went through but the model couldn't be read back. */
+  merge: async (primaryId: string, ids: string[]): Promise<{ print: Print | null; merged_ids: string[] }> => {
+    const res = await fetch(`${apiBase()}/prints/merge`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ primary_id: primaryId, ids }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Merge failed"));
+    return res.json();
+  },
+
+  /** Each model on its own: imported ones are skipped, ones that fail are counted, the rest still get the category. A
+   *  batch failing after an earlier one went through counts what's left as failed, so the grid isn't left stale. */
+  bulkAssignCategory: async (
+    ids: string[],
+    categoryId: string,
+  ): Promise<{ prints: Print[]; skipped: number; failed: number }> => {
+    const result = { prints: [] as Print[], skipped: 0, failed: 0 };
+    let left = ids.length;
+    for (const chunk of bulkChunks(ids)) {
+      try {
+        const res = await fetch(`${apiBase()}/prints/category`, {
+          method: "POST",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ print_ids: chunk, category_id: categoryId }),
+        });
+        if (res.status === 401) throw new UnauthorizedError();
+        if (!res.ok) throw new Error(await readErrorMessage(res, "Category update failed"));
+        const part = (await res.json()) as { prints: Print[]; skipped: number; failed: number };
+        result.prints.push(...part.prints);
+        result.skipped += part.skipped;
+        result.failed += part.failed;
+        left -= chunk.length;
+      } catch (err) {
+        if (!result.prints.length || err instanceof UnauthorizedError) throw err;
+        console.error(err);
+        return { ...result, failed: result.failed + left };
+      }
     }
     return result;
   },

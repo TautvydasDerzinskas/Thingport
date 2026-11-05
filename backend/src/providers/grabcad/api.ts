@@ -1,3 +1,4 @@
+import { assertCredentialDestination } from "../credentialRequest";
 import * as cheerio from "cheerio";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { absoluteHttpUrl, htmlToMarkdown } from "../../services/descriptionMarkdown";
@@ -73,6 +74,7 @@ async function request(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
+    if (init.session) assertCredentialDestination("grabcad-session", url);
     const res = await fetch(url, {
       method: init.json === undefined ? "GET" : "POST",
       headers: {

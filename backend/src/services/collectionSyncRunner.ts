@@ -2,9 +2,12 @@
 // provider listing is compared with the ids it has seen, new models already in the library are
 // filed into the collection, and the rest go into a paced import queue job of the sync's own.
 // Scheduled and "Sync now" checks share one lane, one collection at a time across every user,
-// since they all reach the providers from the same IP.
+// since they all reach the providers from the same IP. A sync's job only ever runs in this lane, a
+// person's Start included, and never joins the import line. It gives way to whatever else is
+// importing from the same provider by returning, not by waiting: the line never waits for the lane
+// nor the lane for the line, so nothing can deadlock and other providers' syncs carry on.
 
-import type { Collection, CollectionSync, Prisma } from "@prisma/client";
+import type { Collection, CollectionSync, ImportJob, Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import {
   isSyncDue,
@@ -15,11 +18,18 @@ import {
 } from "./collectionSyncSchedule";
 import { COLLECTION_SYNC_ITEM_DELAY_MS, IMPORT_COLLECTION_DELAY_MS } from "../config";
 import { sleep } from "../utils/concurrency";
+import { HttpError } from "../utils/fileUtils";
 import { addPrintsToCollection } from "./collectionService";
 import { findLibraryPrints, hasProfiles, modelUrlFor, providerName, sourceDescription } from "./collectionSyncService";
-import { getActiveJob } from "./importJobService";
-import { type LinksImportJobBody, runLinksImportJob, SYNC_JOB_INTERRUPTED } from "./importJobRunner";
-import { startLinksJob } from "./importQueueService";
+import { isImportingFrom, jobPayload } from "./importJobService";
+import {
+  hasResumeMark,
+  type LinksImportJobBody,
+  runLinksImportJob,
+  SYNC_JOB_WAITING,
+  SYNC_RESUME_MARKS,
+} from "./importJobRunner";
+import { importWorkerTuning, isDatabaseSwitching, launchLinksJob } from "./importWorker";
 import { isProviderId } from "../providers/index.generated";
 import { PROVIDERS, withLinkAuth } from "../providers/registry";
 import { SyncHeldError, type SyncProblem } from "../providers/syncProblem";
@@ -54,8 +64,8 @@ export async function fetchListing(sync: SyncedList & Pick<CollectionSync, "prov
 
 export type SyncOutcome =
   | "missing" // the sync was removed before its turn
-  | "busy" // an import of the user's is running; tried again next time
-  | "resumed" // a job a restart cut off was picked up again
+  | "busy" // its job is running, or an import from its provider is; tried again next time
+  | "resumed" // a job waiting for its turn was picked up again
   | "error" // the provider couldn't be read
   | "disconnected" // the provider isn't connected, or turned the login down; not checked till it is
   | "disabled" // an admin turned the provider off for the instance
@@ -73,7 +83,7 @@ let lane: Promise<unknown> = Promise.resolve();
 /** Claims the collection's place, synchronously, so two requests checking at once can't both get
  *  it. False when it's already taken. Pass `reserved` to syncCollection, or release it. */
 export function reserveSync(syncId: string): boolean {
-  if (syncing.has(syncId)) return false;
+  if (syncing.has(syncId) || isDatabaseSwitching()) return false;
   syncing.add(syncId);
   return true;
 }
@@ -82,11 +92,18 @@ export function releaseSync(syncId: string): void {
   syncing.delete(syncId);
 }
 
+/** A sync reserved, in the lane or running, or a round going through them. */
+export function hasActiveCollectionSync(): boolean {
+  return syncing.size > 0 || currentRound !== null;
+}
+
 /** One collection's sync, once the lane gets to it. Resolves once anything it started has finished
- *  importing. `reserved`: the caller already holds the collection's place (see reserveSync). */
-export function syncCollection(syncId: string, { reserved = false } = {}): Promise<SyncOutcome> {
+ *  importing, or has given way. `reserved`: the caller already holds the collection's place (see
+ *  reserveSync). `resumeOnly`: it's here for a job waiting for the lane, which by its turn may have
+ *  gone or been held; it isn't a check of the provider. */
+export function syncCollection(syncId: string, { reserved = false, resumeOnly = false } = {}): Promise<SyncOutcome> {
   if (!reserved && !reserveSync(syncId)) return Promise.resolve("busy");
-  const run = lane.then(() => runSync(syncId)).finally(() => syncing.delete(syncId));
+  const run = lane.then(() => runSync(syncId, resumeOnly)).finally(() => syncing.delete(syncId));
   lane = run.catch(() => undefined);
   return run;
 }
@@ -148,7 +165,20 @@ async function holdProvider(
   await notifyHeld(userId, provider, problem, fresh);
 }
 
-async function runSync(syncId: string): Promise<SyncOutcome> {
+/** Runs a waiting job until it ends or stops. False when it changed since it was read: a Hold made meanwhile stays a
+ *  hold, and whatever it is now gets looked at again next time. */
+async function resumeJob(job: ImportJob): Promise<boolean> {
+  try {
+    const { run } = await launchLinksJob(job);
+    await run;
+    return true;
+  } catch (err) {
+    if (err instanceof HttpError && err.status === 409) return false;
+    throw err;
+  }
+}
+
+async function runSync(syncId: string, resumeOnly: boolean): Promise<SyncOutcome> {
   const sync = await prisma.collectionSync.findUnique({ where: { id: syncId }, include: { collection: true } });
   if (!sync) return "missing";
   const { userId } = sync;
@@ -158,25 +188,29 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
     return "disconnected";
   }
 
-  let openJob = await prisma.importJob.findFirst({
+  const openJobs = await prisma.importJob.findMany({
     where: { collectionSyncId: sync.id, status: { in: ["RUNNING", "PAUSED"] } },
     orderBy: { createdAt: "asc" },
   });
-  if (openJob?.status === "RUNNING") return "busy";
-  if (await getActiveJob(userId)) return "busy";
-  if (openJob?.errorMessage === SYNC_JOB_INTERRUPTED) {
+  if (openJobs.some((job) => job.status === "RUNNING")) return "busy";
+  // Whatever else is importing from this provider goes first. Nothing is marked seen, so a later look finds it all.
+  if (await isImportingFrom(sync.provider)) return "busy";
+  // Before a job on hold: a retry can open an older job while a newer one sits held. A second waiting job gets its turn
+  // on a later look.
+  const waiting = openJobs.find(hasResumeMark);
+  if (waiting) {
     const left = await prisma.importJobItem.count({
-      where: { jobId: openJob.id, status: { in: ["PENDING", "RUNNING"] } },
+      where: { jobId: waiting.id, status: { in: ["PENDING", "RUNNING"] } },
     });
-    if (left) {
-      const { run } = await startLinksJob(openJob);
-      await run;
-      return "resumed";
-    }
+    // With none left it still runs, to its end, if it has models to tell of.
+    const untold = jobPayload(waiting).sync_new;
+    if (left || (Array.isArray(untold) && untold.length)) return (await resumeJob(waiting)) ? "resumed" : "busy";
     // Cut off after its last link: nothing to pick up again.
-    await prisma.importJob.update({ where: { id: openJob.id }, data: { status: "DONE", errorMessage: null } });
-    openJob = null;
+    await prisma.importJob.update({ where: { id: waiting.id }, data: { status: "DONE", errorMessage: null } });
   }
+  if (resumeOnly) return "unchanged";
+  // A job on hold takes the new links.
+  const openJob = openJobs.find((job) => !hasResumeMark(job)) ?? null;
 
   let listing: string[] | null;
   try {
@@ -278,9 +312,6 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
   }
 
   if (toImport.length) {
-    // Checked again: the user may have started an import while the listing loaded. Nothing's been
-    // marked seen yet, so the next sync finds these again.
-    if (await getActiveJob(userId)) return "busy";
     const job = await prisma.importJob.create({
       data: {
         userId,
@@ -306,7 +337,7 @@ async function runSync(syncId: string): Promise<SyncOutcome> {
     });
     await addPrintsToCollection(sync.collectionId, [...inLibrary.values()]);
     await markChecked();
-    // As every LINKS job runs, with LINK_PROVIDER's stored sign-in (see importQueueService.ts).
+    // As every LINKS job runs, with LINK_PROVIDER's stored sign-in (see importWorker.ts).
     await runLinksImportJob(
       job.id,
       userId,
@@ -374,6 +405,11 @@ export async function runManualSync(syncId: string, { reserved = false } = {}): 
     if (!before) return "missing";
     let outcome: SyncOutcome;
     try {
+      // Gives way out here, so a click doesn't hold up other providers' syncs in the lane. The collection's place stays
+      // taken: a second click is refused, and a scheduled check finds it busy.
+      while (await isImportingFrom(before.provider)) {
+        await sleep(Math.max(COLLECTION_SYNC_ITEM_DELAY_MS, importWorkerTuning.syncGiveWayMs));
+      }
       handedOver = true;
       // Turned off since the click was accepted: told, as any other outcome is.
       outcome = (await isProviderEnabled(before.provider)) ? await syncCollection(syncId, { reserved }) : "disabled";
@@ -407,7 +443,7 @@ async function notifyManualOutcome(before: SyncWithCollection, outcome: SyncOutc
     unchanged: { title: `"${name}" is up to date`, body: `No new models in ${sourceDescription(before)}.` },
     busy: {
       title: `Couldn't sync "${name}" yet`,
-      body: "Another import is running. The sync tries again on its next round, or try Sync now once it's done.",
+      body: `An import from ${provider} is running. Try Sync now again once it's done.`,
     },
     error: {
       title: `Couldn't sync "${name}"`,
@@ -434,11 +470,28 @@ async function notifyManualOutcome(before: SyncWithCollection, outcome: SyncOutc
 
 let currentRound: Promise<void> | null = null;
 
-/** The synced collections that are due, the longest unchecked first. A round still going when the
- *  next tick comes is left to finish instead. */
+/** The collections with a job waiting for the lane, which can't wait for their interval. A job a restart cut off only
+ *  counts with scheduled sync on: off, it waits for a person, as it always has. */
+async function syncsWithWaitingJobs(): Promise<Set<string | null>> {
+  const jobs = await prisma.importJob.findMany({
+    where: {
+      status: "PAUSED",
+      collectionSyncId: { not: null },
+      errorMessage: { in: syncSchedulerEnabled() ? SYNC_RESUME_MARKS : [SYNC_JOB_WAITING] },
+    },
+    select: { collectionSyncId: true },
+  });
+  return new Set(jobs.map((job) => job.collectionSyncId));
+}
+
+/** The synced collections that are due, the longest unchecked first, and those with a job waiting
+ *  for the lane. With scheduled sync off, only those. A round still going when the next tick comes
+ *  is left to finish instead. */
 export function runSyncRound(): Promise<void> {
   if (currentRound) return currentRound;
+  if (isDatabaseSwitching()) return Promise.resolve();
   currentRound = (async () => {
+    const waiting = await syncsWithWaitingJobs();
     const syncs = await prisma.collectionSync.findMany({
       orderBy: { lastCheckedAt: { sort: "asc", nulls: "first" } },
       select: {
@@ -456,7 +509,9 @@ export function runSyncRound(): Promise<void> {
     const disabled = await getDisabledProviders();
     // Each user's connection to each provider, looked up once a round.
     const problems = new Map<string, SyncProblem | null>();
-    for (const sync of syncs.filter((s) => isSyncDue(s) && !disabled.has(s.provider as Provider))) {
+    const scheduled = new Set(syncSchedulerEnabled() ? syncs.filter((s) => isSyncDue(s)).map((s) => s.id) : []);
+    const isDue = (s: (typeof syncs)[number]) => scheduled.has(s.id) || waiting.has(s.id);
+    for (const sync of syncs.filter((s) => isDue(s) && !disabled.has(s.provider as Provider))) {
       const only = heldAlone(sync);
       const key = `${sync.userId} ${sync.provider}${only ? ` ${only}` : ""}`;
       if (problems.has(key)) {
@@ -477,7 +532,7 @@ export function runSyncRound(): Promise<void> {
     for (const [index, id] of due.entries()) {
       if (index > 0) await sleep(IMPORT_COLLECTION_DELAY_MS);
       try {
-        const outcome = await syncCollection(id);
+        const outcome = await syncCollection(id, { resumeOnly: !scheduled.has(id) });
         if (outcome !== "unchanged" && outcome !== "missing") console.log(`[sync] ${id}: ${outcome}`);
       } catch (err) {
         console.error(`[sync] ${id} failed:`, err);
@@ -491,9 +546,10 @@ export function runSyncRound(): Promise<void> {
   return currentRound;
 }
 
+/** With scheduled sync off the tick still runs, for jobs a person started or that gave way: nothing else would come back
+ *  to them. No collection gets a next check. */
 export function startCollectionSyncScheduler(): void {
-  if (!syncSchedulerEnabled()) return;
-  markSchedulerStarted();
+  if (syncSchedulerEnabled()) markSchedulerStarted();
   setTimeout(() => {
     void runSyncRound();
     setInterval(() => void runSyncRound(), SYNC_TICK_MS);

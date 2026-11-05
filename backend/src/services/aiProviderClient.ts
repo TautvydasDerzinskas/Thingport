@@ -5,6 +5,8 @@ import type { Logger } from "../logger";
 import { previewImagePath } from "./previewImageService";
 import { aiPreviewJpeg } from "./imageProcessing";
 import type { AiProvider } from "./aiConnectionService";
+import { askClaude } from "./aiAnthropicClient";
+import { parseAnswerJson } from "./aiAnswerJson";
 
 /** What one request to a provider needs, saved or only typed into the settings form. */
 export type ProviderSettings = Omit<AiProvider, "baseUrl" | "model" | "concurrency"> & {
@@ -17,6 +19,11 @@ export type ProviderContent = ({ type: "text"; text: string } | { type: "image_u
 // Per AI: each provider has its own limit, and a slow one shouldn't hold up another, whichever feature asks.
 const slots = new Map<string, { active: number; waiters: (() => void)[] }>();
 let retryDelay = (milliseconds: number) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+
+/** The pause before asking a provider again, which tests shorten. */
+export function waitToRetry(milliseconds: number): Promise<void> {
+  return retryDelay(milliseconds);
+}
 
 /** Keeps timeout and retry tests fast without changing production backoff behavior. */
 export function setAiRetryDelayForTest(delay?: (milliseconds: number) => Promise<void>): void {
@@ -49,7 +56,7 @@ export function noSecretError(error: unknown): Error {
 }
 
 /** What a failed fetch means to an admin; fetch itself only says "fetch failed" or "aborted". */
-function readableNetworkError(error: unknown, waited: { timeoutMs: number; stalled?: boolean }): unknown {
+export function readableNetworkError(error: unknown, waited: { timeoutMs: number; stalled?: boolean }): unknown {
   if (error instanceof Error && error.name === "AbortError")
     return new Error(
       waited.stalled
@@ -80,28 +87,8 @@ export async function previewPart(
   }
 }
 
-function chatUrl(baseUrl: string): string {
+export function chatUrl(baseUrl: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
-}
-
-/**
- * Providers that ignore response_format (Xiaomi MiMo) wrap the object in prose or markdown, e.g.
- * `**{...}**`; the outermost braces are tried when the whole text doesn't parse. undefined when
- * neither does.
- */
-function parseAnswerJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start === -1 || end <= start) return undefined;
-    try {
-      return JSON.parse(text.slice(start, end + 1));
-    } catch {
-      return undefined;
-    }
-  }
 }
 
 type ChatBody = {
@@ -149,11 +136,11 @@ async function readStream(response: Response, onPiece: () => void): Promise<Chat
 }
 
 // Connections (base URL and model) that answered 400 to reasoning_effort, so later requests leave it out.
-const reasoningEffortRejected = new Set<string>();
+export const reasoningEffortRejected = new Set<string>();
 
 // A reasoning model's thinking comes out of max_tokens too, so each effort gets room for it on top of the answer.
 // No effort sent leaves the model at its own default, which is about medium.
-const THINKING_TOKENS: Record<ReasoningEffort | "unset", number> = {
+export const THINKING_TOKENS: Record<ReasoningEffort | "unset", number> = {
   none: 0,
   low: 2048,
   medium: 6144,
@@ -164,11 +151,8 @@ const THINKING_TOKENS: Record<ReasoningEffort | "unset", number> = {
 /** Throws the given message as the answer's problem, logging what an admin needs to tell why. */
 export type Unusable = (message: string) => Error;
 
-/**
- * Asks a provider for one JSON answer in `schema`, retrying what a retry can fix, and hands the parsed object to
- * `read`, which returns what the feature needs or throws `unusable(...)` for an answer it can't use.
- */
-export async function askProvider<T>(options: {
+/** One question for a provider, of either kind. */
+export type AskOptions<T> = {
   settings: ProviderSettings;
   content: ProviderContent;
   schemaName: string;
@@ -187,7 +171,15 @@ export async function askProvider<T>(options: {
    */
   stream?: { firstChunkMs: number; idleMs: number };
   read: (json: unknown, unusable: Unusable, answer: Record<string, unknown>) => T;
-}): Promise<T> {
+};
+
+/**
+ * Asks a provider for one JSON answer in `schema`, retrying what a retry can fix, and hands the parsed object to
+ * `read`, which returns what the feature needs or throws `unusable(...)` for an answer it can't use. Claude has its
+ * own API (aiAnthropicClient.ts); every other provider takes the OpenAI-style one below.
+ */
+export async function askProvider<T>(options: AskOptions<T>): Promise<T> {
+  if (options.settings.kind === "anthropic") return askClaude(options, (milliseconds) => retryDelay(milliseconds));
   const {
     settings,
     content,
@@ -289,11 +281,7 @@ export async function askProvider<T>(options: {
         return new Error(message);
       };
       if (typeof raw !== "string") throw unusable(`AI provider returned ${noAnswer}`);
-      const unfenced = raw
-        .trim()
-        .replace(/^```(?:json)?\s*/i, "")
-        .replace(/\s*```$/, "");
-      const json = parseAnswerJson(unfenced);
+      const json = parseAnswerJson(raw);
       if (json === undefined) {
         // JSON.parse only says where it stopped, which tells an admin nothing about the provider.
         if (body.choices?.[0]?.finish_reason === "length")

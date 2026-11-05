@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { createJob, getJob } from "../src/services/importJobService";
@@ -23,7 +23,7 @@ vi.mock("../src/providers/thingiverse/api", async (importOriginal) => {
 });
 
 import { importPrintFromUrl } from "../src/services/importService";
-import { runListImportJob } from "../src/services/importJobRunner";
+import { profilesImportJob, runListImportJob } from "../src/services/importJobRunner";
 import { runCollectionImportJob } from "../src/providers/makerworld/jobs";
 import { PROVIDERS } from "../src/providers/registry";
 import { fetchThingiverseCollectionTitle } from "../src/providers/thingiverse/api";
@@ -460,5 +460,115 @@ describe("runListImportJob, of a Thingiverse collection", () => {
     expect(finished?.status).toBe("ERROR");
     expect(finished?.errorMessage).toMatch(/isn't configured/i);
     expect(fetchThingiverseCollectionTitle).not.toHaveBeenCalled();
+  });
+});
+
+describe("a batch something took from its runner", () => {
+  const LIKES_URL = "https://www.thingiverse.com/someone/likes";
+  // No collection in it, so nothing's asked for its name.
+  const MAKERWORLD_URL = "https://makerworld.com/en/models/does-not-matter";
+  const NEXPRINT_URL = "https://www.nexprint.com/models/1";
+  const STALLED = "This import stopped responding";
+
+  let asked: string[] = [];
+
+  /** Each model comes in fine, and `during(n)` happens as the nth does. */
+  function importing(during: (nth: number) => Promise<unknown>): void {
+    asked = [];
+    vi.mocked(importPrintFromUrl).mockImplementation(async (_userId: string, url: string) => {
+      asked.push(url);
+      await during(asked.length);
+      return {
+        print: await prisma.print.create({
+          data: { userId, name: `Taken ${url} ${Math.random()}`, nameNormalized: `taken ${url} ${Math.random()}` },
+        }),
+        plates: [],
+        author: null,
+        previewImages: [],
+        alreadyImported: false,
+      };
+    });
+  }
+
+  const giveUp = (jobId: string) =>
+    prisma.importJob.update({ where: { id: jobId }, data: { status: "ERROR", errorMessage: STALLED } });
+
+  const RUNS = [
+    [
+      "a MakerWorld collection",
+      MAKERWORLD_URL,
+      "makerworld",
+      (jobId: string) =>
+        runCollectionImportJob(jobId, userId, { url: MAKERWORLD_URL, design_ids: ["61", "62", "63"], tags: [] }),
+    ],
+    [
+      "another site's list",
+      LIKES_URL,
+      "thingiverse",
+      (jobId: string) => runThingiverseList(jobId, LIKES_URL, ["611", "612", "613"]),
+    ],
+    [
+      "print profiles",
+      NEXPRINT_URL,
+      "nexprint",
+      (jobId: string) => profilesImportJob("nexprint")!(jobId, userId, { url: NEXPRINT_URL, scope: "all", tags: [] }),
+    ],
+  ] as const;
+
+  beforeEach(async () => {
+    await setThingiverseAccessToken("test-token");
+    vi.spyOn(PROVIDERS.nexprint.sourcedImport!.profiles!, "listUrls").mockResolvedValue({
+      title: "A model",
+      urls: ["https://www.nexprint.com/p/1", "https://www.nexprint.com/p/2", "https://www.nexprint.com/p/3"],
+    });
+  });
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    await setThingiverseAccessToken(null);
+  });
+
+  it.each(RUNS)("stops %s at its next model, with no end and no word to anyone", async (_label, url, provider, run) => {
+    const job = await createJob(userId, "COLLECTION", { sourceUrl: url, provider, total: 3 });
+    importing((nth) => (nth === 1 ? giveUp(job.id) : Promise.resolve()));
+    const notifications = await prisma.notification.count({ where: { userId } });
+
+    await run(job.id);
+
+    expect(asked).toHaveLength(1);
+    const left = await getJob(job.id, userId);
+    expect(left).toMatchObject({ status: "ERROR", errorMessage: STALLED, processed: 1, imported: 1 });
+    expect(left?.resultCollectionId).toBeNull();
+    expect(await prisma.notification.count({ where: { userId } })).toBe(notifications);
+  });
+
+  it.each(RUNS)("doesn't stop %s over a read that fails", async (_label, url, provider, run) => {
+    const job = await createJob(userId, "COLLECTION", { sourceUrl: url, provider, total: 3 });
+    importing(() => Promise.resolve());
+    vi.spyOn(prisma.importJob, "findUnique").mockRejectedValueOnce(new Error("database blip"));
+
+    await run(job.id);
+
+    expect(asked).toHaveLength(3);
+    expect(await getJob(job.id, userId)).toMatchObject({ status: "DONE", errorMessage: null, imported: 3 });
+  });
+
+  it.each(RUNS)("stops %s when the job has gone, rejecting nothing", async (_label, url, provider, run) => {
+    const job = await createJob(userId, "COLLECTION", { sourceUrl: url, provider, total: 3 });
+    importing((nth) => (nth === 1 ? prisma.importJob.delete({ where: { id: job.id } }) : Promise.resolve()));
+
+    await expect(run(job.id)).resolves.toBeUndefined();
+
+    expect(asked).toHaveLength(1);
+  });
+
+  it.each(RUNS)("finishes %s if its last model was already on its way", async (_label, url, provider, run) => {
+    const job = await createJob(userId, "COLLECTION", { sourceUrl: url, provider, total: 3 });
+    importing((nth) => (nth === 3 ? giveUp(job.id) : Promise.resolve()));
+
+    await run(job.id);
+
+    expect(asked).toHaveLength(3);
+    expect(await getJob(job.id, userId)).toMatchObject({ status: "DONE", errorMessage: null, imported: 3 });
   });
 });

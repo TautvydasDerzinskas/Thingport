@@ -8,6 +8,7 @@ export default {
   site: "https://www.nexprint.com",
   docsSlug: "nexprint",
   hosts: ["nexprint.com"],
+  credentialHosts: { "nexprint-api": { exact: ["www.nexprint.com"] } },
   brand: {
     logo: {
       viewBox: "0 -0.97 30 30",

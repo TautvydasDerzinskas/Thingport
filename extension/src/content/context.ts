@@ -15,8 +15,10 @@ export type ImportContext = {
   instanceUrl: string;
   classification: Classification;
   library: LibraryState | null;
-  /** Admins also get "Add to the queue": the import waits, paused, in the instance's import queue. */
+  /** "Add to the queue" is on offer: the import waits in the instance's import queue. */
   canQueue: boolean;
+  /** That queue is the user's own, rather than one only an admin starts. Decides how the panel words it. */
+  importQueue: boolean;
   title?: string | null;
 };
 

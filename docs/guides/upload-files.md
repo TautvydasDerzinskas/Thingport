@@ -3,10 +3,10 @@
 The quickest way to add a few models you already have. Everything happens in the browser, and your original files are
 left where they are.
 
-**Supported files:** STL, 3MF, STEP/STP, OBJ, F3D and LightBurn (`.lbrn`, `.lbrn2`) models, images (PNG, JPG, WebP,
-BMP, GIF, SVG), and ZIP archives. Each file can be up to 512 MB by default.
+**Supported files:** STL, 3MF, STEP/STP, OBJ, glTF (`.glb`, or `.gltf` with its files), F3D and LightBurn (`.lbrn`,
+`.lbrn2`) models, images (PNG, JPG, WebP, BMP, GIF, SVG), and ZIP archives. Each file can be up to 512 MB by default.
 
-![The Add menu, with Upload files, Upload folder and Import](images/add-menu.png)
+![What Add opens, with Import, Upload files, Upload folder and the import queue](images/add-menu.png)
 
 ## Upload one file
 
@@ -15,8 +15,8 @@ BMP, GIF, SVG), and ZIP archives. Each file can be up to 512 MB by default.
 
 The model is named after the file (`Benchy.stl` becomes "Benchy") and opens straight in its edit dialog, so you can
 fix the title, add tags and notes, and choose a category or folder before you move on. A 3MF that carries a thumbnail, as most
-slicer projects do, uses it right away. For an STL, OBJ or STEP file, Thingport renders a thumbnail the first time the
-model is shown.
+slicer projects do, uses it right away. For an STL, OBJ, STEP or glTF file, Thingport renders a thumbnail the first time
+the model is shown.
 
 To put new models straight into an existing folder, open that folder on the **Models** page before you upload.
 
@@ -26,10 +26,22 @@ Select several files in the picker. Thingport asks how to import them:
 
 - **Import as separate prints** makes each file its own model, named after the file.
 - **Import as one model with several files** puts them all in a single new model, for when the files belong together,
-  like the parts of one print. STL, 3MF, STEP and OBJ files are added in the order you picked them, and anything
-  else, such as a photo or a PDF, is attached to the model.
+  like the parts of one print. STL, 3MF, STEP, OBJ and glTF files are added in the order you picked them, and
+  anything else, such as a photo or a PDF, is attached to the model.
 
 Close the dialog to cancel without uploading anything.
+
+## Upload a glTF model
+
+A `.glb` is one file and uploads like any other. A `.gltf` is the scene alone: its shape sits in a `.bin` file and its
+textures in images beside it, which is how sites such as Sketchfab hand them out. Pick the `.gltf` together with those
+files, or upload the folder they came in. Thingport packs the scene and the files it points at into one `.glb`, so they
+become a single model rather than a model and a pile of textures. Files the scene doesn't use, such as a licence, are
+attached to it as usual.
+
+A `.gltf` uploaded without its `.bin` is refused, with the name of the file it needs. A missing texture isn't: the
+model comes in without it. glTF is measured in metres, so Thingport shows and checks it in millimetres, a thousand times
+its number, as it does a print file. Files compressed with Draco don't preview yet.
 
 ## Upload a ZIP
 

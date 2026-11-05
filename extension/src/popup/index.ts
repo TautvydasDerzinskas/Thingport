@@ -287,6 +287,12 @@ els.instanceUrlInput.addEventListener("input", () => {
 
 els.credentialsBtn.addEventListener("click", () => showCredentials({ focus: true }));
 
+/** An http:// instance's https:// twin too: a reverse proxy may upgrade it, and Grab follows that upgrade only where it
+ *  may reach the https:// origin. */
+function instanceOrigins(origin: string): string[] {
+  return origin.startsWith("http://") ? [`${origin}/*`, `${origin.replace("http://", "https://")}/*`] : [`${origin}/*`];
+}
+
 /** Must be called straight from a click or a submit: `permissions.request()` needs that gesture. */
 async function pairWithInstance(): Promise<void> {
   if (pairing) return;
@@ -301,7 +307,7 @@ async function pairWithInstance(): Promise<void> {
   }
   setPairing(true);
   // First, while this still counts as the user's gesture: it's what lets Grab read the approval tab.
-  const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
+  const granted = await chrome.permissions.request({ origins: instanceOrigins(origin) });
   if (!granted) {
     setPairing(false);
     showError("Thingport Grab needs permission to reach this instance to work.");
@@ -398,7 +404,7 @@ els.setupForm.addEventListener("submit", async (event) => {
   els.saveBtn.textContent = "Saving…";
   try {
     // Must happen here: permissions.request() needs this submit's user gesture.
-    const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
+    const granted = await chrome.permissions.request({ origins: instanceOrigins(origin) });
     if (!granted) {
       showError("Thingport Grab needs permission to reach this instance to work.");
       return;

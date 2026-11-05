@@ -1,10 +1,17 @@
+import { PROVIDER_IDS, manifestOf } from "../providers/index.generated";
 import { FLARESOLVERR_SESSION_TTL_MS, FLARESOLVERR_TIMEOUT_MS } from "../config";
-import { getFlaresolverrUrl, normalizeFlaresolverrUrl } from "./settingsService";
+import {
+  getFlaresolverrUrl,
+  normalizeFlaresolverrUrl,
+  isAllowedFlaresolverrUrl,
+  flaresolverrUrlPolicyError,
+} from "./settingsService";
 
 const TEST_TIMEOUT_MS = 10000;
 
 export async function isFlaresolverrEnabled(): Promise<boolean> {
-  return Boolean(await getFlaresolverrUrl());
+  const endpoint = await getFlaresolverrUrl();
+  return Boolean(endpoint && isAllowedFlaresolverrUrl(endpoint));
 }
 
 /** `sessions.list` is a cheap command that only FlareSolverr's /v1 endpoint answers with status "ok". Takes the
@@ -14,6 +21,7 @@ export async function testFlaresolverr(
 ): Promise<{ ok: true; latencyMs: number; version: string | null } | { ok: false; error: string }> {
   const endpoint = normalizeFlaresolverrUrl(url);
   if (!endpoint) return { ok: false, error: "Enter the FlareSolverr URL first" };
+  if (!isAllowedFlaresolverrUrl(endpoint)) return { ok: false, error: flaresolverrUrlPolicyError() };
   const start = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
@@ -22,8 +30,13 @@ export async function testFlaresolverr(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cmd: "sessions.list" }),
+      // Not "error" as the solver calls below: this sends nothing secret, and "fetch failed" wouldn't say why.
+      redirect: "manual",
       signal: controller.signal,
     });
+    if (res.status >= 300 && res.status < 400) {
+      return { ok: false, error: `That URL redirects (HTTP ${res.status}): it has to answer at /v1 itself` };
+    }
     if (!res.ok) return { ok: false, error: `FlareSolverr answered HTTP ${res.status}` };
     const data = (await res.json().catch(() => null)) as { status?: string; version?: string } | null;
     if (data?.status !== "ok") return { ok: false, error: "That URL didn't answer like FlareSolverr" };
@@ -52,18 +65,6 @@ export function looksLikeCloudflareBlock(headers: Headers): boolean {
   return isCloudflareChallenge(headers);
 }
 
-function parseCookieHeader(raw: string | null | undefined): Record<string, string> {
-  const jar: Record<string, string> = {};
-  for (const part of (raw || "").split(";")) {
-    const trimmed = part.trim();
-    if (!trimmed) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    jar[trimmed.slice(0, eq)] = trimmed.slice(eq + 1);
-  }
-  return jar;
-}
-
 // Cloudflare's clearance is bound to the solving browser's fingerprint, so its cookies can't be
 // replayed. Once a host blocks us, proxy every request to it for a TTL.
 const proxyHosts = new Map<string, number>();
@@ -82,34 +83,108 @@ export type FlaresolverrResult = {
   body: string;
 };
 
+// A browser can follow redirects and execute scripts outside our HTTP destination guard.
+// Only known provider read endpoints may enter it; a forged Cloudflare response is not trust.
+// Deployment must still isolate the solver from private networks: trusted pages can redirect
+// or load third-party resources, and this allowlist cannot constrain browser subrequests.
+const SOLVER_ROUTES = PROVIDER_IDS.flatMap((provider) => manifestOf(provider).solverRoutes ?? []);
+
+function solverDestination(url: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" || parsed.port || parsed.username || parsed.password) return null;
+  const rule = SOLVER_ROUTES.find((route) => route.host === parsed.hostname && route.path.test(parsed.pathname));
+  if (!rule) return null;
+  // UTF-8 slug bytes are allowed; a route may also permit spaces in a particular segment.
+  // Encoded ASCII delimiters and double-encoding could change the server-side route.
+  const segments = parsed.pathname.slice(1).split("/");
+  if (
+    segments.some((segment, index) => {
+      const checked = index === rule.encodedSpaceSegment ? segment.replace(/%20/gi, " ") : segment;
+      return /%(?![89a-f][0-9a-f])/i.test(checked);
+    })
+  )
+    return null;
+  try {
+    decodeURIComponent(parsed.pathname);
+  } catch {
+    return null;
+  }
+  // Credential names come only from this route, never from caller-supplied bypass options.
+  for (const [key, value] of Array.from(parsed.searchParams)) {
+    if (rule.credentials?.query?.includes(key)) {
+      if (
+        parsed.searchParams.getAll(key).length !== 1 ||
+        !value ||
+        Array.from(value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)
+      )
+        return null;
+      continue;
+    }
+    if (!rule.query.includes(key)) {
+      if (/^(?:access_token|key|token|authorization)$/i.test(key)) return null;
+      parsed.searchParams.delete(key);
+      continue;
+    }
+    if (parsed.searchParams.getAll(key).length !== 1) return null;
+    if (!/^[\w -]*$/.test(value)) return null;
+  }
+  // Fragments are unnecessary for these read endpoints and may drive client-side navigation.
+  parsed.hash = "";
+  return { parsed, rule };
+}
+
+/** Why a Cloudflare block on `url` stands. Most links never reach the solver, so this doesn't claim it tried. */
+export async function cloudflareBlockedMessage(url: string): Promise<string> {
+  if (!solverDestination(url)) return "Cloudflare blocked the request, and FlareSolverr doesn't cover this link";
+  if (!(await isFlaresolverrEnabled())) return "Cloudflare blocked the request and FlareSolverr isn't set up";
+  return "Cloudflare blocked the request and FlareSolverr didn't get past it";
+}
+
 /** GET only: FlareSolverr's POST submits a browser form, not a raw body. */
 export async function fetchViaFlaresolverr(
   url: string,
   cookieHeader?: string | null,
 ): Promise<FlaresolverrResult | null> {
+  const destination = solverDestination(url);
+  if (!destination) return null;
+  const { parsed, rule } = destination;
+  if (cookieHeader && !rule.credentials?.cookies) return null;
   const endpoint = await getFlaresolverrUrl();
-  if (!endpoint) return null;
-  let hostname: string;
-  try {
-    hostname = new URL(url).hostname.toLowerCase();
-  } catch {
-    return null;
-  }
+  if (!endpoint || !isAllowedFlaresolverrUrl(endpoint)) return null;
+  const hostname = parsed.hostname;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FLARESOLVERR_TIMEOUT_MS);
   try {
-    const seedCookies = parseCookieHeader(cookieHeader);
-    const cookieList = Object.entries(seedCookies).map(([name, value]) => ({ name, value, domain: hostname }));
     const body: Record<string, unknown> = {
       cmd: "request.get",
-      url,
+      url: parsed.href,
       maxTimeout: FLARESOLVERR_TIMEOUT_MS,
     };
-    if (cookieList.length) body.cookies = cookieList;
+    if (cookieHeader) {
+      // FlareSolverr seeds cookies after its first navigation. Pin their domain to the
+      // original provider so a redirect cannot bind them to another site.
+      const cookies = cookieHeader.split(";").flatMap((part) => {
+        const equals = part.indexOf("=");
+        if (equals < 1) return [];
+        const name = part.slice(0, equals).trim();
+        const value = part.slice(equals + 1).trim();
+        return /^[!#$%&'*+.^_`|~\w-]+$/.test(name) &&
+          !Array.from(value).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127)
+          ? [{ name, value, domain: parsed.hostname, path: "/", secure: true }]
+          : [];
+      });
+      if (cookies.length) body.cookies = cookies;
+    }
 
     const res = await fetch(endpoint, {
       method: "POST",
+      redirect: "error",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -136,7 +211,7 @@ export async function fetchViaFlaresolverr(
  *  set up or didn't answer. */
 export async function cookiesViaFlaresolverr(url: string, waitSeconds: number): Promise<Record<string, string> | null> {
   const endpoint = await getFlaresolverrUrl();
-  if (!endpoint) return null;
+  if (!endpoint || !isAllowedFlaresolverrUrl(endpoint)) return null;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FLARESOLVERR_TIMEOUT_MS + waitSeconds * 1000);
   try {
@@ -149,6 +224,7 @@ export async function cookiesViaFlaresolverr(url: string, waitSeconds: number): 
         maxTimeout: FLARESOLVERR_TIMEOUT_MS,
         waitInSeconds: waitSeconds,
       }),
+      redirect: "error",
       signal: controller.signal,
     });
     if (!res.ok) return null;

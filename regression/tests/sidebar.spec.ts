@@ -99,7 +99,8 @@ test("bookmarks tags and collections and reorders them by dragging", async ({ pa
   await expect(edit).toBeHidden();
 
   await page.goto("/models/collections");
-  await page.getByRole("button", { name: "More", exact: true }).click();
+  // The page's own, ahead of the ones on collections other specs left behind.
+  await page.getByRole("button", { name: "More", exact: true }).first().click();
   await page.getByRole("menuitem", { name: "New Collection" }).click();
   const form = page.getByRole("dialog", { name: "New Collection" });
   await form.getByLabel("Name").fill(SHELF);

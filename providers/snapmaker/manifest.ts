@@ -9,6 +9,10 @@ export default {
   site: "https://space.snapmaker.com",
   docsSlug: "snapmaker-space",
   hosts: ["snapmaker.com"],
+  credentialHosts: {
+    "snapmaker-api": { exact: ["api-models.snapmaker.com"] },
+    "snapmaker-id": { exact: ["id.snapmaker.com"] },
+  },
   endpoints: { api: "https://api-models.snapmaker.com/api", token: "https://id.snapmaker.com/api/oauth2/token" },
   brand: {
     logo: {

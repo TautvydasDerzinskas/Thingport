@@ -1,15 +1,15 @@
+import { browserCredentialRequest, assertCredentialDestination } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { browserFetch } from "../../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import {
-  extractJsonFromBrowserBody,
-  fetchViaFlaresolverr,
   isCloudflareChallenge,
   looksLikeCloudflareBlock,
+  fetchViaFlaresolverr,
+  extractJsonFromBrowserBody,
 } from "../../services/flaresolverr";
-import { getFlaresolverrUrl } from "../../services/settingsService";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import {
   myminifactoryCollectionKey,
@@ -53,15 +53,10 @@ export class MyminifactoryAuthError extends Error {
 }
 
 export class MyminifactoryRateLimitError extends Error {
-  constructor(flaresolverr?: "missing" | "failed") {
+  constructor() {
     super(
       "MyMiniFactory blocked this request (rate limit or Cloudflare challenge). This usually clears after a " +
-        "while -- wait, then try again." +
-        (flaresolverr === "missing"
-          ? " Setting up FlareSolverr in Administration > Connections gets past it."
-          : flaresolverr === "failed"
-            ? " FlareSolverr couldn't get past it either: check it in Administration > Connections."
-            : ""),
+        "while -- wait, then try again.",
     );
     this.name = "MyminifactoryRateLimitError";
   }
@@ -73,28 +68,37 @@ export function myminifactoryObjectUrl(objectId: string): string {
 
 async function fetchApi(path: string, apiKey: string): Promise<{ ok: boolean; status: number; data: unknown }> {
   const url = `${API_BASE}${path}${path.includes("?") ? "&" : "?"}key=${encodeURIComponent(apiKey)}`;
-  let res = await browserFetch(url, { headers: { Accept: "application/json" }, timeoutMs: API_TIMEOUT_MS });
-  let viaBrowser = false;
-  if ((res.status === 429 || res.status === 403) && looksLikeCloudflareBlock(res.headers)) {
-    const solved = await fetchViaFlaresolverr(url);
-    if (solved) {
-      viaBrowser = true;
-      res = new Response(solved.body, { status: solved.status });
-    }
-  }
-  const text = await res.text();
+  const res = await browserCredentialRequest("myminifactory-api", url, {
+    headers: { Accept: "application/json" },
+    timeoutMs: API_TIMEOUT_MS,
+    signal: AbortSignal.timeout(API_TIMEOUT_MS),
+  });
+  const challenged = res.status === 429 || isCloudflareChallenge(res.headers);
   let data: unknown = null;
-  if (text.trim()) {
+  if (!challenged) {
+    const text = await res.text();
     try {
-      data = viaBrowser ? extractJsonFromBrowserBody(text) : JSON.parse(text);
+      data = JSON.parse(text);
     } catch {
       data = null;
     }
   }
-  if (!viaBrowser && (res.status === 429 || isCloudflareChallenge(res.headers))) {
-    throw new MyminifactoryRateLimitError((await getFlaresolverrUrl()) ? "failed" : "missing");
+  // Cloudflare can send an HTML 403 without cf-mitigated. Its server header alone
+  // is not enough: ordinary JSON API denials carry that header too.
+  if (challenged || (res.status === 403 && data === null && looksLikeCloudflareBlock(res.headers))) {
+    await res.body?.cancel().catch(() => undefined);
+    const solved = await fetchViaFlaresolverr(url);
+    if (!solved || solved.status === 429) throw new MyminifactoryRateLimitError();
+    data = extractJsonFromBrowserBody(solved.body);
+    if (solved.status === 401) throw new MyminifactoryAuthError();
+    // Missing resources and upstream outages can be HTML too; only an otherwise
+    // successful solve or another 403 without API JSON still looks like a challenge.
+    if (data === null && (solved.status === 403 || (solved.status >= 200 && solved.status < 300))) {
+      throw new MyminifactoryRateLimitError();
+    }
+    return { ok: solved.status >= 200 && solved.status < 300, status: solved.status, data };
   }
-  if (res.status === 429) throw new MyminifactoryRateLimitError();
+  // MyMiniFactory also uses 403 for objects that are not public; only 401 rejects the API key.
   if (res.status === 401) throw new MyminifactoryAuthError();
   return { ok: res.ok, status: res.status, data };
 }
@@ -280,7 +284,9 @@ export class MyminifactorySessionExpiredError extends Error {
 /** A request the site's own pages make with the user's session. A redirect to the login page means it's no longer
  *  accepted. */
 async function sessionFetch(path: string, cookie: string): Promise<Response> {
-  const res = await browserFetch(`${MYMINIFACTORY_ORIGIN}${path}`, {
+  const url = `${MYMINIFACTORY_ORIGIN}${path}`;
+  assertCredentialDestination("myminifactory-session", url);
+  const res = await browserFetch(url, {
     headers: { Cookie: cookie, Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
     redirect: "manual",
     timeoutMs: API_TIMEOUT_MS,

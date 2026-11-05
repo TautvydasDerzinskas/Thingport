@@ -9,6 +9,7 @@ export default {
   site: "https://grabcad.com",
   docsSlug: "grabcad",
   hosts: ["grabcad.com"],
+  credentialHosts: { "grabcad-session": { exact: ["grabcad.com"] } },
   // What its library pages call. Its files are on the site's own host.
   endpoints: { api: "https://grabcad.com/community/api/v1" },
   brand: {

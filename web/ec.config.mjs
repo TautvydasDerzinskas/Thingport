@@ -7,7 +7,7 @@ import { defineEcConfig } from "@astrojs/starlight/expressive-code";
 export default defineEcConfig({
   // Light first, as everywhere on the site; Starlight switches them on data-theme.
   themes: ["github-light", "github-dark"],
-  // The header's toggle picks the theme, not the visitor's OS.
+  // data-theme decides, as a visitor's choice in the header's toggle beats their system's theme.
   useDarkModeMediaQuery: false,
   styleOverrides: {
     borderColor: "var(--border)",

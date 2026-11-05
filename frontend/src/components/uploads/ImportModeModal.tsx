@@ -52,7 +52,8 @@ export function useImportModePrompt() {
   };
 
   const prompt = (config: ImportModePromptConfig) => {
-    if (state) {
+    // Not `state`: a prompt that waited its turn is from an older render.
+    if (resolveRef.current) {
       return Promise.resolve();
     }
     setBusy(false);

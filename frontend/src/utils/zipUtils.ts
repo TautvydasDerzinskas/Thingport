@@ -17,6 +17,8 @@ const MIME_BY_EXT: Record<string, string> = {
   ".step": "model/step",
   ".stp": "model/step",
   ".obj": "model/obj",
+  ".glb": "model/gltf-binary",
+  ".gltf": "model/gltf+json",
 };
 
 function normalizePath(path: string) {
@@ -45,6 +47,11 @@ export function guessMimeType(name: string) {
 function isArchiveJunk(path: string) {
   const parts = path.split("/");
   return parts.includes("__MACOSX") || isSystemFile(parts[parts.length - 1]);
+}
+
+/** What starts ticked when picking from a zip: everything but what the OS left in it, which still shows, to tick. */
+export function startingSelection(entries: Pick<ZipEntry, "path">[]): Set<string> {
+  return new Set(entries.map((entry) => entry.path).filter((path) => !isArchiveJunk(path)));
 }
 
 export function isZipFile(name: string) {

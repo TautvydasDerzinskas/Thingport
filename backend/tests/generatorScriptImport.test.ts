@@ -64,8 +64,8 @@ function mockMakerworld(designId: string, scriptsProtected: boolean, zip: Buffer
     if (url.includes(`/design/${designId}/model?modelType=all&type=download`)) {
       return json({ name: "", url: `https://s3.example.com/${designId}-all.zip` });
     }
-    if (url.startsWith("https://api.bambulab.com/v1/iot-service/api/user/profile/")) {
-      return json({ message: "success", url: `https://s3.example.com/${designId}.3mf`, filename: "keychain.3mf" });
+    if (url.startsWith("https://api.bambulab.com/v1/design-service/instance/")) {
+      return json({ url: `https://s3.example.com/${designId}.3mf`, name: "keychain.3mf" });
     }
     if (url === `https://s3.example.com/${designId}.3mf`) {
       return new Response("solid keychain\nendsolid keychain\n", {

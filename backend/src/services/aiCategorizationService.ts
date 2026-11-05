@@ -1,4 +1,4 @@
-import { Prisma, type CategorySource, type Print } from "@prisma/client";
+import { Prisma, type AiProviderKind, type CategorySource, type Print } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
@@ -6,6 +6,7 @@ import { createLogger } from "../logger";
 import { createLog } from "./auditLog";
 import { createNotification } from "./notificationService";
 import { setPrintCategory } from "./printCategoryService";
+import { listClaudeModels } from "./aiAnthropicClient";
 import { resolveAiProvider, type ResolvedAiProvider } from "./aiConnectionService";
 import {
   askProvider,
@@ -28,7 +29,7 @@ export async function getAiCategorizationSettings(): Promise<AiCategorizationSet
   return { ...prefs, ...(await resolveAiProvider(prefs.aiConnectionId)) };
 }
 
-/** Suggestions are only shown while categorization is on; switched off, they stay stored for when it's back. */
+/** AI's suggestions are only shown while categorization is on; switched off, they stay stored for when it's back. */
 export async function aiSuggestionsShown(): Promise<boolean> {
   return aiCategorizationEnabled(await getAiCategorizationSettings());
 }
@@ -43,6 +44,8 @@ const suggestionSchema = z.object({
   reason: z.string().max(300),
   model: z.string(),
   createdAt: z.string(),
+  /** Set when no AI was involved: the category a provider's own maps to. */
+  provider: z.string().optional(),
 });
 
 type Suggestion = z.infer<typeof suggestionSchema>;
@@ -402,7 +405,32 @@ export async function acceptAiSuggestion(userId: string, printId: string): Promi
   if (!suggestion.success) throw new HttpError(404, "No AI suggestion found");
   const category = await prisma.category.findFirst({ where: { id: suggestion.data.categoryId, userId } });
   if (!category) throw new HttpError(409, "Suggested category no longer exists", "stale");
-  await setPrintCategory(userId, print.id, category.id, "AI", { clearSuggestion: true });
+  // A provider's is the mapped category an import would have filed it under, so it's recorded the same way.
+  const source = suggestion.data.provider ? "RULE" : "AI";
+  await setPrintCategory(userId, print.id, category.id, source, { clearSuggestion: true });
+}
+
+/** Offers the category a provider's own maps to, in the slot an AI suggestion takes: it's reviewed the same way, and
+ *  a later AI answer replaces it. Nothing moves until the owner accepts. Not offered when the model is already there
+ *  or the owner turned that category down. */
+export async function suggestMappedCategory(
+  print: Pick<Print, "id" | "categoryId" | "aiRejectedCategoryIds">,
+  categoryId: string,
+  provider: string,
+): Promise<void> {
+  if (categoryId === print.categoryId || print.aiRejectedCategoryIds.includes(categoryId)) return;
+  const suggestion: Suggestion = {
+    categoryId,
+    confidence: 1,
+    reason: "",
+    model: provider,
+    createdAt: new Date().toISOString(),
+    provider,
+  };
+  await prisma.print.update({
+    where: { id: print.id },
+    data: { aiSuggestion: suggestion as unknown as Prisma.InputJsonValue },
+  });
 }
 
 export async function rejectAiSuggestion(userId: string, printId: string): Promise<void> {
@@ -419,10 +447,12 @@ export async function rejectAiSuggestion(userId: string, printId: string): Promi
   });
 }
 
+/** `aiShown`: whether AI's suggestions are shown now. A provider's needs no AI, so it always is. */
 export async function aiSuggestionOut(
   userId: string,
   value: unknown,
   categoryPaths?: Map<string, string>,
+  aiShown = true,
 ): Promise<{
   category_id: string;
   category_path: string;
@@ -430,9 +460,11 @@ export async function aiSuggestionOut(
   reason: string;
   model: string;
   created_at: string;
+  provider: string | null;
 } | null> {
   const suggestion = suggestionSchema.safeParse(value);
   if (!suggestion.success) return null;
+  if (!aiShown && !suggestion.data.provider) return null;
   const path = (categoryPaths ?? (await aiCategoryPaths(userId))).get(suggestion.data.categoryId);
   if (!path) return null;
   return {
@@ -442,6 +474,7 @@ export async function aiSuggestionOut(
     reason: suggestion.data.reason,
     model: suggestion.data.model,
     created_at: suggestion.data.createdAt,
+    provider: suggestion.data.provider ?? null,
   };
 }
 
@@ -654,13 +687,15 @@ export function cancelAiCategorizationRun(userId: string): AiCategorizationRun |
 const MODEL_LIST_TIMEOUT_MS = 10_000;
 
 /**
- * The models a provider serves, from the OpenAI-style `GET /models` that Ollama, LM Studio, vLLM, OpenAI, OpenRouter
- * and Gemini all answer, so the settings form can suggest them.
+ * The models a provider serves, so the settings form can suggest them: from the OpenAI-style `GET /models` that
+ * Ollama, LM Studio, vLLM, OpenAI, OpenRouter and Gemini all answer, or from Anthropic's Models API for Claude.
  */
 export async function listAiProviderModels(provider: {
+  kind: AiProviderKind;
   baseUrl: string | null;
   apiKey: string | null;
 }): Promise<{ ok: true; models: string[] } | { ok: false; error: string }> {
+  if (provider.kind === "anthropic") return listClaudeModels(provider, MODEL_LIST_TIMEOUT_MS);
   if (!provider.baseUrl) return { ok: false, error: "Set the API base URL first" };
   try {
     const response = await fetch(`${provider.baseUrl.replace(/\/+$/, "")}/models`, {

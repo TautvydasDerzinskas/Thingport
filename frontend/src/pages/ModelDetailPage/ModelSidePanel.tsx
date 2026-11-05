@@ -10,11 +10,18 @@ import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
 import ButtonBase from "@mui/material/ButtonBase";
+import Skeleton from "@mui/material/Skeleton";
+import { keyframes } from "@mui/material/styles";
 import FolderIcon from "@mui/icons-material/Folder";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import StorageIcon from "@mui/icons-material/Storage";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import PrintIcon from "@mui/icons-material/Print";
+import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
+import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutlined";
+import CircularProgress from "@mui/material/CircularProgress";
 import type { Print } from "../../api/prints";
 import { aiCategorizationApi } from "../../api/aiCategorization";
 import { UnauthorizedError } from "../../api/client";
@@ -24,19 +31,54 @@ import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import { switchSlicer } from "../../hooks/useSlicerPreference";
 import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
+import { importProviderInfo } from "../../constants/importProviders";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
+import { useOpenInStudio } from "./useOpenInStudio";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
 import ModelFileSelect from "./ModelFileSelect";
 import OpenInSlicerButton from "./OpenInSlicerButton";
 import { useNormalizedOpen } from "./useNormalizedOpen";
+import AddToCollectionModal from "./AddToCollectionModal";
 import RollingNumber from "../../components/RollingNumber";
 import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
+import UserAvatar from "../../components/UserAvatar";
+import { useCopyToLibrary } from "./useCopyToLibrary";
+
+const statChipSx = { flex: 1, px: 0.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 };
+
+const fillUp = keyframes`
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+`;
+
+/** A bookmark filling up and draining again, while the model's collections load. */
+function BookmarkLoader() {
+  return (
+    <Box component="span" sx={{ position: "relative", display: "inline-flex", color: "text.secondary" }}>
+      <BookmarkBorderIcon fontSize="small" />
+      <BookmarkIcon
+        fontSize="small"
+        sx={{
+          position: "absolute",
+          inset: 0,
+          animation: `${fillUp} 700ms ease-in-out infinite alternate`,
+          "@media (prefers-reduced-motion: reduce)": { display: "none" },
+        }}
+      />
+    </Box>
+  );
+}
+
+/** "failed" still opens the dialog, just without showing a number. */
+export type CollectionCount = number | "loading" | "failed";
 
 type Props = {
   print: Print;
+  collectionCount: CollectionCount;
+  onCollectionCountChange: (count: number) => void;
   onSelectCategory: (id: string) => void;
   onUnauthorized?: () => void;
   onUpdated?: (print: Print) => void;
@@ -45,11 +87,22 @@ type Props = {
 };
 
 /** The detail page's sticky summary card. */
-export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized, onUpdated, viewer }: Props) {
+export default function ModelSidePanel({
+  print,
+  collectionCount,
+  onCollectionCountChange,
+  onSelectCategory,
+  onUnauthorized,
+  onUpdated,
+  viewer,
+}: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
   const showToast = useToast();
   const [suggestionBusy, setSuggestionBusy] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
+  // The provider whose own category this maps from, when it isn't AI's answer.
+  const suggestedBy = importProviderInfo(print.ai_suggestion?.provider)?.label;
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 56);
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
@@ -58,9 +111,17 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const selectedFile = files.find((file) => file.key === selectedKey) ?? files[0] ?? null;
   const normalizedTarget = normalizedTargetFor(selectedFile);
+
+  // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
+  const studio = useOpenInStudio(print, onUnauthorized);
+  const studioPlate = studio.files.find((plate) => plate.id === selectedFile?.plate?.id) ?? null;
   const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
   // Opened from the button below rather than a menu, so there is no menu to close.
   const customize = useCustomize(print, () => {}, onUnauthorized);
+  // Another user's model, from one of their public collections.
+  const owner = print.owner ?? null;
+  const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
+  const libraryCopyId = print.library_copy_id ?? null;
 
   const goToCategory = () => {
     if (!print.category_id) return;
@@ -73,11 +134,64 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
     ? new Date(print.created_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
     : null;
 
-  const showViewerAsAuthor =
-    !print.author?.name && !print.author?.handle && !print.creator && !print.source_provider && Boolean(viewer);
+  // A direct upload is its uploader's: the viewer's own, or on another user's model its owner's, whom "Shared by"
+  // already names.
+  const unauthored = !print.author?.name && !print.author?.handle && !print.creator && !print.source_provider;
+  const showViewerAsAuthor = unauthored && !owner && Boolean(viewer);
+  const showAuthor = !(unauthored && owner);
   const authorName =
     print.author?.name || print.author?.handle || print.creator || (showViewerAsAuthor ? viewer!.display_name : null);
   const authorAvatarUrl = print.author?.avatar_url || (showViewerAsAuthor ? viewerAvatarUrl : undefined);
+  const collectionsLabel =
+    typeof collectionCount === "number" && collectionCount > 0
+      ? t("models:detail.addToCollectionAlreadyIn", { count: collectionCount })
+      : t("models:detail.addToCollection");
+
+  // The model's collections: which of the user's hold it, or for another user's model, the user's copy of it.
+  const collectionsChip = (extraSx: Record<string, unknown> = {}) => (
+    <Tooltip title={collectionsLabel}>
+      <ButtonBase
+        onClick={() => setCollectionsOpen(true)}
+        aria-label={collectionsLabel}
+        aria-busy={collectionCount === "loading"}
+        sx={{
+          ...statChipSx,
+          ...extraSx,
+          gap: 0.75,
+          transition: (muiTheme) => muiTheme.transitions.create("background-color", { duration: 150 }),
+          "&:hover": { bgcolor: "action.hover" },
+          "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
+        }}
+      >
+        {collectionCount === "loading" ? (
+          <>
+            <BookmarkLoader />
+            <Skeleton
+              variant="text"
+              width={8}
+              sx={{
+                fontSize: "0.875rem",
+                "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+              }}
+            />
+          </>
+        ) : (
+          <>
+            {typeof collectionCount === "number" && collectionCount > 0 ? (
+              <BookmarkIcon fontSize="small" color="primary" />
+            ) : (
+              <BookmarkBorderIcon fontSize="small" sx={{ color: "text.secondary" }} />
+            )}
+            {typeof collectionCount === "number" && (
+              <Typography variant="body2" fontWeight={600}>
+                <RollingNumber value={collectionCount} />
+              </Typography>
+            )}
+          </>
+        )}
+      </ButtonBase>
+    </Tooltip>
+  );
 
   return (
     <Paper
@@ -105,42 +219,70 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           </Typography>
         </Box>
 
-        <Box>
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
-            {t("models:detail.author")}
-          </Typography>
-          <AuthorHoverCard
-            authorId={print.author ? print.author.id : SELF_AUTHOR_ID}
-            viewer={viewer}
-            disabled={!print.author && !showViewerAsAuthor}
-          >
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
+        {owner && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+              {t("models:shared.sharedByLabel")}
+            </Typography>
+            <ButtonBase
+              onClick={() => navigate(`/explore/users/${owner.id}`)}
               sx={{
-                width: "fit-content",
-                cursor: print.author || showViewerAsAuthor ? "pointer" : "default",
+                borderRadius: 1,
+                px: 0.5,
+                py: 0.25,
+                mx: -0.5,
+                gap: 1,
                 color: (muiTheme) => muiTheme.thingport.headingText,
-                ...(print.author || showViewerAsAuthor ? { "&:hover": { color: "primary.main" } } : undefined),
-              }}
-              onClick={() => {
-                if (print.author) navigate(`/authors/${print.author.id}`);
-                else if (showViewerAsAuthor) navigate(`/authors/${SELF_AUTHOR_ID}`);
+                "&:hover": { color: "primary.main" },
+                "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main" },
               }}
             >
-              <Avatar
-                src={authorAvatarUrl || undefined}
-                sx={{ width: 28, height: 28, fontSize: 13, color: "inherit !important" }}
-              >
-                {(authorName || "?").slice(0, 1).toUpperCase()}
-              </Avatar>
-              <Typography variant="body2" sx={{ color: "inherit" }}>
-                {authorName || t("models:card.unknownAuthor")}
+              <UserAvatar user={owner} size={28} />
+              <Typography variant="body2" fontWeight={600}>
+                {owner.display_name}
               </Typography>
-            </Stack>
-          </AuthorHoverCard>
-        </Box>
+            </ButtonBase>
+          </Box>
+        )}
+
+        {showAuthor && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+              {t("models:detail.author")}
+            </Typography>
+            <AuthorHoverCard
+              authorId={print.author ? print.author.id : SELF_AUTHOR_ID}
+              viewer={viewer}
+              disabled={!print.author && !showViewerAsAuthor}
+            >
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{
+                  width: "fit-content",
+                  cursor: print.author || showViewerAsAuthor ? "pointer" : "default",
+                  color: (muiTheme) => muiTheme.thingport.headingText,
+                  ...(print.author || showViewerAsAuthor ? { "&:hover": { color: "primary.main" } } : undefined),
+                }}
+                onClick={() => {
+                  if (print.author) navigate(`/authors/${print.author.id}`);
+                  else if (showViewerAsAuthor) navigate(`/authors/${SELF_AUTHOR_ID}`);
+                }}
+              >
+                <Avatar
+                  src={authorAvatarUrl || undefined}
+                  sx={{ width: 28, height: 28, fontSize: 13, color: "inherit !important" }}
+                >
+                  {(authorName || "?").slice(0, 1).toUpperCase()}
+                </Avatar>
+                <Typography variant="body2" sx={{ color: "inherit" }}>
+                  {authorName || t("models:card.unknownAuthor")}
+                </Typography>
+              </Stack>
+            </AuthorHoverCard>
+          </Box>
+        )}
 
         {print.category_id && print.category_name && (
           <Box>
@@ -188,10 +330,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           <Paper variant="outlined" sx={{ p: 1.5, bgcolor: "action.hover" }}>
             <Stack spacing={1}>
               <Typography variant="caption" color="text.secondary">
-                {t("models:aiCategorization.suggestionLabel")}
+                {suggestedBy
+                  ? t("models:aiCategorization.suggestionFromProvider", { provider: suggestedBy })
+                  : t("models:aiCategorization.suggestionLabel")}
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {print.ai_suggestion.category_path} · {Math.round(print.ai_suggestion.confidence * 100)}%
+                {print.ai_suggestion.category_path}
+                {!suggestedBy && ` · ${Math.round(print.ai_suggestion.confidence * 100)}%`}
               </Typography>
               {print.ai_suggestion.reason && (
                 <Typography variant="caption" color="text.secondary">
@@ -209,7 +354,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
                       try {
                         const result = await aiCategorizationApi.accept(print.id);
                         onUpdated?.(result.print);
-                        showToast({ message: t("models:aiCategorization.accepted") });
+                        showToast({
+                          message: t(
+                            suggestedBy
+                              ? "models:aiCategorization.suggestionAccepted"
+                              : "models:aiCategorization.accepted",
+                          ),
+                        });
                       } catch (err) {
                         if (err instanceof UnauthorizedError) onUnauthorized?.();
                         else
@@ -232,7 +383,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
                       try {
                         const result = await aiCategorizationApi.reject(print.id);
                         onUpdated?.(result.print);
-                        showToast({ message: t("models:aiCategorization.rejected") });
+                        showToast({
+                          message: t(
+                            suggestedBy
+                              ? "models:aiCategorization.suggestionRejected"
+                              : "models:aiCategorization.rejected",
+                          ),
+                        });
                       } catch (err) {
                         if (err instanceof UnauthorizedError) onUnauthorized?.();
                         else
@@ -270,6 +427,35 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           </Box>
         )}
 
+        {owner && (
+          // Another user's model: copied into the user's library, or filed into their collections (which copies it).
+          <Stack direction="row" spacing={1.5}>
+            {libraryCopyId ? (
+              <Button
+                variant="outlined"
+                startIcon={<LibraryAddCheckOutlinedIcon />}
+                onClick={() => library.openCopy(libraryCopyId)}
+                sx={{ flex: 1 }}
+              >
+                {t("models:shared.openCopy")}
+              </Button>
+            ) : (
+              <Button
+                variant="outlined"
+                disabled={library.copying}
+                startIcon={
+                  library.copying ? <CircularProgress size={16} color="inherit" /> : <LibraryAddOutlinedIcon />
+                }
+                onClick={() => void library.copy()}
+                sx={{ flex: 1 }}
+              >
+                {t("models:shared.copy")}
+              </Button>
+            )}
+            {collectionsChip({ flex: "0 0 auto", px: 1.75 })}
+          </Stack>
+        )}
+
         {selectedFile && files.length > 1 && (
           <ModelFileSelect files={files} selected={selectedFile} onSelect={(file) => setSelectedKey(file.key)} />
         )}
@@ -289,6 +475,8 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
             zipCount={files.filter((file) => file.plate).length}
             onDownloadZip={() => void downloadAllZip()}
             onCustomize={customize.available ? customize.start : undefined}
+            onOpenInStudio={studioPlate ? () => void studio.open(studioPlate) : undefined}
+            openingInStudio={studio.opening}
           />
         )}
         {slicerOption && normalizedTarget && (
@@ -301,32 +489,24 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
           />
         )}
 
-        <Stack direction="row" spacing={1.5}>
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="center"
-            spacing={0.75}
-            sx={{ flex: 1, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
-          >
-            <VisibilityIcon fontSize="small" sx={{ color: "text.secondary" }} />
-            <Typography variant="body2" fontWeight={600}>
-              {print.view_count}
-            </Typography>
+        {/* Another user's model counts their views and prints, not the viewer's: its collections sit by the copy. */}
+        {!owner && (
+          <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5}>
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
+              <VisibilityIcon fontSize="small" sx={{ color: "text.secondary" }} />
+              <Typography variant="body2" fontWeight={600}>
+                {print.view_count}
+              </Typography>
+            </Stack>
+            {collectionsChip()}
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.75} sx={statChipSx}>
+              <PrintIcon fontSize="small" sx={{ color: "text.secondary" }} />
+              <Typography variant="body2" fontWeight={600}>
+                <RollingNumber value={print.print_count} />
+              </Typography>
+            </Stack>
           </Stack>
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="center"
-            spacing={0.75}
-            sx={{ flex: 1, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 }}
-          >
-            <PrintIcon fontSize="small" sx={{ color: "text.secondary" }} />
-            <Typography variant="body2" fontWeight={600}>
-              <RollingNumber value={print.print_count} />
-            </Typography>
-          </Stack>
-        </Stack>
+        )}
 
         {importedDate && (
           <Typography variant="caption" sx={{ textAlign: "right", fontSize: 12, color: "text.secondary" }}>
@@ -335,6 +515,13 @@ export default function ModelSidePanel({ print, onSelectCategory, onUnauthorized
         )}
       </Stack>
       {customize.window}
+      <AddToCollectionModal
+        open={collectionsOpen}
+        onClose={() => setCollectionsOpen(false)}
+        printId={print.id}
+        onUnauthorized={onUnauthorized}
+        onCountChange={onCollectionCountChange}
+      />
     </Paper>
   );
 }

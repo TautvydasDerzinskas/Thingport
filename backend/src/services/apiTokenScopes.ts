@@ -11,6 +11,8 @@ export type ApiTokenScope = {
   description: string;
   /** Paths under /api; `:name` matches one segment. */
   paths: string[];
+  /** Left out of a new token's scopes: its user ticks it themselves. */
+  optIn?: boolean;
 };
 
 export const OTHER_SCOPE = "other";
@@ -57,8 +59,25 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
   {
     id: "collections",
     title: "Collections",
-    description: "Your collections and what's in them.",
-    paths: ["/collections", "/collection/:id", "/print/:id/collections", "/bookmarks"],
+    description: "Your collections and what's in them, and the ones others share.",
+    paths: [
+      "/collections",
+      "/collection/:id",
+      "/print/:id/collections",
+      "/bookmarks",
+      "/social",
+      "/explore",
+      "/explore/user/:id",
+    ],
+  },
+  {
+    // Its own, and granted to no token until its user ticks it: "Everything else", or a new token's every scope,
+    // mustn't hand a dashboard someone's private messages.
+    id: "chats",
+    title: "Chats",
+    description: "Your chats and the messages in them.",
+    paths: ["/chats", "/chats/unread", "/chats/people", "/chats/:id", "/chats/:id/messages"],
+    optIn: true,
   },
   {
     id: "tags",
@@ -108,8 +127,9 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
   {
     id: "imports",
     title: "Imports",
-    description: "Progress of running imports.",
+    description: "Your import queue and the progress of your imports.",
     paths: [
+      "/import/queue",
       "/import/status",
       "/import/tasks/:id",
       "/import/jobs/active",
@@ -132,6 +152,8 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
 ];
 
 export const API_TOKEN_SCOPE_IDS = API_TOKEN_SCOPES.map((scope) => scope.id);
+/** What a new token may read until its user narrows or widens it. */
+export const DEFAULT_API_TOKEN_SCOPE_IDS = API_TOKEN_SCOPES.filter((scope) => !scope.optIn).map((scope) => scope.id);
 
 function pathPattern(path: string): RegExp {
   const segments = path

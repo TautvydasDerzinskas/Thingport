@@ -22,8 +22,11 @@ import printFilesRoutes from "./routes/printFiles";
 import tagsRoutes from "./routes/tags";
 import settingsRoutes from "./routes/settings";
 import importsRoutes from "./routes/imports";
+import importQueueRoutes from "./routes/importQueue";
 import providerRoutes, { providerBodyLimits } from "./providers/routes";
 import collectionsRoutes from "./routes/collections";
+import socialRoutes from "./routes/social";
+import chatRoutes from "./routes/chats";
 import collectionSyncsRoutes from "./routes/collectionSyncs";
 import providerCollectionsRoutes from "./routes/providerCollections";
 import bookmarksRoutes from "./routes/bookmarks";
@@ -34,6 +37,7 @@ import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
 import widgetRoutes from "./routes/widgets";
 import toolRoutes from "./routes/tools";
+import studioRoutes from "./routes/studio";
 import { toolLocks } from "./routes/toolLocks";
 import activityRoutes from "./routes/activity";
 import aiCategorizationRoutes from "./routes/aiCategorization";
@@ -90,7 +94,10 @@ export function createApp(): Express {
   app.use("/api", tagsRoutes);
   app.use("/api", providerRoutes);
   app.use("/api", importsRoutes);
+  app.use("/api", importQueueRoutes);
   app.use("/api", collectionsRoutes);
+  app.use("/api", socialRoutes);
+  app.use("/api", chatRoutes);
   app.use("/api", collectionSyncsRoutes);
   app.use("/api", providerCollectionsRoutes);
   app.use("/api", bookmarksRoutes);
@@ -102,6 +109,7 @@ export function createApp(): Express {
   app.use("/api", dashboardRoutes);
   app.use("/api", widgetRoutes);
   app.use("/api", toolRoutes);
+  app.use("/api", studioRoutes);
   app.use("/api", activityRoutes);
 
   app.use((_req: Request, res: Response) => {

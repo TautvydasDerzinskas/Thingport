@@ -4,6 +4,15 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { resetClientTracking } from "../src/services/clientActivityService";
 
+const policy = vi.hoisted(() => ({ requireHttps: false }));
+
+vi.mock("../src/config", async (original) => ({
+  ...(await original<typeof import("../src/config")>()),
+  get FLARESOLVERR_REQUIRE_HTTPS() {
+    return policy.requireHttps;
+  },
+}));
+
 const app = createApp();
 let admin: string;
 let member: string;
@@ -32,8 +41,10 @@ type Report = {
 const resultOf = (report: Report, component: string) =>
   report.components.find((c) => c.component === component)!.result;
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
+  policy.requireHttps = false;
+  await prisma.setting.deleteMany({ where: { key: "flaresolverr_url" } });
 });
 
 describe("system health", () => {
@@ -132,6 +143,51 @@ describe("system health", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("[]", { status: 200 }));
     const res = await request(app).post("/api/admin/health/test").set(as(admin)).send({ component: "internet" });
     expect(resultOf(res.body, "internet")).toMatchObject({ status: "ok", code: "ok" });
+  });
+
+  describe("FlareSolverr transport", () => {
+    const solverReady = () =>
+      vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async () => new Response(JSON.stringify({ status: "ok", version: "3.3.21" })));
+    const testSolver = async (url: string) => {
+      await prisma.setting.upsert({
+        where: { key: "flaresolverr_url" },
+        create: { key: "flaresolverr_url", value: url },
+        update: { value: url },
+      });
+      const res = await request(app).post("/api/admin/health/test").set(as(admin)).send({ component: "flaresolverr" });
+      return resultOf(res.body, "flaresolverr")!;
+    };
+
+    it("warns about a working plaintext remote solver", async () => {
+      solverReady();
+      expect(await testSolver("http://192.168.1.10:8191/v1")).toMatchObject({ status: "warning", code: "insecure" });
+    });
+
+    it.each(["http://flaresolverr:8191/v1", "https://solver.example/v1"])(
+      "suggests requiring HTTPS once %s is secure",
+      async (url) => {
+        solverReady();
+        expect(await testSolver(url)).toMatchObject({ status: "ok", code: "https_ready" });
+      },
+    );
+
+    it("is plain green once HTTPS is required and met", async () => {
+      policy.requireHttps = true;
+      solverReady();
+      expect(await testSolver("https://solver.example/v1")).toMatchObject({ status: "ok", code: "ok" });
+    });
+
+    it("reports a plaintext solver refused by FLARESOLVERR_REQUIRE_HTTPS without contacting it", async () => {
+      policy.requireHttps = true;
+      const sent = solverReady();
+      expect(await testSolver("http://192.168.1.10:8191/v1")).toMatchObject({
+        status: "error",
+        code: "insecure_refused",
+      });
+      expect(sent).not.toHaveBeenCalled();
+    });
   });
 
   it("is for admins only, and refuses a component it doesn't know", async () => {

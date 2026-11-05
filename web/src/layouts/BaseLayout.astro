@@ -36,7 +36,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = await getImage({ src: defaultOgSource, width: 1200, height: 630, format: "png" });
 const ogImageUrl = new URL(ogImage.src, Astro.site);
 const home = new URL(url(), Astro.site).href;
-// The page is light without JavaScript too, as the docs are; ThemeScript makes it dark if the visitor chose that.
+// The page is light without JavaScript, as the docs are; ThemeScript sets the visitor's theme.
 ---
 
 <!doctype html>

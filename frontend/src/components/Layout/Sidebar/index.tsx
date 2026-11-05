@@ -19,10 +19,14 @@ import SpaceDashboardIcon from "@mui/icons-material/SpaceDashboard";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
+import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
+import Badge from "@mui/material/Badge";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import DownloadIcon from "@mui/icons-material/Download";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
+import DesignServicesOutlinedIcon from "@mui/icons-material/DesignServicesOutlined";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -48,6 +52,10 @@ import Wordmark from "../../Wordmark";
 import BrandMark from "../../BrandMark";
 import { type BookmarkEntry, bookmarksApi } from "../../../api/bookmarks";
 import { useTools } from "../../../hooks/useTools";
+import { useStudioEnabled } from "../../../hooks/useStudioEnabled";
+import { useSocialStatus } from "../../../hooks/useSocialStatus";
+import { useChats } from "../../chats/ChatsContext";
+import { UnreadPill } from "../../chats/ChatList";
 
 const SIDEBAR_WIDTH = 240;
 export const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -237,9 +245,20 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
   // Shown to whoever may use tools, once there's one to open or they may make their own.
   const tools = useTools();
   const showTools = Boolean(tools?.access.canUse && (tools.tools.length > 0 || tools.access.canCreate));
+  // Under Tools, for everyone, once the backend says it has Studio.
+  const showStudio = useStudioEnabled() === true;
+  const onStudio = location.pathname === "/studio";
+  // While an admin has social features on and there's someone else on the instance to explore.
+  const showExplore = useSocialStatus()?.explore === true;
+  const onExplore = location.pathname === "/explore" || location.pathname.startsWith("/explore/");
+  // While an admin has chats on under social features, with how many messages are waiting.
+  const { enabled: showChats, unread: chatsUnread } = useChats();
+  const onChats = location.pathname === "/chats" || location.pathname.startsWith("/chats/");
   const onAdmin = location.pathname.startsWith("/admin");
-  // Administration opens its own menu beside this one, so this one folds to icons there, whatever the user chose.
-  const collapsed = !mobile && (collapsedByUser || onAdmin);
+  // Administration and Chats open their own column beside this one, so this one folds to icons there, whatever the
+  // user chose.
+  const folded = onAdmin || (onChats && showChats);
+  const collapsed = !mobile && (collapsedByUser || folded);
 
   const toggleCollapsed = () => {
     setCollapsedByUser((prev) => {
@@ -294,8 +313,8 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
           </Link>
         )}
         {!mobile &&
-          (onAdmin ? (
-            // Folded for administration, there's nothing to unfold: the mark leads home instead.
+          (folded ? (
+            // Folded for administration or Chats, there's nothing to unfold: the mark leads home instead.
             <Tooltip title={t("sidebar.dashboard")} placement="right">
               <Link
                 component={RouterLink}
@@ -377,6 +396,69 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
             </ListItemButton>
           )}
 
+          {showExplore &&
+            (collapsed ? (
+              <CollapsedNavIcon
+                icon={<ExploreOutlinedIcon fontSize="small" />}
+                label={t("sidebar.explore")}
+                selected={onExplore}
+                onClick={() => navigate("/explore")}
+              />
+            ) : (
+              <ListItemButton
+                selected={onExplore}
+                onClick={() => navigate("/explore")}
+                sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onExplore) }}
+              >
+                <ListItemIcon sx={{ minWidth: 30 }}>
+                  <ExploreOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("sidebar.explore")} primaryTypographyProps={{ variant: "body2" }} />
+              </ListItemButton>
+            ))}
+
+          {showChats &&
+            (collapsed ? (
+              <CollapsedNavIcon
+                icon={
+                  <Badge
+                    badgeContent={chatsUnread}
+                    color="primary"
+                    max={99}
+                    // Small enough to leave the icon readable beside it.
+                    sx={{
+                      "& .MuiBadge-badge": {
+                        height: 15,
+                        minWidth: 15,
+                        px: "4px",
+                        fontSize: "0.6rem",
+                        top: -2,
+                        right: -4,
+                      },
+                    }}
+                  >
+                    <ForumOutlinedIcon fontSize="small" />
+                  </Badge>
+                }
+                label={chatsUnread ? t("sidebar.chatsUnread", { count: chatsUnread }) : t("sidebar.chats")}
+                selected={onChats}
+                onClick={() => navigate("/chats")}
+              />
+            ) : (
+              <ListItemButton
+                selected={onChats}
+                onClick={() => navigate("/chats")}
+                aria-label={chatsUnread ? t("sidebar.chatsUnread", { count: chatsUnread }) : undefined}
+                sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onChats) }}
+              >
+                <ListItemIcon sx={{ minWidth: 30 }}>
+                  <ForumOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("sidebar.chats")} primaryTypographyProps={{ variant: "body2" }} />
+                {chatsUnread > 0 && <UnreadPill count={chatsUnread} />}
+              </ListItemButton>
+            ))}
+
           {collapsed ? (
             <CollapsedNavIcon
               icon={<LocalOfferIcon fontSize="small" />}
@@ -394,26 +476,6 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
                 <LocalOfferIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText primary={t("sidebar.tags")} primaryTypographyProps={{ variant: "body2" }} />
-            </ListItemButton>
-          )}
-
-          {collapsed ? (
-            <CollapsedNavIcon
-              icon={<DownloadIcon fontSize="small" />}
-              label={t("sidebar.downloads")}
-              selected={onDownload}
-              onClick={() => navigate("/downloads")}
-            />
-          ) : (
-            <ListItemButton
-              selected={onDownload}
-              onClick={() => navigate("/downloads")}
-              sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onDownload) }}
-            >
-              <ListItemIcon sx={{ minWidth: 30 }}>
-                <DownloadIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={t("sidebar.downloads")} primaryTypographyProps={{ variant: "body2" }} />
             </ListItemButton>
           )}
 
@@ -437,6 +499,47 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
                 <ListItemText primary={t("sidebar.tools")} primaryTypographyProps={{ variant: "body2" }} />
               </ListItemButton>
             ))}
+
+          {showStudio &&
+            (collapsed ? (
+              <CollapsedNavIcon
+                icon={<DesignServicesOutlinedIcon fontSize="small" />}
+                label={t("sidebar.studio")}
+                selected={onStudio}
+                onClick={() => navigate("/studio")}
+              />
+            ) : (
+              <ListItemButton
+                selected={onStudio}
+                onClick={() => navigate("/studio")}
+                sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onStudio) }}
+              >
+                <ListItemIcon sx={{ minWidth: 30 }}>
+                  <DesignServicesOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={t("sidebar.studio")} primaryTypographyProps={{ variant: "body2" }} />
+              </ListItemButton>
+            ))}
+
+          {collapsed ? (
+            <CollapsedNavIcon
+              icon={<DownloadIcon fontSize="small" />}
+              label={t("sidebar.downloads")}
+              selected={onDownload}
+              onClick={() => navigate("/downloads")}
+            />
+          ) : (
+            <ListItemButton
+              selected={onDownload}
+              onClick={() => navigate("/downloads")}
+              sx={{ borderRadius: 1, mb: 0.5, ...navRowSx(onDownload) }}
+            >
+              <ListItemIcon sx={{ minWidth: 30 }}>
+                <DownloadIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary={t("sidebar.downloads")} primaryTypographyProps={{ variant: "body2" }} />
+            </ListItemButton>
+          )}
 
           {/* Bookmarked tags + collections, interleaved in the user's own manual order -- only
               once any exist, so an empty section never shows just a bare divider with nothing

@@ -95,12 +95,18 @@
       "tags": "Žymos",
       "downloads": "Atsisiuntimai",
       "bookmarks": "Įsimintos",
-      "tools": "Įrankiai"
+      "tools": "Įrankiai",
+      "studio": "Studija",
+      "explore": "Naršyti",
+      "chats": "Pokalbiai",
+      "chatsUnread_one": "Pokalbiai, {{count}} neperskaityta žinutė",
+      "chatsUnread_few": "Pokalbiai, {{count}} neperskaitytos žinutės",
+      "chatsUnread_many": "Pokalbiai, {{count}} neperskaitytos žinutės",
+      "chatsUnread_other": "Pokalbiai, {{count}} neperskaitytų žinučių"
     },
     "uploadBar": {
       "uploading": "Įkeliama…",
       "linkPlaceholder": "Įklijuokite modelio nuorodą (MakerWorld, Printables, Thingiverse, MyMiniFactory...)",
-      "importing": "Importuojama…",
       "importFailed": "Importuoti nepavyko",
       "uploadFailed": "Nepavyko įkelti: {{files}}",
       "multiplateImportFailedWithMessage": "Kelių failų importas ({{message}})",
@@ -121,6 +127,7 @@
       "prompt": "Kaip norėtumėte tvarkyti šį zip failą?",
       "importAsZip": "Importuoti kaip zip",
       "importAndUnzip": "Importuoti ir išpakuoti",
+      "reading": "Skaitomas zip failas…",
       "selectedCount": "Pažymėta {{selected}} iš {{total}}",
       "selectAll": "Pažymėti visus",
       "clear": "Išvalyti",
@@ -140,6 +147,7 @@
       "selectAll": "Pažymėti visus",
       "clear": "Išvalyti",
       "alreadyImported": "Jau bibliotekoje",
+      "blocked": "Negalima importuoti",
       "noEntries": "Šioje kolekcijoje modelių nerasta.",
       "importSelected": "Importuoti pažymėtus",
       "importing": "Importuojama...",
@@ -355,7 +363,13 @@
           "adminOff": "Administratorius šiame Thingport išjungė MCP.",
           "adminReadOnly": "Administratorius leidžia tik skaitančius įrankius.",
           "copyCommand": "Kopijuoti komandą",
-          "reads": "Skaito biblioteką"
+          "reads": "Skaito biblioteką",
+          "studio": {
+            "heading": "Studija",
+            "title": "Studijos projektai",
+            "description": "Skaityti, kurti ir keisti jūsų Studijos projektus žingsnis po žingsnio, kaip galite puslapyje.",
+            "confirm": "Su šiuo raktu prijungtas asistentas galės kurti, keisti ir trinti jūsų Studijos projektus kiekvieną kartą jūsų neklausdamas. Jūsų modelių jis keisti negali."
+          }
         },
         "rest": {
           "heading": "Leidimai",
@@ -386,7 +400,7 @@
             },
             "collections": {
               "title": "Kolekcijos",
-              "description": "Jūsų kolekcijos ir kas jose yra."
+              "description": "Jūsų kolekcijos ir kas jose yra, ir tos, kuriomis dalijasi kiti."
             },
             "tags": {
               "title": "Žymos",
@@ -410,11 +424,15 @@
             },
             "imports": {
               "title": "Importai",
-              "description": "Vykdomų importų eiga."
+              "description": "Jūsų importavimo eilė ir importų eiga."
             },
             "other": {
               "title": "Visa kita",
               "description": "Jūsų nustatymai, pranešimai, DI pasiūlymai ir visa, kas neišvardyta aukščiau."
+            },
+            "chats": {
+              "title": "Pokalbiai",
+              "description": "Jūsų pokalbiai ir jų žinutės. Naujam raktui nepažymima."
             }
           }
         },
@@ -463,11 +481,17 @@
         "disconnectMessage": "Negalėsite prisijungti per {{name}}, kol vėl jo neprijungsite."
       }
     },
+    "retiredMakerworldCookie": {
+      "title": "Palikti šį „MakerWorld“ prisijungimą?",
+      "message": "Senesnė „Thingport“ versija šioje naršyklėje laikė „MakerWorld“ prisijungimą. Išsaugokite jį paskyroje {{name}} tik jei jis jūsų: bendrai naudojamoje naršyklėje jis gali būti kito žmogaus.",
+      "keep": "Išsaugoti mano paskyroje",
+      "discard": "Atmesti"
+    },
     "addMenu": {
       "uploadFiles": "Įkelti failus",
       "uploadFolder": "Įkelti aplanką",
       "importTitle": "Importuoti iš nuorodos",
-      "disabledWhileImporting": "Palaukite, kol baigsis dabartinis importas, prieš pradėdami kitą",
+      "finishFirst": "Pirmiausia užbaikite tai, ką pridedate",
       "exampleLinksFor": "Pavyzdinės {{provider}} nuorodos",
       "exampleModel": "Modelis",
       "exampleCollection": "Kolekcija",
@@ -611,34 +635,276 @@
         "stop": "Stabdyti aprašymų tobulinimą"
       }
     },
-    "importProgress": {
-      "starting": "Pradedamas importas…",
-      "label": "{{phrase}} {{processed}} iš {{total}}",
-      "phrases": [
-        "Thingportuojami modeliai…",
-        "Atveriami vartai į modelį…",
-        "Failai perkeliami į jūsų biblioteką…",
-        "Išpakuojamas 3MF…",
-        "Skaičiuojamos plokštės…",
-        "Ieškoma Benchy…",
-        "Modeliai gelbstimi iš interneto…",
-        "Teleportuojama be gijos…",
-        "Gaudomi STL failai, kol nepabėgo…",
-        "Nuvalomos miniatiūros…"
-      ],
-      "tooltip": "{{imported}} importuota, {{alreadyInLibrary}} jau bibliotekoje, {{failedCount}} nepavyko. Spustelėkite, kad pamatytumėte eilę.",
-      "done": "Importuota {{imported}}, {{alreadyInLibrary}} jau bibliotekoje. Spustelėkite, kad pamatytumėte eilę.",
-      "doneWithFailures": "Importuota {{imported}}, {{alreadyInLibrary}} jau bibliotekoje, {{failedCount}} nepavyko. Spustelėkite, kad pamatytumėte, kurios ir kodėl.",
-      "tooltipFailed": "{{failedCount}} nuorodos nepavyko. Spustelėkite, kad pamatytumėte, kurios ir kodėl.",
-      "retryFailed": "Pakartoti nepavykusius",
-      "dismiss": "Uždaryti",
-      "queueTitle": "Importo eilė",
-      "queueEmpty": "Šioje eilėje nėra nuorodų.",
-      "queueClose": "Uždaryti",
-      "itemPending": "laukiama",
-      "itemRunning": "importuojama",
-      "itemDone": "importuota",
-      "itemFailed": "nepavyko"
+    "importQueue": {
+      "title": "Importavimo eilė",
+      "titleEveryone": "Serverio importavimo eilė",
+      "importingNow": "Dabar importuojama: {{count}}",
+      "settings": "Eilės nustatymai",
+      "sectionsLabel": "Eilės skiltys",
+      "autoStart": "Automatiškai paleisti nuorodas iš Grab",
+      "autoStartOn": "Naujos nuorodos iškart patenka į eilę.",
+      "autoStartOff": "Naujos nuorodos lieka sulaikytos, kol jas paleisite.",
+      "scope": {
+        "label": "Kieno importai",
+        "mine": "Mano",
+        "everyone": "Visų"
+      },
+      "people": "Žmonės",
+      "everyone": "Visi",
+      "loadFailed": "Nepavyko įkelti importavimo eilės.",
+      "sentFromGrab": "Išsiųsta iš Thingport Grab",
+      "untitled": "Importas be pavadinimo",
+      "sections": {
+        "run": "Importuojama",
+        "att": "Reikia dėmesio",
+        "wait": "Laukia",
+        "done": "Baigta"
+      },
+      "panel": {
+        "run": {
+          "sub": "Kas vykdoma dabar, gyvai."
+        },
+        "att": {
+          "sub": "Nepavykę arba nutraukti importai ir ką daryti toliau."
+        },
+        "wait": {
+          "subMine": "Vienu metu vykdomas vienas importas, eilės tvarka. Kitų žmonių importai lieka privatūs.",
+          "subAll": "Visame serveryje vienu metu vykdomas vienas importas, eilės tvarka."
+        },
+        "done": {
+          "sub": "Pasibaigę importai."
+        }
+      },
+      "empty": {
+        "running": {
+          "busyTitle": "Vykdomas kitas importas",
+          "busyNext": "Jūsų kitas importas yra #{{n}} eilėje ir prasidės savaime.",
+          "busyNone": "Importai vykdomi po vieną. Jūsų importai prasidės savaime, kai ateis jų eilė.",
+          "title": "Niekas neimportuojama",
+          "text": "Kol importai vykdomi, jų eiga rodoma čia."
+        },
+        "att": {
+          "title": "Viskas tvarkoje",
+          "text": "Čia patenka nepavykę ir nutraukti importai."
+        },
+        "wait": {
+          "title": "Niekas nelaukia",
+          "text": "Nauji importai čia laukia savo eilės. Nuorodos, išsiųstos iš Thingport Grab mygtuku „Pridėti į eilę“, lieka sulaikytos, kol jas paleisite.",
+          "textAuto": "Nauji importai čia laukia savo eilės."
+        },
+        "done": {
+          "title": "Dar niekas nebaigta",
+          "text": "Baigti importai lieka čia, kol juos išvalysite."
+        }
+      },
+      "group": {
+        "inLine": "Eilėje",
+        "onHold": "Sulaikyti",
+        "inLineHintMine": "Jūsų numeris tik mažėja",
+        "inLineHintAll": "Prasideda savaime",
+        "onHoldHint": "Nebus vykdomi, kol nepaleisite",
+        "onHoldHintAuto": "Naujos Grab nuorodos čia nepatenka"
+      },
+      "line": {
+        "now": "Dabar",
+        "yourImport": "Jūsų importas: {{label}}",
+        "private": "Privatus importas",
+        "privateMany_one": "{{count}} privatus importas",
+        "privateMany_few": "{{count}} privatūs importai",
+        "privateMany_other": "{{count}} privačių importų",
+        "nextUp": "Kitas eilėje",
+        "place": "#{{n}} eilėje",
+        "ahead_one": "Prieš jį {{count}} importas",
+        "ahead_few": "Prieš jį {{count}} importai",
+        "ahead_other": "Prieš jį {{count}} importų"
+      },
+      "unit": {
+        "link_one": "{{count}} nuoroda",
+        "link_few": "{{count}} nuorodos",
+        "link_other": "{{count}} nuorodų",
+        "model_one": "{{count}} modelis",
+        "model_few": "{{count}} modeliai",
+        "model_other": "{{count}} modelių"
+      },
+      "action": {
+        "hold": "Sulaikyti",
+        "pause": "Pristabdyti",
+        "pauseHint": "Pristabdyti po dabartinės nuorodos",
+        "start": "Paleisti",
+        "retry": "Kartoti",
+        "retryMany": "Kartoti {{count}}",
+        "pauseAll": "Pristabdyti visus",
+        "retryAll": "Kartoti visus ({{count}})",
+        "startAll": "Paleisti visus sulaikytus ({{count}})",
+        "clearFinished": "Išvalyti baigtus ({{count}})"
+      },
+      "menu": {
+        "more": "Daugiau veiksmų: {{label}}",
+        "openSource": "Atverti šaltinį",
+        "openModel": "Atverti modelį",
+        "openCollection": "Atverti kolekciją",
+        "delete": "Ištrinti importą"
+      },
+      "hub": {
+        "open": "Atidaryti",
+        "attention": "Dėmesio",
+        "nothing": "Niekas neimportuojama"
+      },
+      "clear": {
+        "title": "Išvalyti baigtus importus?",
+        "message": "Jie dings iš šio sąrašo kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
+        "messageEveryone_one": "Bus išvalytas {{count}} baigtas importas, kad ir kieno jis būtų, kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekose.",
+        "messageEveryone_few": "Bus išvalyti {{count}} baigti importai, kad ir kieno jie būtų, kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekose.",
+        "messageEveryone_other": "Bus išvalyta {{count}} baigtų importų, kad ir kieno jie būtų, kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekose.",
+        "messagePerson_one": "Bus išvalytas {{count}} baigtas importas ({{name}}) kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
+        "messagePerson_few": "Bus išvalyti {{count}} baigti importai ({{name}}) kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
+        "messagePerson_other": "Bus išvalyta {{count}} baigtų importų ({{name}}) kartu su nepavykusiomis nuorodomis, kurių vėliau nebebus galima pakartoti. Jau importuoti modeliai lieka bibliotekoje.",
+        "confirm": "Išvalyti"
+      },
+      "finishedList": {
+        "newest": "Rodoma naujausių: {{shown}} iš {{total}}",
+        "older_one": "{{count}} senesnis importas čia nerodomas",
+        "older_few": "{{count}} senesni importai čia nerodomi",
+        "older_other": "{{count}} senesnių importų čia nerodoma"
+      },
+      "delete": {
+        "title": "Ištrinti šį importą?",
+        "message": "„{{label}}“ bus pašalintas iš eilės. Jau importuoti modeliai lieka bibliotekoje.",
+        "messageSync": "„{{label}}“ bus pašalintas iš eilės visam laikui: sinchronizavimas šių nuorodų nebesugrąžins. Jau importuoti modeliai lieka bibliotekoje.",
+        "confirm": "Ištrinti"
+      },
+      "links": {
+        "show_one": "Rodyti {{count}} nuorodą",
+        "show_few": "Rodyti {{count}} nuorodas",
+        "show_other": "Rodyti {{count}} nuorodų",
+        "hide_one": "Slėpti {{count}} nuorodą",
+        "hide_few": "Slėpti {{count}} nuorodas",
+        "hide_other": "Slėpti {{count}} nuorodų",
+        "remove": "Pašalinti nuorodą",
+        "empty": "Šioje eilėje nėra nuorodų.",
+        "loadFailed": "Nepavyko įkelti nuorodų."
+      },
+      "itemStatus": {
+        "PENDING": "laukia",
+        "RUNNING": "importuojama",
+        "DONE": "importuota",
+        "FAILED": "nepavyko",
+        "cutOff": "nutraukta"
+      },
+      "linkScope": {
+        "designer": "Visi dizainerio spausdinimo profiliai",
+        "all": "Dizainerio ir bendruomenės spausdinimo profiliai"
+      },
+      "syncTag": "SINCH",
+      "syncTagHint": "Sinchronizuojamos kolekcijos vykdomos šalia eilės, todėl eilės niekada nestabdo",
+      "syncWaitingHelp": "Sinchronizuojamos kolekcijos vykdomos po vieną šalia eilės ir užleidžia vietą, kol eilė importuoja iš tos pačios svetainės",
+      "type": {
+        "LINKS": "Nuorodos",
+        "COLLECTION": "Kolekcija",
+        "ZIP": "ZIP",
+        "PROFILES": "Spausdinimo profiliai",
+        "SINGLE": "Viena nuoroda"
+      },
+      "status": {
+        "running": "Importuojama",
+        "queued": "Eilėje",
+        "paused": "Sulaikytas",
+        "pausing": "Stabdomas",
+        "error": "Klaida",
+        "partial": "Dalis nepavyko",
+        "done": "Baigtas",
+        "unknown": "Nežinoma"
+      },
+      "statusHint": {
+        "running": "Dabar importuojama.",
+        "queued": "Prasidės savaime, kai ateis jo eilė.",
+        "paused": "Nebus vykdomas, kol kas nors jo nepaleis.",
+        "pausing": "Baigia dabartinę nuorodą ir sustoja.",
+        "error": "Importas nepavyko.",
+        "partial": "Baigta, bet kai kurios nuorodos nepavyko.",
+        "partialModels": "Baigta, bet kai kurių modelių nepavyko importuoti.",
+        "done": "Visos nuorodos importuotos.",
+        "doneModels": "Visi modeliai importuoti.",
+        "unknown": "Ši Thingport versija tokios būsenos nežino."
+      },
+      "progress": "{{processed}} iš {{total}}",
+      "progressFailed": "{{processed}} iš {{total}}, nepavyko {{failed}}",
+      "why": {
+        "linksFailed_one": "Nepavyko {{count}} nuoroda. Atverkite nuorodas, kad pamatytumėte kodėl.",
+        "linksFailed_few": "Nepavyko {{count}} nuorodos. Atverkite nuorodas, kad pamatytumėte kodėl.",
+        "linksFailed_other": "Nepavyko {{count}} nuorodų. Atverkite nuorodas, kad pamatytumėte kodėl.",
+        "modelsFailed_one": "Nepavyko {{count}} modelis.",
+        "modelsFailed_few": "Nepavyko {{count}} modeliai.",
+        "modelsFailed_other": "Nepavyko {{count}} modelių.",
+        "interruptedNoRetry": "Nutraukta paleidus serverį iš naujo. Dalis failų jau gali būti jūsų bibliotekoje.",
+        "interruptedNoRetryOwner": "Nutraukta paleidus serverį iš naujo. Dalis failų jau gali būti šio žmogaus bibliotekoje.",
+        "interrupted": "Nutraukta paleidus serverį iš naujo. Modelis jūsų bibliotekoje gali būti nepilnas: prieš kartodami jį ištrinkite.",
+        "interruptedOwner": "Nutraukta paleidus serverį iš naujo. Modelis šio žmogaus bibliotekoje gali būti nepilnas: prieš kartojant jį reikėtų ištrinti.",
+        "interruptedZip": "Nutraukta paleidus serverį iš naujo. Dalis modelių jau importuoti. Pradėkite naują importą tik su trūkstamais failais.",
+        "stalled": "Šis importas nustojo reaguoti, todėl eilė pajudėjo toliau. Jei kartoti nesiūloma, paleiskite serverį iš naujo.",
+        "noRequest": "Šis senesnis importas neturi išsaugotos užklausos."
+      },
+      "when": {
+        "started": "Pradėta {{time}}",
+        "startedJustNow": "Pradėta ką tik",
+        "added": "Pridėta {{time}}",
+        "addedJustNow": "Pridėta ką tik",
+        "waiting": "Laukia",
+        "onHold": "Sulaikytas",
+        "justNow": "Ką tik",
+        "today": "Šiandien, {{time}}",
+        "yesterday": "Vakar"
+      },
+      "indicator": {
+        "importing": "Importuojama, {{pct}} %",
+        "importingNoPercent": "Importuojama",
+        "inLine": "Eilėje: {{count}}",
+        "needsAttention_one": "Reikia dėmesio: {{count}}",
+        "needsAttention_few": "Reikia dėmesio: {{count}}",
+        "needsAttention_other": "Reikia dėmesio: {{count}}",
+        "nextUp": "Jūsų importas bus kitas",
+        "nextPlace": "Jūsų kitas importas yra #{{n}} eilėje",
+        "finished": "Visi importai baigti",
+        "onHold": "Sulaikyta: {{count}}",
+        "syncing": "Atnaujinama sinchronizuojama kolekcija"
+      },
+      "toast": {
+        "added": "Pridėta į eilę. Jis bus kitas.",
+        "addedPlace": "Pridėta į eilę. Jis yra #{{n}} eilėje.",
+        "started": "Importas pradėtas.",
+        "open": "Atverti",
+        "tryAgain": "Bandyti dar kartą",
+        "retriedAll_one": "Vėl eilėje: {{count}} importas.",
+        "retriedAll_few": "Vėl eilėje: {{count}} importai.",
+        "retriedAll_other": "Vėl eilėje: {{count}} importų.",
+        "startedAll_one": "Į eilę pridėtas {{count}} importas.",
+        "startedAll_few": "Į eilę pridėti {{count}} importai.",
+        "startedAll_other": "Į eilę pridėta {{count}} importų.",
+        "cleared_one": "Išvalytas {{count}} baigtas importas.",
+        "cleared_few": "Išvalyti {{count}} baigti importai.",
+        "cleared_other": "Išvalyta {{count}} baigtų importų.",
+        "finishFailed": "Nepavyko importuoti „{{name}}“",
+        "finishedPlain": "„{{name}}“ baigtas",
+        "finishedImported_one": "Importuotas {{count}} modelis.",
+        "finishedImported_few": "Importuoti {{count}} modeliai.",
+        "finishedImported_other": "Importuota {{count}} modelių.",
+        "finishedWithExisting": "Importuota {{imported}}, {{alreadyInLibrary}} jau bibliotekoje.",
+        "finishedWithFailures": "Importuota {{imported}}, {{alreadyInLibrary}} jau bibliotekoje, nepavyko {{failedCount}}.",
+        "finishedSomeFailed_one": "Importuotas {{count}} modelis, nepavyko {{failedCount}}.",
+        "finishedSomeFailed_few": "Importuoti {{count}} modeliai, nepavyko {{failedCount}}.",
+        "finishedSomeFailed_other": "Importuota {{count}} modelių, nepavyko {{failedCount}}.",
+        "finishedAllFailed_one": "Nepavyko importuoti {{count}} modelio.",
+        "finishedAllFailed_few": "Nepavyko importuoti {{count}} modelių.",
+        "finishedAllFailed_other": "Nepavyko importuoti {{count}} modelių.",
+        "finishedExistingFailed": "{{alreadyInLibrary}} jau bibliotekoje, nepavyko {{failedCount}}.",
+        "finishedOnlyExisting": "{{alreadyInLibrary}} jau bibliotekoje.",
+        "finishedMany_one": "Baigtas {{count}} importas.",
+        "finishedMany_few": "Baigti {{count}} importai.",
+        "finishedMany_other": "Baigta {{count}} importų.",
+        "finishedManyFailed_one": "Baigtas {{count}} importas, su klaidomis.",
+        "finishedManyFailed_few": "Baigti {{count}} importai, kai kurie su klaidomis.",
+        "finishedManyFailed_other": "Baigta {{count}} importų, kai kurie su klaidomis."
+      }
     },
     "dashboard": {
       "loadError": "Nepavyko įkelti valdymo skydo.",
@@ -1215,7 +1481,10 @@
             "problems": {
               "not_configured": "Nesukonfigūruota. Importai veikia, kol tiekėjas neparodo Cloudflare patikros; nurodykite FlareSolverr adresą, kad jie veiktų ir tada.",
               "unreachable": "FlareSolverr neatsako. Patikrinkite, ar veikia jo konteineris ir ar adresas skiltyje „Ryšiai > FlareSolverr“ teisingas, įskaitant prievadą (dažniausiai 8191).",
-              "timeout": "FlareSolverr laiku neatsakė. Jis gali dar tik pasileisti arba būti užimtas."
+              "timeout": "FlareSolverr laiku neatsakė. Jis gali dar tik pasileisti arba būti užimtas.",
+              "insecure": "Veikia, bet nešifruotu HTTP į kitą kompiuterį, todėl tiekėjų slapukai ir API raktai tinklu keliauja nešifruoti. Įjunkite FlareSolverr HTTPS arba paleiskite jį tame pačiame Compose rinkinyje kaip http://flaresolverr:8191.",
+              "insecure_refused": "Įjungtas FLARESOLVERR_REQUIRE_HTTPS, todėl šis nešifruotas HTTP URL atmetamas ir jam nieko nesiunčiama. Pakeiskite URL į HTTPS arba pašalinkite kintamąjį.",
+              "https_ready": "Ryšys saugus. Nustatykite FLARESOLVERR_REQUIRE_HTTPS=true, kad nuo šiol nesaugūs sprendiklio URL būtų atmetami."
             }
           },
           "thingiverse": {
@@ -1499,7 +1768,7 @@
         "heading": "DI",
         "connection": {
           "heading": "Modeliai",
-          "subtitle": "Su OpenAI suderinamos paslaugos, kurias naudoja Thingport DI funkcijos.",
+          "subtitle": "DI, kuriuos naudoja Thingport funkcijos: su OpenAI suderinamos paslaugos arba Claude.",
           "gridHint": "Spustelėkite DI, kad jis taptų numatytuoju. Dukart spustelėkite, kad redaguotumėte ar patikrintumėte, arba spustelėkite dešiniuoju mygtuku, kad pamatytumėte daugiau.",
           "add": "Pridėti DI modelį",
           "addTitle": "Pridėti DI modelį",
@@ -1546,7 +1815,20 @@
           "testFailed": "Ryšio patikra nepavyko.",
           "save": "Išsaugoti",
           "saving": "Tikrinamas ryšys…",
-          "failed": "Nepavyko įkelti arba išsaugoti DI."
+          "failed": "Nepavyko įkelti arba išsaugoti DI.",
+          "kind": "Tipas",
+          "kinds": {
+            "openai": "Suderinamas su OpenAI",
+            "anthropic": "Claude"
+          },
+          "baseUrlHintClaude": "Palikite kaip yra, nebent Claude pasiekiate per tarpinį serverį.",
+          "keyRequiredClaude": "Būtinas: Anthropic API raktas iš console.anthropic.com, skiltyje API keys.",
+          "modelsNeedKey": "Įveskite API raktą, kad pamatytumėte, kuriuos modelius jis gali naudoti.",
+          "effortClaude": "Pastangos",
+          "effortClaudeHint": "Kiek Claude mąsto prieš atsakydamas. Žemesnis lygis greitesnis ir pigesnis, o šioms užduotims retai reikia daugiau nei „Žemas“.",
+          "effortClaudeDefault": "Modelio numatytasis (nieko nesiųsti)",
+          "vision": "Mato paveikslėlius",
+          "visionHelp": "Ar šis modelis priima paveikslėlius užklausoje. Studio asistentas siūlo pridėti paveikslėlių tik tokiam DI. Naujas DI pradeda pagal tai, ką rodo jo modelio pavadinimas (Claude, GPT-4o ir naujesni, Gemini, Qwen-VL, LLaVA, Gemma 3…): pakeiskite, kad atitiktų modelį."
         }
       },
       "aiFeatures": {
@@ -1565,7 +1847,9 @@
         "manage": "Valdymas",
         "descriptions": "Patobulinti aprašymai",
         "descriptionsDescription": "Naudodamas DI sutvarko modelių aprašymus importuojant arba paleidus: pašalina savireklamą, išverčia ir sutvarko juos, kad peržiūrėtumėte arba iš karto pritaiko.",
-        "privacy": "Naudojant trečiosios šalies API, modelių pavadinimai, aprašymai ir žymos perduodami už šio serverio ribų. Paveikslėliai siunčiami tik įjungus šią parinktį."
+        "privacy": "Naudojant trečiosios šalies API, modelių pavadinimai, aprašymai ir žymos perduodami už šio serverio ribų. Paveikslėliai siunčiami tik įjungus šią parinktį.",
+        "studio": "Studijos asistentas",
+        "studioDescription": "Leidžia Studijos lauke paprašyti DI kurti ir keisti projektus žingsnis po žingsnio, naudojant jūsų siūlomus DI."
       },
       "aiCategorization": {
         "heading": "DI kategorizavimas",
@@ -1740,6 +2024,7 @@
       },
       "flaresolverr": {
         "tabLabel": "FlareSolverr",
+        "trustDisclosure": "Sukonfigūruotas sprendiklis gauna tiekėjų slapukus ir URL esančius API raktus; jo žurnalai gali juos įrašyti. Jo naršyklės veiksmai ir užklausos trečiosioms šalims nepatenka į Thingport atliekamą kiekvieno peradresavimo paskirties patikrą. Naudokite privatų, izoliuotą sprendiklį.",
         "helpText": "FlareSolverr padeda importuojant apeiti Cloudflare patikras MakerWorld ir Thingiverse svetainėse. Įveskite jo URL (su /v1 arba be jo) arba palikite tuščią, kad išjungtumėte. Prieš išsaugant patikrinama, ar FlareSolverr atsako.",
         "urlLabel": "URL",
         "urlPlaceholder": "http://flaresolverr:8191",
@@ -1829,7 +2114,9 @@
           "import_completed": "Importas baigtas",
           "model_edited": "Modelis redaguotas",
           "model_reimported": "Gauta trūkstama informacija",
+          "model_linked": "Modelis susietas su tiekėju",
           "model_deleted": "Modelis ištrintas",
+          "models_merged": "Modeliai sujungti",
           "models_repaired": "Modelių taisymas",
           "collection_created": "Kolekcija sukurta",
           "collection_edited": "Kolekcija redaguota",
@@ -1855,7 +2142,15 @@
           "mcp_access_changed": "Pakeitė MCP prieigą",
           "file_reuse_changed": "Pakeitė, kaip saugomi vienodi failai",
           "file_reuse_backfill_started": "Pradėjo tikrinti išsaugotus failus dėl vienodo turinio",
-          "custom_widgets_changed": "Pakeista, kurie pasirinktiniai valdikliai leidžiami"
+          "custom_widgets_changed": "Pakeista, kurie pasirinktiniai valdikliai leidžiami",
+          "tool_installed": "Įrankis įdiegtas",
+          "tool_uninstalled": "Įrankis pašalintas",
+          "tools_access_changed": "Pakeista prieiga prie įrankių",
+          "model_copied": "Modelis nukopijuotas",
+          "social_settings_changed": "Pakeistos socialinės funkcijos",
+          "chat_room_created": "Sukurtas pokalbių kambarys",
+          "chat_room_edited": "Redaguotas pokalbių kambarys",
+          "chat_room_deleted": "Ištrintas pokalbių kambarys"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -1875,7 +2170,11 @@
         "aiRunStopped": "(sustabdyta)",
         "viaProvider": "per {{provider}}",
         "merged": "{{merged}} → {{name}}",
-        "repairSummary": "{{action}}: pataisyta {{repaired}}, ištrinta {{deleted}}, nepavyko {{failed}}"
+        "repairSummary": "{{action}}: pataisyta {{repaired}}, ištrinta {{deleted}}, nepavyko {{failed}}",
+        "socialOn": "Įjungta",
+        "socialOff": "Išjungta",
+        "chatsOn": "Pokalbiai įjungti",
+        "chatsOff": "Pokalbiai išjungti"
       },
       "rendering": {
         "heading": "Atvaizdavimas",
@@ -1945,77 +2244,6 @@
               "desc": "Mažiau nei 1 mm arba daugiau nei 2 m: tikriausiai eksportuotas netinkamais vienetais."
             }
           }
-        }
-      },
-      "importQueue": {
-        "heading": "Importavimo eilė",
-        "loadFailed": "Nepavyko įkelti importavimo eilės.",
-        "empty": "Eilė tuščia. Nuorodos, išsiųstos iš Thingport Grab mygtuku „Pridėti į eilę“, laukia čia, kol jas paleisite.",
-        "emptyFilter": "Nėra importų pagal šį filtrą.",
-        "startAll": "Paleisti visus ({{count}})",
-        "retryAll": "Kartoti visus nepavykusius ({{count}})",
-        "pauseAll": "Pristabdyti visus",
-        "clearFinished": "Išvalyti baigtus",
-        "startedAll": "Paleista importų: {{count}}. Jie vykdomi po vieną.",
-        "retriedAll": "Kartojama importų: {{count}}, po vieną.",
-        "cleared": "Išvalyta baigtų importų: {{count}}.",
-        "bulkRunning": "Importai vykdomi po vieną, dar laukia: {{count}}.",
-        "filter": {
-          "all": "Visi",
-          "paused": "Pristabdyti",
-          "running": "Vykdomi",
-          "failed": "Su klaidomis",
-          "done": "Baigti"
-        },
-        "columnSource": "Importas",
-        "columnUser": "Naudotojas",
-        "columnStatus": "Būsena",
-        "columnProgress": "Eiga",
-        "columnCreated": "Sukurta",
-        "columnActions": "Veiksmai",
-        "progress": "{{processed}} iš {{total}}, importuota {{imported}}, nepavyko {{failed}}",
-        "type": {
-          "LINKS": "Nuorodos",
-          "COLLECTION": "Kolekcija",
-          "ZIP": "ZIP",
-          "PROFILES": "Spausdinimo profiliai"
-        },
-        "status": {
-          "paused": "Pristabdytas",
-          "pausing": "Stabdomas",
-          "running": "Vykdomas",
-          "stalled": "Įstrigęs",
-          "error": "Klaida",
-          "done": "Baigtas",
-          "doneWithFailures": "Baigtas su klaidomis"
-        },
-        "statusHint": {
-          "paused": "Laukia paleidimo.",
-          "pausing": "Baigia dabartinę nuorodą ir sustoja.",
-          "running": "Dabar importuojama.",
-          "stalled": "Nutrauktas paleidus serverį iš naujo. Pristabdykite ir paleiskite vėl, kad užbaigtumėte.",
-          "error": "Importas nepavyko.",
-          "done": "Visos nuorodos importuotos.",
-          "doneWithFailures": "Baigta, bet kai kurios nuorodos nepavyko. Pakartokite jas, kai priežastis bus pašalinta."
-        },
-        "start": "Paleisti",
-        "pause": "Pristabdyti po dabartinės nuorodos",
-        "retry": "Kartoti nepavykusias ({{count}})",
-        "delete": "Ištrinti",
-        "deleteTitle": "Ištrinti šį importą?",
-        "deleteMessage": "Jo nuorodos ({{count}}) pašalinamos iš eilės. Jau importuoti modeliai lieka bibliotekoje.",
-        "showLinks": "Rodyti nuorodas",
-        "hideLinks": "Slėpti nuorodas",
-        "removeLink": "Pašalinti iš eilės",
-        "itemStatus": {
-          "PENDING": "laukia",
-          "RUNNING": "importuojama",
-          "DONE": "importuota",
-          "FAILED": "nepavyko"
-        },
-        "scope": {
-          "designer": "Visi dizainerio spausdinimo profiliai",
-          "all": "Dizainerio ir bendruomenės spausdinimo profiliai"
         }
       },
       "storageBrowser": {
@@ -2202,6 +2430,8 @@
           "outdated_few": "{{count}} senesnės versijos",
           "outdated_many": "{{count}} senesnės versijos",
           "outdated_other": "{{count}} senesnės versijos",
+          "fromFolder": "Siūloma iš aplanko {{location}}",
+          "fromRepository": "Siūloma iš {{location}}",
           "source": "Žiūrėti kodą",
           "off": "Bendruomenės valdikliai išjungti: naudotojai negali jų įdiegti, o įdiegti nekraunami.",
           "empty": "Bendruomenės saugykloje dar nėra valdiklių.",
@@ -2298,6 +2528,44 @@
           "empty": "Kol kas niekas nesukūrė įrankio.",
           "off": "Naudotojų įrankiai išjungti.",
           "by": "{{name}} · {{email}}"
+        }
+      },
+      "studioAssistant": {
+        "offered": "Siūlomi modeliai",
+        "offeredHelp": "Iš jų renkamasi Studijos lauke. Naujas DI nesiūlomas, kol jo čia neįjungsite. Naudojant debesų DI, kiekviena užklausa apmokestinama jo paskyrai. „Kompaktiškas“ mažam vietiniam modeliui duoda keliolika pagrindinių įrankių (formos, perkėlimas, sujungimas, skylės) dešimtadaliu užklausos dydžio; užapvalinimams, apvalkalams ir eskizams reikia „Visų įrankių“. Claude gauna juos visus, o reikiamus susiranda paieška.",
+        "offerAria": "Siūlyti {{model}} Studijoje",
+        "default": "Numatytasis modelis",
+        "noneOffered": "Įjunkite bent vieną modelį, iš kurio būtų galima rinktis.",
+        "save": "Išsaugoti",
+        "failed": "Nepavyko įkelti ar išsaugoti Studijos asistento nustatymų.",
+        "toolsAll": "Visi įrankiai",
+        "toolsCompact": "Kompaktiškas",
+        "toolsAria": "Įrankiai, kuriuos gauna {{model}}"
+      },
+      "social": {
+        "label": "Socialinės funkcijos",
+        "summary": "Įjungia skiltį Naršyti ir viešas kolekcijas, kad šio serverio naudotojai galėtų dalytis modeliais tarpusavyje.",
+        "infoTitle": "Ką daro socialinės funkcijos",
+        "infoPublic": "Kolekcijos formoje atsiranda pasirinkimas Privati / Vieša. Naujos kolekcijos būna privačios.",
+        "infoExplore": "Kai naudotojų yra daugiau nei vienas, šoniniame meniu atsiranda Naršyti. Joje matyti besidalijantys žmonės, jų naujausi modeliai ir kolekcijos bei tai, kas kopijuojama dažniausiai.",
+        "infoCopy": "Kiti gali atidaryti, atsisiųsti ir pjaustyti viešos kolekcijos modelius bei įsidėti juos į savo kolekcijas. Taip sukuriama jų pačių kopija, kuri lieka, net jei originalas pakeičiamas, padaromas privačiu ar ištrinamas.",
+        "infoOff": "Išjungus vėl paslepiama viskas, kuo dalijamasi. Kiekviena kolekcija išsaugo savo nustatymą Vieša ar Privati tam kartui, kai vėl įjungsite.",
+        "loadFailed": "Nepavyko įkelti socialinių nustatymų.",
+        "saveFailed": "Nepavyko išsaugoti socialinių nustatymų.",
+        "settingsTitle": "Socialinių funkcijų nustatymai",
+        "settingsOff": "Įjunkite socialines funkcijas, kad galėtumėte keisti jų nustatymus",
+        "chats": {
+          "label": "Pokalbiai",
+          "summary": "Asmeninės žinutės tarp šio egzemplioriaus naudotojų ir administratorių kuriami kambariai.",
+          "switch": "Pokalbiai",
+          "infoTitle": "Ką daro pokalbiai",
+          "infoDirect": "Šoninėje juostoje atsiranda Pokalbiai. Bet kas gali rasti kitą naudotoją pagal vardą arba visą el. pašto adresą ir jam parašyti.",
+          "infoRooms": "Administratoriai kuria kambarius: viešus, kuriuos gali skaityti ir prie jų prisijungti bet kas, ir privačius – jų pasirinktiems žmonėms.",
+          "infoNotify": "Kas neskaito pokalbio, jo naujas žinutes mato šoninėje juostoje ir kaip pranešimą. Žinutės ateina per kelias sekundes, ne akimirksniu.",
+          "infoOff": "Išjungus paslepiami visi pokalbiai. Niekas neištrinama – įjungus vėl viskas sugrįžta.",
+          "onHint": "Įjungta: Pokalbiai yra visų šoninėje juostoje.",
+          "offHint": "Iš pradžių išjungta. Įjunkite, kad naudotojai galėtų susirašinėti.",
+          "infoModels": "Pokalbyje išsiųstą modelį gali atidaryti, atsisiųsti ir nusikopijuoti visi, kas gali skaityti tą pokalbį, kol žinutė lieka."
         }
       }
     },
@@ -2779,8 +3047,6 @@
         "count_one": "{{count}} modelis",
         "count_few": "{{count}} modeliai",
         "count_other": "{{count}} modelių",
-        "newName": "Nauja kolekcija",
-        "create": "Sukurti šią kolekciją",
         "cancel": "Atšaukti",
         "choose": "Pasirinkti"
       },
@@ -3016,6 +3282,823 @@
           "Atsisveikinama su šmėklomis…"
         ]
       }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Studijos įrankiai",
+        "shapes": "Formos",
+        "modify": "Keisti"
+      },
+      "emptyDesign": "Pridėkite formą iš įrankių juostos arba pradėkite eskizą",
+      "types": {
+        "box": "Dėžė",
+        "cylinder": "Cilindras",
+        "cone": "Kūgis",
+        "sphere": "Sfera",
+        "torus": "Toras",
+        "extrude": "Išstūmimas",
+        "boolean": "Derinys",
+        "sketch": "Eskizas",
+        "mesh": "Tinklelis",
+        "revolve": "Sukimas",
+        "press_pull": "Stūmimas/traukimas",
+        "fillet": "Užapvalinimas",
+        "chamfer": "Nuožula",
+        "hole": "Skylė",
+        "shell": "Apvalkalas",
+        "split": "Padalijimas",
+        "part": "Dalis",
+        "pattern": "Kartotinis",
+        "mirror": "Veidrodis",
+        "hull": "Apvalkalas",
+        "thread": "Sriegis",
+        "loft": "Perėjimas",
+        "sweep": "Tempimas"
+      },
+      "tree": {
+        "heading": "Elementai",
+        "empty": "Kol kas nieko nėra",
+        "expand": "Išskleisti",
+        "collapse": "Suskleisti"
+      },
+      "actions": {
+        "sketch": "Eskizas",
+        "extrude": "Išstumti",
+        "editSketch": "Redaguoti eskizą",
+        "drawOnSketch": "Piešti eskize",
+        "union": "Sujungti",
+        "subtract": "Atimti",
+        "intersect": "Sankirta",
+        "undo": "Atšaukti",
+        "redo": "Grąžinti",
+        "rename": "Pervadinti",
+        "duplicate": "Dubliuoti",
+        "delete": "Ištrinti",
+        "hide": "Slėpti",
+        "show": "Rodyti",
+        "add": {
+          "box": "Pridėti dėžę",
+          "cylinder": "Pridėti cilindrą",
+          "cone": "Pridėti kūgį",
+          "sphere": "Pridėti sferą",
+          "torus": "Pridėti torą"
+        },
+        "revolve": "Sukti",
+        "separate": "Atskirti dalis",
+        "hull": "Apgaubti",
+        "loft": "Perėjimas"
+      },
+      "shapes": {
+        "rectangle": "Stačiakampis",
+        "circle": "Apskritimas",
+        "polygon": "Daugiakampis",
+        "text": "Tekstas",
+        "trace": "Apvestas paveikslėlis",
+        "path": "Kontūras",
+        "line": "Linija",
+        "arc": "Lankas"
+      },
+      "planes": {
+        "XY": "Viršus",
+        "XZ": "Priekis",
+        "YZ": "Dešinė",
+        "FACE": "Ant sienos",
+        "faceHint": "Pasirinkite plokščią sieną"
+      },
+      "sketch": {
+        "on": "Eskizas: {{plane}}",
+        "tool": "Piešimo įrankis",
+        "finish": "Baigti",
+        "hint": {
+          "rectangle": "Vilkite, kad nupieštumėte stačiakampį",
+          "circle": "Vilkite nuo centro, kad nupieštumėte apskritimą",
+          "polygon": "Spustelėkite, kad pridėtumėte kampų; dvigubas spustelėjimas, Enter arba pirmasis kampas jį uždaro",
+          "line": "Spustelėkite, kad pridėtumėte taškus. Kreivei perjunkite į „Lankas“; uždarykite pirmuoju tašku, dukart spustelėdami arba Enter",
+          "arc": "Spustelėkite, kur lankas baigiasi, tada tašką, pro kurį jis eina. Tiesioms kraštinėms perjunkite į „Linija“; uždarykite pirmuoju tašku arba Enter"
+        }
+      },
+      "transform": {
+        "label": "Valdiklis",
+        "translate": "Perkelti",
+        "rotate": "Pasukti",
+        "scale": "Keisti mastelį",
+        "select": "Žymėti"
+      },
+      "view": {
+        "label": "Vaizdai",
+        "iso": "Izometrinis",
+        "top": "Iš viršaus",
+        "front": "Iš priekio",
+        "right": "Iš dešinės",
+        "fit": "Talpinti į vaizdą",
+        "navigation": "Vilkdami dešiniuoju mygtuku sukate vaizdą, viduriniu (arba Shift + dešiniuoju) – stumiate, ratuku – artinate. Vilkdami kairiuoju brėžiate žymėjimo rėmelį: iš kairės į dešinę jis pažymi tai, kas visiškai viduje, iš dešinės į kairę – ir tai, ką paliečia. Shift prideda prie pažymėtų."
+      },
+      "properties": {
+        "heading": "Savybės",
+        "none": "Pasirinkite elementą, kad jį redaguotumėte.",
+        "selectedCount_one": "Pasirinktas {{count}}",
+        "selectedCount_few": "Pasirinkti {{count}}",
+        "selectedCount_other": "Pasirinkta {{count}}",
+        "partOf": "Dalis:",
+        "name": "Pavadinimas",
+        "size": "Dydis",
+        "extrude": "Išstūmimas",
+        "extrudeHelp": "Kiek toli eskizas ištraukiamas, mm. Neigiamas atstumas – į kitą pusę.",
+        "operation": "Veiksmas",
+        "position": "Padėtis",
+        "rotation": "Pasukimas",
+        "scale": "Mastelis",
+        "plane": "Plokštuma",
+        "planeHelp": "Viršus (XY) išstumia aukštyn, priekis (XZ) – į priekį, dešinė (YZ) – į dešinę. Poslinkis perkelia plokštumą ta kryptimi.",
+        "shapes": "Formos",
+        "noShapes": "Kol kas nėra: pieškite eskize.",
+        "removeShape": "Pašalinti formą",
+        "hole": "Skylė",
+        "points_one": "{{count}} taškas",
+        "points_few": "{{count}} taškai",
+        "points_other": "{{count}} taškų",
+        "fields": {
+          "width": "Plotis",
+          "depth": "Gylis",
+          "height": "Aukštis",
+          "radius": "Spindulys",
+          "segments": "Segmentai",
+          "radius_bottom": "Apatinis spindulys",
+          "radius_top": "Viršutinis spindulys",
+          "major_radius": "Žiedo spindulys",
+          "minor_radius": "Vamzdžio spindulys",
+          "distance": "Atstumas",
+          "offset": "Poslinkis",
+          "angle": "Kampas",
+          "diameter": "Skersmuo",
+          "thickness": "Storis",
+          "count": "Kiekis",
+          "spacing": "Tarpas",
+          "grid_count": "Eilės",
+          "grid_spacing": "Tarpas tarp eilių",
+          "pitch": "Žingsnis",
+          "length": "Ilgis",
+          "clearance": "Tarpelis"
+        },
+        "mesh": {
+          "source": "Šaltinis",
+          "triangles_one": "{{count}} trikampis",
+          "triangles_few": "{{count}} trikampiai",
+          "triangles_other": "{{count}} trikampių",
+          "importedSize": "Įkeltas {{size}} mm dydžio",
+          "solid": "Uždaras kūnas",
+          "open": "Ne uždaras kūnas",
+          "openHelp": "Jame yra tarpų, todėl jį galima perkelti, keisti mastelį ir eksportuoti, bet ne sujungti su kitais kūnais.",
+          "parts_one": "{{count}} atskira dalis",
+          "parts_few": "{{count}} atskiros dalys",
+          "parts_other": "{{count}} atskirų dalių"
+        },
+        "cornerRadius": "Kampų spindulys"
+      },
+      "design": {
+        "none": "Nėra projekto",
+        "new": "Naujas projektas",
+        "open": "Atidaryti…",
+        "openTitle": "Atidaryti projektą",
+        "rename": "Pervadinti projektą",
+        "export": "Atsisiųsti STL",
+        "delete": "Ištrinti projektą",
+        "deleteTitle": "Ištrinti „{{name}}“?",
+        "deleteMessage": "Projektas ir jo istorija bus ištrinti visam laikui.",
+        "empty": "Kol kas nėra projektų.",
+        "emptyTitle": "Kol kas nėra projektų",
+        "emptyHint": "Pradėkite naują ir kurkite jį iš formų bei eskizų.",
+        "untitled": "Projektas be pavadinimo",
+        "nothingToExport": "Nėra matomų elementų atsisiųsti",
+        "features_one": "{{count}} elementas",
+        "features_few": "{{count}} elementai",
+        "features_other": "{{count}} elementų",
+        "saveToLibrary": "Išsaugoti į Thingport",
+        "saving": "Išsaugoma į Thingport…",
+        "saved": "„{{name}}“ išsaugotas jūsų bibliotekoje",
+        "openSaved": "Atidaryti"
+      },
+      "prompt": {
+        "title": "Klausti DI",
+        "open": "Atverti „Klausti DI“",
+        "help": "Aprašykite detalę arba atidaryto projekto pakeitimą, ir DI jį sukurs žingsnis po žingsnio tais pačiais įrankiais kaip įrankių juosta. Matysite kiekvieną žingsnį, o „Atšaukti“ juos atšaukia po vieną. Kuriuos DI siūlyti, renkasi administratorius. DI, kuris mato paveikslėlius, priima iki 4: nuotrauką ar brėžinį, pagal kurį kurti, arba logotipą, kurį apvesti.",
+        "model": "DI modelis",
+        "addModel": "Pridėti DI modelį",
+        "noModels": "Studijai dar nesiūlomas joks DI.",
+        "minimize": "Sumažinti",
+        "placeholder": "Aprašykite detalę arba šios detalės pakeitimą",
+        "send": "Siųsti",
+        "chooseModels": "Pasirinkti siūlomus modelius",
+        "off": "Studijos asistentas išjungtas.",
+        "turnOn": "Įjungti",
+        "stop": "Sustabdyti",
+        "working": "Dirba…",
+        "clear": "Išvalyti pokalbį",
+        "clearTitle": "Išvalyti pokalbį?",
+        "clearMessage": "Asistentas pamirš, kas buvo pasakyta apie šį projektą. Projektas liks toks, koks yra.",
+        "steps_one": "{{count}} žingsnis",
+        "steps_few": "{{count}} žingsniai",
+        "steps_other": "{{count}} žingsnių",
+        "stopped": "Sustabdyta.",
+        "limit": "Sustabdyta po {{count}} žingsnių.",
+        "failed": "Nepavyko užbaigti: {{error}}",
+        "showConversation": "Rodyti pokalbį",
+        "hideConversation": "Slėpti pokalbį",
+        "live": "Žingsnis {{number}}: {{step}}",
+        "attach": "Pridėti paveikslėlių",
+        "picture": "Paveikslėlis {{number}}",
+        "removePicture": "Pašalinti paveikslėlį {{number}}",
+        "noVision": "Šis DI nemato paveikslėlių. Pasirinkite tokį, kuris mato, arba juos pašalinkite."
+      },
+      "panels": {
+        "label": "Skydeliai",
+        "features": "Elementai",
+        "properties": "Savybės",
+        "hide": "Slėpti: {{panel}}",
+        "show": "Rodyti: {{panel}}"
+      },
+      "viewCube": {
+        "label": "Vaizdo kubas: spustelėkite sieną, briauną ar kampą, kad žiūrėtumėte iš ten, vilkite jį, kad pasuktumėte vaizdą",
+        "home": "Pradinis vaizdas",
+        "top": "VIRŠUS",
+        "bottom": "APAČIA",
+        "front": "PRIEKIS",
+        "back": "GALAS",
+        "left": "KAIRĖ",
+        "right": "DEŠINĖ"
+      },
+      "open": {
+        "designs": "Projektai",
+        "library": "Biblioteka",
+        "search": "Ieškokite savo modelių",
+        "help": "STL, 3MF, STEP, OBJ ir GLB failai įkeliami kaip tinklelio kūnai, savo tikru dydžiu. Projektas pasilieka savo kopiją, todėl vėlesni modelio pakeitimai jos nepaliečia.",
+        "open": "Atidaryti",
+        "openHelp": "Kaip naują projektą",
+        "insert": "Įterpti",
+        "insertHelp": "Į šį projektą",
+        "noMatches": "Nėra atitinkančių modelių su 3D failu",
+        "emptyLibrary": "Jūsų bibliotekoje dar nėra STL, 3MF, STEP, OBJ ar GLB failų",
+        "loadMore": "Įkelti daugiau"
+      },
+      "working": "Skaičiuojama…",
+      "edges": {
+        "none": "Aštri",
+        "fillet": "Apvali",
+        "chamfer": "Nuožula",
+        "radius": "Spindulys",
+        "distance": "Atstumas"
+      },
+      "ops": {
+        "cancel": "Atšaukti",
+        "ok": "Gerai",
+        "pickBody": "Spustelėkite kūną",
+        "combine": {
+          "label": "Rezultatas",
+          "new": "Naujas",
+          "join": "Sujungti",
+          "cut": "Išpjauti",
+          "intersect": "Sankirta"
+        },
+        "extrude": {
+          "title": "Išstūmimas",
+          "help": "Ištraukia eskizą į kūną. Nuolydis palenkia šonus į tolimąjį galą; galų briaunas galima užapvalinti ar nusklembti. Sujungimas, išpjovimas ar sankirta įdeda jį į kitą kūną.",
+          "taper": "Nuolydis",
+          "startOffset": "Pradžios poslinkis",
+          "symmetric": "Į abi puses",
+          "topEdge": "Tolimasis galas",
+          "bottomEdge": "Artimasis galas",
+          "topRim": "Viršutinis kraštas",
+          "bottomRim": "Apatinis kraštas"
+        },
+        "revolve": {
+          "title": "Sukimas",
+          "help": "Pasuka eskizą apie vieną jo ašį. Visos jo formos turi būti vienoje ašies pusėje.",
+          "axis": "Ašis",
+          "axisU": "Skersai (u)",
+          "axisV": "Aukštyn (v)",
+          "angle": "Kampas"
+        },
+        "press_pull": {
+          "title": "Stūmimas/traukimas",
+          "help": "Pastumia plokščią sieną tiesiai į išorę (prideda) ar į vidų (išpjauna), išlaikydamas jos kontūrą.",
+          "pick": "Spustelėkite plokščią sieną"
+        },
+        "fillet": {
+          "title": "Užapvalinimas",
+          "help": "Užapvalina tiesias briaunas tarp plokščių sienų. Išorinės briaunos nuapvalinamos, vidinės užpildomos. Spustelėkite briaunas, kad jas pridėtumėte ar pašalintumėte.",
+          "pick": "Spustelėkite briaunas užapvalinti"
+        },
+        "chamfer": {
+          "title": "Nuožula",
+          "help": "Nusklembia tiesias briaunas tarp plokščių sienų, nupjaudama vienodą atstumą abiejose. Spustelėkite briaunas, kad jas pridėtumėte ar pašalintumėte.",
+          "pick": "Spustelėkite briaunas nusklembti"
+        },
+        "hole": {
+          "title": "Skylė",
+          "help": "Išgręžia apvalią skylę ten, kur spustelite, į paviršių. Įleidimas ir paplatinimas palieka vietos varžto galvutei.",
+          "pick": "Spustelėkite, kur gręžti",
+          "diameter": "Skersmuo",
+          "depth": "Gylis",
+          "through": "Kiaurai",
+          "style": "Tipas",
+          "simple": "Paprasta",
+          "counterbore": "Įleidimas",
+          "countersink": "Paplatinimas",
+          "angle": "Kampas",
+          "boreDiameter": "Įleidimo skersmuo",
+          "boreDepth": "Įleidimo gylis",
+          "sinkDiameter": "Paplatinimo skersmuo",
+          "threaded": "Su sriegiu",
+          "threadedAs": "Su sriegiu {{size}}"
+        },
+        "shell": {
+          "title": "Apvalkalas",
+          "help": "Išskaptuoja kūną, palikdamas tokio storio sieneles. Spustelėkite plokščias sienas, kad jos liktų atviros, kaip dėžutės viršus.",
+          "thickness": "Sienelių storis",
+          "pick": "Spustelėkite sienas, kurias palikti atviras",
+          "open_one": "{{count}} siena atvira",
+          "open_few": "{{count}} sienos atviros",
+          "open_other": "{{count}} sienų atvira"
+        },
+        "split": {
+          "title": "Padalijimas",
+          "help": "Padalija kūną į dvi dalis: plokštuma, plokščios sienos plokštuma ar kitu kūnu. Abi dalys lieka redaguojamos.",
+          "by": "Dalyti pagal",
+          "plane": "Plokštumą",
+          "face": "Sieną",
+          "body": "Kūną",
+          "pickFace": "Spustelėkite plokščią sieną",
+          "facePicked": "Siena pasirinkta",
+          "pickTool": "Spustelėkite kūną, pagal kurį dalyti",
+          "keep": "Dalis",
+          "front": "Priekinė",
+          "back": "Galinė",
+          "inside": "Vidinė",
+          "outside": "Išorinė"
+        },
+        "scale": {
+          "title": "Mastelis",
+          "help": "Keičia kūno mastelį apie jo paties pradžios tašką.",
+          "factor": "Koeficientas"
+        },
+        "sketch_face": {
+          "title": "Eskizas ant sienos",
+          "help": "Pradeda eskizą ant spustelėtos plokščios sienos.",
+          "pick": "Spustelėkite plokščią sieną eskizui"
+        },
+        "edges_one": "{{count}} briauna",
+        "edges_few": "{{count}} briaunos",
+        "edges_other": "{{count}} briaunų",
+        "separate": {
+          "title": "Atskirti dalis",
+          "help": "Kiekvieną laisvą kūno dalį, kiekvieną gabalą, kuris neliečia kitų, paverčia atskiru kūnu. Ertmė dalies viduje lieka su ja; persidengiančios, bet nesujungtos dalys lieka atskiros, čia kiekviena savo spalva. Ištrynus visas dalis, kūnas grąžinamas.",
+          "count_one": "{{count}} dalis",
+          "count_few": "{{count}} dalys",
+          "count_other": "{{count}} dalių",
+          "open_one": "{{count}} turi tarpų: ją galima perkelti ir eksportuoti, bet ne sujungti",
+          "open_few": "{{count}} turi tarpų: jas galima perkelti ir eksportuoti, bet ne sujungti",
+          "open_other": "{{count}} turi tarpų: jas galima perkelti ir eksportuoti, bet ne sujungti"
+        },
+        "text": {
+          "title": "Tekstas",
+          "help": "Paverčia žodžius kietu kūnu: iškiliomis raidėmis plokštumoje arba iškiliai ar įgilintai ant plokščio kūno paviršiaus. Raidžių aukštis – didžiosios raidės aukštis; 6 mm ar daugiau gerai atsispausdina. Žodžius, šriftą ir dydį vėliau galima keisti jo eskize.",
+          "on": "Kur",
+          "onPlane": "Plokštumoje",
+          "onFace": "Ant paviršiaus",
+          "style": "Stilius",
+          "raised": "Iškilios",
+          "engraved": "Įgilintos",
+          "height": "Aukštis",
+          "depth": "Gylis",
+          "pick": "Spustelėkite plokščią paviršių, ant kurio rašyti"
+        },
+        "pattern": {
+          "title": "Kartojimas",
+          "help": "Pakartoja kūną eilėje, tinklelyje ar aplink ašį ir sujungia kopijas su juo į vieną kūną. Pakeitus kūną, keičiasi visos kopijos. Norėdami išpjauti daug skylių, pakartokite vienos skylės cilindrą ir atimkite kartotinį.",
+          "style": "Rūšis",
+          "linear": "Eilėje",
+          "circular": "Aplink ašį",
+          "along": "Išilgai",
+          "around": "Aplink",
+          "count": "Kiekis",
+          "spacing": "Tarpas",
+          "grid": "Antra kryptis (tinklelis)",
+          "rows": "Eilės",
+          "rowSpacing": "Tarpas tarp eilių",
+          "angle": "Paskirstyti per",
+          "center": "Centras {{axis}}"
+        },
+        "mirror": {
+          "title": "Veidrodis",
+          "help": "Atspindi kūną per plokštumą – simetriškiems dalykams, kuriamiems po pusę. Palikus originalą, pusė ir jos atspindys tampa vienu kūnu.",
+          "plane": "Per",
+          "keep": "Palikti originalą"
+        },
+        "align": {
+          "title": "Lygiuoti",
+          "help": "Sulygiuoja kūną su kitu kūnu arba su pagrindu: pradžias, vidurius ar galus kartu, arba šalia (prieš ar po) su tarpu. Pagal Z „po“ padeda ant viršaus. Kūnas tik perkeliamas.",
+          "pickBody": "Spustelėkite kūną, kurį perkelti",
+          "pickReference": "Spustelėkite kūną, su kuriuo lygiuoti, arba palikite lygiavimą su pagrindu",
+          "with": "Su {{name}}",
+          "axis": "Pagal {{axis}}",
+          "none": "Ne",
+          "before": "Prieš",
+          "start": "Pradžia",
+          "center": "Centras",
+          "end": "Galas",
+          "after": "Po",
+          "z_none": "Ne",
+          "z_before": "Po apačia",
+          "z_start": "Apačia",
+          "z_center": "Vidurys",
+          "z_end": "Viršus",
+          "z_after": "Ant viršaus",
+          "gap": "Tarpas"
+        },
+        "lay_flat": {
+          "title": "Paguldyti",
+          "help": "Pasuka kūną taip, kad spustelėtas paviršius gulėtų ant pagrindo, kaip dalis pasukama spausdinimui, ir padeda jį ant pagrindo.",
+          "pick": "Spustelėkite paviršių, ant kurio paguldyti"
+        },
+        "sweep": {
+          "title": "Tempimas",
+          "help": "Tempia eskizo kontūrą taškų keliu ir sukuria kūną, pro kurį jis praeina: vamzdį, rankeną, bėgelį. Eskizo pradžios taškas juda keliu, todėl kontūrą pieškite aplink jį; pirmajame taške kontūras statmenas keliui. „Glotnus“ nubrėžia kreivę per taškus, „Uždaras“ sujungia kelią į žiedą.",
+          "path": "Kelio taškai (mm)",
+          "addPoint": "Pridėti tašką",
+          "removePoint": "Pašalinti {{number}} tašką",
+          "smooth": "Glotnus",
+          "closed": "Uždaras"
+        }
+      },
+      "imported": {
+        "parts_one": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskiros dalies",
+        "parts_few": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
+        "parts_other": "Modelis įkeltas kaip vienas kūnas iš {{count}} atskirų dalių",
+        "separate": "Atskirti"
+      },
+      "text": {
+        "words": "Tekstas",
+        "font": "Šriftas",
+        "size": "Raidžių aukštis",
+        "spacing": "Tarpai tarp raidžių",
+        "align": "Lygiuoti",
+        "aligns": {
+          "left": "Kairėje",
+          "center": "Centre",
+          "right": "Dešinėje"
+        },
+        "placeholder": "Tekstas",
+        "newLine": "Shift+Enter pradeda naują eilutę",
+        "add": "Pridėti tekstą"
+      },
+      "trace": {
+        "title": "Apvesti paveikslėlį",
+        "help": "Paverčia paveikslėlio figūras kontūru, iš kurio daromas kietas kūnas: logotipą, siluetą, užrašą, piešinį. Apvedamos tamsios figūros šviesiame fone (Invertuoti – šviesios tamsiame; permatoma laikoma šviesia), o skylės lieka skylėmis. Geriausiai apvedamas švarus, kontrastingas paveikslėlis.",
+        "picture": "Paveikslėlis",
+        "drop": "Numeskite paveikslėlį čia arba įklijuokite",
+        "choose": "Pasirinkti paveikslėlį",
+        "another": "Kitas paveikslėlis",
+        "resultEmpty": "Čia matysite apvestą kontūrą",
+        "threshold": "Slenkstis",
+        "auto": "Rasti",
+        "invert": "Invertuoti",
+        "detail": "Detalumas",
+        "details": {
+          "low": "Mažas",
+          "medium": "Vidutinis",
+          "high": "Didelis"
+        },
+        "found_one": "{{count}} figūra",
+        "found_few": "{{count}} figūros",
+        "found_other": "{{count}} figūrų",
+        "holes_one": "{{count}} skylė",
+        "holes_few": "{{count}} skylės",
+        "holes_other": "{{count}} skylių",
+        "make": "Sukurti",
+        "solid": "Kūną",
+        "sketch": "Tik eskizą",
+        "ok": "Apvesti"
+      },
+      "edit": {
+        "start": "Redaguoti dizainą",
+        "done": "Baigti redaguoti"
+      },
+      "emptyView": "Paprašykite DI apačioje ką nors sukurti arba spustelėkite Redaguoti ir kurkite patys",
+      "thread": {
+        "kind": "Tipas",
+        "external": "Išorinis",
+        "internal": "Vidinis",
+        "hand": "Kryptis",
+        "hands": {
+          "right": "Dešininis",
+          "left": "Kairinis"
+        },
+        "chamfer": "Nuožulnūs galai"
+      },
+      "path": {
+        "title": "Pridėti kontūrą",
+        "help": "SVG kontūro duomenys eskizo milimetrais, x į dešinę ir y aukštyn: M, L, H, V, C, S, Q, T, A ir Z, kiekvienas pokontūris yra vienas uždaras kontūras. Įklijuokite iš piešimo programos arba parašykite patys.",
+        "data": "Kontūro duomenys",
+        "fill": "Užpildymo taisyklė",
+        "fills": {
+          "evenodd": "Lyginis-nelyginis",
+          "nonzero": "Nenulinis"
+        },
+        "nothing": "Kol kas nėra ko piešti",
+        "add": "Pridėti"
+      },
+      "parameters": {
+        "title": "Parametrai",
+        "help": "Pavadinti skaičiai, pagal kuriuos gali keistis dizaino matmenys. Bet kuriame matmens laukelyje įrašykite = ir formulę, pvz., =wall * 2 + 10. Pakeitus parametrą čia, perskaičiuojamos visos jį naudojančios formulės.",
+        "follows": "Pagal formulę = {{expression}}",
+        "name": "Pavadinimas",
+        "value": "Reikšmė",
+        "add": "Pridėti parametrą",
+        "delete": "Ištrinti {{name}}",
+        "inUse": "Naudojamas: pirmiausia pakeiskite laukelius, kurie nuo jo priklauso",
+        "none": "Parametrų dar nėra.",
+        "taken": "Toks pavadinimas jau yra",
+        "badName": "Raidės, skaitmenys ir _, nepradedant skaitmeniu",
+        "unused": "Nenaudojamas",
+        "uses_one": "Naudoja {{count}} laukelis",
+        "uses_few": "Naudoja {{count}} laukeliai",
+        "uses_other": "Naudoja {{count}} laukelių",
+        "noUnit": "Nėra",
+        "unit": "Vienetas",
+        "unitOf": "{{name}} vienetas"
+      },
+      "check": {
+        "title": "Patikrinti spausdinimui",
+        "help": "Patikrina kiekvieną matomą kūną ten, kur jis padėtas: ar jis ant pagrindo ir telpa į jį, ar vientisas, ar nesikerta su kitu, ar nėra iškyšų, kurioms reikia atramų, ir per plonų sienelių. Tą patį patikrinimą asistentas atlieka su savo darbu.",
+        "bed_x": "Pagrindas X",
+        "bed_y": "Pagrindas Y",
+        "bed_z": "Pagrindas Z",
+        "overhangLimit": "Iškyša",
+        "minWall": "Min. sienelė",
+        "ready": "Paruošta spausdinti",
+        "nothing": "Nėra matomų kūnų, kuriuos būtų galima patikrinti.",
+        "empty": "Tuščias",
+        "tooBig": "Per didelis pagrindui",
+        "offBed": "Už pagrindo ribų",
+        "floating": "Kybo {{value}} aukščiau",
+        "sunk": "Įsmigęs {{value}}",
+        "pieces_one": "{{count}} atskira dalis",
+        "pieces_few": "{{count}} atskiros dalys",
+        "pieces_other": "{{count}} atskirų dalių",
+        "overhang": "{{value}} iškyšų",
+        "thin": "Sienelės iki {{value}}",
+        "overlaps": "Kertasi su {{name}}",
+        "open": "Ne uždaras kūnas",
+        "toBed": "Ant pagrindo",
+        "measure": "Matuoti",
+        "measureNeedsTwo": "Pridėkite du kūnus, kad galėtumėte išmatuoti atstumą tarp jų.",
+        "first": "Nuo",
+        "second": "Iki",
+        "gap": "Tarpas {{value}}",
+        "touching": "Liečiasi",
+        "overlap": "Persidengia {{value}}",
+        "far": "Daugiau nei 1 m atstumu",
+        "toBedOf": "Padėti {{name}} ant pagrindo"
+      },
+      "status": {
+        "label": "Dizaino matmenys",
+        "design": "Dizainas",
+        "selection": "Pasirinkta",
+        "bodiesLabel": "Kūnai",
+        "size": "Dydis",
+        "volume": "Tūris",
+        "openMeshes": "Atviri tinkleliai neturi tūrio, todėl neįskaičiuojami",
+        "units": "Vienetai"
+      },
+      "measure": {
+        "title": "Matuoti",
+        "help": "Pasirinkite taškus, briaunas, paviršius arba kūnus. Vienas pasirinkimas parodo jo paties dydį: taško padėtį, briaunos ilgį, paviršiaus plotą, kūno dydį ir tūrį. Du parodo trumpiausią atstumą tarp jų, kiek tai sudaro pagal X, Y ir Z, ir kampą tarp jų. Reikšmės rodomos būsenos juostos vienetais, o matavimas dizaino nekeičia.",
+        "filter": "Ką pasirinkti",
+        "clear": "Išvalyti",
+        "done": "Baigti",
+        "again": "Spustelėkite dar kartą, kad pradėtumėte iš naujo",
+        "kinds": {
+          "point": "Taškas",
+          "edge": "Briauna",
+          "face": "Paviršius",
+          "body": "Kūnas"
+        },
+        "pickFirst": {
+          "point": "Spustelėkite tašką, kurį norite matuoti",
+          "edge": "Spustelėkite briauną, kurią norite matuoti",
+          "face": "Spustelėkite paviršių, kurį norite matuoti",
+          "body": "Spustelėkite kūną, kurį norite matuoti"
+        },
+        "pickSecond": {
+          "point": "Spustelėkite antrą tašką, kad išmatuotumėte atstumą tarp jų",
+          "edge": "Spustelėkite antrą briauną, kad išmatuotumėte atstumą tarp jų",
+          "face": "Spustelėkite antrą paviršių, kad išmatuotumėte atstumą tarp jų",
+          "body": "Spustelėkite antrą kūną, kad išmatuotumėte atstumą tarp jų"
+        },
+        "readings": {
+          "distance": "Atstumas",
+          "length": "Ilgis",
+          "gap": "Tarpas",
+          "area": "Plotas",
+          "volume": "Tūris",
+          "overlap": "Persidengimas",
+          "angle": "Kampas",
+          "size": "Dydis",
+          "touching": "Liečiasi",
+          "far": "Daugiau nei 1 m atstumu",
+          "openMesh": "Atviras tinklelis neturi tūrio",
+          "measuring": "Matuojama…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Studijos nustatymai",
+        "sections": {
+          "assistant": "Klausti DI",
+          "units": "Vienetai",
+          "grid": "Tinklelis"
+        },
+        "assistantIntro": "Kur „Klausti DI“ rodo pokalbį.",
+        "layout": "Išdėstymas",
+        "layoutHelp": "Juosta: po vaizdu, viena eilutė, kol DI dirba, likusi dalis atsidaro paspaudus. Šoninis skydelis: šalia vaizdo, kad niekas neuždengtų modelio.",
+        "layouts": {
+          "bar": "Juosta",
+          "panel": "Šoninis skydelis"
+        },
+        "failed": "Nepavyko išsaugoti nustatymo.",
+        "unitsIntro": "Kokiais vienetais rodomi ir įvedami dydžiai. Patys dydžiai nesikeičia, keičiasi tik tai, kaip jie užrašomi.",
+        "designUnits": "Šis dizainas",
+        "designUnitsHelp": "Išsaugoma su dizainu ir atšaukiama kaip bet kuris pakeitimas. Dydis be vieneto įvedamas šiais vienetais; su vienetu, pvz., 2 in ar 5 mm, – tuo vienetu.",
+        "newUnits": "Nauji dizainai",
+        "newUnitsHelp": "Kokiais vienetais pradedamas naujas dizainas. Saugoma jūsų paskyroje, todėl galioja visuose įrenginiuose.",
+        "unitNames": {
+          "mm": "Milimetrai",
+          "cm": "Centimetrai",
+          "in": "Coliai"
+        },
+        "grid": {
+          "intro": "Kaip piešiamas tinklelis po dizainu ir prie ko pritraukiami taškai.",
+          "show": "Rodyti tinklelį",
+          "spacing": "Tankis",
+          "spacingHelp": "Prisitaikantis keičiasi su priartinimu, kaip CAD tinklelis: priartinus atsiranda smulkesnės linijos, kas dešimt kartų (coliais – kas keturis), kas dešimta (ketvirta) linija tamsesnė. Pastovus išlaiko jūsų nustatytą žingsnį.",
+          "spacings": {
+            "adaptive": "Prisitaikantis",
+            "fixed": "Pastovus"
+          },
+          "density": "Tankumas",
+          "densities": {
+            "coarse": "Retas",
+            "normal": "Įprastas",
+            "fine": "Tankus"
+          },
+          "major": "Pagrindinės linijos kas",
+          "subdivisions": "Padalyta į",
+          "snap": "Pritraukti prie tinklelio",
+          "snapHelp": "Eskizo taškai ir perkeliami kūnai pritraukiami prie smulkiausių matomų tinklelio linijų. Išjungus jie atsiduria ten, kur rodote."
+        }
+      }
+    },
+    "chats": {
+      "open": "Atidaryti",
+      "off": "Pokalbiai šiame egzemplioriuje išjungti. Administratorius gali juos įjungti skiltyje Administravimas > Naudotojai.",
+      "welcome": "Pasirinkite pokalbį arba pradėkite naują.",
+      "deletedUser": "Ištrintas naudotojas",
+      "today": "Šiandien",
+      "yesterday": "Vakar",
+      "search": "Ieškoti pokalbių ir žmonių",
+      "clearSearch": "Išvalyti paiešką",
+      "searchPeople": "Ieškoti pagal vardą ar el. paštą",
+      "searchPeopleHelp": "Žmogų randa bet kuri vardo dalis. El. paštas randa tik įvestas visas ir niekada nerodomas.",
+      "peopleFailed": "Nepavyko įkelti žmonių.",
+      "noPeopleFound": "Niekas neatitinka.",
+      "noPeople": "Šiame egzemplioriuje kol kas nėra kitų žmonių.",
+      "online": "Prisijungęs",
+      "offline": "Neprisijungęs",
+      "favorites": "Mėgstamiausi",
+      "directMessages": "Asmeninės žinutės",
+      "rooms": "Kambariai",
+      "people": "Žmonės",
+      "startChat": "Pradėti pokalbį",
+      "nothingFound": "Neatitinka nei pokalbiai, nei žmonės.",
+      "noDirect": "Asmeninių žinučių kol kas nėra.",
+      "noRooms": "Kambarių kol kas nėra.",
+      "emptyList": "Pokalbių kol kas nėra. Parašykite kam nors šiame egzemplioriuje ir pokalbis prasidės.",
+      "newMessage": "Nauja žinutė",
+      "newRoom": "Naujas kambarys",
+      "openFailed": "Nepavyko atidaryti pokalbio.",
+      "loadFailed": "Nepavyko įkelti pokalbių.",
+      "actionFailed": "Nepavyko. Bandykite dar kartą.",
+      "publicRoom": "Viešas kambarys",
+      "privateRoom": "Privatus kambarys",
+      "publicRoomMembers_one": "Viešas kambarys · {{count}} narys",
+      "publicRoomMembers_few": "Viešas kambarys · {{count}} nariai",
+      "publicRoomMembers_many": "Viešas kambarys · {{count}} nario",
+      "publicRoomMembers_other": "Viešas kambarys · {{count}} narių",
+      "privateRoomMembers_one": "Privatus kambarys · {{count}} narys",
+      "privateRoomMembers_few": "Privatus kambarys · {{count}} nariai",
+      "privateRoomMembers_many": "Privatus kambarys · {{count}} nario",
+      "privateRoomMembers_other": "Privatus kambarys · {{count}} narių",
+      "noMessagesYet": "Žinučių kol kas nėra",
+      "messageDeleted": "Žinutė ištrinta",
+      "youWrote": "Jūs: {{body}}",
+      "mutedLabel": "Nutildytas",
+      "favorite": "Pridėti prie mėgstamiausių",
+      "unfavorite": "Pašalinti iš mėgstamiausių",
+      "mute": "Nutildyti",
+      "unmute": "Įjungti garsą",
+      "join": "Prisijungti",
+      "leave": "Palikti kambarį",
+      "members": "Nariai",
+      "membersOf": "{{name}} nariai",
+      "noMembers": "Šiame kambaryje nieko nėra.",
+      "you": "{{name}} (jūs)",
+      "editRoom": "Redaguoti kambarį",
+      "deleteRoom": "Ištrinti kambarį",
+      "leaveTitle": "Palikti {{name}}?",
+      "leavePublic": "Nebegausite jo žinučių. Vėl prisijungti galėsite bet kada.",
+      "leavePrivate": "Prarasite prieigą prie jo. Grąžinti jus gali tik administratorius.",
+      "deleteRoomTitle": "Ištrinti {{name}}?",
+      "deleteRoomMessage": "Viskas, kas jame parašyta, bus ištrinta visiems. To atšaukti negalima.",
+      "roomDeleted": "Ištrinta: {{name}}",
+      "roomSaved": "Išsaugota: {{name}}",
+      "roomName": "Pavadinimas",
+      "roomDescription": "Kam jis skirtas",
+      "roomVisibility": "Kas mato",
+      "roomVisibilityHelp": "Viešą kambarį gali skaityti ir prie jo prisijungti bet kas šiame egzemplioriuje. Privatus kambarys skirtas tik jūsų pasirinktiems žmonėms.",
+      "public": "Viešas",
+      "private": "Privatus",
+      "roomMembers": "Nariai ({{count}})",
+      "createRoom": "Sukurti kambarį",
+      "roomSaveFailed": "Nepavyko išsaugoti kambario.",
+      "send": "Siųsti",
+      "characters": "{{count}} iš {{max}} simbolių",
+      "writeTo": "Žinutė: {{name}}",
+      "loadOlder": "Įkelti ankstesnes žinutes",
+      "newMessages": "Naujos žinutės",
+      "jumpToNew": "Naujos žinutės",
+      "sendFailed": "Neišsiųsta.",
+      "discard": "Atmesti",
+      "sending": "Siunčiama…",
+      "seenAt": "Pamatyta · {{time}}",
+      "copyMessage": "Kopijuoti tekstą",
+      "deleteMessage": "Ištrinti žinutę",
+      "deleteMessageTitle": "Ištrinti šią žinutę?",
+      "deleteMessageText": "Ji pašalinama visiems pokalbio dalyviams. Jos vietoje lieka pastaba, kad žinutė ištrinta.",
+      "messageActions": "Žinutės veiksmai",
+      "copied": "Nukopijuota",
+      "copyFailed": "Nepavyko nukopijuoti teksto.",
+      "chatActions": "Pokalbio veiksmai",
+      "notFound": "Šio pokalbio nebėra arba jis ne jums.",
+      "backToChats": "Atgal į pokalbius",
+      "notAMember": "Šis privatus kambarys skirtas tik jo nariams. Save galite pridėti per „Redaguoti kambarį“.",
+      "readingRoom": "Skaitote šį kambarį. Prisijunkite, kad galėtumėte rašyti ir gautumėte pranešimus.",
+      "recipientGone": "Šio žmogaus paskyra ištrinta, todėl žinučių siųsti negalima.",
+      "emptyRoom": "Čia dar niekas nieko neparašė.",
+      "emptyDirect": "Pasisveikinkite su {{name}}.",
+      "emoji": "Jaustukai",
+      "attachModel": "Pridėti modelį",
+      "attachTitle": "Pridėti modelius",
+      "attach": "Pridėti",
+      "attachLimit": "Vienoje žinutėje – iki {{count}} modelių",
+      "removeAttachment": "Pašalinti {{name}}",
+      "modelUnavailable": "Nebepasiekiamas",
+      "modelFrom": "Nuo {{name}}",
+      "yourModel": "Jūsų modelis",
+      "openModel": "Atidaryti {{name}}",
+      "sentModels_one": "📎 {{name}}",
+      "sentModels_few": "📎 {{count}} modeliai",
+      "sentModels_many": "📎 {{count}} modelio",
+      "sentModels_other": "📎 {{count}} modelių",
+      "emojiPicker": {
+        "search": "Ieškoti jaustukų",
+        "clear": "Išvalyti",
+        "categories": {
+          "suggested": "Neseniai naudoti",
+          "smileys_people": "Šypsenėlės ir žmonės",
+          "animals_nature": "Gyvūnai ir gamta",
+          "food_drink": "Maistas ir gėrimai",
+          "travel_places": "Kelionės ir vietos",
+          "activities": "Veikla",
+          "objects": "Daiktai",
+          "symbols": "Simboliai",
+          "flags": "Vėliavos"
+        }
+      }
+    },
+    "modelPicker": {
+      "search": "Ieškoti savo bibliotekoje",
+      "limit_one": "Galima pasirinkti iki {{count}}",
+      "limit_few": "Galima pasirinkti iki {{count}}",
+      "limit_many": "Galima pasirinkti iki {{count}}",
+      "limit_other": "Galima pasirinkti iki {{count}}",
+      "noMatch": "Atitinkančių modelių nėra.",
+      "emptyLibrary": "Jūsų bibliotekoje kol kas nėra modelių.",
+      "loadFailed": "Nepavyko įkelti jūsų modelių."
     }
   },
   "common": {
@@ -3613,6 +4696,36 @@
       "importedFrom": "Importuota iš {{provider}}",
       "uploadedDirectly": "Įkelta tiesiai į Thingport"
     },
+    "linkSource": {
+      "action": "Susieti su tiekėju",
+      "title": "Susieti su tiekėju",
+      "help": "Paima puslapio nuotraukas, aprašymą, žymas ir autorių. Failai neatsisiunčiami, o modelis lieka ten, kur yra: svetainės kategoriją atitinkanti kategorija tik pasiūloma.",
+      "label": "Modelio nuoroda",
+      "placeholder": "Įklijuokite šio modelio puslapio nuorodą",
+      "link": "Susieti",
+      "linking": "Susiejama…",
+      "problem": {
+        "several": "Įklijuokite tik vieną nuorodą.",
+        "list": "Tai modelių sąrašas. Įklijuokite vieno modelio nuorodą.",
+        "notModel": "Tai nėra modelio nuoroda palaikomoje svetainėje.",
+        "disabled": "Administratorius išjungė šią svetainę."
+      },
+      "previewFailed": "Peržiūros nėra: {{reason}}",
+      "linkedElsewhere": "„{{name}}“ jau susietas su šiuo puslapiu.",
+      "openModel": "Atverti",
+      "pictures_one": "{{count}} nuotrauka",
+      "pictures_few": "{{count}} nuotraukos",
+      "pictures_other": "{{count}} nuotraukų",
+      "tags_one": "{{count}} žyma",
+      "tags_few": "{{count}} žymos",
+      "tags_other": "{{count}} žymų",
+      "replacesDescription": "Tai pakeis dabartinį modelio aprašymą.",
+      "linked": "Susieta su {{provider}}.",
+      "linkedWithSuggestion": "Susieta su {{provider}}. Siūloma kategorija: {{category}}.",
+      "failed": "Nepavyko susieti šio modelio. Bandykite dar kartą.",
+      "alreadyLinked": "Jau susietas su tiekėju",
+      "selectOne": "Pasirinkite vieną modelį, kurį norite susieti"
+    },
     "aiCategorization": {
       "suggestionPending": "Pirmiausia priimkite arba atmeskite pasiūlymą",
       "section": "DI kategorizavimas",
@@ -3648,6 +4761,9 @@
       "loadMore": "Įkelti daugiau",
       "noSuggestions": "Laukiančių pasiūlymų nėra.",
       "suggestionLabel": "DI pasiūlymas",
+      "suggestionFromProvider": "Siūlo {{provider}}",
+      "suggestionAccepted": "Kategorijos pasiūlymas priimtas.",
+      "suggestionRejected": "Kategorijos pasiūlymas atmestas.",
       "byAi": "DI",
       "accepted": "DI pasiūlymas priimtas.",
       "rejected": "DI pasiūlymas atmestas.",
@@ -3701,6 +4817,7 @@
       "deleteFailed": "Nepavyko ištrinti modelio.",
       "confirmDelete": "Ištrinti „{{name}}“? Šio veiksmo nebus galima atšaukti.",
       "addToCollection": "Pridėti prie kolekcijos",
+      "addToCollectionAlreadyIn": "Pridėti prie kolekcijos (jau yra {{count}})",
       "addToCollectionTitle": "Pridėti prie kolekcijos",
       "addToCollectionEmpty": "Kol kas neturite jokių kolekcijų.",
       "addToCollectionLoadFailed": "Nepavyko įkelti kolekcijų. Bandykite dar kartą.",
@@ -3728,6 +4845,7 @@
         "images": "peržiūros nuotraukos"
       },
       "openInSlicer": "Atverti su {{slicer}}",
+      "openInStudio": "Atidaryti „Thingport Studio“",
       "openNormalizedInSlicer": "Atverti normalizuotą su {{slicer}}",
       "normalizedInfo": "MakerWorld failai yra Bambu Studio projektai, kuriuos {{slicer}} dažnai atveria be spalvų ar spausdinimo nustatymų. Ši parinktis atveria konvertuotą kopiją, kurioje išlieka nudažytos spalvos, gijų spalvos, plokštės ir autoriaus nustatymai (sienelės, sluoksnio aukštis, užpildas, atramos). Atkreipkite dėmesį: kelių dalių objektai gali būti sujungti į vieną, atskirų objektų nustatymai ir spalvų keitimai tarp sluoksnių pašalinami, o spausdintuvo profilį pasirenkate patys. Saugomas failas nekeičiamas.",
       "normalizePreparing": "Ruošiamas normalizuotas failas…",
@@ -3995,6 +5113,12 @@
       "pageTitle": "Kolekcijos",
       "newCollection": "Nauja kolekcija",
       "empty": "Kol kas nėra kolekcijų.",
+      "noneShown": "Nė viena kolekcija neatitinka filtrų.",
+      "types": {
+        "system": "Sisteminės kolekcijos",
+        "user": "Naudotojo kolekcijos",
+        "tool": "Įrankių kolekcijos"
+      },
       "bookmarkCollection": "Įsiminti kolekciją",
       "unbookmarkCollection": "Pašalinti iš įsimintų",
       "bookmarkFailed": "Nepavyko atnaujinti įsimintos kolekcijos. Bandykite dar kartą.",
@@ -4008,7 +5132,10 @@
         "empty": "Kol kas nėra modelių",
         "itemCount_one": "{{count}} modelis",
         "itemCount_few": "{{count}} modeliai",
-        "itemCount_other": "{{count}} modelių"
+        "itemCount_other": "{{count}} modelių",
+        "ownerAndCount_one": "{{name}} · {{count}} modelis",
+        "ownerAndCount_few": "{{name}} · {{count}} modeliai",
+        "ownerAndCount_other": "{{name}} · {{count}} modelių"
       },
       "form": {
         "createTitle": "Nauja kolekcija",
@@ -4018,7 +5145,11 @@
         "tagsLabel": "Žymos",
         "tagsPlaceholder": "Pridėti žymų",
         "create": "Sukurti",
-        "saveFailed": "Nepavyko išsaugoti kolekcijos. Bandykite dar kartą."
+        "saveFailed": "Nepavyko išsaugoti kolekcijos. Bandykite dar kartą.",
+        "visibilityLabel": "Matomumas",
+        "visibilityHelp": "Viešos kolekcijos rodomos skiltyje Naršyti: kiti šio serverio naudotojai gali atidaryti, atsisiųsti ir kopijuoti jų modelius. Privačios matomos tik jums.",
+        "private": "Privati",
+        "public": "Vieša"
       },
       "detail": {
         "title": "{{name}}",
@@ -4159,14 +5290,16 @@
         "openTool": "Atidaryti „{{tool}}“",
         "openToolUnknown": "Atidaryti įrankį",
         "cantSelect": "Įrankio kolekcijos negalima sujungti ar ištrinti"
-      }
+      },
+      "publicHint": "Vieša: rodoma kitiems skiltyje Naršyti"
     },
     "tags": {
       "pageTitle": "Žymos",
       "sortByName": "Pavadinimas",
       "empty": "Kol kas nėra žymų.",
-      "hideRarelyUsed": "Slėpti vieną kartą naudotas žymas",
-      "allHidden": "Nėra žymų su 2+ modeliais. Išjunkite filtrą aukščiau, kad matytumėte visas žymas.",
+      "minCount": "Slėpti žymas, kuriose modelių mažiau nei",
+      "allHidden": "Nėra žymų su {{min}}+ modeliais.",
+      "showAll": "Rodyti visas žymas",
       "bookmarkTag": "Įsiminti žymą",
       "unbookmarkTag": "Pašalinti iš įsimintų",
       "deleteTag": "Ištrinti žymą",
@@ -4330,7 +5463,40 @@
       "title": "Kategorijų ir aplankų tvarkymas",
       "repair": "Taisymas"
     },
+    "categoryPicker": {
+      "filter": "Filtruoti kategorijas",
+      "noMatches": "Nėra kategorijų, atitinkančių „{{query}}“"
+    },
+    "assignCategory": {
+      "action": "Priskirti kategoriją",
+      "needOne": "Pasirinkite bent 1 neimportuotą modelį",
+      "title_one": "Priskirti kategoriją {{count}} modeliui",
+      "title_few": "Priskirti kategoriją {{count}} modeliams",
+      "title_many": "Priskirti kategoriją {{count}} modelio",
+      "title_other": "Priskirti kategoriją {{count}} modelių",
+      "category": "Kategorija",
+      "folderWarning": "Priskyrus kategoriją, modeliai pašalinami iš aplankų struktūros: po to jie nebebus jokiame aplanke.",
+      "replaces_one": "{{count}} pasirinktas modelis jau turi kategoriją, kuri bus pakeista.",
+      "replaces_few": "{{count}} pasirinkti modeliai jau turi kategoriją, kuri bus pakeista.",
+      "replaces_many": "{{count}} pasirinkto modelio jau turi kategoriją, kuri bus pakeista.",
+      "replaces_other": "{{count}} pasirinktų modelių jau turi kategoriją, kuri bus pakeista.",
+      "empty": "Kol kas nėra iš ko rinktis. Pridėkite kategorijų per „Kategorijų ir aplankų tvarkymas“.",
+      "done_one": "Kategorija „{{name}}“ priskirta {{count}} modeliui.",
+      "done_few": "Kategorija „{{name}}“ priskirta {{count}} modeliams.",
+      "done_many": "Kategorija „{{name}}“ priskirta {{count}} modelio.",
+      "done_other": "Kategorija „{{name}}“ priskirta {{count}} modelių.",
+      "partlyFailed_one": "Nepavyko pakeisti {{count}} modelio.",
+      "partlyFailed_few": "Nepavyko pakeisti {{count}} modelių.",
+      "partlyFailed_many": "Nepavyko pakeisti {{count}} modelio.",
+      "partlyFailed_other": "Nepavyko pakeisti {{count}} modelių.",
+      "failed": "Nepavyko priskirti kategorijos. Bandykite dar kartą.",
+      "loadFailed": "Nepavyko įkelti kategorijų. Bandykite dar kartą."
+    },
     "selection": {
+      "skipped_one": "Praleistas {{count}} pasirinktas modelis: jis importuotas arba priklauso įrankiui.",
+      "skipped_few": "Praleisti {{count}} pasirinkti modeliai: jie importuoti arba priklauso įrankiui.",
+      "skipped_many": "Praleista {{count}} pasirinkto modelio: jie importuoti arba priklauso įrankiui.",
+      "skipped_other": "Praleista {{count}} pasirinktų modelių: jie importuoti arba priklauso įrankiui.",
       "enter": "Žymėti modelius",
       "exit": "Baigti žymėjimą",
       "toolbar": "Veiksmai su pažymėtais modeliais",
@@ -4408,7 +5574,13 @@
       "tagsPartlyUpdated_other": "Atnaujintos {{count}} modelių žymės, bet likusių nepavyko. Bandykite dar kartą.",
       "toolOwned_one": "{{count}} pažymėtas modelis priklauso įrankiui: praleiskite jį, kad tai atliktumėte",
       "toolOwned_few": "{{count}} pažymėti modeliai priklauso įrankiui: praleiskite juos, kad tai atliktumėte",
-      "toolOwned_other": "{{count}} pažymėtų modelių priklauso įrankiui: praleiskite juos, kad tai atliktumėte"
+      "toolOwned_other": "{{count}} pažymėtų modelių priklauso įrankiui: praleiskite juos, kad tai atliktumėte",
+      "notFiled_one": "{{count}} modelio nepavyko pridėti: juo nebesidalijama",
+      "notFiled_few": "{{count}} modelių nepavyko pridėti: jais nebesidalijama",
+      "notFiled_other": "{{count}} modelių nepavyko pridėti: jais nebesidalijama",
+      "notFiledNames_one": "Nepavyko pridėti {{names}}: juo nebesidalijama",
+      "notFiledNames_few": "Nepavyko pridėti {{names}}: jais nebesidalijama",
+      "notFiledNames_other": "Nepavyko pridėti {{names}}: jais nebesidalijama"
     },
     "merge": {
       "action": "Sujungti",
@@ -4464,6 +5636,38 @@
         "othersGo_many": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
         "othersGo_other": "{{names}} bus pašalintos. Jų modeliai bus pažymėti „{{name}}“.",
         "keepsOwn": "Modeliai, jau pažymėti „{{name}}“, nesikeičia."
+      },
+      "models": {
+        "action": "Sujungti modelius",
+        "needTwo": "Pasirinkite bent 2 neimportuotus modelius",
+        "tooMany": "Sujungimui pažymėkite ne daugiau kaip {{max}} modelių",
+        "title_one": "Sujungti {{count}} modelį",
+        "title_few": "Sujungti {{count}} modelius",
+        "title_many": "Sujungti {{count}} modelio",
+        "title_other": "Sujungti {{count}} modelių",
+        "keepHelp": "Pasirinkite pagrindinį modelį. Kitų modelių failai, nuotraukos ir aprašymai bus perkelti į jį, o kiti modeliai ištrinti.",
+        "goes": "Ištrinamas",
+        "othersGo_one": "{{names}} bus ištrintas. Jo failai, nuotraukos ir aprašymas bus perkelti į „{{name}}“.",
+        "othersGo_few": "{{names}} bus ištrinti. Jų failai, nuotraukos ir aprašymai bus perkelti į „{{name}}“.",
+        "othersGo_many": "{{names}} bus ištrinti. Jų failai, nuotraukos ir aprašymai bus perkelti į „{{name}}“.",
+        "othersGo_other": "{{names}} bus ištrinti. Jų failai, nuotraukos ir aprašymai bus perkelti į „{{name}}“.",
+        "keepsOwn": "„{{name}}“ išlaiko savo pavadinimą ir kategoriją ar aplanką. Žymos ir kolekcijos sujungiamos.",
+        "fileCount_one": "{{count}} failas",
+        "fileCount_few": "{{count}} failai",
+        "fileCount_many": "{{count}} failo",
+        "fileCount_other": "{{count}} failų",
+        "pictureCount_one": "{{count}} nuotrauka",
+        "pictureCount_few": "{{count}} nuotraukos",
+        "pictureCount_many": "{{count}} nuotraukos",
+        "pictureCount_other": "{{count}} nuotraukų",
+        "fileUnit_one": "failas",
+        "fileUnit_few": "failai",
+        "fileUnit_many": "failo",
+        "fileUnit_other": "failų",
+        "merged_one": "{{count}} modelis sujungtas į „{{name}}“.",
+        "merged_few": "{{count}} modeliai sujungti į „{{name}}“.",
+        "merged_many": "{{count}} modelio sujungta į „{{name}}“.",
+        "merged_other": "{{count}} modelių sujungta į „{{name}}“."
       }
     },
     "filters": {
@@ -4476,6 +5680,48 @@
       "noneSelected": "Neįjungta nė viena svetainė, tad nėra ko rodyti.",
       "noMatch": "Nė vienas čia esantis modelis neatitinka filtrų.",
       "clear": "Išvalyti filtrus"
+    },
+    "shared": {
+      "sharedBy": "Dalijasi {{name}}",
+      "sharedByLabel": "Dalijasi",
+      "inLibrary": "Yra jūsų bibliotekoje",
+      "copy": "Kopijuoti į mano biblioteką",
+      "openCopy": "Atidaryti mano kopiją",
+      "copied": "„{{name}}“ nukopijuotas į jūsų biblioteką",
+      "alreadyInLibrary": "„{{name}}“ jau yra jūsų bibliotekoje",
+      "copyFailed": "Nepavyko nukopijuoti modelio",
+      "moreFrom": "Daugiau iš naudotojo {{name}}",
+      "collectionSubtitle": "Dalijasi {{name}}"
+    },
+    "explore": {
+      "people": "Žmonės",
+      "peopleHelp": "Šio serverio naudotojai, kurie dalijasi kolekcijomis. Atidarykite, kad pamatytumėte visas.",
+      "recentModels": "Nauji modeliai",
+      "recentModelsHelp": "Modeliai, neseniai įdėti į kieno nors viešą kolekciją.",
+      "recentCollections": "Neseniai atnaujintos kolekcijos",
+      "recentCollectionsHelp": "Viešos kolekcijos: pirmiausia neseniai paviešintos ar papildytos.",
+      "mostCollected": "Dažniausiai kaupiami",
+      "mostCollectedHelp": "Bendrinami modeliai, kuriuos žmonės dažniausiai kopijavo į savo bibliotekas.",
+      "copies_one": "Įsidėjo {{count}} žmogus",
+      "copies_few": "Įsidėjo {{count}} žmonės",
+      "copies_other": "Įsidėjo {{count}} žmonių",
+      "personCounts": "{{collections}} · {{models}}",
+      "collectionCount_one": "{{count}} kolekcija",
+      "collectionCount_few": "{{count}} kolekcijos",
+      "collectionCount_other": "{{count}} kolekcijų",
+      "modelCount_one": "{{count}} modelis",
+      "modelCount_few": "{{count}} modeliai",
+      "modelCount_other": "{{count}} modelių",
+      "emptyTitle": "Kol kas niekuo nesidalijama",
+      "emptyHint": "Kai kas nors padarys kolekciją viešą, ji atsiras čia.",
+      "emptyAction": "Eiti į mano kolekcijas",
+      "unavailable": "Naršyti šiuo metu nepasiekiama.",
+      "userNotFound": "Šis naudotojas niekuo nesidalija.",
+      "backToExplore": "Grįžti į Naršyti",
+      "joined": "Prisijungė {{date}}",
+      "ownEmpty": "Dar nepadarėte jokios kolekcijos viešos.",
+      "loadFailed": "Nepavyko įkelti šio puslapio.",
+      "refreshFailed": "Nepavyko įkelti naujausių skaičių."
     }
   },
   "providers": {
@@ -5038,6 +6284,48 @@
       },
       "sync": {
         "notConnected": "Prijunkite GrabCAD skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
+      }
+    },
+    "meshy": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite meshy.ai prisijungę. Jis prijungs jūsų paskyrą ir atsiųs prisijungimą kaskart, kai jis ten pasikeis.",
+          "Arba rankiniu būdu: prisijunkite prie meshy.ai ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Eikite į skiltį Network, perkraukite puslapį, spustelėkite bet kurią www.meshy.ai užklausą, nukopijuokite jos Cookie antraštę ir įklijuokite žemiau."
+        ],
+        "placeholder": "Prisijungusio meshy.ai užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Prijunkite paskyrą, kad galėtumėte importuoti iš Meshy: failus jis atiduoda tik prisijungusiai paskyrai.",
+        "expired": "Prisijungimas nebegalioja. Prisijunkite meshy.ai su Thingport Grab arba vėl prijunkite Meshy skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Meshy: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "DI 3D modelių generatorius su didele bendruomenės galerija. Thingport importuoja bendruomenės modelius ir jūsų pačių sugeneruotus kaip spausdinimui paruoštus 3MF.",
+        "signIn": "Jūsų, kiekvienam atsisiuntimui; bendruomenės modeliams dar reikia Pro arba Studio plano.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės meshy.ai.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Meshy ir atverkite meshy.ai prisijungę.",
+          "Importuokite bet kurio įrašo nuorodą arba sinchronizuokite kolekciją ar savo sugeneruotus modelius iš skilties Naršyti.",
+          "Su nemokamu planu atsisiunčiami tik jūsų sugeneruoti modeliai: bendruomenės modelius Meshy palieka Pro ir Studio planams."
+        ]
+      },
+      "blocked": {
+        "community": {
+          "title": "Reikia Meshy Pro",
+          "hint": "Kitų žmonių bendruomenės modelius Meshy palieka Pro ir Studio planams. Jūsų pačių modeliai importuojami ir su nemokamu planu, nebent juos sukūrė Meshy DI agentas."
+        },
+        "own": {
+          "title": "Reikia mokamo Meshy plano",
+          "hint": "Modelius, kuriuos sukūrė Meshy DI agentas, Meshy palieka mokamiems planams, net jūsų."
+        }
+      },
+      "admin": {
+        "description": "Bendruomenės įrašai, kolekcijos ir kiekvieno naudotojo sugeneruoti modeliai – visi atsisiunčiami su paties naudotojo prisijungimu. Bendruomenės modeliams reikia Meshy Pro arba Studio plano."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Meshy skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte savo sugeneruotus modelius ir kolekcijas."
       }
     },
     "owlcad": {

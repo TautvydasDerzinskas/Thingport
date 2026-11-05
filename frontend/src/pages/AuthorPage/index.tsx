@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -32,6 +32,8 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
+import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
+import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
 
 const PAGE_SIZE = 24;
 const COVER_HEIGHT = 184;
@@ -57,6 +59,10 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
   const filters = useModelFilters();
   const { generative, hiddenProviders } = filters;
   const sources = useLibrarySources(null);
+  const finishedVersion = useFinishedVersion();
+  const isBackgroundReload = useBackgroundReload(finishedVersion);
+  // A page on its way when the list reloads belongs to the old list, and is dropped.
+  const listRun = useRef(0);
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 112);
   const [author, setAuthor] = useState<Author | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -96,8 +102,13 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
   useEffect(() => {
     if (!authorId) return;
     let cancelled = false;
-    setLoading(true);
-    setNotFound(false);
+    listRun.current += 1;
+    const background = isBackgroundReload();
+    const limit = background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE;
+    if (!background) {
+      setLoading(true);
+      setNotFound(false);
+    }
     (async () => {
       try {
         if (isSelf) {
@@ -106,7 +117,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
               author_id: SELF_AUTHOR_ID,
               generative: generative || undefined,
               hide_providers: hiddenProviders,
-              limit: PAGE_SIZE,
+              limit,
               offset: 0,
             }),
             authorsApi.myLinks(),
@@ -125,7 +136,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
             author_id: authorId,
             generative: generative || undefined,
             hide_providers: hiddenProviders,
-            limit: PAGE_SIZE,
+            limit,
             offset: 0,
           }),
           authorsApi.myLinks(),
@@ -138,7 +149,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
         setHasMore(printsResult.hasMore);
       } catch (err) {
         if (cancelled) return;
-        if (handleError(err)) return;
+        if (handleError(err) || background) return;
         setNotFound(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -148,10 +159,11 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authorId, isSelf, generative, hiddenProviders]);
+  }, [authorId, isSelf, generative, hiddenProviders, finishedVersion]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !authorId) return;
+    const run = listRun.current;
     setLoadingMore(true);
     try {
       const result = await printsApi.list({
@@ -161,6 +173,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
         limit: PAGE_SIZE,
         offset,
       });
+      if (run !== listRun.current) return;
       setItems((prev) => [...prev, ...result.items]);
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);

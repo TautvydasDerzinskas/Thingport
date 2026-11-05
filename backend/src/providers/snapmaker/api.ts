@@ -1,3 +1,4 @@
+import { credentialRequest } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
@@ -64,7 +65,7 @@ async function fetchApi(path: string, token: string | null): Promise<{ code: num
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   let body: unknown;
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await credentialRequest("snapmaker-api", `${API_BASE}${path}`, {
       headers: { Accept: "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       signal: controller.signal,
     });

@@ -1,6 +1,6 @@
 /* The docs (Starlight) in the site's colours and type: Starlight's --sl-* tokens point at tokens.css, and the rules below
  * restyle its parts to match the site's own pages and the design. Starlight's styles sit in cascade layers, so these
- * unlayered rules win without !important. ThemeProvider.astro always sets data-theme: light unless dark was chosen. */
+ * unlayered rules win without !important. ThemeProvider.astro always sets data-theme, to light or dark. */
 
 /* ---------- Tokens ---------- */
 

@@ -7,6 +7,7 @@ import { parseBody } from "../utils/validate";
 import {
   assertWidgetSourceEnabled,
   communityWidgetScreenshot,
+  communityWidgetsSource,
   deleteCustomWidget,
   enabledWidgetSources,
   installCommunityWidget,
@@ -83,7 +84,11 @@ router.get(
     if (!Number.isInteger(index) || index < 0) throw new HttpError(400, "Not a screenshot");
     const image = await communityWidgetScreenshot(String(req.params.slug), index);
     res.set("Content-Type", image.type);
-    res.set("Cache-Control", "private, max-age=3600");
+    // A folder's are read afresh, so an edit shows on refresh.
+    res.set(
+      "Cache-Control",
+      communityWidgetsSource().kind === "folder" ? "private, no-cache" : "private, max-age=3600",
+    );
     res.set("X-Content-Type-Options", "nosniff");
     res.send(image.body);
   }),

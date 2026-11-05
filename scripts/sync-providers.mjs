@@ -93,7 +93,28 @@ async function loadManifests() {
     manifest.capabilities.trending ? [manifest.capabilities.trending.rank] : [],
   );
   if (new Set(ranks).size !== ranks.length) throw new Error(`Two providers share a trending rank: ${ranks.join(", ")}`);
+  const destinations = new Set();
+  for (const manifest of manifests) {
+    for (const [destination, rule] of Object.entries(manifest.credentialHosts ?? {})) {
+      if (!destination.startsWith(`${manifest.id}-`) || destinations.has(destination)) {
+        throw new Error(`Invalid or duplicate credential destination ${destination} in ${manifest.id}`);
+      }
+      if (!rule.exact?.length || rule.exact.some((host) => !/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(host))) {
+        throw new Error(`Invalid credential hosts for ${destination}`);
+      }
+      destinations.add(destination);
+    }
+  }
   return manifests;
+}
+
+function credentialHosts(manifests) {
+  const rules = Object.fromEntries(manifests.flatMap((manifest) => Object.entries(manifest.credentialHosts ?? {})));
+  return `${header("providers/*/manifest.ts")}
+/** Destinations that may receive provider credentials. URL recognition is deliberately broader. */
+export const CREDENTIAL_HOSTS = ${JSON.stringify(rules, null, 2)} as const;
+export type CredentialDestination = keyof typeof CREDENTIAL_HOSTS;
+`;
 }
 
 /** What's wrong with a docs.ts `highlight`, if anything. */
@@ -442,6 +463,7 @@ async function outputs(manifests) {
     const text = readFileSync(path.join(SOURCE, "_lib", file), "utf8");
     files.set(`_lib/${generatedName(file)}`, header(`providers/_lib/${file}`) + pointAtCopies(text));
   }
+  files.set("_lib/credentialHosts.generated.ts", credentialHosts(manifests));
   for (const { id } of manifests) {
     for (const file of PROVIDER_FILES) {
       const from = `providers/${id}/${file}`;
@@ -487,12 +509,17 @@ for (const [file, text] of docs) {
 }
 for (const target of TARGETS) {
   const dir = path.join(ROOT, target);
+  // Browser UI code never sends provider credentials; only backend and Grab need this security map.
+  const targetFiles =
+    target === "frontend/src/providers"
+      ? new Map([...files].filter(([file]) => file !== "_lib/credentialHosts.generated.ts"))
+      : files;
   for (const file of listGenerated(dir)) {
-    if (files.has(file)) continue;
+    if (targetFiles.has(file)) continue;
     stale.push(`${target}/${file}`);
     if (!check) rmSync(path.join(dir, file));
   }
-  for (const [file, text] of files) {
+  for (const [file, text] of targetFiles) {
     const out = path.join(dir, file);
     if (existsSync(out) && readFileSync(out, "utf8") === text) continue;
     stale.push(`${target}/${file}`);

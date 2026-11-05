@@ -1,7 +1,7 @@
 # Print quality checks
 
-Find out whether a model will print before you spend an hour slicing it. Thingport checks a model's STL, OBJ, 3MF and
-STEP files for the problems that spoil prints, and tells you what it found and how serious it is.
+Find out whether a model will print before you spend an hour slicing it. Thingport checks a model's STL, OBJ, 3MF,
+STEP and glTF files for the problems that spoil prints, and tells you what it found and how serious it is.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/08_model_print_quality.png">

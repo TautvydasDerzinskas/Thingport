@@ -16,7 +16,7 @@ const VALID_DESIGN = {
   defaultInstanceId: "1",
 };
 
-const VALID_DOWNLOAD = { message: "success", url: "https://example.com/signed-download.3mf" };
+const VALID_DOWNLOAD = { name: "Phoenix.3mf", url: "https://example.com/signed-download.3mf" };
 
 describe("resolveMakerworldViaCloudApi", () => {
   const originalFetch = global.fetch;
@@ -35,7 +35,7 @@ describe("resolveMakerworldViaCloudApi", () => {
         if (designCalls === 1) return jsonResponse(418, { error: "temporary" });
         return jsonResponse(200, VALID_DESIGN);
       }
-      if (url.includes("/iot-service/api/user/profile/")) {
+      if (url.includes("/design-service/instance/")) {
         return jsonResponse(200, VALID_DOWNLOAD);
       }
       throw new Error(`Unexpected fetch to ${url}`);
@@ -46,6 +46,34 @@ describe("resolveMakerworldViaCloudApi", () => {
     expect(designCalls).toBe(2);
     expect(result?.downloadUrl).toBe(VALID_DOWNLOAD.url);
     expect(makerworldCaptchaCooloffActive()).toBe(false);
+  });
+
+  it("downloads the selected profile's 3MF as the page's own Download 3MF asks for it", async () => {
+    const fetched: string[] = [];
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      const url = String(input);
+      fetched.push(url);
+      if (url.includes("/design-service/design/")) {
+        return jsonResponse(200, {
+          ...VALID_DESIGN,
+          instances: [
+            { id: "1", profileId: "profile-1" },
+            { id: "2", profileId: "profile-2" },
+          ],
+        });
+      }
+      if (url.includes("/design-service/instance/2/f3mf?type=download&fileType=")) {
+        return jsonResponse(200, VALID_DOWNLOAD);
+      }
+      throw new Error(`Unexpected fetch to ${url}`);
+    }) as unknown as typeof fetch;
+
+    const result = await resolveMakerworldViaCloudApi("124", "2", "test-token");
+
+    expect(result?.downloadUrl).toBe(VALID_DOWNLOAD.url);
+    expect(result?.meta.filename).toBe("Phoenix.3mf");
+    expect(result?.meta.makerworldProfile?.instanceId).toBe("2");
+    expect(fetched.some((url) => url.includes("/iot-service/"))).toBe(false);
   });
 
   it("downloads the raw files of a model with no print profiles, as one zip", async () => {
@@ -67,7 +95,7 @@ describe("resolveMakerworldViaCloudApi", () => {
     expect(result?.downloadUrl).toBe("https://makerworld.bblmw.com/model/777/all.zip?key=k");
     expect(result?.meta.title).toBe("Paint holder");
     expect(result?.meta.makerworldProfile?.instanceId).toBeNull();
-    expect(fetched.some((url) => url.includes("/iot-service/"))).toBe(false);
+    expect(fetched.some((url) => url.includes("/f3mf"))).toBe(false);
   });
 
   it("takes the raw files when no profile has an id to download it by", async () => {
@@ -91,7 +119,7 @@ describe("resolveMakerworldViaCloudApi", () => {
     global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
       const url = String(input);
       if (url.includes("/design-service/design/")) return jsonResponse(200, VALID_DESIGN);
-      if (url.includes("/iot-service/api/user/profile/")) {
+      if (url.includes("/design-service/instance/")) {
         return jsonResponse(400, { code: -1, error: "You've reached your daily download limit." });
       }
       throw new Error(`Unexpected fetch to ${url}`);

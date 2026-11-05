@@ -31,6 +31,8 @@ export type ProviderManifest = {
   docsSlug: string;
   /** The provider's domains; their subdomains count too. */
   hosts: readonly string[];
+  /** Exact hosts allowed to receive each kind of this provider's credentials. */
+  credentialHosts?: Readonly<Record<string, { exact: readonly string[] }>>;
   /** Its APIs and file hosts, by what they serve, for every package that calls them. */
   endpoints?: Readonly<Record<string, `https://${string}`>>;
   /** `accent`: its own colour for what's drawn in its manner, such as its name chip and its collections' tiles in the
@@ -47,9 +49,19 @@ export type ProviderManifest = {
   /** The credentials Thingport keeps for it, connected in Configuration → Providers; none for Printables. */
   auth: readonly AuthSlot[];
   helpers: { grab: Need; flaresolverr: Need };
-  /** Its Cloudflare tells Node's fetch apart by its TLS handshake, so the backend sends every request to its hosts
-   *  with a browser's (backend/src/utils/browserFetch.ts). */
-  browserFetch?: true;
+  /** Browser fallback entry points. Exact HTTPS hosts only; browser redirects/subrequests remain outside
+   * Thingport's per-hop guard. Credential permissions are scoped to each declared route. */
+  solverRoutes?: readonly {
+    host: string;
+    path: RegExp;
+    query: readonly string[];
+    /** Permit encoded spaces only in this pathname segment (zero-based, excluding the leading slash). */
+    encodedSpaceSegment?: number;
+    credentials?: { query?: readonly string[]; cookies?: true };
+  }[];
+  /** Exact HTTPS origins where Cloudflare rejects Node's TLS handshake. Requests to these origins use impit;
+   *  keep the list here so each provider owns its transport exceptions. */
+  browserFetchOrigins?: readonly `https://${string}`[];
   capabilities: {
     collections: boolean;
     likes: boolean;

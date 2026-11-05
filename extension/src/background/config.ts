@@ -7,7 +7,7 @@ import {
   type StoredConfig,
 } from "../shared/storage";
 import type { ExtensionState } from "../shared/messages";
-import { loginAndStoreToken } from "./api";
+import { learnImportQueue, loginAndStoreToken } from "./api";
 
 export async function getStoredConfig(): Promise<StoredConfig> {
   return chrome.storage.local.get(Object.values(STORAGE_KEYS)) as Promise<StoredConfig>;
@@ -20,6 +20,9 @@ export function isConfigured(config: StoredConfig): config is ConfiguredConfig {
   return Boolean(config.instanceUrl && config.email && (config.password || config.connectionToken));
 }
 
+// Shared, so a burst of tabs opening asks the instance once.
+let learningImportQueue: Promise<void> | null = null;
+
 export async function getState(): Promise<ExtensionState> {
   const config = await getStoredConfig();
   // Set up before the role was stored: one login learns it.
@@ -28,10 +31,19 @@ export async function getState(): Promise<ExtensionState> {
       .then(async () => Object.assign(config, await getStoredConfig()))
       .catch(() => undefined);
   }
+  // Set up before the instance was asked, or it hasn't answered yet. Not waited for: an instance out of reach would
+  // hold up the popup and every page, offline features included. Open tabs re-render once it's in storage.
+  if (isConfigured(config) && !config.disabled && config.importQueue === undefined) {
+    learningImportQueue ??= learnImportQueue(config.instanceUrl, config.instanceUrl).finally(() => {
+      learningImportQueue = null;
+    });
+  }
+  const importQueue = config.importQueue === true;
   return {
     configured: isConfigured(config),
     disabled: Boolean(config.disabled),
-    isAdmin: Boolean(config.isAdmin),
+    canQueue: Boolean(config.isAdmin) || importQueue,
+    importQueue,
     instanceUrl: config.instanceUrl || "",
     email: config.email || "",
     connectedByApproval: Boolean(config.connectionToken),

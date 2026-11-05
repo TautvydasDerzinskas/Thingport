@@ -19,15 +19,16 @@ teardown() {
     "${compose[@]}" logs --no-color > test-results/stack.log 2>&1 || true
   fi
   "${compose[@]}" down --volumes --remove-orphans > /dev/null 2>&1 || true
-  rm -rf consume
+  rm -rf consume fake-provider-gates
   exit "$status"
 }
 trap teardown EXIT
 
 # A previous run that was killed before its teardown would otherwise leave old data in place.
 "${compose[@]}" down --volumes --remove-orphans > /dev/null 2>&1 || true
-# The backend's watched consume folder, bind-mounted so tests can drop files into it.
-rm -rf consume && mkdir consume
+# The backend's watched consume folder, bind-mounted so tests can drop files into it, and likewise what lets the fake
+# provider's held imports go.
+rm -rf consume fake-provider-gates && mkdir consume fake-provider-gates
 "${compose[@]}" up --build --detach --wait
 
 BASE_URL="http://localhost:${REGRESSION_PORT}" npx playwright test "$@"

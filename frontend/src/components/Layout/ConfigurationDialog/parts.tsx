@@ -12,8 +12,9 @@ export function PanelHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <Box sx={{ mb: 2.5, display: "flex", alignItems: "flex-start", gap: 2 }}>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+    <Box sx={{ mb: 2.5, display: "flex", alignItems: "flex-start", flexWrap: "wrap", gap: 2 }}>
+      {/* Short of room, the action drops below rather than squeezing the words. */}
+      <Box sx={{ flex: 1, minWidth: 180 }}>
         <Typography variant="body1" fontWeight={600} sx={{ color: (muiTheme) => muiTheme.thingport.headingText }}>
           {title}
         </Typography>

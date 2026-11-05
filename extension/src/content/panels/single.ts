@@ -4,7 +4,7 @@
 // flow below, which is every provider's.
 
 import type { FillGapsResult, InspectResult, SourceGap, ZipEntriesResult } from "../../shared/api";
-import { request } from "../../shared/messages";
+import { IMPORT_PAUSED, request } from "../../shared/messages";
 import { ctx } from "../context";
 import {
   isMakerworldBlockingError,
@@ -17,7 +17,7 @@ import { api, escapeHtml } from "../runtime";
 import { onPanelAction, panelQuery, panelQueryAll, renderPanel, setPanelNote } from "../shell";
 import { modelHeadHtml, modelTitle } from "./modelHead";
 import { collectionIdFor, collectionPickerHtml, readCollectionChoice, wireCollectionPicker } from "./collectionPicker";
-import { errorHtml, statusHtml, successHtml } from "./results";
+import { errorHtml, pausedHtml, queuedHtml, statusHtml, successHtml } from "./results";
 import { SHARED_SCRIPT_PANEL_NOTE_HTML, WITHHELD_SCRIPT_PANEL_NOTE_HTML } from "../scriptNote";
 import {
   checkingLinkPhrases,
@@ -38,6 +38,11 @@ async function profileIdsFor(): Promise<((scope: ProfileScope) => string[]) | nu
   const { url, classification } = ctx();
   if (classification.kind !== "single") return null;
   return (await CONTENT_MODULES[classification.provider].loadProfiles?.(url)) ?? null;
+}
+
+/** The page offers a print profile, whose download is always one 3MF. */
+async function hasPrintProfiles(): Promise<boolean> {
+  return ((await profileIdsFor())?.("all").length ?? 0) > 0;
 }
 
 /** The page's selected profile first, then "designer's" and "all" where they'd import more. */
@@ -94,8 +99,8 @@ function startScriptNote(): void {
   void CONTENT_MODULES[provider].scriptState?.(ctx().url).then(showScriptNote, () => undefined);
 }
 
-/** Admins only: the same import, but waiting paused in the instance's import queue. Not where only Grab gets the files:
- *  the queue would only hand the link back to it. */
+/** Whoever `canQueue` lets: the same import, but waiting in the instance's import queue. Not where only Grab gets the
+ *  files: the queue would only hand the link back to it. */
 function queueButtonHtml(): string {
   return ctx().canQueue && manifestOf(ctx().classification.provider).helpers.grab !== "required"
     ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="queue">Add to the queue</button>`
@@ -138,8 +143,9 @@ export async function loadSingleItem(): Promise<void> {
     `);
     return;
   }
-  // A link that may be a zip of raw files is looked at first; every other site's is a model page the instance reads.
-  const skipInspect = !manifestOf(provider).capabilities.rawFilesZip;
+  // A design without print profiles may download as a zip of its raw files, so it's looked at first. Not one with
+  // them: that would only wait on the instance resolving a 3MF. Every other site's link is a model page it reads.
+  const skipInspect = !manifestOf(provider).capabilities.rawFilesZip || (await hasPrintProfiles());
 
   let zipFilename: string | null = null;
   if (skipInspect) {
@@ -274,10 +280,10 @@ async function loadZipEntries(): Promise<void> {
   }
   const rows = result.entries
     .map(
-      (entry) => `
+      ({ path }) => `
         <label class="tg-entry">
-          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(entry)}" checked />
-          <span class="tg-entry__name">${escapeHtml(entry)}</span>
+          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(path)}" checked />
+          <span class="tg-entry__name">${escapeHtml(path)}</span>
         </label>
       `,
     )
@@ -336,7 +342,8 @@ async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
       renderPanel(successHtml(link));
     }
   } catch (err) {
-    renderBlockedError(err, "url", collectionId);
+    if (err instanceof Error && err.message === IMPORT_PAUSED) renderPanel(pausedHtml(instanceUrl));
+    else renderBlockedError(err, "url", collectionId);
   }
 }
 
@@ -380,9 +387,9 @@ async function runOwlcadImport(collectionId: string | null): Promise<void> {
   }
 }
 
-/** A CAPTCHA or the daily limit won't clear by clicking Import again, so an admin can park the
- *  link in the queue with the same choices instead, and start it once MakerWorld lets go. The
- *  backend's errors arrive as plain text, hence the message check. */
+/** A CAPTCHA or the daily limit won't clear by clicking Import again, so whoever `canQueue` lets can
+ *  park the link in the queue with the same choices instead, and have it started once MakerWorld
+ *  lets go. The backend's errors arrive as plain text, hence the message check. */
 function renderBlockedError(err: unknown, scope: ProfileScope, collectionId: string | null): void {
   const blocked =
     isMakerworldBlockingError(err) || (err instanceof Error && /captcha|download limit/i.test(err.message));
@@ -419,14 +426,12 @@ async function runProfilesImport(scope: ProfileScope, collectionId: string | nul
   for (const [index, instanceId] of ids.entries()) {
     renderPanel(statusHtml(`Importing print profile ${index + 1} of ${ids.length}…`));
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, PROFILE_GAP_MS));
-    // The page's Download button gives exactly the link's profile. Snapmaker's and Creality Cloud's the instance
-    // fetches itself.
+    // Each profile is picked on the page, then downloaded with its own button: the one the page shows needn't be the
+    // first of these. Snapmaker's and Creality Cloud's the instance fetches itself.
     try {
-      const resolved = !makerworld
-        ? null
-        : index === 0
-          ? await resolveMakerworldDownloadUrl(url).catch(nullUnlessBlocking)
-          : await resolveMakerworldProfileDownload(url, instanceId).catch(nullUnlessBlocking);
+      const resolved = makerworld
+        ? await resolveMakerworldProfileDownload(url, instanceId).catch(nullUnlessBlocking)
+        : null;
       const print = await request("IMPORT_SINGLE", {
         // MakerWorld's page link carries its profile; the others' is named, so a model already in the library gets it.
         url: index === 0 && makerworld ? url : profileUrl(url, instanceId),
@@ -460,24 +465,14 @@ async function runProfilesImport(scope: ProfileScope, collectionId: string | nul
   );
 }
 
-/** Sends the link to the paused import queue with the panel's collection and profile choices. No
- *  download is resolved here: the instance does that once the queue is started. */
+/** Sends the link to the import queue with the panel's collection and profile choices. No download
+ *  is resolved here: the instance does that when the link's turn comes. */
 async function runQueueImport(scope: ProfileScope, collectionId: string | null): Promise<void> {
-  const { url, instanceUrl, title } = ctx();
+  const { url, instanceUrl, title, importQueue } = ctx();
   renderPanel(statusHtml("Adding to the queue…"));
   try {
     const result = await request("QUEUE_IMPORT", { url, collectionId, scope, title: title ?? null });
-    const waiting = `${result.waiting} link${result.waiting === 1 ? "" : "s"} waiting`;
-    renderPanel(
-      successHtml(
-        `${instanceUrl}/admin-queue`,
-        result.duplicate
-          ? `This link was already waiting in the queue (${waiting}).`
-          : `Paused until it's started from Administration > Import queue (${waiting}).`,
-        result.duplicate ? "Already in the queue" : "Added to the queue",
-        "Open import queue",
-      ),
-    );
+    renderPanel(queuedHtml(instanceUrl, result, importQueue));
   } catch (err) {
     renderPanel(errorHtml(err));
   }

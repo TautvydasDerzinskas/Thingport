@@ -127,11 +127,13 @@ describe("Cults3D URLs", () => {
     });
   });
 
-  it("only takes files from its CloudFront host and its own Scaleway bucket", () => {
+  it("only takes files from its own download hosts and its own Scaleway bucket", () => {
     expect(isCults3dFileHost("download.cults3d.com")).toBe(true);
+    expect(isCults3dFileHost("downloader.cults3d.com")).toBe(true);
     expect(isCults3dFileHost("s3.fr-par.scw.cloud")).toBe(true);
     expect(isCults3dFileHost("cults3d.com")).toBe(false);
     expect(isCults3dFileHost("download.cults3d.com.evil.test")).toBe(false);
+    expect(isCults3dFileHost("downloader.cults3d.com.evil.test")).toBe(false);
   });
 });
 
@@ -365,7 +367,7 @@ describe("Cults3D downloads", () => {
     await expect(placeCults3dFreeOrder("ghostship-benchy", BROWSER)).rejects.toBeInstanceOf(Cults3dBlockedError);
   });
 
-  it("follows the download page to its signed CloudFront link, and nowhere else", async () => {
+  it("follows the download page to its signed link to the files, and nowhere else", async () => {
     const signed =
       "https://download.cults3d.com/uploads/creation_zip/file/263230/ghostship-benchy.zip?Expires=1&Signature=s&Key-Pair-Id=k";
     stubFetch(() => redirect(signed));
@@ -375,6 +377,13 @@ describe("Cults3D downloads", () => {
       name: "ghostship-benchy.zip",
       url: signed,
     });
+    // A bought model's: the designer's own upload.
+    const upload =
+      "https://downloader.cults3d.com/uploaders/15745893/blueprint-file/c/FJ40-RodMuzac.zip?Expires=1&Signature=s&Key-Pair-Id=k";
+    stubFetch(() => redirect(upload));
+    expect(
+      await resolveCults3dDownload("https://cults3d.com/en/downloads/3?creation=toyota-fj40-rodmuzac", BROWSER),
+    ).toEqual({ name: "FJ40-RodMuzac.zip", url: upload });
     const scaleway =
       "https://s3.fr-par.scw.cloud/cults-stl-prod/uploaders/2169353/blueprint-file/d/Tsoi.zip?X-Amz-Expires=900&X-Amz-Signature=s";
     stubFetch(() => redirect(scaleway));

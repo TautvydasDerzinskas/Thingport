@@ -23,10 +23,11 @@ type Props = {
   context?: ToolContext;
   onClose: () => void;
   onAbout?: () => void;
+  onUnauthorized?: () => void;
 };
 
 /** A tool running in a window of its own: the size its metadata asks for, or the whole screen. */
-export default function ToolWindow({ tool, context, onClose, onAbout }: Props) {
+export default function ToolWindow({ tool, context, onClose, onAbout, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [full, setFull] = useState(false);
   // Each tool opens at its own size, whatever the last one was left at.
@@ -110,7 +111,7 @@ export default function ToolWindow({ tool, context, onClose, onAbout }: Props) {
             </Tooltip>
           </Box>
           <Box sx={{ flex: 1, minHeight: 0, bgcolor: (theme) => theme.thingport.pageBackground }}>
-            <ToolRunner tool={tool} context={context} onClose={onClose} />
+            <ToolRunner tool={tool} context={context} onClose={onClose} onUnauthorized={onUnauthorized} />
           </Box>
         </>
       )}

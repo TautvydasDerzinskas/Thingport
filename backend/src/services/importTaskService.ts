@@ -47,6 +47,10 @@ export function startImportTask(userId: string, run: () => Promise<unknown>): st
   return id;
 }
 
+export function hasRunningImportTasks(): boolean {
+  return [...tasks.values()].some((task) => task.state.status === "running");
+}
+
 /** Null for an unknown, expired or someone else's task. */
 export function getImportTask(id: string, userId: string): ImportTaskState | null {
   pruneFinished();

@@ -37,6 +37,8 @@ import cgtrader from "./cgtrader/manifest.generated";
 import { urls as cgtraderUrls } from "./cgtrader/urls.generated";
 import grabcad from "./grabcad/manifest.generated";
 import { urls as grabcadUrls } from "./grabcad/urls.generated";
+import meshy from "./meshy/manifest.generated";
+import { urls as meshyUrls } from "./meshy/urls.generated";
 
 export type {
   AuthField,
@@ -73,6 +75,7 @@ export const PROVIDER_IDS = [
   "makerables",
   "cgtrader",
   "grabcad",
+  "meshy",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -94,6 +97,7 @@ export const MANIFESTS = {
   makerables,
   cgtrader,
   grabcad,
+  meshy,
 } as const;
 
 /** What each site is, in two or three sentences (providers/<id>/docs.ts), for the UI that introduces a provider
@@ -133,6 +137,8 @@ export const ABOUT: { readonly [K in ProviderId]: string } = {
     "A Vilnius-born marketplace of over three million 3D models, started in 2011: game and film assets, renders and a large 3D printing catalogue, sold by their designers and many of them free.",
   grabcad:
     "An engineers' community started in Estonia in 2009 and owned by Stratasys since 2014. Its free library holds millions of CAD models, from machine parts to whole assemblies, mostly as STEP files and native CAD formats.",
+  meshy:
+    "An AI 3D model generator that turns a prompt or a picture into a textured model in about a minute. Its community shares the results by the hundred thousand, and lets creators mark the ones fit to print.",
 };
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -153,6 +159,7 @@ export const TRENDING_PROVIDER_IDS = [
   "makerables",
   "cgtrader",
   "grabcad",
+  "meshy",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -174,6 +181,7 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   makerables: makerablesUrls,
   cgtrader: cgtraderUrls,
   grabcad: grabcadUrls,
+  meshy: meshyUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {
