@@ -100,9 +100,10 @@ const THEME_DEFS: Record<ResolvedTheme, BaseThemeDef> = {
     panelStrong: "#1e2746",
     border: "#333a54",
     borderStrong: "#333a54",
-    text: "#828690",
-    textMuted: "#828690",
-    textSubtle: "#828690",
+    // Primary is near-white (11:1 on the panel); muted and subtle are a step down but stay above 4.5:1 on page, panel and sub-nav.
+    text: "#e6e8ee",
+    textMuted: "#9aa0ad",
+    textSubtle: "#9aa0ad",
     altText: "rgb(255, 114, 32)",
     modelColor: "#e2e8f0",
     modelEmissive: "#475569",
