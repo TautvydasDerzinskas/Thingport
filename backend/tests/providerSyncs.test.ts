@@ -625,5 +625,8 @@ describe("a sync's model links", () => {
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),
     );
     expect(readBack).toEqual(ids);
+    // One of the user's own Meshy generations, kept apart from posts by its prefix.
+    const task = "task-01a18f26-a4c0-7762-a46c-2c16edc01022";
+    expect(modelIdFromUrl("meshy", modelUrlFor("meshy", task))).toBe(task);
   });
 });

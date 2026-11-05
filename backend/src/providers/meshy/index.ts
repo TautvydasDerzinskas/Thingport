@@ -20,6 +20,7 @@ import {
   fetchMeshyGenerations,
   fetchMeshyPopular,
   isMeshyFileHost,
+  MeshyAccountChangedError,
   markMeshyDownloaded,
   MESHY_GENERATIONS_NAME,
   MeshyAuthError,
@@ -55,6 +56,7 @@ async function meshyFailure(userId: string, err: unknown): Promise<unknown> {
   if (err instanceof MeshyPlanError || err instanceof MeshyRefusedError) return new HttpError(403, err.message);
   if (err instanceof MeshyRateLimitError) return new HttpError(429, err.message);
   if (err instanceof MeshyBlockedError) return new HttpError(503, err.message);
+  if (err instanceof MeshyAccountChangedError) return new HttpError(409, err.message);
   return err;
 }
 

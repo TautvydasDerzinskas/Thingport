@@ -2,6 +2,7 @@
 // community models for its Pro and Studio plans, and says so for each model before its Download button is shown.
 
 import { MANIFESTS } from "../index.generated";
+import { meshyChunkIndex, meshySessionOf } from "./cookie";
 import { parseMeshyPostUrl } from "./urls.generated";
 
 const { meshy } = MANIFESTS;
@@ -20,21 +21,11 @@ function accessToken(): string | null {
     .split("; ")
     .map((part) => part.split("="))
     .filter(([name]) => name === prefix || name?.startsWith(`${prefix}.`))
-    .toSorted(([a], [b]) => Number(a.split(".")[1] ?? -1) - Number(b.split(".")[1] ?? -1))
+    .toSorted(([a], [b]) => meshyChunkIndex(a) - meshyChunkIndex(b))
     .map(([, ...value]) => value.join("="));
-  if (!chunks.length) return null;
-  try {
-    const encoded = chunks
-      .join("")
-      .replace(/^base64-/, "")
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-    const session = JSON.parse(atob(encoded)) as { access_token?: unknown; expires_at?: unknown };
-    const fresh = typeof session.expires_at === "number" && session.expires_at * 1000 > Date.now();
-    return typeof session.access_token === "string" && fresh ? session.access_token : null;
-  } catch {
-    return null;
-  }
+  const session = chunks.length ? meshySessionOf(chunks.join("")) : null;
+  const fresh = typeof session?.expires_at === "number" && session.expires_at * 1000 > Date.now();
+  return typeof session?.access_token === "string" && fresh ? session.access_token : null;
 }
 
 async function getJson(path: string, token: string | null): Promise<Record<string, unknown> | null> {

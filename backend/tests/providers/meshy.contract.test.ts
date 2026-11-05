@@ -5,6 +5,7 @@ import { meshyBrowse } from "../../src/providers/meshy/browse";
 import { meshyConnection } from "../../src/providers/meshy/connection";
 import {
   getMeshyConnection,
+  getUserMeshyAuth,
   normalizeMeshySession,
   setUserMeshySession,
   type MeshySession,
@@ -12,7 +13,18 @@ import {
 import { fetchListing } from "../../src/services/collectionSyncRunner";
 import { SyncHeldError } from "../../src/providers/syncProblem";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
-import { assertThat, binary, expectStatus, html, json, loadFixture, threeMf, type FetchHandler } from "./support";
+import { fetchMeshyUserCollections } from "../../src/providers/meshy/api";
+import {
+  assertThat,
+  binary,
+  expectStatus,
+  html,
+  json,
+  loadFixture,
+  threeMf,
+  type FetchHandler,
+  type RecordedCall,
+} from "./support";
 
 vi.mock("node:dns/promises", () => ({
   default: {
@@ -83,26 +95,52 @@ function cookieFor(accessToken: string, refreshToken = REFRESH): string {
 
 const sessionOf = (accessToken: string): MeshySession => normalizeMeshySession(cookieFor(accessToken))!;
 
+// Another Meshy account, for a sign-in switched while a call runs.
+const OTHER_USER = "11111111-2222-4333-8444-555555555555";
+const OTHER_TOKEN = jwt({ sub: OTHER_USER, exp: IN_2100, session_id: "other" });
+
+/** A made-up id of the shape Meshy's are, for listings longer than a fixture. */
+const postId = (n: number) => `01a20000-0000-7000-8000-${String(n).padStart(12, "0")}`;
+const COLLECTION_SYNC = (userId: string) => ({
+  userId,
+  provider: "meshy",
+  externalId: COLLECTION_ID,
+  sourceUrl: COLLECTION_URL,
+});
+
 const signedIn = (headers: Record<string, string | undefined>) =>
   headers.authorization === `Bearer ${TOKEN}` || headers.authorization === `Bearer ${RENEWED}`;
 
-/** `answers` replaces what one path answers with, for a variant of the ok scenario. */
-function handlerFor(scenario: string, answers: Record<string, () => Response> = {}): FetchHandler {
-  return async ({ url, headers, json: body }) => {
+type Answer = (call: RecordedCall) => Response | Promise<Response>;
+
+/** `answers` replaces what one path answers with, for a variant of the ok scenario. Supabase spends each refresh
+ *  token it renews with, as the real one does: the next renewal must bring the one the last handed back. */
+function handlerFor(scenario: string, answers: Record<string, Answer> = {}): FetchHandler {
+  const accepted = new Set([REFRESH]);
+  let renewals = 0;
+  return async (call) => {
+    const { url, headers, json: body } = call;
     if (url.hostname === "assets.meshy.ai") return binary(await threeMf(url.pathname), "model/3mf");
     if (url.hostname === "auth.meshy.ai") {
       assertThat(url.searchParams.get("grant_type") === "refresh_token", "only ever renews");
       assertThat(headers.apikey?.startsWith("eyJ"), "Supabase wants its public key beside every call");
-      if (answers.refresh) return answers.refresh();
-      if (scenario === "rejected" || body?.refresh_token !== REFRESH) {
+      if (answers.refresh) return answers.refresh(call);
+      if (scenario === "rejected" || !accepted.delete(body?.refresh_token)) {
         return json(loadFixture("meshy", "refresh-rejected"), 400);
       }
-      return json({ ...loadFixture("meshy", "refresh"), access_token: RENEWED, expires_at: IN_2100 });
+      const next = `nextrefresh${++renewals + 1}`;
+      accepted.add(next);
+      return json({
+        ...loadFixture("meshy", "refresh"),
+        access_token: RENEWED,
+        refresh_token: next,
+        expires_at: IN_2100,
+      });
     }
     if (url.hostname !== "www.meshy.ai" || !url.pathname.startsWith("/meshyd-api/web/")) return undefined;
     const path = url.pathname.slice("/meshyd-api/web".length);
     const answer = answers[path];
-    if (answer) return answer();
+    if (answer) return answer(call);
 
     // Anyone's to read.
     const post = path.match(/^\/public\/community\/posts\/([\w-]+)$/)?.[1];
@@ -394,6 +432,156 @@ describe("Meshy specifics", () => {
     // The refresh token it came with is spent: only the one Supabase handed back renews it now.
     expect(row.secret).toMatchObject({ accessToken: RENEWED, refreshToken: "nextrefresh2" });
   });
+
+  it("keeps the renewed tokens when Meshy can't say whose they are just then, and says so when asked to check", async () => {
+    ctx.install(handlerFor("ok", { "/v1/me/info": () => html("<title>502 Bad Gateway</title>", 502) }));
+    expect(await meshyConnection.save(ctx.userId, { session: cookieFor(EXPIRED) })).toEqual({ configured: true });
+    const row = await prisma.providerConnection.findFirstOrThrow({ where: { userId: ctx.userId, provider: "meshy" } });
+    expect(row.secret).toMatchObject({ accessToken: RENEWED, refreshToken: "nextrefresh2" });
+
+    ctx.install(handlerFor("ok", { "/v1/me/info": () => html("<title>502 Bad Gateway</title>", 502) }));
+    await expect(meshyConnection.save(ctx.userId, { session: cookieFor(EXPIRED), verify: true })).rejects.toMatchObject(
+      { status: 503 },
+    );
+  });
+
+  it("renews again with the refresh token the last renewal handed back", async () => {
+    await connect(ctx.userId, EXPIRED);
+    const stub = ctx.stub("ok");
+    expectStatus(await ctx.importUrl(), 200);
+    // The renewed access token runs out in turn.
+    await prisma.providerConnection.updateMany({
+      where: { userId: ctx.userId, provider: "meshy" },
+      data: { expiresAt: new Date(0) },
+    });
+    expectStatus(await ctx.importUrl(`https://www.meshy.ai/posts/fangy-mchowl-${PHOTO_POST_ID}`), 200);
+    expect(stub.callsTo("auth.meshy.ai").map((call) => call.json)).toEqual([
+      { refresh_token: REFRESH },
+      { refresh_token: "nextrefresh2" },
+    ]);
+  });
+
+  it("keeps a disconnect made while a renewal was on its way, rather than writing the old sign-in back", async () => {
+    await connect(ctx.userId, EXPIRED);
+    const ok = handlerFor("ok");
+    ctx.install(async (call) => {
+      if (call.url.hostname === "auth.meshy.ai") await setUserMeshySession(ctx.userId, null);
+      return ok(call);
+    });
+    await ctx.importUrl();
+    expect((await getMeshyConnection(ctx.userId)).state).toBe("disconnected");
+  });
+
+  it("leaves the sign-in alone when something other than Supabase turns the renewal away", async () => {
+    await connect(ctx.userId, EXPIRED);
+    ctx.install(handlerFor("ok", { refresh: () => html("<title>403 Forbidden</title>", 403) }));
+    const res = await ctx.importUrl();
+    expect(res.body.code).not.toBe("meshy_session");
+    expect((await getMeshyConnection(ctx.userId)).state).toBe("connected");
+  });
+
+  it("won't retry as another account connected while a call ran, nor mark that one's sign-in ended", async () => {
+    await connect(ctx.userId);
+    const ok = handlerFor("ok");
+    ctx.install(async (call) => {
+      if (call.url.pathname.endsWith("/asset-url") && call.headers.authorization === `Bearer ${TOKEN}`) {
+        await setUserMeshySession(ctx.userId, sessionOf(OTHER_TOKEN));
+        return json(loadFixture("meshy", "invalid-token"), 401);
+      }
+      return ok(call);
+    });
+    const res = await ctx.importUrl();
+    expect(res.status).toBe(409);
+    expect(await ctx.prints()).toHaveLength(0);
+    expect(await getMeshyConnection(ctx.userId)).toMatchObject({ state: "connected", account: { userId: OTHER_USER } });
+  });
+
+  it("asks Meshy whose a sign-in is once, keeping it on that account's connection and its tokens as they are", async () => {
+    await setUserMeshySession(ctx.userId, sessionOf(TOKEN), null);
+    const stub = ctx.stub("ok");
+    expect((await getUserMeshyAuth(ctx.userId))?.account).toEqual(ACCOUNT);
+    expect((await getUserMeshyAuth(ctx.userId))?.account).toEqual(ACCOUNT);
+    expect(stub.calls.filter((call) => call.url.pathname.endsWith("/v1/me/info"))).toHaveLength(1);
+    const row = await prisma.providerConnection.findFirstOrThrow({ where: { userId: ctx.userId, provider: "meshy" } });
+    expect(row.secret).toMatchObject({ accessToken: TOKEN, refreshToken: REFRESH, handle: ACCOUNT.handle });
+
+    // Another account connected while it was asked: that one's connection doesn't get this one's name. Its name is
+    // forgotten first, as the same account's sign-in again would keep it.
+    await prisma.providerConnection.updateMany({
+      where: { userId: ctx.userId, provider: "meshy" },
+      data: { accountName: null },
+    });
+    const ok = handlerFor("ok");
+    ctx.install(async (call) => {
+      if (call.url.pathname.endsWith("/v1/me/info")) await setUserMeshySession(ctx.userId, sessionOf(OTHER_TOKEN));
+      return ok(call);
+    });
+    await getUserMeshyAuth(ctx.userId);
+    expect((await getMeshyConnection(ctx.userId)).account).toEqual({ userId: OTHER_USER, name: null, handle: null });
+  });
+
+  it("reads a collection past its first page, judging a full page by the records Meshy sent", async () => {
+    const page1 = Array.from({ length: 100 }, (_, n) => (n === 50 ? { kind: "no id" } : { id: postId(n) }));
+    const page2 = COLLECTION_POSTS.map((id) => ({ id }));
+    ctx.install(
+      handlerFor("ok", {
+        "/public/community/posts": (call) => {
+          const pageNum = call.url.searchParams.get("pageNum");
+          return json({ code: "OK", result: pageNum === "1" ? page1 : pageNum === "2" ? page2 : [], total: 106 });
+        },
+      }),
+    );
+    const ids = await fetchListing(COLLECTION_SYNC(ctx.userId));
+    expect(ids).toHaveLength(105);
+    expect(ids!.slice(-6)).toEqual(COLLECTION_POSTS);
+  });
+
+  it("fails a sync rather than syncing part of a collection longer than it reads", async () => {
+    ctx.install(
+      handlerFor("ok", {
+        "/public/community/posts": (call) => {
+          const pageNum = Number(call.url.searchParams.get("pageNum"));
+          const result = Array.from({ length: 100 }, (_, n) => ({ id: postId(pageNum * 100 + n) }));
+          return json({ code: "OK", result, total: null });
+        },
+      }),
+    );
+    await expect(fetchListing(COLLECTION_SYNC(ctx.userId))).rejects.toThrow(/can't be read whole/);
+  });
+
+  it("finds every collection a user made, past the first page", async () => {
+    const mine = (n: number) => ({ id: postId(n), name: `Collection ${n}`, userId: MESHY_USER });
+    ctx.install(
+      handlerFor("ok", {
+        "/public/community-collections": (call) => {
+          const pageNum = Number(call.url.searchParams.get("pageNum"));
+          const result =
+            pageNum === 1 ? Array.from({ length: 100 }, (_, n) => mine(n)) : pageNum === 2 ? [mine(100)] : [];
+          return json({ code: "OK", result });
+        },
+      }),
+    );
+    expect(await fetchMeshyUserCollections(MESHY_USER)).toHaveLength(101);
+  });
+
+  it("counts a generation once when it shows up on two pages", async () => {
+    await connect(ctx.userId);
+    const own = loadFixture("meshy", "tasks").result[0];
+    const task = (n: number) => ({ ...own, id: postId(n) });
+    ctx.install(
+      handlerFor("ok", {
+        "/v2/tasks": (call) => {
+          // A generation made while the pages are read pushes the last of page one onto page two.
+          const pageNum = Number(call.url.searchParams.get("pageNum"));
+          const result = pageNum === 1 ? Array.from({ length: 100 }, (_, n) => task(n)) : [task(99), task(100)];
+          return json({ code: "OK", result, total: 102 });
+        },
+      }),
+    );
+    const res = await ctx.post("/api/import/meshy/list/entries", { url: GENERATIONS_URL });
+    expectStatus(res, 200);
+    expect(res.body.total).toBe(101);
+  });
 });
 
 describe("Meshy sign-in", () => {
@@ -407,6 +595,16 @@ describe("Meshy sign-in", () => {
       userId: MESHY_USER,
       expiresAt: new Date(IN_2100 * 1000),
     });
+  });
+
+  it("keeps a split cookie's last chunk however short it is", () => {
+    const value = cookieFor(TOKEN)
+      .split("; ")
+      .filter((part) => part.startsWith("sb-auth-auth-token."))
+      .map((part) => part.split("=")[1])
+      .join("");
+    const split = `sb-auth-auth-token.0=${value.slice(0, -1)}; sb-auth-auth-token.1=${value.slice(-1)}`;
+    expect(normalizeMeshySession(split)?.accessToken).toBe(TOKEN);
   });
 
   it("takes an unsplit cookie, and nothing from a page without a sign-in", () => {

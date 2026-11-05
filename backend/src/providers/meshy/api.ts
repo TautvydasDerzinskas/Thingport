@@ -56,6 +56,8 @@ const FORMAT = "3mf";
 const PAGE_SIZE = 100;
 const LISTING_MAX_ENTRIES = 600;
 const MAX_LIST_PAGES = 40;
+// A sync reads a list to its end; no account's comes near this, and one that does fails rather than syncs a part.
+const SYNC_MAX_PAGES = 1000;
 const CARD_THUMBNAILS = 4;
 
 export class MeshyAuthError extends Error {
@@ -110,9 +112,17 @@ export class MeshyBlockedError extends Error {
   }
 }
 
+/** The user connected another Meshy account while a call ran with the last one's sign-in. */
+export class MeshyAccountChangedError extends Error {
+  constructor() {
+    super("Your Meshy sign-in changed to another account while this ran. Try again.");
+    this.name = "MeshyAccountChangedError";
+  }
+}
+
 /** What a signed-in call is made with: the access token, and the browser's device id and bot-check token, so Meshy
- *  sees the device the sign-in came from. */
-export type MeshyAuth = { token: string; deviceId: string | null; wafToken: string | null };
+ *  sees the device the sign-in came from. `accountId` is whose it is, so a retry never goes as someone else. */
+export type MeshyAuth = { token: string; deviceId: string | null; wafToken: string | null; accountId?: string };
 
 type Envelope = { status: number; code: string | null; result: unknown; total: number | null };
 
@@ -448,28 +458,47 @@ function postSummary(post: Record<string, unknown>): MeshySummary | null {
   };
 }
 
-/** Pages of a listing until `maxItems`, the end, or MAX_LIST_PAGES. `page` reads one, null when it isn't there. */
+/** A listing's pages, PAGE_SIZE records at a time, each record kept as `keep` makes it (null leaves it out), until
+ *  `maxItems` are kept or a short page says it ended. With `countAll`, every page is read, for a listing whose own
+ *  count takes in what `keep` leaves out. Reading one to its end -- infinite `maxItems`, as a sync does -- fails at
+ *  SYNC_MAX_PAGES rather than hand back a list cut short as if it were whole. Null when the listing isn't there. */
 async function readPages(
-  page: (pageNum: number) => Promise<{ entries: MeshySummary[]; total: number | null } | null>,
+  page: (pageNum: number) => Promise<{ records: Record<string, unknown>[]; total: number | null } | null>,
+  keep: (record: Record<string, unknown>) => MeshySummary | null,
   maxItems: number,
+  countAll = false,
 ): Promise<MeshyListing | null> {
   const entries: MeshySummary[] = [];
   const seen = new Set<string>();
-  let total = 0;
-  for (let pageNum = 1; pageNum <= MAX_LIST_PAGES; pageNum++) {
-    const read = await page(pageNum);
-    if (!read) return pageNum === 1 ? null : { entries, total: Math.max(total, entries.length), truncated: false };
-    total = read.total ?? total;
-    for (const entry of read.entries) {
-      if (seen.has(entry.externalId)) continue;
+  const toEnd = !Number.isFinite(maxItems);
+  const maxPages = toEnd ? SYNC_MAX_PAGES : MAX_LIST_PAGES;
+  let total: number | null = null;
+  let read = 0;
+  let ended = false;
+  for (let pageNum = 1; pageNum <= maxPages && !ended; pageNum++) {
+    const got = await page(pageNum);
+    if (!got) {
+      if (pageNum === 1) return null;
+      ended = true;
+      break;
+    }
+    total = got.total ?? total;
+    read += got.records.length;
+    for (const record of got.records) {
+      const entry = keep(record);
+      if (!entry || seen.has(entry.externalId)) continue;
       seen.add(entry.externalId);
       entries.push(entry);
     }
-    if (read.entries.length < PAGE_SIZE || entries.length >= maxItems || (total && entries.length >= total)) break;
+    // A page is short by the records it held, not by those kept: the next may have more to keep.
+    ended = got.records.length < PAGE_SIZE || (!countAll && total !== null && read >= total);
+    if (!countAll && entries.length >= maxItems) break;
   }
+  if (toEnd && !ended) throw new Error(`Meshy's listing runs past ${SYNC_MAX_PAGES} pages; it can't be read whole`);
   const kept = entries.slice(0, maxItems);
-  const known = Math.max(total, entries.length);
-  return { entries: kept, total: known, truncated: kept.length < known };
+  const known = countAll ? entries.length : Math.max(total ?? 0, entries.length);
+  // One that stopped short of its end may have more past where it stopped.
+  return { entries: kept, total: known, truncated: kept.length < known || !ended };
 }
 
 /** A collection's name and owner; null when it's gone. */
@@ -489,12 +518,16 @@ export async function fetchMeshyCollectionPosts(
   collectionId: string,
   maxItems: number = LISTING_MAX_ENTRIES,
 ): Promise<MeshyListing> {
-  const listing = await readPages(async (pageNum) => {
-    const read = await call(
-      `/public/community/posts?${query({ pageNum, pageSize: PAGE_SIZE, communityCollectionId: collectionId })}`,
-    );
-    return read && { entries: recordsOf(read.result).flatMap((post) => postSummary(post) ?? []), total: read.total };
-  }, maxItems);
+  const listing = await readPages(
+    async (pageNum) => {
+      const read = await call(
+        `/public/community/posts?${query({ pageNum, pageSize: PAGE_SIZE, communityCollectionId: collectionId })}`,
+      );
+      return read && { records: recordsOf(read.result), total: read.total };
+    },
+    postSummary,
+    maxItems,
+  );
   return listing ?? { entries: [], total: 0, truncated: false };
 }
 
@@ -519,15 +552,27 @@ export async function meshyCollectionCard(collection: {
 
 /** The collections a Meshy account made, in the order its profile lists them. */
 export async function fetchMeshyUserCollections(meshyUserId: string): Promise<{ id: string; name: string }[]> {
-  const read = await call(
-    `/public/community-collections?${query({ createdBy: meshyUserId, pageNum: 1, pageSize: PAGE_SIZE })}`,
+  const listing = await readPages(
+    async (pageNum) => {
+      const read = await call(
+        `/public/community-collections?${query({ createdBy: meshyUserId, pageNum, pageSize: PAGE_SIZE })}`,
+      );
+      return read && { records: recordsOf(read.result), total: null };
+    },
+    (collection) => {
+      const id = asText(collection.id);
+      // A filter it doesn't apply hands back everyone's collections, so whose each one is gets checked.
+      if (!id || asText(collection.userId)?.toLowerCase() !== meshyUserId) return null;
+      return {
+        externalId: id.toLowerCase(),
+        title: asText(collection.name) ?? "Meshy collection",
+        cover: null,
+        likes: null,
+      };
+    },
+    Number.POSITIVE_INFINITY,
   );
-  return recordsOf(read?.result).flatMap((collection) => {
-    const id = asText(collection.id);
-    // A filter it doesn't apply hands back everyone's collections, so whose each one is gets checked.
-    if (!id || asText(collection.userId)?.toLowerCase() !== meshyUserId) return [];
-    return [{ id: id.toLowerCase(), name: asText(collection.name) ?? "Meshy collection" }];
-  });
+  return (listing?.entries ?? []).map((entry) => ({ id: entry.externalId, name: entry.title }));
 }
 
 /** The user's own generations: every finished model in their workspace, newest first, as kept ids. The examples Meshy
@@ -538,24 +583,26 @@ export async function fetchMeshyGenerations(
   auth: MeshyAuth,
   maxItems: number = LISTING_MAX_ENTRIES,
 ): Promise<MeshyListing> {
-  const entries: MeshySummary[] = [];
-  for (let pageNum = 1; pageNum <= MAX_LIST_PAGES; pageNum++) {
-    const tasks = recordsOf((await call(`/v2/tasks?${query({ pageNum, pageSize: PAGE_SIZE })}`, { auth }))?.result);
-    for (const task of tasks) {
+  const listing = await readPages(
+    async (pageNum) => {
+      const read = await call(`/v2/tasks?${query({ pageNum, pageSize: PAGE_SIZE })}`, { auth });
+      return read && { records: recordsOf(read.result), total: read.total };
+    },
+    (task) => {
       const id = asText(task.id);
       const result = asRecord(task.result);
-      if (!id || task.status !== "SUCCEEDED" || result?.isExample === true || !hasMesh(task)) continue;
-      entries.push({
+      if (!id || task.status !== "SUCCEEDED" || result?.isExample === true || !hasMesh(task)) return null;
+      return {
         externalId: meshyTaskKey(id.toLowerCase()),
         title: asText(task.name) ?? promptTitle(promptOf(task)) ?? `Meshy generation ${id}`,
         cover: webImage(result?.previewUrl),
         likes: null,
-      });
-    }
-    if (tasks.length < PAGE_SIZE) break;
-  }
-  const kept = entries.slice(0, maxItems);
-  return { entries: kept, total: entries.length, truncated: kept.length < entries.length };
+      };
+    },
+    maxItems,
+    true,
+  );
+  return listing ?? { entries: [], total: 0, truncated: false };
 }
 
 /** What a sync names the collection it keeps the user's generations in. */
@@ -643,9 +690,10 @@ export async function refreshMeshySession(refreshToken: string): Promise<MeshyTo
     clearTimeout(timeout);
   }
   if (res.status === 429) throw new MeshyRateLimitError();
-  // Only these say the refresh token itself is no good; anything else is Supabase being unwell, which must not read
-  // as a refusal, or an outage would sign every user out.
-  if (res.status === 400 || res.status === 401 || res.status === 403) throw new MeshyAuthError();
+  // Only Supabase's own answer, which names its error, says the refresh token itself is no good. Anything else -- an
+  // outage, or a proxy's bare 403 -- must not read as a refusal, or it would sign every user out.
+  const refused = [400, 401, 403].includes(res.status) && Boolean(asText(body?.error_code) ?? asText(body?.error));
+  if (refused) throw new MeshyAuthError();
   const accessToken = body && asText(body.access_token);
   const nextRefresh = body && asText(body.refresh_token);
   if (!accessToken || !nextRefresh) throw new Error(`Meshy's sign-in didn't renew (HTTP ${res.status})`);

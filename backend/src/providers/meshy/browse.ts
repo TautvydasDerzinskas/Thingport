@@ -1,8 +1,10 @@
+import { mapWithConcurrency } from "../../utils/concurrency";
 import { HttpError } from "../../utils/fileUtils";
 import type { ProviderBrowse } from "../types";
 import {
   fetchMeshyCollection,
   fetchMeshyUserCollections,
+  MeshyAccountChangedError,
   MeshyAuthError,
   MeshyBlockedError,
   meshyCollectionCard,
@@ -14,6 +16,8 @@ import {
 import { getMeshyConnection, getUserMeshyAuth, withMeshyAuth } from "./session";
 
 const CONNECT_FIRST = "Connect Meshy in Configuration > Providers, or visit it with Thingport Grab";
+// Each card is a call of its own; a few at a time, so a user with many collections doesn't send them all at once.
+const CARD_CONCURRENCY = 4;
 
 export const meshyBrowse: ProviderBrowse = {
   async account(userId) {
@@ -33,7 +37,9 @@ export const meshyBrowse: ProviderBrowse = {
     const owner = account.handle ?? account.name;
     return [
       generations,
-      ...(await Promise.all(collections.map((collection) => meshyCollectionCard({ ...collection, owner })))),
+      ...(await mapWithConcurrency(collections, CARD_CONCURRENCY, (collection) =>
+        meshyCollectionCard({ ...collection, owner }),
+      )),
     ];
   },
   async card(userId, source) {
@@ -51,5 +57,6 @@ export const meshyBrowse: ProviderBrowse = {
     if (err instanceof MeshyAuthError) return new HttpError(400, err.message);
     if (err instanceof MeshyRateLimitError) return new HttpError(429, err.message);
     if (err instanceof MeshyBlockedError) return new HttpError(503, err.message);
+    if (err instanceof MeshyAccountChangedError) return new HttpError(409, err.message);
   },
 };

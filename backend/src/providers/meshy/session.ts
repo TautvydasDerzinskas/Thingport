@@ -1,9 +1,12 @@
+import { Prisma } from "@prisma/client";
+import { prisma } from "../../db";
 import {
   connectionState,
   readConnection,
   rejectConnection,
   usableSecret,
   writeConnection,
+  type Connection,
   type ConnectionState,
 } from "../connections";
 import { createLogger } from "../../logger";
@@ -11,6 +14,7 @@ import manifest from "./manifest.generated";
 import {
   decodeMeshyToken,
   fetchMeshyAccount,
+  MeshyAccountChangedError,
   MeshyAuthError,
   refreshMeshySession,
   type MeshyAccount,
@@ -20,9 +24,10 @@ import {
 // Per-user: the Meshy sign-in. Meshy signs in with Supabase, which keeps the session -- a 15-minute access token and
 // the refresh token that renews it -- in the `sb-auth-auth-token` cookie, split across `.0`, `.1`, … once it outgrows
 // one, as `base64-` and the session's JSON. Thingport keeps both tokens and renews the access token itself as it runs
-// out, saving each new refresh token, as the site's pages do. Meshy lets the browser and Thingport each renew from the
-// same sign-in without signing the other out. Thingport Grab sends the cookie whenever the browser's changes, with the
-// browser's device id and AWS bot-check token beside it; a pasted Cookie header works too.
+// out, saving each new refresh token, as the site's pages do. In testing Meshy let the browser and Thingport each renew
+// from the same sign-in without signing the other out; should it ever end it, the next visit with Grab sends a new one.
+// Thingport Grab sends the cookie whenever the browser's changes, with the browser's device id and AWS bot-check token
+// beside it; a pasted Cookie header works too.
 
 const ID = manifest.id;
 const { session: SESSION_PREFIX, device: DEVICE_COOKIE, waf: WAF_COOKIE } = manifest.sessionCookies;
@@ -43,7 +48,8 @@ type Secret = {
 /** A sign-in as read from the browser's cookies: the secret, whose it is and when its access token runs out. */
 export type MeshySession = Secret & { userId: string; expiresAt: Date | null };
 
-const COOKIE_VALUE = String.raw`[\w%=+/.~:-]{8,8192}`;
+// A split cookie's last chunk holds whatever was left over, which may be a character or two.
+const COOKIE_VALUE = String.raw`[\w%=+/.~:-]{1,8192}`;
 const cookiePattern = (name: string) =>
   new RegExp(
     String.raw`(?:^|[;\s])(${name.replace(/[.-]/g, "\\$&")}(?:\.\d{1,2})?)="?(${COOKIE_VALUE})"?(?=[;\s]|$)`,
@@ -96,11 +102,15 @@ export function normalizeMeshySession(raw: string | null | undefined): MeshySess
   };
 }
 
-const authOf = (secret: Secret): MeshyAuth => ({
+const authOf = (secret: Secret, accountId: string): MeshyAuth => ({
   token: secret.accessToken,
   deviceId: secret.deviceId,
   wafToken: secret.wafToken,
+  accountId,
 });
+
+/** The user's Meshy connection, the row each write below is conditional on. */
+const ROW = (userId: string) => ({ userId, provider: ID, slot: "default" });
 
 /** A new sign-in clears an earlier rejection. Who it is, where a check said so, is kept with it; one for another
  *  account than the last forgets that one's name. */
@@ -144,32 +154,38 @@ export async function getMeshyConnection(
   };
 }
 
-// One renewal at a time per user, however many calls ask at once: a second would spend a refresh token the first
+// One renewal of a refresh token at a time, however many calls ask at once: a second would spend the token the first
 // already used.
 const renewing = new Map<string, Promise<Secret>>();
 
-/** The stored sign-in, renewed and saved. Throws MeshyAuthError (and remembers it) when Supabase turns the refresh
- *  token down. */
-function renew(userId: string, secret: Secret): Promise<Secret> {
-  const running = renewing.get(userId);
+/** The stored sign-in of `accountId`, renewed and saved. The save, and a refusal's mark, apply only while the refresh
+ *  token renewed is still the one stored: a disconnect, or a new sign-in saved meanwhile, wins over them. Throws
+ *  MeshyAuthError when Supabase turns the refresh token down. */
+function renew(userId: string, secret: Secret, accountId: string): Promise<Secret> {
+  const key = `${userId}:${secret.refreshToken}`;
+  const running = renewing.get(key);
   if (running) return running;
+  const stillStored = { ...ROW(userId), accountId, secret: { path: ["refreshToken"], equals: secret.refreshToken } };
   const run = (async () => {
     try {
       const tokens = await refreshMeshySession(secret.refreshToken);
       const renewed: Secret = { ...secret, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
       // Saved before anything uses it: the refresh token it replaced is spent.
-      await writeConnection<Secret>(userId, ID, { secret: renewed, expiresAt: tokens.expiresAt });
-      log.info("access token renewed", { user: userId });
+      const { count } = await prisma.providerConnection.updateMany({
+        where: stillStored,
+        data: { secret: renewed as Prisma.InputJsonValue, expiresAt: tokens.expiresAt },
+      });
+      log.info(count ? "access token renewed" : "access token renewed, but a newer sign-in was kept", { user: userId });
       return renewed;
     } catch (err) {
       if (err instanceof MeshyAuthError) {
         log.warn("refresh token turned down", { user: userId });
-        await markMeshySessionRejected(userId);
+        await prisma.providerConnection.updateMany({ where: stillStored, data: { rejectedAt: new Date() } });
       }
       throw err;
     }
-  })().finally(() => renewing.delete(userId));
-  renewing.set(userId, run);
+  })().finally(() => renewing.delete(key));
+  renewing.set(key, run);
   return run;
 }
 
@@ -180,31 +196,33 @@ const fresh = (expiresAt: Date | null) => Boolean(expiresAt && expiresAt.getTime
 export async function getUserMeshyAuth(userId: string): Promise<{ auth: MeshyAuth; account: MeshyAccount } | null> {
   const connection = await readConnection<Secret>(userId, ID);
   const secret = usableSecret<Secret>(connection);
-  if (!secret || !connection?.accountId) return null;
-  const current = fresh(connection.expiresAt) ? secret : await renew(userId, secret);
-  const account = { userId: connection.accountId, name: connection.accountName, handle: secret.handle ?? null };
-  return {
-    auth: authOf(current),
-    account: account.name ? account : await resolveAccount(userId, authOf(current), account),
-  };
+  const accountId = connection?.accountId;
+  if (!secret || !accountId) return null;
+  const current = fresh(connection.expiresAt) ? secret : await renew(userId, secret, accountId);
+  const auth = authOf(current, accountId);
+  const account = { userId: accountId, name: connection.accountName, handle: secret.handle ?? null };
+  return { auth, account: account.name ? account : await resolveAccount(userId, auth, account) };
 }
 
-/** Who the sign-in is, asked of Meshy once and kept; the id alone when it can't be asked just now. */
+/** Who the sign-in is, asked of Meshy once and kept -- on that account's connection only, should another have been
+ *  saved meanwhile; the id alone when it can't be asked just now. */
 async function resolveAccount(userId: string, auth: MeshyAuth, known: MeshyAccount): Promise<MeshyAccount> {
   const account = await fetchMeshyAccount(auth).catch(() => null);
   if (!account || account.userId !== known.userId) return known;
-  const connection = await readConnection<Secret>(userId, ID);
-  if (connection?.secret) {
-    await writeConnection<Secret>(userId, ID, {
-      secret: { ...connection.secret, handle: account.handle },
-      accountName: account.name,
-    });
-  }
+  // In place, so the tokens a renewal may have saved meanwhile stay as they are.
+  await prisma.$executeRaw`
+    UPDATE "ProviderConnection"
+    SET "accountName" = ${account.name},
+        secret = jsonb_set(secret, '{handle}', ${JSON.stringify(account.handle)}::jsonb),
+        "updatedAt" = now()
+    WHERE "userId" = ${userId} AND provider = ${ID} AND slot = 'default'
+      AND "accountId" = ${known.userId} AND secret IS NOT NULL`;
   return account;
 }
 
-/** Runs `call` with the user's sign-in; when Meshy turns the access token down, renews it and tries once more. Throws
- *  MeshyAuthError once the sign-in itself is turned down, and remembers it. */
+/** Runs `call` with the user's sign-in; when Meshy turns the access token down, renews it and tries once more -- as
+ *  the same account only: throws MeshyAccountChangedError when another was connected meanwhile. Throws MeshyAuthError
+ *  once the sign-in itself is turned down, and remembers it. */
 export async function withMeshyAuth<T>(
   userId: string,
   auth: MeshyAuth,
@@ -214,12 +232,16 @@ export async function withMeshyAuth<T>(
     return await call(auth);
   } catch (err) {
     if (!(err instanceof MeshyAuthError)) throw err;
-    const secret = usableSecret<Secret>(await readConnection<Secret>(userId, ID));
-    if (!secret) throw err;
+    // The account and its tokens from the one read, so the retry can't pair one account with another's tokens.
+    const connection: Connection<Secret> | null = await readConnection<Secret>(userId, ID);
+    const secret = usableSecret<Secret>(connection);
+    if (!secret || !connection?.accountId) throw err;
+    if (auth.accountId && connection.accountId !== auth.accountId) throw new MeshyAccountChangedError();
+    const accountId = connection.accountId;
     // Renewed by a concurrent call meanwhile: that one's token is tried instead.
-    const renewed = secret.accessToken !== auth.token ? secret : await renew(userId, secret);
+    const renewed = secret.accessToken !== auth.token ? secret : await renew(userId, secret, accountId);
     try {
-      return await call(authOf(renewed));
+      return await call(authOf(renewed, accountId));
     } catch (retryErr) {
       if (retryErr instanceof MeshyAuthError) await markMeshySessionRejected(userId);
       throw retryErr;
@@ -228,20 +250,17 @@ export async function withMeshyAuth<T>(
 }
 
 /** Checks a sign-in with Meshy before it's kept: renewed first when its access token has run out, as a cookie Grab
- *  reads from a tab left closed may have. The session to keep -- the renewed one, if it was -- and who it is; null
- *  when Meshy turned it down, "unreachable" when it couldn't be asked. */
+ *  reads from a tab left closed may have. The session to keep -- the renewed one, if it was, whose refresh token is the
+ *  only one left that works -- with who it is, and whether Meshy could be asked; null when it turned the sign-in down. */
 export async function checkMeshySession(
   session: MeshySession,
-): Promise<{ session: MeshySession; account: MeshyAccount | null } | null | "unreachable"> {
+): Promise<{ session: MeshySession; account: MeshyAccount | null; reachable: boolean } | null> {
+  let current = session;
   try {
-    let current = session;
-    if (!fresh(session.expiresAt)) {
-      const tokens = await refreshMeshySession(session.refreshToken);
-      current = { ...session, ...tokens };
-    }
-    return { session: current, account: await fetchMeshyAccount(authOf(current)) };
+    if (!fresh(session.expiresAt)) current = { ...session, ...(await refreshMeshySession(session.refreshToken)) };
+    return { session: current, account: await fetchMeshyAccount(authOf(current, session.userId)), reachable: true };
   } catch (err) {
-    return err instanceof MeshyAuthError ? null : "unreachable";
+    return err instanceof MeshyAuthError ? null : { session: current, account: null, reachable: false };
   }
 }
 

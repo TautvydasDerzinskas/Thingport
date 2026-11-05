@@ -39,11 +39,12 @@ export const meshyConnection: ConnectionSlot = {
         );
       }
       // 503, not 422: nothing is known to be wrong with the sign-in.
-      if (body.verify && check === "unreachable") {
+      if (body.verify && check && !check.reachable) {
         throw new HttpError(503, "Couldn't reach Meshy to check this sign-in. Try again in a moment.");
       }
-      if (check && check !== "unreachable") {
-        // A check that had to renew it spent the refresh token it came with: only the renewed one works now.
+      if (check) {
+        // A check that had to renew it spent the refresh token it came with: only the renewed one works now, even
+        // when Meshy couldn't say whose it is.
         session = check.session;
         account = check.account;
       }
