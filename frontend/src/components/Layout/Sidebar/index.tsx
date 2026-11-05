@@ -245,7 +245,7 @@ export default function Sidebar({ mobile = false, isAdmin, onSelectCategory, boo
   // Shown to whoever may use tools, once there's one to open or they may make their own.
   const tools = useTools();
   const showTools = Boolean(tools?.access.canUse && (tools.tools.length > 0 || tools.access.canCreate));
-  // Under Tools, for everyone, while the instance has it switched on (STUDIO_ENABLED).
+  // Under Tools, for everyone, once the backend says it has Studio.
   const showStudio = useStudioEnabled() === true;
   const onStudio = location.pathname === "/studio";
   // While an admin has social features on and there's someone else on the instance to explore.

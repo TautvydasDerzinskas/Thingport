@@ -17,7 +17,7 @@ const app = createApp();
 
 // The write tools a new token gets without asking; every other default only reads.
 const DEFAULT_ON_WRITES = ["save_widget", "save_tool", "upload_icon"];
-// Studio's are left out: they're off while STUDIO_ENABLED is (tests/studio.test.ts has them).
+// Studio's are left out: a new token doesn't get them (tests/studio.test.ts has them).
 const READ_TOOL_NAMES = MCP_TOOLS.filter((tool) => tool.readOnly && tool.group !== "studio").map((tool) => tool.name);
 
 type Account = { session: string; userId: string; token: string };

@@ -3,20 +3,7 @@
 Studio is a small CAD page for designing printable parts from shapes and sketches. Everything you do there, an AI
 assistant connected over [MCP](mcp.md) can do too, step by step, and you see its changes on the page as it makes them.
 
-Studio is new, so it's off unless an admin turns it on.
-
-## Turning it on
-
-Set `STUDIO_ENABLED=true` on the backend and restart it. In `docker-compose.yml` or `docker-compose.deploy.yml` the line
-is already there:
-
-```yaml
-- STUDIO_ENABLED=${STUDIO_ENABLED:-false}
-```
-
-so `STUDIO_ENABLED=true` in your `.env` is enough. **Studio** then appears in the sidebar, under **Tools**, for everyone
-on the instance. Turned off again, the page, its API and its MCP tools are gone, but the designs stay in the database
-for when it's back.
+**Studio** is in the sidebar, under **Tools**, for everyone on the instance.
 
 ## Designing
 

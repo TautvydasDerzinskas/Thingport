@@ -74,10 +74,10 @@ import { resetToolsView } from "./hooks/useToolsView";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 
-// Behind STUDIO_ENABLED, and heavy (three.js, its gizmos, zod), so only fetched by someone who opens it.
+// Heavy (three.js, its gizmos, zod), so only fetched by someone who opens it.
 const StudioPage = React.lazy(() => import("./pages/StudioPage"));
 
-/** /studio while Studio is on; home while it's off, once that's known. */
+/** /studio when the backend has Studio; home when it's older than Studio, once that's known. */
 function StudioRoute({ isAdmin, onUnauthorized }: { isAdmin: boolean; onUnauthorized: () => void }) {
   const enabled = useStudioEnabled();
   if (enabled === null) return null;

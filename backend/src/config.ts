@@ -156,9 +156,6 @@ export const IMPORT_PREVIEW_IMAGE_DELAY_MS = envInt("IMPORT_PREVIEW_IMAGE_DELAY_
 export const IMPORT_BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36";
 
-// Studio, the CAD page under Tools, and its MCP tools: off unless "true", while it's new.
-export const STUDIO_ENABLED = (process.env.STUDIO_ENABLED ?? "").trim().toLowerCase() === "true";
-
 export const FLARESOLVERR_URL = (process.env.FLARESOLVERR_URL || "").trim();
 // Opt-in: once every setup can, plaintext HTTP is refused for any solver but the local ones (System Health says when).
 export const FLARESOLVERR_REQUIRE_HTTPS = process.env.FLARESOLVERR_REQUIRE_HTTPS === "true";
