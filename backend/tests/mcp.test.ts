@@ -5,7 +5,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
 import JSZip from "jszip";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS, mcpImportTiming } from "../src/mcp/tools";
@@ -373,7 +373,7 @@ describe("the tools", () => {
     expect(Buffer.from(file.data.base64, "base64").toString()).toBe("solid dragon.stl\nendsolid dragon.stl\n");
   });
 
-  it("list_model_files gives 3MF plates their profile", async () => {
+  it("list_model_files gives 3MF plates their profile, reading it for a plate that has none stored yet", async () => {
     const zip = new JSZip();
     zip.file("3D/3dmodel.model", '<model><metadata name="ProfileTitle">Fast</metadata></model>');
     zip.file("Metadata/project_settings.config", JSON.stringify({ printer_model: "Bambu Lab A1 mini" }));
@@ -392,10 +392,14 @@ describe("the tools", () => {
         storagePath: `mcp-profile/${Date.now()}.txt`,
       },
     });
+    // As on a plate imported before profiles were stored: the tool reads the file and saves what it found.
+    await prisma.plate.updateMany({ where: { printId: print.id }, data: { profileMeta: Prisma.JsonNull } });
     const { data } = await callTool(alice.token, "list_model_files", { model_id: print.id });
     const plate = data.files.find((f: { kind: string }) => f.kind === "plate");
     expect(plate.profile).toMatchObject({ title: "Fast", printer: "Bambu Lab A1 mini" });
     expect(data.files.find((f: { kind: string }) => f.kind === "supporting")).not.toHaveProperty("profile");
+    const stored = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    expect(stored.profileMeta).toMatchObject({ title: "Fast", printer: "Bambu Lab A1 mini" });
   });
 
   it("list_model_files marks the source's default plate with is_default, and only plates carry it", async () => {
