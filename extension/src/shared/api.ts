@@ -31,7 +31,13 @@ export type InspectResult = { title?: string | null; is_zip?: boolean; filename?
 /** A zip's files by path, its folders left out by the instance. */
 export type ZipEntriesResult = { entries: { path: string; size: number }[] };
 
-export type BatchEntry = { design_id: string; title?: string | null; already_imported?: boolean };
+export type BatchEntry = {
+  design_id: string;
+  title?: string | null;
+  already_imported?: boolean;
+  /** Why the user can't import it, as the provider's reason; its words are the provider's `listBlocks`. */
+  blocked?: string;
+};
 export type BatchEntriesResult = { title?: string | null; entries: BatchEntry[]; truncated?: boolean };
 
 export type ImportJob = {

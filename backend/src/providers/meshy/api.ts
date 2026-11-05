@@ -4,7 +4,7 @@ import { tidy } from "../../services/descriptionMarkdown";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
-import { sleep } from "../../utils/concurrency";
+import { mapWithConcurrency, sleep } from "../../utils/concurrency";
 import manifest from "./manifest.generated";
 import {
   meshyCollectionUrl,
@@ -434,6 +434,41 @@ export async function meshyDownloadUrl(
   }
 }
 
+/** Why the account's plan can't download a model: someone else's community model, or one of the user's own. */
+export type MeshyPlanBlock = "community" | "own";
+
+// The plans Meshy's pages ask a model's download status for; any other downloads every model, so they don't ask.
+const ASKED_TIERS = new Set(["free", "starter"]);
+const BLOCK_CHECKS_AT_ONCE = 4;
+
+/** The models of a listing that Meshy keeps from the account's plan, by id, asked as its pages ask, and only on the
+ *  plans they ask for. A free plan is kept from every other person's community model -- over forty asked, featured or
+ *  not, all said so -- so only the user's own are asked of, as their generations. One it can't tell of is left out. */
+export async function meshyPlanBlocks(
+  entries: MeshySummary[],
+  accountId: string,
+  auth: MeshyAuth,
+): Promise<Map<string, MeshyPlanBlock>> {
+  const blocks = new Map<string, MeshyPlanBlock>();
+  const tier = asText(asRecord((await call("/v1/me/tier", { auth }).catch(() => null))?.result)?.tier);
+  if (!tier || !ASKED_TIERS.has(tier)) return blocks;
+  const own: MeshySummary[] = [];
+  for (const entry of entries) {
+    if (meshyTaskIdOf(entry.externalId) || entry.authorId === accountId) own.push(entry);
+    // Starter's community downloads are counted, not kept from it.
+    else if (tier === "free" && entry.authorId) blocks.set(entry.externalId, "community");
+  }
+  await mapWithConcurrency(own, BLOCK_CHECKS_AT_ONCE, async (entry) => {
+    // A post whose cover is a picture says which its model is only when it's read.
+    const taskId =
+      meshyTaskIdOf(entry.externalId) ??
+      entry.modelTaskId ??
+      (await resolveMeshyPost(entry.externalId).catch(() => null))?.meshes[0]?.taskId;
+    if (taskId && (await isPlanForbidden(taskId, "Task", auth))) blocks.set(entry.externalId, "own");
+  });
+  return blocks;
+}
+
 /** Tells Meshy the download happened, as the site does after its own, so it counts toward the model's downloads. A
  *  failure here costs nothing the user cares about, so it's left alone. */
 export async function markMeshyDownloaded(taskId: string, auth: MeshyAuth): Promise<void> {
@@ -451,7 +486,16 @@ export function isMeshyFileHost(hostname: string): boolean {
 
 // ---- Listings ----
 
-export type MeshySummary = { externalId: string; title: string; cover: string | null; likes: number | null };
+export type MeshySummary = {
+  externalId: string;
+  title: string;
+  cover: string | null;
+  likes: number | null;
+  /** Who posted it; a generation has no one but the user. */
+  authorId?: string | null;
+  /** The task its cover model was generated as, where its cover is one. */
+  modelTaskId?: string | null;
+};
 
 export type MeshyListing = { entries: MeshySummary[]; total: number; truncated: boolean };
 
@@ -467,6 +511,8 @@ function postSummary(post: Record<string, unknown>): MeshySummary | null {
     title: title ?? (author ? `Meshy post by ${author}` : "Meshy post"),
     cover: cover ? itemPicture(cover) : null,
     likes: asCount(asRecord(post.stats)?.likesCount),
+    authorId: asText(asRecord(post.author)?.id),
+    modelTaskId: cover?.kind === "model" ? asText(cover.refId) : null,
   };
 }
 

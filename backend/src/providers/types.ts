@@ -147,7 +147,14 @@ export type CustomImport = {
 };
 
 /** One model of a list, to pick from. */
-export type ListEntry = { externalId: string; title: string; cover: string | null };
+export type ListEntry = {
+  externalId: string;
+  title: string;
+  cover: string | null;
+  /** Why the user can't import it, as a reason of the provider's own, whose words are the app's and Grab's to say;
+   *  left out when they can, or when that can't be told. */
+  blocked?: string;
+};
 
 /** A list as its provider reads it for the import dialog: up to the first few hundred of its models. */
 export type ProviderList = { title: string | null; total: number; truncated: boolean; entries: ListEntry[] };

@@ -250,6 +250,7 @@ async function listEntries(req: Request, res: Response, provider: ProviderId, ki
       title: e.title,
       cover: e.cover,
       already_imported: alreadyImported.has(e.externalId),
+      ...(e.blocked ? { blocked: e.blocked } : {}),
     })),
   });
 }

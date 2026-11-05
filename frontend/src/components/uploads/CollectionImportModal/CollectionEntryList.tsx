@@ -7,8 +7,11 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
 import { useTranslation } from "react-i18next";
 import type { ImportCollectionEntry } from "../../../api/imports";
+import type { ProviderId } from "../../../providers/index.generated";
+import HelpTip from "../../HelpTip";
 
 type Props = {
+  provider?: ProviderId;
   entries: ImportCollectionEntry[];
   selected: Set<string>;
   busy: boolean;
@@ -16,9 +19,31 @@ type Props = {
   onToggleEntry: (designId: string) => void;
 };
 
-/** Already-imported entries are dimmed and disabled, since importing them would do nothing. */
-export default function CollectionEntryList({ entries, selected, busy, noEntriesLabel, onToggleEntry }: Props) {
+function BlockedReason({ title, hint }: { title: string; hint: string }) {
+  return (
+    <Stack direction="row" alignItems="center" sx={{ flexShrink: 0 }}>
+      <Chip label={title} size="small" variant="outlined" />
+      {hint && <HelpTip text={hint} />}
+    </Stack>
+  );
+}
+
+/** Already-imported entries are dimmed and disabled, since importing them would do nothing, and so are the ones the
+ *  provider keeps from the user, with its reason. */
+export default function CollectionEntryList({
+  provider,
+  entries,
+  selected,
+  busy,
+  noEntriesLabel,
+  onToggleEntry,
+}: Props) {
   const { t } = useTranslation("app");
+  // The provider's words for its reason; a reason it has none for still says the model can't be imported.
+  const blockedText = (reason: string) => ({
+    title: t(`providers:${provider}.blocked.${reason}.title`, { defaultValue: t("collectionImport.blocked") }),
+    hint: t(`providers:${provider}.blocked.${reason}.hint`, { defaultValue: "" }),
+  });
   return (
     <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, maxHeight: 420, overflow: "auto" }}>
       {entries.map((entry) => (
@@ -33,13 +58,13 @@ export default function CollectionEntryList({ entries, selected, busy, noEntries
             borderBottom: "1px solid",
             borderColor: "divider",
             "&:last-of-type": { borderBottom: "none" },
-            opacity: entry.already_imported ? 0.5 : 1,
+            opacity: entry.already_imported || entry.blocked ? 0.5 : 1,
           }}
           control={
             <Checkbox
               checked={selected.has(entry.design_id)}
               onChange={() => onToggleEntry(entry.design_id)}
-              disabled={busy || entry.already_imported}
+              disabled={busy || entry.already_imported || Boolean(entry.blocked)}
               size="small"
             />
           }
@@ -72,6 +97,7 @@ export default function CollectionEntryList({ entries, selected, busy, noEntries
                   sx={{ flexShrink: 0 }}
                 />
               )}
+              {entry.blocked && !entry.already_imported && <BlockedReason {...blockedText(entry.blocked)} />}
             </Stack>
           }
         />

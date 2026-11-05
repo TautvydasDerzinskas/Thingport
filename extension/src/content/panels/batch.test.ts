@@ -181,3 +181,45 @@ describe("the batch panel's import", () => {
     expect(last()).not.toContain("Imported!");
   });
 });
+
+describe("the batch panel's list", () => {
+  beforeEach(() => {
+    rendered.length = 0;
+    calls.length = 0;
+    actions.clear();
+    mounted = true;
+    answers = {
+      "POST /import/meshy/list/entries": [
+        {
+          title: "Figures",
+          entries: [
+            { design_id: "own", title: "Boxer dog figure", blocked: "own" },
+            { design_id: "theirs", title: "Forgotten temple", blocked: "community" },
+            { design_id: "free", title: "Sleepy fox" },
+            { design_id: "odd", title: "Robot", blocked: "a-reason-grab-has-no-words-for" },
+          ],
+        },
+      ],
+      "GET /collection-sync": [{ supported: false, sync: null }],
+    };
+    setContext({
+      url: "https://www.meshy.ai/collections/Figures-01a1ac94-ba41-7557-b54d-1e6ddfe02ec0",
+      instanceUrl: INSTANCE,
+      classification: { kind: "batch", provider: "meshy", type: "collection" },
+      library: null,
+      canQueue: false,
+      importQueue: false,
+    } satisfies ImportContext);
+  });
+
+  it("leaves out the models the instance says the user can't import, and says why, once per reason", async () => {
+    await loadBatchEntries();
+    const boxes = last().match(/<input[^>]*tg-entry__checkbox[^>]*>/g) ?? [];
+    expect(boxes.map((box) => box.match(/value="([^"]+)"/)?.[1])).toEqual(["own", "theirs", "free", "odd"]);
+    expect(boxes.map((box) => box.includes(" disabled"))).toEqual([true, true, false, false]);
+    expect(boxes.map((box) => box.includes(" checked"))).toEqual([false, false, true, true]);
+    expect(last()).toContain("Needs a paid Meshy plan (1): ");
+    expect(last()).toContain("Needs Meshy Pro (1): ");
+    expect(last()).not.toContain("a-reason-grab-has-no-words-for");
+  });
+});

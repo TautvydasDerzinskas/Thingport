@@ -3,13 +3,13 @@
 // Printables collection is read as its owner (providers/printables/content.ts), and Snapmaker's likes and bookmarks
 // share one page, which the panel switches between.
 
-import type { BatchEntriesResult, ImportJob, SyncLookup } from "../../shared/api";
+import type { BatchEntriesResult, BatchEntry, ImportJob, SyncLookup } from "../../shared/api";
 import { ctx, setContext } from "../context";
 import { MANIFESTS, manifestOf } from "../../providers/index.generated";
 import { parseSnapmakerListUrl, snapmakerListUrl, type SnapmakerList } from "../../shared/urls";
 import { request } from "../../shared/messages";
 import { api, escapeHtml, sleep } from "../runtime";
-import { isPanelMounted, onPanelAction, panelQuery, panelQueryAll, renderPanel } from "../shell";
+import { isPanelMounted, onPanelAction, panelQueryAll, renderPanel } from "../shell";
 import { errorHtml, pausedHtml, statusHtml, successHtml } from "./results";
 import { loadingModelsPhrases, renderFunStatus } from "./funStatus";
 import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
@@ -126,33 +126,20 @@ async function loadEntries(): Promise<PanelEntries> {
   return { entries: [] };
 }
 
-/** Takes the models the site wouldn't let import out of the import, once the provider has said which and why. */
-function markBlockedEntries(blocks: Map<string, ImportBlock> | null): void {
-  if (!blocks?.size) return;
-  const reasons = new Map<string, { block: ImportBlock; count: number }>();
-  for (const box of panelQueryAll<HTMLInputElement>(".tg-entry__checkbox")) {
-    const block = blocks.get(box.value);
-    const row = box.closest(".tg-entry");
-    if (!block || !row || row.classList.contains("tg-entry--imported")) continue;
-    box.checked = false;
-    box.disabled = true;
-    row.classList.add("tg-entry--blocked");
-    row.setAttribute("title", block.hint);
-    row.insertAdjacentHTML("beforeend", `<span class="tg-badge">${escapeHtml(block.title)}</span>`);
-    const key = `${block.title}\n${block.hint}`;
-    reasons.set(key, { block, count: (reasons.get(key)?.count ?? 0) + 1 });
-  }
-  const notes = [...reasons.values()].map(
-    ({ block, count }) => `<div class="tg-hint">${escapeHtml(block.title)} (${count}): ${escapeHtml(block.hint)}</div>`,
-  );
-  panelQuery(".tg-entries")?.insertAdjacentHTML("beforebegin", notes.join(""));
+/** The notes over the list for its models the provider keeps from the user: one per reason, with how many. */
+function blockedNotesHtml(blocked: ImportBlock[]): string {
+  const counts = new Map<ImportBlock, number>();
+  for (const block of blocked) counts.set(block, (counts.get(block) ?? 0) + 1);
+  return [...counts]
+    .map(
+      ([block, count]) => `<div class="tg-hint">${escapeHtml(block.title)} (${count}): ${escapeHtml(block.hint)}</div>`,
+    )
+    .join("");
 }
 
 export async function loadBatchEntries(): Promise<void> {
-  const { classification, url } = ctx();
-  renderFunStatus(loadingModelsPhrases(classification.provider));
-  // Asked beside the list, and shown once it answers: the list doesn't wait on it.
-  const blocks = CONTENT_MODULES[classification.provider].entryBlocks?.(url).catch(() => null) ?? null;
+  const { provider } = ctx().classification;
+  renderFunStatus(loadingModelsPhrases(provider));
   let result: PanelEntries;
   let sync: SyncLookup | null;
   try {
@@ -163,16 +150,22 @@ export async function loadBatchEntries(): Promise<void> {
     return;
   }
   const allImported = result.entries.every((entry) => entry.already_imported);
+  // A reason the provider has no words for leaves its model as any other.
+  const blockOf = (entry: BatchEntry) =>
+    entry.blocked && !entry.already_imported ? CONTENT_MODULES[provider].listBlocks?.[entry.blocked] : undefined;
   const rows = result.entries
-    .map(
-      (entry) => `
-        <label class="tg-entry${entry.already_imported ? " tg-entry--imported" : ""}">
-          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(entry.design_id)}" ${entry.already_imported ? "" : "checked"} />
+    .map((entry) => {
+      const block = blockOf(entry);
+      const state = entry.already_imported ? " tg-entry--imported" : block ? " tg-entry--blocked" : "";
+      const badge = entry.already_imported ? "already imported" : block?.title;
+      return `
+        <label class="tg-entry${state}"${block ? ` title="${escapeHtml(block.hint)}"` : ""}>
+          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(entry.design_id)}" ${entry.already_imported || block ? "" : "checked"}${block ? " disabled" : ""} />
           <span class="tg-entry__name">${escapeHtml(entry.title || entry.design_id)}</span>
-          ${entry.already_imported ? '<span class="tg-badge">already imported</span>' : ""}
+          ${badge ? `<span class="tg-badge">${escapeHtml(badge)}</span>` : ""}
         </label>
-      `,
-    )
+      `;
+    })
     .join("");
   const count = result.entries.length;
   const found = `${count} model${count === 1 ? "" : "s"} found${result.truncated ? " (more available on the site)" : ""}`;
@@ -180,13 +173,13 @@ export async function loadBatchEntries(): Promise<void> {
     ${snapmakerListSwitchHtml()}
     <div class="tg-title">${escapeHtml(result.title || "Import models")}</div>
     <div class="tg-hint">${allImported && result.entries.length ? `${found}, all already in your library.` : found}</div>
+    ${blockedNotesHtml(result.entries.flatMap((entry) => blockOf(entry) ?? []))}
     <div class="tg-entries">${rows}</div>
     ${syncToggleHtml(sync)}
     <button class="tg-btn" type="button" data-action="import">${allImported && sync ? "Save" : "Import selected"}</button>
   `);
   onPanelAction("import", () => void runBatchImport(result, sync));
   wireSnapmakerListSwitch();
-  void blocks?.then(markBlockedEntries);
 }
 
 async function runBatchImport(result: PanelEntries, sync: SyncLookup | null): Promise<void> {

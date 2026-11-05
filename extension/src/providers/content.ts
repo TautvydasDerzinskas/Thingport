@@ -7,7 +7,7 @@ import { parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
 import { crealitycloudUserId, loadCrealitycloudProfiles } from "./crealitycloud/content";
 import { isUnboughtCgtraderModel } from "./cgtrader/content";
 import { isUnboughtCults3dModel } from "./cults3d/content";
-import { meshyCollectionLocks, meshyPlanLock, type MeshyPlanLock } from "./meshy/content";
+import { meshyPlanLock, type MeshyPlanLock } from "./meshy/content";
 import { loadMakeronlineProfiles } from "./makeronline/content";
 import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } from "./makerworld/pageData";
 import { loadNexprintProfiles } from "./nexprint/content";
@@ -30,8 +30,8 @@ export type ContentModule = {
   profileUrl?(url: string, profileId: string): string;
   /** Why the model on this page can't be imported, or null when it can, or that can't be told. */
   blockReason?(url: string): Promise<ImportBlock | null>;
-  /** Why models of the list on this page can't be imported, by their ids; one it can't tell of is left out. */
-  entryBlocks?(url: string): Promise<Map<string, ImportBlock>>;
+  /** What the panel says of a list's model the instance marks as one the user can't import, by its reason. */
+  listBlocks?: Readonly<Record<string, ImportBlock>>;
   /** The script this page's model was generated from, or null where it wasn't generated from one. A withheld
    *  script still lets the model import; it is only the script that can't come along. */
   scriptState?(url: string): Promise<ScriptState | null>;
@@ -149,9 +149,6 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
       const lock = await meshyPlanLock(url);
       return lock && MESHY_BLOCKS[lock];
     },
-    async entryBlocks(url) {
-      const locks = await meshyCollectionLocks(url);
-      return new Map([...locks].map(([id, lock]) => [id, MESHY_BLOCKS[lock]]));
-    },
+    listBlocks: MESHY_BLOCKS,
   },
 };
