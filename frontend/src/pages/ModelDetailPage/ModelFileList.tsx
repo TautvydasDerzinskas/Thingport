@@ -8,7 +8,6 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import PrintIcon from "@mui/icons-material/Print";
-import HelpTip from "../../components/HelpTip";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
 import DefaultFileChip from "./DefaultFileChip";
 import { fileRowText } from "./fileRowText";
@@ -179,8 +178,12 @@ export default function ModelFileList({ files, selected, onSelect }: Props) {
               </Tooltip>
               {file.plate?.is_default && (
                 <Box sx={{ display: "inline-flex", alignItems: "center", flexShrink: 0, mt: 0.25 }}>
-                  <DefaultFileChip />
-                  <HelpTip text={t("models:detail.defaultFileHelp")} />
+                  {/* Not a HelpTip: a focusable "?" inside an option row would break keyboard selection. */}
+                  <Tooltip title={t("models:detail.defaultFileHelp")}>
+                    <span>
+                      <DefaultFileChip />
+                    </span>
+                  </Tooltip>
                 </Box>
               )}
             </ListItemButton>

@@ -405,11 +405,11 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
   if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
 }
 
-/** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
 function isThreeMf(filename: string): boolean {
   return path.extname(filename).toLowerCase() === ".3mf";
 }
 
+/** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
 export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
   const plate = await prisma.plate.findUnique({ where: { id: plateId } });
   if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");

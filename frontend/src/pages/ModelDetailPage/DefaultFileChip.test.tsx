@@ -1,7 +1,9 @@
 import i18next from "i18next";
+import { ThemeProvider } from "@mui/material/styles";
 import { renderToStaticMarkup } from "react-dom/server";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
+import { buildTheme } from "../../theme";
 import en from "../../i18n/locales/en.json";
 import DefaultFileChip, { defaultFirst } from "./DefaultFileChip";
 
@@ -39,7 +41,9 @@ describe("DefaultFileChip", () => {
   it("shows the translated label", () => {
     const html = renderToStaticMarkup(
       <I18nextProvider i18n={i18n}>
-        <DefaultFileChip />
+        <ThemeProvider theme={buildTheme("light")}>
+          <DefaultFileChip />
+        </ThemeProvider>
       </I18nextProvider>,
     );
     expect(html).toContain(en.models.detail.defaultFile);

@@ -1,8 +1,10 @@
 import i18next from "i18next";
+import { ThemeProvider } from "@mui/material/styles";
 import { renderToStaticMarkup } from "react-dom/server";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import type { Plate } from "../../api/prints";
+import { buildTheme } from "../../theme";
 import en from "../../i18n/locales/en.json";
 import ModelFileList, { nextFocusIndex } from "./ModelFileList";
 import { defaultFile, type ModelFile } from "./useOpenInSlicer";
@@ -42,7 +44,9 @@ function file(i: number, name = `part${i}.3mf`, profile = false): ModelFile {
 function render(files: ModelFile[], selectedIndex = 0): string {
   return renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
-      <ModelFileList files={files} selected={files[selectedIndex]} onSelect={() => {}} />
+      <ThemeProvider theme={buildTheme("light")}>
+        <ModelFileList files={files} selected={files[selectedIndex]} onSelect={() => {}} />
+      </ThemeProvider>
     </I18nextProvider>,
   );
 }

@@ -830,8 +830,8 @@ const listModelFiles: McpToolDefinition = {
     "profile (title, printer, nozzle, layer height, materials, plates, and for a sliced file print time and weight per plate; and walls, infill_density_pct (percent), infill_pattern (the slicer's key, such as " +
     "gyroid) and supports: none, normal or tree): a single value is null " +
     "and materials and plate_stats are empty arrays when the file doesn't say. The whole profile is null when it " +
-    "hasn't been read yet or the file says nothing of this. Plates also carry is_default: true for the one file the " +
-    "source site itself offers as its default (MakerWorld's default print profile), recorded when the file was " +
+    "hasn't been read yet or the file says nothing of this. Plates also carry is_default: true for a file the " +
+    "source site itself offers as its default (MakerWorld's default print profile; normally one per model), recorded when the file was " +
     "imported; false for every other plate, including models imported before this was recorded and ones from other sites.",
   readOnly: true,
   inputSchema: { model_id: z.string().min(1).describe("The model's id, from search_models or list_models.") },

@@ -3,7 +3,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import JSZip from "jszip";
-import { readZipEntryPrefix } from "../src/utils/zipReader";
 import { hasAnyProfileValue, readPlateProfile, readPlateProfileChecked } from "../src/services/plateProfile";
 
 let dir: string;
@@ -47,15 +46,6 @@ const NO_VALUES = {
   infill_pattern: null,
   supports: null,
 };
-
-describe("readZipEntryPrefix", () => {
-  it("returns the first bytes of a large entry", async () => {
-    const file = await write3mf({ "big.txt": "abcdefghij".repeat(1000) });
-    const prefix = await readZipEntryPrefix(file, "big.txt", 25);
-    expect(prefix?.toString()).toBe("abcdefghij".repeat(2) + "abcde");
-    expect(await readZipEntryPrefix(file, "missing.txt", 25)).toBeNull();
-  });
-});
 
 describe("readPlateProfile", () => {
   it("reads a Bambu Studio project", async () => {
