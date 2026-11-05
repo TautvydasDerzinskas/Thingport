@@ -105,7 +105,7 @@ export default function ClockCard({ hourCycle, showDate, showGreeting }: Props) 
         </Typography>
       )}
       {showGreeting && (
-        <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.disabled" }}>
+        <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.secondary" }}>
           {t(`dashboard.clock.greeting.${greetingKey(now.getHours())}`)}
         </Typography>
       )}

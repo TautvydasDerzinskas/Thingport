@@ -359,7 +359,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
             </Typography>
             <Typography
               variant="body2"
-              sx={{ whiteSpace: "pre-wrap", color: bioText ? "text.primary" : "text.disabled" }}
+              sx={{ whiteSpace: "pre-wrap", color: bioText ? "text.primary" : "text.secondary" }}
             >
               {bioText || t("models:author.noBio")}
             </Typography>

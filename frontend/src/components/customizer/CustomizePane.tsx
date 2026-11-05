@@ -147,7 +147,7 @@ export default function CustomizePane({
         </Typography>
 
         {!groups.length && (
-          <Typography variant="body2" sx={{ color: "text.disabled" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             {t("models:customizer.form.noParameters")}
           </Typography>
         )}

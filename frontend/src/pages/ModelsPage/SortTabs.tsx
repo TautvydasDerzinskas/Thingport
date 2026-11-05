@@ -26,8 +26,8 @@ export default function SortTabs({ value, modes = SORT_MODES, onChange }: Props)
             cursor: "pointer",
             fontSize: 14,
             fontWeight: value === mode ? 700 : 500,
-            color: value === mode ? "primary.main" : "text.secondary",
-            "&:hover": { color: "primary.main" },
+            color: value === mode ? (theme) => theme.thingport.accentText : "text.secondary",
+            "&:hover": { color: (theme) => theme.thingport.accentText },
           }}
         >
           {t(`sort.${mode}`)}

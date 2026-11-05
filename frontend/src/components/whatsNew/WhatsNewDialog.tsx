@@ -292,7 +292,7 @@ function Section({
         <Typography id={`whats-new-${kind}`} variant="subtitle2" fontWeight={700}>
           {t(`whatsNew.kinds.${kind}`)}
         </Typography>
-        <Typography variant="caption" color="text.disabled">
+        <Typography variant="caption" color="text.secondary">
           {items.length}
         </Typography>
       </Stack>

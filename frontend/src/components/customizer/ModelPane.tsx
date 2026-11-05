@@ -112,7 +112,7 @@ export default function ModelPane({
             {print.notes}
           </Typography>
         ) : (
-          <Typography variant="body2" sx={{ color: "text.disabled" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             {t("models:detail.noDescription")}
           </Typography>
         )}

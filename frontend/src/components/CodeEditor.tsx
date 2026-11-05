@@ -45,7 +45,7 @@ function themeOf(theme: Theme) {
           backgroundColor: `${alpha(palette.primary.main, 0.25)} !important`,
         },
         ".cm-matchingBracket": { backgroundColor: palette.action.selected, outline: "none" },
-        ".cm-placeholder": { color: palette.text.disabled },
+        ".cm-placeholder": { color: palette.text.secondary },
         ".cm-tooltip": {
           backgroundColor: palette.background.paper,
           border: `1px solid ${palette.divider}`,
@@ -67,7 +67,11 @@ function themeOf(theme: Theme) {
         },
         { tag: [tags.string, tags.special(tags.string), tags.attributeValue], color: palette.success.main },
         { tag: [tags.number, tags.bool, tags.null, tags.atom], color: palette.warning.main },
-        { tag: [tags.comment, tags.blockComment, tags.lineComment], color: palette.text.disabled, fontStyle: "italic" },
+        {
+          tag: [tags.comment, tags.blockComment, tags.lineComment],
+          color: palette.text.secondary,
+          fontStyle: "italic",
+        },
         { tag: [tags.function(tags.variableName), tags.function(tags.propertyName)], color: palette.info.main },
         { tag: [tags.tagName, tags.angleBracket], color: palette.error.main },
         { tag: tags.attributeName, color: palette.warning.main },

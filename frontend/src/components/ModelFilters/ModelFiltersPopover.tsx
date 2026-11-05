@@ -55,7 +55,7 @@ function SourceChip({
         borderColor: "divider",
         borderRadius: 1.5,
         bgcolor: on ? "background.paper" : "transparent",
-        color: on ? "text.primary" : "text.disabled",
+        color: on ? "text.primary" : "text.secondary",
         font: "inherit",
         fontSize: 13,
         fontWeight: 600,

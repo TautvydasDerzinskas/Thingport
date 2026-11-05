@@ -29,9 +29,9 @@ export default function SortTabs<T extends string>({ value, options, onChange }:
               cursor: "pointer",
               fontSize: 14,
               fontWeight: chosen ? 700 : 500,
-              color: chosen ? "primary.main" : "text.secondary",
+              color: chosen ? (theme) => theme.thingport.accentText : "text.secondary",
               transition: "color 150ms",
-              "&:hover": { color: "primary.main" },
+              "&:hover": { color: (theme) => theme.thingport.accentText },
               "&:focus-visible": {
                 outline: "2px solid",
                 outlineColor: "primary.main",
