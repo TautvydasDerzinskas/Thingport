@@ -272,21 +272,17 @@ describe("the single-model panel", () => {
       expect(last()).toContain('data-action="choose-files"');
     });
 
-    it("lists a zip's files by name, its folders left out", async () => {
+    it("lists a zip's files by path, as the instance sends them", async () => {
       withProfiles(-1);
       answers["POST /import/inspect"] = { title: "Thing", is_zip: true, filename: "raw.zip" };
-      answers["POST /import/zip/entries"] = {
-        entries: [
-          { name: "parts/", size: 0, isDirectory: true },
-          { name: "parts/hull.stl", size: 120, isDirectory: false },
-        ],
-      };
+      // What /import/zip/entries answers (services/zipService.ts): files only, folders already left out.
+      answers["POST /import/zip/entries"] = { entries: [{ path: "parts/hull.stl", size: 120 }] };
       atProvider("makerworld", { canQueue: false, importQueue: false });
       await loadSingleItem();
       await click("choose-files");
 
       expect(last()).toContain('value="parts/hull.stl"');
-      expect(last()).not.toContain('value="parts/"');
+      expect(last()).toContain(">parts/hull.stl<");
       expect(last()).not.toContain("[object Object]");
     });
   });

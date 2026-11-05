@@ -279,12 +279,11 @@ async function loadZipEntries(): Promise<void> {
     return;
   }
   const rows = result.entries
-    .filter((entry) => !entry.isDirectory)
     .map(
-      ({ name }) => `
+      ({ path }) => `
         <label class="tg-entry">
-          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(name)}" checked />
-          <span class="tg-entry__name">${escapeHtml(name)}</span>
+          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(path)}" checked />
+          <span class="tg-entry__name">${escapeHtml(path)}</span>
         </label>
       `,
     )
