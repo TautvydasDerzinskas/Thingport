@@ -2,16 +2,20 @@
 // there, one at a time. Real page loads pace the requests the way no config value can, which
 // keeps MakerWorld's account-wide CAPTCHA from tripping.
 //
+// Beyond each model's own profile, its others come in as steps of their own on the same page: each
+// is picked in the page's list and downloaded with its button, after the same wait as a model.
+//
 // State lives in chrome.storage because an MV3 background can be suspended between steps. For the
 // same reason the wait between models is counted down by the next model's page (see overlays.ts),
 // not slept here: the background is killed after 30s idle.
 
 import type { ImportStatus } from "../../shared/api";
-import type { MakerworldJob, MakerworldJobError } from "../../shared/messages";
+import type { MakerworldJob, MakerworldJobError, Reply, ResolvedDownload } from "../../shared/messages";
 import { sendToTab } from "../../shared/messages";
 import { apiCall } from "../../background/api";
 import { importSingle } from "../../background/importJobs";
 import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
+import { makerworldModelUrl, parseMakerworldModelUrl } from "./urls.generated";
 
 const JOB_STORAGE_KEY = "makerworldCollectionJob";
 const JOB_ERROR_STORAGE_KEY = "makerworldJobError";
@@ -49,7 +53,8 @@ async function sendRunSummary(job: MakerworldJob, stopped: string | null): Promi
   }).catch(() => undefined);
 }
 
-/** `urls` are the not-yet-imported designs. tabs.onUpdated drives every step after the first. */
+/** `urls` are the designs to visit: the not-yet-imported ones, and with more than each page's own profile wanted, those
+ *  already in the library too, for the profiles they lack. tabs.onUpdated drives every step after the first. */
 export async function startJob(
   tabId: number,
   {
@@ -57,7 +62,8 @@ export async function startJob(
     collectionId,
     originalUrl,
     stepDelayMs,
-  }: { urls: string[]; collectionId: string | null; originalUrl: string; stepDelayMs: number },
+    profileScope,
+  }: BackgroundMessages["START_MAKERWORLD_COLLECTION_JOB"]["payload"],
 ): Promise<null> {
   if (!urls.length) return null;
   await setJob({
@@ -73,6 +79,8 @@ export async function startJob(
     startAt: 0,
     paused: false,
     printIds: [],
+    profileScope,
+    profiles: null,
   });
   await chrome.tabs.update(tabId, { url: urls[0] });
   return null;
@@ -109,15 +117,25 @@ export async function getJobForTab(
   return { job: null, error };
 }
 
+/** A model, and how many of its profiles are behind it. */
+type Step = { index: number; profile: number };
+const stepOf = (job: MakerworldJob): Step => ({ index: job.index, profile: job.profiles?.done ?? 0 });
+
 /** Keeps a late automatic completion from double-advancing a step "Import next" already moved past. */
-async function isStillAtStep(tabId: number, stepIndex: number): Promise<boolean> {
+async function isStillAtStep(tabId: number, step: Step): Promise<boolean> {
   const current = await getJob();
-  return Boolean(current && current.tabId === tabId && current.index === stepIndex);
+  return Boolean(
+    current &&
+    current.tabId === tabId &&
+    current.index === step.index &&
+    (current.profiles?.done ?? 0) === step.profile,
+  );
 }
 
 /** The next model's page counts down `stepDelayMs` before its step starts. */
 async function moveForward(tabId: number, job: MakerworldJob): Promise<void> {
   job.index += 1;
+  job.profiles = null;
   if (job.index >= job.urls.length) {
     await setJob(null);
     void sendRunSummary(job, null);
@@ -126,6 +144,101 @@ async function moveForward(tabId: number, job: MakerworldJob): Promise<void> {
   }
   await setJob({ ...job, awaitingLoad: true, startAt: Date.now() + job.stepDelayMs });
   await chrome.tabs.update(tabId, { url: job.urls[job.index] });
+}
+
+/** The model's next profile waits as a model would, counted down on the page already open, which re-renders for it.
+ *  Reloaded where it can't be told, so its countdown starts anyway. */
+async function waitForNextProfile(tabId: number, job: MakerworldJob): Promise<void> {
+  await setJob({ ...job, awaitingLoad: true, startAt: Date.now() + job.stepDelayMs });
+  const reply = await sendToTab(tabId, "MAKERWORLD_JOB_UPDATED").catch(() => undefined);
+  if (!reply?.ok) await chrome.tabs.reload(tabId).catch(() => undefined);
+}
+
+/** Past the current profile, to the model's next one or, with none left, the next model. */
+async function finishProfile(tabId: number, job: MakerworldJob): Promise<void> {
+  if (job.profiles) {
+    job.profiles = { ...job.profiles, ids: job.profiles.ids.slice(1), done: job.profiles.done + 1 };
+    if (job.profiles.ids.length) {
+      await waitForNextProfile(tabId, job);
+      return;
+    }
+  }
+  job.imported += 1;
+  await moveForward(tabId, job);
+}
+
+/** A model's link naming one of its profiles, as the page's own links do. */
+function profileUrl(modelUrl: string, instanceId: string): string {
+  const designId = parseMakerworldModelUrl(modelUrl)?.designId;
+  return designId ? makerworldModelUrl(designId, instanceId) : `${modelUrl.split("#")[0]}#profileId-${instanceId}`;
+}
+
+/** Records a model the run brought in or added to, once. */
+function notePrint(job: MakerworldJob, printId: string | undefined): void {
+  if (printId && !(job.printIds ?? []).includes(printId)) job.printIds = [...(job.printIds ?? []), printId];
+}
+
+/** What the page resolved with its own session. Null lets the backend resolve it; the content script only answers
+ *  with an error for a CAPTCHA or the daily download limit, which the backend would hit too, so those are thrown. */
+async function resolvedInPage(
+  reply: Promise<Reply<ResolvedDownload | null> | undefined>,
+): Promise<ResolvedDownload | null> {
+  const answer = await withTimeout(reply, DOWNLOAD_RESOLVE_TIMEOUT_MS).catch(() => null);
+  if (answer && !answer.ok) throw new Error(answer.error);
+  return answer?.ok ? answer.data : null;
+}
+
+/** The profile the page shows, as every model came in before profiles could be chosen. */
+async function importPageProfile(tabId: number, job: MakerworldJob): Promise<void> {
+  const resolved = await resolvedInPage(sendToTab(tabId, "RESOLVE_MAKERWORLD_DOWNLOAD_URL"));
+  const print = await importSingle(
+    { url: job.urls[job.index], collectionId: job.collectionId, resolved },
+    { notify: false },
+  );
+  notePrint(job, print?.id);
+}
+
+/** Which of `ids` the library doesn't have on the model yet. One it can't tell about is imported: the instance won't
+ *  add a profile twice. */
+async function missingProfiles(modelUrl: string, ids: string[]): Promise<string[]> {
+  const held = await Promise.all(
+    ids.map((id) =>
+      apiCall<ImportStatus>("GET", `/import/status?url=${encodeURIComponent(profileUrl(modelUrl, id))}`)
+        .then((status) => status.already_imported)
+        .catch(() => false),
+    ),
+  );
+  return ids.filter((_, index) => !held[index]);
+}
+
+/** On a model's first visit, the profiles the scope brings less those the library has, the first of them imported
+ *  straight away; on each later step the next. A page that can't say which it has brings its own, as before. */
+async function importProfileStep(tabId: number, job: MakerworldJob): Promise<void> {
+  const modelUrl = job.urls[job.index];
+  if (!job.profiles) {
+    const scope = job.profileScope ?? "url";
+    const reply = await withTimeout(
+      sendToTab(tabId, "READ_MAKERWORLD_PROFILES", { scope }),
+      DOWNLOAD_RESOLVE_TIMEOUT_MS,
+    ).catch(() => null);
+    const ids = reply?.ok ? reply.data : null;
+    if (!ids?.length) {
+      await importPageProfile(tabId, job);
+      return;
+    }
+    const missing = await missingProfiles(modelUrl, ids);
+    job.profiles = { ids: missing, done: 0, total: missing.length };
+    // Kept, so a CAPTCHA or a background woken afresh carries on with this plan rather than asking again.
+    await setJob(job);
+    if (!missing.length) return;
+  }
+  const instanceId = job.profiles.ids[0];
+  const resolved = await resolvedInPage(sendToTab(tabId, "RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD", { instanceId }));
+  const print = await importSingle(
+    { url: profileUrl(modelUrl, instanceId), collectionId: job.collectionId, resolved },
+    { notify: false },
+  );
+  notePrint(job, print?.id);
 }
 
 let claimQueue: Promise<unknown> = Promise.resolve();
@@ -150,28 +263,14 @@ function claimStep(tabId: number): Promise<MakerworldJob | null> {
 export async function advanceJob(tabId: number): Promise<void> {
   const job = await claimStep(tabId);
   if (!job) return;
-  const stepIndex = job.index;
-
-  const currentUrl = job.urls[stepIndex];
-  // The content script resolves the download itself with the page's session. Best-effort: null
-  // lets the backend resolve it.
-  let resolved = null;
-  let resolveError: string | null = null;
-  try {
-    const reply = await withTimeout(sendToTab(tabId, "RESOLVE_MAKERWORLD_DOWNLOAD_URL"), DOWNLOAD_RESOLVE_TIMEOUT_MS);
-    // The content script only replies with an error for a CAPTCHA or the daily download limit;
-    // the backend would hit it too.
-    if (reply && reply.ok) resolved = reply.data;
-    else if (reply) resolveError = reply.error;
-  } catch {}
+  const step = stepOf(job);
 
   try {
-    if (resolveError) throw new Error(resolveError);
-    const print = await importSingle({ url: currentUrl, collectionId: job.collectionId, resolved }, { notify: false });
-    if (print?.id) job.printIds = [...(job.printIds ?? []), print.id];
+    if ((job.profileScope ?? "url") === "url") await importPageProfile(tabId, job);
+    else await importProfileStep(tabId, job);
   } catch (err) {
     // A manual "Import next" may have moved past this step while the request was in flight.
-    if (!(await isStillAtStep(tabId, stepIndex))) return;
+    if (!(await isStillAtStep(tabId, step))) return;
     const message = err instanceof Error ? err.message : String(err);
     if (isCaptchaMessage(message)) {
       // Stays on this page: the CAPTCHA has to be solved here, in MakerWorld's own UI.
@@ -187,22 +286,23 @@ export async function advanceJob(tabId: number): Promise<void> {
     return;
   }
 
-  if (!(await isStillAtStep(tabId, stepIndex))) return;
-  job.imported += 1;
-  await moveForward(tabId, job);
+  if (!(await isStillAtStep(tabId, step))) return;
+  await finishProfile(tabId, job);
 }
 
 /** Manual escape hatch: MV3 can kill the background mid-request on a large import. Confirms the
- *  stuck step actually landed in Thingport before continuing. */
+ *  stuck step actually landed in Thingport before continuing, to the model's next profile if it has one. */
 export async function forceAdvanceJob(tabId: number): Promise<null> {
   const job = await getJob();
   if (!job || job.tabId !== tabId) return null;
-  const currentUrl = job.urls[job.index];
+  const instanceId = job.profiles?.ids[0];
+  const currentUrl = instanceId ? profileUrl(job.urls[job.index], instanceId) : job.urls[job.index];
+  let landed = false;
   try {
     const status = await apiCall<ImportStatus>("GET", `/import/status?url=${encodeURIComponent(currentUrl)}`);
-    if (status.already_imported) {
-      job.imported += 1;
-      if (status.print_id) job.printIds = [...(job.printIds ?? []), status.print_id];
+    landed = status.already_imported;
+    if (landed) {
+      notePrint(job, status.print_id ?? undefined);
       if (job.collectionId && status.print_id) {
         await apiCall("POST", `/collection/${job.collectionId}/items/${status.print_id}`).catch(() => undefined);
       }
@@ -210,7 +310,12 @@ export async function forceAdvanceJob(tabId: number): Promise<null> {
   } catch {
     // Status check failed: proceed anyway, the user saw it land before clicking.
   }
-  await moveForward(tabId, job);
+  // A model counts once whatever came of its profiles; without them, only once it's seen to have landed.
+  if (!job.profiles && !landed) {
+    await moveForward(tabId, job);
+    return null;
+  }
+  await finishProfile(tabId, job);
   return null;
 }
 

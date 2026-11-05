@@ -6,6 +6,7 @@ import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
 import type { Provider } from "./urls";
 import type { MANIFESTS, ProviderId } from "../providers/index.generated";
+import type { MakerworldProfileScope } from "../providers/makerworld/pageData";
 
 export type ExtensionState = {
   configured: boolean;
@@ -119,6 +120,11 @@ export type MakerworldJob = {
   paused: boolean;
   /** The models imported so far, for the run's one notification. Missing on a run saved by an older version. */
   printIds?: string[];
+  /** Which of each model's print profiles come in. Missing on a run saved by an older version: the page's own. */
+  profileScope?: MakerworldProfileScope;
+  /** The current model's profiles still to import, each a step of its own after the wait, once its page has said
+   *  which it has and the library which it lacks. Null before that. */
+  profiles?: { ids: string[]; done: number; total: number } | null;
 };
 
 export type MakerworldJobError = { message: string; imported: number; total: number };
@@ -183,7 +189,13 @@ export type BackgroundMessages = {
   IMPORT_SINGLE: { payload: ImportSinglePayload; result: Print | null };
   QUEUE_IMPORT: { payload: QueueImportPayload; result: QueueImportResult };
   START_MAKERWORLD_COLLECTION_JOB: {
-    payload: { urls: string[]; collectionId: string | null; originalUrl: string; stepDelayMs: number };
+    payload: {
+      urls: string[];
+      collectionId: string | null;
+      originalUrl: string;
+      stepDelayMs: number;
+      profileScope: MakerworldProfileScope;
+    };
     result: null;
   };
   ABORT_MAKERWORLD_COLLECTION_JOB: { payload: void; result: null };
@@ -198,6 +210,10 @@ export type BackgroundMessages = {
 
 export type ContentMessages = {
   RESOLVE_MAKERWORLD_DOWNLOAD_URL: { payload: void; result: ResolvedDownload | null };
+  /** The page's print profiles a scope brings, its selected one first. Null when the page can't say. */
+  READ_MAKERWORLD_PROFILES: { payload: { scope: MakerworldProfileScope }; result: string[] | null };
+  /** Selects the profile on the page and downloads it with the page's own button. */
+  RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD: { payload: { instanceId: string }; result: ResolvedDownload | null };
   /** The guided import paused on this page; it re-renders. */
   MAKERWORLD_JOB_UPDATED: { payload: void; result: null };
 };
@@ -231,8 +247,9 @@ export async function request<K extends BackgroundType>(
 export async function sendToTab<K extends keyof ContentMessages>(
   tabId: number,
   type: K,
+  ...payload: PayloadArgs<ContentMessages[K]["payload"]>
 ): Promise<Reply<ContentMessages[K]["result"]> | undefined> {
-  return chrome.tabs.sendMessage(tabId, { type, payload: undefined });
+  return chrome.tabs.sendMessage(tabId, { type, payload: payload[0] });
 }
 
 type Handler<M extends AnyMessages, K extends keyof M> = (

@@ -8,7 +8,7 @@ import type { ResolvedDownload } from "../../shared/messages";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { send } from "../../shared/messages";
 import { parseMakerworldModelUrl } from "./urls.generated";
-import { sleep } from "../../content/runtime";
+import { holdingNavigation, sleep } from "../../content/runtime";
 import { DOWNLOAD_3MF, DOWNLOAD_ALL, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
 import {
   loadMakerworldDesignForPage,
@@ -291,7 +291,7 @@ export async function resolveMakerworldDownloadUrl(
     const instanceId = !viaClick.isProfile
       ? null
       : page
-        ? pickMakerworldInstanceId(page.design, page.requestedInstanceId)
+        ? (pageSelectedInstanceId(page.design) ?? pickMakerworldInstanceId(page.design, page.requestedInstanceId))
         : requested;
     return page
       ? { downloadUrl: viaClick.url, instanceId, design: makerworldDesignForImport(page.design) }
@@ -303,16 +303,74 @@ export async function resolveMakerworldDownloadUrl(
   });
 }
 
-/** The Download button only gives the selected profile, so other profiles resolve via the API. */
+// How long a clicked profile's card may take to show as picked, on a slow page.
+const PROFILE_SELECT_WAIT_MS = 4000;
+
+/** The title of the profile's card in the page's list of print profiles. `config_title` is the page's own class name,
+ *  unlike its hashed ones. Matched by the card's picture, whose address carries the profile id, and by its title only
+ *  where no other card shares it. */
+function findProfileTitle(design: MakerworldDesign, instanceId: string): HTMLElement | null {
+  const instance = design.instances?.find((inst) => inst && String(inst.id) === instanceId);
+  if (!instance) return null;
+  const picturePath = instance.profileId != null ? `/${instance.profileId}/instance/` : null;
+  const titles = [...document.querySelectorAll<HTMLElement>(".config_title")];
+  const byPicture = picturePath
+    ? titles.find((title) => cardOf(title)?.querySelector(`img[src*="${picturePath}"]`))
+    : undefined;
+  if (byPicture) return byPicture;
+  const named = titles.filter((title) => (title.textContent || "").trim() === (instance.title || "").trim());
+  return named.length === 1 ? named[0] : null;
+}
+
+/** A card is the closest box holding its picture as well as its title. */
+function cardOf(title: HTMLElement): HTMLElement | null {
+  for (let el = title.parentElement; el; el = el.parentElement) {
+    if (el.querySelector("img")) return el;
+  }
+  return null;
+}
+
+/** The profile the page shows picked, by its card. On an address naming none, MakerWorld picks the first it lists,
+ *  which needn't be the design's `defaultInstanceId`. Read afresh: the page may render the list again on a pick. */
+function pageSelectedInstanceId(design: MakerworldDesign): string | null {
+  const picked = design.instances?.find((inst) => {
+    if (!inst || inst.id == null) return false;
+    const title = findProfileTitle(design, String(inst.id));
+    return Boolean(title && cardOf(title)?.classList.contains("active"));
+  });
+  return picked ? String(picked.id) : null;
+}
+
+/** Clicks the profile in the page's list, as a person picking it would, unless it's the one already picked. False
+ *  when the page doesn't list it, or doesn't take the click. */
+async function selectProfileOnPage(design: MakerworldDesign, instanceId: string): Promise<boolean> {
+  const title = findProfileTitle(design, instanceId);
+  if (!title) return false;
+  const selected = () => pageSelectedInstanceId(design) === instanceId;
+  if (selected()) return true;
+  title.scrollIntoView({ block: "nearest" });
+  title.click();
+  return Boolean(await waitFor(() => (selected() ? true : null), PROFILE_SELECT_WAIT_MS));
+}
+
+/**
+ * Picks the profile on the page as a person would, then downloads it with the page's own "Download 3MF". Where the page
+ * doesn't list it (a community profile behind "more") or won't pick it, the request that button sends instead.
+ */
 export async function resolveMakerworldProfileDownload(
   pageUrl: string,
   instanceId: string,
 ): Promise<ResolvedDownload | null> {
   const page = await loadMakerworldDesignForPage(pageUrl);
   if (!page) return null;
+  const design = makerworldDesignForImport(page.design);
+  const viaClick = await holdingNavigation(async () =>
+    (await selectProfileOnPage(page.design, instanceId)) ? captureViaRealClick(true).catch(() => null) : null,
+  );
+  if (viaClick) return { downloadUrl: viaClick.url, instanceId, design };
   const downloadUrl = await fetchInstanceDownloadUrl(page.design, instanceId).catch((err) => {
-    if (err instanceof MakerworldDownloadLimitError) throw err;
+    if (isMakerworldBlockingError(err)) throw err;
     return null;
   });
-  return downloadUrl ? { downloadUrl, instanceId, design: makerworldDesignForImport(page.design) } : null;
+  return downloadUrl ? { downloadUrl, instanceId, design } : null;
 }

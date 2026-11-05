@@ -1,7 +1,8 @@
 // MakerWorld collection import. Avoids MakerWorld's collection-listing API (a burst of those calls
 // trips an account-wide CAPTCHA) by scrolling the page and scraping model ids from the DOM, until
 // it has as many as the page's own data says the collection holds.
-// Every not-yet-imported model is queued.
+// Every not-yet-imported model is queued, and with more than each model's own print profile wanted, those already in
+// the library too, for the profiles they lack.
 
 import type { ImportStatus, SyncLookup } from "../../shared/api";
 import { request } from "../../shared/messages";
@@ -9,7 +10,7 @@ import { makerworldModelUrl } from "./urls.generated";
 import { ctx } from "../../content/context";
 import { findOrCreateCollection } from "../../content/panels/collectionPicker";
 import { NO_MORE_DATA } from "./labels";
-import { loadMakerworldCollectionTotal } from "./pageData";
+import { loadMakerworldCollectionTotal, type MakerworldProfileScope } from "./pageData";
 import { mountScanOverlay } from "../../content/overlays";
 import { api, escapeHtml, sleep } from "../../content/runtime";
 import { getShadowRoot, onPanelAction, panelQuery, renderPanel } from "../../content/shell";
@@ -114,6 +115,41 @@ function stepDelayOptions(selectedMs: number): string {
   ).join("");
 }
 
+// As the model page's panel offers them. Beyond each model's own, every profile is a page visit and a download of its
+// own, after the same wait as a model.
+const PROFILE_SCOPE_CHOICES: { scope: MakerworldProfileScope; label: string }[] = [
+  { scope: "url", label: "Each model's default print profile" },
+  { scope: "designer", label: "All designer print profiles" },
+  { scope: "all", label: "Designer & community print profiles" },
+];
+const PROFILE_SCOPE_STORAGE_KEY = "makerworldProfileScope";
+
+async function rememberedProfileScope(): Promise<MakerworldProfileScope> {
+  try {
+    const stored = (await chrome.storage.local.get(PROFILE_SCOPE_STORAGE_KEY))[PROFILE_SCOPE_STORAGE_KEY];
+    const known = PROFILE_SCOPE_CHOICES.find((choice) => choice.scope === stored);
+    if (known) return known.scope;
+  } catch {}
+  return "url";
+}
+
+async function rememberProfileScope(scope: MakerworldProfileScope): Promise<void> {
+  try {
+    await chrome.storage.local.set({ [PROFILE_SCOPE_STORAGE_KEY]: scope });
+  } catch {}
+}
+
+function profileScopeOptions(selected: MakerworldProfileScope): string {
+  return PROFILE_SCOPE_CHOICES.map(
+    ({ scope, label }) => `<option value="${scope}"${scope === selected ? " selected" : ""}>${label}</option>`,
+  ).join("");
+}
+
+function readProfileScope(): MakerworldProfileScope {
+  const value = panelQuery<HTMLSelectElement>("#tg-profile-scope")?.value;
+  return PROFILE_SCOPE_CHOICES.find((choice) => choice.scope === value)?.scope ?? "url";
+}
+
 type ModelStatus = { url: string; already_imported: boolean; print_id: string | null };
 
 // Per-model checks, for instances without the batch endpoint, run a few at a time.
@@ -188,30 +224,51 @@ export async function loadMakerworldGuidedCollection(): Promise<void> {
     : collectionTitle
       ? `Models go into a Thingport collection named "${escapeHtml(collectionTitle)}" (created if it doesn't exist yet). `
       : "";
+  // The models a run visits: the new ones, and with more than each one's own profile, those in the library too.
+  const toVisit = (scope: MakerworldProfileScope) => (scope === "url" ? toImport : statuses);
+  const startLabel = (scope: MakerworldProfileScope) =>
+    toVisit(scope).length ? "Start import" : sync ? "Save" : "Add to collection";
+  const paceHint = (scope: MakerworldProfileScope) =>
+    !toVisit(scope).length
+      ? ""
+      : `${
+          scope !== "url" && alreadyImported.length
+            ? "Models already in your library are visited too, for the print profiles they lack. "
+            : ""
+        }Models are imported one page visit at a time, pacing itself to avoid MakerWorld's rate limiting -- this can
+        take a while for a large collection.`;
+  const scope = await rememberedProfileScope();
   renderPanel(`
     <div class="tg-title">${escapeHtml(collectionTitle || "Import collection")}</div>
     <div class="tg-hint">${parts.join(", ") || "No models found."}</div>
     ${
-      toImport.length
-        ? `<label class="tg-label" for="tg-step-delay">Wait between models</label>
+      statuses.length
+        ? `<label class="tg-label" for="tg-profile-scope">Print profiles</label>
+           <select id="tg-profile-scope" class="tg-select">${profileScopeOptions(scope)}</select>
+           <label class="tg-label" for="tg-step-delay">Wait between models</label>
            <select id="tg-step-delay" class="tg-select">${stepDelayOptions(await rememberedStepDelay())}</select>`
         : ""
     }
     ${syncToggleHtml(sync)}
-    <button class="tg-btn" type="button" data-action="start">${toImport.length ? "Start import" : sync ? "Save" : "Add to collection"}</button>
-    <div class="tg-hint tg-hint--spaced">
-      ${target}${
-        toImport.length
-          ? `New models are imported one page visit at a time, pacing itself to avoid MakerWorld's rate
-             limiting -- this can take a while for a large collection.`
-          : ""
-      }
-    </div>
+    <button class="tg-btn" type="button" data-action="start">${startLabel(scope)}</button>
+    <div class="tg-hint tg-hint--spaced">${target}<span data-role="pace">${paceHint(scope)}</span></div>
   `);
+  panelQuery<HTMLSelectElement>("#tg-profile-scope")?.addEventListener("change", () => {
+    const chosen = readProfileScope();
+    const start = panelQuery<HTMLButtonElement>('[data-action="start"]');
+    const pace = panelQuery<HTMLElement>('[data-role="pace"]');
+    if (start) start.textContent = startLabel(chosen);
+    if (pace) pace.textContent = paceHint(chosen);
+  });
   onPanelAction("start", () => {
     const stepDelayMs = Number(panelQuery<HTMLSelectElement>("#tg-step-delay")?.value) || STEP_DELAY_CHOICES[0].ms;
-    if (toImport.length) void rememberStepDelay(stepDelayMs);
-    void startGuidedImport(toImport, alreadyImported, collectionTitle, stepDelayMs, {
+    const chosen = readProfileScope();
+    const visit = toVisit(chosen);
+    if (visit.length) {
+      void rememberStepDelay(stepDelayMs);
+      void rememberProfileScope(chosen);
+    }
+    void startGuidedImport(visit, alreadyImported, collectionTitle, stepDelayMs, chosen, {
       state: sync,
       wanted: readSyncToggle(),
       knownIds: ids,
@@ -219,11 +276,13 @@ export async function loadMakerworldGuidedCollection(): Promise<void> {
   });
 }
 
+/** `visit`: the models the run goes to, page by page; `alreadyImported` are filed into the collection first. */
 async function startGuidedImport(
-  toImport: ModelStatus[],
+  visit: ModelStatus[],
   alreadyImported: ModelStatus[],
   collectionTitle: string | null,
   stepDelayMs: number,
+  profileScope: MakerworldProfileScope,
   sync: { state: SyncLookup | null; wanted: boolean; knownIds: string[] },
 ): Promise<void> {
   const { url: originalUrl, instanceUrl } = ctx();
@@ -244,7 +303,7 @@ async function startGuidedImport(
     return;
   }
 
-  // Already-imported models need no page visit, so they're filed here directly.
+  // Filed here directly: they need no page visit to be, and get one only for profiles they lack.
   if (alreadyImported.length && collectionId) {
     renderPanel(
       statusHtml(
@@ -262,7 +321,7 @@ async function startGuidedImport(
     }
   }
 
-  if (!toImport.length) {
+  if (!visit.length) {
     renderPanel(
       successHtml(
         collectionId ? `${instanceUrl}/models/collections/${collectionId}` : `${instanceUrl}/models`,
@@ -274,9 +333,10 @@ async function startGuidedImport(
 
   renderPanel(statusHtml("Starting guided import…"));
   await request("START_MAKERWORLD_COLLECTION_JOB", {
-    urls: toImport.map((e) => e.url),
+    urls: visit.map((e) => e.url),
     collectionId,
     originalUrl,
     stepDelayMs,
+    profileScope,
   });
 }
