@@ -26,8 +26,8 @@ import { HttpError } from "../utils/fileUtils";
 import { WithImages, type McpToolContext, type McpToolDefinition } from "./toolTypes";
 
 // Studio over MCP: the designs, and one tool per command in frontend/src/studio/commands.ts, made from that list, so
-// every step a person takes on the page is one an assistant can take too. Offered only while STUDIO_ENABLED is on
-// (mcpToolsFor), and shown to a token's user as a single "Studio" permission.
+// every step a person takes on the page is one an assistant can take too. Shown to a token's user as a single "Studio"
+// permission.
 
 const designId = z.string().min(1).describe("The design's id, from studio_list_designs or studio_create_design.");
 const RENDER_COLOR = "#4f8fd8";

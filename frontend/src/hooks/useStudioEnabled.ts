@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { studioApi } from "../api/studio";
 
-// Whether this Thingport has Studio switched on (STUDIO_ENABLED on the backend). The instance's, not the account's, so
-// one answer does for the page's lifetime; a failed one isn't kept, and the next caller asks again.
+// Whether this Thingport's backend has Studio: one older than Studio has no answer, and its page would have nothing
+// behind it. The instance's, not the account's, so one answer does for the page's lifetime; a failed one isn't kept,
+// and the next caller asks again.
 let cached: boolean | undefined;
 let inFlight: Promise<boolean> | null = null;
 

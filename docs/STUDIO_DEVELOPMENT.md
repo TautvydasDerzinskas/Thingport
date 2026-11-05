@@ -1,6 +1,6 @@
 # Developing Studio
 
-Studio is Thingport's CAD page (`/studio`, behind `STUDIO_ENABLED`). Its one rule: **anything a person can do to a design
+Studio is Thingport's CAD page (`/studio`). Its one rule: **anything a person can do to a design
 on the page, an AI can do the same way.** That holds because there is only one way to change a design, a _command_, and
 each command is a toolbar action, an MCP tool and, later, a tool for Studio's own AI at once.
 
