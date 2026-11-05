@@ -29,7 +29,7 @@ function progressHtml(job: MakerworldJob): string {
   const profiles = job.profiles?.total
     ? `<div class="tg-overlay__count">Print profile ${Math.min(job.profiles.done + 1, job.profiles.total)} of ${job.profiles.total}</div>`
     : "";
-  return `<div class="tg-overlay__count">${job.imported} / ${job.total} models imported (${percent}%)</div>
+  return `<div class="tg-overlay__count">${job.imported} / ${job.total} models done (${percent}%)</div>
      <div class="tg-progress"><div class="tg-progress__bar" style="width:${percent}%"></div></div>${profiles}`;
 }
 

@@ -21,6 +21,8 @@ const JOB_STORAGE_KEY = "makerworldCollectionJob";
 const JOB_ERROR_STORAGE_KEY = "makerworldJobError";
 // tabs.sendMessage has no timeout; this is well above the content script's own worst case.
 const DOWNLOAD_RESOLVE_TIMEOUT_MS = 30000;
+// Before asking a model's page for its print profiles a second time.
+const PROFILES_RETRY_MS = 2000;
 
 async function getJob(): Promise<MakerworldJob | null> {
   const stored = await chrome.storage.local.get(JOB_STORAGE_KEY);
@@ -211,22 +213,39 @@ async function missingProfiles(modelUrl: string, ids: string[]): Promise<string[
   return ids.filter((_, index) => !held[index]);
 }
 
+/** The page's profiles the scope brings: none for a design without any, null when the page couldn't say. */
+async function readProfiles(tabId: number, job: MakerworldJob): Promise<string[] | null> {
+  const scope = job.profileScope ?? "url";
+  const reply = await withTimeout(
+    sendToTab(tabId, "READ_MAKERWORLD_PROFILES", { scope }),
+    DOWNLOAD_RESOLVE_TIMEOUT_MS,
+  ).catch(() => null);
+  return reply?.ok ? reply.data : null;
+}
+
 /** On a model's first visit, the profiles the scope brings less those the library has, the first of them imported
- *  straight away; on each later step the next. A page that can't say which it has brings its own, as before. */
+ *  straight away; on each later step the next. A design without profiles brings its own download, as before. */
 async function importProfileStep(tabId: number, job: MakerworldJob): Promise<void> {
   const modelUrl = job.urls[job.index];
   if (!job.profiles) {
-    const scope = job.profileScope ?? "url";
-    const reply = await withTimeout(
-      sendToTab(tabId, "READ_MAKERWORLD_PROFILES", { scope }),
-      DOWNLOAD_RESOLVE_TIMEOUT_MS,
-    ).catch(() => null);
-    const ids = reply?.ok ? reply.data : null;
-    if (!ids?.length) {
+    // Asked again once, for a page still reading its data. After that the run stops rather than going on with only
+    // the page's own profile, which would quietly leave the others out.
+    const ids =
+      (await readProfiles(tabId, job)) ??
+      (await new Promise((resolve) => setTimeout(resolve, PROFILES_RETRY_MS)).then(() => readProfiles(tabId, job)));
+    if (!ids) {
+      throw new Error(
+        "Couldn't read this model's print profiles from its page. Start the import again to carry on: models " +
+          "already brought in are only checked for the profiles they lack.",
+      );
+    }
+    if (!ids.length) {
       await importPageProfile(tabId, job);
       return;
     }
     const missing = await missingProfiles(modelUrl, ids);
+    // Aborted, or moved past with Import next, while the library was asked: keeping the plan would bring the run back.
+    if (!(await isStillAtStep(tabId, stepOf(job)))) throw new Error("The run has moved on from this model.");
     job.profiles = { ids: missing, done: 0, total: missing.length };
     // Kept, so a CAPTCHA or a background woken afresh carries on with this plan rather than asking again.
     await setJob(job);

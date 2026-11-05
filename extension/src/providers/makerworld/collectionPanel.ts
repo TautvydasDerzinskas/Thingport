@@ -145,6 +145,11 @@ function profileScopeOptions(selected: MakerworldProfileScope): string {
   ).join("");
 }
 
+/** Beyond each model's own, every print profile waits as a model does. */
+function waitLabel(scope: MakerworldProfileScope): string {
+  return scope === "url" ? "Wait between models" : "Wait between models and print profiles";
+}
+
 function readProfileScope(): MakerworldProfileScope {
   const value = panelQuery<HTMLSelectElement>("#tg-profile-scope")?.value;
   return PROFILE_SCOPE_CHOICES.find((choice) => choice.scope === value)?.scope ?? "url";
@@ -231,12 +236,15 @@ export async function loadMakerworldGuidedCollection(): Promise<void> {
   const paceHint = (scope: MakerworldProfileScope) =>
     !toVisit(scope).length
       ? ""
-      : `${
-          scope !== "url" && alreadyImported.length
-            ? "Models already in your library are visited too, for the print profiles they lack. "
-            : ""
-        }Models are imported one page visit at a time, pacing itself to avoid MakerWorld's rate limiting -- this can
-        take a while for a large collection.`;
+      : scope === "url"
+        ? `Models are imported one page visit at a time, pacing itself to avoid MakerWorld's rate limiting -- this can
+          take a while for a large collection.`
+        : `${
+            alreadyImported.length
+              ? "Models already in your library are visited too, for the print profiles they lack. "
+              : ""
+          }Each print profile is a page visit of its own, after the same wait as a model, to avoid MakerWorld's rate
+          limiting -- so a run takes about one wait per model and per extra profile.`;
   const scope = await rememberedProfileScope();
   renderPanel(`
     <div class="tg-title">${escapeHtml(collectionTitle || "Import collection")}</div>
@@ -245,7 +253,7 @@ export async function loadMakerworldGuidedCollection(): Promise<void> {
       statuses.length
         ? `<label class="tg-label" for="tg-profile-scope">Print profiles</label>
            <select id="tg-profile-scope" class="tg-select">${profileScopeOptions(scope)}</select>
-           <label class="tg-label" for="tg-step-delay">Wait between models</label>
+           <label class="tg-label" for="tg-step-delay" data-role="wait-label">${waitLabel(scope)}</label>
            <select id="tg-step-delay" class="tg-select">${stepDelayOptions(await rememberedStepDelay())}</select>`
         : ""
     }
@@ -257,17 +265,17 @@ export async function loadMakerworldGuidedCollection(): Promise<void> {
     const chosen = readProfileScope();
     const start = panelQuery<HTMLButtonElement>('[data-action="start"]');
     const pace = panelQuery<HTMLElement>('[data-role="pace"]');
+    const wait = panelQuery<HTMLElement>('[data-role="wait-label"]');
     if (start) start.textContent = startLabel(chosen);
     if (pace) pace.textContent = paceHint(chosen);
+    if (wait) wait.textContent = waitLabel(chosen);
   });
   onPanelAction("start", () => {
     const stepDelayMs = Number(panelQuery<HTMLSelectElement>("#tg-step-delay")?.value) || STEP_DELAY_CHOICES[0].ms;
     const chosen = readProfileScope();
     const visit = toVisit(chosen);
-    if (visit.length) {
-      void rememberStepDelay(stepDelayMs);
-      void rememberProfileScope(chosen);
-    }
+    void rememberProfileScope(chosen);
+    if (visit.length) void rememberStepDelay(stepDelayMs);
     void startGuidedImport(visit, alreadyImported, collectionTitle, stepDelayMs, chosen, {
       state: sync,
       wanted: readSyncToggle(),

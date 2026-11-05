@@ -109,6 +109,7 @@ export type MakerworldJob = {
   collectionId: string | null;
   urls: string[];
   index: number;
+  /** Models done, a model already in the library that lacked no profile among them: "imported" from before profiles. */
   imported: number;
   total: number;
   awaitingLoad: boolean;

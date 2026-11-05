@@ -18,11 +18,16 @@ let page: Record<string, (payload: { instanceId?: string }) => Reply<unknown>>;
 /** Profile links the library already holds. */
 const held = new Set<string>();
 const imported: { url: string; resolved: unknown }[] = [];
+/** Held open, the library's answer waits until a test lets it through. */
+let libraryGate: Promise<void> | null = null;
+const libraryAsked: string[] = [];
 
 vi.mock("../../background/api", () => ({
   apiCall: async (method: string, path: string) => {
     if (method === "GET" && path.startsWith("/import/status?url=")) {
       const url = decodeURIComponent(path.slice("/import/status?url=".length));
+      libraryAsked.push(url);
+      await libraryGate;
       return held.has(url) ? { already_imported: true, print_id: "existing" } : { already_imported: false };
     }
     return null;
@@ -54,7 +59,7 @@ vi.stubGlobal("chrome", {
   },
 });
 
-const { advanceJob, forceAdvanceJob, resumeJob, startJob } = await import("./job");
+const { abortJob, advanceJob, forceAdvanceJob, resumeJob, startJob } = await import("./job");
 
 const job = () => store.makerworldCollectionJob as MakerworldJob | undefined;
 const importedUrls = () => imported.map(({ url }) => url);
@@ -79,6 +84,8 @@ describe("the guided MakerWorld collection import", () => {
     visited.length = 0;
     imported.length = 0;
     held.clear();
+    libraryGate = null;
+    libraryAsked.length = 0;
     page = {
       READ_MAKERWORLD_PROFILES: () => ({ ok: true, data: ["10", "11", "12"] }),
       RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD: ({ instanceId }) => ({
@@ -171,12 +178,49 @@ describe("the guided MakerWorld collection import", () => {
     expect(visited).toEqual([]);
   });
 
-  it("brings the page's own profile where the page can't say which it has", async () => {
-    page.READ_MAKERWORLD_PROFILES = () => ({ ok: true, data: null });
+  it("brings a design without print profiles in by its page's own download", async () => {
+    page.READ_MAKERWORLD_PROFILES = () => ({ ok: true, data: [] });
     await start([MODEL_A, MODEL_B], "designer");
     await step();
 
     expect(importedUrls()).toEqual([MODEL_A]);
     expect(visited).toEqual([MODEL_B]);
+  });
+
+  it("asks a page that couldn't say which profiles it has once more", async () => {
+    const answers = [null, ["10"]];
+    page.READ_MAKERWORLD_PROFILES = () => ({ ok: true, data: answers.shift() });
+    await start([MODEL_A, MODEL_B], "designer");
+    await step();
+
+    expect(importedUrls()).toEqual([profileOf(MODEL_A, "10")]);
+    expect(visited).toEqual([MODEL_B]);
+  });
+
+  it("stops rather than bring only the page's own profile, when the page still can't say", async () => {
+    page.READ_MAKERWORLD_PROFILES = () => ({ ok: true, data: null });
+    await start([MODEL_A, MODEL_B], "designer");
+    await step();
+
+    expect(imported).toEqual([]);
+    expect(job()).toBeUndefined();
+    expect(visited).toEqual([ORIGIN]);
+    expect(store.makerworldJobError).toMatchObject({ message: expect.stringMatching(/print profiles/), imported: 0 });
+  });
+
+  it("stays stopped when aborted while the library is asked about the model", async () => {
+    let letThrough!: () => void;
+    libraryGate = new Promise((resolve) => (letThrough = resolve));
+    await start([MODEL_A, MODEL_B], "designer");
+    const running = step();
+    await vi.waitFor(() => expect(libraryAsked).toHaveLength(3));
+
+    await abortJob(TAB);
+    letThrough();
+    await running;
+
+    expect(job()).toBeUndefined();
+    expect(imported).toEqual([]);
+    expect(visited).toEqual([ORIGIN]);
   });
 });
