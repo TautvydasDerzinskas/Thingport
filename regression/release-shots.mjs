@@ -2,38 +2,41 @@
 // Captures the What's new pictures for a release from a running instance with a populated library, cropped to the
 // thing each one is about and written as WebP into release-notes/screenshots/, named after the version:
 //
-//   THINGPORT_PASSWORD='…' npm --prefix regression run release-shots -- --url https://thingport.example \
-//     --email me@example.com --model <id> --generative-model <id>
+//   THINGPORT_PASSWORD='…' THINGPORT_VIEWER_PASSWORD='…' npm --prefix regression run release-shots -- \
+//     --url https://thingport.example --email me@example.com --viewer-email someone@example.com
 //
 // Options, also settable as env vars:
 //   --url                 THINGPORT_URL              instance to capture (required)
 //   --email               THINGPORT_EMAIL            admin account to sign in with (required)
 //   --password            THINGPORT_PASSWORD
+//   --viewer-email        THINGPORT_VIEWER_EMAIL     a second account, for Explore, which leaves out your own shares
+//   --viewer-password     THINGPORT_VIEWER_PASSWORD
+//   --studio-design       SCREENSHOT_STUDIO_DESIGN   a design Ask AI built, default the one edited last
+//   --chat                SCREENSHOT_CHAT            the chat to show, default the one written in last
 //   --version             RELEASE_SHOTS_VERSION      names the files, default the version the notes name
-//   --model               SCREENSHOT_MODEL           a multicolour model, for the 3D preview shot
-//   --generative-model    SCREENSHOT_GENERATIVE      a model that came with its OpenSCAD script
 //   --theme               RELEASE_SHOTS_THEME        light (the default) or dark
-//   --only                RELEASE_SHOTS_ONLY         comma-separated shot names, e.g. tools,admin-tools
+//   --only                RELEASE_SHOTS_ONLY         comma-separated shot names, e.g. studio-ai,chats
 //   --out                 RELEASE_SHOTS_OUT          output folder, default release-notes/screenshots
 //   --headed                                         show the browser
 //
-// Shots needing a tool that isn't installed, or a model that wasn't given, are skipped with a line saying so --
-// the rest still run. Nothing in the library is changed: dialogs and panels are only opened. Email addresses are
-// blurred. The account's theme is switched for the run and restored afterwards.
+// Shots needing something the instance doesn't have -- a Claude AI, a Studio design with an Ask AI answer, chats
+// switched on, a second account -- are skipped with a line saying so, and the rest still run. Nothing in the library is changed: dialogs
+// and panels are only opened. Email addresses are blurred. The accounts' themes, and the admin's Studio prompt layout,
+// are switched for the run and restored afterwards.
 //
-// The editor shots (tools-ai, tool-editor) need Users' own tools, a setting for the whole instance: if it's off it's
-// turned on for the run, so everyone who sees tools can make their own meanwhile, and off again at the end. A run
-// stopped with Ctrl+C or killed leaves it on -- check Administration → Tools after one.
+// What the shots show has to be there first: a Studio design Ask AI built, with its conversation; a public collection
+// of the admin's for the viewer's Explore; and a chat with a model sent in it.
 //
 // Thingport Grab's own pictures aren't covered: they come from `npm --prefix extension run screenshots`, which
 // loads the built extension into a visible browser. Convert the ones you want with `sharp` as this script does.
 //
 // The file a shot writes is what a release-notes item then names in its `images`, e.g.
 //
-//   { "src": "screenshots/1.4.0-tools.webp", "caption": "The Tools page, with the tools split into shelves" }
+//   { "src": "screenshots/1.5.0-chats.webp", "caption": "A room, with a model sent in it" }
 //
 // so a shot added here wants an item in release-notes/latest-release-notes.json to put it in, and the other way
-// round: an item naming a picture nothing captures leaves a gap in What's new.
+// round: an item naming a picture nothing captures leaves a gap in What's new. Earlier releases' shots are in this
+// file's git history.
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -58,9 +61,11 @@ const { values: args } = parseArgs({
     url: { type: "string" },
     email: { type: "string" },
     password: { type: "string" },
+    "viewer-email": { type: "string" },
+    "viewer-password": { type: "string" },
+    "studio-design": { type: "string" },
+    chat: { type: "string" },
     version: { type: "string" },
-    model: { type: "string" },
-    "generative-model": { type: "string" },
     theme: { type: "string" },
     only: { type: "string" },
     out: { type: "string" },
@@ -76,8 +81,10 @@ const list = (value) =>
 const baseUrl = (args.url || process.env.THINGPORT_URL || "").replace(/\/+$/, "");
 const email = args.email || process.env.THINGPORT_EMAIL;
 const password = args.password || process.env.THINGPORT_PASSWORD;
-const modelId = args.model || process.env.SCREENSHOT_MODEL;
-const generativeId = args["generative-model"] || process.env.SCREENSHOT_GENERATIVE;
+const viewerEmail = args["viewer-email"] || process.env.THINGPORT_VIEWER_EMAIL;
+const viewerPassword = args["viewer-password"] || process.env.THINGPORT_VIEWER_PASSWORD;
+let designId = args["studio-design"] || process.env.SCREENSHOT_STUDIO_DESIGN;
+const chatId = args.chat || process.env.SCREENSHOT_CHAT;
 const theme = args.theme || process.env.RELEASE_SHOTS_THEME || "light";
 const only = list(args.only || process.env.RELEASE_SHOTS_ONLY);
 const outDir = path.resolve(
@@ -127,15 +134,20 @@ async function clipOf(page, locator, pad = PAD) {
   };
 }
 
-/** The box covering several locators at once, e.g. a button and the menu it opened. */
-async function clipAround(page, locators, pad = PAD) {
-  const boxes = (await Promise.all(locators.map((l) => l.boundingBox()))).filter(Boolean);
-  if (!boxes.length) throw new Error("nothing to crop to");
+/** The box covering several boxes at once, e.g. a button and the popover it opened. */
+function clipAround(boxes, pad = PAD) {
   const left = Math.max(0, Math.min(...boxes.map((b) => b.x)) - pad);
   const top = Math.max(0, Math.min(...boxes.map((b) => b.y)) - pad);
   const right = Math.min(VIEWPORT.width, Math.max(...boxes.map((b) => b.x + b.width)) + pad);
   const bottom = Math.min(VIEWPORT.height, Math.max(...boxes.map((b) => b.y + b.height)) + pad);
   return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+/** Everything right of the sidebar, top bar included: the page without the navigation it's always shown with. */
+async function mainClip(page) {
+  const main = await page.locator("main").first().boundingBox();
+  if (!main) throw new Error("no main area to crop to");
+  return { x: main.x, y: 0, width: VIEWPORT.width - main.x, height: VIEWPORT.height };
 }
 
 // No address, the account's own included, should end up in a published screenshot.
@@ -152,125 +164,137 @@ async function blurEmails(page) {
   });
 }
 
+/** Studio on the design, its geometry built. */
+async function openStudio(page) {
+  await open(page, designId ? `/studio?design=${encodeURIComponent(designId)}` : "/studio");
+  await page.getByRole("button", { name: "Edit design" }).waitFor({ timeout: 30000 });
+  await page.locator("canvas").first().waitFor();
+  // The bodies are built in a worker once the design arrives, and the camera eases onto them.
+  await settle(page, 3000);
+}
+
+/** Why a Studio shot can't be taken, or null. It changes the prompt layout, which must be put back afterwards. */
+function studioBlocked(layoutSaved) {
+  if (!layoutSaved) return "Studio's settings couldn't be read, so its layout couldn't be put back";
+  if (!designId) return "no Studio design with anything in it";
+  return null;
+}
+
+/** Ask AI's picker set to `model`, when it's still offered; otherwise left as it is. */
+async function pickModel(page, model) {
+  const picker = page.getByRole("combobox", { name: "AI model" });
+  if (!model || !(await picker.isVisible().catch(() => false))) return;
+  await picker.click();
+  const option = page.getByRole("option", { name: model }).first();
+  if (await option.isVisible().catch(() => false)) await option.click();
+  else await page.keyboard.press("Escape");
+}
+
 const SHOTS = [
   {
-    name: "tools",
-    run: async (page) => {
-      await open(page, "/tools");
-      await page.getByRole("heading", { name: "Tools", exact: true }).waitFor();
-      await settle(page);
-      // Down to the last shelf: the tools rarely fill the page, and the blank below them says nothing.
-      const bottom = await page.evaluate(() => {
-        const tiles = [...document.querySelectorAll("[aria-label*='press Enter to open']")];
-        return tiles.length ? Math.max(...tiles.map((t) => t.getBoundingClientRect().bottom)) : null;
-      });
-      return bottom
-        ? { clip: { x: 0, y: 0, width: VIEWPORT.width, height: Math.min(VIEWPORT.height, bottom + 48) } }
-        : undefined;
+    name: "studio-ai",
+    run: async (page, { api, layoutSaved }) => {
+      const blocked = studioBlocked(layoutSaved);
+      if (blocked) return { skip: blocked };
+      // Beside the view rather than over it, so the conversation and the design both show.
+      await api("PATCH", "/studio/settings", { prompt_layout: "panel" });
+      await openStudio(page);
+      // The picker shows the AI that wrote the conversation's last answer, so the two agree.
+      const opened = new URL(page.url()).searchParams.get("design");
+      const thread = opened ? await api("GET", `/studio/designs/${encodeURIComponent(opened)}/assistant`) : null;
+      const answer = thread?.messages.findLast((message) => message.role === "assistant");
+      if (!answer) return { skip: "the design has no Ask AI answer to show" };
+      await pickModel(page, answer.model);
+      // The steps the answer took, folded under it until asked for.
+      const steps = page.getByRole("button", { name: /^\d+ steps?$/ }).last();
+      if (await steps.isVisible().catch(() => false)) await steps.click();
+      await settle(page, 1000);
+      return { clip: await mainClip(page) };
     },
   },
   {
-    name: "tools-ai",
-    needsUserTools: true,
+    name: "studio-edit",
+    run: async (page, { api, layoutSaved }) => {
+      const blocked = studioBlocked(layoutSaved);
+      if (blocked) return { skip: blocked };
+      await api("PATCH", "/studio/settings", { prompt_layout: "bar" });
+      await openStudio(page);
+      // The prompt folds to its button, leaving the view to the design and the panels.
+      await page.getByRole("button", { name: "Minimise" }).click();
+      await page.getByRole("button", { name: "Edit design" }).click();
+      const top = page.getByRole("tree").getByRole("treeitem").first();
+      await top.waitFor();
+      // Selected, so Properties shows its exact values, and opened one level to show what it's built from: clicked
+      // past the chevron, which only folds, then the right arrow, which opens a row as in a file tree.
+      await top
+        .locator(".MuiListItemButton-root")
+        .first()
+        .click({ position: { x: 120, y: 16 } });
+      await page.keyboard.press("ArrowRight");
+      await settle(page, 1200);
+      return { clip: await mainClip(page) };
+    },
+  },
+  {
+    name: "studio-assistant",
     run: async (page) => {
-      await open(page, "/tools");
-      await page.getByRole("button", { name: "New tool" }).click();
+      await open(page, "/admin-ai");
+      const tile = page.getByRole("button", { name: "Studio assistant settings" });
+      if (!(await tile.isVisible().catch(() => false))) return { skip: "Studio isn't on this instance" };
+      await tile.click();
       const dialog = page.getByRole("dialog");
-      await dialog.getByRole("button", { name: "Use AI" }).click();
-      await dialog.getByText("Build a tool with AI").waitFor();
-      return { clip: await clipOf(page, dialog) };
+      await dialog.getByText("Available models").waitFor();
+      await settle(page, 600);
+      return { clip: await clipOf(page, dialog, 0) };
     },
   },
   {
-    name: "tool-editor",
-    needsUserTools: true,
+    name: "ai-claude",
     run: async (page) => {
-      await open(page, "/tools");
-      await page.getByRole("button", { name: "New tool" }).click();
+      await open(page, "/admin-ai");
+      // An AI's tile is named after its model. A saved API key never comes back to the page, so the field shows dots.
+      const tile = page.getByRole("button", { name: /^claude/i }).first();
+      if (!(await tile.isVisible().catch(() => false))) return { skip: "no Claude AI under Administration → AI" };
+      await tile.dblclick();
       const dialog = page.getByRole("dialog");
-      await dialog.getByRole("button", { name: "Script", exact: true }).click();
-      await settle(page);
-      return { clip: await clipOf(page, dialog) };
+      await dialog.getByText("Effort", { exact: true }).first().waitFor();
+      await settle(page, 600);
+      return { clip: await clipOf(page, dialog, 0) };
     },
   },
   {
-    name: "admin-tools",
-    run: async (page) => {
-      await open(page, "/admin-tools");
-      // The tile grid, not the access settings above it.
-      const grid = page.getByRole("heading", { name: /repository/i }).locator("xpath=../..");
-      await settle(page);
-      return { clip: await clipOf(page, grid) };
-    },
-  },
-  {
-    name: "generative-model",
-    needs: { generativeId: "--generative-model" },
-    run: async (page) => {
-      await open(page, `/models/${generativeId}`);
-      // Customize takes the main button on a model that came with its script, where Open would otherwise be.
-      // Named exactly: a model may also carry a tag called "Customize", whose chip is a button earlier in the page.
-      await page.getByRole("button", { name: "Customize\u2026", exact: true }).waitFor({ timeout: 30000 });
-      await settle(page);
-    },
-  },
-  {
-    name: "customizer",
-    needs: { generativeId: "--generative-model" },
-    run: async (page) => {
-      await open(page, `/models/${generativeId}`);
-      await page.getByRole("button", { name: "Customize\u2026", exact: true }).click();
-      // A model that came with several scripts asks which one first.
-      const pick = page.getByRole("dialog").filter({ hasText: "Which script?" });
-      if (await pick.isVisible().catch(() => false)) await pick.getByRole("button").first().click();
-      // The script is read and its controls built from it, which is the engine's first run of the visit.
-      const generate = page.getByRole("button", { name: "Generate" });
-      await generate.waitFor({ timeout: 120000 });
-      // An empty stage says nothing about what the parameters do, so it is generated before the shot.
-      await generate.click();
-      await page
-        .getByText(/Generated in/)
-        .waitFor({ timeout: 180000 })
-        .catch(() => console.warn("  nothing generated in time; the stage may be empty"));
-      await settle(page, 1500);
-    },
-  },
-  {
-    name: "filters",
+    name: "import-queue",
     run: async (page) => {
       await open(page, "/models");
-      const button = page.getByRole("button", { name: "Filters" });
-      // Measured first: an open popover hides the rest of the page from role queries.
-      const anchor = await button.boundingBox();
-      await button.click();
-      const panel = page.locator(".MuiPopover-paper, .MuiMenu-paper").first();
-      await panel.waitFor();
-      await settle(page, 500);
-      const box = await panel.boundingBox();
-      const left = Math.max(0, Math.min(anchor.x, box.x) - PAD);
-      const right = Math.min(VIEWPORT.width, Math.max(anchor.x + anchor.width, box.x + box.width) + PAD);
-      const top = Math.max(0, anchor.y - PAD);
-      return {
-        clip: {
-          x: left,
-          y: top,
-          width: right - left,
-          height: Math.min(VIEWPORT.height - top, box.y + box.height - top + PAD),
-        },
-      };
+      await page.getByRole("button", { name: "Add", exact: true }).click();
+      await page.getByRole("button", { name: "Open", exact: true }).click();
+      const dialog = page.getByRole("dialog").filter({ hasText: "Import queue" });
+      await dialog.waitFor();
+      // An idle queue opens on an empty Importing, so it goes to the first section with something in it.
+      for (const section of [/^Importing\s*[1-9]/, /^Waiting\s*[1-9]/, /^Finished\s*[1-9]/]) {
+        const button = dialog.getByRole("button", { name: section });
+        if (await button.isVisible().catch(() => false)) {
+          await button.click();
+          break;
+        }
+      }
+      await settle(page);
+      return { clip: await clipOf(page, dialog, 0) };
     },
   },
   {
-    name: "multicolor",
-    needs: { modelId: "--model" },
+    name: "add-hub",
     run: async (page) => {
-      await open(page, `/models/${modelId}`);
-      await page.getByRole("button", { name: "3D Preview" }).click();
-      await page.locator("canvas").first().waitFor();
-      // The model streams in and the camera eases to fit it.
-      await page.waitForLoadState("networkidle").catch(() => undefined);
-      await page.waitForTimeout(4500);
-      return { clip: await clipOf(page, page.getByRole("dialog").first(), 0) };
+      await open(page, "/models");
+      const button = page.getByRole("button", { name: "Add", exact: true });
+      // Measured first: an open popover hides the rest of the page from role queries. The whole row of top-bar
+      // buttons, so the crop doesn't cut through the bell beside Add.
+      const row = await button.locator("xpath=ancestor::*[count(.//button) >= 4][1]").boundingBox();
+      await button.click();
+      const hub = page.locator(".MuiPopover-paper").first();
+      await hub.waitFor();
+      await settle(page, 500);
+      return { clip: clipAround([row, await hub.boundingBox()]) };
     },
   },
   {
@@ -278,55 +302,75 @@ const SHOTS = [
     run: async (page) => {
       await open(page, "/admin-providers");
       await settle(page);
-      // The newest sites are at the foot of a list of seventeen, which is what this shot is about.
-      await page.getByText("GrabCAD", { exact: true }).scrollIntoViewIfNeeded();
+      // The newest site is at the foot of the list, which is what this shot is about.
+      await page.getByText("Meshy", { exact: true }).first().scrollIntoViewIfNeeded();
       await settle(page, 400);
     },
   },
   {
-    name: "repair",
+    name: "social-switch",
     run: async (page) => {
-      // On a library that has lost files, the dialog comes up on its own and says what was found; the panel
-      // behind Manage categories is the way in otherwise, and all a healthy library has to show.
-      // The init script below marks it dismissed on every page load, so it's told to hold off for this one.
-      await page.evaluate(() => {
-        localStorage.setItem("release-shots.missingFilesPrompt", "1");
-        localStorage.removeItem("thingport.missingFiles.dismissedAt");
-      });
-      await page.goto("/");
-      await page.evaluate(() => localStorage.removeItem("release-shots.missingFilesPrompt"));
-      await settle(page, 0);
-      const prompt = page.getByRole("dialog").filter({ hasText: "Some models have lost their files" });
-      if (await prompt.isVisible().catch(() => false)) {
-        await settle(page);
-        return { clip: await clipOf(page, prompt) };
-      }
-      await open(page, "/models");
-      await page.getByRole("button", { name: "Manage categories" }).click();
-      const dialog = page.getByRole("dialog");
-      await dialog.waitFor();
-      await dialog.getByRole("button", { name: "Repair", exact: true }).click();
-      await dialog.waitFor();
-      // The look through the library takes a moment on a real one.
-      await dialog
-        .getByText(/Looking through/)
-        .waitFor({ state: "detached", timeout: 60000 })
-        .catch(() => undefined);
+      // Narrower, so the switch's card and the people under it make a picture rather than a strip.
+      await page.setViewportSize({ width: 1200, height: VIEWPORT.height });
+      await open(page, "/admin-users");
+      const label = page.getByText("Social features", { exact: true }).first();
+      await label.waitFor();
+      const card = label.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
       await settle(page);
-      return { clip: await clipOf(page, dialog) };
+      const boxes = [await card.boundingBox(), await page.getByRole("table").first().boundingBox()];
+      return { clip: clipAround(boxes.filter(Boolean)) };
     },
   },
   {
-    name: "multiboard",
+    name: "explore",
+    needs: { viewer: "--viewer-email" },
+    run: async (_page, { viewer }) => {
+      const page = await viewer();
+      await open(page, "/explore");
+      if (
+        !(await page
+          .getByText("People", { exact: true })
+          .first()
+          .isVisible()
+          .catch(() => false))
+      ) {
+        return { skip: "Explore is empty for the viewer: turn social features on and make a collection public" };
+      }
+      await settle(page);
+      return { page };
+    },
+  },
+  {
+    name: "chats",
     run: async (page) => {
-      await open(page, "/tools");
-      await page.getByRole("button", { name: /Multiboard planner/ }).dblclick();
-      const window_ = page.getByRole("dialog");
-      await window_.waitFor();
-      // The board is drawn from the plan once the tool's script has started.
-      await window_.locator("svg, canvas").first().waitFor({ timeout: 30000 });
+      // Shorter than the others: a conversation is a few lines, and the rest of a tall window is empty.
+      await page.setViewportSize({ width: VIEWPORT.width, height: 600 });
+      await open(page, chatId ? `/chats/${encodeURIComponent(chatId)}` : "/chats");
+      if (
+        await page
+          .getByText("Chats are off on this instance")
+          .isVisible()
+          .catch(() => false)
+      ) {
+        return { skip: "chats are off" };
+      }
+      if (!chatId) {
+        // The list is newest first.
+        const first = page.locator("[href^='/chats/']").first();
+        if (!(await first.isVisible().catch(() => false))) return { skip: "no chats yet" };
+        await first.click();
+      }
+      // A chat that opened has somewhere to write; a stale or mistyped --chat gets an error instead.
+      const composer = page.getByPlaceholder(/^Message /);
+      if (
+        !(await composer.waitFor({ timeout: 15000 }).then(
+          () => true,
+          () => false,
+        ))
+      ) {
+        return { skip: "the chat didn't open: check --chat" };
+      }
       await settle(page, 1500);
-      return { clip: await clipOf(page, window_) };
     },
   },
 ];
@@ -347,66 +391,97 @@ if (!version) {
   console.error(`Couldn't read a version from ${notesFile}; pass --version.`);
   process.exit(1);
 }
-const missing = { modelId: !modelId, generativeId: !generativeId };
+const missing = { viewer: !viewerEmail || !viewerPassword };
 const wanted = SHOTS.filter((shot) => !only.length || only.includes(shot.name));
-
-const browser = await chromium.launch({ headless: !args.headed });
-const context = await browser.newContext({
-  baseURL: baseUrl,
-  viewport: VIEWPORT,
-  deviceScaleFactor: 2,
-  locale: "en-US",
-  // Self-hosted instances often run on a self-signed certificate.
-  ignoreHTTPSErrors: true,
-});
-await context.addInitScript(() => {
-  localStorage.setItem("thingport_language", "en");
-  localStorage.setItem("thingport_sidebar_collapsed", "false");
-  // A library that has lost files greets every visit with a dialog, seconds after the page loads, and an open
-  // dialog takes everything behind it out of the accessibility tree -- so no other shot could find what it came
-  // for. Marked dismissed before anything loads it never opens -- except for the repair shot, which wants it.
-  if (!localStorage.getItem("release-shots.missingFilesPrompt")) {
-    localStorage.setItem("thingport.missingFiles.dismissedAt", "999999");
-  }
-});
-const page = await context.newPage();
-
-/** Through the browser context, so a self-signed certificate is accepted the same way. */
-async function api(token, method, url, body) {
-  const res = await context.request.fetch(`${baseUrl}/api${url}`, {
-    method,
-    headers: { Authorization: `Bearer ${token}` },
-    data: body,
-  });
-  if (!res.ok()) throw new Error(`${method} ${url}: ${res.status()} ${await res.text()}`);
-  return res.json();
+if (only.length && !wanted.length) {
+  console.error(`No shot is named ${only.join(", ")}. Shots: ${SHOTS.map((shot) => shot.name).join(", ")}.`);
+  process.exit(1);
+}
+// Sign-in takes the email trimmed and in any case, so this is the same account however it's typed.
+const sameAccount = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+if (viewerEmail && sameAccount(viewerEmail, email)) {
+  console.error("--viewer-email must be another account: Explore leaves out the viewer's own shares.");
+  process.exit(1);
 }
 
-let token = null;
-let originalTheme;
-let originalUserTools;
-try {
+const browser = await chromium.launch({ headless: !args.headed });
+
+// What puts each account's theme back at the end, newest first.
+const restores = [];
+
+/** A signed-in browser context of its own, with the run's theme on its account until the end of the run. */
+async function signIn(accountEmail, accountPassword) {
+  const context = await browser.newContext({
+    baseURL: baseUrl,
+    viewport: VIEWPORT,
+    deviceScaleFactor: 2,
+    locale: "en-US",
+    // Self-hosted instances often run on a self-signed certificate.
+    ignoreHTTPSErrors: true,
+  });
+  await context.addInitScript(() => {
+    localStorage.setItem("thingport_language", "en");
+    localStorage.setItem("thingport_sidebar_collapsed", "false");
+    // A library that has lost files greets every visit with a dialog, seconds after the page loads, and an open
+    // dialog takes everything behind it out of the accessibility tree -- so no shot could find what it came for.
+    localStorage.setItem("thingport.missingFiles.dismissedAt", "999999");
+  });
+  const page = await context.newPage();
   await page.goto("/");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel(/^Password/).fill(password);
+  await page.getByLabel("Email").fill(accountEmail);
+  await page.getByLabel(/^Password/).fill(accountPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
   // Not a button on the page: an instance with broken models greets you with a dialog, and a dialog hides
   // everything behind it from role queries. The session landing is what says the sign-in worked.
   await page.waitForFunction(() => !!localStorage.getItem("thingport_auth_token"), null, { timeout: 30000 });
-  token = await page.evaluate(() => localStorage.getItem("thingport_auth_token"));
-  if (!token) throw new Error("Signed in, but couldn't read the session from the page");
+  const token = await page.evaluate(() => localStorage.getItem("thingport_auth_token"));
+  if (!token) throw new Error(`Signed in as ${accountEmail}, but couldn't read the session from the page`);
 
-  if (wanted.some((shot) => shot.needsUserTools)) {
-    const access = await api(token, "GET", "/admin/tools/access");
-    if (!access.userTools) {
-      originalUserTools = false;
-      await api(token, "POST", "/admin/tools/access", { userTools: true });
-      console.log("Turned Users' own tools on for the editor shots; it goes back off at the end.");
-    }
-  }
-  originalTheme = (await api(token, "GET", "/settings/theme")).theme;
-  await api(token, "PATCH", "/settings/theme", { theme });
+  /** Through the browser context, so a self-signed certificate is accepted the same way. */
+  const api = async (method, url, body) => {
+    const res = await context.request.fetch(`${baseUrl}/api${url}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+      data: body,
+    });
+    if (!res.ok()) throw new Error(`${method} ${url}: ${res.status()} ${await res.text()}`);
+    return res.json();
+  };
+  const originalTheme = (await api("GET", "/settings/theme")).theme;
+  // Before the theme changes, so a failure right after it still puts it back.
+  restores.unshift(() =>
+    api("PATCH", "/settings/theme", { theme: originalTheme }).catch((err) =>
+      console.error(`Couldn't restore ${accountEmail}'s theme (${originalTheme}): ${err.message}`),
+    ),
+  );
+  await api("PATCH", "/settings/theme", { theme });
   await page.emulateMedia({ colorScheme: theme });
+  return { page, api };
+}
+
+let originalLayout;
+let admin;
+try {
+  admin = await signIn(email, password);
+  if (wanted.some((shot) => shot.name.startsWith("studio-"))) {
+    // An instance older than Studio has none to read, and its Studio shots fail on their own.
+    originalLayout = await admin.api("GET", "/studio/settings").then(
+      (settings) => settings.prompt_layout,
+      () => undefined,
+    );
+    // The newest design with something in it when none was named: the latest may be an empty one just opened.
+    designId ??= await admin.api("GET", "/studio/designs").then(
+      (designs) => designs.find((design) => design.feature_count > 0)?.id,
+      () => undefined,
+    );
+  }
+  let viewerPage;
+  const viewer = async () => {
+    if (!viewerPage) {
+      viewerPage = (await signIn(viewerEmail, viewerPassword)).page;
+    }
+    return viewerPage;
+  };
   fs.mkdirSync(outDir, { recursive: true });
 
   for (const shot of wanted) {
@@ -417,10 +492,16 @@ try {
     }
     process.stdout.write(`${shot.name}... `);
     try {
-      await page.setViewportSize(VIEWPORT);
-      const result = await shot.run(page);
+      await admin.page.setViewportSize(VIEWPORT);
+      const result = await shot.run(admin.page, { api: admin.api, viewer, layoutSaved: originalLayout !== undefined });
+      if (result?.skip) {
+        console.log(`skipped, ${result.skip}`);
+        continue;
+      }
+      const page = result?.page ?? admin.page;
       // Off the page, so no tooltip shows up under the pointer.
-      await page.mouse.move(VIEWPORT.width - 1, VIEWPORT.height - 1);
+      const size = page.viewportSize() ?? VIEWPORT;
+      await page.mouse.move(size.width - 1, size.height - 1);
       await settle(page, 300);
       await blurEmails(page);
       const png = await page.screenshot(result?.clip ? { clip: result.clip } : {});
@@ -429,22 +510,19 @@ try {
       console.log(`${(fs.statSync(file).size / 1024).toFixed(0)} kB`);
     } catch (err) {
       console.log(`failed: ${err.message}`);
+    } finally {
+      // Twice: a dialog can open over another one.
+      await admin.page.keyboard.press("Escape").catch(() => undefined);
+      await admin.page.keyboard.press("Escape").catch(() => undefined);
     }
-    // Twice: a dialog can open over another one.
-    await page.keyboard.press("Escape").catch(() => undefined);
-    await page.keyboard.press("Escape").catch(() => undefined);
   }
   console.log(`Saved to ${outDir}`);
 } finally {
-  if (token && originalUserTools === false) {
-    await api(token, "POST", "/admin/tools/access", { userTools: false }).catch((err) =>
-      console.error(`Couldn't turn Users' own tools back off: ${err.message}`),
-    );
+  if (admin && originalLayout !== undefined) {
+    await admin
+      .api("PATCH", "/studio/settings", { prompt_layout: originalLayout })
+      .catch((err) => console.error(`Couldn't restore the Studio prompt layout (${originalLayout}): ${err.message}`));
   }
-  if (token && originalTheme !== undefined) {
-    await api(token, "PATCH", "/settings/theme", { theme: originalTheme }).catch((err) =>
-      console.error(`Couldn't restore the account's theme (${originalTheme}): ${err.message}`),
-    );
-  }
+  for (const restore of restores) await restore();
   await browser.close();
 }

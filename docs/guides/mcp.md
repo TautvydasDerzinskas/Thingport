@@ -15,10 +15,11 @@ you open Thingport at, and the assistant signs in with your [API token](api-toke
 3. Click the cog next to the token to open **Token permissions**, and under **MCP permissions** set each tool to **Allow** or
    **Deny**. Changes apply at once, to the token you already have.
 
-A new token gets every tool that only reads, plus `save_widget`, `save_tool` and `upload_icon`, so an assistant can
-make you a dashboard widget or a tool straight away. The other tools that change your library are marked **Changes your library**, stay off
-until you turn them on, and ask you to confirm when you do. The token still can't change anything over the REST API,
-and an MCP tool is only reachable if it's allowed here. Regenerating the token sets its tools back to these defaults.
+A new token gets every tool that only reads, apart from [Studio's](#the-tools), plus `save_widget`, `save_tool` and
+`upload_icon`, so an assistant can make you a dashboard widget or a tool straight away. The other tools that change your
+library are marked **Changes your library**, stay off until you turn them on, and ask you to confirm when you do. The
+token still can't change anything over the REST API, and an MCP tool is only reachable if it's allowed here.
+Regenerating the token sets its tools back to these defaults.
 
 ## 2. Add Thingport to your assistant
 

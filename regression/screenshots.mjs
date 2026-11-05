@@ -14,6 +14,7 @@
 //   --generative-model      SCREENSHOT_GENERATIVE_MODEL      a model that came with its script; default the first one
 //   --synced-collection     SCREENSHOT_SYNCED_COLLECTION     a synced collection; default the first one
 //   --ai-description-model  SCREENSHOT_AI_DESCRIPTION_MODEL  a model whose description AI rewrote; skipped without one
+//   --studio-design         SCREENSHOT_STUDIO_DESIGN         a Studio design Ask AI built; default the one edited last
 //   --themes                SCREENSHOT_THEMES                comma-separated, default light,dark
 //   --only                  SCREENSHOT_ONLY                  comma-separated shot names or numbers, e.g. 06,07
 //   --out                   SCREENSHOT_OUT                   output folder, holding one folder per theme
@@ -22,7 +23,8 @@
 // The account's theme and Categories/Folders choice are switched for the shots and restored afterwards. Nothing is
 // changed in the library: the merge and download dialogs are only opened, and System Health's full test only checks
 // connections. Email addresses on the page are blurred. The import queue's rows are made up and answered in the browser,
-// so nothing is queued on the instance.
+// so nothing is queued on the instance, and so is Explore, so social features needn't be on: the library's own models,
+// shown as shared by made-up people. The Studio prompt layout is switched for its shot and restored afterwards.
 //
 // The guide_* cut-outs replace the images in docs/guides/images, light only, and run only when named with --only;
 // guide_consume_settings needs the consume folder mounted.
@@ -43,6 +45,7 @@ const { values: args } = parseArgs({
     "generative-model": { type: "string" },
     "synced-collection": { type: "string" },
     "ai-description-model": { type: "string" },
+    "studio-design": { type: "string" },
     themes: { type: "string" },
     only: { type: "string" },
     out: { type: "string" },
@@ -64,6 +67,7 @@ const optionalIds = {
   generativeModel: args["generative-model"] || process.env.SCREENSHOT_GENERATIVE_MODEL,
   syncedCollection: args["synced-collection"] || process.env.SCREENSHOT_SYNCED_COLLECTION,
   aiDescriptionModel: args["ai-description-model"] || process.env.SCREENSHOT_AI_DESCRIPTION_MODEL,
+  studioDesign: args["studio-design"] || process.env.SCREENSHOT_STUDIO_DESIGN,
 };
 const themes = list(args.themes || process.env.SCREENSHOT_THEMES || "light,dark");
 const outDir = path.resolve(
@@ -236,6 +240,24 @@ function queueAnswers(displayName) {
         }),
       ],
     },
+  };
+}
+
+// What the Explore shot shows: the library's own models and collections, as two made-up people's shares.
+async function exploreAnswers(api) {
+  const alex = { id: "alex", display_name: "Alex Morgan", avatar_url: null };
+  const sam = { id: "sam", display_name: "Sam Rivera", avatar_url: null };
+  const models = (await api("GET", "/prints?limit=40")).filter((m) => m.preview_images?.length);
+  const collections = (await api("GET", "/collections")).filter((c) => !c.tool_id && c.item_count > 3);
+  const owned = (list, i) => ({ ...list, owner: i % 3 === 2 ? sam : alex });
+  return {
+    people: [
+      { ...alex, collection_count: 3, model_count: 41 },
+      { ...sam, collection_count: 2, model_count: 17 },
+    ],
+    recent_models: models.slice(0, 10).map(owned),
+    recent_collections: collections.slice(0, 4).map(owned),
+    most_collected: models.slice(10, 15).map((model, i) => ({ model: owned(model, i), copies: 4 - (i % 3) })),
   };
 }
 
@@ -508,6 +530,43 @@ const SHOTS = [
   },
   // The guides' cut-outs, saved next to the guides rather than with the README shots.
   {
+    name: "41_studio",
+    optional: "studioDesign",
+    run: async (page, ctx) => {
+      // The conversation beside the design rather than over it.
+      await ctx.api("PATCH", "/studio/settings", { prompt_layout: "panel" });
+      await open(page, `/studio?design=${encodeURIComponent(ctx.studioDesign)}`);
+      await page.getByRole("button", { name: "Edit design" }).waitFor({ timeout: 30000 });
+      // The bodies are built in a worker once the design arrives, and the camera eases onto them.
+      await page.locator("canvas").first().waitFor();
+      await page.waitForTimeout(3000);
+      // The picker shows the AI that wrote the conversation's last answer, so the two agree.
+      const thread = await ctx.api("GET", `/studio/designs/${encodeURIComponent(ctx.studioDesign)}/assistant`);
+      const model = thread.messages.findLast((message) => message.role === "assistant")?.model;
+      const picker = page.getByRole("combobox", { name: "AI model" });
+      if (model && (await picker.isVisible().catch(() => false))) {
+        await picker.click();
+        const option = page.getByRole("option", { name: model }).first();
+        if (await option.isVisible().catch(() => false)) await option.click();
+        else await page.keyboard.press("Escape");
+      }
+    },
+  },
+  {
+    name: "42_explore",
+    run: async (page, ctx) => {
+      const overview = await exploreAnswers(ctx.api);
+      await page.route(/\/api\/social$/, (route) =>
+        route.fulfill({ json: { enabled: true, explore: true, chats: true } }),
+      );
+      await page.route(/\/api\/explore$/, (route) => route.fulfill({ json: overview }));
+      // Chats is in the sidebar beside Explore; an empty count keeps it from asking the instance.
+      await page.route(/\/api\/chats\/unread/, (route) => route.fulfill({ json: { unread: 0, latest: null } }));
+      await open(page, "/explore");
+      await page.getByText("Alex Morgan").first().waitFor();
+    },
+  },
+  {
     name: "guide_consume_settings",
     guide: true,
     run: async (page) => {
@@ -611,6 +670,7 @@ const page = await context.newPage();
 let token = null;
 let originalTheme;
 let originalView;
+let originalLayout;
 let failed = 0;
 try {
   await page.goto("/");
@@ -632,7 +692,19 @@ try {
   optionalIds.generativeModel ??= (await api(token, "GET", "/prints?generative=1&limit=1"))[0]?.id;
   optionalIds.syncedCollection ??= (await api(token, "GET", "/collections")).find((c) => c.sync)?.id;
 
-  const ctx = { displayName, ...optionalIds };
+  // The newest Studio design with something in it when none was named: the latest may be an empty one just opened.
+  optionalIds.studioDesign ??= await api(token, "GET", "/studio/designs")
+    .then((designs) => designs.find((design) => design.feature_count > 0)?.id)
+    .catch(() => undefined);
+  if (shots.some((shot) => shot.name === "41_studio")) {
+    originalLayout = await api(token, "GET", "/studio/settings")
+      .then((settings) => settings.prompt_layout)
+      .catch(() => undefined);
+    // The shot changes the layout, so without one to put back it isn't taken.
+    if (originalLayout === undefined) optionalIds.studioDesign = undefined;
+  }
+
+  const ctx = { displayName, ...optionalIds, api: (method, url, body) => api(token, method, url, body) };
   for (const theme of themes) {
     await api(token, "PATCH", "/settings/theme", { theme });
     await page.emulateMedia({ colorScheme: theme });
@@ -677,6 +749,11 @@ try {
   if (token && originalView !== undefined) {
     await api(token, "PATCH", "/settings/categories-view", { view: originalView }).catch((err) =>
       console.error(`Couldn't restore the Categories/Folders choice (${originalView}): ${err.message}`),
+    );
+  }
+  if (token && originalLayout !== undefined) {
+    await api(token, "PATCH", "/studio/settings", { prompt_layout: originalLayout }).catch((err) =>
+      console.error(`Couldn't restore the Studio prompt layout (${originalLayout}): ${err.message}`),
     );
   }
   // Each run signs in afresh, so without this every run would leave a session behind on the account.
