@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import SvgIcon from "@mui/material/SvgIcon";
@@ -81,6 +81,58 @@ export function hasProfileBadges(profile: PlateProfile): boolean {
  * A 3MF's slicer profile as small icon + value pairs: printer, nozzle, layer height, material, plates,
  * print time, weight. Whatever the file doesn't say is left out; renders nothing when there's nothing to show.
  */
+/**
+ * One badge. When its value is cut off by an ellipsis it takes a tab stop, so a keyboard user can focus it and get
+ * the tooltip with the full value (hover alone would leave them without it); a badge that fits stays out of the tab
+ * order. Enter and Space stop here, so the row around it isn't picked by accident.
+ */
+function Badge({ item: i }: { item: Item }) {
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [cut, setCut] = useState(false);
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    const measure = () => setCut(el.scrollWidth > el.clientWidth);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    // Without describeChild the tooltip text becomes the badge's aria-label, its name for screen readers.
+    <Tooltip title={i.label}>
+      <Box
+        component="span"
+        // An icon and its value read as one picture with a name; an <img> can't hold both.
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+        role="img"
+        // The MUI tooltip is the hover text; without this an ancestor's title (the file name) shows too.
+        title=""
+        tabIndex={cut ? 0 : undefined}
+        onKeyDown={cut ? (e) => e.stopPropagation() : undefined}
+        data-item={i.key}
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 0.25,
+          minWidth: i.key === "printer" ? PRINTER_MIN : 0,
+          maxWidth: "100%",
+          // The printer takes the rest of the line once its first few letters fit, then ellipsizes.
+          flex: FLEX[i.key] ?? "0 1 auto",
+          "& .MuiSvgIcon-root": { fontSize: "1.05em", flexShrink: 0 },
+        }}
+      >
+        {i.icon}
+        <Box component="span" ref={textRef} sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {i.text}
+        </Box>
+      </Box>
+    </Tooltip>
+  );
+}
+
 export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
   const { t, i18n } = useTranslation(["models"]);
   const locale = i18n.resolvedLanguage ?? i18n.language;
@@ -145,33 +197,7 @@ export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
     // value). When even that is too narrow, whole badges wrap to the next line; a number is never cut.
     <Box component="span" sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 1, minWidth: 0 }}>
       {shown.map((i) => (
-        // Without describeChild the tooltip text becomes the badge's aria-label, its name for screen readers.
-        <Tooltip key={i.key} title={i.label}>
-          <Box
-            component="span"
-            // An icon and its value read as one picture with a name; an <img> can't hold both.
-            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-            role="img"
-            // The MUI tooltip is the hover text; without this an ancestor's title (the file name) shows too.
-            title=""
-            data-item={i.key}
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.25,
-              minWidth: i.key === "printer" ? PRINTER_MIN : 0,
-              maxWidth: "100%",
-              // The printer takes the rest of the line once its first few letters fit, then ellipsizes.
-              flex: FLEX[i.key] ?? "0 1 auto",
-              "& .MuiSvgIcon-root": { fontSize: "1.05em", flexShrink: 0 },
-            }}
-          >
-            {i.icon}
-            <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {i.text}
-            </Box>
-          </Box>
-        </Tooltip>
+        <Badge key={i.key} item={i} />
       ))}
     </Box>
   );
