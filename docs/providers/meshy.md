@@ -44,10 +44,11 @@ Meshy is a site over an API of its own, which Thingport reads the way its own pa
 Per-user (**Configuration → Providers → Meshy**). Meshy signs you in with Supabase, which keeps the session -- a
 15-minute access token and the refresh token that renews it -- in an `sb-auth-auth-token` cookie, split across
 `sb-auth-auth-token.0`, `.1`, … once it outgrows one. Thingport keeps both and renews the access token itself as it
-runs out, as the site's pages do, while your browser renews its own. Each renewal spends the refresh token it used, and
-the two start from the same one; in testing Meshy let both carry on renewing without signing either out. Should it ever
-end the sign-in for both, your next visit to meshy.ai with Grab connects Thingport again. Thingport sends your
-browser's device id along too, so Meshy counts it as the browser it came from rather than a new device.
+runs out, as the site's pages do, while your browser renews its own. Each renewal spends the refresh token it used,
+and the two start from the same one; in testing Meshy let both carry on renewing without signing either out. Should it
+ever end the sign-in for both, sign in to meshy.ai again: Grab connects Thingport with the new sign-in on that visit.
+Thingport sends your browser's device id along too, so Meshy counts it as the browser it came from rather than a new
+device.
 
 ### Easiest: Thingport Grab
 

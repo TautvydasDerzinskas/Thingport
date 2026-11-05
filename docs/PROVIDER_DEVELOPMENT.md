@@ -80,7 +80,7 @@ how lists are read. When a new site resembles one of these, copy that provider's
 | Official API with an instance key                 | Thingiverse (an admin's App Token), MyMiniFactory (an admin's API key as `?key=`)                                                                                                                                                                                                                                                             |
 | Official API with the user's key                  | Cults3D's GraphQL API (nickname + API key) for models, likes, printlists and orders, though never files                                                                                                                                                                                                                                       |
 | Public GraphQL API, no sign-in                    | Printables (`api.printables.com` answers unauthenticated, unlike the Cloudflare-gated site)                                                                                                                                                                                                                                                   |
-| The site's own private API (what its pages call)  | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs, eufyMake, Makerables, GrabCAD. Most wrap answers in a `code` of their own, so check that, not the HTTP status; GrabCAD's answers with plain statuses, a visitor's `/members/me` with a 204. Creality Cloud refuses any call without its full set of `__cxy_*` headers               |
+| The site's own private API (what its pages call)  | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs, eufyMake, Makerables, GrabCAD, Meshy. Most wrap answers in a `code` of their own, so check that, not the HTTP status; GrabCAD's answers with plain statuses, a visitor's `/members/me` with a 204. Creality Cloud refuses any call without its full set of `__cxy_*` headers        |
 | Model pages plus the maker's cloud API            | MakerWorld (page data, and `api.bambulab.com` with the user's cookie)                                                                                                                                                                                                                                                                         |
 | Its pages' HTML, rendered on the server           | Pinshape and Toymakr3D, read with cheerio. Pinshape's own calls answer with more HTML (`{success, html, pagination}`), and both sites' redirects are their answers: Pinshape's `/index` for a missing model, `/auth/login` for a refused sign-in; Toymakr3D's `/login` for one, and its canonical product page for a link whose name is wrong |
 | Its pages' data, as the JSON they hold or ask for | CGTrader: its listings answer JSON to a page's own script, a model page hands its React components their data as `data-react-props`, and `/products/<slug>.js`, the script the page loads to learn who's looking, says whether the user bought the model. Its redirect to `/not_found` is its 404                                             |
@@ -117,31 +117,33 @@ how lists are read. When a new site resembles one of these, copy that provider's
 Cloudflare page. A browser passing it gets an `aws-waf-token` cookie, which, unlike Cloudflare's clearance, isn't tied
 to the browser or its address, so the backend sends one with every request: the browser's, which Grab hands over with
 the sign-in, or one FlareSolverr's browser got by running the challenge (`cookiesViaFlaresolverr`, which waits for its
-script, as FlareSolverr doesn't know to). A challenge is answered once with a fresh one (`cgtrader/waf.ts`).
+script, as FlareSolverr doesn't know to). A challenge is answered once with a fresh one (`cgtrader/waf.ts`). Meshy's
+guards its pages but not the API its provider reads, so it only sends the browser's token along when Grab hands one over.
 
 ### Keeping a sign-in
 
 `signIn` and `auth` in the manifest declare what's needed, and the provider's `session.ts` keeps it:
 
-| Provider       | What's kept                                                                     | How it stays valid                                                                                                 |
-| -------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Printables     | Nothing                                                                         | Private lists and likes come from Grab while the user is on the site (below)                                       |
-| Thingiverse    | An admin's App Token (instance)                                                 | Set once in Settings, and checked by `instanceHealth`                                                              |
-| MyMiniFactory  | An admin's API key, plus each user's `PHPSESSID` for paid models                | The user's session is pasted, or sent by Grab                                                                      |
-| MakerWorld     | The user's cookie                                                               | Grab sends it. A turned-down cookie is marked rejected until a new or re-verified one arrives                      |
-| Snapmaker      | A day-long access token                                                         | **Only Grab renews it.** Refresh tokens are single-use and sign the old holder out, so the backend never refreshes |
-| MakerOnline    | A JWT good for about 90 days, needed only for likes and own lists               | Grab sends each new one                                                                                            |
-| Creality Cloud | `model_token` + `model_user_id`, set for 7 days                                 | Grab sends each new pair. The expiry is kept only for display, since the token may outlive the cookie              |
-| NexPrint       | `auth_token`, sent as a Bearer token                                            | The site refreshes it as it's used, and Grab sends each new one                                                    |
-| Thangs         | A 7-day access token and a refresh token good for about a year                  | **The backend renews it itself**, a little before expiry, since the refresh token survives use                     |
-| Cults3D        | API key (`default` slot) and the browser's session + clearance (`browser` slot) | The 20-day session slides with use, the backend's own use included                                                 |
-| eufyMake       | The auth token and user id the site keeps in page storage as `mk-userinfo`      | Grab reads it from an open site tab and sends each new one. Only the likes need it, with the id's MD5 as `Gtoken`  |
-| Pinshape       | Flask-Login's year-long `remember_token`, and the `session` cookie              | Grab sends each new pair, only from a signed-in page: a visitor gets a `session` cookie too                        |
-| Toymakr3D      | Laravel's session cookie and its `remember_web_…` one beside it                 | Grab sends each new pair, only from a signed-in page: a visitor gets a session cookie too                          |
-| Makerables     | Auth0's `__session` cookie, split across `__session__0`, `__session__1`, …      | Grab sends each new set; the backend turns it into the Bearer token the API takes, as the site's own pages do      |
-| CGTrader       | Rails' `_cgtrader_session_id`, and the browser's `aws-waf-token` beside it      | Grab sends each new pair, only while the browser has the signed-in `user_id` cookie: a visitor gets a session too  |
-| GrabCAD        | Rails' `_grabcad_session`, with no remember-me cookie beside it                 | Grab sends each new one, only from a signed-in page. It lasts two days from its last use, Thingport's included     |
-| OwlCAD         | Nothing                                                                         | Its gallery, its files and its one call all answer without a sign-in                                               |
+| Provider       | What's kept                                                                     | How it stays valid                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Printables     | Nothing                                                                         | Private lists and likes come from Grab while the user is on the site (below)                                        |
+| Thingiverse    | An admin's App Token (instance)                                                 | Set once in Settings, and checked by `instanceHealth`                                                               |
+| MyMiniFactory  | An admin's API key, plus each user's `PHPSESSID` for paid models                | The user's session is pasted, or sent by Grab                                                                       |
+| MakerWorld     | The user's cookie                                                               | Grab sends it. A turned-down cookie is marked rejected until a new or re-verified one arrives                       |
+| Snapmaker      | A day-long access token                                                         | **Only Grab renews it.** Refresh tokens are single-use and sign the old holder out, so the backend never refreshes  |
+| MakerOnline    | A JWT good for about 90 days, needed only for likes and own lists               | Grab sends each new one                                                                                             |
+| Creality Cloud | `model_token` + `model_user_id`, set for 7 days                                 | Grab sends each new pair. The expiry is kept only for display, since the token may outlive the cookie               |
+| NexPrint       | `auth_token`, sent as a Bearer token                                            | The site refreshes it as it's used, and Grab sends each new one                                                     |
+| Thangs         | A 7-day access token and a refresh token good for about a year                  | **The backend renews it itself**, a little before expiry, since the refresh token survives use                      |
+| Cults3D        | API key (`default` slot) and the browser's session + clearance (`browser` slot) | The 20-day session slides with use, the backend's own use included                                                  |
+| eufyMake       | The auth token and user id the site keeps in page storage as `mk-userinfo`      | Grab reads it from an open site tab and sends each new one. Only the likes need it, with the id's MD5 as `Gtoken`   |
+| Pinshape       | Flask-Login's year-long `remember_token`, and the `session` cookie              | Grab sends each new pair, only from a signed-in page: a visitor gets a `session` cookie too                         |
+| Toymakr3D      | Laravel's session cookie and its `remember_web_…` one beside it                 | Grab sends each new pair, only from a signed-in page: a visitor gets a session cookie too                           |
+| Makerables     | Auth0's `__session` cookie, split across `__session__0`, `__session__1`, …      | Grab sends each new set; the backend turns it into the Bearer token the API takes, as the site's own pages do       |
+| CGTrader       | Rails' `_cgtrader_session_id`, and the browser's `aws-waf-token` beside it      | Grab sends each new pair, only while the browser has the signed-in `user_id` cookie: a visitor gets a session too   |
+| GrabCAD        | Rails' `_grabcad_session`, with no remember-me cookie beside it                 | Grab sends each new one, only from a signed-in page. It lasts two days from its last use, Thingport's included      |
+| OwlCAD         | Nothing                                                                         | Its gallery, its files and its one call all answer without a sign-in                                                |
+| Meshy          | Supabase's 15-minute access token and the refresh token in `sb-auth-auth-token` | **The backend renews it itself**, saving each rotated refresh token before using it, only while it's the one stored |
 
 Rules of thumb:
 
@@ -202,6 +204,10 @@ Rules of thumb:
   `customImport` with a `grabQueue`: Grab first asks the backend whether a model needs the editor at all
   (`/import/owlcad/plan`), and imports started elsewhere wait in `GrabImport` for the user's next owlcad.com visit
   (`errorCodes.needsGrab`).
+- **Meshy** has no file to take: its viewer streams an encrypted format of its own. A download is Meshy converting the
+  model for the signed-in account (`asset-url`), counted against its downloads, and the provider asks for the 3MF,
+  which comes print-ready where the STL is the raw mesh in metres. A community model needs a Pro or Studio plan, which
+  Meshy answers with a 402, and a used-up month is `errorCodes.downloadLimit`.
 - **Repairs** (`services/modelRepairService.ts`) fetch a model's lost files again through the provider's own import
   (`sourcedImport`'s `downloadModel`, or the link import) and replace only the files. A provider with a `grabQueue` has
   the model wait for Grab instead, so its `customImport.addToExisting` has to put the files back when `kit.filesMissing`
@@ -219,14 +225,15 @@ Rules of thumb:
 - **Trending** declares its list's `kind` (trending, popular, featured or recommended) and its `rank` on the
   dashboard panel, or `false` where the site has no such list.
 - **Category ids** are numbers for most sites. Thangs has no ids, so its are paths (`categoryIds: "path"`), and so are
-  CGTrader's: the `<category>/<subcategory>` a model's address names; GrabCAD's, its categories' slugs; and OwlCAD's,
-  the label a model carries (`Printer Parts`). A GrabCAD model is in several, which it lists alphabetically, so the
+  CGTrader's: the `<category>/<subcategory>` a model's address names; GrabCAD's and Meshy's, their categories' slugs;
+  and OwlCAD's, the label a model carries (`Printer Parts`). A GrabCAD model is in several, which it lists alphabetically, so the
   broad ones are put last. Pinshape's model pages don't say their category at all (`categoryIds: "none"`): its imports
   come uncategorized, its `categories.json` is empty, and the category mapping shows no row for it.
 - **A list with no address of its own.** Snapmaker's likes and bookmarks share one page, whose own address
   (`?tab=interactions`) doesn't say which of the two is shown, so Thingport adds `&list=likes` or `&list=bookmarks`
   to tell them apart. Makerables' saved projects are a tab of a profile that the site keeps in React state rather
-  than in the URL at all, so Thingport adds `?tab=saved`. Each provider's `examples.list` shows the form it keeps,
+  than in the URL at all, so Thingport adds `?tab=saved`, and Meshy's workspace is whoever's signed in, so Thingport
+  keeps it as `/workspace?user=<id>`. Each provider's `examples.list` shows the form it keeps,
   which is what a sync holds the list by.
 - **Categories a model's page doesn't say.** Toymakr3D's pages name no category either, but its category listings do,
   so its provider reads those once and keeps the model-to-category index for a few hours. Its "All Products",

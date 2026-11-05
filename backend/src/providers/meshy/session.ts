@@ -25,9 +25,9 @@ import {
 // the refresh token that renews it -- in the `sb-auth-auth-token` cookie, split across `.0`, `.1`, … once it outgrows
 // one, as `base64-` and the session's JSON. Thingport keeps both tokens and renews the access token itself as it runs
 // out, saving each new refresh token, as the site's pages do. In testing Meshy let the browser and Thingport each renew
-// from the same sign-in without signing the other out; should it ever end it, the next visit with Grab sends a new one.
-// Thingport Grab sends the cookie whenever the browser's changes, with the browser's device id and AWS bot-check token
-// beside it; a pasted Cookie header works too.
+// from the same sign-in without signing the other out; should it ever end it, signing in again on meshy.ai with Grab
+// sends a new one. Thingport Grab sends the cookie whenever the browser's changes, with the browser's device id and AWS
+// bot-check token beside it; a pasted Cookie header works too.
 
 const ID = manifest.id;
 const { session: SESSION_PREFIX, device: DEVICE_COOKIE, waf: WAF_COOKIE } = manifest.sessionCookies;
