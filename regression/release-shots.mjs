@@ -83,7 +83,7 @@ const email = args.email || process.env.THINGPORT_EMAIL;
 const password = args.password || process.env.THINGPORT_PASSWORD;
 const viewerEmail = args["viewer-email"] || process.env.THINGPORT_VIEWER_EMAIL;
 const viewerPassword = args["viewer-password"] || process.env.THINGPORT_VIEWER_PASSWORD;
-const designId = args["studio-design"] || process.env.SCREENSHOT_STUDIO_DESIGN;
+let designId = args["studio-design"] || process.env.SCREENSHOT_STUDIO_DESIGN;
 const chatId = args.chat || process.env.SCREENSHOT_CHAT;
 const theme = args.theme || process.env.RELEASE_SHOTS_THEME || "light";
 const only = list(args.only || process.env.RELEASE_SHOTS_ONLY);
@@ -173,6 +173,13 @@ async function openStudio(page) {
   await settle(page, 3000);
 }
 
+/** Why a Studio shot can't be taken, or null. It changes the prompt layout, which must be put back afterwards. */
+function studioBlocked(layoutSaved) {
+  if (!layoutSaved) return "Studio's settings couldn't be read, so its layout couldn't be put back";
+  if (!designId) return "no Studio design with anything in it";
+  return null;
+}
+
 /** Ask AI's picker set to `model`, when it's still offered; otherwise left as it is. */
 async function pickModel(page, model) {
   const picker = page.getByRole("combobox", { name: "AI model" });
@@ -186,12 +193,13 @@ async function pickModel(page, model) {
 const SHOTS = [
   {
     name: "studio-ai",
-    run: async (page, { api }) => {
+    run: async (page, { api, layoutSaved }) => {
+      const blocked = studioBlocked(layoutSaved);
+      if (blocked) return { skip: blocked };
       // Beside the view rather than over it, so the conversation and the design both show.
       await api("PATCH", "/studio/settings", { prompt_layout: "panel" });
       await openStudio(page);
-      // The picker shows the AI that wrote the conversation's last answer, so the two agree. It's the page's own
-      // design, which is the latest when none was named.
+      // The picker shows the AI that wrote the conversation's last answer, so the two agree.
       const opened = new URL(page.url()).searchParams.get("design");
       const thread = opened ? await api("GET", `/studio/designs/${encodeURIComponent(opened)}/assistant`) : null;
       const answer = thread?.messages.findLast((message) => message.role === "assistant");
@@ -206,7 +214,9 @@ const SHOTS = [
   },
   {
     name: "studio-edit",
-    run: async (page, { api }) => {
+    run: async (page, { api, layoutSaved }) => {
+      const blocked = studioBlocked(layoutSaved);
+      if (blocked) return { skip: blocked };
       await api("PATCH", "/studio/settings", { prompt_layout: "bar" });
       await openStudio(page);
       // The prompt folds to its button, leaving the view to the design and the panels.
@@ -459,6 +469,11 @@ try {
       (settings) => settings.prompt_layout,
       () => undefined,
     );
+    // The newest design with something in it when none was named: the latest may be an empty one just opened.
+    designId ??= await admin.api("GET", "/studio/designs").then(
+      (designs) => designs.find((design) => design.feature_count > 0)?.id,
+      () => undefined,
+    );
   }
   let viewerPage;
   const viewer = async () => {
@@ -478,7 +493,7 @@ try {
     process.stdout.write(`${shot.name}... `);
     try {
       await admin.page.setViewportSize(VIEWPORT);
-      const result = await shot.run(admin.page, { api: admin.api, viewer });
+      const result = await shot.run(admin.page, { api: admin.api, viewer, layoutSaved: originalLayout !== undefined });
       if (result?.skip) {
         console.log(`skipped, ${result.skip}`);
         continue;

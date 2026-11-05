@@ -692,14 +692,16 @@ try {
   optionalIds.generativeModel ??= (await api(token, "GET", "/prints?generative=1&limit=1"))[0]?.id;
   optionalIds.syncedCollection ??= (await api(token, "GET", "/collections")).find((c) => c.sync)?.id;
 
-  // Studio's latest design when none was named, if this instance has Studio.
+  // The newest Studio design with something in it when none was named: the latest may be an empty one just opened.
   optionalIds.studioDesign ??= await api(token, "GET", "/studio/designs")
-    .then((designs) => designs[0]?.id)
+    .then((designs) => designs.find((design) => design.feature_count > 0)?.id)
     .catch(() => undefined);
   if (shots.some((shot) => shot.name === "41_studio")) {
     originalLayout = await api(token, "GET", "/studio/settings")
       .then((settings) => settings.prompt_layout)
       .catch(() => undefined);
+    // The shot changes the layout, so without one to put back it isn't taken.
+    if (originalLayout === undefined) optionalIds.studioDesign = undefined;
   }
 
   const ctx = { displayName, ...optionalIds, api: (method, url, body) => api(token, method, url, body) };

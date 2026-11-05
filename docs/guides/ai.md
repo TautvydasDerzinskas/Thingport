@@ -1,8 +1,9 @@
 # AI categorization and descriptions
 
 Thingport can use an AI model to sort models into your categories, to clean up their descriptions, and to design and
-change parts with you in [Studio](studio.md). All three are optional and off until an admin adds a model and turns
-them on. Everything else in Thingport works without them.
+change parts with you in [Studio](studio.md)'s Ask AI box. All three are optional and off until an admin adds a model
+and turns them on. Everything else in Thingport works without them, and an assistant connected over [MCP](mcp.md)
+brings its own AI, so it needs none of this, in Studio or anywhere else.
 
 The model can run on your own hardware, with [Ollama](https://ollama.com), LM Studio or vLLM, so nothing leaves your
 network. A cloud API such as OpenAI, OpenRouter or Google Gemini works too, and so does Anthropic's Claude, through its
