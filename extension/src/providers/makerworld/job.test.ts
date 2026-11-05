@@ -248,4 +248,22 @@ describe("the guided MakerWorld collection import", () => {
     expect(job()).toBeUndefined();
     expect(visited).toEqual([ORIGIN]);
   });
+
+  it("leaves a run started afresh in the same tab alone, when an aborted run's step stops waiting", async () => {
+    let letThrough!: () => void;
+    libraryGate = new Promise((resolve) => (letThrough = resolve));
+    await start([MODEL_A, MODEL_B], "designer");
+    const running = step();
+    await vi.waitFor(() => expect(libraryAsked).toHaveLength(3));
+
+    await abortJob(TAB);
+    visited.length = 0;
+    await start([MODEL_A, MODEL_B], "designer");
+    const fresh = job();
+    letThrough();
+    await running;
+
+    expect(job()).toEqual(fresh);
+    expect(imported).toEqual([]);
+  });
 });

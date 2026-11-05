@@ -81,6 +81,7 @@ export async function startJob(
     startAt: 0,
     paused: false,
     printIds: [],
+    runId: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
     profileScope,
     profiles: null,
   });
@@ -119,16 +120,22 @@ export async function getJobForTab(
   return { job: null, error };
 }
 
-/** A model, and how many of its profiles are behind it. */
-type Step = { index: number; profile: number };
-const stepOf = (job: MakerworldJob): Step => ({ index: job.index, profile: job.profiles?.done ?? 0 });
+/** Which run, which of its models, and how many of that model's profiles are behind it. */
+type Step = { runId: string | undefined; index: number; profile: number };
+const stepOf = (job: MakerworldJob): Step => ({
+  runId: job.runId,
+  index: job.index,
+  profile: job.profiles?.done ?? 0,
+});
 
-/** Keeps a late automatic completion from double-advancing a step "Import next" already moved past. */
+/** Keeps a late automatic completion from double-advancing a step "Import next" already moved past, or from acting for
+ *  a run aborted meanwhile whose tab has started another: that one's first step looks the same but for its id. */
 async function isStillAtStep(tabId: number, step: Step): Promise<boolean> {
   const current = await getJob();
   return Boolean(
     current &&
     current.tabId === tabId &&
+    current.runId === step.runId &&
     current.index === step.index &&
     (current.profiles?.done ?? 0) === step.profile,
   );

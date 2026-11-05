@@ -121,6 +121,8 @@ export type MakerworldJob = {
   paused: boolean;
   /** The models imported so far, for the run's one notification. Missing on a run saved by an older version. */
   printIds?: string[];
+  /** Tells this run's steps from those of an earlier run in the same tab. Missing on a run saved by an older version. */
+  runId?: string;
   /** Which of each model's print profiles come in. Missing on a run saved by an older version: the page's own. */
   profileScope?: MakerworldProfileScope;
   /** The current model's profiles still to import, each a step of its own after the wait, once its page has said
