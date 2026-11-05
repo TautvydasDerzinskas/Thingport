@@ -99,4 +99,7 @@
 - name: "provider: GrabCAD"
   color: "e63b2d"
   description: "About GrabCAD, from the bug form's Provider answer"
+- name: "provider: Meshy"
+  color: "c5f955"
+  description: "About Meshy, from the bug form's Provider answer"
 # /providers:labels

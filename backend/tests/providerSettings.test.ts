@@ -47,6 +47,7 @@ afterAll(async () => {
     "makerables",
     "cgtrader",
     "grabcad",
+    "meshy",
   ] as const)
     await setProviderEnabled(provider, true);
 });
@@ -73,6 +74,7 @@ describe("turning providers off", () => {
       makerables: true,
       cgtrader: true,
       grabcad: true,
+      meshy: true,
     });
 
     expect(
@@ -102,6 +104,7 @@ describe("turning providers off", () => {
       makerables: true,
       cgtrader: true,
       grabcad: true,
+      meshy: true,
     });
   });
 

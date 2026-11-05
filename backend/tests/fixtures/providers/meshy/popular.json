@@ -1,0 +1,263 @@
+{
+  "code": "OK",
+  "requestId": "Root=1-6aebb87b-6227d1a67bd1a66076b07834",
+  "result": [
+    {
+      "id": "01977b49-47c8-7059-ba30-b5e353d19c39",
+      "author": {
+        "id": "c7ec2f25-ff9c-4981-b703-efe5d0406749",
+        "uid": "s1724194756c7ec2",
+        "nickname": "arq.thompson",
+        "avatarUrl": "https://cdn.meshy.ai/uploads/prod/f528e6008f5c002301a8c9d7add080aa66f4f13b1728f7446c63bf0e25b7f639/avatars/019ea94b-57c3-7d30-bade-b7df91a3cc70.jpg",
+        "tier": "pro"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["NaturePlants", "Architecture"],
+      "tags": [],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "01977b49-47c8-7059-ba30-b5e353d19c39",
+        "position": 0,
+        "kind": "model",
+        "refId": "01975c1f-b605-719d-aad4-f6f543655e5b",
+        "settings": {
+          "orbitPosition": [10.40463123033493, 4.913296744493779, 10.404631230334932],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "color"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/f528e6008f5c002301a8c9d7add080aa66f4f13b1728f7446c63bf0e25b7f639/publish/cover-square/01977b49-4467-7059-8c97-08193281a362.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/f528e6008f5c002301a8c9d7add080aa66f4f13b1728f7446c63bf0e25b7f639/publish/cover-square/01977b49-3ed1-7059-9346-c93ad03ee5b6.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/f528e6008f5c002301a8c9d7add080aa66f4f13b1728f7446c63bf0e25b7f639/publish/cover-square/01977b49-4467-7059-8c97-08193281a362.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/f528e6008f5c002301a8c9d7add080aa66f4f13b1728f7446c63bf0e25b7f639/publish/cover-square/01977b49-3ed1-7059-9346-c93ad03ee5b6.png"
+        },
+        "modelPhase": "texture",
+        "modelMode": "texture",
+        "objectPrompt": "Cactus Stone Block",
+        "imageUrls": [
+          "https://api.meshy.ai/misc/cdn-images/c7ec2f25-ff9c-4981-b703-efe5d0406749/uploads/71b55199b86aa067a842d9687f85002104682bbd.png?sign=1793923200-4a374c59452ad4f73edb7e009e42803b"
+        ],
+        "is3DPrintable": true,
+        "isPbr": false,
+        "modelIsAnimated": false
+      },
+      "itemCount": 1,
+      "isFeatured": true,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": true,
+      "stats": {
+        "viewsCount": 177,
+        "downloadsCount": 53,
+        "remixesCount": 8,
+        "likesCount": 20,
+        "collectionsCount": 13,
+        "commentsCount": 0,
+        "tipsAmount": 10
+      },
+      "createdAt": 1750120089551,
+      "updatedAt": 1788174483166,
+      "submittedAt": 1750120089551,
+      "publishedAt": 1750120089551
+    },
+    {
+      "id": "0197a1c4-cb35-7e83-abc0-bdf8af15463d",
+      "author": {
+        "id": "google-oauth2|106662520491189471676",
+        "uid": "g106662520491189471676",
+        "nickname": "ada.chou",
+        "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocLlVzQxV5OSAbJA3v8PHZ38Z_WX0Thifukx6JCALPYLQj612w=s96-c",
+        "tier": "free"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["CultureHistory", "FashionStyle"],
+      "tags": ["mask", "tengu", "japanese", "demon", "red", "traditional", "wood", "theater", "noh", "kabuki"],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "0197a1c4-cb35-7e83-abc0-bdf8af15463d",
+        "position": 0,
+        "kind": "model",
+        "refId": "0197a1c0-0ff2-7b1a-bfc8-a8464dd5cbf7",
+        "settings": {
+          "orbitPosition": [-1.6299292322385508, 2.7197880305388424, 14.8937985715192],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "color"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/073694a405e641ed86aa21e000d34fbae680c05ba202ea5a0ebddac0470ab1c3/publish/cover-portrait/0197a1c4-c8c3-7e83-afe3-0c451bd82f76.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/073694a405e641ed86aa21e000d34fbae680c05ba202ea5a0ebddac0470ab1c3/publish/cover-portrait/0197a1c4-c418-7e83-b501-78ea4be82dd1.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/073694a405e641ed86aa21e000d34fbae680c05ba202ea5a0ebddac0470ab1c3/publish/cover-portrait/0197a1c4-c8c3-7e83-afe3-0c451bd82f76.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/073694a405e641ed86aa21e000d34fbae680c05ba202ea5a0ebddac0470ab1c3/publish/cover-portrait/0197a1c4-c418-7e83-b501-78ea4be82dd1.png"
+        },
+        "modelPhase": "texture",
+        "modelMode": "texture",
+        "objectPrompt": "Tengu Mask",
+        "imageUrls": [
+          "https://api.meshy.ai/misc/cdn-images/google-oauth2|106662520491189471676/uploads/f9c0545b4b3e0a1806950b48cb6291da2da3a541.jpg?sign=1793923200-434a39ff070a85c7f5216cbb8e9e0e35"
+        ],
+        "is3DPrintable": true,
+        "isPbr": false,
+        "modelIsAnimated": false
+      },
+      "itemCount": 1,
+      "isFeatured": true,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": false,
+      "stats": {
+        "viewsCount": 539,
+        "downloadsCount": 47,
+        "remixesCount": 27,
+        "likesCount": 37,
+        "collectionsCount": 20,
+        "commentsCount": 2,
+        "tipsAmount": 0
+      },
+      "createdAt": 1750765718332,
+      "updatedAt": 1787672396092,
+      "submittedAt": 1750765718332,
+      "publishedAt": 1750765718332
+    },
+    {
+      "id": "0197881a-d112-7119-a94e-a45fc33aaab7",
+      "author": {
+        "id": "fc8695f6-9d85-4d04-a6e7-8768aad5b184",
+        "uid": "s1718807303fc869",
+        "nickname": "pavlin007zxc",
+        "avatarUrl": "https://cdn.meshy.ai/uploads/prod/30d7ff76101b40a7364631818ede22e9ad9c1b399b4500a21c056b27e19c1e9e/avatars/01977499-af16-7b16-b54d-d8f34840ba85.jpg",
+        "tier": "free"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["NaturePlants", "PlacesTravel"],
+      "tags": [
+        "rock",
+        "formation",
+        "nature",
+        "landscape",
+        "stone",
+        "cliff",
+        "mountain",
+        "outdoors",
+        "natural",
+        "desert",
+        "environment",
+        "historical",
+        "rpg",
+        "survival"
+      ],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "0197881a-d112-7119-a94e-a45fc33aaab7",
+        "position": 0,
+        "kind": "model",
+        "refId": "01978813-b2e7-7341-9b23-4deb33188f5f",
+        "settings": {
+          "orbitPosition": [-4.347184914571412, 8.734120783302078, 12.678864325893812],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "pbr"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/30d7ff76101b40a7364631818ede22e9ad9c1b399b4500a21c056b27e19c1e9e/publish/cover-portrait/0197881a-cb8c-7353-b51e-d16ce9e99909.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/30d7ff76101b40a7364631818ede22e9ad9c1b399b4500a21c056b27e19c1e9e/publish/cover-portrait/0197881a-bfb0-7119-9297-9c7d57ae6671.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/30d7ff76101b40a7364631818ede22e9ad9c1b399b4500a21c056b27e19c1e9e/publish/cover-portrait/0197881a-cb8c-7353-b51e-d16ce9e99909.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/30d7ff76101b40a7364631818ede22e9ad9c1b399b4500a21c056b27e19c1e9e/publish/cover-portrait/0197881a-bfb0-7119-9297-9c7d57ae6671.png"
+        },
+        "modelPhase": "stylize",
+        "modelMode": "stylize",
+        "is3DPrintable": true,
+        "isPbr": false,
+        "modelIsAnimated": false
+      },
+      "itemCount": 1,
+      "isFeatured": true,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": true,
+      "stats": {
+        "viewsCount": 149,
+        "downloadsCount": 64,
+        "remixesCount": 0,
+        "likesCount": 28,
+        "collectionsCount": 23,
+        "commentsCount": 0,
+        "tipsAmount": 10
+      },
+      "createdAt": 1750335148339,
+      "updatedAt": 1790894456815,
+      "submittedAt": 1750335148339,
+      "publishedAt": 1750335148339
+    },
+    {
+      "id": "019783cf-f3c5-77f9-94f2-4fdfe6d3d82b",
+      "author": {
+        "id": "88ba79b0-8030-4bef-a6e0-e96078773193",
+        "uid": "s172509414988ba7",
+        "nickname": "Magig_33_Gamer",
+        "avatarUrl": "https://cdn.meshy.ai/uploads/prod/ca9706df5b74546aae9398467f492af186317994fdd749b18f96112264796740/avatars/01927026-abfb-74bb-9f6e-c7c34e30b526.jpg",
+        "tier": "free"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["Characters", "WeaponsMilitary"],
+      "tags": ["characters", "barbarian", "warrior"],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "019783cf-f3c5-77f9-94f2-4fdfe6d3d82b",
+        "position": 0,
+        "kind": "model",
+        "refId": "019783cd-833d-77f8-aa58-96e60a0e9575",
+        "settings": {
+          "orbitPosition": [0.01084856585296458, 1.7607420718272633, 14.998087809865144],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "color"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/ca9706df5b74546aae9398467f492af186317994fdd749b18f96112264796740/publish/cover-portrait/019783cf-ef3e-7cb5-b69d-222a49c9b826.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/ca9706df5b74546aae9398467f492af186317994fdd749b18f96112264796740/publish/cover-portrait/019783cf-e8c3-7cb5-a3a7-bbb434d3af30.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/ca9706df5b74546aae9398467f492af186317994fdd749b18f96112264796740/publish/cover-portrait/019783cf-ef3e-7cb5-b69d-222a49c9b826.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/ca9706df5b74546aae9398467f492af186317994fdd749b18f96112264796740/publish/cover-portrait/019783cf-e8c3-7cb5-a3a7-bbb434d3af30.png"
+        },
+        "modelPhase": "texture",
+        "modelMode": "texture",
+        "objectPrompt": "ultra detailed . comic style. pixar style. art-style :Dungeons & Dragons. a horned tribal beast warrior barbarian, he has orange hair and a red beard. use natural \ncolors. highly clean stylized look. extrem detailed muscular Body. light leather amour.  standing on a square rough stone base.game assets.ensure solid printable figurine. ",
+        "is3DPrintable": true,
+        "isPbr": false,
+        "modelIsAnimated": false
+      },
+      "itemCount": 1,
+      "isFeatured": true,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": false,
+      "stats": {
+        "viewsCount": 288,
+        "downloadsCount": 21,
+        "remixesCount": 20,
+        "likesCount": 19,
+        "collectionsCount": 6,
+        "commentsCount": 3,
+        "tipsAmount": 1
+      },
+      "createdAt": 1750263133130,
+      "updatedAt": 1787952657929,
+      "submittedAt": 1750263133130,
+      "publishedAt": 1750263133130
+    }
+  ],
+  "total": 102147
+}

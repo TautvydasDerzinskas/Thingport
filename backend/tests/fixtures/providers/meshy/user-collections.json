@@ -1,0 +1,24 @@
+{
+  "code": "OK",
+  "requestId": "Root=1-6aebb87a-287c335d39c9874c7e2c250b",
+  "result": [
+    {
+      "id": "30c16c30-c6de-4199-a5c4-b949b3cc5e33",
+      "name": "maker-one's collection",
+      "description": "",
+      "backgroundUrls": null,
+      "backgroundVideoUrls": null,
+      "showBgImageInCommunity": false,
+      "projectLink": "",
+      "userId": "0f1e2d3c-4b5a-4968-8778-695a4b3c2d1e",
+      "isDefault": true,
+      "isFeatured": false,
+      "isPinnedToSpotlight": false,
+      "isNsfw": false,
+      "createdAt": "2025-07-24T00:00:00Z",
+      "updatedAt": "2025-07-24T00:00:00Z",
+      "isSubscribed": false
+    }
+  ],
+  "total": 1
+}

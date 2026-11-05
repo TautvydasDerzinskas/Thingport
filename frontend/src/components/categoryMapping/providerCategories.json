@@ -10483,5 +10483,107 @@
       "name": "Toys",
       "parent": null
     }
+  ],
+  "meshy": [
+    {
+      "id": "animals",
+      "name": "Animals",
+      "parent": null
+    },
+    {
+      "id": "anime-manga",
+      "name": "Anime & Manga",
+      "parent": null
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "parent": null
+    },
+    {
+      "id": "art-abstract",
+      "name": "Art & Abstract",
+      "parent": null
+    },
+    {
+      "id": "characters",
+      "name": "Characters",
+      "parent": null
+    },
+    {
+      "id": "culture-history",
+      "name": "Culture & History",
+      "parent": null
+    },
+    {
+      "id": "electronics",
+      "name": "Electronics",
+      "parent": null
+    },
+    {
+      "id": "fantasy-mythology",
+      "name": "Fantasy & Mythology",
+      "parent": null
+    },
+    {
+      "id": "fashion-style",
+      "name": "Fashion & Style",
+      "parent": null
+    },
+    {
+      "id": "food-drink",
+      "name": "Food & Drink",
+      "parent": null
+    },
+    {
+      "id": "furniture-home",
+      "name": "Furniture & Home",
+      "parent": null
+    },
+    {
+      "id": "gaming",
+      "name": "Gaming",
+      "parent": null
+    },
+    {
+      "id": "music",
+      "name": "Music",
+      "parent": null
+    },
+    {
+      "id": "nature-plants",
+      "name": "Nature & Plants",
+      "parent": null
+    },
+    {
+      "id": "places-travel",
+      "name": "Places & Travel",
+      "parent": null
+    },
+    {
+      "id": "science-technology",
+      "name": "Science & Technology",
+      "parent": null
+    },
+    {
+      "id": "sci-fi",
+      "name": "Sci-Fi",
+      "parent": null
+    },
+    {
+      "id": "sports-fitness",
+      "name": "Sports & Fitness",
+      "parent": null
+    },
+    {
+      "id": "vehicles",
+      "name": "Vehicles",
+      "parent": null
+    },
+    {
+      "id": "weapons-military",
+      "name": "Weapons & Military",
+      "parent": null
+    }
   ]
 }

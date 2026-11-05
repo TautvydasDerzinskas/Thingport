@@ -46,6 +46,7 @@ body:
         - Makerables
         - CGTrader
         - GrabCAD
+        - Meshy
         # /providers:bug-form
   - type: input
     id: backend_version

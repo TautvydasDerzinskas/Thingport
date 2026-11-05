@@ -24,6 +24,7 @@ how to connect it:
 - <img src="assets/providers/makerables.svg" alt="" width="18" height="18" align="absmiddle"> [Makerables](providers/makerables.md) -- no sign-in to import; yours adds your saved projects.
 - <img src="assets/providers/cgtrader.svg" alt="" width="18" height="18" align="absmiddle"> [CGTrader](providers/cgtrader.md) -- your own sign-in, for the files, your likes and your wishlist; Grab or FlareSolverr for its bot check.
 - <img src="assets/providers/grabcad.svg" alt="" width="18" height="18" align="absmiddle"> [GrabCAD](providers/grabcad.md) -- your own sign-in, for the files; anyone's likes read without it.
+- <img src="assets/providers/meshy.svg" alt="" width="18" height="18" align="absmiddle"> [Meshy](providers/meshy.md) -- your own sign-in; community models also need a Meshy Pro or Studio plan.
 
 <!-- /providers:list -->
 
@@ -54,6 +55,7 @@ badge, shows the same in short.
 | <img src="assets/providers/makerables.svg" alt="" width="18" height="18" align="absmiddle"> [Makerables](providers/makerables.md)                | Yours, for saved projects only  | Recommended    |              | Saved       |       | ✓    |                |
 | <img src="assets/providers/cgtrader.svg" alt="" width="18" height="18" align="absmiddle"> [CGTrader](providers/cgtrader.md)                      | Yours, for the files            | Recommended⁶   | Recommended  | Wishlist    | ✓⁶    | ✓    |                |
 | <img src="assets/providers/grabcad.svg" alt="" width="18" height="18" align="absmiddle"> [GrabCAD](providers/grabcad.md)                         | Yours, for the files            | Recommended    |              |             | ✓     | ✓    |                |
+| <img src="assets/providers/meshy.svg" alt="" width="18" height="18" align="absmiddle"> [Meshy](providers/meshy.md)                               | Yours; Pro for community models | Recommended    |              | ✓           |       | ✓    |                |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.

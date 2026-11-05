@@ -117,6 +117,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/meshy",
+    "name": "Meshy",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

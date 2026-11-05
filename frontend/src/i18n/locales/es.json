@@ -5912,6 +5912,38 @@
         "notConnected": "Conecta GrabCAD en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta."
       }
     },
+    "meshy": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir meshy.ai con la sesión iniciada. Conecta tu cuenta y envía tu inicio de sesión cada vez que cambia allí.",
+          "O manualmente: inicia sesión en meshy.ai y abre las herramientas de desarrollador de tu navegador (F12).",
+          "Ve a la pestaña Network, recarga la página, haz clic en cualquier petición a www.meshy.ai, copia su cabecera Cookie y pégala abajo."
+        ],
+        "placeholder": "La cabecera Cookie de una petición a meshy.ai con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "Conecta tu cuenta para importar desde Meshy: solo entrega sus archivos a una cuenta con la sesión iniciada.",
+        "expired": "El inicio de sesión ha terminado. Inicia sesión en meshy.ai con Thingport Grab o vuelve a conectar Meshy en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión terminado",
+        "disabledReason": "Meshy: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Un generador de modelos 3D con IA y una gran galería de la comunidad. Thingport importa sus modelos de la comunidad y tus propias generaciones como 3MF listos para imprimir.",
+        "signIn": "La tuya, para cada descarga; los modelos de la comunidad también necesitan un plan Pro o Studio.",
+        "grab": "Envía tu inicio de sesión cuando visitas meshy.ai.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en Meshy y abre meshy.ai con la sesión iniciada.",
+          "Importa cualquier enlace de publicación, o sincroniza una colección o tus propias generaciones desde la pestaña Explorar.",
+          "Con un plan gratuito solo se descargan tus propias generaciones: Meshy reserva los modelos de la comunidad para Pro y Studio."
+        ]
+      },
+      "admin": {
+        "description": "Publicaciones de la comunidad, colecciones y las generaciones de cada usuario, todo descargado con el inicio de sesión del propio usuario. Los modelos de la comunidad necesitan un plan Meshy Pro o Studio."
+      },
+      "sync": {
+        "notConnected": "Conecta Meshy en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus generaciones y colecciones."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD está conectado de forma predeterminada: no necesita cuenta ni clave."
