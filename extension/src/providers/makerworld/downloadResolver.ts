@@ -207,7 +207,7 @@ function closeFilesDialog(): void {
  *  downloading. */
 async function captureViaRealClick(
   profileOnly: boolean,
-  stillPicked?: () => boolean,
+  stillWanted?: () => boolean,
 ): Promise<{ url: string; isProfile: boolean } | null> {
   const arrow = findMenuArrow();
   arrow?.click();
@@ -223,9 +223,9 @@ async function captureViaRealClick(
     link.stop();
     return null;
   }
-  // "Download 3MF" takes whichever profile is picked when it's clicked: one the user picked meanwhile would be taken
-  // for the one asked for.
-  if (isProfile && stillPicked && !stillPicked()) {
+  // The menu downloads for whichever model and profile the page shows when it's clicked: ones the user went to
+  // meanwhile would be taken for those asked for.
+  if (stillWanted && !stillWanted()) {
     link.stop();
     void send("DISARM_DOWNLOAD_CAPTURE");
     return null;
@@ -267,13 +267,14 @@ async function fetchInstanceDownloadUrl(design: MakerworldDesign, instanceId: st
   return extractDownloadUrl(await fetchMakerworldApiJson(apiUrl, null));
 }
 
-/** Same two steps as the backend: instance-scoped endpoint, then model-scoped. */
-async function resolveFromPageApi(pageUrl: string): Promise<ResolvedDownload | null> {
+/** Same two steps as the backend: instance-scoped endpoint, then model-scoped. `picked` is the profile the page showed,
+ *  which its link needn't name. */
+async function resolveFromPageApi(pageUrl: string, picked: string | null = null): Promise<ResolvedDownload | null> {
   // Fetched when the tab's own page data is stale, i.e. after clicking through MakerWorld.
   const page = await loadMakerworldDesignForPage(pageUrl);
   if (!page) return null; // the backend resolves from the URL
   const { design, nonce } = page;
-  const instanceId = pickMakerworldInstanceId(design, page.requestedInstanceId);
+  const instanceId = picked ?? pickMakerworldInstanceId(design, page.requestedInstanceId);
   if (instanceId) {
     const downloadUrl = await fetchInstanceDownloadUrl(design, instanceId);
     if (downloadUrl) return { downloadUrl, instanceId, design: makerworldDesignForImport(design) };
@@ -286,6 +287,12 @@ async function resolveFromPageApi(pageUrl: string): Promise<ResolvedDownload | n
     : null;
 }
 
+/** The page open now shows `pageUrl`'s model. One the user went on to has profiles of its own, perhaps named alike. */
+function onModelOf(pageUrl: string): boolean {
+  const wanted = parseMakerworldModelUrl(pageUrl)?.designId;
+  return Boolean(wanted && parseMakerworldModelUrl(location.href)?.designId === wanted);
+}
+
 /** `pageUrl` is captured by the caller before any await. */
 /** `profileOnly` skips the raw-files zip, for callers that need the 3MF itself. */
 export async function resolveMakerworldDownloadUrl(
@@ -293,11 +300,12 @@ export async function resolveMakerworldDownloadUrl(
   { profileOnly = false } = {},
 ): Promise<ResolvedDownload | null> {
   // "Download 3MF" gives the page's selected profile, which follows the URL hash, so it's read before the click and
-  // held to; the raw-files zip belongs to no profile.
+  // held to; the raw-files zip belongs to no profile. Only on the model's own page: another has its own.
   const page = readMakerworldDesignForPage(pageUrl);
-  const picked = page ? pageSelectedInstanceId(page.design) : null;
-  const stillPicked = page && picked ? () => pageSelectedInstanceId(page.design) === picked : undefined;
-  const viaClick = await captureViaRealClick(profileOnly, stillPicked).catch(() => null);
+  const onModel = () => onModelOf(pageUrl);
+  const picked = page && onModel() ? pageSelectedInstanceId(page.design) : null;
+  const stillWanted = () => onModel() && (!page || !picked || pageSelectedInstanceId(page.design) === picked);
+  const viaClick = onModel() ? await captureViaRealClick(profileOnly, stillWanted).catch(() => null) : null;
   if (viaClick) {
     const requested = parseMakerworldModelUrl(pageUrl)?.requestedInstanceId ?? null;
     const instanceId = !viaClick.isProfile
@@ -309,7 +317,7 @@ export async function resolveMakerworldDownloadUrl(
       ? { downloadUrl: viaClick.url, instanceId, design: makerworldDesignForImport(page.design) }
       : { downloadUrl: viaClick.url, instanceId };
   }
-  return resolveFromPageApi(pageUrl).catch((err) => {
+  return resolveFromPageApi(pageUrl, picked).catch((err) => {
     if (isMakerworldBlockingError(err)) throw err;
     return null;
   });
@@ -376,11 +384,17 @@ export async function resolveMakerworldProfileDownload(
   const page = await loadMakerworldDesignForPage(pageUrl);
   if (!page) return null;
   const design = makerworldDesignForImport(page.design);
-  const viaClick = await holdingNavigation(async () =>
-    (await selectProfileOnPage(page.design, instanceId))
-      ? captureViaRealClick(true, () => pageSelectedInstanceId(page.design) === instanceId).catch(() => null)
-      : null,
-  );
+  // On another model's page, a card named like this profile would be one of that model's.
+  const onModel = () => onModelOf(pageUrl);
+  const viaClick = onModel()
+    ? await holdingNavigation(async () =>
+        (await selectProfileOnPage(page.design, instanceId))
+          ? captureViaRealClick(true, () => onModel() && pageSelectedInstanceId(page.design) === instanceId).catch(
+              () => null,
+            )
+          : null,
+      )
+    : null;
   if (viaClick) return { downloadUrl: viaClick.url, instanceId, design };
   const downloadUrl = await fetchInstanceDownloadUrl(page.design, instanceId).catch((err) => {
     if (isMakerworldBlockingError(err)) throw err;
