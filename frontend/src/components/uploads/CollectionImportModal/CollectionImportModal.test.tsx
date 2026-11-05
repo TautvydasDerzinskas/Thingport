@@ -70,4 +70,37 @@ describe("the list picker", () => {
   it("can't be dismissed at all while it's importing", () => {
     expect(modal("select", true).dismiss).toBeUndefined();
   });
+
+  it("shows a model the provider keeps from the user as not pickable, with the provider's reason", () => {
+    const html = renderQueue(
+      <CollectionImportModalView
+        label="https://www.meshy.ai/collections/Figures-01a1ac94-ba41-7557-b54d-1e6ddfe02ec0"
+        provider="meshy"
+        stage="select"
+        collectionTitle="Figures"
+        total={2}
+        truncated={false}
+        entries={[
+          { design_id: "a", title: "Boxer dog figure", cover: null, already_imported: false, blocked: "own" },
+          { design_id: "b", title: "Sleepy fox", cover: null, already_imported: false },
+        ]}
+        selected={new Set(["b"])}
+        selectedCount={1}
+        allSelected
+        busy={false}
+        error={null}
+        onClose={noop}
+        onImportSelected={noop}
+        onToggleEntry={noop}
+        onSelectAll={noop}
+        onClearAll={noop}
+      />,
+    );
+    expect(textOf(html)).toContain("Needs a paid Meshy plan");
+    expect(html).toContain('aria-label="Meshy keeps the models its AI agent made for paid plans, even yours."');
+    const boxes = html.match(/<input[^>]*type="checkbox"[^>]*>/g) ?? [];
+    expect(boxes).toHaveLength(2);
+    expect(boxes[0]).toContain("disabled");
+    expect(boxes[1]).not.toContain("disabled");
+  });
 });

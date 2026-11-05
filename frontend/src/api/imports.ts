@@ -20,6 +20,8 @@ export type ImportCollectionEntry = {
   title: string;
   cover: string | null;
   already_imported: boolean;
+  /** Why it can't be imported, as the provider's reason, which its text is under `providers:<id>.blocked.<reason>`. */
+  blocked?: string;
 };
 
 export type ImportCollectionEntriesResult = {

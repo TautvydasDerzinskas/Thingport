@@ -142,6 +142,7 @@ export function createImportSubmit({
         let collectionTitle: string | undefined;
         await showCollectionPrompt({
           label: url,
+          provider,
           loadEntries: () =>
             notingSignOut(async () => {
               const result = await importsApi.listEntries(provider, payload);

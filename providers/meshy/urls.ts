@@ -25,7 +25,8 @@ const LANG = String.raw`(?:[a-z]{2}(?:-[a-z]{2,4})?/)?`;
 // whatever the title made of it, Chinese percent-encoded included, and may be left off, so the id at the end is what
 // says which post it is.
 const POST_PATH = new RegExp(String.raw`^/${LANG}(?:posts|3d-models)/(?:[^/]*-)?(${UUID})/?$`, "i");
-const COLLECTION_PATH = new RegExp(String.raw`^/${LANG}collections/(${UUID})/?$`, "i");
+// A collection's, `/collections/<name>-<id>`, its name likewise left off by older links.
+const COLLECTION_PATH = new RegExp(String.raw`^/${LANG}collections/(?:[^/]*-)?(${UUID})/?$`, "i");
 const WORKSPACE_PATH = new RegExp(String.raw`^/${LANG}workspace/?$`, "i");
 
 // A model the user generated, in their own workspace, is kept apart from posts, whose ids look the same.

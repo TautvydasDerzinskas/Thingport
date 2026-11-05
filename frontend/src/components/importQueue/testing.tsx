@@ -16,8 +16,8 @@ const i18n = i18next.createInstance();
 await i18n.init({
   lng: "en",
   defaultNS: "app",
-  ns: ["app", "common"],
-  resources: { en: { app: en.app, common: en.common } },
+  ns: ["app", "common", "providers"],
+  resources: { en: { app: en.app, common: en.common, providers: en.providers } },
   interpolation: { escapeValue: false },
 });
 

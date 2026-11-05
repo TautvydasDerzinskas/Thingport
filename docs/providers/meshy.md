@@ -25,9 +25,13 @@ Meshy is a site over an API of its own, which Thingport reads the way its own pa
   does, and Thingport asks for the same conversion. It takes the **3MF**, which Meshy makes print-ready: 75 mm tall,
   standing on the plate. Scale it in your slicer as you like. A post with several models brings each as its own plate.
 - **Plans and limits.** Each download counts against your Meshy account's own, as one from the site would. Meshy
-  keeps community models for its **Pro** and **Studio** plans: on a free plan an import of one stops and says so, and
-  Thingport Grab shows **Needs Meshy Pro** on such a post instead of an import button. Once a month's downloads are
-  used up, an import stops with that, and a synced list picks up where it left off on a later check.
+  keeps other people's community models for its **Pro** and **Studio** plans: on a free plan an import of one stops
+  and says so, and Thingport Grab shows **Needs Meshy Pro** on such a post instead of an import button. A post of your
+  own imports as your generation, which a free plan downloads, except the models Meshy's AI agent made: Meshy keeps
+  those for paid plans, and Grab shows **Needs a paid Meshy plan** on them. When you import a collection or your
+  generations, the models your plan can't download come unticked, with the reason, both in Thingport's import dialog
+  and in Grab's panel. Once a month's downloads are used up, an import stops with that, and a synced list picks up
+  where it left off on a later check.
 - **Your generations.** The models you generate are in your workspace. Open one (`https://www.meshy.ai/workspace?task=<id>`)
   and import it like a post, or sync the whole workspace from the Browse tab, and what you generate next comes in
   on the next check. It's named after the model and carries the prompt it was made from. The examples Meshy puts in
