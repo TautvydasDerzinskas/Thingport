@@ -205,7 +205,10 @@ function closeFilesDialog(): void {
  *  starts is captured and cancelled (see background/downloadCapture.ts). Null means try the API
  *  fallback -- also what a CAPTCHA looks like here, since MakerWorld shows it instead of
  *  downloading. */
-async function captureViaRealClick(profileOnly: boolean): Promise<{ url: string; isProfile: boolean } | null> {
+async function captureViaRealClick(
+  profileOnly: boolean,
+  stillPicked?: () => boolean,
+): Promise<{ url: string; isProfile: boolean } | null> {
   const arrow = findMenuArrow();
   arrow?.click();
   const fileItem = () => findByLabel(DOWNLOAD_3MF) ?? (profileOnly ? null : findByLabel(DOWNLOAD_STL));
@@ -218,6 +221,13 @@ async function captureViaRealClick(profileOnly: boolean): Promise<{ url: string;
   const link = interceptFileLink(CAPTURE_TIMEOUT_MS);
   if (!(await armCapture())) {
     link.stop();
+    return null;
+  }
+  // "Download 3MF" takes whichever profile is picked when it's clicked: one the user picked meanwhile would be taken
+  // for the one asked for.
+  if (isProfile && stillPicked && !stillPicked()) {
+    link.stop();
+    void send("DISARM_DOWNLOAD_CAPTURE");
     return null;
   }
   item.click();
@@ -282,16 +292,18 @@ export async function resolveMakerworldDownloadUrl(
   pageUrl: string,
   { profileOnly = false } = {},
 ): Promise<ResolvedDownload | null> {
-  const viaClick = await captureViaRealClick(profileOnly).catch(() => null);
+  // "Download 3MF" gives the page's selected profile, which follows the URL hash, so it's read before the click and
+  // held to; the raw-files zip belongs to no profile.
+  const page = readMakerworldDesignForPage(pageUrl);
+  const picked = page ? pageSelectedInstanceId(page.design) : null;
+  const stillPicked = page && picked ? () => pageSelectedInstanceId(page.design) === picked : undefined;
+  const viaClick = await captureViaRealClick(profileOnly, stillPicked).catch(() => null);
   if (viaClick) {
-    // "Download 3MF" gives the page's selected profile, which follows the URL hash; the raw-files
-    // zip belongs to no profile.
-    const page = readMakerworldDesignForPage(pageUrl);
     const requested = parseMakerworldModelUrl(pageUrl)?.requestedInstanceId ?? null;
     const instanceId = !viaClick.isProfile
       ? null
       : page
-        ? (pageSelectedInstanceId(page.design) ?? pickMakerworldInstanceId(page.design, page.requestedInstanceId))
+        ? (picked ?? pickMakerworldInstanceId(page.design, page.requestedInstanceId))
         : requested;
     return page
       ? { downloadUrl: viaClick.url, instanceId, design: makerworldDesignForImport(page.design) }
@@ -365,7 +377,9 @@ export async function resolveMakerworldProfileDownload(
   if (!page) return null;
   const design = makerworldDesignForImport(page.design);
   const viaClick = await holdingNavigation(async () =>
-    (await selectProfileOnPage(page.design, instanceId)) ? captureViaRealClick(true).catch(() => null) : null,
+    (await selectProfileOnPage(page.design, instanceId))
+      ? captureViaRealClick(true, () => pageSelectedInstanceId(page.design) === instanceId).catch(() => null)
+      : null,
   );
   if (viaClick) return { downloadUrl: viaClick.url, instanceId, design };
   const downloadUrl = await fetchInstanceDownloadUrl(page.design, instanceId).catch((err) => {
