@@ -420,14 +420,12 @@ async function runProfilesImport(scope: ProfileScope, collectionId: string | nul
   for (const [index, instanceId] of ids.entries()) {
     renderPanel(statusHtml(`Importing print profile ${index + 1} of ${ids.length}…`));
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, PROFILE_GAP_MS));
-    // The page's Download button gives exactly the link's profile. Snapmaker's and Creality Cloud's the instance
-    // fetches itself.
+    // Each profile is picked on the page, then downloaded with its own button: the one the page shows needn't be the
+    // first of these. Snapmaker's and Creality Cloud's the instance fetches itself.
     try {
-      const resolved = !makerworld
-        ? null
-        : index === 0
-          ? await resolveMakerworldDownloadUrl(url).catch(nullUnlessBlocking)
-          : await resolveMakerworldProfileDownload(url, instanceId).catch(nullUnlessBlocking);
+      const resolved = makerworld
+        ? await resolveMakerworldProfileDownload(url, instanceId).catch(nullUnlessBlocking)
+        : null;
       const print = await request("IMPORT_SINGLE", {
         // MakerWorld's page link carries its profile; the others' is named, so a model already in the library gets it.
         url: index === 0 && makerworld ? url : profileUrl(url, instanceId),
