@@ -1,0 +1,43 @@
+{
+  "code": "OK",
+  "requestId": "Root=1-6aebb890-37a96147756b96ac01b73cd6",
+  "result": {
+    "userId": "0f1e2d3c-4b5a-4968-8778-695a4b3c2d1e",
+    "nickname": "maker-one",
+    "email": "maker-one@example.com",
+    "avatarUrl": "https://cdn.meshy.ai/landing-assets/shared/avatars/default-mushroom-02.webp",
+    "tier": "",
+    "discordId": "",
+    "uid": "s1793402995maker",
+    "backgroundUrl": "",
+    "bio": "",
+    "personalUrl": "",
+    "youtubeUrl": "",
+    "instagramUrl": "",
+    "tiktokUrl": "",
+    "xUrl": "",
+    "createdAt": 1793402995853,
+    "identityDiscordId": "",
+    "identityAppleId": "",
+    "identityFacebookId": "",
+    "identityGithubId": "",
+    "preferences": {
+      "defaultCollectionDismissed": false,
+      "enableTaskCompleteNotification": true,
+      "ignoreFirstMonthProCoupon": false,
+      "ignorePMFSurvey": false,
+      "locale": "en",
+      "navSidebarIntroSeen": ["general", "credits", "home"]
+    },
+    "stableId": "00000000-0000-4000-8000-000000000000",
+    "teamId": "",
+    "intercomUserHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "isRolloverEnabled": false,
+    "labels": [],
+    "socialBindRewardClaimed": false,
+    "emailBindingRequired": false,
+    "teamIntent": false,
+    "commentMutedUntil": null,
+    "onboardingUsageFromEmail": ""
+  }
+}

@@ -6285,6 +6285,38 @@
         "notConnected": "Prijunkite GrabCAD skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte pamėgtus modelius."
       }
     },
+    "meshy": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite meshy.ai prisijungę. Jis prijungs jūsų paskyrą ir atsiųs prisijungimą kaskart, kai jis ten pasikeis.",
+          "Arba rankiniu būdu: prisijunkite prie meshy.ai ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Eikite į skiltį Network, perkraukite puslapį, spustelėkite bet kurią www.meshy.ai užklausą, nukopijuokite jos Cookie antraštę ir įklijuokite žemiau."
+        ],
+        "placeholder": "Prisijungusio meshy.ai užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "Prijunkite paskyrą, kad galėtumėte importuoti iš Meshy: failus jis atiduoda tik prisijungusiai paskyrai.",
+        "expired": "Prisijungimas nebegalioja. Prisijunkite meshy.ai su Thingport Grab arba vėl prijunkite Meshy skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Meshy: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "DI 3D modelių generatorius su didele bendruomenės galerija. Thingport importuoja bendruomenės modelius ir jūsų pačių sugeneruotus kaip spausdinimui paruoštus 3MF.",
+        "signIn": "Jūsų, kiekvienam atsisiuntimui; bendruomenės modeliams dar reikia Pro arba Studio plano.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės meshy.ai.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Meshy ir atverkite meshy.ai prisijungę.",
+          "Importuokite bet kurio įrašo nuorodą arba sinchronizuokite kolekciją ar savo sugeneruotus modelius iš skilties Naršyti.",
+          "Su nemokamu planu atsisiunčiami tik jūsų sugeneruoti modeliai: bendruomenės modelius Meshy palieka Pro ir Studio planams."
+        ]
+      },
+      "admin": {
+        "description": "Bendruomenės įrašai, kolekcijos ir kiekvieno naudotojo sugeneruoti modeliai – visi atsisiunčiami su paties naudotojo prisijungimu. Bendruomenės modeliams reikia Meshy Pro arba Studio plano."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Meshy skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte savo sugeneruotus modelius ir kolekcijas."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD prijungtas iš karto: jam nereikia nei paskyros, nei rakto."

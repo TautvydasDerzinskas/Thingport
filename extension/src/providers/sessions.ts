@@ -17,6 +17,7 @@ import { makerablesSession } from "./makerables/session";
 import { toymakr3dSession } from "./toymakr3d/session";
 import { cgtraderSession } from "./cgtrader/session";
 import { grabcadSession } from "./grabcad/session";
+import { meshySession } from "./meshy/session";
 
 export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   myminifactory: myminifactorySession,
@@ -32,4 +33,5 @@ export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   makerables: makerablesSession,
   cgtrader: cgtraderSession,
   grabcad: grabcadSession,
+  meshy: meshySession,
 };

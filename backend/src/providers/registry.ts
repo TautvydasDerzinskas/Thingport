@@ -20,6 +20,11 @@ import makerablesCategories from "./makerables/categories.json";
 import cgtraderCategories from "./cgtrader/categories.json";
 import grabcadCategories from "./grabcad/categories.json";
 import owlcadCategories from "./owlcad/categories.json";
+import meshyCategories from "./meshy/categories.json";
+import { meshyImport, meshyTrending, meshyLists, meshyDetails } from "./meshy";
+import { meshyConnection } from "./meshy/connection";
+import { meshySync } from "./meshy/sync";
+import { meshyBrowse } from "./meshy/browse";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -472,6 +477,18 @@ export const PROVIDERS = {
       clear: async (userId, modelId) => (await owlcadExports()).clearOwlcadExports(userId, modelId),
     },
     details: owlcadDetails,
+  },
+  meshy: {
+    starterCategories: meshyCategories,
+    connection: { default: meshyConnection },
+    // Every file is read with the sign-in; its posts and collections read without one.
+    authStopText: grabSignInStop("meshy"),
+    sourcedImport: meshyImport,
+    lists: meshyLists,
+    sync: meshySync,
+    browse: meshyBrowse,
+    trending: meshyTrending,
+    details: meshyDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

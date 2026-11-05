@@ -6015,6 +6015,38 @@
         "notConnected": "Connect GrabCAD in Configuration > Providers, or visit it with Thingport Grab, to see your likes here."
       }
     },
+    "meshy": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open meshy.ai while signed in. It connects your account, and sends your sign-in on whenever it changes there.",
+          "Or by hand: sign in at meshy.ai and open your browser's developer tools (F12).",
+          "Go to the Network tab, reload the page, click any www.meshy.ai request and copy its Cookie header, then paste it below."
+        ],
+        "placeholder": "The Cookie header of a signed-in meshy.ai request"
+      },
+      "status": {
+        "notConnected": "Connect your account to import from Meshy: it hands its files only to a signed-in account.",
+        "expired": "Sign-in ended. Sign in on meshy.ai with Thingport Grab, or connect Meshy again in Configuration → Providers.",
+        "expiredStatus": "Sign-in ended",
+        "disabledReason": "Meshy: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "An AI 3D model generator with a large community gallery. Thingport imports its community models and your own generations as print-ready 3MFs.",
+        "signIn": "Yours, for every download; community models also need a Pro or Studio plan.",
+        "grab": "Sends your sign-in as you visit meshy.ai.",
+        "setup": [
+          "Install Thingport Grab, enable it on Meshy and open meshy.ai signed in.",
+          "Import any post link, or sync a collection or your own generations from the Browse tab.",
+          "On a free plan only your own generations download: Meshy keeps community models for Pro and Studio."
+        ]
+      },
+      "admin": {
+        "description": "Community posts, collections and each user's own generations, all downloaded with the user's own sign-in. Community models need a Meshy Pro or Studio plan."
+      },
+      "sync": {
+        "notConnected": "Connect Meshy in Configuration > Providers, or visit it with Thingport Grab, to see your generations and collections here."
+      }
+    },
     "owlcad": {
       "status": {
         "alwaysConnected": "OwlCAD is connected by default: it needs no account or key."

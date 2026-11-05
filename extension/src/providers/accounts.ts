@@ -54,6 +54,9 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   grabcad: (id) => {
     if (grabcadSignedIn()) syncSession(id);
   },
+  // Its sign-in downloads the files and reads the user's generations; Thingport renews it itself, so it's sent once it
+  // changes.
+  meshy: syncSession,
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,
