@@ -247,7 +247,7 @@ export default function ModelCard({
               spacing={0.75}
               sx={{
                 minWidth: 0,
-                color: "#858585",
+                color: "text.secondary",
                 ...((author || showViewerAsAuthor) && !selectMode
                   ? { cursor: "pointer", "&:hover": { color: "primary.main" } }
                   : undefined),
@@ -260,7 +260,7 @@ export default function ModelCard({
             >
               <Avatar
                 src={authorAvatarUrl || undefined}
-                sx={{ width: 20, height: 20, fontSize: 11, color: "inherit !important" }}
+                sx={{ width: 20, height: 20, fontSize: 11, color: "common.white", bgcolor: "grey.700" }}
               >
                 {(authorName || "?").slice(0, 1).toUpperCase()}
               </Avatar>
@@ -269,7 +269,7 @@ export default function ModelCard({
               </Typography>
             </Stack>
           </AuthorHoverCard>
-          <Stack direction="row" spacing={1.5} sx={{ color: "#858585", flexShrink: 0 }}>
+          <Stack direction="row" spacing={1.5} sx={{ color: "text.secondary", flexShrink: 0 }}>
             <Stack direction="row" alignItems="center" spacing={0.4}>
               <VisibilityIcon sx={{ fontSize: 14 }} />
               <Typography variant="caption">{item.view_count}</Typography>

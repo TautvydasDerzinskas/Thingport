@@ -398,7 +398,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
             {print.notes?.trim() ? (
               <MarkdownDescription markdown={print.notes} />
             ) : (
-              <Typography variant="body2" color="text.disabled">
+              <Typography variant="body2" color="text.secondary">
                 {t("models:detail.noDescription")}
               </Typography>
             )}
@@ -433,7 +433,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                 ))}
               </Stack>
             ) : (
-              <Typography variant="body2" color="text.disabled">
+              <Typography variant="body2" color="text.secondary">
                 {t("models:detail.noTags")}
               </Typography>
             )}

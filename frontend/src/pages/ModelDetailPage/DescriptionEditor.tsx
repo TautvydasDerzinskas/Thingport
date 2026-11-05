@@ -204,7 +204,7 @@ export default function DescriptionEditor({ value, onChange, disabled }: Props) 
           {value.trim() ? (
             <MarkdownDescription markdown={value} />
           ) : (
-            <Typography variant="body2" color="text.disabled">
+            <Typography variant="body2" color="text.secondary">
               {t("detail.noDescription")}
             </Typography>
           )}

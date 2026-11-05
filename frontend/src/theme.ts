@@ -88,7 +88,7 @@ const THEME_DEFS: Record<ResolvedTheme, BaseThemeDef> = {
     altText: "rgb(255, 114, 32)",
     modelColor: "#cbd5e1",
     modelEmissive: "#94a3b8",
-    navInactiveText: "#858585",
+    navInactiveText: "#6b6b6b",
     headingText: "#1f1f1f",
   },
   dark: {

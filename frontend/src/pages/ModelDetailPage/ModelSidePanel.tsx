@@ -182,7 +182,7 @@ export default function ModelSidePanel({
             >
               <Avatar
                 src={authorAvatarUrl || undefined}
-                sx={{ width: 28, height: 28, fontSize: 13, color: "inherit !important" }}
+                sx={{ width: 28, height: 28, fontSize: 13, color: "common.white", bgcolor: "grey.700" }}
               >
                 {(authorName || "?").slice(0, 1).toUpperCase()}
               </Avatar>

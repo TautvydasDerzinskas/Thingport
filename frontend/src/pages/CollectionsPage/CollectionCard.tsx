@@ -215,7 +215,7 @@ export default function CollectionCard({
               <Stack
                 alignItems="center"
                 justifyContent="center"
-                sx={{ width: "100%", height: "100%", color: "text.disabled" }}
+                sx={{ width: "100%", height: "100%", color: "text.primary" }}
               >
                 <Typography variant="caption">{t("models:collections.card.empty")}</Typography>
               </Stack>
@@ -300,7 +300,7 @@ export default function CollectionCard({
                     {displayName}
                   </Typography>
                 </Stack>
-                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, color: "#858585" }}>
+                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, color: "text.secondary" }}>
                   <Inventory2OutlinedIcon sx={{ fontSize: 14 }} />
                   <Typography variant="caption">
                     {t("models:collections.card.itemCount", { count: collection.item_count })}
