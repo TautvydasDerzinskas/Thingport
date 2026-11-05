@@ -160,7 +160,7 @@
     },
     {
       "type": "fix",
-      "title": "MakerWorld imports bring a print profile's 3MF again, rather than a zip of its STLs, now that MakerWorld no longer answers the download Thingport used to ask for, and Grab's panel offers the profiles again"
+      "title": "MakerWorld imports bring a print profile's 3MF again, rather than a zip of its STLs, and Grab's panel offers the print profiles again"
     },
     {
       "type": "fix",
