@@ -28,7 +28,8 @@ export type FillGapsResult = { filled: SourceGap[]; remaining: SourceGap[] };
 
 export type InspectResult = { title?: string | null; is_zip?: boolean; filename?: string | null };
 
-export type ZipEntriesResult = { entries: string[] };
+/** A zip's contents, its folders listed as entries of their own. */
+export type ZipEntriesResult = { entries: { name: string; size: number; isDirectory: boolean }[] };
 
 export type BatchEntry = { design_id: string; title?: string | null; already_imported?: boolean };
 export type BatchEntriesResult = { title?: string | null; entries: BatchEntry[]; truncated?: boolean };

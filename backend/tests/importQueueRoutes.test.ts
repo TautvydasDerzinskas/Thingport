@@ -105,8 +105,8 @@ function mockFetch() {
         instances: [{ id: 2, profileId: 102, title: "multi-colored version", instanceCreator: DESIGNER }],
       });
     }
-    if (/\/iot-service\/api\/user\/profile\/\d+/.test(url)) {
-      return json({ message: "success", url: "https://s3.example.com/phoenix.stl", filename: "phoenix.stl" });
+    if (/\/design-service\/instance\/\d+\/f3mf/.test(url)) {
+      return json({ url: "https://s3.example.com/phoenix.stl", name: "phoenix.stl" });
     }
     if (/\/design-service\/favorites\/\d+$/.test(url)) return json({ title: "Flock" });
     if (url.startsWith(ZIP_URL)) {

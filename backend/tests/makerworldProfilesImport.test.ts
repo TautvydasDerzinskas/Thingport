@@ -129,12 +129,11 @@ describe("importing several MakerWorld print profiles", () => {
       const url = String(input);
       fetched.push(url);
       if (url === `https://api.bambulab.com/v1/design-service/design/${designId}`) return json(design(designId));
-      const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/iot-service\/api\/user\/profile\/(\d+)/);
+      const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/design-service\/instance\/(\d+)\/f3mf/);
       if (profile)
         return json({
-          message: "success",
           url: `https://s3.example.com/phoenix-${profile[1]}.stl`,
-          filename: sameName ? "phoenix.stl" : `phoenix-${profile[1]}.stl`,
+          name: sameName ? "phoenix.stl" : `phoenix-${profile[1]}.stl`,
         });
       const file = url.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl$/);
       if (file)
@@ -197,8 +196,8 @@ describe("importing several MakerWorld print profiles", () => {
     });
     // The default profile created the model, then the designer's other one.
     expect(print.plates.map((p) => [p.sourceInstanceId, p.filename])).toEqual([
-      ["2", "phoenix-102.stl"],
-      ["1", "phoenix-101.stl"],
+      ["2", "phoenix-2.stl"],
+      ["1", "phoenix-1.stl"],
     ]);
     // Each profile's file shows that profile's own picture, not the model's cover.
     const [blue, red] = await Promise.all(print.plates.map((p) => thumbColour(p.id)));
@@ -456,8 +455,8 @@ describe("Improved descriptions on import", () => {
           defaultInstanceId: 1,
         });
       }
-      if (url.startsWith("https://api.bambulab.com/v1/iot-service/api/user/profile/")) {
-        return json({ message: "success", url: "https://s3.example.com/phoenix.stl", filename: "phoenix.stl" });
+      if (url.startsWith("https://api.bambulab.com/v1/design-service/instance/")) {
+        return json({ url: "https://s3.example.com/phoenix.stl", name: "phoenix.stl" });
       }
       if (url === "https://s3.example.com/phoenix.stl") {
         return new Response("solid phoenix\nendsolid\n", { headers: { "content-type": "application/octet-stream" } });
