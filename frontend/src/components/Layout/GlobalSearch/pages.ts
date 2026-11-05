@@ -8,6 +8,7 @@ export type PageId =
   | "models"
   | "collections"
   | "explore"
+  | "chats"
   | "tags"
   | "downloads"
   | "tools"
@@ -38,6 +39,8 @@ export type SearchPage = {
   adminOnly?: boolean;
   /** Found only while the sidebar offers Explore: social features on, and someone else to explore. */
   needsExplore?: boolean;
+  /** Found only while the sidebar offers Chats: chats on under social features, and someone to talk to. */
+  needsChats?: boolean;
 };
 
 // "admin" alone lists every one of them.
@@ -60,6 +63,13 @@ export const SEARCH_PAGES: SearchPage[] = [
     labelKey: "app:sidebar.explore",
     terms: ["explore", "shared", "public collections", "people", "community"],
     needsExplore: true,
+  },
+  {
+    id: "chats",
+    path: "/chats",
+    labelKey: "app:sidebar.chats",
+    terms: ["chats", "messages", "direct messages", "rooms", "talk", "inbox"],
+    needsChats: true,
   },
   { id: "tags", path: "/models/tags", labelKey: "app:sidebar.tags", terms: ["tags", "labels"] },
   {
@@ -158,6 +168,8 @@ export const SEARCH_PAGES: SearchPage[] = [
     "explore",
     "public collections",
     "sharing",
+    "chats",
+    "rooms",
   ]),
   adminPage("adminLogs", "/admin-logs", "app:adminSettings.logs.heading", ["logs", "audit", "events"]),
   adminPage("adminTriggers", "/admin-triggers", "app:adminSettings.triggers.heading", [
@@ -177,8 +189,10 @@ export const SEARCH_PAGES: SearchPage[] = [
 ];
 
 /** The pages this viewer may open. */
-export const pagesFor = (isAdmin: boolean, explore = false) =>
-  SEARCH_PAGES.filter((page) => (isAdmin || !page.adminOnly) && (explore || !page.needsExplore));
+export const pagesFor = (isAdmin: boolean, explore = false, chats = false) =>
+  SEARCH_PAGES.filter(
+    (page) => (isAdmin || !page.adminOnly) && (explore || !page.needsExplore) && (chats || !page.needsChats),
+  );
 
 /** The pages `query` matches, best first. `labels` are their names as shown. */
 export function matchPages(
@@ -186,8 +200,9 @@ export function matchPages(
   labels: Record<PageId, string>,
   isAdmin: boolean,
   explore = false,
+  chats = false,
 ): SearchPage[] {
-  return pagesFor(isAdmin, explore)
+  return pagesFor(isAdmin, explore, chats)
     .map((page) => ({ page, score: bestScore(query, labels[page.id], page.terms) }))
     .filter((match) => match.score >= minScoreFor(query))
     .toSorted((a, b) => b.score - a.score)

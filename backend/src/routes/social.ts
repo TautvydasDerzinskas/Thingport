@@ -13,7 +13,7 @@ import { exploreOverview, exploreUser, socialStatus } from "../services/socialSe
 const router = Router();
 router.use(requireAuth);
 
-// For everyone: whether the sidebar offers Explore, and whether a collection's form offers making it public.
+// For everyone: whether the sidebar offers Explore and Chats, and whether a collection's form offers making it public.
 router.get(
   "/social",
   asyncHandler(async (_req, res) => {
@@ -29,7 +29,7 @@ router.get(
   }),
 );
 
-const socialSettingsSchema = z.object({ enabled: z.boolean() }).partial();
+const socialSettingsSchema = z.object({ enabled: z.boolean(), chats: z.boolean() }).partial();
 router.patch(
   "/social/settings",
   requireAdmin,

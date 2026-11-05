@@ -1,7 +1,17 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 
-export const NOTIFICATION_TYPES = ["import", "upload", "sync", "queue", "consume", "ai", "system", "general"] as const;
+export const NOTIFICATION_TYPES = [
+  "import",
+  "upload",
+  "sync",
+  "queue",
+  "consume",
+  "ai",
+  "system",
+  "chat",
+  "general",
+] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 /** The tabs: everything, the unread ones, or only system announcements. Opening the list marks

@@ -68,7 +68,11 @@ afterAll(async () => {
 
 describe("social features switched off", () => {
   it("offer no Explore, and keep a public collection to its owner", async () => {
-    expect((await request(app).get("/api/social").set(auth(viewer))).body).toEqual({ enabled: false, explore: false });
+    expect((await request(app).get("/api/social").set(auth(viewer))).body).toEqual({
+      enabled: false,
+      explore: false,
+      chats: false,
+    });
     expect((await request(app).get("/api/explore").set(auth(viewer))).status).toBe(404);
     expect((await request(app).get(`/api/collection/${collectionId}`).set(auth(viewer))).status).toBe(404);
     expect((await request(app).get(`/api/print/${printId}`).set(auth(viewer))).status).toBe(404);
@@ -79,8 +83,12 @@ describe("social features switched off", () => {
     expect(refused.status).toBe(403);
     const switched = await request(app).patch("/api/social/settings").set(auth(admin)).send({ enabled: true });
     expect(switched.status).toBe(200);
-    expect(switched.body).toEqual({ enabled: true });
-    expect((await request(app).get("/api/social").set(auth(viewer))).body).toEqual({ enabled: true, explore: true });
+    expect(switched.body).toEqual({ enabled: true, chats: false });
+    expect((await request(app).get("/api/social").set(auth(viewer))).body).toEqual({
+      enabled: true,
+      explore: true,
+      chats: false,
+    });
   });
 });
 

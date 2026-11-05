@@ -11,12 +11,12 @@ import { ModelShape, prefersReducedMotion } from "../storageAnimations/parts";
 const CYCLE_S = 3.6;
 
 type Look = { skin: string; hair: string; shirt: string; style: "curly" | "bob" };
-const SHARER: Look = { skin: "#c68863", hair: "#3b2416", shirt: "#f59e0b", style: "curly" };
-const COLLECTOR: Look = { skin: "#f2c9a5", hair: "#e0a64a", shirt: "#3b82f6", style: "bob" };
+export const SHARER: Look = { skin: "#c68863", hair: "#3b2416", shirt: "#f59e0b", style: "curly" };
+export const COLLECTOR: Look = { skin: "#f2c9a5", hair: "#e0a64a", shirt: "#3b82f6", style: "bob" };
 const FEATURES = "#1f2937";
 
 /** A head-and-shoulders portrait, `width` wide, drawn on a 100 by 92 grid: hair, face and shirt. */
-function Bust({
+export function Bust({
   left,
   bottom,
   width,
@@ -60,7 +60,7 @@ function Bust({
 }
 
 /** A closed padlock, `size` wide. */
-function Padlock({ left, top, size }: { left: number; top: number; size: number }) {
+export function Padlock({ left, top, size }: { left: number; top: number; size: number }) {
   return (
     <Box component="svg" viewBox="0 0 20 24" sx={{ position: "absolute", left, top, width: size, height: size * 1.2 }}>
       <path d="M5 11 V7.5 Q5 2 10 2 Q15 2 15 7.5 V11" fill="none" stroke="#94a3b8" strokeWidth="2.6" />

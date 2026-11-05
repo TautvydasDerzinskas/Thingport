@@ -21,7 +21,7 @@ import {
   setApiTokenMcpTools,
   setApiTokenRestScopes,
 } from "../services/apiTokenService";
-import { API_TOKEN_SCOPE_IDS, apiTokenScopeCatalog } from "../services/apiTokenScopes";
+import { API_TOKEN_SCOPE_IDS, DEFAULT_API_TOKEN_SCOPE_IDS, apiTokenScopeCatalog } from "../services/apiTokenScopes";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOL_NAMES, mcpToolCatalog, mcpToolsFor } from "../mcp/tools";
 import { getMcpAccess, type McpAccess } from "../services/settingsService";
 import { toUserOut } from "../dto";
@@ -440,8 +440,8 @@ const mcpToolsSchema = z
 const restScopesSchema = z
   .array(z.enum(API_TOKEN_SCOPE_IDS as [string, ...string[]]))
   .transform((ids) => [...new Set(ids)]);
-// No body (older clients) gives the default tools (see DEFAULT_MCP_TOOL_NAMES), and every REST scope: a token reads all it
-// can see until its user narrows it.
+// No body (older clients) gives the default tools (see DEFAULT_MCP_TOOL_NAMES), and every REST scope but the opt-in
+// ones: a token reads all it can see until its user narrows it, private messages aside.
 const generateApiTokenSchema = z
   .object({ mcp_tools: mcpToolsSchema.optional(), rest_scopes: restScopesSchema.optional() })
   .default({});
@@ -456,7 +456,7 @@ router.post(
     const token = await generateApiToken(
       req.userId!,
       body.mcp_tools ?? DEFAULT_MCP_TOOL_NAMES,
-      body.rest_scopes ?? API_TOKEN_SCOPE_IDS,
+      body.rest_scopes ?? DEFAULT_API_TOKEN_SCOPE_IDS,
     );
     res.json(withMcpCatalog(token, access));
     void createLog({

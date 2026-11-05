@@ -7,20 +7,25 @@ import CircularProgress from "@mui/material/CircularProgress";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import IconButton from "@mui/material/IconButton";
 import Switch from "@mui/material/Switch";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { socialApi, type SocialSettings } from "../../api/social";
 import HelpTip from "../../components/HelpTip";
 import SharingAnimation from "../../components/adminAnimations/SharingAnimation";
 import { AnimatedTile } from "../../components/storageAnimations/parts";
 import { refreshSocialStatus } from "../../hooks/useSocialStatus";
+import SocialSettingsDialog from "./SocialSettingsDialog";
 
 type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Social features, at the top of Users: Explore and public collections for the instance's users. Saves as switched. */
+/** Social features, at the top of Users: Explore and public collections for the instance's users, and behind the cog
+ *  what comes with them, chats first. Saves as switched. */
 export default function SocialSection({ onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const [settings, setSettings] = React.useState<SocialSettings | null>(null);
@@ -28,6 +33,7 @@ export default function SocialSection({ onUnauthorized }: Props) {
   // Kept apart: reading the setting again after a failed save fixes the switch, not what the save said.
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [loadFailed, setLoadFailed] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
   const savingRef = React.useRef(false);
   const live = React.useRef(true);
   // Moved on as a save starts and as it ends: a read sent before either is from before the save, and its answer --
@@ -36,7 +42,7 @@ export default function SocialSection({ onUnauthorized }: Props) {
   // Only the latest read counts: two at once (opening, then the tab coming back) can answer in either order.
   const reads = React.useRef(0);
   // What the server last said: a read that finds it changed (another admin switched it) tells the rest of the app too.
-  const known = React.useRef<boolean | null>(null);
+  const known = React.useRef<SocialSettings | null>(null);
 
   const read = React.useCallback(() => {
     const reading = ++reads.current;
@@ -47,8 +53,9 @@ export default function SocialSection({ onUnauthorized }: Props) {
         if (!current()) return;
         setSettings(value);
         setLoadFailed(false);
-        if (known.current !== null && known.current !== value.enabled) void refreshSocialStatus();
-        known.current = value.enabled;
+        const was = known.current;
+        if (was && (was.enabled !== value.enabled || was.chats !== value.chats)) void refreshSocialStatus();
+        known.current = value;
       },
       (err) => {
         if (!current()) return;
@@ -74,9 +81,9 @@ export default function SocialSection({ onUnauthorized }: Props) {
     };
   }, [read]);
 
-  const toggle = async (enabled: boolean) => {
+  const save = async (patch: Partial<SocialSettings>) => {
     const previous = settings;
-    setSettings({ ...(settings ?? { enabled }), enabled });
+    setSettings({ ...(settings ?? { enabled: false, chats: false }), ...patch });
     setSaving(true);
     savingRef.current = true;
     saves.current += 1;
@@ -84,10 +91,10 @@ export default function SocialSection({ onUnauthorized }: Props) {
     setLoadFailed(false);
     let failed = false;
     try {
-      const saved = await socialApi.updateSettings({ enabled });
+      const saved = await socialApi.updateSettings(patch);
       setSettings(saved);
-      known.current = saved.enabled;
-      // The sidebar's Explore and the collection form's Private/Public follow straight away.
+      known.current = saved;
+      // The sidebar's Explore and Chats, and the collection form's Private/Public, follow straight away.
       void refreshSocialStatus();
     } catch (err) {
       failed = true;
@@ -123,6 +130,11 @@ export default function SocialSection({ onUnauthorized }: Props) {
     </>
   );
   const enabled = settings?.enabled ?? false;
+  // Closed with social features, wherever they were switched off, rather than waiting hidden to come back with them.
+  React.useEffect(() => {
+    if (!enabled) setSettingsOpen(false);
+  }, [enabled]);
+  const settingsLabel = t("adminSettings.social.settingsTitle");
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -137,7 +149,7 @@ export default function SocialSection({ onUnauthorized }: Props) {
                 <Switch
                   checked={enabled}
                   disabled={settings === null || saving}
-                  onChange={(e) => void toggle(e.target.checked)}
+                  onChange={(e) => void save({ enabled: e.target.checked })}
                 />
               }
               label={
@@ -148,12 +160,26 @@ export default function SocialSection({ onUnauthorized }: Props) {
               }
               sx={{ m: 0 }}
             />
-            {saving && <CircularProgress size={16} />}
+            {saving && !settingsOpen && <CircularProgress size={16} />}
+            <Box sx={{ flex: 1 }} />
+            {/* What social features offer besides Explore, each its own switch: only while they're on. */}
+            <Tooltip title={enabled ? settingsLabel : t("adminSettings.social.settingsOff")}>
+              <span>
+                <IconButton
+                  size="small"
+                  aria-label={settingsLabel}
+                  disabled={!enabled || settings === null}
+                  onClick={() => setSettingsOpen(true)}
+                >
+                  <SettingsOutlinedIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
           </Stack>
           <Typography variant="body2" color="text.secondary">
             {t("adminSettings.social.summary")}
           </Typography>
-          {saveError && (
+          {saveError && !settingsOpen && (
             <Alert severity="error" sx={{ mt: 1 }} onClose={() => setSaveError(null)}>
               {saveError}
             </Alert>
@@ -174,6 +200,17 @@ export default function SocialSection({ onUnauthorized }: Props) {
           )}
         </Stack>
       </Stack>
+      {settings && (
+        <SocialSettingsDialog
+          open={settingsOpen && enabled}
+          onClose={() => setSettingsOpen(false)}
+          settings={settings}
+          saving={saving}
+          error={saveError}
+          onDismissError={() => setSaveError(null)}
+          onChange={(patch) => void save(patch)}
+        />
+      )}
     </Paper>
   );
 }

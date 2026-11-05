@@ -606,7 +606,12 @@ describe("the sync lane", () => {
       await startQueueJob(await reload(job.id), { manual: true });
       await finished(job.id);
       expect(await reload(job.id)).toMatchObject({ imported: 3, alreadyInLibrary: 1 });
-      const told = await synced(alice.id, sync, "3 new models");
+      // The job says DONE a moment before its notification is written.
+      const told = await eventually(async () => {
+        const found = await synced(alice.id, sync, "3 new models");
+        expect(found).not.toBeNull();
+        return found;
+      });
       expect(told?.body).toContain("2 models that were already in your library were added to it too.");
       expect(await prisma.notification.count({ where: { userId: alice.id, type: "sync" } })).toBe(1);
     });

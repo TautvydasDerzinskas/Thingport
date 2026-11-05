@@ -23,10 +23,12 @@ export type SocialStatus = {
   enabled: boolean;
   /** And there's someone else on the instance: the sidebar offers Explore. */
   explore: boolean;
+  /** And chats are on too: the sidebar offers Chats. */
+  chats: boolean;
 };
 
-/** Administration > Social. */
-export type SocialSettings = { enabled: boolean };
+/** Administration > Users' social features card and its settings. `chats` counts only while `enabled` is on. */
+export type SocialSettings = { enabled: boolean; chats: boolean };
 
 export type ExplorePerson = UserCard & { collection_count: number; model_count: number };
 

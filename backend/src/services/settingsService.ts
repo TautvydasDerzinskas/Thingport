@@ -99,21 +99,29 @@ export async function setToolsAccess(patch: Partial<ToolsAccess>): Promise<Tools
 }
 
 // Social features (services/socialService.ts): the instance's users seeing, opening and copying each other's public
-// collections on Explore. Off until an admin turns them on. One object, so what comes next joins it.
-export type SocialSettings = { enabled: boolean };
+// collections on Explore. Off until an admin turns them on. One object, so what comes next joins it: `chats`, the
+// instance's users messaging each other (services/chatService.ts), off until switched on too, and only while
+// `enabled` is.
+export type SocialSettings = { enabled: boolean; chats: boolean };
 const SOCIAL_KEY = "social";
 
 export async function getSocialSettings(): Promise<SocialSettings> {
   const row = await prisma.setting.findUnique({ where: { key: SOCIAL_KEY } });
   const value = (row?.value ?? {}) as Partial<SocialSettings>;
-  return { enabled: typeof value.enabled === "boolean" ? value.enabled : false };
+  return {
+    enabled: typeof value.enabled === "boolean" ? value.enabled : false,
+    chats: typeof value.chats === "boolean" ? value.chats : false,
+  };
 }
 
-/** Changes only what's given. */
+/** Changes only what's given, merged into what's stored in one statement: two changes at once, one to each
+ *  setting, would otherwise each write back the other's old value. */
 export async function setSocialSettings(patch: Partial<SocialSettings>): Promise<SocialSettings> {
-  const value = { ...(await getSocialSettings()), ...patch };
-  await prisma.setting.upsert({ where: { key: SOCIAL_KEY }, create: { key: SOCIAL_KEY, value }, update: { value } });
-  return value;
+  const given = JSON.stringify(patch);
+  await prisma.$executeRaw`
+    INSERT INTO "Setting" (key, value) VALUES (${SOCIAL_KEY}, ${given}::jsonb)
+    ON CONFLICT (key) DO UPDATE SET value = "Setting".value || EXCLUDED.value`;
+  return getSocialSettings();
 }
 
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";

@@ -104,6 +104,8 @@ model User {
   // Filled from the first linked Author with this data; later links never overwrite it.
   bio                      String?
   backgroundUrl            String?
+  // When they last had Thingport in front of them, as Chats' unread poll says: what shows them online to the others.
+  lastSeenAt               DateTime?
   categories               Category[]
   prints                   Print[]
   collections              Collection[]
@@ -127,6 +129,9 @@ model User {
   grabConnections          GrabConnection[]
   providerConnections      ProviderConnection[]
   sessions                 Session[]
+  chatMemberships          ChatMember[]
+  chatMessages             ChatMessage[]
+  chatsCreated             Chat[]               @relation("ChatCreatedBy")
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt
 }
@@ -241,6 +246,8 @@ model Print {
   // Generated column (name A, tags B, notes C, creator D) created with its GIN index in a
   // hand-written migration, since Prisma can't express a generated tsvector.
   searchVector             Unsupported("tsvector")?
+  // Sent in chats: whoever can read one of those chats can open it (socialService's readablePrintWhere).
+  chatAttachments          ChatAttachment[]
 
   @@unique([userId, categoryId, nameNormalized])
   @@unique([userId, sourceProvider, sourceExternalId])
@@ -486,7 +493,7 @@ model Notification {
   id           String    @id @default(cuid())
   userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// What it's about, for its icon: import, sync, queue, consume, ai, system or general.
+  /// What it's about, for its icon: import, sync, queue, consume, ai, system, chat or general.
   type         String    @default("general")
   /// Set on notifications later ones may fold into, e.g. { key: "single-import", items: [...] }.
   group        Json?
@@ -978,4 +985,88 @@ model Activity {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+enum ChatKind {
+  DIRECT
+  ROOM
+}
+
+/// Chats (services/chatService.ts), while an admin has them on under social features: two users' direct messages, or
+/// a room an admin made.
+model Chat {
+  id            String        @id @default(cuid())
+  kind          ChatKind
+  /// A room's. Direct messages are named after the other person.
+  name          String?
+  description   String?
+  /// A room anyone may read and join. A private one's members are the users an admin picked.
+  isPublic      Boolean       @default(false)
+  /// Direct messages only: the two users' ids, sorted and joined, so a pair only ever has the one.
+  directKey     String?       @unique
+  createdById   String?
+  createdBy     User?         @relation("ChatCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  /// The latest message's time, for ordering the list; when it was made until there's one.
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  members       ChatMember[]
+  messages      ChatMessage[]
+
+  @@index([kind])
+}
+
+model ChatMember {
+  chatId     String
+  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Pinned to the top of the list.
+  favorite   Boolean   @default(false)
+  /// Counted, but never notified, and left out of the sidebar's badge.
+  muted      Boolean   @default(false)
+  /// Messages after this are unread: what was said before someone joined isn't news to them.
+  lastReadAt DateTime  @default(now())
+  /// When the chat was last open in front of them, kept current while it is: a new message finding it so doesn't
+  /// notify them.
+  viewedAt   DateTime?
+  joinedAt   DateTime  @default(now())
+
+  @@id([chatId, userId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id          String           @id @default(cuid())
+  chatId      String
+  chat        Chat             @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  /// Null once the sender's account is gone: what they said stays, from a deleted user.
+  senderId    String?
+  sender      User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  /// Emptied when it's deleted.
+  body        String
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  attachments ChatAttachment[]
+
+  @@index([chatId, createdAt])
+  // For polls asking what was deleted since they last looked.
+  @@index([chatId, deletedAt])
+  @@index([senderId])
+}
+
+/// A model of the sender's own, sent in a chat message. Whoever can read the chat can open, download and copy it while
+/// the message stays.
+model ChatAttachment {
+  id        String      @id @default(cuid())
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  /// Null once the model's deleted: the message still says what was sent.
+  printId   String?
+  print     Print?      @relation(fields: [printId], references: [id], onDelete: SetNull)
+  /// The model's name when it was sent.
+  name      String
+  position  Int         @default(0)
+
+  @@index([messageId])
+  @@index([printId])
 }

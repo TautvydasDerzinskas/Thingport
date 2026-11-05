@@ -6,23 +6,40 @@ import { getSocialSettings } from "./settingsService";
 
 // Social features: while an admin has them on, a collection its owner made public is shown to the instance's other
 // users on Explore, and every model in one can be opened, downloaded and copied by them -- what the owner can do with
-// it, short of changing it. Changing a model, a collection or anything else stays its owner's alone: every write keeps
-// its `{ userId }`, and only what reads goes through readablePrintWhere.
+// it, short of changing it. So can a model sent in a chat, by whoever can read that chat, while chats are on too.
+// Changing a model, a collection or anything else stays its owner's alone: every write keeps its `{ userId }`, and only
+// what reads goes through readablePrintWhere.
 
 const IN_PUBLIC_COLLECTION: Prisma.PrintWhereInput = { collectionItems: { some: { collection: { isPublic: true } } } };
 
-/** Whether Explore is offered: social features are on, and there's someone else on the instance to explore. */
-export async function socialStatus(): Promise<{ enabled: boolean; explore: boolean }> {
-  const { enabled } = await getSocialSettings();
-  if (!enabled) return { enabled, explore: false };
-  return { enabled, explore: (await prisma.user.count({ take: 2 })) > 1 };
+/** Sent in a message, still there, of a chat `userId` can read: one they're in, or a public room. */
+const sentInChatsOf = (userId: string): Prisma.PrintWhereInput => ({
+  chatAttachments: {
+    some: {
+      message: {
+        deletedAt: null,
+        chat: { OR: [{ members: { some: { userId } } }, { kind: "ROOM", isPublic: true }] },
+      },
+    },
+  },
+});
+
+/** Whether Explore and Chats are offered: social features are on (and chats with them), and there's someone else on the
+ *  instance to explore or talk to. */
+export async function socialStatus(): Promise<{ enabled: boolean; explore: boolean; chats: boolean }> {
+  const { enabled, chats } = await getSocialSettings();
+  if (!enabled) return { enabled, explore: false, chats: false };
+  const others = (await prisma.user.count({ take: 2 })) > 1;
+  return { enabled, explore: others, chats: chats && others };
 }
 
 /** The models `userId` may open, download and copy: their own, and while social features are on, every model in a
- *  public collection. Only for reading: whatever changes a model stays `{ userId }`. */
+ *  public collection, and with chats on, every model sent in a chat they can read. Only for reading: whatever changes a
+ *  model stays `{ userId }`. */
 export async function readablePrintWhere(userId: string): Promise<Prisma.PrintWhereInput> {
-  if (!(await getSocialSettings()).enabled) return { userId };
-  return { OR: [{ userId }, IN_PUBLIC_COLLECTION] };
+  const { enabled, chats } = await getSocialSettings();
+  if (!enabled) return { userId };
+  return { OR: [{ userId }, IN_PUBLIC_COLLECTION, ...(chats ? [sentInChatsOf(userId)] : [])] };
 }
 
 /** A collection `userId` may open: their own, or while social features are on, a public one. */
