@@ -25,11 +25,12 @@ function NozzleIcon() {
 }
 
 /**
- * Flex per badge in the one-line row: the printer name gives way first, then the materials, and the numbers
- * (which are short and the point of the row) last. The printer takes only the space left over, so it
- * may shrink to its icon.
+ * Flex per badge: the printer name gives way first, then the materials, and the numbers (which are short and
+ * the point of the row) never shrink. The printer takes only the space left over, but not below `PRINTER_MIN`.
+ * Past that the row wraps to a second line instead of cutting a value ("0.…").
  */
 const FLEX: Record<string, string> = { printer: "1 1 0px", materials: "0 8 auto" };
+const PRINTER_MIN = "10ch";
 
 type Item = { key: string; icon: ReactNode; text: string; label: string };
 
@@ -140,9 +141,9 @@ export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
   if (!shown.length) return null;
 
   return (
-    // One line: badges that don't fit shrink and end in an ellipsis (the tooltip has the full value), so the
-    // row keeps its height.
-    <Box component="span" sx={{ display: "flex", flexWrap: "nowrap", alignItems: "center", columnGap: 1, minWidth: 0 }}>
+    // One line while it fits: the printer and materials shrink and end in an ellipsis (the tooltip has the full
+    // value). When even that is too narrow, whole badges wrap to the next line; a number is never cut.
+    <Box component="span" sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 1, minWidth: 0 }}>
       {shown.map((i) => (
         // Without describeChild the tooltip text becomes the badge's aria-label, its name for screen readers.
         <Tooltip key={i.key} title={i.label}>
@@ -158,7 +159,8 @@ export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
               display: "inline-flex",
               alignItems: "center",
               gap: 0.25,
-              minWidth: 0,
+              minWidth: i.key === "printer" ? PRINTER_MIN : 0,
+              maxWidth: "100%",
               // The printer takes the rest of the line once its first few letters fit, then ellipsizes.
               flex: FLEX[i.key] ?? "0 1 auto",
               "& .MuiSvgIcon-root": { fontSize: "1.05em", flexShrink: 0 },

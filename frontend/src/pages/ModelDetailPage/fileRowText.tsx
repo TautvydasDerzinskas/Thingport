@@ -95,7 +95,15 @@ export function fileRowText(
         <Box
           component="span"
           title={summary && title ? `${stem} · ${plain}` : undefined}
-          sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+          // Up to two lines before the ellipsis, so a narrow row (or the "Default" chip beside it) doesn't cut
+          // the settings line to a few words; the full text is in the row's tooltip.
+          sx={{
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 2,
+            overflow: "hidden",
+            whiteSpace: "normal",
+          }}
         >
           {second}
         </Box>
