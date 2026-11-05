@@ -79,10 +79,21 @@ function design(designId: string) {
     summary: "<p>A phoenix.</p>",
     tags: ["phoenix"],
     designCreator: DESIGNER,
-    defaultInstanceId: 2,
+    // Unique across designs: a profile's download is asked for by its instance id alone.
+    defaultInstanceId: Number(`2${designId}`),
     instances: [
-      { id: 1, profileId: Number(`1${designId}`), title: "Single-colour version", instanceCreator: DESIGNER },
-      { id: 2, profileId: Number(`2${designId}`), title: "multi-colored version", instanceCreator: DESIGNER },
+      {
+        id: Number(`1${designId}`),
+        profileId: Number(`1${designId}`),
+        title: "Single-colour version",
+        instanceCreator: DESIGNER,
+      },
+      {
+        id: Number(`2${designId}`),
+        profileId: Number(`2${designId}`),
+        title: "multi-colored version",
+        instanceCreator: DESIGNER,
+      },
     ],
   };
 }
@@ -145,9 +156,9 @@ const fakeFetch = async (input: RequestInfo | URL): Promise<Response> => {
     }
     return json(design(model[1]));
   }
-  const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/iot-service\/api\/user\/profile\/(\d+)/);
+  const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/design-service\/instance\/(\d+)\/f3mf/);
   if (profile) {
-    return json({ message: "success", url: `https://s3.example.com/phoenix-${profile[1]}.stl`, filename: "p.stl" });
+    return json({ url: `https://s3.example.com/phoenix-${profile[1]}.stl`, name: "p.stl" });
   }
   const file = url.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl$/);
   if (file) {

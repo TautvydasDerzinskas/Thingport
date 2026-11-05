@@ -145,12 +145,12 @@ function mockFetch() {
         instances: [{ id: Number(id) + 1, profileId: Number(id) + 2, title: "Multi", instanceCreator: DESIGNER }],
       });
     }
-    const profile = url.match(/\/iot-service\/api\/user\/profile\/(\d+)/);
+    const profile = url.match(/\/design-service\/instance\/(\d+)\/f3mf/);
     if (profile) {
-      if (limited.has(String(Number(profile[1]) - 2))) {
+      if (limited.has(String(Number(profile[1]) - 1))) {
         return json({ code: -1, error: "You've reached your daily download limit." }, 400);
       }
-      return json({ message: "success", url: `https://s3.example.com/${profile[1]}.stl`, filename: "phoenix.stl" });
+      return json({ url: `https://s3.example.com/${profile[1]}.stl`, name: "phoenix.stl" });
     }
     if (/\/design-service\/favorites\/\d+$/.test(url)) return json({ title: "Flock" });
     if (url.startsWith(ZIP_URL)) {

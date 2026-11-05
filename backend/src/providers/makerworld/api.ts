@@ -46,7 +46,6 @@ export {
 // makerworld.com puts Cloudflare and a Geetest CAPTCHA in front of download resolution;
 // api.bambulab.com is the same Bambu Cloud backend (same bearer token) without either.
 const DESIGN_API_BASE = `${manifest.endpoints.cloudApi}/design-service`;
-const PROFILE_DOWNLOAD_BASE = `${manifest.endpoints.cloudApi}/iot-service/api/user/profile`;
 const AUTHOR_PROFILE_BASE = `${manifest.endpoints.api}/design-user-service/user/profile`;
 // Only succeeds for a logged-in session, so it doubles as the cookie check.
 const SELF_PREFERENCE_URL = `${manifest.endpoints.cloudApi}/design-user-service/my/preference`;
@@ -439,9 +438,6 @@ export async function resolveMakerworldViaCloudApi(
     : [];
   if (!instances.length) return resolveMakerworldRawFiles(designId, design, bearerToken, paceMs);
 
-  const modelId = typeof design.modelId === "string" && design.modelId.trim() ? design.modelId.trim() : null;
-  if (!modelId) return null;
-
   const defaultInstanceId = design.defaultInstanceId != null ? String(design.defaultInstanceId) : null;
 
   let selected: Record<string, unknown> | null = null;
@@ -455,15 +451,16 @@ export async function resolveMakerworldViaCloudApi(
     selected = instances[0] ?? null;
   }
   if (!selected) return null;
+  const instanceId = String(selected.id);
 
-  const profileId = selected.profileId != null ? String(selected.profileId) : null;
-  if (!profileId) return null;
-
+  // What the page's own "Download 3MF" asks for. Bambu Studio's iot-service profile download now answers "success"
+  // with an empty URL.
   await maybeSleep(paceMs);
   const body = downloadReplyBody(
-    await fetchCloudJson(`${PROFILE_DOWNLOAD_BASE}/${profileId}?model_id=${encodeURIComponent(modelId)}`, bearerToken),
+    await fetchCloudJson(`${DESIGN_API_BASE}/instance/${instanceId}/f3mf?type=download&fileType=`, bearerToken),
   );
-  if (!body || body.message !== "success" || typeof body.url !== "string" || !body.url.trim()) return null;
+  const downloadUrl = body && pickString(body, ["url"]);
+  if (!body || !downloadUrl) return null;
 
   const meta = makerworldMetaFromDesign(design);
   const author = await completeMakerworldAuthor(meta.author, paceMs);
@@ -477,16 +474,16 @@ export async function resolveMakerworldViaCloudApi(
   );
 
   return {
-    downloadUrl: body.url,
+    downloadUrl,
     meta: {
       ...meta,
       creator: author?.name ?? meta.creator,
-      filename: pickString(body, ["filename"]),
+      filename: pickString(body, ["name"]),
       author,
       parametricSource,
       makerworldProfile: {
-        instanceId: selected.id != null ? String(selected.id) : null,
-        coverUrl: makerworldInstanceCover(design, selected.id != null ? String(selected.id) : null),
+        instanceId,
+        coverUrl: makerworldInstanceCover(design, instanceId),
         titles: makerworldInstanceTitles(design),
       },
     },

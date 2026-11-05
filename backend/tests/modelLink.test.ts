@@ -137,7 +137,7 @@ describe("linking a model to its page on a provider", () => {
     expect(await prisma.previewImage.count({ where: { printId: model.id, generated: false } })).toBe(1);
     const after = await prisma.plate.findMany({ where: { printId: model.id } });
     expect(after.map((plate) => [plate.id, plate.filename])).toEqual(before.map((plate) => [plate.id, plate.filename]));
-    expect(asked.filter((url) => url.includes("iot-service"))).toEqual([]);
+    expect(asked.filter((url) => url.includes("/f3mf"))).toEqual([]);
   });
 
   it("puts the source's pictures ahead of the owner's own and keeps those", async () => {
