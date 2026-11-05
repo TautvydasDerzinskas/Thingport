@@ -1,5 +1,23 @@
 # Thingport Grab changelog
 
+# [thingport-grab-v1.10.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.9.0...thingport-grab-v1.10.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* bring MakerWorld profiles in as their 3MF again, and offer them in Grab's panel ([#241](https://github.com/TautvydasDerzinskas/Thingport/issues/241)) ([fd55957](https://github.com/TautvydasDerzinskas/Thingport/commit/fd559575385d6d3448c4e34b92ce361d7eb0ecc7))
+* guard provider credentials and remote imports ([#151](https://github.com/TautvydasDerzinskas/Thingport/issues/151)) ([6b12b97](https://github.com/TautvydasDerzinskas/Thingport/commit/6b12b9727a60a1a86b1a6cb8ecee267367f0d97f))
+* import bought Cults3D models, and offer them in Grab ([#236](https://github.com/TautvydasDerzinskas/Thingport/issues/236)) ([c1c30cb](https://github.com/TautvydasDerzinskas/Thingport/commit/c1c30cb9b733bce4dbdd12d39a5d5082aa397f16)), closes [#232](https://github.com/TautvydasDerzinskas/Thingport/issues/232)
+* import your own Meshy posts on a free plan, and say which Meshy models a plan can't download ([#245](https://github.com/TautvydasDerzinskas/Thingport/issues/245)) ([e1933d0](https://github.com/TautvydasDerzinskas/Thingport/commit/e1933d0e8c83be0ebe752f67144188ab33c5d580))
+
+
+### Features
+
+* a persistent import queue, with its own modal and top-bar indicator ([#218](https://github.com/TautvydasDerzinskas/Thingport/issues/218)) ([6392e77](https://github.com/TautvydasDerzinskas/Thingport/commit/6392e773edd49e966fa5f015a39840aeec568ed8)), closes [#169](https://github.com/TautvydasDerzinskas/Thingport/issues/169)
+* choose print profiles for a MakerWorld collection import in Grab ([#242](https://github.com/TautvydasDerzinskas/Thingport/issues/242)) ([4c72549](https://github.com/TautvydasDerzinskas/Thingport/commit/4c72549129cc5ced03595a31fc5fff85d3ac1267)), closes [#fragment](https://github.com/TautvydasDerzinskas/Thingport/issues/fragment)
+* **frontend:** a compact top bar with two-tone icons ([#215](https://github.com/TautvydasDerzinskas/Thingport/issues/215)) ([2fd8f19](https://github.com/TautvydasDerzinskas/Thingport/commit/2fd8f19dadbe2860671d6abc2ece112c417c8523))
+* import from Meshy, its community models and your own AI generations ([#240](https://github.com/TautvydasDerzinskas/Thingport/issues/240)) ([c7aaf4d](https://github.com/TautvydasDerzinskas/Thingport/commit/c7aaf4d4b1e281f433f3edc303678f12891d754c))
+
 # [thingport-grab-v1.9.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.8.1...thingport-grab-v1.9.0) (2026-10-30)
 
 
