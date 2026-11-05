@@ -1,5 +1,30 @@
 # Thingport backend changelog
 
+# [thingport-backend-v1.5.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-backend-v1.4.0...thingport-backend-v1.5.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* bring MakerWorld profiles in as their 3MF again, and offer them in Grab's panel ([#241](https://github.com/TautvydasDerzinskas/Thingport/issues/241)) ([fd55957](https://github.com/TautvydasDerzinskas/Thingport/commit/fd559575385d6d3448c4e34b92ce361d7eb0ecc7))
+* guard provider credentials and remote imports ([#151](https://github.com/TautvydasDerzinskas/Thingport/issues/151)) ([6b12b97](https://github.com/TautvydasDerzinskas/Thingport/commit/6b12b9727a60a1a86b1a6cb8ecee267367f0d97f))
+* import bought Cults3D models, and offer them in Grab ([#236](https://github.com/TautvydasDerzinskas/Thingport/issues/236)) ([c1c30cb](https://github.com/TautvydasDerzinskas/Thingport/commit/c1c30cb9b733bce4dbdd12d39a5d5082aa397f16)), closes [#232](https://github.com/TautvydasDerzinskas/Thingport/issues/232)
+* import your own Meshy posts on a free plan, and say which Meshy models a plan can't download ([#245](https://github.com/TautvydasDerzinskas/Thingport/issues/245)) ([e1933d0](https://github.com/TautvydasDerzinskas/Thingport/commit/e1933d0e8c83be0ebe752f67144188ab33c5d580))
+
+
+### Features
+
+* a persistent import queue, with its own modal and top-bar indicator ([#218](https://github.com/TautvydasDerzinskas/Thingport/issues/218)) ([6392e77](https://github.com/TautvydasDerzinskas/Thingport/commit/6392e773edd49e966fa5f015a39840aeec568ed8)), closes [#169](https://github.com/TautvydasDerzinskas/Thingport/issues/169)
+* add chats to social features, with direct messages and rooms ([#238](https://github.com/TautvydasDerzinskas/Thingport/issues/238)) ([e714fe2](https://github.com/TautvydasDerzinskas/Thingport/commit/e714fe206d74819c198a3129b184293ae27c2f15))
+* add Claude as an AI, through Anthropic's own API ([#233](https://github.com/TautvydasDerzinskas/Thingport/issues/233)) ([2d73475](https://github.com/TautvydasDerzinskas/Thingport/commit/2d73475d9701ac6acae819881306692991338887))
+* add Studio, a CAD page an AI can drive ([#235](https://github.com/TautvydasDerzinskas/Thingport/issues/235)) ([9dab716](https://github.com/TautvydasDerzinskas/Thingport/commit/9dab71656e691cc499c0ab958e270f4bbe7cc2f0))
+* import from Meshy, its community models and your own AI generations ([#240](https://github.com/TautvydasDerzinskas/Thingport/issues/240)) ([c7aaf4d](https://github.com/TautvydasDerzinskas/Thingport/commit/c7aaf4d4b1e281f433f3edc303678f12891d754c))
+* import glTF models, packing a .gltf and its files into one .glb ([#212](https://github.com/TautvydasDerzinskas/Thingport/issues/212)) ([46744b7](https://github.com/TautvydasDerzinskas/Thingport/commit/46744b7a4ab8fc5cfe08ef5605a2a59d04edc444))
+* link a model with no source to its page on a provider ([b2be095](https://github.com/TautvydasDerzinskas/Thingport/commit/b2be095880fe046e52d8546516a1fb587ee2ddbd))
+* merge uploaded models into one, and assign a category to several at once ([#228](https://github.com/TautvydasDerzinskas/Thingport/issues/228)) ([b4f1b6a](https://github.com/TautvydasDerzinskas/Thingport/commit/b4f1b6a6f6e992edb02c5bf112666f39caba5c36))
+* share collections between users, with an Explore page ([#237](https://github.com/TautvydasDerzinskas/Thingport/issues/237)) ([25d4d0d](https://github.com/TautvydasDerzinskas/Thingport/commit/25d4d0dee5cab07253616a7561ee87bce347c29b))
+* turn Studio on for every instance, without STUDIO_ENABLED ([#243](https://github.com/TautvydasDerzinskas/Thingport/issues/243)) ([f7a3f73](https://github.com/TautvydasDerzinskas/Thingport/commit/f7a3f73e760286580ead0b92150650adc302e61e))
+* **widgets:** offer community widgets from the checkout when run from one ([#226](https://github.com/TautvydasDerzinskas/Thingport/issues/226)) ([db10b26](https://github.com/TautvydasDerzinskas/Thingport/commit/db10b260ad2376f20ad54f89d17716dae2dbe78d))
+
 # [thingport-backend-v1.4.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-backend-v1.3.1...thingport-backend-v1.4.0) (2026-10-30)
 
 
