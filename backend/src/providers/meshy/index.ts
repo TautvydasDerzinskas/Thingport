@@ -92,12 +92,15 @@ export const meshyImport: SourcedImport<Connected, MeshyModelResolution> = {
   nameHint: (externalId) => `meshy-${meshyTaskIdOf(externalId) ?? externalId}`,
   async downloadModel(target, resolved, connected, _requested, kit) {
     let auth = connected.auth;
+    // The user's own post is their own generation to Meshy, which a free plan downloads; as a community model it doesn't.
+    const own = resolved.type === "Showcase" && resolved.meta.author?.externalId === connected.account.userId;
+    const type = own ? "Task" : resolved.type;
     const downloaded: NewPlateInput[] = [];
     try {
       for (const mesh of resolved.meshes) {
         const url = await withMeshyAuth(target.userId, auth, (fresh) => {
           auth = fresh;
-          return meshyDownloadUrl(mesh, resolved.type, fresh);
+          return meshyDownloadUrl(mesh, type, fresh);
         });
         if (!url) continue;
         const inputs = (await kit.downloadSignedFile({ url, name: mesh.name }, isMeshyFileHost, BLOCKED)) ?? [];

@@ -9,12 +9,13 @@ import { MANIFESTS, manifestOf } from "../../providers/index.generated";
 import { parseSnapmakerListUrl, snapmakerListUrl, type SnapmakerList } from "../../shared/urls";
 import { request } from "../../shared/messages";
 import { api, escapeHtml, sleep } from "../runtime";
-import { isPanelMounted, onPanelAction, panelQueryAll, renderPanel } from "../shell";
+import { isPanelMounted, onPanelAction, panelQuery, panelQueryAll, renderPanel } from "../shell";
 import { errorHtml, pausedHtml, statusHtml, successHtml } from "./results";
 import { loadingModelsPhrases, renderFunStatus } from "./funStatus";
 import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
 import { printablesToken, readCollectionForPanel } from "../../providers/printables/content";
 import { pushPrintablesNow } from "../../providers/printables/content";
+import { CONTENT_MODULES, type ImportBlock } from "../../providers/content";
 
 const SNAPMAKER_LISTS: { list: SnapmakerList; label: string }[] = [
   { list: "likes", label: "Likes" },
@@ -125,8 +126,33 @@ async function loadEntries(): Promise<PanelEntries> {
   return { entries: [] };
 }
 
+/** Takes the models the site wouldn't let import out of the import, once the provider has said which and why. */
+function markBlockedEntries(blocks: Map<string, ImportBlock> | null): void {
+  if (!blocks?.size) return;
+  const reasons = new Map<string, { block: ImportBlock; count: number }>();
+  for (const box of panelQueryAll<HTMLInputElement>(".tg-entry__checkbox")) {
+    const block = blocks.get(box.value);
+    const row = box.closest(".tg-entry");
+    if (!block || !row || row.classList.contains("tg-entry--imported")) continue;
+    box.checked = false;
+    box.disabled = true;
+    row.classList.add("tg-entry--blocked");
+    row.setAttribute("title", block.hint);
+    row.insertAdjacentHTML("beforeend", `<span class="tg-badge">${escapeHtml(block.title)}</span>`);
+    const key = `${block.title}\n${block.hint}`;
+    reasons.set(key, { block, count: (reasons.get(key)?.count ?? 0) + 1 });
+  }
+  const notes = [...reasons.values()].map(
+    ({ block, count }) => `<div class="tg-hint">${escapeHtml(block.title)} (${count}): ${escapeHtml(block.hint)}</div>`,
+  );
+  panelQuery(".tg-entries")?.insertAdjacentHTML("beforebegin", notes.join(""));
+}
+
 export async function loadBatchEntries(): Promise<void> {
-  renderFunStatus(loadingModelsPhrases(ctx().classification.provider));
+  const { classification, url } = ctx();
+  renderFunStatus(loadingModelsPhrases(classification.provider));
+  // Asked beside the list, and shown once it answers: the list doesn't wait on it.
+  const blocks = CONTENT_MODULES[classification.provider].entryBlocks?.(url).catch(() => null) ?? null;
   let result: PanelEntries;
   let sync: SyncLookup | null;
   try {
@@ -148,7 +174,8 @@ export async function loadBatchEntries(): Promise<void> {
       `,
     )
     .join("");
-  const found = `${result.entries.length} models found${result.truncated ? " (more available on the site)" : ""}`;
+  const count = result.entries.length;
+  const found = `${count} model${count === 1 ? "" : "s"} found${result.truncated ? " (more available on the site)" : ""}`;
   renderPanel(`
     ${snapmakerListSwitchHtml()}
     <div class="tg-title">${escapeHtml(result.title || "Import models")}</div>
@@ -159,6 +186,7 @@ export async function loadBatchEntries(): Promise<void> {
   `);
   onPanelAction("import", () => void runBatchImport(result, sync));
   wireSnapmakerListSwitch();
+  void blocks?.then(markBlockedEntries);
 }
 
 async function runBatchImport(result: PanelEntries, sync: SyncLookup | null): Promise<void> {

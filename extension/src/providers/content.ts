@@ -7,7 +7,7 @@ import { parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
 import { crealitycloudUserId, loadCrealitycloudProfiles } from "./crealitycloud/content";
 import { isUnboughtCgtraderModel } from "./cgtrader/content";
 import { isUnboughtCults3dModel } from "./cults3d/content";
-import { isMeshyPlanLocked } from "./meshy/content";
+import { meshyCollectionLocks, meshyPlanLock, type MeshyPlanLock } from "./meshy/content";
 import { loadMakeronlineProfiles } from "./makeronline/content";
 import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } from "./makerworld/pageData";
 import { loadNexprintProfiles } from "./nexprint/content";
@@ -30,6 +30,8 @@ export type ContentModule = {
   profileUrl?(url: string, profileId: string): string;
   /** Why the model on this page can't be imported, or null when it can, or that can't be told. */
   blockReason?(url: string): Promise<ImportBlock | null>;
+  /** Why models of the list on this page can't be imported, by their ids; one it can't tell of is left out. */
+  entryBlocks?(url: string): Promise<Map<string, ImportBlock>>;
   /** The script this page's model was generated from, or null where it wasn't generated from one. A withheld
    *  script still lets the model import; it is only the script that can't come along. */
   scriptState?(url: string): Promise<ScriptState | null>;
@@ -37,6 +39,17 @@ export type ContentModule = {
    *  page alone: the list's address as the instance takes it, or null on someone else's. Undefined for a list anyone
    *  sees. */
   ownList?(url: string, kind: ListKind): Promise<string | null | undefined>;
+};
+
+const MESHY_BLOCKS: Record<MeshyPlanLock, ImportBlock> = {
+  community: {
+    title: "Needs Meshy Pro",
+    hint: "Meshy keeps other people's community models for its Pro and Studio plans. Your own import on a free plan.",
+  },
+  own: {
+    title: "Needs a paid Meshy plan",
+    hint: "Meshy keeps the models its AI agent made for paid plans, even yours.",
+  },
 };
 
 export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
@@ -128,16 +141,17 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
         : null;
     },
   },
-  // Its collections are anyone's to read, and the user's generations are their own workspace's. Meshy keeps community
-  // models for its Pro and Studio plans, so one the account's plan can't download isn't tried.
+  // Its collections are anyone's to read, and the user's generations are their own workspace's. Meshy keeps other
+  // people's community models for its Pro and Studio plans, and its AI agent's generations for paid ones, so one the
+  // account's plan can't download isn't tried.
   meshy: {
     async blockReason(url) {
-      return (await isMeshyPlanLocked(url))
-        ? {
-            title: "Needs Meshy Pro",
-            hint: "Meshy only lets Pro and Studio plans download community models. Your own generations import on any plan.",
-          }
-        : null;
+      const lock = await meshyPlanLock(url);
+      return lock && MESHY_BLOCKS[lock];
+    },
+    async entryBlocks(url) {
+      const locks = await meshyCollectionLocks(url);
+      return new Map([...locks].map(([id, lock]) => [id, MESHY_BLOCKS[lock]]));
     },
   },
 };

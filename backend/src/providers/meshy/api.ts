@@ -70,14 +70,15 @@ export class MeshyAuthError extends Error {
   }
 }
 
-/** A download the account's plan doesn't include: community models are Pro and Studio's, and so are a free plan's
- *  generations from Meshy's newest models. */
+/** A download the account's plan doesn't include: other people's community models are Pro and Studio's, and so are
+ *  the user's own generations that Meshy's AI agent made. */
 export class MeshyPlanError extends Error {
   constructor(community = true) {
     super(
       community
-        ? "Meshy only lets Pro and Studio plans download community models. Your own generations import on any plan."
-        : "Meshy's plan on this account doesn't include downloading this generation.",
+        ? "Meshy only lets Pro and Studio plans download other people's community models. Your own import on a free " +
+            "plan too, unless its AI agent made them."
+        : "Meshy only lets paid plans download this generation of yours, as it does with its AI agent's models.",
     );
     this.name = "MeshyPlanError";
   }
@@ -405,9 +406,16 @@ export async function resolveMeshyTask(
   };
 }
 
-/** The signed link to a mesh, converted for the signed-in account. Throws MeshyPlanError for a community model a free
- *  plan can't have, MeshyDownloadLimitError once the month's downloads are used up; null when the model has nothing
- *  to convert. */
+/** Whether Meshy keeps a model from the account's plan altogether, as its pages ask before they show Download. False
+ *  when it can't be asked. */
+async function isPlanForbidden(taskId: string, type: MeshyModelResolution["type"], auth: MeshyAuth): Promise<boolean> {
+  const path = `/v2/tasks/${encodeURIComponent(taskId)}/downloadable-status?${query({ type })}`;
+  const status = asRecord((await call(path, { auth }).catch(() => null))?.result);
+  return status?.downloadableStatus === "Forbidden";
+}
+
+/** The signed link to a mesh, converted for the signed-in account. Throws MeshyPlanError for a model the plan can't
+ *  have, MeshyDownloadLimitError once the month's downloads are used up; null when the model has nothing to convert. */
 export async function meshyDownloadUrl(
   mesh: MeshyMesh,
   type: MeshyModelResolution["type"],
@@ -417,7 +425,11 @@ export async function meshyDownloadUrl(
   try {
     return webImage((await call(path, { auth, timeoutMs: CONVERT_TIMEOUT_MS }))?.result);
   } catch (err) {
-    if (err instanceof MeshyPlanError) throw new MeshyPlanError(type === "Showcase");
+    // A generation the plan can't have at all is refused as a used-up limit, its limit being none.
+    const forbidden =
+      err instanceof MeshyPlanError ||
+      (err instanceof MeshyDownloadLimitError && (await isPlanForbidden(mesh.taskId, type, auth)));
+    if (forbidden) throw new MeshyPlanError(type === "Showcase");
     throw err;
   }
 }

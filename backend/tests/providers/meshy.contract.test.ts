@@ -181,6 +181,7 @@ function handlerFor(scenario: string, answers: Record<string, Answer> = {}): Fet
       assertThat(url.searchParams.get("format") === "3mf", "a model is converted to a 3MF");
       return json(loadFixture("meshy", "asset-url"));
     }
+    if (path.endsWith("/downloadable-status")) return json(loadFixture("meshy", "downloadable-status"));
     if (path.endsWith("/mark-downloaded")) return json(loadFixture("meshy", "mark-downloaded"));
     return undefined;
   };
@@ -289,6 +290,38 @@ describe("Meshy specifics", () => {
     const res = await ctx.importUrl();
     expect(res.status).toBe(429);
     expect(res.body.code).toBe("MESHY_DOWNLOAD_LIMIT");
+    expect(await ctx.prints()).toHaveLength(0);
+  });
+
+  it("imports the user's own post as their own generation, which Meshy lets a free plan download", async () => {
+    await connect(ctx.userId);
+    const post = loadFixture("meshy", "post");
+    const stub = ctx.install(
+      handlerFor("ok", {
+        [`/public/community/posts/${POST_ID}`]: () =>
+          json({ ...post, result: { ...post.result, author: { ...post.result.author, id: MESHY_USER } } }),
+      }),
+    );
+    expectStatus(await ctx.importUrl(), 200);
+    const convert = stub.calls.find((call) => call.url.pathname.endsWith("/asset-url"));
+    expect(convert?.url.searchParams.get("type")).toBe("Task");
+  });
+
+  it("says the plan stops a generation Meshy keeps from it, though Meshy refuses it as a used-up limit", async () => {
+    await connect(ctx.userId);
+    const stub = ctx.install(
+      handlerFor("ok", {
+        [`/v2/tasks/${OWN_TASK}/asset-url`]: () => json(loadFixture("meshy", "asset-url-limit"), 403),
+        [`/v2/tasks/${OWN_TASK}/downloadable-status`]: () =>
+          json(loadFixture("meshy", "downloadable-status-forbidden")),
+      }),
+    );
+    const res = await ctx.importUrl(`https://www.meshy.ai/workspace?task=${OWN_TASK}`);
+    expect(res.status).toBe(403);
+    expect(res.body.code).not.toBe("MESHY_DOWNLOAD_LIMIT");
+    expect(res.body.detail).toContain("paid plans");
+    const status = stub.calls.find((call) => call.url.pathname.endsWith("/downloadable-status"));
+    expect(status?.url.searchParams.get("type")).toBe("Task");
     expect(await ctx.prints()).toHaveLength(0);
   });
 
