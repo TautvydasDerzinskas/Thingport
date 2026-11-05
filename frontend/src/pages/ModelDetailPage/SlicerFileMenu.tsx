@@ -95,7 +95,7 @@ export default function SlicerFileMenu({
             </ListItemIcon>
             <ListItemText
               {...text}
-              primaryTypographyProps={{ variant: "body2", noWrap: true }}
+              primaryTypographyProps={{ variant: "body2", fontWeight: 600, noWrap: true }}
               secondaryTypographyProps={{ variant: "caption", noWrap: true }}
               sx={{ minWidth: 0 }}
             />

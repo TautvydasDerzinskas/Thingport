@@ -67,7 +67,7 @@ export default function DownloadPickerDialog({
                 </ListItemIcon>
                 <ListItemText
                   {...fileRowText(t, plate.filename, idx, plate.profile, i18n.resolvedLanguage ?? i18n.language)}
-                  primaryTypographyProps={{ noWrap: true }}
+                  primaryTypographyProps={{ fontWeight: 600, noWrap: true }}
                   secondaryTypographyProps={{ noWrap: true }}
                   sx={{ minWidth: 0 }}
                 />
