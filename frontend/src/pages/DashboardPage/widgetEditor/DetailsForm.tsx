@@ -101,7 +101,7 @@ export default function DetailsForm({ draft, onChange, errors, slugLocked }: Pro
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "primary.main",
+              color: (theme) => theme.thingport.accentText,
             }}
           >
             <WidgetIcon iconUrl={draft.iconUrl.trim() || undefined} size={24} />

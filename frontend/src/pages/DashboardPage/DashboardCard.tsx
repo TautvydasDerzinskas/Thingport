@@ -75,7 +75,7 @@ export function DashboardCardTitle({ icon, title, children, sx }: TitleProps) {
   return (
     <Box
       sx={[
-        { display: "flex", alignItems: "center", gap: 1, color: "primary.main", minWidth: 0 },
+        { display: "flex", alignItems: "center", gap: 1, color: (theme) => theme.thingport.accentText, minWidth: 0 },
         tabbed && { justifyContent: "flex-end" },
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}

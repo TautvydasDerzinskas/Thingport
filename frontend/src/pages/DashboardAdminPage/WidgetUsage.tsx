@@ -69,7 +69,7 @@ function UserAvatar({ name, size = 24 }: { name: string; size?: number }) {
         fontSize: size * 0.42,
         fontWeight: 600,
         bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
-        color: "primary.main",
+        color: (theme) => theme.thingport.accentText,
       }}
     >
       {initials(name)}
@@ -99,7 +99,7 @@ function StatTile({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "primary.main",
+          color: (theme) => theme.thingport.accentText,
           bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
         }}
       >
@@ -130,7 +130,7 @@ function WidgetHead({ manifest, badge }: { manifest: WidgetManifest; badge?: Rea
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "primary.main",
+          color: (theme) => theme.thingport.accentText,
           bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
         }}
       >

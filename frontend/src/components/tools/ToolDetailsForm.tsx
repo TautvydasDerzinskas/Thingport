@@ -177,7 +177,7 @@ export default function ToolDetailsForm({ draft, onChange, errors, slugLocked }:
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "primary.main",
+              color: (theme) => theme.thingport.accentText,
             }}
           >
             <ToolIcon iconUrl={draft.iconUrl.trim() || undefined} size={24} />

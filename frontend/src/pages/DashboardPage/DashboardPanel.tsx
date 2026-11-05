@@ -453,7 +453,7 @@ export function WidgetChipFace({ widgetId, lifted = false }: { widgetId: WidgetI
         color: "text.primary",
         cursor: lifted ? "grabbing" : "grab",
         transform: lifted ? "rotate(-2deg) scale(1.04)" : "none",
-        "& svg": { color: "primary.main", fontSize: 16 },
+        "& svg": { color: (theme) => theme.thingport.accentText, fontSize: 16 },
         "@media (prefers-reduced-motion: reduce)": { transform: "none" },
       }}
     >

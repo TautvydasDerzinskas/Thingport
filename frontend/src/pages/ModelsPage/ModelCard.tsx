@@ -249,7 +249,7 @@ export default function ModelCard({
                 minWidth: 0,
                 color: "text.secondary",
                 ...((author || showViewerAsAuthor) && !selectMode
-                  ? { cursor: "pointer", "&:hover": { color: "primary.main" } }
+                  ? { cursor: "pointer", "&:hover": { color: (th) => th.thingport.accentText } }
                   : undefined),
               }}
               onClick={(e) => {

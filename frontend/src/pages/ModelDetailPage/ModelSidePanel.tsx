@@ -173,7 +173,9 @@ export default function ModelSidePanel({
                 width: "fit-content",
                 cursor: print.author || showViewerAsAuthor ? "pointer" : "default",
                 color: (muiTheme) => muiTheme.thingport.headingText,
-                ...(print.author || showViewerAsAuthor ? { "&:hover": { color: "primary.main" } } : undefined),
+                ...(print.author || showViewerAsAuthor
+                  ? { "&:hover": { color: (theme) => theme.thingport.accentText } }
+                  : undefined),
               }}
               onClick={() => {
                 if (print.author) navigate(`/authors/${print.author.id}`);
@@ -207,7 +209,7 @@ export default function ModelSidePanel({
                 mx: -0.5,
                 gap: 0.75,
                 color: (muiTheme) => muiTheme.thingport.headingText,
-                "&:hover": { color: "primary.main" },
+                "&:hover": { color: (theme) => theme.thingport.accentText },
               }}
             >
               <FolderIcon fontSize="small" />

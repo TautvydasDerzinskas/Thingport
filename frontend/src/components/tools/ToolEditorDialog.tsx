@@ -183,7 +183,7 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
           borderColor: "divider",
         }}
       >
-        <Box sx={{ display: "flex", color: "primary.main" }}>
+        <Box sx={{ display: "flex", color: (theme) => theme.thingport.accentText }}>
           <ToolIcon iconUrl={manifest.iconUrl} size={20} />
         </Box>
         <Typography
@@ -441,7 +441,12 @@ function Reference() {
           <Box key={entry.key}>
             <Box
               component="dt"
-              sx={{ fontFamily: "monospace", fontSize: 12, color: "primary.main", wordBreak: "break-word" }}
+              sx={{
+                fontFamily: "monospace",
+                fontSize: 12,
+                color: (theme) => theme.thingport.accentText,
+                wordBreak: "break-word",
+              }}
             >
               thingport.{entry.name}
             </Box>

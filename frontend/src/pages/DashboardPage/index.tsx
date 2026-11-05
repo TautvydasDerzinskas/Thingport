@@ -241,7 +241,7 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
               .filter((widget) => !widget.custom)
               .map((widget) => (
                 <MenuItem key={widget.id} onClick={() => addPanel(widget.id)}>
-                  <ListItemIcon sx={{ color: "primary.main" }}>{widget.icon}</ListItemIcon>
+                  <ListItemIcon sx={{ color: (theme) => theme.thingport.accentText }}>{widget.icon}</ListItemIcon>
                   <ListItemText>{labelOf(t, widget)}</ListItemText>
                 </MenuItem>
               ))}
@@ -254,7 +254,7 @@ export default function DashboardPage({ onUnauthorized, isAdmin = false, standal
                 .filter((widget) => widget.custom)
                 .map((widget) => (
                   <MenuItem key={widget.id} onClick={() => addPanel(widget.id)}>
-                    <ListItemIcon sx={{ color: "primary.main" }}>{widget.icon}</ListItemIcon>
+                    <ListItemIcon sx={{ color: (theme) => theme.thingport.accentText }}>{widget.icon}</ListItemIcon>
                     <ListItemText>{labelOf(t, widget)}</ListItemText>
                   </MenuItem>
                 )),

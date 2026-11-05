@@ -75,7 +75,7 @@ export default function ToolWindow({ tool, context, onClose, onAbout, onUnauthor
               borderColor: "divider",
             }}
           >
-            <Box sx={{ display: "flex", color: "primary.main" }}>
+            <Box sx={{ display: "flex", color: (theme) => theme.thingport.accentText }}>
               <ToolIcon iconUrl={tool.manifest.iconUrl} size={20} />
             </Box>
             <Typography

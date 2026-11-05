@@ -174,7 +174,7 @@ export default function WidgetSourceTile({ kind, label, description, checked, di
             top: 10,
             left: 12,
             display: "flex",
-            color: "primary.main",
+            color: (theme) => theme.thingport.accentText,
             animation: `${pulse} ${LOOP} ease-in-out infinite`,
           }}
         >

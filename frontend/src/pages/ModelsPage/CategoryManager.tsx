@@ -273,7 +273,7 @@ function CategoryRow({
                   fontSize="small"
                   sx={{
                     opacity: hasDetails ? 1 : 0.35,
-                    color: hasDetails ? "primary.main" : "action.active",
+                    color: hasDetails ? (theme) => theme.thingport.accentText : "action.active",
                   }}
                 />
               </IconButton>

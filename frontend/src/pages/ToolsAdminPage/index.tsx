@@ -364,7 +364,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
                         : undefined
                     }
                     logo={
-                      <Box sx={{ display: "flex", color: "primary.main" }}>
+                      <Box sx={{ display: "flex", color: (theme) => theme.thingport.accentText }}>
                         <ToolIcon iconUrl={tool.manifest.iconUrl} size={36} />
                       </Box>
                     }
@@ -419,7 +419,7 @@ export default function ToolsAdminPage({ onUnauthorized }: Props) {
           <Stack spacing={1} sx={{ maxWidth: 720 }}>
             {own.map((tool) => (
               <Stack key={tool.id} direction="row" alignItems="center" spacing={1.5} sx={{ px: 1 }}>
-                <Box sx={{ display: "flex", color: "primary.main" }}>
+                <Box sx={{ display: "flex", color: (theme) => theme.thingport.accentText }}>
                   <ToolIcon iconUrl={tool.manifest.iconUrl} size={22} />
                 </Box>
                 <Box sx={{ minWidth: 0, flex: 1 }}>

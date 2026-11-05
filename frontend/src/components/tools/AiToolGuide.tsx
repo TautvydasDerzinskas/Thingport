@@ -93,7 +93,7 @@ export default function AiToolGuide({ onClose }: { onClose: () => void }) {
           borderColor: "divider",
         }}
       >
-        <AutoAwesomeOutlinedIcon fontSize="small" sx={{ color: "primary.main" }} />
+        <AutoAwesomeOutlinedIcon fontSize="small" sx={{ color: (theme) => theme.thingport.accentText }} />
         <Typography
           id={titleId}
           variant="body2"

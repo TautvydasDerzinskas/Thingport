@@ -59,7 +59,7 @@ export default function ToolAboutDialog({ tool, onClose, onOpen }: Props) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "primary.main",
+                  color: (theme) => theme.thingport.accentText,
                 }}
               >
                 <ToolIcon iconUrl={manifest.iconUrl} size={32} />

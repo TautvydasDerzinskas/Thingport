@@ -198,7 +198,7 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
             name={tool.manifest.name}
             subtitle={tool.source === "own" ? t("tools.page.yours") : undefined}
             logo={
-              <Box sx={{ display: "flex", color: "primary.main" }}>
+              <Box sx={{ display: "flex", color: (theme) => theme.thingport.accentText }}>
                 <ToolIcon iconUrl={tool.manifest.iconUrl} size={Math.round(ICON * 0.6)} />
               </Box>
             }
@@ -333,7 +333,7 @@ export default function ToolsPage({ isAdmin, onUnauthorized }: Props) {
           <TileMenuHeader
             key="header"
             logo={
-              <Box sx={{ display: "flex", color: "primary.main" }}>
+              <Box sx={{ display: "flex", color: (theme) => theme.thingport.accentText }}>
                 <ToolIcon iconUrl={menuTool.manifest.iconUrl} size={28} />
               </Box>
             }

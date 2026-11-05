@@ -72,7 +72,7 @@ export function ToolCollectionMenu({ toolId, name, at, onClose, onOpenCollection
     >
       <TileMenuHeader
         logo={
-          <Box sx={{ display: "flex", color: "primary.main" }}>
+          <Box sx={{ display: "flex", color: (theme) => theme.thingport.accentText }}>
             {tool ? <ToolIcon iconUrl={tool.manifest.iconUrl} size={28} /> : <LockOutlinedIcon />}
           </Box>
         }

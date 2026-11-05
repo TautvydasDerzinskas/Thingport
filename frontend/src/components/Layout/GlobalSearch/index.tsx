@@ -381,7 +381,7 @@ export default function GlobalSearch({
     label: tool.manifest.name,
     keywords: ["tool", "app", ...tool.manifest.name.toLowerCase().split(/\s+/)],
     icon: (
-      <Box sx={{ display: "flex", color: "primary.main" }}>
+      <Box sx={{ display: "flex", color: (th) => th.thingport.accentText }}>
         <ToolIcon iconUrl={tool.manifest.iconUrl} size={20} />
       </Box>
     ),

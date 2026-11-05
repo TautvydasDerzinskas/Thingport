@@ -31,7 +31,7 @@ export default function CountCard({ icon, count, label, onClick }: Props) {
         }),
       }}
     >
-      <Typography component="div" sx={{ color: "primary.main", display: "flex" }}>
+      <Typography component="div" sx={{ color: (theme) => theme.thingport.accentText, display: "flex" }}>
         {icon}
       </Typography>
       <Typography variant="h3" fontWeight={700} sx={{ lineHeight: 1, color: (theme) => theme.thingport.headingText }}>
