@@ -19,8 +19,8 @@
 //   --out                 RELEASE_SHOTS_OUT          output folder, default release-notes/screenshots
 //   --headed                                         show the browser
 //
-// Shots needing something the instance doesn't have -- a Claude AI, social features or chats switched on, a second
-// account -- are skipped with a line saying so, and the rest still run. Nothing in the library is changed: dialogs
+// Shots needing something the instance doesn't have -- a Claude AI, a Studio design with an Ask AI answer, chats
+// switched on, a second account -- are skipped with a line saying so, and the rest still run. Nothing in the library is changed: dialogs
 // and panels are only opened. Email addresses are blurred. The accounts' themes, and the admin's Studio prompt layout,
 // are switched for the run and restored afterwards.
 //
@@ -173,6 +173,16 @@ async function openStudio(page) {
   await settle(page, 3000);
 }
 
+/** Ask AI's picker set to `model`, when it's still offered; otherwise left as it is. */
+async function pickModel(page, model) {
+  const picker = page.getByRole("combobox", { name: "AI model" });
+  if (!model || !(await picker.isVisible().catch(() => false))) return;
+  await picker.click();
+  const option = page.getByRole("option", { name: model }).first();
+  if (await option.isVisible().catch(() => false)) await option.click();
+  else await page.keyboard.press("Escape");
+}
+
 const SHOTS = [
   {
     name: "studio-ai",
@@ -180,14 +190,13 @@ const SHOTS = [
       // Beside the view rather than over it, so the conversation and the design both show.
       await api("PATCH", "/studio/settings", { prompt_layout: "panel" });
       await openStudio(page);
-      // The design's conversation doesn't say which AI had it; the shot is about what Claude does, when it's there.
-      const model = page.getByRole("combobox", { name: "AI model" });
-      if (await model.isVisible().catch(() => false)) {
-        await model.click();
-        const claude = page.getByRole("option", { name: /claude/i }).first();
-        if (await claude.isVisible().catch(() => false)) await claude.click();
-        else await page.keyboard.press("Escape");
-      }
+      // The picker shows the AI that wrote the conversation's last answer, so the two agree. It's the page's own
+      // design, which is the latest when none was named.
+      const opened = new URL(page.url()).searchParams.get("design");
+      const thread = opened ? await api("GET", `/studio/designs/${encodeURIComponent(opened)}/assistant`) : null;
+      const answer = thread?.messages.findLast((message) => message.role === "assistant");
+      if (!answer) return { skip: "the design has no Ask AI answer to show" };
+      await pickModel(page, answer.model);
       // The steps the answer took, folded under it until asked for.
       const steps = page.getByRole("button", { name: /^\d+ steps?$/ }).last();
       if (await steps.isVisible().catch(() => false)) await steps.click();
@@ -341,6 +350,16 @@ const SHOTS = [
         if (!(await first.isVisible().catch(() => false))) return { skip: "no chats yet" };
         await first.click();
       }
+      // A chat that opened has somewhere to write; a stale or mistyped --chat gets an error instead.
+      const composer = page.getByPlaceholder(/^Message /);
+      if (
+        !(await composer.waitFor({ timeout: 15000 }).then(
+          () => true,
+          () => false,
+        ))
+      ) {
+        return { skip: "the chat didn't open: check --chat" };
+      }
       await settle(page, 1500);
     },
   },
@@ -364,10 +383,23 @@ if (!version) {
 }
 const missing = { viewer: !viewerEmail || !viewerPassword };
 const wanted = SHOTS.filter((shot) => !only.length || only.includes(shot.name));
+if (only.length && !wanted.length) {
+  console.error(`No shot is named ${only.join(", ")}. Shots: ${SHOTS.map((shot) => shot.name).join(", ")}.`);
+  process.exit(1);
+}
+// Sign-in takes the email trimmed and in any case, so this is the same account however it's typed.
+const sameAccount = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+if (viewerEmail && sameAccount(viewerEmail, email)) {
+  console.error("--viewer-email must be another account: Explore leaves out the viewer's own shares.");
+  process.exit(1);
+}
 
 const browser = await chromium.launch({ headless: !args.headed });
 
-/** A signed-in browser context of its own, with the run's theme on its account until `restore`. */
+// What puts each account's theme back at the end, newest first.
+const restores = [];
+
+/** A signed-in browser context of its own, with the run's theme on its account until the end of the run. */
 async function signIn(accountEmail, accountPassword) {
   const context = await browser.newContext({
     baseURL: baseUrl,
@@ -406,30 +438,32 @@ async function signIn(accountEmail, accountPassword) {
     return res.json();
   };
   const originalTheme = (await api("GET", "/settings/theme")).theme;
-  await api("PATCH", "/settings/theme", { theme });
-  await page.emulateMedia({ colorScheme: theme });
-  const restore = () =>
+  // Before the theme changes, so a failure right after it still puts it back.
+  restores.unshift(() =>
     api("PATCH", "/settings/theme", { theme: originalTheme }).catch((err) =>
       console.error(`Couldn't restore ${accountEmail}'s theme (${originalTheme}): ${err.message}`),
-    );
-  return { page, api, restore };
+    ),
+  );
+  await api("PATCH", "/settings/theme", { theme });
+  await page.emulateMedia({ colorScheme: theme });
+  return { page, api };
 }
 
-const sessions = [];
 let originalLayout;
 let admin;
 try {
   admin = await signIn(email, password);
-  sessions.push(admin);
   if (wanted.some((shot) => shot.name.startsWith("studio-"))) {
-    originalLayout = (await admin.api("GET", "/studio/settings")).prompt_layout;
+    // An instance older than Studio has none to read, and its Studio shots fail on their own.
+    originalLayout = await admin.api("GET", "/studio/settings").then(
+      (settings) => settings.prompt_layout,
+      () => undefined,
+    );
   }
   let viewerPage;
   const viewer = async () => {
     if (!viewerPage) {
-      const session = await signIn(viewerEmail, viewerPassword);
-      sessions.push(session);
-      viewerPage = session.page;
+      viewerPage = (await signIn(viewerEmail, viewerPassword)).page;
     }
     return viewerPage;
   };
@@ -474,6 +508,6 @@ try {
       .api("PATCH", "/studio/settings", { prompt_layout: originalLayout })
       .catch((err) => console.error(`Couldn't restore the Studio prompt layout (${originalLayout}): ${err.message}`));
   }
-  for (const session of sessions) await session.restore();
+  for (const restore of restores) await restore();
   await browser.close();
 }

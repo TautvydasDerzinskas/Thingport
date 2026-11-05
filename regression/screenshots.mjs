@@ -540,12 +540,14 @@ const SHOTS = [
       // The bodies are built in a worker once the design arrives, and the camera eases onto them.
       await page.locator("canvas").first().waitFor();
       await page.waitForTimeout(3000);
-      // The conversation doesn't say which AI had it; the shot shows Claude when it's offered.
-      const model = page.getByRole("combobox", { name: "AI model" });
-      if (await model.isVisible().catch(() => false)) {
-        await model.click();
-        const claude = page.getByRole("option", { name: /claude/i }).first();
-        if (await claude.isVisible().catch(() => false)) await claude.click();
+      // The picker shows the AI that wrote the conversation's last answer, so the two agree.
+      const thread = await ctx.api("GET", `/studio/designs/${encodeURIComponent(ctx.studioDesign)}/assistant`);
+      const model = thread.messages.findLast((message) => message.role === "assistant")?.model;
+      const picker = page.getByRole("combobox", { name: "AI model" });
+      if (model && (await picker.isVisible().catch(() => false))) {
+        await picker.click();
+        const option = page.getByRole("option", { name: model }).first();
+        if (await option.isVisible().catch(() => false)) await option.click();
         else await page.keyboard.press("Escape");
       }
     },
