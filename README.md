@@ -303,7 +303,8 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 
 ## Features
 
-- **[Import from 17 sites](docs/features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader and GrabCAD
+- **[Import from 18 sites](docs/features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD and Meshy
+- **[Your own import queue, in one line that survives a restart](docs/features/importing.md#the-import-queue)**
 - **[Import bookmarklet](docs/guides/bookmarklet.md)**
 - **[Synced collections](docs/guides/synced-collections.md)**
 - **[Bring your existing library](docs/guides/existing-library.md)**
@@ -311,7 +312,8 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[3D previews](docs/features/3d-previews.md)**
 - **[Multicolour models in their own colours](docs/features/3d-previews.md)**
 - **[Print quality checks](docs/features/print-quality.md)**
-- **[AI categorization and descriptions](docs/guides/ai.md)**
+- **[Studio: design parts with an AI, or by hand](docs/guides/studio.md)**
+- **[AI categorization and descriptions, on a local model or Claude](docs/guides/ai.md)**
 - **[Organize, search and bulk-edit](docs/features/organize-and-search.md)**
 - **[Dashboard](docs/features/dashboard.md)**
 - **[Profile and activity](docs/features/profile-and-activity.md)**
@@ -324,6 +326,7 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[Plain files on your disk](docs/features/storage.md)**
 - **[Repair models whose files are gone](docs/features/storage.md#when-the-files-are-gone)**
 - **[Multi-user](docs/features/multi-user.md)**
+- **[Share collections and chat with your household](docs/features/multi-user.md#sharing-with-each-other)**
 - **[Single sign-on](docs/guides/single-sign-on.md)**
 - **[Administration](docs/features/administration.md)**
 - **[System Health](docs/guides/system-health.md)**

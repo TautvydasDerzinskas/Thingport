@@ -11,12 +11,14 @@ import preview3d from "../../../../frontend/src/assets/screenshots/light/07_mode
 import preview3dDark from "../../../../frontend/src/assets/screenshots/dark/07_model_3d_preview.png";
 import customize from "../../../../frontend/src/assets/screenshots/light/35_model_customize.png";
 import customizeDark from "../../../../frontend/src/assets/screenshots/dark/35_model_customize.png";
+import studio from "../../../../frontend/src/assets/screenshots/light/41_studio.png";
+import studioDark from "../../../../frontend/src/assets/screenshots/dark/41_studio.png";
+import explore from "../../../../frontend/src/assets/screenshots/light/42_explore.png";
+import exploreDark from "../../../../frontend/src/assets/screenshots/dark/42_explore.png";
 import tags from "../../../../frontend/src/assets/screenshots/light/11_tags.png";
 import tagsDark from "../../../../frontend/src/assets/screenshots/dark/11_tags.png";
 import downloads from "../../../../frontend/src/assets/screenshots/light/13_downloads.png";
 import downloadsDark from "../../../../frontend/src/assets/screenshots/dark/13_downloads.png";
-import myModels from "../../../../frontend/src/assets/screenshots/light/33_my_models.png";
-import myModelsDark from "../../../../frontend/src/assets/screenshots/dark/33_my_models.png";
 import profile from "../../../../frontend/src/assets/screenshots/light/14_profile.png";
 import profileDark from "../../../../frontend/src/assets/screenshots/dark/14_profile.png";
 import toolWindow from "../../../../frontend/src/assets/screenshots/light/32_tool_window.png";
@@ -44,7 +46,7 @@ const SECTIONS: FeatureSection[] = [
     points: [
       `Paste a model link from MakerWorld, Printables, Thingiverse or ${otherSites} other sites, or any direct link to a model file.`,
       "No extension? Click the bookmarklet in your bookmarks bar on a model's page, and Thingport opens with the link ready to import.",
-      "Import whole collections and your likes in one go. Imports take turns in a queue you follow from the top bar, with a notification when they finish.",
+      "Import whole collections and your likes in one go. Imports take turns in one line that survives a restart, everyone follows their own from Add in the top bar, and a notification says when they finish.",
       "A model you already have is never imported twice, so running a collection import again only brings in what's new.",
       "Sync a collection, and models added to it later are imported on their own.",
       "Bring in a MakerWorld model's print profiles too: the designer's own, or all of them. Models with only STL/CAD files come in too.",
@@ -159,6 +161,27 @@ const SECTIONS: FeatureSection[] = [
     alt: "The customizer, with a model's own parameters beside the shape they generate",
   },
   {
+    id: "studio",
+    short: "Studio",
+    icon: "compass",
+    title: "Design parts with an AI",
+    intro:
+      "Studio is a CAD page built for an AI to drive from start to finish: every change you can make to a design is a tool the AI can use.",
+    points: [
+      "Describe a part in the Ask AI box, or select something and ask for a change to it, and watch the AI build it step by step with the same tools as the toolbar.",
+      "Each step lands in the view as it's made and undoes like one of yours, and the AI checks its own work for printing as it goes.",
+      "Bring in a model from your library for it to rework, or, with an AI that sees pictures, a photo or a drawing with sizes on it to build from.",
+      "How far it gets is down to the model: Claude and other frontier models take a paragraph to a finished, printable part, and a small local model manages simple ones.",
+      "Or build it yourself: sketches, extrudes, fillets, holes, shells, threads, patterns and text, in a list of features that stays editable.",
+      "Download an STL, or save the design to your library as a model with its picture.",
+      "An assistant connected over MCP gets the same tools, and you watch its changes appear on the page.",
+    ],
+    link: { label: "Studio", href: url("docs/guides/studio/") },
+    image: studio,
+    dark: studioDark,
+    alt: "Studio with a desk organizer the AI built, and the conversation that built it beside it",
+  },
+  {
     id: "organize",
     short: "Organize",
     icon: "folder",
@@ -183,15 +206,16 @@ const SECTIONS: FeatureSection[] = [
     id: "ai",
     short: "AI",
     icon: "sparkle",
-    title: "Let AI tidy up your library",
+    title: "Put AI to work on your library",
     intro:
-      "Optional AI features, on a model running on your own hardware or a cloud API of your choice. Off until an admin adds a model.",
+      "Optional AI features, on a model running on your own hardware, a cloud API of your choice, or Claude. Off until an admin adds a model.",
     points: [
       "AI categorization sorts models into your own categories from their title, description, tags and photo. It never makes up new ones.",
       "Improved descriptions strips self-promotion and boost requests, translates descriptions into English, fixes spelling and formatting, and writes one where there's none.",
       "Review each suggestion before it's applied, or let confident ones apply on their own. Original descriptions are kept, so any change can be reverted.",
       "Runs on every new import, on one model, or over your whole library in the background.",
-      "Works with Claude, and with Ollama, LM Studio, vLLM, OpenAI, OpenRouter, Gemini and other OpenAI-compatible APIs. With a local model, nothing leaves your network.",
+      "In Studio, Ask AI designs parts and changes them with you, step by step.",
+      "Works with Claude, through Anthropic's own API, and with Ollama, LM Studio, vLLM, OpenAI, OpenRouter, Gemini and other OpenAI-compatible APIs. With a local model, nothing leaves your network.",
     ],
     link: { label: "AI categorization and descriptions", href: url("docs/guides/ai/") },
     image: aiSuggestions,
@@ -275,18 +299,21 @@ const SECTIONS: FeatureSection[] = [
     short: "Multi-user",
     icon: "users",
     title: "Made to share with your household",
-    intro: "One server, separate libraries for everyone who prints.",
+    intro: "One server, separate libraries for everyone who prints, and as much sharing between them as you like.",
     points: [
       "Multiple user accounts. The first person to sign up becomes the admin.",
+      "Share collections with each other once an admin turns on social features: a collection can be public, and Explore shows who shares and what they've added.",
+      "Add someone else's model to a collection of yours and it's your own copy, which stays if theirs goes.",
+      "Chats: direct messages and rooms, with models sent in them, all on your own server.",
       "Open sign-up, or invite-only with email invitations. Optional email verification and captcha.",
       "Single sign-on with Authentik, Pocket ID, Keycloak or any other OpenID Connect provider, next to email and password.",
       "Light and dark themes, an accent colour of your own, in English, Spanish, French and Lithuanian.",
       "On a phone, the menu, the top bar and the model filters fit the narrow screen.",
     ],
-    link: { label: "Single sign-on", href: url("docs/guides/single-sign-on/") },
-    image: myModels,
-    dark: myModelsDark,
-    alt: "A user's own models in Thingport",
+    link: { label: "Multi-user", href: url("docs/features/multi-user/") },
+    image: explore,
+    dark: exploreDark,
+    alt: "Explore, with the people who share and the newest models they've shared",
   },
   {
     id: "admin",

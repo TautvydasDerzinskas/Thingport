@@ -2,7 +2,7 @@
 
 A browser extension for Chrome, Edge and Firefox that imports models into your self-hosted Thingport instance without
 leaving the site they're on: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
-Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader and GrabCAD.
+Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD and Meshy.
 Visiting a model page, or a collection or likes page, shows a floating Thingport icon. Clicking it opens the import
 panel: the model's picture and name as the page shows them, and one box that picks one of your collections or makes a
 new one as you type (on a list's page, the models it lists instead). It imports the same way Thingport's own
