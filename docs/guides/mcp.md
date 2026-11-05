@@ -123,6 +123,15 @@ the same token in the `Authorization: Bearer` header if the token may read **Mod
 if the token may read **Images**. With `include_pictures`, it also hands the assistant the first 8 pictures, scaled down
 to 512 px, so it can look at them, e.g. to pick a cover.
 
+`list_model_files` gives every plate a `profile` read from a 3MF's slicer settings: `title`, `printer`, `nozzle_mm`,
+`layer_height_mm`, `materials`, `plates`, `walls`, `infill_density_pct` (percent), `infill_pattern` (the slicer's key,
+e.g. `gyroid`), `supports` (`none`, `normal` or `tree`), and for a sliced 3MF `estimated_seconds`, `weight_g` (grams)
+and `plate_stats` with both per plate. A value the file doesn't state is `null`; `materials` and `plate_stats` are empty
+lists instead. The whole `profile` is `null` when the file says nothing of this, as for an STL. Supporting files and the
+sliced print (`kind` `supporting` and `prepared`) carry no `profile` field. Every plate also has `is_default`: `true` for the file the source site
+itself offers as its default (MakerWorld's default print profile, normally one per model), `false` for the others,
+including models imported before this was recorded and ones from other sites.
+
 `save_tool` needs tools turned on for you, with **Users' own tools** switched on, under **Administration → Tools**;
 `list_tools` says so when they aren't, so the assistant can tell you what to ask an admin for. A tool it saves is yours
 alone, and it can't bring models of its own — only a tool in the Thingport repository does that, where its files are
