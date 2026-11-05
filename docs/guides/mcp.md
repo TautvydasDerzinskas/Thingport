@@ -127,7 +127,7 @@ to 512 px, so it can look at them, e.g. to pick a cover.
 `layer_height_mm`, `materials`, `plates`, `walls`, `infill_density_pct` (percent), `infill_pattern` (the slicer's key,
 e.g. `gyroid`), `supports` (`none`, `normal` or `tree`), and for a sliced 3MF `estimated_seconds`, `weight_g` (grams)
 and `plate_stats` with both per plate. A value the file doesn't state is `null`; `materials` and `plate_stats` are empty
-lists instead. The whole `profile` is `null` when the file says nothing of this, as for an STL. Supporting files and the
+lists instead. The whole `profile` is `null` when the file says nothing of this, as for an STL, or can't be read whole. Supporting files and the
 sliced print (`kind` `supporting` and `prepared`) carry no `profile` field. Every plate also has `is_default`: `true` for the file the source site
 itself offers as its default (MakerWorld's default print profile, normally one per model), `false` for the others,
 including models imported before this was recorded and ones from other sites.

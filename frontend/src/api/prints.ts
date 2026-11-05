@@ -52,7 +52,7 @@ export type Plate = {
   preview_glb_url?: string | null; // /plate/{plateId}/preview.glb?v=... once background pre-render finishes
   render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
   own_colors?: boolean; // the file carries colours of its own, so our picture of it is a colour render
-  profile?: PlateProfile | null; // slicer profile of a 3MF; null for other formats or when unreadable
+  profile?: PlateProfile | null; // slicer profile of a 3MF; null for other formats, when unreadable or not read yet
   is_default?: boolean; // the source site offers this file as its default; normally one file of a model
 };
 
