@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UnauthorizedError } from "./client";
-import { adminQueueApi, importQueueApi, toSubmitAnswer } from "./imports";
+import { adminQueueApi, importQueueApi, importsApi, toSubmitAnswer } from "./imports";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -189,5 +189,24 @@ describe("adminQueueApi", () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`/api/admin/import-queue/${route}?queue=1`);
     await call("user 1");
     expect(fetchMock.mock.calls[1][0]).toBe(`/api/admin/import-queue/${route}?queue=1&user_id=user+1`);
+  });
+});
+
+describe("importsApi.listZipEntries", () => {
+  it("gives a linked zip's files by path, its folders left out", async () => {
+    stubFetch(() =>
+      json({
+        filename: "pack.zip",
+        entries: [
+          { name: "parts/", size: 0, isDirectory: true },
+          { name: "parts/hull.stl", size: 120, isDirectory: false },
+        ],
+      }),
+    );
+
+    await expect(importsApi.listZipEntries({ url: "https://example.com/pack.zip" })).resolves.toEqual({
+      filename: "pack.zip",
+      entries: [{ path: "parts/hull.stl", size: 120 }],
+    });
   });
 });

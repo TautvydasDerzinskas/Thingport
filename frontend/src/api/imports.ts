@@ -15,6 +15,9 @@ export type ZipEntryInfo = {
   size: number;
 };
 
+/** An entry as /import/zip/entries sends it: by `name`, folders listed as entries of their own. */
+type ZipEntryReply = { name: string; size: number; isDirectory: boolean };
+
 export type ImportCollectionEntry = {
   design_id: string;
   title: string;
@@ -323,7 +326,12 @@ export const importsApi = {
       const message = await readErrorMessage(res, "Zip listing failed");
       throw new Error(message);
     }
-    return res.json();
+    // The picker takes a zip's files by path, as it does a zip read in the browser.
+    const { filename, entries } = (await res.json()) as { filename: string; entries: ZipEntryReply[] };
+    return {
+      filename,
+      entries: entries.filter((entry) => !entry.isDirectory).map(({ name, size }) => ({ path: name, size })),
+    };
   },
 
   /** A provider's collection, likes or bookmarks, to pick models from. */
