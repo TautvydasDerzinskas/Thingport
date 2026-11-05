@@ -11,7 +11,8 @@ export default {
     "cults3d-api": { exact: ["cults3d.com"] },
     "cults3d-session": { exact: ["cults3d.com"] },
   },
-  endpoints: { downloads: "https://download.cults3d.com" },
+  // Where its download pages send the files: zips it makes of a model's files, and the designers' own uploads.
+  endpoints: { downloads: "https://download.cults3d.com", uploads: "https://downloader.cults3d.com" },
   brand: {
     logo: {
       viewBox: "0 0 260 260",

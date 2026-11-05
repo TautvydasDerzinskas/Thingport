@@ -1,4 +1,4 @@
-import type { AiConnection, Prisma, ReasoningEffort } from "@prisma/client";
+import type { AiConnection, AiProviderKind, Prisma, ReasoningEffort } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { normalizeAiBaseUrl } from "./settingsService";
@@ -6,19 +6,34 @@ import { normalizeAiBaseUrl } from "./settingsService";
 /** What a request to a provider needs, whether the connection is saved or only typed into the form. */
 export type AiProvider = Pick<
   AiConnection,
-  "baseUrl" | "apiKey" | "model" | "timeoutMs" | "concurrency" | "reasoningEffort"
+  "kind" | "baseUrl" | "apiKey" | "model" | "timeoutMs" | "concurrency" | "reasoningEffort"
 >;
 
 export type AiConnectionInput = {
+  /** OpenAI-compatible unless said otherwise. */
+  kind?: AiProviderKind;
   baseUrl: string;
   apiKey: string | null;
   model: string;
   timeoutMs: number;
   concurrency: number;
   reasoningEffort: ReasoningEffort | null;
+  /** Takes pictures in a prompt; guessed from the model when not given. */
+  vision?: boolean;
 };
 
+// Models whose names say they take pictures: Claude, OpenAI's multimodal ones, Gemini, and the open vision models. The
+// migration that brought the setting in starts the AIs already saved on the same guess.
+const VISION_MODELS =
+  /(gpt-4o|gpt-4\.1|gpt-4-turbo|gpt-5|^o[134](?:[-_]|$)|gemini|claude|llava|vision|vl(?:[-_:.]|$)|gemma-?3|minicpm-v|pixtral|llama-?4|mistral-small-?3\.[12]|moondream|internvl|multimodal|omni)/i;
+
+/** Whether an AI takes pictures, as far as its kind and model name tell: what a new one starts with. */
+export function guessVision(kind: AiProviderKind, model: string): boolean {
+  return kind === "anthropic" || VISION_MODELS.test(model);
+}
+
 export const DEFAULT_AI_PROVIDER: Omit<AiProvider, "baseUrl" | "model"> = {
+  kind: "openai",
   apiKey: null,
   timeoutMs: 60000,
   concurrency: 1,
@@ -63,6 +78,7 @@ export async function resolveAiProvider(id: string | null | undefined): Promise<
   const connection = await resolveAiConnection(id);
   if (!connection) return { ...DEFAULT_AI_PROVIDER, baseUrl: null, model: null, connectionId: null };
   return {
+    kind: connection.kind,
     baseUrl: connection.baseUrl,
     apiKey: connection.apiKey,
     model: connection.model,
@@ -82,7 +98,8 @@ export async function createAiConnection(input: AiConnectionInput): Promise<AiCo
     return tx.aiConnection.create({
       data: {
         ...input,
-        baseUrl: normalizeAiBaseUrl(input.baseUrl) ?? input.baseUrl,
+        vision: input.vision ?? guessVision(input.kind ?? DEFAULT_AI_PROVIDER.kind, input.model),
+        baseUrl: normalizeAiBaseUrl(input.baseUrl, input.kind) ?? input.baseUrl,
         isDefault: !hasDefault,
         position: last ? last.position + 1 : 0,
       },
@@ -91,10 +108,14 @@ export async function createAiConnection(input: AiConnectionInput): Promise<AiCo
 }
 
 export async function updateAiConnection(id: string, patch: Partial<AiConnectionInput>): Promise<AiConnection> {
-  await getAiConnection(id);
+  const saved = await getAiConnection(id);
+  const kind = patch.kind ?? saved.kind;
   return prisma.aiConnection.update({
     where: { id },
-    data: { ...patch, ...(patch.baseUrl !== undefined ? { baseUrl: normalizeAiBaseUrl(patch.baseUrl) ?? "" } : {}) },
+    data: {
+      ...patch,
+      ...(patch.baseUrl !== undefined ? { baseUrl: normalizeAiBaseUrl(patch.baseUrl, kind) ?? "" } : {}),
+    },
   });
 }
 

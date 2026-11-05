@@ -13,6 +13,7 @@ import {
 import { checkPlateQuality } from "./modelPreviewCache";
 import { resolvePlateFilePath } from "./printCreation";
 import { getQualityChecks, getQualityChecksOff } from "./settingsService";
+import { readablePrintWhere } from "./socialService";
 
 // Printability checks run when a model is opened, never on import: each file is checked once, the first time its
 // model is viewed with checks switched on, and again only when the rules change (QUALITY_CHECK_VERSION).
@@ -95,12 +96,16 @@ async function toPrintQualityOut(plates: Plate[]): Promise<PrintQualityOut> {
   return { enabled: true, status, files };
 }
 
+/** Another user's shared model too: a check reads the files, and what it finds is the file's, not the owner's. */
 async function ownedPlates(userId: string, printId: string): Promise<Plate[] | null> {
-  const print = await prisma.print.findFirst({ where: { id: printId, userId }, include: { plates: true } });
+  const print = await prisma.print.findFirst({
+    where: { id: printId, AND: [await readablePrintWhere(userId)] },
+    include: { plates: true },
+  });
   return print ? print.plates : null;
 }
 
-/** Null when the model isn't the user's. */
+/** Null when the model isn't one the user may read. */
 export async function printQuality(userId: string, printId: string): Promise<PrintQualityOut | null> {
   const plates = await ownedPlates(userId, printId);
   if (!plates) return null;

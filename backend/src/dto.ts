@@ -208,6 +208,19 @@ export type PrintOut = {
   /** What "Fetch missing details" could still fill. Null where the preview images weren't
    *  loaded (list endpoints), since an images gap can't be told without them. */
   source_gaps: SourceGap[] | null;
+  /** Set on another user's model, from one of their public collections (services/socialService.ts): whose it is. Null
+   *  on the viewer's own. */
+  owner: UserCardOut | null;
+  /** On another user's model: the viewer's own copy of it, once they have one. */
+  library_copy_id: string | null;
+};
+
+/** Another of the instance's users, as social features show them: never their email. */
+export type UserCardOut = {
+  id: string;
+  display_name: string;
+  /** Of the provider profile they linked as themselves, when it has one. */
+  avatar_url: string | null;
 };
 
 export type CategoryOut = {
@@ -419,6 +432,8 @@ export function toPrintOut(
     source_provider: print.sourceProvider,
     source_url: buildImportSourceUrl(print.sourceProvider, print.sourceExternalId),
     source_gaps: previewImages ? openSourceGaps(print, previewImages) : null,
+    owner: null,
+    library_copy_id: null,
   };
 }
 
@@ -440,6 +455,10 @@ export type CollectionOut = {
   sync: CollectionSyncOut | null;
   /** Set on the collection of a tool's models: fixed, and gone when the tool is uninstalled. */
   tool_id: string | null;
+  /** Shown to the instance's other users while social features are on. */
+  is_public: boolean;
+  /** Set on another user's public collection: whose it is. Null on the viewer's own. */
+  owner: UserCardOut | null;
 };
 
 export type SyncProfileScope = "url" | "designer" | "all";
@@ -499,6 +518,8 @@ export function toCollectionOut(
     bookmarked,
     sync: sync ? toCollectionSyncOut(sync) : null,
     tool_id: collection.toolId ?? null,
+    is_public: collection.isPublic,
+    owner: null,
   };
 }
 
@@ -522,6 +543,8 @@ export function toSystemCollectionOut(
     bookmarked: false,
     sync: null,
     tool_id: null,
+    is_public: false,
+    owner: null,
   };
 }
 

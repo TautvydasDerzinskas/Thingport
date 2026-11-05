@@ -12,7 +12,8 @@ import { modelUpload } from "../uploadMiddleware";
 import { resolvePlateFilePath } from "../services/printCreation";
 import { createUploadedModel } from "../services/uploadService";
 import { plateThumbPath, relocatePrintsForToken } from "../services/printService";
-import { setPrintCategory } from "../services/printCategoryService";
+import { assignCategory, setPrintCategory } from "../services/printCategoryService";
+import { mergeModels } from "../services/modelMergeService";
 import { previewImagePath } from "../services/previewImageService";
 import { descriptionImagePath } from "../services/descriptionImageService";
 import { deleteAuthorIfOrphaned } from "../services/authorService";
@@ -34,6 +35,7 @@ import {
   type PrintFilters,
 } from "../services/printQuery";
 import { printQuality, startPrintQualityCheck } from "../services/modelQualityService";
+import { readableCollection, readablePrintOutById, readablePrintWhere, withOwners } from "../services/socialService";
 
 const router = Router();
 router.use(requireAuth);
@@ -164,11 +166,16 @@ router.get(
       if (!Number.isFinite(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
     }
 
-    const page = await listPrints(req.userId!, printFiltersFromQuery(req), {
+    const filters = printFiltersFromQuery(req);
+    // Another user's public collection lists as its owner's, the models in it marked as theirs.
+    const shared = filters.collectionId ? await readableCollection(req.userId!, filters.collectionId) : null;
+    const listAs = shared && shared.userId !== req.userId ? shared.userId : req.userId!;
+    const page = await listPrints(listAs, filters, {
       sort: parseSortMode(req.query.orderBy),
       limit,
       offset,
     });
+    if (listAs !== req.userId) page.prints = await withOwners(req.userId!, page.prints);
     if (limit !== undefined) {
       res.setHeader("X-Has-More", page.hasMore ? "true" : "false");
       res.setHeader("X-Next-Offset", String(page.nextOffset));
@@ -191,12 +198,13 @@ router.get(
 router.get(
   "/print/:id",
   asyncHandler(async (req, res) => {
-    // Counts owner views too: lastViewedAt drives Browsing History.
+    // Counts owner views too: lastViewedAt drives Browsing History. Another user's views of a shared model are theirs,
+    // and nothing of the owner's.
     await prisma.print.updateMany({
       where: { id: req.params.id, userId: req.userId },
       data: { viewCount: { increment: 1 }, lastViewedAt: new Date() },
     });
-    res.json(await printOutById(req.userId!, req.params.id));
+    res.json(await readablePrintOutById(req.userId!, req.params.id));
   }),
 );
 
@@ -255,7 +263,11 @@ router.post(
       where: { id: req.params.id, userId: req.userId },
       data: { printCount: { increment: 1 } },
     });
-    if (result.count === 0) throw new HttpError(404, "Print not found");
+    // A shared model's counts and activity are its owner's, so another user's use of it records nothing.
+    if (result.count === 0) {
+      res.json(await readablePrintOutById(req.userId!, req.params.id));
+      return;
+    }
     const print = await printOutById(req.userId!, req.params.id);
     void recordActivity(req.userId!, kind, req.params.id, print.name);
     res.json(print);
@@ -303,8 +315,9 @@ router.post(
     assertDownloadFilterGiven(body);
     const prints = await resolvePrintsForDownload(req.userId!, body);
 
-    // Tag and collection downloads span categories, so they skip per-category subfolders.
-    const flatten = Boolean(body.tag || body.collection_id);
+    // Tag and collection downloads span categories, so they skip per-category subfolders; so do another user's models,
+    // whose categories are theirs.
+    const flatten = Boolean(body.tag || body.collection_id) || prints.some((print) => print.userId !== req.userId);
 
     let downloadName = body.filename || "thingport.zip";
     if (body.tag) {
@@ -319,7 +332,7 @@ router.post(
       }
     }
     if (body.collection_id) {
-      const collection = await prisma.collection.findFirst({ where: { id: body.collection_id, userId: req.userId } });
+      const collection = await readableCollection(req.userId!, body.collection_id);
       if (collection) {
         const safeName = collection.name.replace(/ /g, "_").slice(0, 50) || "collection";
         downloadName = `${safeName}.zip`;
@@ -333,7 +346,7 @@ router.get(
   "/print/:id/plate/:plateId/file/:filename",
   asyncHandler(async (req, res) => {
     const plate = await prisma.plate.findFirst({
-      where: { id: req.params.plateId, printId: req.params.id, print: { userId: req.userId } },
+      where: { id: req.params.plateId, printId: req.params.id, print: await readablePrintWhere(req.userId!) },
       include: { print: { select: { preparedMetadata: true } } },
     });
     if (!plate) throw new HttpError(404, "Not found");
@@ -355,7 +368,7 @@ router.post(
   "/print/:id/plate/:plateId/normalize",
   asyncHandler(async (req, res) => {
     const plate = await prisma.plate.findFirst({
-      where: { id: req.params.plateId, printId: req.params.id, print: { userId: req.userId } },
+      where: { id: req.params.plateId, printId: req.params.id, print: await readablePrintWhere(req.userId!) },
       include: { print: { select: { preparedMetadata: true } } },
     });
     if (!plate) throw new HttpError(404, "Not found");
@@ -372,7 +385,7 @@ router.get(
   "/print/:id/thumb.jpg",
   asyncHandler(async (req, res) => {
     const plate0 = await prisma.plate.findFirst({
-      where: { printId: req.params.id, print: { userId: req.userId } },
+      where: { printId: req.params.id, print: await readablePrintWhere(req.userId!) },
       orderBy: { position: "asc" },
       include: { print: { select: { assetsPath: true } } },
     });
@@ -389,7 +402,7 @@ router.get(
   "/description-image/:id",
   asyncHandler(async (req, res) => {
     const image = await prisma.descriptionImage.findFirst({
-      where: { id: req.params.id, print: { userId: req.userId } },
+      where: { id: req.params.id, print: await readablePrintWhere(req.userId!) },
       include: { print: { select: { assetsPath: true } } },
     });
     if (!image) throw new HttpError(404, "Not found");
@@ -406,7 +419,7 @@ router.get(
   "/preview-image/:id/file.jpg",
   asyncHandler(async (req, res) => {
     const image = await prisma.previewImage.findFirst({
-      where: { id: req.params.id, print: { userId: req.userId } },
+      where: { id: req.params.id, print: await readablePrintWhere(req.userId!) },
       include: { print: { select: { assetsPath: true } } },
     });
     if (!image) throw new HttpError(404, "Not found");
@@ -580,6 +593,50 @@ router.post(
         details: { field: "tags", name: print.name },
       });
     }
+  }),
+);
+
+const bulkCategorySchema = bulkPrintIdsSchema.extend({ category_id: z.string() });
+router.post(
+  "/prints/category",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(bulkCategorySchema, req.body);
+    const { assigned, skipped, failed } = await assignCategory(req.userId!, body.print_ids, body.category_id);
+    for (const print of assigned) {
+      void createLog({
+        userId: req.userId!,
+        action: "model_edited",
+        targetId: print.id,
+        details: { field: "category", name: print.name },
+      });
+    }
+    const out = await printOutsByIds(
+      req.userId!,
+      assigned.map((print) => print.id),
+    );
+    res.json({ prints: assigned.flatMap((print) => out.get(print.id) ?? []), skipped, failed });
+  }),
+);
+
+// `ids` are merged into `primary_id` and deleted; it may list `primary_id` too.
+const mergeModelsSchema = z.object({ primary_id: z.string(), ids: z.array(z.string()).min(1).max(500) });
+router.post(
+  "/prints/merge",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(mergeModelsSchema, req.body);
+    const { primary, merged } = await mergeModels(req.userId!, body.primary_id, body.ids);
+    void createLog({
+      userId: req.userId!,
+      action: "models_merged",
+      targetId: primary.id,
+      details: { name: primary.name, merged: merged.map((print) => print.name) },
+    });
+    // The others are gone by now, so an error here would offer a retry that can only answer 404.
+    const print = await printOutById(req.userId!, primary.id).catch((error: unknown) => {
+      console.error(`Couldn't read back merged model ${primary.id}:`, error);
+      return null;
+    });
+    res.json({ print, merged_ids: merged.map((other) => other.id) });
   }),
 );
 

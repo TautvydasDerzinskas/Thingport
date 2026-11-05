@@ -7,8 +7,9 @@ import { assertNotToolCollections, assertNotToolModels } from "../services/tools
 // for every route that would change one, rather than in each; editing and deleting a model are also refused by
 // printEditService, for the MCP tools.
 
-// What may still be done to a tool's model: things about the user's use of it, not the model itself.
-const PRINT_ALLOWED = [/^favorite$/, /^download$/, /^quality$/, /^plate\/[^/]+\/normalize$/];
+// What may still be done to a tool's model: things about the user's use of it, not the model itself. A copy is the
+// copier's own model, which leaves this one as it was.
+const PRINT_ALLOWED = [/^favorite$/, /^download$/, /^quality$/, /^plate\/[^/]+\/normalize$/, /^copy$/];
 
 const ids = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];

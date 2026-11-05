@@ -89,10 +89,15 @@ jobs:
             // Read now, not from the event, so an edit made while this waited to run isn't overwritten.
             const { data: pull } = await github.rest.pulls.get({ ...context.repo, pull_number: context.issue.number });
             const typed = (pull.body ?? '').replace(/<!-- release-pr -->[\s\S]*?<!-- \/release-pr -->/, '').trim();
+            // Opened in the browser, a description starts as the default template, which nobody typed.
+            const template = fs.readFileSync('.github/PULL_REQUEST_TEMPLATE.md', 'utf8').trim();
+            const untouched = typed.replace(/\r\n/g, '\n') === template;
             await github.rest.pulls.update({
               ...context.repo,
               pull_number: context.issue.number,
               // Replaced whole on each push. Anything typed outside it stays, below it.
-              body: [`<!-- release-pr -->\n${generated}\n<!-- /release-pr -->`, typed].filter(Boolean).join('\n\n'),
+              body: [`<!-- release-pr -->\n${generated}\n<!-- /release-pr -->`, !untouched && typed]
+                .filter(Boolean)
+                .join('\n\n'),
               ...(version && { title: `Release ${version}` }),
             });

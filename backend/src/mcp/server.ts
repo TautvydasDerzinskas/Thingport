@@ -22,7 +22,13 @@ export function buildMcpServer(ctx: McpToolContext, allowedTools: ReadonlySet<st
     {
       instructions:
         "Thingport is the user's self-hosted library of 3D-printable models. Find models with search_models or " +
-        "list_models, then read one with get_model. Ids from one tool are what the others take.",
+        "list_models, then read one with get_model. Ids from one tool are what the others take." +
+        ([...allowedTools].some((name) => name.startsWith("studio_"))
+          ? " Studio is Thingport's CAD page: read studio_guide first, then find or make a design with " +
+            "studio_list_designs or studio_create_design, " +
+            "read it with studio_get_design, change it with the other studio_ tools (each is a step the user can " +
+            "take on the page too) and look at it with studio_view_design. Units are mm and Z is up."
+          : ""),
     },
   );
   // registerTool's generics recurse past TypeScript's limit (TS2589) on a shape typed as any zod shape.

@@ -1,0 +1,18 @@
+{
+  "access_token": "REPLACED_IN_TEST",
+  "token_type": "bearer",
+  "expires_in": 900,
+  "expires_at": 1793834003,
+  "refresh_token": "nextrefresh2",
+  "user": {
+    "id": "0f1e2d3c-4b5a-4968-8778-695a4b3c2d1e",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "maker-one@example.com",
+    "app_metadata": {
+      "provider": "google",
+      "providers": ["google"]
+    },
+    "user_metadata": {}
+  }
+}

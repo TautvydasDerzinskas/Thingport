@@ -16,6 +16,8 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AutoFixNormalIcon from "@mui/icons-material/AutoFixNormal";
 import AddLinkIcon from "@mui/icons-material/AddLink";
+import CallMergeIcon from "@mui/icons-material/CallMerge";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { BULK_LIMIT, type Print, printsApi } from "../../api/prints";
 import { AiCategorizationError, aiCategorizationApi } from "../../api/aiCategorization";
@@ -28,8 +30,10 @@ import { useToast } from "../ToastProvider";
 import DownloadZipConfirmDialog from "../DownloadZipConfirmDialog";
 import LinkSourceDialog from "../linkSource/LinkSourceDialog";
 import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders";
+import AssignCategoryDialog from "./AssignCategoryDialog";
 import BulkEditCollectionsDialog from "./BulkEditCollectionsDialog";
 import BulkEditTagsDialog from "./BulkEditTagsDialog";
+import MergeModelsDialog from "./MergeModelsDialog";
 import SelectionToolbar, { SelectionAction } from "../selection/SelectionToolbar";
 
 type Props = {
@@ -46,11 +50,18 @@ type Props = {
   onRemovedFromCollection?: (ids: string[]) => void;
   /** Every model in the grid belongs to a tool, as in a tool's collection: what would change them isn't offered. */
   toolOwned?: boolean;
-  /** Offers linking a model with no source to its page on a provider, one at a time. */
-  offerLink?: boolean;
+  /** Every model in the grid is another user's, as in their public collection: only filing them into the user's own
+   *  collections, which copies them, and downloading are offered. */
+  shared?: boolean;
+  /** The grid shows the Folders view, where uploads get organized: offers linking one to its page on a provider,
+   *  merging several, and assigning them a category. */
+  foldersView?: boolean;
 };
 
 type Busy = "favorite" | "removeFromCollection" | "delete" | "ai" | null;
+
+/** Neither imported nor a tool's, as the backend's isOwnUpload: what merging and assigning a category work on. */
+const isOwnUpload = (print: Print) => !print.source_provider && !print.tool_id;
 
 /** A grid's select-mode toggle and, while it's on, the actions for the selected models. */
 export default function ModelSelectionToolbar({
@@ -62,9 +73,12 @@ export default function ModelSelectionToolbar({
   onUnauthorized,
   collectionId,
   onRemovedFromCollection,
-  toolOwned = false,
-  offerLink = false,
+  toolOwned: toolOwnedGrid = false,
+  shared = false,
+  foldersView = false,
 }: Props) {
+  // Neither kind may be changed here; a shared grid's models aren't the user's to favourite either.
+  const toolOwned = toolOwnedGrid || shared;
   const { t } = useTranslation(["models", "common"]);
   const confirm = useConfirm();
   const showToast = useToast();
@@ -78,6 +92,8 @@ export default function ModelSelectionToolbar({
   const [tagsOpen, setTagsOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const disabledProviders = useDisabledProviders();
   const { active, selected } = selection;
   const ids = selected.map((item) => item.id);
@@ -96,6 +112,9 @@ export default function ModelSelectionToolbar({
       : selected[0].source_provider
         ? t("models:linkSource.alreadyLinked")
         : toolHint;
+  // The rest of a mixed selection is left out, and the dialogs say so: "select all" here takes imported models too.
+  const uploads = selected.filter(isOwnUpload);
+  const skipped = count - uploads.length;
 
   // Both statuses are cached for the session, so this costs nothing after the first grid.
   useEffect(() => {
@@ -301,6 +320,7 @@ export default function ModelSelectionToolbar({
             open={addOpen}
             onClose={() => setAddOpen(false)}
             printIds={ids}
+            printNames={Object.fromEntries(selected.map((print) => [print.id, print.title || print.name]))}
             collectionId={collectionId}
             onRemovedFromCollection={onRemovedFromCollection}
             onUnauthorized={onUnauthorized}
@@ -328,6 +348,26 @@ export default function ModelSelectionToolbar({
               onUnauthorized={onUnauthorized}
             />
           )}
+          <MergeModelsDialog
+            open={mergeOpen}
+            onClose={() => setMergeOpen(false)}
+            prints={uploads}
+            skipped={skipped}
+            onMerged={(primary, mergedIds) => {
+              onDeleted(mergedIds);
+              if (primary) onUpdated([primary]);
+              selection.setActive(false);
+            }}
+            onUnauthorized={onUnauthorized}
+          />
+          <AssignCategoryDialog
+            open={categoryOpen}
+            onClose={() => setCategoryOpen(false)}
+            prints={uploads}
+            skipped={skipped}
+            onAssigned={onUpdated}
+            onUnauthorized={onUnauthorized}
+          />
         </>
       }
     >
@@ -340,22 +380,43 @@ export default function ModelSelectionToolbar({
         )}
       {!toolOwned &&
         action(t("models:selection.editTags"), <LocalOfferIcon fontSize="small" />, () => setTagsOpen(true), toolHint)}
-      {action(
-        favoriteLabel,
-        busy === "favorite" ? (
-          <CircularProgress size={18} />
-        ) : allFavorite ? (
-          <StarIcon fontSize="small" sx={{ color: "warning.main" }} />
-        ) : (
-          <StarBorderIcon fontSize="small" />
-        ),
-        () => void toggleFavorite(),
-      )}
+      {!shared &&
+        action(
+          favoriteLabel,
+          busy === "favorite" ? (
+            <CircularProgress size={18} />
+          ) : allFavorite ? (
+            <StarIcon fontSize="small" sx={{ color: "warning.main" }} />
+          ) : (
+            <StarBorderIcon fontSize="small" />
+          ),
+          () => void toggleFavorite(),
+        )}
       {action(t("common:download"), <DownloadIcon fontSize="small" />, () => setDownloadOpen(true))}
-      {offerLink &&
+      {foldersView &&
         !toolOwned &&
         !allProvidersOff(disabledProviders) &&
         action(t("models:linkSource.action"), <AddLinkIcon fontSize="small" />, () => setLinkOpen(true), linkHint)}
+      {foldersView &&
+        !toolOwned &&
+        action(
+          t("models:merge.models.action"),
+          <CallMergeIcon fontSize="small" />,
+          () => setMergeOpen(true),
+          uploads.length < 2
+            ? t("models:merge.models.needTwo")
+            : uploads.length > BULK_LIMIT
+              ? t("models:merge.models.tooMany", { max: BULK_LIMIT })
+              : undefined,
+        )}
+      {foldersView &&
+        !toolOwned &&
+        action(
+          t("models:assignCategory.action"),
+          <CategoryOutlinedIcon fontSize="small" />,
+          () => setCategoryOpen(true),
+          uploads.length < 1 ? t("models:assignCategory.needOne") : undefined,
+        )}
       {!toolOwned &&
         action(
           t("common:delete"),

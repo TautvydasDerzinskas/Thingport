@@ -1,0 +1,367 @@
+{
+  "code": "OK",
+  "requestId": "Root=1-6aebb87a-3b200cb670d07fd03fe23d6e",
+  "result": [
+    {
+      "id": "0196f842-8f5b-7674-942e-b4a2ac8e2cd8",
+      "author": {
+        "id": "300d4f40-c74d-4460-ba8a-0ee98f231422",
+        "uid": "s1746466231300d4",
+        "nickname": "Jusin_Cloud",
+        "avatarUrl": "https://cdn.meshy.ai/landing-assets/shared/avatars/default-mushroom-03.webp",
+        "tier": "pro"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["Characters", "Animals"],
+      "tags": ["monster", "teeth", "grumble", "horrorific", "frightening", "mouth"],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "0196f842-8f5b-7674-942e-b4a2ac8e2cd8",
+        "position": 0,
+        "kind": "model",
+        "refId": "0196b207-9515-798b-8e5a-1b4be94c3a0c",
+        "settings": {
+          "orbitPosition": [-6.384606847872578, 5.412560286277067, 13.137398056336094],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "color"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/b19d98217bd0f47eccfe70a4b6886fff27c4dbb8c3527271db030d15cbfe670e/publish/cover-portrait/0196f842-8c8a-7674-8e6e-78fd4f57889e.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/b19d98217bd0f47eccfe70a4b6886fff27c4dbb8c3527271db030d15cbfe670e/publish/cover-portrait/0196f842-8852-7ce8-9dd4-2d0c202267d8.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/b19d98217bd0f47eccfe70a4b6886fff27c4dbb8c3527271db030d15cbfe670e/publish/cover-portrait/0196f842-8c8a-7674-8e6e-78fd4f57889e.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/b19d98217bd0f47eccfe70a4b6886fff27c4dbb8c3527271db030d15cbfe670e/publish/cover-portrait/0196f842-8852-7ce8-9dd4-2d0c202267d8.png"
+        },
+        "modelPhase": "texture",
+        "modelMode": "remesh-texture",
+        "objectPrompt": "Grumblefiend",
+        "imageUrls": [
+          "https://api.meshy.ai/misc/cdn-images/300d4f40-c74d-4460-ba8a-0ee98f231422/uploads/4021c40ebfb7431098df6a686bc106d2cbc1c43a.png?sign=1793923200-8fbe656a784ca8674049044f73375065"
+        ],
+        "is3DPrintable": false,
+        "isPbr": false,
+        "modelIsAnimated": false
+      },
+      "itemCount": 1,
+      "isFeatured": true,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": true,
+      "stats": {
+        "viewsCount": 16,
+        "downloadsCount": 12,
+        "remixesCount": 2,
+        "likesCount": 4,
+        "collectionsCount": 7,
+        "commentsCount": 0,
+        "tipsAmount": 0
+      },
+      "createdAt": 1747921833827,
+      "updatedAt": 1792620176095,
+      "submittedAt": 1747921833827,
+      "publishedAt": 1747921833827
+    },
+    {
+      "id": "0196eacb-b71c-72b1-8b6b-d023d062d6d1",
+      "author": {
+        "id": "c1b1eb04-768f-4124-b5e9-9b7cd6c82d3e",
+        "uid": "s1715969782c1b1e",
+        "nickname": "bigbro2236",
+        "avatarUrl": "https://cdn.meshy.ai/uploads/prod/b78c052a262f3f53e3d67c1006cc8253ebe3569baf700c1076bdfafb5390359a/avatars/01930731-e454-7750-929b-fbf88045447d.jpg",
+        "tier": "pro"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["Characters", "NaturePlants"],
+      "tags": ["monster", "creature", "fantasy", "horror", "green", "plant", "vines", "creepy", "verdant"],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "0196eacb-b71c-72b1-8b6b-d023d062d6d1",
+        "position": 0,
+        "kind": "model",
+        "refId": "0196eaa4-c37e-767e-b1a2-cd7e44a613bb",
+        "settings": {
+          "orbitPosition": [3.927453068814154, 3.337243598556495, 14.414815016169374],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "color"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/b78c052a262f3f53e3d67c1006cc8253ebe3569baf700c1076bdfafb5390359a/publish/cover-square/0196eacb-b5e0-7683-bd65-3c81e5b2439c.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/b78c052a262f3f53e3d67c1006cc8253ebe3569baf700c1076bdfafb5390359a/publish/cover-square/0196eacb-b3b3-7683-928f-5829650209dd.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/b78c052a262f3f53e3d67c1006cc8253ebe3569baf700c1076bdfafb5390359a/publish/cover-square/0196eacb-b5e0-7683-bd65-3c81e5b2439c.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/b78c052a262f3f53e3d67c1006cc8253ebe3569baf700c1076bdfafb5390359a/publish/cover-square/0196eacb-b3b3-7683-928f-5829650209dd.png"
+        },
+        "modelPhase": "texture",
+        "modelMode": "remesh-texture",
+        "objectPrompt": "Verdant Terror",
+        "imageUrls": [
+          "https://api.meshy.ai/misc/cdn-images/c1b1eb04-768f-4124-b5e9-9b7cd6c82d3e/uploads/55da38c70fb4153a71615feb9e861103604c371f.jpg?sign=1793923200-b7b7fd57a2d351a59e2f65efe9ba7e8d"
+        ],
+        "is3DPrintable": false,
+        "isPbr": false,
+        "modelIsAnimated": false
+      },
+      "itemCount": 1,
+      "isFeatured": true,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": true,
+      "stats": {
+        "viewsCount": 52,
+        "downloadsCount": 19,
+        "remixesCount": 6,
+        "likesCount": 13,
+        "collectionsCount": 17,
+        "commentsCount": 0,
+        "tipsAmount": 0
+      },
+      "createdAt": 1747695941411,
+      "updatedAt": 1785429664222,
+      "submittedAt": 1747695941411,
+      "publishedAt": 1747695941411
+    },
+    {
+      "id": "0196be4d-5d1a-71ce-917d-0735ba3abf3d",
+      "author": {
+        "id": "f0306217-b33a-48de-adec-3849c02be589",
+        "uid": "s1730383749f0306",
+        "nickname": "MrThorin",
+        "avatarUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/avatars/019307aa-2f96-776d-99d8-60de8dbdc88b.jpg",
+        "tier": "free"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["Characters"],
+      "tags": ["abomination"],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "0196be4d-5d1a-71ce-917d-0735ba3abf3d",
+        "position": 0,
+        "kind": "model",
+        "refId": "0196be4a-fa9a-7556-9030-cf4da659c927",
+        "settings": {
+          "orbitPosition": [-7.331549334554296, -0.4261741808681525, 12.859318146740337],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "color"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/publish/cover-square/0196be4d-5876-71ce-87cc-a10179a2a6df.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/publish/cover-square/0196be4d-4a82-71ce-9d5a-c0dc8a2eaea0.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/publish/cover-square/0196be4d-5876-71ce-87cc-a10179a2a6df.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/publish/cover-square/0196be4d-4a82-71ce-9d5a-c0dc8a2eaea0.png"
+        },
+        "modelPhase": "texture",
+        "modelMode": "remesh-texture",
+        "objectPrompt": "Random Abomination Creature from Another Dimension",
+        "is3DPrintable": false,
+        "isPbr": false,
+        "modelIsAnimated": false
+      },
+      "itemCount": 1,
+      "isFeatured": true,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": false,
+      "stats": {
+        "viewsCount": 18,
+        "downloadsCount": 10,
+        "remixesCount": 0,
+        "likesCount": 8,
+        "collectionsCount": 6,
+        "commentsCount": 0,
+        "tipsAmount": 0
+      },
+      "createdAt": 1746949463329,
+      "updatedAt": 1757091505741,
+      "submittedAt": 1746949463329,
+      "publishedAt": 1746949463329
+    },
+    {
+      "id": "0196be47-df89-71ce-8a20-067c4a4b9e7b",
+      "author": {
+        "id": "f0306217-b33a-48de-adec-3849c02be589",
+        "uid": "s1730383749f0306",
+        "nickname": "MrThorin",
+        "avatarUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/avatars/019307aa-2f96-776d-99d8-60de8dbdc88b.jpg",
+        "tier": "free"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["Characters"],
+      "tags": ["abomination"],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "0196be47-df89-71ce-8a20-067c4a4b9e7b",
+        "position": 0,
+        "kind": "model",
+        "refId": "0196be3e-9281-71ce-ab26-2d697b39849d",
+        "settings": {
+          "orbitPosition": [3.093012220556658, 0.6118247382419619, 14.611852888875191],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "color"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/publish/cover-portrait/0196be47-dae3-7648-9295-a90a7f57dc60.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/publish/cover-portrait/0196be47-d101-7556-94b5-5cdc5614bbfe.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/publish/cover-portrait/0196be47-dae3-7648-9295-a90a7f57dc60.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/7150a6c3be42175bee82ce541c841ace121a517c0d86a982c9f4fcbac8a7c822/publish/cover-portrait/0196be47-d101-7556-94b5-5cdc5614bbfe.png"
+        },
+        "modelPhase": "texture",
+        "modelMode": "remesh-texture",
+        "objectPrompt": "Random Abomination Creature from Another Dimension",
+        "is3DPrintable": false,
+        "isPbr": false,
+        "modelIsAnimated": false
+      },
+      "itemCount": 1,
+      "isFeatured": true,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": true,
+      "stats": {
+        "viewsCount": 14,
+        "downloadsCount": 12,
+        "remixesCount": 1,
+        "likesCount": 7,
+        "collectionsCount": 6,
+        "commentsCount": 0,
+        "tipsAmount": 0
+      },
+      "createdAt": 1746949103504,
+      "updatedAt": 1760367798357,
+      "submittedAt": 1746949103504,
+      "publishedAt": 1746949103504
+    },
+    {
+      "id": "01954f35-56e4-73df-be47-bb9307c0566f",
+      "author": {
+        "id": "021003d3-cc0c-429b-887c-4f797cf40331",
+        "uid": "s173456306702100",
+        "nickname": "harlequinn866",
+        "avatarUrl": "https://cdn.meshy.ai/uploads/prod/1903933c5afe3bf28a5d84ef2642c87664057ed5a56034fbf553d379a3c5328f/avatars/0194e9a5-b5d0-7956-9e0a-3f6fdbdf43fc.jpg",
+        "tier": "pro"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["Characters"],
+      "tags": ["fantasy", "dragon", "monster", "centipede", "creature", "black", "red", "mythical", "evil", "beast"],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "01954f35-56e4-73df-be47-bb9307c0566f",
+        "position": 0,
+        "kind": "model",
+        "refId": "01954f30-bebb-73c3-aada-2bad19b88c1a",
+        "settings": {
+          "orbitPosition": [11.999999999999993, 5.799999999999999, 11.999999999999995],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "color"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/1903933c5afe3bf28a5d84ef2642c87664057ed5a56034fbf553d379a3c5328f/publish/cover-landscape/01954f35-54f1-73df-9a7b-3b077569762e.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/1903933c5afe3bf28a5d84ef2642c87664057ed5a56034fbf553d379a3c5328f/publish/cover-landscape/01954f35-514a-73de-a130-59423ab4ce5f.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/1903933c5afe3bf28a5d84ef2642c87664057ed5a56034fbf553d379a3c5328f/publish/cover-landscape/01954f35-54f1-73df-9a7b-3b077569762e.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/1903933c5afe3bf28a5d84ef2642c87664057ed5a56034fbf553d379a3c5328f/publish/cover-landscape/01954f35-514a-73de-a130-59423ab4ce5f.png"
+        },
+        "modelPhase": "texture",
+        "modelMode": "texture",
+        "objectPrompt": "Centipede Dragon",
+        "is3DPrintable": false,
+        "isPbr": false,
+        "modelIsAnimated": false
+      },
+      "itemCount": 1,
+      "isFeatured": true,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": true,
+      "stats": {
+        "viewsCount": 143,
+        "downloadsCount": 10,
+        "remixesCount": 9,
+        "likesCount": 11,
+        "collectionsCount": 8,
+        "commentsCount": 0,
+        "tipsAmount": 5
+      },
+      "createdAt": 1740790650601,
+      "updatedAt": 1786449315817,
+      "submittedAt": 1740790650601,
+      "publishedAt": 1740790650601
+    },
+    {
+      "id": "01950f41-6f72-70c1-92a1-687fc58bbc77",
+      "author": {
+        "id": "4c2472f2-4df3-43f5-87db-6c6add3aa899",
+        "uid": "KRAJ",
+        "nickname": "KRAJ",
+        "avatarUrl": "https://cdn.meshy.ai/uploads/prod/115a7a9f4a7e7a8ba4c1baf826db67f95ace1903ed508f09918abc1a1c7978fa/avatars/0192f2a5-8113-734e-83d0-ce73ebadd9d8.jpg",
+        "tier": "free"
+      },
+      "state": "published",
+      "title": "",
+      "body": "",
+      "textLang": "und",
+      "categories": ["ArtAbstract", "Characters"],
+      "tags": [],
+      "creationType": "general",
+      "coverPosition": 0,
+      "coverItem": {
+        "id": "01950f41-6f72-70c1-92a1-687fc58bbc77",
+        "position": 0,
+        "kind": "model",
+        "refId": "01950f3e-9337-70c0-9b35-0e12d740891f",
+        "settings": {
+          "orbitPosition": [14.987946554610321, 2.547265355748059, -0.24891505889069526],
+          "orbitTarget": [0, 2, 0],
+          "previewRenderMode": "color"
+        },
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/115a7a9f4a7e7a8ba4c1baf826db67f95ace1903ed508f09918abc1a1c7978fa/publish/cover-portrait/01950f41-6c01-70c1-9a4c-f7957f41afe8.jpg",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/115a7a9f4a7e7a8ba4c1baf826db67f95ace1903ed508f09918abc1a1c7978fa/publish/cover-portrait/01950f41-670c-70c1-a190-dc824424d53f.jpg",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/115a7a9f4a7e7a8ba4c1baf826db67f95ace1903ed508f09918abc1a1c7978fa/publish/cover-portrait/01950f41-6c01-70c1-9a4c-f7957f41afe8.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/115a7a9f4a7e7a8ba4c1baf826db67f95ace1903ed508f09918abc1a1c7978fa/publish/cover-portrait/01950f41-670c-70c1-a190-dc824424d53f.png"
+        },
+        "modelPhase": "animate",
+        "modelMode": "animate",
+        "objectPrompt": "The object is a sleek, abstract figure with elongated limbs and sharp, angular shapes that create a sense of dynamic movement. Its dark, smooth metallic surface glistens with subtle reflections, enhanced by glowing, otherworldly patterns that pulse gently across its body, suggesting an inner energy. These intricate designs add depth and complexity, evoking a feeling of mystery and intrigue, as if the figure holds secrets from beyond the stars.",
+        "is3DPrintable": false,
+        "isPbr": false,
+        "modelIsAnimated": true
+      },
+      "itemCount": 1,
+      "isFeatured": false,
+      "isNsfw": false,
+      "slug": "",
+      "seoNoindex": true,
+      "stats": {
+        "viewsCount": 17,
+        "downloadsCount": 0,
+        "remixesCount": 2,
+        "likesCount": 1,
+        "collectionsCount": 3,
+        "commentsCount": 0,
+        "tipsAmount": 0
+      },
+      "createdAt": 1739717701540,
+      "updatedAt": 1757093753877,
+      "submittedAt": 1739717701540,
+      "publishedAt": 1739717701540
+    }
+  ],
+  "total": 6
+}

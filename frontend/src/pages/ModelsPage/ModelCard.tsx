@@ -12,6 +12,7 @@ import { useTheme } from "@mui/material/styles";
 import SelectionCheck from "../../components/selection/SelectionCheck";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PrintIcon from "@mui/icons-material/Print";
+import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutlined";
 import { type Print, printsApi } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
@@ -28,6 +29,8 @@ import { useFavoriteToggle } from "../../hooks/useFavoriteToggle";
 import ModelActionsMenu from "../ModelDetailPage/ModelActionsMenu";
 import type { AuthUser } from "../../api/auth";
 import { useCardContextMenu } from "../../components/Layout/ConfigurationDialog/AppTiles";
+import UserAvatar from "../../components/UserAvatar";
+import { modelPath } from "../../utils/sharedPaths";
 
 type Props = {
   item: Print;
@@ -92,12 +95,20 @@ export default function ModelCard({
     onUnauthorized,
   });
   const author = item.author;
+  // Another user's model, from one of their public collections: theirs to favourite and count, not the viewer's.
+  const owner = item.owner ?? null;
   const viewerAvatarUrl = useGravatarUrl(viewer?.email, 40);
-  // Not clickable: there's no Author id behind this fallback.
-  const showViewerAsAuthor =
-    !author?.name && !author?.handle && !item.creator && !item.source_provider && Boolean(viewer);
+  // Not clickable: there's no Author id behind this fallback. A direct upload is its uploader's: on someone else's
+  // model, that's its owner.
+  const unauthored = !author?.name && !author?.handle && !item.creator && !item.source_provider;
+  const showViewerAsAuthor = unauthored && !owner && Boolean(viewer);
+  const showOwnerAsAuthor = unauthored && Boolean(owner);
   const authorName =
-    author?.name || author?.handle || item.creator || (showViewerAsAuthor ? viewer!.display_name : null);
+    author?.name ||
+    author?.handle ||
+    item.creator ||
+    (showViewerAsAuthor ? viewer!.display_name : showOwnerAsAuthor ? owner!.display_name : null);
+  // The owner's own is drawn as they are everywhere else (UserAvatar).
   const authorAvatarUrl = author?.avatar_url || (showViewerAsAuthor ? viewerAvatarUrl : undefined);
   // Only mounted while hovered, so idle cards don't load images or tick.
   const [hovered, setHovered] = useState(false);
@@ -110,7 +121,7 @@ export default function ModelCard({
   return (
     <Paper
       variant="outlined"
-      onClick={selectMode ? toggleSelect : () => navigate(`/models/${item.id}`)}
+      onClick={selectMode ? toggleSelect : () => navigate(modelPath(item))}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onContextMenu={selectMode ? undefined : contextMenu.onContextMenu}
@@ -197,18 +208,20 @@ export default function ModelCard({
             transition: "opacity .15s ease",
           }}
         >
-          <Tooltip title={favoriteLabel}>
-            <Box>
-              <StarToggle
-                active={isFavorite}
-                onClick={toggleFavorite}
-                ariaLabel={favoriteLabel}
-                inactiveColor={overlayIconColor}
-                size={HOVER_ICON_SIZE}
-                sx={overlayButtonSx}
-              />
-            </Box>
-          </Tooltip>
+          {!owner && (
+            <Tooltip title={favoriteLabel}>
+              <Box>
+                <StarToggle
+                  active={isFavorite}
+                  onClick={toggleFavorite}
+                  ariaLabel={favoriteLabel}
+                  inactiveColor={overlayIconColor}
+                  size={HOVER_ICON_SIZE}
+                  sx={overlayButtonSx}
+                />
+              </Box>
+            </Tooltip>
+          )}
           <ModelActionsMenu
             print={item}
             onUnauthorized={onUnauthorized}
@@ -258,29 +271,55 @@ export default function ModelCard({
                 navigate(`/authors/${author ? author.id : SELF_AUTHOR_ID}`);
               }}
             >
-              <Avatar
-                src={authorAvatarUrl || undefined}
-                sx={{ width: 20, height: 20, fontSize: 11, color: "common.white", bgcolor: "grey.700" }}
-              >
-                {(authorName || "?").slice(0, 1).toUpperCase()}
-              </Avatar>
+              {showOwnerAsAuthor ? (
+                <UserAvatar user={owner!} size={20} />
+              ) : (
+                <Avatar
+                  src={authorAvatarUrl || undefined}
+                  sx={{ width: 20, height: 20, fontSize: 11, color: "common.white", bgcolor: "grey.700" }}
+                >
+                  {(authorName || "?").slice(0, 1).toUpperCase()}
+                </Avatar>
+              )}
               <Typography variant="caption" noWrap sx={{ color: "inherit" }}>
                 {authorName || t("models:card.unknownAuthor")}
               </Typography>
             </Stack>
           </AuthorHoverCard>
-          <Stack direction="row" spacing={1.5} sx={{ color: "text.secondary", flexShrink: 0 }}>
-            <Stack direction="row" alignItems="center" spacing={0.4}>
-              <VisibilityIcon sx={{ fontSize: 14 }} />
-              <Typography variant="caption">{item.view_count}</Typography>
+          {owner ? (
+            // Whose it is, where the owner's own counts would be, and whether the viewer has it already.
+            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: "text.secondary", flexShrink: 0 }}>
+              {item.library_copy_id && (
+                <Tooltip title={t("models:shared.inLibrary")}>
+                  <LibraryAddCheckOutlinedIcon
+                    aria-label={t("models:shared.inLibrary")}
+                    sx={{ fontSize: 16, color: (th) => th.thingport.accentText }}
+                  />
+                </Tooltip>
+              )}
+              {/* Already the author on the left for their own upload. */}
+              {!showOwnerAsAuthor && (
+                <Tooltip title={t("models:shared.sharedBy", { name: owner.display_name })}>
+                  <Box sx={{ display: "flex" }} aria-label={t("models:shared.sharedBy", { name: owner.display_name })}>
+                    <UserAvatar user={owner} size={20} />
+                  </Box>
+                </Tooltip>
+              )}
             </Stack>
-            <Stack direction="row" alignItems="center" spacing={0.4}>
-              <PrintIcon sx={{ fontSize: 14 }} />
-              <Typography variant="caption">
-                <RollingNumber value={item.print_count} />
-              </Typography>
+          ) : (
+            <Stack direction="row" spacing={1.5} sx={{ color: "text.secondary", flexShrink: 0 }}>
+              <Stack direction="row" alignItems="center" spacing={0.4}>
+                <VisibilityIcon sx={{ fontSize: 14 }} />
+                <Typography variant="caption">{item.view_count}</Typography>
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={0.4}>
+                <PrintIcon sx={{ fontSize: 14 }} />
+                <Typography variant="caption">
+                  <RollingNumber value={item.print_count} />
+                </Typography>
+              </Stack>
             </Stack>
-          </Stack>
+          )}
         </Stack>
       </Box>
     </Paper>

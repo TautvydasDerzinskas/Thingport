@@ -27,6 +27,13 @@ enum ReasoningEffort {
   high
 }
 
+/// How Thingport talks to an AI: the OpenAI-style chat API most providers and local servers offer, or Anthropic's own
+/// Messages API for Claude.
+enum AiProviderKind {
+  openai
+  anthropic
+}
+
 model User {
   id                       String               @id @default(cuid())
   email                    String               @unique
@@ -81,6 +88,12 @@ model User {
   dashboardTemplates       Json?
   // What model cards lead with, one of CARD_PREVIEWS; null means "images".
   cardPreview              String?
+  // Where Studio's assistant shows its conversation, one of STUDIO_PROMPT_LAYOUTS; null means "bar".
+  studioPromptLayout       String?
+  // The units a new Studio design starts in, one of STUDIO_UNITS; null means "mm".
+  studioUnits              String?
+  // How Studio's grid is drawn and snapped to (StudioGrid); null, or anything left out, is its default.
+  studioGrid               Json?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.
   weatherLocation          Json?
   authorPreviewEnabled     Boolean              @default(true)
@@ -91,6 +104,8 @@ model User {
   // Filled from the first linked Author with this data; later links never overwrite it.
   bio                      String?
   backgroundUrl            String?
+  // When they last had Thingport in front of them, as Chats' unread poll says: what shows them online to the others.
+  lastSeenAt               DateTime?
   categories               Category[]
   prints                   Print[]
   collections              Collection[]
@@ -98,6 +113,7 @@ model User {
   tools                    Tool[]
   toolData                 ToolData[]
   icons                    UserIcon[]
+  studioDesigns            StudioDesign[]
   collectionSyncs          CollectionSync[]
   providerListings         ProviderListing[]
   importJobs               ImportJob[]
@@ -113,6 +129,9 @@ model User {
   grabConnections          GrabConnection[]
   providerConnections      ProviderConnection[]
   sessions                 Session[]
+  chatMemberships          ChatMember[]
+  chatMessages             ChatMessage[]
+  chatsCreated             Chat[]               @relation("ChatCreatedBy")
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt
 }
@@ -214,21 +233,33 @@ model Print {
   tool                     Tool?                    @relation(fields: [toolId], references: [id], onDelete: SetNull)
   // Which of the tool's models it is, from the tool's metadata.
   toolKey                  String?
+  // The model this one was copied from, out of another user's public collection (services/modelCopyService.ts). The
+  // copy is the user's own: the original changing, going private or being deleted leaves it as it is.
+  copiedFromId             String?
+  copiedFrom               Print?                   @relation("PrintCopies", fields: [copiedFromId], references: [id], onDelete: SetNull)
+  copies                   Print[]                  @relation("PrintCopies")
+  // The first original of that chain: what a copy of a copy is a copy of. No relation, so it outlasts the original's
+  // deletion, and with it the knowledge that the user already has the model. One copy per user and original.
+  originalId               String?
   createdAt                DateTime                 @default(now())
   updatedAt                DateTime                 @updatedAt
   // Generated column (name A, tags B, notes C, creator D) created with its GIN index in a
   // hand-written migration, since Prisma can't express a generated tsvector.
   searchVector             Unsupported("tsvector")?
+  // Sent in chats: whoever can read one of those chats can open it (socialService's readablePrintWhere).
+  chatAttachments          ChatAttachment[]
 
   @@unique([userId, categoryId, nameNormalized])
   @@unique([userId, sourceProvider, sourceExternalId])
   @@unique([userId, toolId, toolKey])
+  @@unique([userId, originalId])
   @@index([userId, categoryId, name])
   @@index([tags], type: Gin)
   @@index([authorId])
   @@index([userId, favoritedAt])
   @@index([userId, lastViewedAt])
   @@index([toolId])
+  @@index([copiedFromId])
 }
 
 /// A user-curated group of models. Collection imports reuse a row by nameNormalized.
@@ -246,6 +277,9 @@ model Collection {
   // Set on the collection a tool keeps its models in: fixed, listed last, and gone with the tool.
   toolId         String?
   tool           Tool?                    @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  // Shown to the instance's other users, on Explore, while an admin has social features on (services/socialService.ts):
+  // its models can then be opened, downloaded and copied by them. Private unless its owner says otherwise.
+  isPublic       Boolean                  @default(false)
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
   // Generated column (name A, tags B, description C); see Print.searchVector.
@@ -254,6 +288,7 @@ model Collection {
   @@unique([userId, nameNormalized])
   @@index([tags], type: Gin)
   @@index([toolId])
+  @@index([isPublic])
 }
 
 /// Keeps a collection in step with one on a provider: models added there later are imported into
@@ -458,7 +493,7 @@ model Notification {
   id           String    @id @default(cuid())
   userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// What it's about, for its icon: import, sync, queue, consume, ai, system or general.
+  /// What it's about, for its icon: import, sync, queue, consume, ai, system, chat or general.
   type         String    @default("general")
   /// Set on notifications later ones may fold into, e.g. { key: "single-import", items: [...] }.
   group        Json?
@@ -699,6 +734,66 @@ model Tool {
   @@index([userId])
 }
 
+/// A design made in Studio: a parametric feature tree, as frontend/src/studio/document.ts describes it.
+model StudioDesign {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  document  Json
+  /// Goes up with every change, undo and redo too, so an open page can tell the design changed under it.
+  version   Int              @default(0)
+  /// Which revision `document` is: undo moves it back one, redo forward.
+  position  Int              @default(0)
+  revisions StudioRevision[]
+  messages  StudioMessage[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+/// A design as one command left it, for undo and redo, and a record of who changed what.
+model StudioRevision {
+  id        String       @id @default(cuid())
+  designId  String
+  design    StudioDesign @relation(fields: [designId], references: [id], onDelete: Cascade)
+  position  Int
+  document  Json
+  /// The command that made it, null for the design's start.
+  command   String?
+  args      Json?
+  summary   String?
+  /// "user" from the page, "mcp" from an assistant connected with an API token, "assistant" from Studio's own.
+  actor     String
+  createdAt DateTime     @default(now())
+
+  @@unique([designId, position])
+}
+
+/// The conversation with Studio's assistant about one design: what was asked, what it answered and the steps it took,
+/// so a later prompt can build on it. Text only: the AI's own working, tool payloads and thinking aren't kept.
+model StudioMessage {
+  id        String       @id @default(cuid())
+  designId  String
+  design    StudioDesign @relation(fields: [designId], references: [id], onDelete: Cascade)
+  /// "user" or "assistant".
+  role      String
+  text      String
+  /// An answer's steps, [{ tool, title, summary, ok }], and how its run ended: done, stopped, limit or failed.
+  steps     Json?
+  outcome   String?
+  /// Why a failed run stopped, in the provider's words.
+  error     String?
+  /// The AI that answered, as it was named then.
+  model     String?
+  /// A prompt's pictures, [{ id, width, height }], kept beside the design as <id>.png.
+  pictures  Json?
+  createdAt DateTime     @default(now())
+
+  @@index([designId, createdAt])
+}
+
 /// What a tool keeps for a user through `thingport.storage`: JSON values by key.
 model ToolData {
   id        String   @id @default(cuid())
@@ -735,9 +830,10 @@ model Setting {
   value Json
 }
 
-/// An OpenAI-compatible AI service. Features use the default one unless set to another.
+/// An AI service: OpenAI-compatible, or Claude. Features use the default one unless set to another.
 model AiConnection {
   id              String           @id @default(cuid())
+  kind            AiProviderKind   @default(openai)
   baseUrl         String
   /// Write-only: the API only ever says whether one is set.
   apiKey          String?
@@ -747,6 +843,8 @@ model AiConnection {
   concurrency     Int              @default(1)
   /// Sent as reasoning_effort. Null sends nothing, leaving it to the provider.
   reasoningEffort ReasoningEffort?
+  /// The model takes pictures in a prompt, which an admin says; features that send pictures only send them where it does.
+  vision          Boolean          @default(false)
   isDefault       Boolean          @default(false)
   position        Int              @default(0)
   createdAt       DateTime         @default(now())
@@ -892,4 +990,88 @@ model Activity {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+enum ChatKind {
+  DIRECT
+  ROOM
+}
+
+/// Chats (services/chatService.ts), while an admin has them on under social features: two users' direct messages, or
+/// a room an admin made.
+model Chat {
+  id            String        @id @default(cuid())
+  kind          ChatKind
+  /// A room's. Direct messages are named after the other person.
+  name          String?
+  description   String?
+  /// A room anyone may read and join. A private one's members are the users an admin picked.
+  isPublic      Boolean       @default(false)
+  /// Direct messages only: the two users' ids, sorted and joined, so a pair only ever has the one.
+  directKey     String?       @unique
+  createdById   String?
+  createdBy     User?         @relation("ChatCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  /// The latest message's time, for ordering the list; when it was made until there's one.
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  members       ChatMember[]
+  messages      ChatMessage[]
+
+  @@index([kind])
+}
+
+model ChatMember {
+  chatId     String
+  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Pinned to the top of the list.
+  favorite   Boolean   @default(false)
+  /// Counted, but never notified, and left out of the sidebar's badge.
+  muted      Boolean   @default(false)
+  /// Messages after this are unread: what was said before someone joined isn't news to them.
+  lastReadAt DateTime  @default(now())
+  /// When the chat was last open in front of them, kept current while it is: a new message finding it so doesn't
+  /// notify them.
+  viewedAt   DateTime?
+  joinedAt   DateTime  @default(now())
+
+  @@id([chatId, userId])
+  @@index([userId])
+}
+
+model ChatMessage {
+  id          String           @id @default(cuid())
+  chatId      String
+  chat        Chat             @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  /// Null once the sender's account is gone: what they said stays, from a deleted user.
+  senderId    String?
+  sender      User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  /// Emptied when it's deleted.
+  body        String
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  attachments ChatAttachment[]
+
+  @@index([chatId, createdAt])
+  // For polls asking what was deleted since they last looked.
+  @@index([chatId, deletedAt])
+  @@index([senderId])
+}
+
+/// A model of the sender's own, sent in a chat message. Whoever can read the chat can open, download and copy it while
+/// the message stays.
+model ChatAttachment {
+  id        String      @id @default(cuid())
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  /// Null once the model's deleted: the message still says what was sent.
+  printId   String?
+  print     Print?      @relation(fields: [printId], references: [id], onDelete: SetNull)
+  /// The model's name when it was sent.
+  name      String
+  position  Int         @default(0)
+
+  @@index([messageId])
+  @@index([printId])
 }

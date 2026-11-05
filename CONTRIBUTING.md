@@ -56,8 +56,9 @@ default configuration points at your development database.
 ## What CI checks
 
 Formatting is checked on every pull request (`npm run format:check`), and so are the files written from `providers/`
-(`npm run providers:check`) and from the widget and tool SDK's types in `frontend/src/sdk/types.ts` (`npm run sdk:check`,
-which also type-checks the examples in `docs/developers/examples/`). The other workflows are path-filtered, so only the
+(`npm run providers:check`), from the widget and tool SDK's types in `frontend/src/sdk/types.ts` (`npm run sdk:check`,
+which also type-checks the examples in `docs/developers/examples/`), and Studio's backend copies of
+`frontend/src/studio/` (`npm run studio:check`). The other workflows are path-filtered, so only the
 parts you touched run:
 
 | You changed            | CI runs                                                                                         |
@@ -97,6 +98,12 @@ checklist for a new one are in [docs/PROVIDER_DEVELOPMENT.md](docs/PROVIDER_DEVE
 A tool is a small app that opens in a window from the Tools page. The format, the rules its script follows and the
 steps to get one merged are in [docs/TOOL_DEVELOPMENT.md](docs/TOOL_DEVELOPMENT.md); a tool's script runs in its
 users' browsers, so it's read before it's merged.
+
+## Working on Studio
+
+Studio, the CAD page, has one rule: everything a person can do to a design is a command, which is also an MCP tool, so
+an AI can do it too. How that's built and the steps for a new command are in
+[docs/STUDIO_DEVELOPMENT.md](docs/STUDIO_DEVELOPMENT.md).
 
 ## Code style
 

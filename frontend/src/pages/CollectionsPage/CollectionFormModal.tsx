@@ -12,6 +12,11 @@ import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import type { Collection, CollectionInput } from "../../api/collections";
 import TagInput from "../../components/TagInput";
+import Segmented from "../../components/controls/Segmented";
+import HelpTip from "../../components/HelpTip";
+import { useSocialStatus } from "../../hooks/useSocialStatus";
+
+type Visibility = "private" | "public";
 
 type Props = {
   collection?: Collection | null;
@@ -25,6 +30,9 @@ export default function CollectionFormModal({ collection, onClose, onSubmit }: P
   const [name, setName] = useState(collection?.name || "");
   const [description, setDescription] = useState(collection?.description || "");
   const [tags, setTags] = useState<string[]>(collection?.tags || []);
+  // Private until its owner says otherwise. Offered only while social features are on: off, nobody else sees it anyway.
+  const social = useSocialStatus();
+  const [visibility, setVisibility] = useState<Visibility>(collection?.is_public ? "public" : "private");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +44,12 @@ export default function CollectionFormModal({ collection, onClose, onSubmit }: P
     setSaving(true);
     setError(null);
     try {
-      await onSubmit({ name: trimmedName, description: description.trim() || null, tags });
+      await onSubmit({
+        name: trimmedName,
+        description: description.trim() || null,
+        tags,
+        ...(social?.enabled ? { is_public: visibility === "public" } : {}),
+      });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("models:collections.form.saveFailed"));
@@ -82,6 +95,24 @@ export default function CollectionFormModal({ collection, onClose, onSubmit }: P
               placeholder={t("models:collections.form.tagsPlaceholder") ?? undefined}
             />
           </Stack>
+          {social?.enabled && (
+            <Stack spacing={0.5} alignItems="flex-start">
+              <Typography variant="body2" color="text.secondary">
+                {t("models:collections.form.visibilityLabel")}
+                <HelpTip text={t("models:collections.form.visibilityHelp")} />
+              </Typography>
+              <Segmented
+                value={visibility}
+                onChange={setVisibility}
+                label={t("models:collections.form.visibilityLabel")}
+                disabled={saving}
+                options={[
+                  { value: "private", label: t("models:collections.form.private") },
+                  { value: "public", label: t("models:collections.form.public") },
+                ]}
+              />
+            </Stack>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>

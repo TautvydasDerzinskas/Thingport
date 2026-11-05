@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { AiProviderKind, Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { FLARESOLVERR_REQUIRE_HTTPS, FLARESOLVERR_URL, PUBLIC_URL } from "../config";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "./meshQuality";
@@ -96,6 +96,32 @@ export async function setToolsAccess(patch: Partial<ToolsAccess>): Promise<Tools
     update: { value },
   });
   return value;
+}
+
+// Social features (services/socialService.ts): the instance's users seeing, opening and copying each other's public
+// collections on Explore. Off until an admin turns them on. One object, so what comes next joins it: `chats`, the
+// instance's users messaging each other (services/chatService.ts), off until switched on too, and only while
+// `enabled` is.
+export type SocialSettings = { enabled: boolean; chats: boolean };
+const SOCIAL_KEY = "social";
+
+export async function getSocialSettings(): Promise<SocialSettings> {
+  const row = await prisma.setting.findUnique({ where: { key: SOCIAL_KEY } });
+  const value = (row?.value ?? {}) as Partial<SocialSettings>;
+  return {
+    enabled: typeof value.enabled === "boolean" ? value.enabled : false,
+    chats: typeof value.chats === "boolean" ? value.chats : false,
+  };
+}
+
+/** Changes only what's given, merged into what's stored in one statement: two changes at once, one to each
+ *  setting, would otherwise each write back the other's old value. */
+export async function setSocialSettings(patch: Partial<SocialSettings>): Promise<SocialSettings> {
+  const given = JSON.stringify(patch);
+  await prisma.$executeRaw`
+    INSERT INTO "Setting" (key, value) VALUES (${SOCIAL_KEY}, ${given}::jsonb)
+    ON CONFLICT (key) DO UPDATE SET value = "Setting".value || EXCLUDED.value`;
+  return getSocialSettings();
 }
 
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";
@@ -412,10 +438,12 @@ export const DEFAULT_AI_CATEGORIZATION_PREFS: AiCategorizationPrefs = {
 };
 
 /** Ollama, LM Studio, vLLM and OpenAI serve the API under /v1, so a bare origin gets it added. Any other path is
- * kept, for providers like OpenRouter (/api/v1) or Gemini (/v1beta/openai). */
-export function normalizeAiBaseUrl(value: string | null | undefined): string | null {
+ * kept, for providers like OpenRouter (/api/v1) or Gemini (/v1beta/openai). Claude's SDK adds /v1 itself, so its
+ * URL is kept without one. */
+export function normalizeAiBaseUrl(value: string | null | undefined, kind: AiProviderKind = "openai"): string | null {
   const trimmed = (value ?? "").trim().replace(/\/+$/, "");
   if (!trimmed) return null;
+  if (kind === "anthropic") return trimmed.replace(/\/v1$/, "");
   try {
     const url = new URL(trimmed);
     if (url.pathname === "/" && !url.search && !url.hash) return `${trimmed}/v1`;
@@ -531,6 +559,65 @@ export async function setAiDescriptionPrefs(
   await prisma.setting.upsert({
     where: { key: AI_DESCRIPTIONS_KEY },
     create: { key: AI_DESCRIPTIONS_KEY, value: next as unknown as Prisma.InputJsonValue },
+    update: { value: next as unknown as Prisma.InputJsonValue },
+  });
+  return next;
+}
+
+/** Studio's assistant: whether people may prompt it, which AIs they may pick, and which is picked first. A new AI
+ *  isn't offered until an admin adds it here, as each prompt may cost money. */
+export type StudioAssistantPrefs = {
+  enabled: boolean;
+  aiConnectionIds: string[];
+  /** One of aiConnectionIds; null picks the first of them. */
+  defaultAiConnectionId: string | null;
+  /** Offered AIs given the compact tool set: a few basic tools, briefly described, for small local models. */
+  compactAiConnectionIds: string[];
+};
+
+const STUDIO_ASSISTANT_KEY = "studio_assistant";
+export const DEFAULT_STUDIO_ASSISTANT_PREFS: StudioAssistantPrefs = {
+  enabled: false,
+  aiConnectionIds: [],
+  defaultAiConnectionId: null,
+  compactAiConnectionIds: [],
+};
+
+export async function getStudioAssistantPrefs(): Promise<StudioAssistantPrefs> {
+  const row = await prisma.setting.findUnique({ where: { key: STUDIO_ASSISTANT_KEY } });
+  const raw = (row?.value && typeof row.value === "object" && !Array.isArray(row.value) ? row.value : {}) as Record<
+    string,
+    unknown
+  >;
+  const ids = Array.isArray(raw.aiConnectionIds)
+    ? raw.aiConnectionIds.filter((id): id is string => typeof id === "string")
+    : [];
+  const fallback = typeof raw.defaultAiConnectionId === "string" ? raw.defaultAiConnectionId : null;
+  const compact = Array.isArray(raw.compactAiConnectionIds) ? raw.compactAiConnectionIds : [];
+  return {
+    enabled: typeof raw.enabled === "boolean" ? raw.enabled : DEFAULT_STUDIO_ASSISTANT_PREFS.enabled,
+    aiConnectionIds: ids,
+    defaultAiConnectionId: fallback && ids.includes(fallback) ? fallback : (ids[0] ?? null),
+    compactAiConnectionIds: ids.filter((id) => compact.includes(id)),
+  };
+}
+
+export async function setStudioAssistantPrefs(patch: Partial<StudioAssistantPrefs>): Promise<StudioAssistantPrefs> {
+  const current = await getStudioAssistantPrefs();
+  const ids = [...new Set(patch.aiConnectionIds ?? current.aiConnectionIds)];
+  const wanted =
+    patch.defaultAiConnectionId !== undefined ? patch.defaultAiConnectionId : current.defaultAiConnectionId;
+  const compact = patch.compactAiConnectionIds ?? current.compactAiConnectionIds;
+  const next: StudioAssistantPrefs = {
+    enabled: patch.enabled ?? current.enabled,
+    aiConnectionIds: ids,
+    // The default is always one on offer: the first, when the one asked for isn't.
+    defaultAiConnectionId: wanted && ids.includes(wanted) ? wanted : (ids[0] ?? null),
+    compactAiConnectionIds: ids.filter((id) => compact.includes(id)),
+  };
+  await prisma.setting.upsert({
+    where: { key: STUDIO_ASSISTANT_KEY },
+    create: { key: STUDIO_ASSISTANT_KEY, value: next as unknown as Prisma.InputJsonValue },
     update: { value: next as unknown as Prisma.InputJsonValue },
   });
   return next;

@@ -47,7 +47,8 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Language, theme, accent, render colour, model card pictures and hover slideshow, and author preview, each applied as it's changed. */
+/** Language, theme, accent, render colour, model card pictures and hover slideshow, and author preview, each applied as
+ *  it's changed. Studio's own settings are in Studio. */
 export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }: Props) {
   const { t, i18n } = useTranslation("app");
   const authorPreview = useAuthorPreviewEnabled();

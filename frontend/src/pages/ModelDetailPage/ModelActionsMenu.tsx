@@ -22,6 +22,10 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import AutoFixNormalIcon from "@mui/icons-material/AutoFixNormal";
 import LaunchIcon from "@mui/icons-material/Launch";
 import AddLinkIcon from "@mui/icons-material/AddLink";
+import DesignServicesOutlinedIcon from "@mui/icons-material/DesignServicesOutlined";
+import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
+import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutlined";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, PrintApiError, printsApi } from "../../api/prints";
@@ -36,6 +40,8 @@ import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders"
 import LinkSourceDialog from "../../components/linkSource/LinkSourceDialog";
 import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
+import { useOpenInStudio } from "./useOpenInStudio";
+import StudioFileMenu from "./StudioFileMenu";
 import SlicerFileMenu, { type MenuAnchor } from "./SlicerFileMenu";
 import NormalizeInfoIcon from "./NormalizeInfoIcon";
 import { useNormalizedOpen } from "./useNormalizedOpen";
@@ -45,6 +51,7 @@ import EditModelModal from "./EditModelModal";
 import FillGapsDialog from "./FillGapsDialog";
 import { useAiOutcomeWatch } from "./useAiOutcomeWatch";
 import { useCustomize } from "./useCustomize";
+import { useCopyToLibrary } from "./useCopyToLibrary";
 import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
@@ -85,8 +92,10 @@ export default function ModelActionsMenu({
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const toolOwned = Boolean(print.tool_id);
+  // Another user's model, from one of their public collections: everything that uses it, nothing that changes it.
+  const owner = print.owner ?? null;
   const disabledProviders = useDisabledProviders();
-  const canLink = offerLink && !print.source_provider && !toolOwned && !allProvidersOff(disabledProviders);
+  const canLink = offerLink && !owner && !print.source_provider && !toolOwned && !allProvidersOff(disabledProviders);
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const [aiEnabled, setAiEnabled] = useState(false);
@@ -118,6 +127,7 @@ export default function ModelActionsMenu({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [slicerMenuAnchor, setSlicerMenuAnchor] = useState<MenuAnchor>(null);
   const [normalizedMenuAnchor, setNormalizedMenuAnchor] = useState<MenuAnchor>(null);
+  const [studioMenuAnchor, setStudioMenuAnchor] = useState<MenuAnchor>(null);
   const [deleting, setDeleting] = useState(false);
   const [removingFromCollection, setRemovingFromCollection] = useState(false);
   const [addToCollectionOpen, setAddToCollectionOpen] = useState(false);
@@ -150,6 +160,9 @@ export default function ModelActionsMenu({
   };
 
   const customize = useCustomize(print, closeMenu, onUnauthorized);
+  const studio = useOpenInStudio(print, onUnauthorized);
+  const library = useCopyToLibrary(print, onUnauthorized, onUpdated);
+  const libraryCopyId = print.library_copy_id ?? null;
 
   const openEdit = () => {
     closeMenu();
@@ -319,6 +332,33 @@ export default function ModelActionsMenu({
             <ListItemText>{t("models:detail.removeFromCollection")}</ListItemText>
           </MenuItem>
         )}
+        {owner &&
+          (libraryCopyId ? (
+            <MenuItem
+              onClick={() => {
+                closeMenu();
+                library.openCopy(libraryCopyId);
+              }}
+            >
+              <ListItemIcon>
+                <LibraryAddCheckOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t("models:shared.openCopy")}</ListItemText>
+            </MenuItem>
+          ) : (
+            <MenuItem
+              disabled={library.copying}
+              onClick={() => {
+                closeMenu();
+                void library.copy();
+              }}
+            >
+              <ListItemIcon>
+                {library.copying ? <CircularProgress size={18} /> : <LibraryAddOutlinedIcon fontSize="small" />}
+              </ListItemIcon>
+              <ListItemText>{t("models:shared.copy")}</ListItemText>
+            </MenuItem>
+          ))}
         <MenuItem onClick={onDownloadClick} disabled={downloading}>
           <ListItemIcon>
             <DownloadIcon fontSize="small" />
@@ -326,7 +366,7 @@ export default function ModelActionsMenu({
           <ListItemText>{t("common:download")}</ListItemText>
         </MenuItem>
         {customize.item}
-        {toolOwned ? (
+        {owner ? null : toolOwned ? (
           // Kept as the tool needs it: it goes when the tool is uninstalled.
           <MenuItem disabled>
             <ListItemIcon>
@@ -350,7 +390,7 @@ export default function ModelActionsMenu({
             </MenuItem>,
           ]
         )}
-        {aiEnabled && !toolOwned && (
+        {aiEnabled && !toolOwned && !owner && (
           // One suggestion at a time: the next waits until this one is accepted or rejected.
           <MenuItem onClick={() => void recategorize()} disabled={recategorizing || Boolean(print.ai_suggestion)}>
             <ListItemIcon>
@@ -361,7 +401,7 @@ export default function ModelActionsMenu({
             </ListItemText>
           </MenuItem>
         )}
-        {descriptionsEnabled && !toolOwned && (
+        {descriptionsEnabled && !toolOwned && !owner && (
           <MenuItem
             onClick={() => void improveDescription()}
             disabled={improving || Boolean(print.ai_description_pending)}
@@ -426,6 +466,26 @@ export default function ModelActionsMenu({
             <ListItemText>{normalizedMenuLabel(slicerOption.label)}</ListItemText>
           </MenuItem>
         )}
+        {studio.files.length > 0 && (
+          // One file opens straight away; several hand over to a picker, as the slicer's do.
+          <MenuItem
+            disabled={studio.opening}
+            onClick={() => {
+              if (studio.files.length > 1) {
+                setStudioMenuAnchor(menuAnchor);
+                closeMenu();
+                return;
+              }
+              closeMenu();
+              void studio.open(studio.files[0]);
+            }}
+          >
+            <ListItemIcon>
+              {studio.opening ? <CircularProgress size={18} /> : <DesignServicesOutlinedIcon fontSize="small" />}
+            </ListItemIcon>
+            <ListItemText>{t("models:detail.openInStudio")}</ListItemText>
+          </MenuItem>
+        )}
         {canLink && (
           <MenuItem
             onClick={() => {
@@ -447,7 +507,20 @@ export default function ModelActionsMenu({
             <ListItemText>{t("models:detail.openInProvider", { provider: providerInfo.label })}</ListItemText>
           </MenuItem>
         )}
-        {providerInfo && print.source_url && sourceGaps.length > 0 && !toolOwned && (
+        {owner && (
+          <MenuItem
+            onClick={() => {
+              closeMenu();
+              navigate(`/explore/users/${owner.id}`);
+            }}
+          >
+            <ListItemIcon>
+              <PersonOutlineIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("models:shared.moreFrom", { name: owner.display_name })}</ListItemText>
+          </MenuItem>
+        )}
+        {providerInfo && print.source_url && sourceGaps.length > 0 && !toolOwned && !owner && (
           <MenuItem
             onClick={() => {
               closeMenu();
@@ -483,6 +556,13 @@ export default function ModelActionsMenu({
         />
       )}
 
+      <StudioFileMenu
+        anchorEl={studioMenuAnchor}
+        onClose={() => setStudioMenuAnchor(null)}
+        files={studio.files}
+        onOpen={(plate) => void studio.open(plate)}
+      />
+
       {customize.window}
 
       <DownloadPickerDialog
@@ -506,7 +586,7 @@ export default function ModelActionsMenu({
         onCountChange={onCollectionCountChange}
       />
 
-      {editOpen && (
+      {editOpen && !owner && (
         <EditModelModal
           print={print}
           onClose={closeEdit}

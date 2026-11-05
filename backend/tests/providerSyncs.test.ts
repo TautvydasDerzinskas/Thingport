@@ -619,10 +619,14 @@ describe("a sync's model links", () => {
       makerables: "acrylic-knife",
       cgtrader: "lotus-ring-with-opening-and-closing-mechanism",
       grabcad: "arduino-uno-r3-1",
+      meshy: "01a1560f-f5f6-7426-80e3-4876e325f98f",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),
     );
     expect(readBack).toEqual(ids);
+    // One of the user's own Meshy generations, kept apart from posts by its prefix.
+    const task = "task-01a18f26-a4c0-7762-a46c-2c16edc01022";
+    expect(modelIdFromUrl("meshy", modelUrlFor("meshy", task))).toBe(task);
   });
 });

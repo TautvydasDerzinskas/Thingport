@@ -7,7 +7,7 @@ import { z } from "zod";
 import { parseBody } from "../utils/validate";
 import { deleteAllPrintsForUser, getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
 import { createLog } from "../services/auditLog";
-import { communityWidgetUsage, widgetsInUse } from "../services/customWidgetsService";
+import { communityWidgetsSource, communityWidgetUsage, widgetsInUse } from "../services/customWidgetsService";
 import { getToolsAccess, setToolsAccess, TOOLS_AUDIENCES } from "../services/settingsService";
 import {
   adminToolCatalog,
@@ -349,7 +349,7 @@ router.get(
 router.get(
   "/widgets/community",
   asyncHandler(async (_req, res) => {
-    res.json({ widgets: await communityWidgetUsage() });
+    res.json({ widgets: await communityWidgetUsage(), source: communityWidgetsSource() });
   }),
 );
 

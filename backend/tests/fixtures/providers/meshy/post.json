@@ -1,0 +1,182 @@
+{
+  "code": "OK",
+  "requestId": "Root=1-6aebbc98-135f918849617d7f45998233",
+  "result": {
+    "id": "01a1a8bd-7d1a-757e-a8bc-b5f5a93723c5",
+    "author": {
+      "id": "google-oauth2|103629785585971581349",
+      "uid": "lkantunes",
+      "nickname": "lk_antunes",
+      "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocIg-hWZmAmpiHbVMbdczafaNnEzCcDvPdxTgJh6YN_TcNo=s96-c",
+      "tier": "pro"
+    },
+    "state": "published",
+    "title": "011 Forgotten Temple",
+    "body": "Part of FRAGMENTED WORLDS → an experimental series exploring the fragmentation and reconstruction of digital environments in TouchDesigner.",
+    "textLang": "en",
+    "categories": ["Architecture", "NaturePlants"],
+    "tags": ["temple", "ruins", "ancient", "stone", "roots"],
+    "creationType": "general",
+    "coverPosition": 0,
+    "coverItem": {
+      "id": "01a1a8bd-7d06-70fd-9b13-d43d710de864",
+      "position": 0,
+      "kind": "model",
+      "refId": "01a0d0d4-a717-74ff-975b-b71d7cc2beed",
+      "settings": {},
+      "thumbnails": {
+        "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/01a1a8bc-f525-7577-871d-0565e6f7c1e0.png",
+        "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/01a1a8bc-f5cd-73b9-89c6-a3264ccbb17a.png",
+        "thumbnailPlayUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/cover-play/01a1a8bc-f5cd-73ba-9cc7-ff844f3ad277.png",
+        "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/01a1a8bc-f523-77dc-b51c-4882c7af8b0a.png",
+        "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/01a1a8bc-f5cc-7340-9aff-442e74948499.png"
+      },
+      "modelPhase": "texture",
+      "modelMode": "texture",
+      "modelArgs": {
+        "draft": {
+          "aiModel": "blueberry",
+          "modelType": "standard",
+          "topology": "",
+          "prompt": "Rootbound Temple Ruins",
+          "imageId": "01a07381-62e1-7661-b547-e6e21acd9495.png",
+          "imageIds": ["01a07381-62e1-7661-b547-e6e21acd9495.png"],
+          "symmetryMode": 0,
+          "seed": 2623545258,
+          "license": "",
+          "shouldTransferImageStyle": false,
+          "ultraMode": false,
+          "multiView": false,
+          "imageUrl": "https://api.meshy.ai/misc/cdn-images/google-oauth2|103629785585971581349/uploads/01a07381-62e1-7661-b547-e6e21acd9495.png?sign=1793923200-8808a5b46194711df4fb718e6dca7bb7",
+          "imageUrls": [
+            "https://api.meshy.ai/misc/cdn-images/google-oauth2|103629785585971581349/uploads/01a07381-62e1-7661-b547-e6e21acd9495.png?sign=1793923200-8808a5b46194711df4fb718e6dca7bb7"
+          ]
+        },
+        "generate": {
+          "draftIds": null,
+          "modelId": "",
+          "name": "",
+          "enableOriginalUV": false,
+          "license": ""
+        },
+        "remesh": null,
+        "texture": {
+          "prompt": "",
+          "imageId": "01a07381-62e1-7661-b547-e6e21acd9495.png",
+          "imageIds": null,
+          "seed": 1531539977,
+          "artStyle": "realistic",
+          "aiModel": "blueberry",
+          "enablePBR": true,
+          "srMode": "none",
+          "textureSize": 4096,
+          "imageUrl": "https://api.meshy.ai/misc/cdn-images/google-oauth2|103629785585971581349/uploads/01a07381-62e1-7661-b547-e6e21acd9495.png?sign=1793923200-8808a5b46194711df4fb718e6dca7bb7"
+        },
+        "stylize": null,
+        "animate": null,
+        "textToImage": null,
+        "image": null,
+        "threeDToImage": null,
+        "video": null,
+        "extract3DBody": null
+      },
+      "objectPrompt": "Rootbound Temple Ruins",
+      "imageUrls": [
+        "https://api.meshy.ai/misc/cdn-images/google-oauth2|103629785585971581349/uploads/01a07381-62e1-7661-b547-e6e21acd9495.png?sign=1793923200-8808a5b46194711df4fb718e6dca7bb7"
+      ],
+      "is3DPrintable": false,
+      "isPbr": true,
+      "modelIsAnimated": false
+    },
+    "items": [
+      {
+        "id": "01a1a8bd-7d06-70fd-9b13-d43d710de864",
+        "position": 0,
+        "kind": "model",
+        "refId": "01a0d0d4-a717-74ff-975b-b71d7cc2beed",
+        "settings": {},
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/01a1a8bc-f525-7577-871d-0565e6f7c1e0.png",
+          "solidThumbnailUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/01a1a8bc-f5cd-73b9-89c6-a3264ccbb17a.png",
+          "thumbnailPlayUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/cover-play/01a1a8bc-f5cd-73ba-9cc7-ff844f3ad277.png",
+          "thumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/01a1a8bc-f523-77dc-b51c-4882c7af8b0a.png",
+          "solidThumbnailNoBgUrl": "https://cdn.meshy.ai/uploads/prod/2ee1893a884cc9ed69620f7b8790da7a3e7a92a25bec9900e9ed0fe89b4c3054/community-post/01a1a8bc-f5cc-7340-9aff-442e74948499.png"
+        },
+        "modelPhase": "texture",
+        "modelMode": "texture",
+        "modelArgs": {
+          "draft": {
+            "aiModel": "blueberry",
+            "modelType": "standard",
+            "topology": "",
+            "prompt": "Rootbound Temple Ruins",
+            "imageId": "01a07381-62e1-7661-b547-e6e21acd9495.png",
+            "imageIds": ["01a07381-62e1-7661-b547-e6e21acd9495.png"],
+            "symmetryMode": 0,
+            "seed": 2623545258,
+            "license": "",
+            "shouldTransferImageStyle": false,
+            "ultraMode": false,
+            "multiView": false,
+            "imageUrl": "https://api.meshy.ai/misc/cdn-images/google-oauth2|103629785585971581349/uploads/01a07381-62e1-7661-b547-e6e21acd9495.png?sign=1793923200-8808a5b46194711df4fb718e6dca7bb7",
+            "imageUrls": [
+              "https://api.meshy.ai/misc/cdn-images/google-oauth2|103629785585971581349/uploads/01a07381-62e1-7661-b547-e6e21acd9495.png?sign=1793923200-8808a5b46194711df4fb718e6dca7bb7"
+            ]
+          },
+          "generate": {
+            "draftIds": null,
+            "modelId": "",
+            "name": "",
+            "enableOriginalUV": false,
+            "license": ""
+          },
+          "remesh": null,
+          "texture": {
+            "prompt": "",
+            "imageId": "01a07381-62e1-7661-b547-e6e21acd9495.png",
+            "imageIds": null,
+            "seed": 1531539977,
+            "artStyle": "realistic",
+            "aiModel": "blueberry",
+            "enablePBR": true,
+            "srMode": "none",
+            "textureSize": 4096,
+            "imageUrl": "https://api.meshy.ai/misc/cdn-images/google-oauth2|103629785585971581349/uploads/01a07381-62e1-7661-b547-e6e21acd9495.png?sign=1793923200-8808a5b46194711df4fb718e6dca7bb7"
+          },
+          "stylize": null,
+          "animate": null,
+          "textToImage": null,
+          "image": null,
+          "threeDToImage": null,
+          "video": null,
+          "extract3DBody": null
+        },
+        "objectPrompt": "Rootbound Temple Ruins",
+        "imageUrls": [
+          "https://api.meshy.ai/misc/cdn-images/google-oauth2|103629785585971581349/uploads/01a07381-62e1-7661-b547-e6e21acd9495.png?sign=1793923200-8808a5b46194711df4fb718e6dca7bb7"
+        ],
+        "is3DPrintable": false,
+        "isPbr": true,
+        "modelIsAnimated": false
+      }
+    ],
+    "itemCount": 1,
+    "isFeatured": false,
+    "isNsfw": false,
+    "slug": "011-forgotten-temple",
+    "seoNoindex": false,
+    "stats": {
+      "viewsCount": 1,
+      "downloadsCount": 0,
+      "remixesCount": 0,
+      "likesCount": 0,
+      "collectionsCount": 1,
+      "commentsCount": 0,
+      "tipsAmount": 0
+    },
+    "createdAt": 1793832353050,
+    "updatedAt": 1793832357875,
+    "submittedAt": 1793832353048,
+    "publishedAt": 1793832357875
+  }
+}

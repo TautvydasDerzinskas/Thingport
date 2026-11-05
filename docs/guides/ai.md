@@ -4,7 +4,8 @@ Thingport can use an AI model to sort models into your categories and to clean u
 are optional and off until an admin adds a model. Everything else in Thingport works without them.
 
 The model can run on your own hardware, with [Ollama](https://ollama.com), LM Studio or vLLM, so nothing leaves your
-network. A cloud API such as OpenAI, OpenRouter or Google Gemini works too.
+network. A cloud API such as OpenAI, OpenRouter or Google Gemini works too, and so does Anthropic's Claude, through its
+own API.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/20_admin_ai.png">
@@ -63,7 +64,8 @@ models with nothing new since their last check.
 
 ## Set up an AI model
 
-Admins add models under **Administration → AI → Models → Add AI model**.
+Admins add models under **Administration → AI → Models → Add AI model**. Pick its **Type** first: **OpenAI-compatible**
+for Ollama, LM Studio, OpenAI and the rest, or **Claude** for Anthropic's models.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/37_ai_model.png">
@@ -78,9 +80,28 @@ Admins add models under **Administration → AI → Models → Add AI model**.
 - **Reasoning effort**: sent to the provider as `reasoning_effort`. Leave it on the provider's default unless a
   reasoning model is slow or runs out of tokens: **None** stops qwen3 thinking, but gpt-oss can't stop and needs
   **Low**. A provider that turns the setting down is asked again without it.
+- **Sees pictures**: whether the model takes pictures in a prompt (see [below](#seeing-pictures)).
 
 **Test connection** asks the model to categorize a calibration cube, and saving tests it too, so a wrong URL, key or
 model name shows up straight away.
+
+### Claude
+
+With **Claude** picked, the API base URL is filled in (`https://api.anthropic.com`): change it only to reach Claude
+through a proxy. An **API key** is required; create one at [console.anthropic.com](https://console.anthropic.com) under
+**API keys**. Once it's typed in, the models it may use are listed, such as `claude-haiku-5-5`, `claude-sonnet-5-5`
+and `claude-opus-5-5`.
+
+- **Effort** takes the place of reasoning effort: how much Claude thinks before it answers. Current Claude models always
+  think a little, so there's no **None**. These tasks rarely need more than **Low**, which is also the fastest and
+  cheapest.
+- Claude bills each request by the words it reads and writes. Categorizing a whole library sends every model's title,
+  description and tags, so a large run costs more than a few models do. `claude-haiku-5-5` is the cheap choice for
+  categorization; a larger model writes better descriptions.
+- If Claude Opus 5.5, Sonnet 5.5 or Fable 5.1 declines to answer, which can happen with something harmless that looks
+  like a weapon, Anthropic answers with another model in the same request, billed as that model. Thingport asks for
+  this only at `api.anthropic.com`, not through a proxy. A request no model answers fails with **Claude declined to
+  answer**.
 
 | Provider      | API base URL                                               | API key |
 | ------------- | ---------------------------------------------------------- | ------- |
@@ -105,14 +126,21 @@ Add as many models as you like. Click one to make it the **default**, which ever
 another one with **Use AI** in its settings. That way, for example, categorization can run on a small local model while
 descriptions use a bigger one.
 
+### Seeing pictures
+
+**Sees pictures** says a model takes pictures, and Studio's assistant offers to attach pictures to a prompt only for one
+that does. A new model starts as its name suggests: on for Claude, GPT-4o and later, Gemini, and open vision models
+such as `qwen2.5vl`, `llava`, `gemma3`, `pixtral` and `minicpm-v`; off for the rest. Switch it to match the model. One
+switched on that turns pictures down stops the run with a message saying so, rather than answering without them.
+
 ### Choosing a model
 
 - Small local models (7 to 8 billion parameters, such as `qwen2.5:7b` or `llama3.1:8b`) categorize well enough to make
   suggestions worth reviewing. Bigger ones are more reliable, and better at writing descriptions.
 - Small models are often sure of themselves even when they're wrong, so start with **Suggest for review**. Switch to
   **Apply automatically** once you trust the model's picks, and keep the confidence threshold high.
-- **Send the first preview image** only helps with a model that can see images, such as `qwen2.5vl` or `llava`, or most
-  cloud models.
+- **Send the first preview image** only helps with a model that can see images, such as `qwen2.5vl` or `llava`, Claude, or
+  most other cloud models.
 
 ## Turn the features on
 
@@ -128,11 +156,40 @@ tab starts a run over your library and lists what's waiting for review.
 Once a feature is on, it's there for everyone on this Thingport, and each person's runs and suggestions cover their own
 library.
 
+### Studio assistant
+
+On an instance with [Studio](studio.md) on, a third tile, **Studio assistant**, lets people ask an AI in Studio's
+**Ask AI** box to build and change their designs. It's off until you switch it on. Click it to pick:
+
+- **Available models**: the AIs people may pick from in Studio. A new AI isn't offered until you switch it on here, so
+  adding one for categorization doesn't expose it to Studio's users. The server refuses any other.
+- **Default model**: the one picked first in the box.
+
+An admin also finds **Add AI model** and **Choose available models** at the bottom of the box's model list.
+
+The assistant needs a model that can use tools (function calling). Claude and the larger cloud models can; small local
+models often can't, and the box says so. Every prompt is billed to a cloud AI's account, and a request may take several
+steps, each a request of its own.
+
+Each request carries the assistant's tools, and how they're sent depends on the AI:
+
+- **Claude** gets a few tools up front and finds the rest by searching for them, so a request starts at about 3,000
+  tokens rather than 15,000. The tools and instructions are cached too: a later step, or another prompt within a few
+  minutes, reads them at a tenth of the price.
+- **Compact**, set per AI under **Available models**, is for small local models: a dozen basic tools (shapes,
+  text, moving, combining, holes) described in a line each, about 1,600 tokens in all. Fillets, shells, sketches and the
+  rest need **All tools**. An AI on your own network starts on Compact when you switch it on.
+- **All tools** sends every tool, about 15,000 tokens. OpenAI and most cloud APIs cache the part that repeats on their
+  own, and Ollama keeps it in memory between steps, so only a run's first step reads it all. On a slow CPU that first
+  step can still take minutes: raise Ollama's context (`OLLAMA_CONTEXT_LENGTH`, at least 24576 for All tools) or use
+  Compact.
+
 ## Privacy
 
 With a model on your own hardware, nothing leaves your network. With a third-party API, a model's title, description
 and tags are sent to that provider, and its first photo too when **Send the first preview image** is on. Files are never
-sent.
+sent. The Studio assistant sends the request, any pictures attached to it, the design's features and sizes, and, when
+the AI asks to look, pictures of the design.
 
 ## Troubleshooting
 

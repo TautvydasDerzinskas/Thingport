@@ -5,6 +5,8 @@ const EN: Record<PageId, string> = {
   dashboard: "Dashboard",
   models: "Models",
   collections: "Collections",
+  explore: "Explore",
+  chats: "Chats",
   tags: "Tags",
   downloads: "Downloads",
   tools: "Tools",
@@ -24,7 +26,8 @@ const EN: Record<PageId, string> = {
   adminConnections: "Connections",
   adminCaptcha: "Captcha",
 };
-const ids = (query: string, isAdmin = false) => matchPages(query, EN, isAdmin).map((page) => page.id);
+const ids = (query: string, isAdmin = false, explore = false, chats = false) =>
+  matchPages(query, EN, isAdmin, explore, chats).map((page) => page.id);
 
 describe("matchPages", () => {
   it("matches the shown name from the first letter, best first", () => {
@@ -61,5 +64,16 @@ describe("matchPages", () => {
 
   it("marks every admin path as admin-only", () => {
     for (const page of SEARCH_PAGES) expect(page.adminOnly ?? false).toBe(page.path.startsWith("/admin"));
+  });
+  it("finds Explore only while the sidebar offers it", () => {
+    expect(ids("explore")).toEqual([]);
+    expect(ids("explore", false, true)).toEqual(["explore"]);
+    expect(ids("public collections", false, true)[0]).toBe("explore");
+  });
+
+  it("finds Chats only while the sidebar offers it", () => {
+    expect(ids("chats")).toEqual([]);
+    expect(ids("chats", false, false, true)).toEqual(["chats"]);
+    expect(ids("direct messages", false, false, true)[0]).toBe("chats");
   });
 });

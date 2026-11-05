@@ -4,7 +4,7 @@ import { HttpError } from "../utils/fileUtils";
 import { toPrintOut, type PrintOut } from "../dto";
 import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCategorizationService";
 import { aiDescriptionOut } from "./aiDescriptionService";
-import type { Author, Category, Plate, PreviewImage, Print, PrintFile } from "@prisma/client";
+import type { Author, Category, Plate, PreviewImage, Prisma, Print, PrintFile } from "@prisma/client";
 
 export type FullPrint = {
   print: Print & { author: Author | null; category: Category | null };
@@ -14,9 +14,14 @@ export type FullPrint = {
   previewImages: PreviewImage[];
 };
 
-export async function loadFullPrint(userId: string, printId: string): Promise<FullPrint> {
+/** `scope` widens which models may be loaded, from the user's own (as services/socialService.ts readablePrintWhere). */
+export async function loadFullPrint(
+  userId: string,
+  printId: string,
+  scope: Prisma.PrintWhereInput = { userId },
+): Promise<FullPrint> {
   const print = await prisma.print.findFirst({
-    where: { id: printId, userId },
+    where: { id: printId, AND: [scope] },
     include: { author: true, category: true },
   });
   if (!print) throw new HttpError(404, "Print not found");
@@ -31,9 +36,13 @@ export async function loadFullPrint(userId: string, printId: string): Promise<Fu
   return { print, plates, files, preparedFile, previewImages };
 }
 
-export async function printOutById(userId: string, printId: string): Promise<PrintOut> {
+export async function printOutById(
+  userId: string,
+  printId: string,
+  scope: Prisma.PrintWhereInput = { userId },
+): Promise<PrintOut> {
   const [full, categoryPaths, suggestionsShown] = await Promise.all([
-    loadFullPrint(userId, printId),
+    loadFullPrint(userId, printId, scope),
     aiCategoryPaths(userId),
     aiSuggestionsShown(),
   ]);
@@ -61,12 +70,19 @@ function groupByPrintId<T extends { printId: string }>(rows: T[]): Map<string, T
   return map;
 }
 
-/** A few `IN` queries instead of one load per id. Ids not owned by `userId` are omitted. */
-export async function printOutsByIds(userId: string, printIds: string[]): Promise<Map<string, PrintOut>> {
+/** A few `IN` queries instead of one load per id. Ids not owned by `userId` (or outside `scope`) are omitted. */
+export async function printOutsByIds(
+  userId: string,
+  printIds: string[],
+  scope: Prisma.PrintWhereInput = { userId },
+): Promise<Map<string, PrintOut>> {
   const out = new Map<string, PrintOut>();
   if (!printIds.length) return out;
   const [prints, plates, files, previewImages, categoryPaths, suggestionsShown] = await Promise.all([
-    prisma.print.findMany({ where: { id: { in: printIds }, userId }, include: { author: true, category: true } }),
+    prisma.print.findMany({
+      where: { id: { in: printIds }, AND: [scope] },
+      include: { author: true, category: true },
+    }),
     prisma.plate.findMany({ where: { printId: { in: printIds } }, orderBy: { position: "asc" } }),
     prisma.printFile.findMany({ where: { printId: { in: printIds } } }),
     prisma.previewImage.findMany({ where: { printId: { in: printIds } }, orderBy: { position: "asc" } }),

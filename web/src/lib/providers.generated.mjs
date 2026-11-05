@@ -146,6 +146,15 @@ export const PROVIDER_DOCS = [
     nav: "GrabCAD",
     description: "Import GrabCAD's free CAD models, and anyone's likes, with your own sign-in for the files.",
   },
+  {
+    slug: "providers/meshy",
+    source: "docs/providers/meshy.md",
+    group: "Providers",
+    title: "Meshy",
+    nav: "Meshy",
+    description:
+      "Import Meshy's community models and your own AI generations as print-ready 3MFs, with your own sign-in.",
+  },
 ];
 
 /** What each provider's page shows besides its Markdown and the comparison table, from its manifest and docs.ts: a
@@ -553,6 +562,29 @@ export const PROVIDER_PAGES = [
       categories: true,
     },
   },
+  {
+    docsSlug: "meshy",
+    accent: "#C5F955",
+    highlight: {
+      title: "Your AI generations, ready to print",
+      text: "Meshy converts each model for your account into a 3MF that stands 75 mm tall on the plate. Sync your workspace, and what you generate there comes in on the next check.",
+      link: "guides/synced-collections#turn-sync-on-in-thingport",
+    },
+    facts: {
+      signIn: "user",
+      grab: "recommended",
+      grabSite: "optional",
+      flaresolverr: "none",
+      collections: true,
+      likes: false,
+      sync: true,
+      profiles: false,
+      slicers: [],
+      bambuProjects: false,
+      trending: "popular",
+      categories: true,
+    },
+  },
 ];
 
 /** The comparison table of docs/PROVIDER_SETUP.md, for the foot of each provider's page: the columns' headings, a row
@@ -779,6 +811,19 @@ export const PROVIDER_COMPARISON = {
         { need: "none" },
         { yes: false },
         { yes: true },
+        { yes: true },
+        { yes: false },
+      ],
+    },
+    {
+      docsSlug: "meshy",
+      name: "Meshy",
+      cells: [
+        { text: "Yours; Pro for community models" },
+        { need: "recommended" },
+        { need: "none" },
+        { yes: true },
+        { yes: false },
         { yes: true },
         { yes: false },
       ],

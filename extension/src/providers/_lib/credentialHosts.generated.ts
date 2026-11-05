@@ -75,5 +75,11 @@ export const CREDENTIAL_HOSTS = {
   "grabcad-session": {
     exact: ["grabcad.com"],
   },
+  "meshy-api": {
+    exact: ["www.meshy.ai"],
+  },
+  "meshy-auth": {
+    exact: ["auth.meshy.ai"],
+  },
 } as const;
 export type CredentialDestination = keyof typeof CREDENTIAL_HOSTS;

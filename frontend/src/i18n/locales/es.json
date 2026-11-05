@@ -95,7 +95,12 @@
       "tags": "Etiquetas",
       "downloads": "Descargas",
       "bookmarks": "Marcadores",
-      "tools": "Herramientas"
+      "tools": "Herramientas",
+      "studio": "Estudio",
+      "explore": "Explorar",
+      "chats": "Chats",
+      "chatsUnread_one": "Chats, {{count}} mensaje sin leer",
+      "chatsUnread_other": "Chats, {{count}} mensajes sin leer"
     },
     "uploadBar": {
       "uploading": "Subiendo…",
@@ -354,7 +359,13 @@
           "writeConfirmTitle": "¿Dejar que el asistente use «{{tool}}»?",
           "writeConfirmMessage": "Esta herramienta cambia tu biblioteca. Un asistente conectado con este token podrá usarla sin preguntarte cada vez. Nada de lo que haga elimina modelos.",
           "writeConfirm": "Activar",
-          "reads": "Lee tu biblioteca"
+          "reads": "Lee tu biblioteca",
+          "studio": {
+            "heading": "Estudio",
+            "title": "Diseños de Estudio",
+            "description": "Leer, crear y cambiar tus diseños de Estudio, paso a paso, como puedes hacerlo en la página.",
+            "confirm": "Un asistente conectado con este token podrá crear, cambiar y eliminar tus diseños de Estudio sin preguntarte cada vez. No puede cambiar tus modelos."
+          }
         },
         "rest": {
           "heading": "Permisos",
@@ -385,7 +396,7 @@
             },
             "collections": {
               "title": "Colecciones",
-              "description": "Tus colecciones y lo que contienen."
+              "description": "Tus colecciones y lo que contienen, y las que comparten otros."
             },
             "tags": {
               "title": "Etiquetas",
@@ -414,6 +425,10 @@
             "other": {
               "title": "Todo lo demás",
               "description": "Tus ajustes, notificaciones, sugerencias de IA y todo lo que no aparece arriba."
+            },
+            "chats": {
+              "title": "Chats",
+              "description": "Tus chats y sus mensajes. No se marca en un token nuevo."
             }
           }
         },
@@ -1734,7 +1749,7 @@
         "heading": "IA",
         "connection": {
           "heading": "Modelos",
-          "subtitle": "Servicios compatibles con OpenAI que usan las funciones de IA de Thingport.",
+          "subtitle": "Las IA que usan las funciones de Thingport: servicios compatibles con OpenAI o Claude.",
           "gridHint": "Haz clic en una IA para hacerla predeterminada. Haz doble clic para editarla o probarla, o clic derecho para ver más opciones.",
           "add": "Añadir modelo de IA",
           "addTitle": "Añadir modelo de IA",
@@ -1779,7 +1794,20 @@
           "testFailed": "La prueba de conexión ha fallado.",
           "save": "Guardar",
           "saving": "Comprobando la conexión…",
-          "failed": "No se pudo cargar ni guardar la IA."
+          "failed": "No se pudo cargar ni guardar la IA.",
+          "kind": "Tipo",
+          "kinds": {
+            "openai": "Compatible con OpenAI",
+            "anthropic": "Claude"
+          },
+          "baseUrlHintClaude": "Déjala así, salvo que llegues a Claude a través de un proxy.",
+          "keyRequiredClaude": "Obligatoria: una clave de API de Anthropic, de console.anthropic.com, en API keys.",
+          "modelsNeedKey": "Escribe la clave de API para ver los modelos que puede usar.",
+          "effortClaude": "Esfuerzo",
+          "effortClaudeHint": "Cuánto piensa Claude antes de responder. Menos es más rápido y barato, y estas tareas rara vez necesitan más que Bajo.",
+          "effortClaudeDefault": "Predeterminado del modelo (no enviar nada)",
+          "vision": "Ve imágenes",
+          "visionHelp": "Si este modelo admite imágenes en una petición. El asistente de Studio solo ofrece adjuntar imágenes a una IA que las admite. Una IA nueva empieza según lo que indica el nombre de su modelo (Claude, GPT-4o y posteriores, Gemini, Qwen-VL, LLaVA, Gemma 3…): cámbialo para que coincida con el modelo."
         }
       },
       "aiFeatures": {
@@ -1798,7 +1826,9 @@
         "manage": "Gestionar",
         "descriptions": "Descripciones mejoradas",
         "descriptionsDescription": "Limpia las descripciones de los modelos con IA, al importarlos o en una ejecución: elimina la autopromoción, las traduce y las ordena, para que las revises o para aplicarlas de inmediato.",
-        "privacy": "Con una API de terceros, los títulos, las descripciones y las etiquetas de los modelos salen de este servidor. Las imágenes solo se envían si está activado."
+        "privacy": "Con una API de terceros, los títulos, las descripciones y las etiquetas de los modelos salen de este servidor. Las imágenes solo se envían si está activado.",
+        "studio": "Asistente de Estudio",
+        "studioDescription": "Permite pedir a una IA, en el cuadro de Estudio, que construya y cambie los diseños paso a paso, con las IA que ofrezcas."
       },
       "aiCategorization": {
         "heading": "Categorización por IA",
@@ -2050,6 +2080,7 @@
           "model_reimported": "Detalles que faltaban obtenidos",
           "model_linked": "Modelo vinculado a un proveedor",
           "model_deleted": "Modelo eliminado",
+          "models_merged": "Modelos fusionados",
           "models_repaired": "Modelos reparados",
           "collection_created": "Colección creada",
           "collection_edited": "Colección editada",
@@ -2077,7 +2108,15 @@
           "api_token_rest_scopes_changed": "Cambió los permisos de su token de API",
           "file_reuse_changed": "Cambió cómo se guardan los archivos idénticos",
           "file_reuse_backfill_started": "Empezó a comprobar si hay archivos guardados con contenido idéntico",
-          "custom_widgets_changed": "Cambió qué widgets personalizados se permiten"
+          "custom_widgets_changed": "Cambió qué widgets personalizados se permiten",
+          "tool_installed": "Herramienta instalada",
+          "tool_uninstalled": "Herramienta desinstalada",
+          "tools_access_changed": "Cambió el acceso a las herramientas",
+          "model_copied": "Modelo copiado",
+          "social_settings_changed": "Funciones sociales cambiadas",
+          "chat_room_created": "Sala de chat creada",
+          "chat_room_edited": "Sala de chat editada",
+          "chat_room_deleted": "Sala de chat eliminada"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -2093,7 +2132,11 @@
         "aiRunStopped": "(detenida)",
         "viaProvider": "mediante {{provider}}",
         "merged": "{{merged}} → {{name}}",
-        "repairSummary": "{{action}}: {{repaired}} reparados, {{deleted}} eliminados, {{failed}} fallidos"
+        "repairSummary": "{{action}}: {{repaired}} reparados, {{deleted}} eliminados, {{failed}} fallidos",
+        "socialOn": "Activadas",
+        "socialOff": "Desactivadas",
+        "chatsOn": "Chats activados",
+        "chatsOff": "Chats desactivados"
       },
       "rendering": {
         "heading": "Renderizado",
@@ -2338,6 +2381,8 @@
           "outdated_one": "{{count}} en una versión anterior",
           "outdated_many": "{{count}} en una versión anterior",
           "outdated_other": "{{count}} en una versión anterior",
+          "fromFolder": "Se ofrecen desde la carpeta {{location}}",
+          "fromRepository": "Se ofrecen desde {{location}}",
           "source": "Ver código",
           "off": "Los widgets de la comunidad están desactivados: los usuarios no pueden instalarlos y los instalados no se cargan.",
           "empty": "El repositorio de la comunidad aún no tiene widgets.",
@@ -2432,6 +2477,44 @@
           "empty": "Nadie ha creado una herramienta todavía.",
           "off": "Las herramientas propias de los usuarios están desactivadas.",
           "by": "{{name}} · {{email}}"
+        }
+      },
+      "studioAssistant": {
+        "offered": "Modelos disponibles",
+        "offeredHelp": "Se elige entre estos en el cuadro de Estudio. Una IA nueva no se ofrece hasta que la actives aquí. Con una IA en la nube, cada petición se cobra a su cuenta. Compacto da a un modelo local pequeño una docena de herramientas básicas (formas, mover, combinar, agujeros) en una décima parte de la petición; los redondeos, vaciados y bocetos necesitan Todas. Claude las recibe todas y busca las que necesita.",
+        "offerAria": "Ofrecer {{model}} en Estudio",
+        "default": "Modelo predeterminado",
+        "noneOffered": "Activa al menos un modelo para que se pueda elegir.",
+        "save": "Guardar",
+        "failed": "No se pudieron cargar o guardar los ajustes del asistente de Estudio.",
+        "toolsAll": "Todas",
+        "toolsCompact": "Compacto",
+        "toolsAria": "Herramientas que recibe {{model}}"
+      },
+      "social": {
+        "label": "Funciones sociales",
+        "summary": "Activa la página Explorar y las colecciones públicas, para que los usuarios de esta instancia compartan modelos entre sí.",
+        "infoTitle": "Qué hacen las funciones sociales",
+        "infoPublic": "El formulario de una colección incluye la opción Privada / Pública. Las colecciones nuevas empiezan como privadas.",
+        "infoExplore": "Explorar aparece en la barra lateral cuando hay más de un usuario. Muestra a quienes comparten, sus modelos y colecciones más recientes y lo que más se copia.",
+        "infoCopy": "Los demás pueden abrir, descargar y laminar los modelos de una colección pública, y añadirlos a sus propias colecciones. Así obtienen su propia copia, que se conserva aunque el original cambie, se haga privado o se elimine.",
+        "infoOff": "Al desactivarlo, todo lo compartido vuelve a ocultarse. Cada colección conserva su ajuste Pública o Privada para cuando se vuelva a activar.",
+        "loadFailed": "No se pudieron cargar los ajustes sociales.",
+        "saveFailed": "No se pudieron guardar los ajustes sociales.",
+        "settingsTitle": "Ajustes de las funciones sociales",
+        "settingsOff": "Activa las funciones sociales para cambiar sus ajustes",
+        "chats": {
+          "label": "Chats",
+          "summary": "Mensajes directos entre los usuarios de esta instancia, y salas que crean los administradores.",
+          "switch": "Chats",
+          "infoTitle": "Qué hacen los chats",
+          "infoDirect": "Chats aparece en la barra lateral. Cualquiera puede encontrar a otro usuario por su nombre, o por su correo completo, y escribirle.",
+          "infoRooms": "Los administradores crean salas: públicas, que cualquiera puede leer y unirse, y privadas, para las personas que elijan.",
+          "infoNotify": "Quien no está leyendo un chat ve sus mensajes nuevos en la barra lateral y como notificación. Los mensajes llegan en unos segundos, no al instante.",
+          "infoOff": "Al desactivarlo se ocultan todos los chats. No se elimina nada, y todo vuelve cuando se reactivan.",
+          "onHint": "Activado: Chats está en la barra lateral de todos.",
+          "offHint": "Desactivado por defecto. Actívalo para que los usuarios se escriban.",
+          "infoModels": "Un modelo enviado en un chat lo puede abrir, descargar y copiar cualquiera que pueda leer ese chat, mientras el mensaje siga ahí."
         }
       }
     },
@@ -3109,6 +3192,815 @@
           "Despidiendo a los fantasmas…"
         ]
       }
+    },
+    "studio": {
+      "toolbar": {
+        "label": "Herramientas de Estudio",
+        "shapes": "Formas",
+        "modify": "Modificar"
+      },
+      "emptyDesign": "Añade una forma desde la barra de herramientas o empieza un boceto",
+      "types": {
+        "box": "Caja",
+        "cylinder": "Cilindro",
+        "cone": "Cono",
+        "sphere": "Esfera",
+        "torus": "Toro",
+        "extrude": "Extrusión",
+        "boolean": "Combinación",
+        "sketch": "Boceto",
+        "mesh": "Malla",
+        "revolve": "Revolución",
+        "press_pull": "Empujar/tirar",
+        "fillet": "Redondeo",
+        "chamfer": "Chaflán",
+        "hole": "Agujero",
+        "shell": "Vaciado",
+        "split": "División",
+        "part": "Pieza",
+        "pattern": "Patrón",
+        "mirror": "Simetría",
+        "hull": "Envolvente",
+        "thread": "Rosca",
+        "loft": "Transición",
+        "sweep": "Barrido"
+      },
+      "tree": {
+        "heading": "Elementos",
+        "empty": "Aún no hay nada",
+        "expand": "Expandir",
+        "collapse": "Contraer"
+      },
+      "actions": {
+        "sketch": "Boceto",
+        "extrude": "Extruir",
+        "editSketch": "Editar boceto",
+        "drawOnSketch": "Dibujar en el boceto",
+        "union": "Unir",
+        "subtract": "Restar",
+        "intersect": "Intersecar",
+        "undo": "Deshacer",
+        "redo": "Rehacer",
+        "rename": "Cambiar nombre",
+        "duplicate": "Duplicar",
+        "delete": "Eliminar",
+        "hide": "Ocultar",
+        "show": "Mostrar",
+        "add": {
+          "box": "Añadir caja",
+          "cylinder": "Añadir cilindro",
+          "cone": "Añadir cono",
+          "sphere": "Añadir esfera",
+          "torus": "Añadir toro"
+        },
+        "revolve": "Revolucionar",
+        "separate": "Separar piezas",
+        "hull": "Envolver",
+        "loft": "Transición"
+      },
+      "shapes": {
+        "rectangle": "Rectángulo",
+        "circle": "Círculo",
+        "polygon": "Polígono",
+        "text": "Texto",
+        "trace": "Imagen calcada",
+        "path": "Trazado",
+        "line": "Línea",
+        "arc": "Arco"
+      },
+      "planes": {
+        "XY": "Superior",
+        "XZ": "Frontal",
+        "YZ": "Derecho",
+        "FACE": "Sobre una cara",
+        "faceHint": "Elige una cara plana"
+      },
+      "sketch": {
+        "on": "Boceto en el plano {{plane}}",
+        "tool": "Herramienta de dibujo",
+        "finish": "Terminar",
+        "hint": {
+          "rectangle": "Arrastra para dibujar un rectángulo",
+          "circle": "Arrastra desde el centro para dibujar un círculo",
+          "polygon": "Haz clic para añadir vértices; un doble clic, Intro o el primer vértice lo cierran",
+          "line": "Haz clic para añadir puntos. Cambia a Arco para una curva; ciérrala en el primer punto, con doble clic o Intro",
+          "arc": "Haz clic donde termina el arco y luego en un punto por el que pasa. Cambia a Línea para lados rectos; ciérrala en el primer punto o con Intro"
+        }
+      },
+      "transform": {
+        "label": "Manipulador",
+        "translate": "Mover",
+        "rotate": "Rotar",
+        "scale": "Escalar",
+        "select": "Seleccionar"
+      },
+      "view": {
+        "label": "Vistas",
+        "iso": "Isométrica",
+        "top": "Superior",
+        "front": "Frontal",
+        "right": "Derecha",
+        "fit": "Ajustar a la vista",
+        "navigation": "Arrastrar con el botón derecho gira la vista, con el central (o Mayús + derecho) la desplaza, la rueda acerca. Arrastrar con el izquierdo dibuja un cuadro de selección: de izquierda a derecha toma lo que queda dentro por completo, de derecha a izquierda también lo que toca. Mayús añade a la selección."
+      },
+      "properties": {
+        "heading": "Propiedades",
+        "none": "Selecciona un elemento para editarlo.",
+        "selectedCount_one": "{{count}} seleccionado",
+        "selectedCount_many": "{{count}} seleccionados",
+        "selectedCount_other": "{{count}} seleccionados",
+        "partOf": "Parte de",
+        "name": "Nombre",
+        "size": "Tamaño",
+        "extrude": "Extrusión",
+        "extrudeHelp": "Cuánto se extruye el boceto, en mm. Una distancia negativa va en sentido contrario.",
+        "operation": "Operación",
+        "position": "Posición",
+        "rotation": "Rotación",
+        "scale": "Escala",
+        "plane": "Plano",
+        "planeHelp": "Superior (XY) extruye hacia arriba, Frontal (XZ) hacia delante, Derecho (YZ) hacia la derecha. El desplazamiento mueve el plano en ese sentido.",
+        "shapes": "Formas",
+        "noShapes": "Aún ninguna: dibuja en el boceto.",
+        "removeShape": "Quitar forma",
+        "hole": "Agujero",
+        "points_one": "{{count}} punto",
+        "points_many": "{{count}} puntos",
+        "points_other": "{{count}} puntos",
+        "fields": {
+          "width": "Ancho",
+          "depth": "Profundidad",
+          "height": "Alto",
+          "radius": "Radio",
+          "segments": "Segmentos",
+          "radius_bottom": "Radio inferior",
+          "radius_top": "Radio superior",
+          "major_radius": "Radio del anillo",
+          "minor_radius": "Radio del tubo",
+          "distance": "Distancia",
+          "offset": "Desplazamiento",
+          "angle": "Ángulo",
+          "diameter": "Diámetro",
+          "thickness": "Grosor",
+          "count": "Cantidad",
+          "spacing": "Separación",
+          "grid_count": "Filas",
+          "grid_spacing": "Separación entre filas",
+          "pitch": "Paso",
+          "length": "Longitud",
+          "clearance": "Holgura"
+        },
+        "mesh": {
+          "source": "Origen",
+          "triangles_one": "{{count}} triángulo",
+          "triangles_many": "{{count}} triángulos",
+          "triangles_other": "{{count}} triángulos",
+          "importedSize": "Importado a {{size}} mm",
+          "solid": "Sólido cerrado",
+          "open": "No es un sólido cerrado",
+          "openHelp": "Tiene huecos, así que se puede mover, escalar y exportar, pero no combinar con otros cuerpos.",
+          "parts_one": "{{count}} pieza",
+          "parts_many": "{{count}} piezas separadas",
+          "parts_other": "{{count}} piezas separadas"
+        },
+        "cornerRadius": "Radio de las esquinas"
+      },
+      "design": {
+        "none": "Sin diseño",
+        "new": "Nuevo diseño",
+        "open": "Abrir…",
+        "openTitle": "Abrir un diseño",
+        "rename": "Cambiar nombre del diseño",
+        "export": "Descargar STL",
+        "delete": "Eliminar diseño",
+        "deleteTitle": "¿Eliminar «{{name}}»?",
+        "deleteMessage": "El diseño y su historial se eliminan para siempre.",
+        "empty": "Aún no hay diseños.",
+        "emptyTitle": "Aún no hay diseños",
+        "emptyHint": "Empieza uno y constrúyelo con formas y bocetos.",
+        "untitled": "Diseño sin título",
+        "nothingToExport": "No hay nada visible que descargar",
+        "features_one": "{{count}} elemento",
+        "features_many": "{{count}} elementos",
+        "features_other": "{{count}} elementos",
+        "saveToLibrary": "Guardar en Thingport",
+        "saving": "Guardando en Thingport…",
+        "saved": "«{{name}}» guardado en tu biblioteca",
+        "openSaved": "Abrir"
+      },
+      "prompt": {
+        "title": "Preguntar a la IA",
+        "open": "Abrir Preguntar a la IA",
+        "help": "Describe una pieza o un cambio en el diseño abierto, y la IA lo construye paso a paso con las mismas herramientas que la barra. Verás llegar cada paso, y Deshacer los revierte de uno en uno. Un administrador elige qué IA se ofrecen. Una IA que ve imágenes admite hasta 4: una foto o un dibujo del que partir, o un logotipo que calcar.",
+        "model": "Modelo de IA",
+        "addModel": "Añadir modelo de IA",
+        "noModels": "Aún no se ofrece ninguna IA para Estudio.",
+        "minimize": "Minimizar",
+        "placeholder": "Describe una pieza o un cambio en esta",
+        "send": "Enviar",
+        "chooseModels": "Elegir los modelos disponibles",
+        "off": "El asistente de Estudio está desactivado.",
+        "turnOn": "Activarlo",
+        "stop": "Detener",
+        "working": "Trabajando…",
+        "clear": "Borrar la conversación",
+        "clearTitle": "¿Borrar la conversación?",
+        "clearMessage": "El asistente olvida lo que se dijo sobre este diseño. El diseño se queda como está.",
+        "steps_one": "{{count}} paso",
+        "steps_many": "{{count}} pasos",
+        "steps_other": "{{count}} pasos",
+        "stopped": "Detenido.",
+        "limit": "Detenido tras {{count}} pasos.",
+        "failed": "No pudo terminar: {{error}}",
+        "showConversation": "Mostrar la conversación",
+        "hideConversation": "Ocultar la conversación",
+        "live": "Paso {{number}}: {{step}}",
+        "attach": "Adjuntar imágenes",
+        "picture": "Imagen {{number}}",
+        "removePicture": "Quitar la imagen {{number}}",
+        "noVision": "Esta IA no ve imágenes. Elige una que las vea, o quítalas."
+      },
+      "panels": {
+        "label": "Paneles",
+        "features": "Elementos",
+        "properties": "Propiedades",
+        "hide": "Ocultar {{panel}}",
+        "show": "Mostrar {{panel}}"
+      },
+      "viewCube": {
+        "label": "Cubo de vista: haz clic en una cara, arista o esquina para mirar desde ahí, arrástralo para girar la vista",
+        "home": "Vista inicial",
+        "top": "SUPERIOR",
+        "bottom": "INFERIOR",
+        "front": "FRONTAL",
+        "back": "POSTERIOR",
+        "left": "IZQUIERDA",
+        "right": "DERECHA"
+      },
+      "open": {
+        "designs": "Diseños",
+        "library": "Biblioteca",
+        "search": "Busca tus modelos",
+        "help": "Los archivos STL, 3MF, STEP, OBJ y GLB entran como cuerpos de malla, a su propio tamaño. El diseño guarda su propia copia, así que los cambios posteriores en el modelo no le llegan.",
+        "open": "Abrir",
+        "openHelp": "Como un diseño nuevo",
+        "insert": "Insertar",
+        "insertHelp": "En este diseño",
+        "noMatches": "Ningún modelo con un archivo 3D coincide",
+        "emptyLibrary": "Tu biblioteca aún no tiene archivos STL, 3MF, STEP, OBJ ni GLB",
+        "loadMore": "Cargar más"
+      },
+      "working": "Calculando…",
+      "edges": {
+        "none": "Viva",
+        "fillet": "Redondeo",
+        "chamfer": "Chaflán",
+        "radius": "Radio",
+        "distance": "Distancia"
+      },
+      "ops": {
+        "cancel": "Cancelar",
+        "ok": "Aceptar",
+        "pickBody": "Haz clic en un cuerpo",
+        "combine": {
+          "label": "Resultado",
+          "new": "Nuevo",
+          "join": "Unir",
+          "cut": "Cortar",
+          "intersect": "Intersecar"
+        },
+        "extrude": {
+          "title": "Extrusión",
+          "help": "Convierte el boceto en un sólido. La conicidad inclina los lados hacia el extremo (un desmoldeo); las aristas de los extremos se pueden redondear o achaflanar. Unir, cortar o intersecar lo combina con otro cuerpo.",
+          "taper": "Conicidad",
+          "startOffset": "Desfase inicial",
+          "symmetric": "En ambos sentidos",
+          "topEdge": "Extremo lejano",
+          "bottomEdge": "Extremo cercano",
+          "topRim": "Borde superior",
+          "bottomRim": "Borde inferior"
+        },
+        "revolve": {
+          "title": "Revolución",
+          "help": "Gira el boceto alrededor de uno de sus ejes. Todas sus formas deben estar a un lado del eje.",
+          "axis": "Eje",
+          "axisU": "Horizontal (u)",
+          "axisV": "Vertical (v)",
+          "angle": "Ángulo"
+        },
+        "press_pull": {
+          "title": "Empujar/tirar",
+          "help": "Mueve una cara plana hacia fuera (añade) o hacia dentro (corta), manteniendo su contorno.",
+          "pick": "Haz clic en una cara plana"
+        },
+        "fillet": {
+          "title": "Redondeo",
+          "help": "Redondea aristas rectas entre caras planas. Las exteriores se redondean, las interiores se rellenan. Haz clic en aristas para añadirlas o quitarlas.",
+          "pick": "Haz clic en las aristas a redondear"
+        },
+        "chamfer": {
+          "title": "Chaflán",
+          "help": "Achaflana aristas rectas entre caras planas, recortando la misma distancia en ambas. Haz clic en aristas para añadirlas o quitarlas.",
+          "pick": "Haz clic en las aristas a achaflanar"
+        },
+        "hole": {
+          "title": "Agujero",
+          "help": "Taladra un agujero redondo donde haces clic, hacia dentro de la superficie. El avellanado y el escariado dejan sitio a la cabeza del tornillo.",
+          "pick": "Haz clic donde taladrar",
+          "diameter": "Diámetro",
+          "depth": "Profundidad",
+          "through": "Pasante",
+          "style": "Tipo",
+          "simple": "Simple",
+          "counterbore": "Escariado",
+          "countersink": "Avellanado",
+          "angle": "Ángulo",
+          "boreDiameter": "Diámetro del escariado",
+          "boreDepth": "Profundidad del escariado",
+          "sinkDiameter": "Diámetro del avellanado",
+          "threaded": "Roscado",
+          "threadedAs": "Roscado {{size}}"
+        },
+        "shell": {
+          "title": "Vaciado",
+          "help": "Vacía el cuerpo, con paredes de este grosor. Haz clic en caras planas para dejarlas abiertas, como la parte de arriba de una bandeja.",
+          "thickness": "Grosor de pared",
+          "pick": "Haz clic en las caras a dejar abiertas",
+          "open_one": "{{count}} cara abierta",
+          "open_many": "{{count}} caras abiertas",
+          "open_other": "{{count}} caras abiertas"
+        },
+        "split": {
+          "title": "División",
+          "help": "Divide el cuerpo en dos: por un plano, el plano de una cara plana u otro cuerpo. Ambas partes siguen siendo editables.",
+          "by": "Dividir por",
+          "plane": "Plano",
+          "face": "Cara",
+          "body": "Cuerpo",
+          "pickFace": "Haz clic en una cara plana",
+          "facePicked": "Cara elegida",
+          "pickTool": "Haz clic en el cuerpo con el que dividir",
+          "keep": "Parte",
+          "front": "Delantera",
+          "back": "Trasera",
+          "inside": "Interior",
+          "outside": "Exterior"
+        },
+        "scale": {
+          "title": "Escala",
+          "help": "Escala el cuerpo respecto a su propio origen.",
+          "factor": "Factor"
+        },
+        "sketch_face": {
+          "title": "Boceto sobre una cara",
+          "help": "Empieza un boceto sobre la cara plana en la que haces clic.",
+          "pick": "Haz clic en una cara plana para el boceto"
+        },
+        "edges_one": "{{count}} arista",
+        "edges_many": "{{count}} aristas",
+        "edges_other": "{{count}} aristas",
+        "separate": {
+          "title": "Separar piezas",
+          "help": "Convierte cada pieza suelta del cuerpo, cada trozo que no toca al resto, en un cuerpo propio. Un hueco dentro de una pieza se queda con ella; las piezas que se solapan sin estar unidas quedan separadas, aquí cada una de su color. Al borrar todas las piezas vuelve el cuerpo.",
+          "count_one": "{{count}} pieza",
+          "count_many": "{{count}} piezas",
+          "count_other": "{{count}} piezas",
+          "open_one": "{{count}} tiene huecos: se puede mover y exportar, no combinar",
+          "open_many": "{{count}} tienen huecos: se pueden mover y exportar, no combinar",
+          "open_other": "{{count}} tienen huecos: se pueden mover y exportar, no combinar"
+        },
+        "text": {
+          "title": "Texto",
+          "help": "Convierte palabras en un sólido: letras en relieve sobre un plano, o en relieve o grabadas en una cara plana de un cuerpo. La altura de letra es la de una mayúscula; 6 mm o más se imprime bien. Las palabras, la fuente y el tamaño siguen editables en su boceto.",
+          "on": "Dónde",
+          "onPlane": "En un plano",
+          "onFace": "En una cara",
+          "style": "Estilo",
+          "raised": "En relieve",
+          "engraved": "Grabado",
+          "height": "Altura",
+          "depth": "Profundidad",
+          "pick": "Haz clic en una cara plana donde escribir"
+        },
+        "pattern": {
+          "title": "Patrón",
+          "help": "Repite un cuerpo en fila, en cuadrícula o alrededor de un eje, y une las copias con él en un solo cuerpo. Si cambias el cuerpo, cambian todas las copias. Para cortar muchos agujeros, repite el cilindro de uno y resta el patrón.",
+          "style": "Tipo",
+          "linear": "En fila",
+          "circular": "Alrededor de un eje",
+          "along": "A lo largo de",
+          "around": "Alrededor de",
+          "count": "Cantidad",
+          "spacing": "Separación",
+          "grid": "Segunda dirección (cuadrícula)",
+          "rows": "Filas",
+          "rowSpacing": "Separación entre filas",
+          "angle": "Repartir en",
+          "center": "Centro {{axis}}"
+        },
+        "mirror": {
+          "title": "Simetría",
+          "help": "Refleja un cuerpo respecto a un plano, para algo simétrico hecho mitad por mitad. Si conservas el original, la mitad y su reflejo forman un solo cuerpo.",
+          "plane": "Respecto a",
+          "keep": "Conservar el original"
+        },
+        "align": {
+          "title": "Alinear",
+          "help": "Alinea un cuerpo con otro, o con la cama: sus inicios, centros o finales juntos, o al lado (antes o después) con un hueco. En Z, después lo pone encima. Solo mueve el cuerpo.",
+          "pickBody": "Haz clic en el cuerpo que quieres mover",
+          "pickReference": "Haz clic en un cuerpo con el que alinearlo, o déjalo alineado con la cama",
+          "with": "Con {{name}}",
+          "axis": "En {{axis}}",
+          "none": "No",
+          "before": "Antes",
+          "start": "Inicio",
+          "center": "Centro",
+          "end": "Final",
+          "after": "Después",
+          "z_none": "No",
+          "z_before": "Debajo",
+          "z_start": "Base",
+          "z_center": "Medio",
+          "z_end": "Arriba",
+          "z_after": "Encima",
+          "gap": "Hueco"
+        },
+        "lay_flat": {
+          "title": "Apoyar",
+          "help": "Gira un cuerpo para que la cara en la que haces clic quede sobre la cama, como se orienta una pieza para imprimirla, y lo apoya en la cama.",
+          "pick": "Haz clic en la cara sobre la que apoyarlo"
+        },
+        "sweep": {
+          "title": "Barrido",
+          "help": "Lleva el contorno del boceto a lo largo de un recorrido de puntos y crea el sólido por el que pasa: un tubo, un asa, un riel. El origen del boceto va sobre el recorrido, así que dibuja el contorno a su alrededor; empieza perpendicular al recorrido en el primer punto. Suave traza una curva por los puntos y Cerrado forma un anillo.",
+          "path": "Puntos del recorrido (mm)",
+          "addPoint": "Añadir punto",
+          "removePoint": "Quitar el punto {{number}}",
+          "smooth": "Suave",
+          "closed": "Cerrado"
+        }
+      },
+      "imported": {
+        "parts_one": "El modelo se importó como un solo cuerpo de {{count}} pieza",
+        "parts_many": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",
+        "parts_other": "El modelo se importó como un solo cuerpo de {{count}} piezas separadas",
+        "separate": "Separar"
+      },
+      "text": {
+        "words": "Texto",
+        "font": "Fuente",
+        "size": "Altura de letra",
+        "spacing": "Espaciado entre letras",
+        "align": "Alinear",
+        "aligns": {
+          "left": "Izquierda",
+          "center": "Centro",
+          "right": "Derecha"
+        },
+        "placeholder": "Texto",
+        "newLine": "Mayús+Intro empieza una línea nueva",
+        "add": "Añadir texto"
+      },
+      "trace": {
+        "title": "Calcar imagen",
+        "help": "Convierte las formas de una imagen en un contorno para hacerlo sólido: un logotipo, una silueta, un rótulo, un dibujo. Se calcan las formas oscuras sobre fondo claro (Invertir para claras sobre oscuro; lo transparente cuenta como claro), y los agujeros siguen siendo agujeros. Una imagen limpia y con buen contraste se calca mejor.",
+        "picture": "Imagen",
+        "drop": "Suelta una imagen aquí o pégala",
+        "choose": "Elegir una imagen",
+        "another": "Otra imagen",
+        "resultEmpty": "Aquí se verá el contorno calcado",
+        "threshold": "Umbral",
+        "auto": "Encontrarlo",
+        "invert": "Invertir",
+        "detail": "Detalle",
+        "details": {
+          "low": "Bajo",
+          "medium": "Medio",
+          "high": "Alto"
+        },
+        "found_one": "{{count}} forma",
+        "found_many": "{{count}} formas",
+        "found_other": "{{count}} formas",
+        "holes_one": "{{count}} agujero",
+        "holes_many": "{{count}} agujeros",
+        "holes_other": "{{count}} agujeros",
+        "make": "Crear",
+        "solid": "Sólido",
+        "sketch": "Solo boceto",
+        "ok": "Calcar"
+      },
+      "edit": {
+        "start": "Editar diseño",
+        "done": "Terminar de editar"
+      },
+      "emptyView": "Pide a la IA abajo que haga algo, o haz clic en Editar para crearlo tú",
+      "thread": {
+        "kind": "Tipo",
+        "external": "Exterior",
+        "internal": "Interior",
+        "hand": "Sentido",
+        "hands": {
+          "right": "A derechas",
+          "left": "A izquierdas"
+        },
+        "chamfer": "Extremos achaflanados"
+      },
+      "path": {
+        "title": "Añadir trazado",
+        "help": "Datos de trazado SVG en milímetros del boceto, x hacia la derecha e y hacia arriba: M, L, H, V, C, S, Q, T, A y Z, cada subtrazado un contorno cerrado. Pégalo desde un programa de dibujo o escríbelo a mano.",
+        "data": "Datos del trazado",
+        "fill": "Regla de relleno",
+        "fills": {
+          "evenodd": "Par-impar",
+          "nonzero": "No nulo"
+        },
+        "nothing": "Aún no hay nada que dibujar",
+        "add": "Añadir"
+      },
+      "parameters": {
+        "title": "Parámetros",
+        "help": "Números con nombre que pueden seguir las medidas del diseño. En cualquier campo de medida, escribe = y una fórmula, como =wall * 2 + 10. Al cambiar aquí un parámetro, se vuelven a calcular todas las fórmulas que lo usan.",
+        "follows": "Sigue = {{expression}}",
+        "name": "Nombre",
+        "value": "Valor",
+        "add": "Añadir parámetro",
+        "delete": "Eliminar {{name}}",
+        "inUse": "En uso: cambia primero los campos que lo siguen",
+        "none": "Aún no hay parámetros.",
+        "taken": "Ya hay uno con ese nombre",
+        "badName": "Letras, dígitos y _, sin empezar por un dígito",
+        "unused": "Sin usar",
+        "uses_one": "Lo usa {{count}} campo",
+        "uses_many": "Lo usan {{count}} campos",
+        "uses_other": "Lo usan {{count}} campos",
+        "noUnit": "Ninguna",
+        "unit": "Unidad",
+        "unitOf": "Unidad de {{name}}"
+      },
+      "check": {
+        "title": "Comprobar para imprimir",
+        "help": "Comprueba cada cuerpo visible donde está colocado: sobre la cama y dentro de ella, en una sola pieza, sin solaparse con otro, sin voladizos que necesiten soporte y sin paredes demasiado finas para imprimir. Es la misma comprobación que el asistente hace con su propio trabajo.",
+        "bed_x": "Cama X",
+        "bed_y": "Cama Y",
+        "bed_z": "Cama Z",
+        "overhangLimit": "Voladizo",
+        "minWall": "Pared mín.",
+        "ready": "Listo para imprimir",
+        "nothing": "No hay cuerpos visibles que comprobar.",
+        "empty": "Vacío",
+        "tooBig": "Demasiado grande para la cama",
+        "offBed": "Fuera de la cama",
+        "floating": "Flota {{value}} por encima",
+        "sunk": "Hundido {{value}}",
+        "pieces_one": "{{count}} pieza suelta",
+        "pieces_many": "{{count}} piezas sueltas",
+        "pieces_other": "{{count}} piezas sueltas",
+        "overhang": "{{value}} de voladizo",
+        "thin": "Paredes de hasta {{value}}",
+        "overlaps": "Se solapa con {{name}}",
+        "open": "No es un sólido cerrado",
+        "toBed": "A la cama",
+        "measure": "Medir",
+        "measureNeedsTwo": "Añade dos cuerpos para medir entre ellos.",
+        "first": "Desde",
+        "second": "Hasta",
+        "gap": "Separación {{value}}",
+        "touching": "Se tocan",
+        "overlap": "Solape {{value}}",
+        "far": "A más de 1 m",
+        "toBedOf": "Poner {{name}} sobre la cama"
+      },
+      "status": {
+        "label": "Medidas del diseño",
+        "design": "Diseño",
+        "selection": "Selección",
+        "bodiesLabel": "Cuerpos",
+        "size": "Tamaño",
+        "volume": "Volumen",
+        "openMeshes": "Las mallas abiertas no tienen volumen, así que no se cuentan",
+        "units": "Unidades"
+      },
+      "measure": {
+        "title": "Medir",
+        "help": "Selecciona puntos, aristas, caras o cuerpos. Una selección muestra su propio tamaño: la posición de un punto, la longitud de una arista, el área de una cara, el tamaño y el volumen de un cuerpo. Dos muestran la distancia más corta entre ellos, cuánto es a lo largo de X, Y y Z, y el ángulo entre ellos. Las medidas están en las unidades de la barra de estado, y medir no cambia el diseño.",
+        "filter": "Qué seleccionar",
+        "clear": "Borrar",
+        "done": "Listo",
+        "again": "Haz clic de nuevo para empezar otra vez",
+        "kinds": {
+          "point": "Punto",
+          "edge": "Arista",
+          "face": "Cara",
+          "body": "Cuerpo"
+        },
+        "pickFirst": {
+          "point": "Haz clic en un punto para medirlo",
+          "edge": "Haz clic en una arista para medirla",
+          "face": "Haz clic en una cara para medirla",
+          "body": "Haz clic en un cuerpo para medirlo"
+        },
+        "pickSecond": {
+          "point": "Haz clic en un segundo punto para medir entre ambos",
+          "edge": "Haz clic en una segunda arista para medir entre ambas",
+          "face": "Haz clic en una segunda cara para medir entre ambas",
+          "body": "Haz clic en un segundo cuerpo para medir entre ambos"
+        },
+        "readings": {
+          "distance": "Distancia",
+          "length": "Longitud",
+          "gap": "Separación",
+          "area": "Área",
+          "volume": "Volumen",
+          "overlap": "Solape",
+          "angle": "Ángulo",
+          "size": "Tamaño",
+          "touching": "Se tocan",
+          "far": "A más de 1 m",
+          "openMesh": "Una malla abierta no tiene volumen",
+          "measuring": "Midiendo…",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Ajustes de Studio",
+        "sections": {
+          "assistant": "Preguntar a la IA",
+          "units": "Unidades",
+          "grid": "Cuadrícula"
+        },
+        "assistantIntro": "Dónde muestra su conversación Preguntar a la IA.",
+        "layout": "Disposición",
+        "layoutHelp": "Barra: bajo la vista, una línea mientras la IA trabaja y el resto al abrirla. Panel lateral: junto a la vista, para que nada tape el modelo.",
+        "layouts": {
+          "bar": "Barra",
+          "panel": "Panel lateral"
+        },
+        "failed": "No se pudo guardar el ajuste.",
+        "unitsIntro": "En qué se muestran y escriben las medidas. Las medidas no cambian; solo cómo se leen.",
+        "designUnits": "Este diseño",
+        "designUnitsHelp": "Se guarda con el diseño y se deshace como cualquier cambio. Una medida escrita sin unidad está en estas; una con unidad, como 2 in o 5 mm, en esa.",
+        "newUnits": "Diseños nuevos",
+        "newUnitsHelp": "Las unidades con las que empieza un diseño nuevo. Se guardan en tu cuenta, así que valen en todos tus dispositivos.",
+        "unitNames": {
+          "mm": "Milímetros",
+          "cm": "Centímetros",
+          "in": "Pulgadas"
+        },
+        "grid": {
+          "intro": "Cómo se dibuja la cuadrícula tras el diseño y a qué se ajustan los puntos.",
+          "show": "Mostrar la cuadrícula",
+          "spacing": "Espaciado",
+          "spacingHelp": "Adaptable sigue el zoom, como la cuadrícula de un CAD: al acercarte aparecen líneas más finas, en pasos de diez (de cuatro en pulgadas), y cada décima (cuarta) línea es más oscura. Fijo mantiene el espaciado que indiques.",
+          "spacings": {
+            "adaptive": "Adaptable",
+            "fixed": "Fijo"
+          },
+          "density": "Densidad",
+          "densities": {
+            "coarse": "Amplia",
+            "normal": "Normal",
+            "fine": "Fina"
+          },
+          "major": "Líneas principales cada",
+          "subdivisions": "Dividida en",
+          "snap": "Ajustar a la cuadrícula",
+          "snapHelp": "Los puntos del boceto y los cuerpos que mueves se ajustan a las líneas más finas que se ven. Desactivado, van donde apuntas."
+        }
+      }
+    },
+    "chats": {
+      "open": "Abrir",
+      "off": "Los chats están desactivados en esta instancia. Un administrador puede activarlos en Administración > Usuarios.",
+      "welcome": "Elige un chat o empieza uno nuevo.",
+      "deletedUser": "Usuario eliminado",
+      "today": "Hoy",
+      "yesterday": "Ayer",
+      "search": "Buscar chats y personas",
+      "clearSearch": "Borrar búsqueda",
+      "searchPeople": "Buscar por nombre o correo",
+      "searchPeopleHelp": "Cualquier parte de un nombre encuentra a alguien. Un correo solo lo encuentra si se escribe completo, y nunca se muestra.",
+      "peopleFailed": "No se pudo cargar a las personas.",
+      "noPeopleFound": "Nadie coincide.",
+      "noPeople": "Todavía no hay nadie más en esta instancia.",
+      "online": "En línea",
+      "offline": "Desconectado",
+      "favorites": "Favoritos",
+      "directMessages": "Mensajes directos",
+      "rooms": "Salas",
+      "people": "Personas",
+      "startChat": "Empezar un chat",
+      "nothingFound": "Ningún chat ni persona coincide.",
+      "noDirect": "Aún no hay mensajes directos.",
+      "noRooms": "Aún no hay salas.",
+      "emptyList": "Aún no hay chats. Escribe a alguien de esta instancia para empezar uno.",
+      "newMessage": "Nuevo mensaje",
+      "newRoom": "Nueva sala",
+      "openFailed": "No se pudo abrir el chat.",
+      "loadFailed": "No se pudieron cargar los chats.",
+      "actionFailed": "No se pudo hacer. Inténtalo de nuevo.",
+      "publicRoom": "Sala pública",
+      "privateRoom": "Sala privada",
+      "publicRoomMembers_one": "Sala pública · {{count}} miembro",
+      "publicRoomMembers_other": "Sala pública · {{count}} miembros",
+      "privateRoomMembers_one": "Sala privada · {{count}} miembro",
+      "privateRoomMembers_other": "Sala privada · {{count}} miembros",
+      "noMessagesYet": "Aún no hay mensajes",
+      "messageDeleted": "Mensaje eliminado",
+      "youWrote": "Tú: {{body}}",
+      "mutedLabel": "Silenciado",
+      "favorite": "Añadir a favoritos",
+      "unfavorite": "Quitar de favoritos",
+      "mute": "Silenciar",
+      "unmute": "Activar sonido",
+      "join": "Unirse",
+      "leave": "Salir de la sala",
+      "members": "Miembros",
+      "membersOf": "Miembros de {{name}}",
+      "noMembers": "No hay nadie en esta sala.",
+      "you": "{{name}} (tú)",
+      "editRoom": "Editar sala",
+      "deleteRoom": "Eliminar sala",
+      "leaveTitle": "¿Salir de {{name}}?",
+      "leavePublic": "Dejarás de recibir sus mensajes. Puedes volver a unirte cuando quieras.",
+      "leavePrivate": "Perderás el acceso. Solo un administrador puede volver a añadirte.",
+      "deleteRoomTitle": "¿Eliminar {{name}}?",
+      "deleteRoomMessage": "Todo lo escrito en ella se elimina para todos. No se puede deshacer.",
+      "roomDeleted": "{{name}} eliminada",
+      "roomSaved": "{{name}} guardada",
+      "roomName": "Nombre",
+      "roomDescription": "Para qué es",
+      "roomVisibility": "Quién la ve",
+      "roomVisibilityHelp": "Cualquiera en esta instancia puede leer una sala pública y unirse. Una sala privada es solo para las personas que elijas.",
+      "public": "Pública",
+      "private": "Privada",
+      "roomMembers": "Miembros ({{count}})",
+      "createRoom": "Crear sala",
+      "roomSaveFailed": "No se pudo guardar la sala.",
+      "send": "Enviar",
+      "characters": "{{count}} de {{max}} caracteres",
+      "writeTo": "Mensaje para {{name}}",
+      "loadOlder": "Cargar mensajes anteriores",
+      "newMessages": "Mensajes nuevos",
+      "jumpToNew": "Mensajes nuevos",
+      "sendFailed": "No enviado.",
+      "discard": "Descartar",
+      "sending": "Enviando…",
+      "seenAt": "Visto · {{time}}",
+      "copyMessage": "Copiar texto",
+      "deleteMessage": "Eliminar mensaje",
+      "deleteMessageTitle": "¿Eliminar este mensaje?",
+      "deleteMessageText": "Se quita para todos en el chat. En su lugar queda una nota de que se eliminó un mensaje.",
+      "messageActions": "Acciones del mensaje",
+      "copied": "Copiado",
+      "copyFailed": "No se pudo copiar el texto.",
+      "chatActions": "Acciones del chat",
+      "notFound": "Este chat ya no existe, o no es tuyo.",
+      "backToChats": "Volver a los chats",
+      "notAMember": "Esta sala privada es solo para sus miembros. Puedes añadirte en Editar sala.",
+      "readingRoom": "Estás leyendo esta sala. Únete para escribir y recibir avisos.",
+      "recipientGone": "La cuenta de esta persona se eliminó, así que no se pueden enviar mensajes.",
+      "emptyRoom": "Aquí aún no se ha dicho nada.",
+      "emptyDirect": "Saluda a {{name}}.",
+      "emoji": "Emoji",
+      "attachModel": "Adjuntar un modelo",
+      "attachTitle": "Adjuntar modelos",
+      "attach": "Adjuntar",
+      "attachLimit": "Hasta {{count}} modelos por mensaje",
+      "removeAttachment": "Quitar {{name}}",
+      "modelUnavailable": "Ya no está disponible",
+      "modelFrom": "De {{name}}",
+      "yourModel": "Tu modelo",
+      "openModel": "Abrir {{name}}",
+      "sentModels_one": "📎 {{name}}",
+      "sentModels_other": "📎 {{count}} modelos",
+      "emojiPicker": {
+        "search": "Buscar emoji",
+        "clear": "Borrar",
+        "categories": {
+          "suggested": "Usados recientemente",
+          "smileys_people": "Caras y personas",
+          "animals_nature": "Animales y naturaleza",
+          "food_drink": "Comida y bebida",
+          "travel_places": "Viajes y lugares",
+          "activities": "Actividades",
+          "objects": "Objetos",
+          "symbols": "Símbolos",
+          "flags": "Banderas"
+        }
+      }
+    },
+    "modelPicker": {
+      "search": "Buscar en tu biblioteca",
+      "limit_one": "Elige hasta {{count}}",
+      "limit_other": "Elige hasta {{count}}",
+      "noMatch": "Ningún modelo coincide.",
+      "emptyLibrary": "Tu biblioteca aún no tiene modelos.",
+      "loadFailed": "No se pudieron cargar tus modelos."
     }
   },
   "common": {
@@ -3903,6 +4795,7 @@
         "images": "imágenes de vista previa"
       },
       "openInSlicer": "Abrir en {{slicer}}",
+      "openInStudio": "Abrir en Thingport Studio",
       "openNormalizedInSlicer": "Abrir versión normalizada en {{slicer}}",
       "normalizedInfo": "Los archivos de MakerWorld son proyectos de Bambu Studio, que {{slicer}} a menudo abre sin sus colores ni sus ajustes de impresión. Esta opción abre una copia convertida que conserva los colores pintados, los colores del filamento, las placas y los ajustes del diseñador (paredes, altura de capa, relleno, soportes). Atención: los objetos con varias piezas pueden fusionarse en uno, se pierden los ajustes específicos por objeto y los cambios de color por capa, y debes elegir tu propio perfil de impresora. El archivo guardado no se modifica.",
       "normalizePreparing": "Preparando el archivo normalizado…",
@@ -4163,6 +5056,12 @@
       "pageTitle": "Colecciones",
       "newCollection": "Nueva colección",
       "empty": "Aún no hay colecciones.",
+      "noneShown": "Ninguna colección coincide con los filtros.",
+      "types": {
+        "system": "Colecciones del sistema",
+        "user": "Colecciones del usuario",
+        "tool": "Colecciones de herramientas"
+      },
       "bookmarkCollection": "Marcar colección",
       "unbookmarkCollection": "Quitar marcador",
       "bookmarkFailed": "No se pudo actualizar el marcador. Inténtalo de nuevo.",
@@ -4175,7 +5074,9 @@
       "card": {
         "empty": "Aún no hay modelos",
         "itemCount_one": "{{count}} modelo",
-        "itemCount_other": "{{count}} modelos"
+        "itemCount_other": "{{count}} modelos",
+        "ownerAndCount_one": "{{name}} · {{count}} modelo",
+        "ownerAndCount_other": "{{name}} · {{count}} modelos"
       },
       "form": {
         "createTitle": "Nueva colección",
@@ -4185,7 +5086,11 @@
         "tagsLabel": "Etiquetas",
         "tagsPlaceholder": "Añadir etiquetas",
         "create": "Crear",
-        "saveFailed": "No se pudo guardar la colección. Inténtalo de nuevo."
+        "saveFailed": "No se pudo guardar la colección. Inténtalo de nuevo.",
+        "visibilityLabel": "Visibilidad",
+        "visibilityHelp": "Las colecciones públicas aparecen en Explorar: los demás usuarios de la instancia pueden abrir, descargar y copiar sus modelos. Las privadas son solo tuyas.",
+        "private": "Privada",
+        "public": "Pública"
       },
       "detail": {
         "title": "{{name}}",
@@ -4300,14 +5205,16 @@
         "openTool": "Abrir {{tool}}",
         "openToolUnknown": "Abrir la herramienta",
         "cantSelect": "La colección de una herramienta no se puede combinar ni eliminar"
-      }
+      },
+      "publicHint": "Pública: se muestra a los demás en Explorar"
     },
     "tags": {
       "pageTitle": "Etiquetas",
       "sortByName": "Nombre",
       "empty": "Aún no hay etiquetas.",
-      "hideRarelyUsed": "Ocultar etiquetas usadas una sola vez",
-      "allHidden": "No hay etiquetas con 2 o más modelos. Desactiva el filtro de arriba para ver todas las etiquetas.",
+      "minCount": "Ocultar etiquetas con menos modelos que",
+      "allHidden": "No hay etiquetas con {{min}} o más modelos.",
+      "showAll": "Mostrar todas las etiquetas",
       "bookmarkTag": "Marcar etiqueta",
       "unbookmarkTag": "Quitar marcador",
       "deleteTag": "Eliminar etiqueta",
@@ -4449,7 +5356,30 @@
       "title": "Gestionar categorías y carpetas",
       "repair": "Reparar"
     },
+    "categoryPicker": {
+      "filter": "Filtrar categorías",
+      "noMatches": "Ninguna categoría coincide con «{{query}}»"
+    },
+    "assignCategory": {
+      "action": "Asignar categoría",
+      "needOne": "Selecciona al menos 1 modelo que no se haya importado",
+      "title_one": "Asignar una categoría a {{count}} modelo",
+      "title_other": "Asignar una categoría a {{count}} modelos",
+      "category": "Categoría",
+      "folderWarning": "Asignar una categoría quita los modelos de la estructura de carpetas: después no estarán en ninguna carpeta.",
+      "replaces_one": "{{count}} modelo seleccionado ya tiene una categoría, que se sustituirá.",
+      "replaces_other": "{{count}} modelos seleccionados ya tienen una categoría, que se sustituirá.",
+      "empty": "Aún no hay categorías para elegir. Añade algunas en «Gestionar categorías y carpetas».",
+      "done_one": "«{{name}}» asignada a {{count}} modelo.",
+      "done_other": "«{{name}}» asignada a {{count}} modelos.",
+      "partlyFailed_one": "No se pudo cambiar {{count}} modelo.",
+      "partlyFailed_other": "No se pudieron cambiar {{count}} modelos.",
+      "failed": "No se pudo asignar la categoría. Inténtalo de nuevo.",
+      "loadFailed": "No se pudieron cargar tus categorías. Inténtalo de nuevo."
+    },
     "selection": {
+      "skipped_one": "{{count}} modelo seleccionado queda fuera: se importó o pertenece a una herramienta.",
+      "skipped_other": "{{count}} modelos seleccionados quedan fuera: se importaron o pertenecen a una herramienta.",
       "enter": "Seleccionar modelos",
       "exit": "Terminar selección",
       "toolbar": "Acciones para los modelos seleccionados",
@@ -4512,7 +5442,11 @@
       "tagsPartlyUpdated_other": "Se actualizaron las etiquetas de {{count}} modelos, pero el resto falló. Inténtalo de nuevo.",
       "toolOwned_one": "{{count}} de los modelos elegidos pertenece a una herramienta: déjalo fuera para hacer esto",
       "toolOwned_other": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
-      "toolOwned_many": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto"
+      "toolOwned_many": "{{count}} de los modelos elegidos pertenecen a una herramienta: déjalos fuera para hacer esto",
+      "notFiled_one": "No se pudo añadir {{count}} modelo: ya no se comparte",
+      "notFiled_other": "No se pudieron añadir {{count}} modelos: ya no se comparten",
+      "notFiledNames_one": "No se pudo añadir {{names}}: ya no se comparte",
+      "notFiledNames_other": "No se pudieron añadir {{names}}: ya no se comparten"
     },
     "merge": {
       "action": "Fusionar",
@@ -4552,6 +5486,26 @@
         "othersGo_one": "{{names}} se quita. Sus modelos pasan a tener «{{name}}».",
         "othersGo_other": "{{names}} se quitan. Sus modelos pasan a tener «{{name}}».",
         "keepsOwn": "Los modelos que ya tienen «{{name}}» no cambian."
+      },
+      "models": {
+        "action": "Fusionar modelos",
+        "needTwo": "Selecciona al menos 2 modelos que no se hayan importado",
+        "tooMany": "Selecciona hasta {{max}} modelos para fusionar",
+        "title_one": "Fusionar {{count}} modelo",
+        "title_other": "Fusionar {{count}} modelos",
+        "keepHelp": "Elige el modelo principal. Los archivos, imágenes y descripciones de los demás pasan a él y luego los demás se eliminan.",
+        "goes": "Se elimina",
+        "othersGo_one": "{{names}} se elimina. Sus archivos, imágenes y descripción pasan a «{{name}}».",
+        "othersGo_other": "{{names}} se eliminan. Sus archivos, imágenes y descripciones pasan a «{{name}}».",
+        "keepsOwn": "«{{name}}» conserva su nombre y su categoría o carpeta. Las etiquetas y colecciones se combinan.",
+        "fileCount_one": "{{count}} archivo",
+        "fileCount_other": "{{count}} archivos",
+        "pictureCount_one": "{{count}} imagen",
+        "pictureCount_other": "{{count}} imágenes",
+        "fileUnit_one": "archivo",
+        "fileUnit_other": "archivos",
+        "merged_one": "{{count}} modelo fusionado en «{{name}}».",
+        "merged_other": "{{count}} modelos fusionados en «{{name}}»."
       }
     },
     "filters": {
@@ -4564,6 +5518,45 @@
       "noneSelected": "No hay ningún sitio activado, así que no hay nada que mostrar.",
       "noMatch": "Ningún modelo de aquí coincide con los filtros.",
       "clear": "Quitar filtros"
+    },
+    "shared": {
+      "sharedBy": "Compartido por {{name}}",
+      "sharedByLabel": "Compartido por",
+      "inLibrary": "En tu biblioteca",
+      "copy": "Copiar a mi biblioteca",
+      "openCopy": "Abrir mi copia",
+      "copied": "«{{name}}» copiado a tu biblioteca",
+      "alreadyInLibrary": "«{{name}}» ya está en tu biblioteca",
+      "copyFailed": "No se pudo copiar el modelo",
+      "moreFrom": "Más de {{name}}",
+      "collectionSubtitle": "Compartida por {{name}}"
+    },
+    "explore": {
+      "people": "Personas",
+      "peopleHelp": "Los usuarios de la instancia que comparten colecciones. Abre uno para verlas todas.",
+      "recentModels": "Modelos nuevos",
+      "recentModelsHelp": "Los modelos añadidos más recientemente a la colección pública de alguien.",
+      "recentCollections": "Colecciones actualizadas recientemente",
+      "recentCollectionsHelp": "Colecciones públicas, primero las que se hicieron públicas o se ampliaron más recientemente.",
+      "mostCollected": "Más coleccionados",
+      "mostCollectedHelp": "Los modelos compartidos que más se han copiado a otras bibliotecas.",
+      "copies_one": "Coleccionado por {{count}} persona",
+      "copies_other": "Coleccionado por {{count}} personas",
+      "personCounts": "{{collections}} · {{models}}",
+      "collectionCount_one": "{{count}} colección",
+      "collectionCount_other": "{{count}} colecciones",
+      "modelCount_one": "{{count}} modelo",
+      "modelCount_other": "{{count}} modelos",
+      "emptyTitle": "Aún no se comparte nada",
+      "emptyHint": "Cuando alguien haga pública una colección, aparecerá aquí.",
+      "emptyAction": "Ir a mis colecciones",
+      "unavailable": "Explorar no está disponible ahora mismo.",
+      "userNotFound": "Este usuario no comparte nada.",
+      "backToExplore": "Volver a Explorar",
+      "joined": "Se unió en {{date}}",
+      "ownEmpty": "Aún no has hecho pública ninguna colección.",
+      "loadFailed": "No se pudo cargar esta página.",
+      "refreshFailed": "No se pudieron cargar los recuentos más recientes."
     }
   },
   "providers": {
@@ -5126,6 +6119,38 @@
       },
       "sync": {
         "notConnected": "Conecta GrabCAD en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus me gusta."
+      }
+    },
+    "meshy": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir meshy.ai con la sesión iniciada. Conecta tu cuenta y envía tu inicio de sesión cada vez que cambia allí.",
+          "O manualmente: inicia sesión en meshy.ai y abre las herramientas de desarrollador de tu navegador (F12).",
+          "Ve a la pestaña Network, recarga la página, haz clic en cualquier petición a www.meshy.ai, copia su cabecera Cookie y pégala abajo."
+        ],
+        "placeholder": "La cabecera Cookie de una petición a meshy.ai con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "Conecta tu cuenta para importar desde Meshy: solo entrega sus archivos a una cuenta con la sesión iniciada.",
+        "expired": "El inicio de sesión ha terminado. Inicia sesión en meshy.ai con Thingport Grab o vuelve a conectar Meshy en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión terminado",
+        "disabledReason": "Meshy: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Un generador de modelos 3D con IA y una gran galería de la comunidad. Thingport importa sus modelos de la comunidad y tus propias generaciones como 3MF listos para imprimir.",
+        "signIn": "La tuya, para cada descarga; los modelos de la comunidad también necesitan un plan Pro o Studio.",
+        "grab": "Envía tu inicio de sesión cuando visitas meshy.ai.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en Meshy y abre meshy.ai con la sesión iniciada.",
+          "Importa cualquier enlace de publicación, o sincroniza una colección o tus propias generaciones desde la pestaña Explorar.",
+          "Con un plan gratuito solo se descargan tus propias generaciones: Meshy reserva los modelos de la comunidad para Pro y Studio."
+        ]
+      },
+      "admin": {
+        "description": "Publicaciones de la comunidad, colecciones y las generaciones de cada usuario, todo descargado con el inicio de sesión del propio usuario. Los modelos de la comunidad necesitan un plan Meshy Pro o Studio."
+      },
+      "sync": {
+        "notConnected": "Conecta Meshy en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus generaciones y colecciones."
       }
     },
     "owlcad": {

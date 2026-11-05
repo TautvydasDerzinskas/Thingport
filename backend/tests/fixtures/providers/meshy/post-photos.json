@@ -1,0 +1,153 @@
+{
+  "code": "OK",
+  "requestId": "Root=1-6aebb877-16b4fb9026c27f661d376f88",
+  "result": {
+    "id": "01a1560f-f5f6-7426-80e3-4876e325f98f",
+    "author": {
+      "id": "d0181df3-c53d-4dbc-b933-370e24feb65a",
+      "uid": "zenkai3dstudio",
+      "nickname": "zenkai3dstudio",
+      "avatarUrl": "https://cdn.meshy.ai/uploads/prod/bba45622289c796ab37b46ebde08ecbfb5831059f908251b4a9451b4721b52a8/avatars/019f0a02-a39a-738e-a0dc-cb6e31d0111c.jpg",
+      "tier": "premium"
+    },
+    "state": "published",
+    "title": "Fangy McHowl",
+    "body": "Meet Fangy McHowl, the fuzziest, most menacing yet surprisingly fun beast joining my gothic designer vinyl art toy collection for Halloween! This model captures the wild spirit of an aggressive werewolf with a playful urban collectible aesthetic, all while maintaining a smart workflow designed for multi-color physical prints without an AMS (100% NO-AMS).\n\nStarting from the solid manifold mesh created in Meshy, the cutting and preparation was handled directly using the color-separation tool. The model is split into distinct modular blocks: a tapered head sculpted in rich chocolate-brown fur with glowing yellow eyes and sharp ivory fangs, a distressed crimson-red ragged jacket, navy-blue pants, and solid black flat-soled boots. To ensure the snarling muzzle and jacket folds printed with crisp edges, tree supports were required, which peeled away cleanly without affecting the surface finish.\n\nThe character is completely freestanding on its own shoe soles with no baseplate required. A hilarious yet terrifying piece to howl at the moon with this Halloween!",
+    "textLang": "en",
+    "categories": [],
+    "tags": ["MidnightMischief"],
+    "creationType": "general",
+    "coverPosition": 0,
+    "coverItem": {
+      "id": "01a1560f-f53e-7734-860f-b3b1ebe886d3",
+      "position": 0,
+      "kind": "image",
+      "refId": "01a1560f-ed4c-7204-8c72-3f8615ed121e.jpg",
+      "url": "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/uploads/01a1560f-ed4c-7204-8c72-3f8615ed121e.jpg?sign=1793923200-382294bd8fc600e8f591afe794f5b4ff",
+      "settings": {},
+      "thumbnails": {
+        "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/community-post/01a1560f-f5f6-7426-80e3-4876e325f98f/01a1560f-f53e-7734-860f-b3b1ebe886d3-01a15610-0fdd-73be-99ef-6974eda0c5fb.jpg"
+      }
+    },
+    "items": [
+      {
+        "id": "01a1560f-f53e-7734-860f-b3b1ebe886d3",
+        "position": 0,
+        "kind": "image",
+        "refId": "01a1560f-ed4c-7204-8c72-3f8615ed121e.jpg",
+        "url": "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/uploads/01a1560f-ed4c-7204-8c72-3f8615ed121e.jpg?sign=1793923200-382294bd8fc600e8f591afe794f5b4ff",
+        "settings": {},
+        "thumbnails": {
+          "thumbnailUrl": "https://cdn.meshy.ai/uploads/prod/community-post/01a1560f-f5f6-7426-80e3-4876e325f98f/01a1560f-f53e-7734-860f-b3b1ebe886d3-01a15610-0fdd-73be-99ef-6974eda0c5fb.jpg"
+        }
+      },
+      {
+        "id": "01a1560f-f53e-7735-991f-e0a04fb7090b",
+        "position": 1,
+        "kind": "image",
+        "refId": "01a1560f-eefb-7323-8973-11bbf30146d2.jpg",
+        "url": "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/uploads/01a1560f-eefb-7323-8973-11bbf30146d2.jpg?sign=1793923200-ab265913df9a777c4b3d10e304e41cb7",
+        "settings": {}
+      },
+      {
+        "id": "01a1560f-f53e-7736-8c17-77551308f068",
+        "position": 2,
+        "kind": "image",
+        "refId": "01a1560f-f0a3-77f9-a29b-2e46959c27b1.jpg",
+        "url": "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/uploads/01a1560f-f0a3-77f9-a29b-2e46959c27b1.jpg?sign=1793923200-2e262f28005f2f9b9d1dac47763b5291",
+        "settings": {}
+      },
+      {
+        "id": "01a1560f-f53e-7737-b2dc-16657c182f2f",
+        "position": 3,
+        "kind": "image",
+        "refId": "01a1560f-f295-7166-bd35-f3a017adb854.jpg",
+        "url": "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/uploads/01a1560f-f295-7166-bd35-f3a017adb854.jpg?sign=1793923200-a74a1a7c5d236d2cb13f247ef46bc4dc",
+        "settings": {}
+      },
+      {
+        "id": "01a1560f-f53e-7738-b9dd-a7df71c179eb",
+        "position": 4,
+        "kind": "image",
+        "refId": "01a1560f-f441-70fc-9239-0282e9aafed5.jpg",
+        "url": "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/uploads/01a1560f-f441-70fc-9239-0282e9aafed5.jpg?sign=1793923200-7bc32e12bd648cfec40b84087a036859",
+        "settings": {}
+      },
+      {
+        "id": "01a1560f-f53e-7739-9f43-9c80fe27ab6b",
+        "position": 5,
+        "kind": "model",
+        "refId": "01a10651-e68c-73ed-8012-70befb11f3e5",
+        "settings": {},
+        "thumbnails": {
+          "thumbnailUrl": "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/tasks/01a10651-e68c-73ed-8012-70befb11f3e5/output/preview.png?sign=1793923200-d4ebbf0ed80960d573ebee9594d4e395"
+        },
+        "modelPhase": "generate",
+        "modelMode": "draft",
+        "modelArgs": {
+          "draft": {
+            "aiModel": "blueberry-20260902",
+            "modelType": "standard",
+            "topology": "",
+            "prompt": "A 3D printable stylized designer vinyl art toy of a spooky yet fun creepy werewolf, urban vinyl horror collectible style. Solid watertight manifold mesh with zero open gaps, completely solid interior with no hollow cavities, and no internal voids. Freestanding figure standing firmly on two separate flat-bottom black boots, completely base-free, no pedestal, no display stand, no floor plate. Tapered blocky head sculpted in rich warm chocolate-brown fur with soft beveled chamfers, alert pointed wolf ears, glowing menacing yellow eye dots, and a snarling blocky muzzle displaying sharp ivory-white fangs. Wearing a distressed crimson-red ragged jacket over a dark torn shirt, with arms pressed flush and fused seamlessly against the ribs. Short sturdy block legs in deep navy-blue pants. Vibrant,",
+            "imageId": "fbfa313b39272aece59508a3e91efddf28420ac8d503386386c4ed2be242e925",
+            "imageIds": ["fbfa313b39272aece59508a3e91efddf28420ac8d503386386c4ed2be242e925"],
+            "symmetryMode": 0,
+            "seed": 2935453034,
+            "license": "",
+            "shouldTransferImageStyle": true,
+            "ultraMode": true,
+            "ultraResolution": "2k",
+            "multiView": false,
+            "imageUrl": "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/uploads/fbfa313b39272aece59508a3e91efddf28420ac8d503386386c4ed2be242e925?sign=1793923200-4049f57786d2720a22c714c57e1dbf89",
+            "imageUrls": [
+              "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/uploads/fbfa313b39272aece59508a3e91efddf28420ac8d503386386c4ed2be242e925?sign=1793923200-4049f57786d2720a22c714c57e1dbf89"
+            ]
+          },
+          "generate": {
+            "draftIds": null,
+            "modelId": "",
+            "name": "",
+            "enableOriginalUV": false,
+            "license": ""
+          },
+          "remesh": null,
+          "texture": null,
+          "stylize": null,
+          "animate": null,
+          "textToImage": null,
+          "image": null,
+          "threeDToImage": null,
+          "video": null,
+          "extract3DBody": null
+        },
+        "objectPrompt": "A 3D printable stylized designer vinyl art toy of a spooky yet fun creepy werewolf, urban vinyl horror collectible style. Solid watertight manifold mesh with zero open gaps, completely solid interior with no hollow cavities, and no internal voids. Freestanding figure standing firmly on two separate flat-bottom black boots, completely base-free, no pedestal, no display stand, no floor plate. Tapered blocky head sculpted in rich warm chocolate-brown fur with soft beveled chamfers, alert pointed wolf ears, glowing menacing yellow eye dots, and a snarling blocky muzzle displaying sharp ivory-white fangs. Wearing a distressed crimson-red ragged jacket over a dark torn shirt, with arms pressed flush and fused seamlessly against the ribs. Short sturdy block legs in deep navy-blue pants. Vibrant,",
+        "imageUrls": [
+          "https://api.meshy.ai/misc/cdn-images/d0181df3-c53d-4dbc-b933-370e24feb65a/uploads/fbfa313b39272aece59508a3e91efddf28420ac8d503386386c4ed2be242e925?sign=1793923200-4049f57786d2720a22c714c57e1dbf89"
+        ],
+        "is3DPrintable": true,
+        "isPbr": false,
+        "modelIsAnimated": false
+      }
+    ],
+    "itemCount": 6,
+    "theme": "MidnightMischief",
+    "isFeatured": false,
+    "isNsfw": false,
+    "slug": "fangy-mchowl",
+    "seoNoindex": false,
+    "stats": {
+      "viewsCount": 181,
+      "downloadsCount": 2,
+      "remixesCount": 1,
+      "likesCount": 36,
+      "collectionsCount": 2,
+      "commentsCount": 5,
+      "tipsAmount": 10
+    },
+    "createdAt": 1792445249014,
+    "updatedAt": 1792445253842,
+    "submittedAt": 1792445249012,
+    "publishedAt": 1792445253842
+  }
+}

@@ -1,0 +1,60 @@
+[
+  {
+    "url": "https://www.meshy.ai/posts/fangy-mchowl-01a1560f-f5f6-7426-80e3-4876e325f98f",
+    "expect": { "provider": "meshy", "kind": "model", "externalId": "01a1560f-f5f6-7426-80e3-4876e325f98f" }
+  },
+  {
+    "url": "https://www.meshy.ai/posts/01a12279-28b1-7346-82c3-c9f03d6138c3",
+    "expect": { "provider": "meshy", "kind": "model", "externalId": "01a12279-28b1-7346-82c3-c9f03d6138c3" }
+  },
+  {
+    "url": "https://meshy.ai/3d-models/profe-de-parvulo-01A12279-28B1-7346-82C3-C9F03D6138C3/",
+    "expect": { "provider": "meshy", "kind": "model", "externalId": "01a12279-28b1-7346-82c3-c9f03d6138c3" }
+  },
+  {
+    "url": "https://www.meshy.ai/3d-models/Cyber-Cat-v2-019a0c3e-1b2c-7d4e-8f90-a1b2c3d4e5f6?animation=true",
+    "expect": { "provider": "meshy", "kind": "model", "externalId": "019a0c3e-1b2c-7d4e-8f90-a1b2c3d4e5f6" }
+  },
+  {
+    "url": "https://www.meshy.ai/ja/posts/%E7%8C%AB-01a1560f-f5f6-7426-80e3-4876e325f98f",
+    "expect": { "provider": "meshy", "kind": "model", "externalId": "01a1560f-f5f6-7426-80e3-4876e325f98f" }
+  },
+  {
+    "url": "https://www.meshy.ai/workspace?task=01a18f26-a4c0-7762-a46c-2c16edc01022&sidebar=print",
+    "expect": { "provider": "meshy", "kind": "model", "externalId": "task-01a18f26-a4c0-7762-a46c-2c16edc01022" }
+  },
+  {
+    "url": "https://www.meshy.ai/collections/30c16c30-c6de-4199-a5c4-b949b3cc5e33",
+    "expect": {
+      "provider": "meshy",
+      "kind": "list",
+      "externalId": "30c16c30-c6de-4199-a5c4-b949b3cc5e33",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://www.meshy.ai/workspace?user=dfc18070-1eb5-4346-81d6-cfbd14f53e86",
+    "expect": {
+      "provider": "meshy",
+      "kind": "list",
+      "externalId": "generations-dfc18070-1eb5-4346-81d6-cfbd14f53e86",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://www.meshy.ai/workspace?sidebar=print",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://www.meshy.ai/@s1754341417b55bb",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://www.meshy.ai/discover#community-feed",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://assets.meshy.ai/uploads/converted/01a18f26-a4c0-7762-a46c-2c16edc01022/model.3mf",
+    "expect": { "provider": null, "kind": null }
+  }
+]

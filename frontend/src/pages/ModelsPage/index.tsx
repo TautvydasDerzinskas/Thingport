@@ -71,7 +71,6 @@ export default function ModelsPage({
   const [items, setItems] = useState<Print[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const selection = useModelSelection(items);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -92,12 +91,25 @@ export default function ModelsPage({
   const [sourcesVersion, setSourcesVersion] = useState(0);
   const refreshSources = useCallback(() => setSourcesVersion((version) => version + 1), []);
 
-  // Linking a model can bring a site into the sources it's filtered by.
+  // Bumped when models leave the list here: a page asked for before that counted from where they were.
+  const listDrops = useRef(0);
+  const dropFromList = (ids: string[]) => {
+    listDrops.current += 1;
+    setItems((prev) => prev.filter((item) => !ids.includes(item.id)));
+  };
+
+  // Linking a model can bring a site into the sources it's filtered by, and one given another category or folder
+  // leaves the open one's list.
   const applyUpdates = (updated: Print[]) => {
     const linked = updated.some(
       (print) => print.source_provider && !items.find((item) => item.id === print.id)?.source_provider,
     );
+    const open = categoryIdFilter === undefined ? null : [categoryIdFilter].flat();
+    const left = open
+      ? updated.filter((print) => !open.includes(print.category_id ?? "")).map((print) => print.id)
+      : [];
     setItems((prev) => replacePrints(prev, updated));
+    if (left.length) dropFromList(left);
     if (linked) refreshSources();
   };
 
@@ -195,17 +207,22 @@ export default function ModelsPage({
     if (!background) setLoading(true);
     (async () => {
       try {
-        const result = await printsApi.list({
-          category_id: categoryIdFilter,
-          generative: generative || undefined,
-          hide_providers: hiddenProviders,
-          order_by: sortMode,
-          limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
-          offset: 0,
-        });
-        if (run !== listRun.current) return;
+        let result: Awaited<ReturnType<typeof printsApi.list>>;
+        let drops: number;
+        // Asked again if models left the list while this was on its way, as it may still hold them.
+        do {
+          drops = listDrops.current;
+          result = await printsApi.list({
+            category_id: categoryIdFilter,
+            generative: generative || undefined,
+            hide_providers: hiddenProviders,
+            order_by: sortMode,
+            limit: background ? keepLoaded(PAGE_SIZE, items.length) : PAGE_SIZE,
+            offset: 0,
+          });
+          if (run !== listRun.current) return;
+        } while (drops !== listDrops.current);
         setItems(result.items);
-        setOffset(result.items.length);
         setHasMore(result.hasMore);
       } catch (err) {
         if (run !== listRun.current) return;
@@ -220,6 +237,7 @@ export default function ModelsPage({
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     const run = listRun.current;
+    const drops = listDrops.current;
     setLoadingMore(true);
     try {
       const result = await printsApi.list({
@@ -228,12 +246,13 @@ export default function ModelsPage({
         hide_providers: hiddenProviders,
         order_by: sortMode,
         limit: PAGE_SIZE,
-        offset,
+        // What's on screen, so models that left the list here don't make the next page skip any.
+        offset: items.length,
       });
-      // A filter changed while this page was on its way: appending it would mix two lists together.
-      if (run !== listRun.current) return;
+      // A filter changed while this page was on its way: appending it would mix two lists together. Models leaving the
+      // list shift it too, so that page is asked for again from the new place.
+      if (run !== listRun.current || drops !== listDrops.current) return;
       setItems((prev) => [...prev, ...result.items]);
-      setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
       if (run !== listRun.current) return;
@@ -339,12 +358,12 @@ export default function ModelsPage({
           total={items.length}
           hasMore={hasMore}
           onDeleted={(ids) => {
-            setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+            dropFromList(ids);
             refreshSources();
           }}
           onUpdated={applyUpdates}
           onUnauthorized={onUnauthorized}
-          offerLink={categoriesView === "folders"}
+          foldersView={categoriesView === "folders"}
         />
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5, width: { xs: "100%", md: "auto" } }}>
           <Box sx={{ overflowX: "auto" }}>
@@ -429,7 +448,7 @@ export default function ModelsPage({
             <Box sx={cardGridSx(5)}>
               <CardSkeletons count={10} />
             </Box>
-          ) : items.length ? (
+          ) : items.length || hasMore ? (
             <Stack spacing={2}>
               <Box sx={cardGridSx(5)}>
                 {items.map((item) => (
@@ -439,7 +458,7 @@ export default function ModelsPage({
                     theme={theme}
                     previewMode={previewMode}
                     onDeleted={(deletedId) => {
-                      setItems((prev) => prev.filter((i) => i.id !== deletedId));
+                      dropFromList([deletedId]);
                       refreshSources();
                     }}
                     onFavoriteChange={(updated) =>

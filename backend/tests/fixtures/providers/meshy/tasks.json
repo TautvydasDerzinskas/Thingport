@@ -1,0 +1,363 @@
+{
+  "code": "OK",
+  "requestId": "Root=1-6aebb890-04607541738c88ab4dded917",
+  "result": [
+    {
+      "id": "01a1b2c3-1111-7222-8333-444455556666",
+      "name": "Sleepy Fox Keychain",
+      "userId": "0f1e2d3c-4b5a-4968-8778-695a4b3c2d1e",
+      "status": "SUCCEEDED",
+      "progress": 0,
+      "phase": "texture",
+      "showcaseId": "",
+      "showcaseSlug": "",
+      "labels": null,
+      "retryCount": 0,
+      "mode": "texture",
+      "fromAgent": false,
+      "fromChromeExtension": false,
+      "createdAt": 1793402994853,
+      "updatedAt": 1793402994853,
+      "addedAt": 0,
+      "isDownloaded": true,
+      "isPublished": false,
+      "canPublishToCommunity": false,
+      "isNSFW": false,
+      "sketchfabModelUid": "",
+      "coarseModelId": "",
+      "rootId": "01a1b2c3-1111-7222-8333-444455556666",
+      "parent": "",
+      "license": "cc0",
+      "workspaceId": "",
+      "sceneId": "",
+      "topology": "triangle",
+      "triangleCount": 3122660,
+      "vertexCount": 1663795,
+      "faceCount": 3122660,
+      "aabb": [
+        -0.6150400042533875, -0.7465839982032776, -0.9515619874000549, 0.6082339882850647, 0.7240610122680664,
+        0.9407950043678284
+      ],
+      "comments": 0,
+      "downloads": 0,
+      "rating": null,
+      "args": {
+        "draft": {
+          "aiModel": "blueberry",
+          "modelType": "standard",
+          "topology": "",
+          "prompt": "A sleepy fox curled up as a keychain charm. Flat back, round loop on top.",
+          "imageId": "019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png",
+          "imageIds": ["019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png"],
+          "symmetryMode": 0,
+          "seed": 437703491,
+          "license": "",
+          "shouldTransferImageStyle": true,
+          "ultraMode": true,
+          "multiView": false,
+          "imageUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/mes-10160/uploads/019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png?sign=1793923200-8c19dc1775cda5885b8e6c8342ad8034",
+          "imageUrls": [
+            "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/mes-10160/uploads/019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png?sign=1793923200-8c19dc1775cda5885b8e6c8342ad8034"
+          ]
+        },
+        "generate": {
+          "draftIds": null,
+          "modelId": "",
+          "name": "",
+          "enableOriginalUV": false,
+          "license": ""
+        },
+        "remesh": null,
+        "texture": {
+          "prompt": "A sleepy fox curled up as a keychain charm. Flat back, round loop on top.",
+          "imageId": "019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png",
+          "imageIds": null,
+          "seed": 1349471539,
+          "artStyle": "realistic",
+          "aiModel": "blueberry",
+          "enablePBR": true,
+          "srMode": "none",
+          "textureSize": 8192,
+          "imageUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/mes-10160/uploads/019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png?sign=1793923200-8c19dc1775cda5885b8e6c8342ad8034"
+        },
+        "stylize": null,
+        "animate": null,
+        "textToImage": null,
+        "image": null,
+        "threeDToImage": null,
+        "video": null,
+        "extract3DBody": null
+      },
+      "result": {
+        "previewUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/preview.png?sign=1793923200-24b249dbce1bfe129f10669386837d85",
+        "previewLogoUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/preview_watermark.png?sign=1793923200-8a15d2134956547714d1eb3cd2ef9084",
+        "previewLogoPlayUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/preview_watermark_play.png?sign=1793923200-c7914dbf6ed04d9b56306ecfb00c5a4d",
+        "draft": null,
+        "generate": null,
+        "texture": {
+          "modelUrl": "https://api.meshy.ai/misc/cdn-models/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/model.meshy?sign=1793923200-16aa4581d51e195fe28492ece7fa63b9",
+          "quadJsonUrl": "https://assets.meshy.ai/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/model.json?Expires=1793923200&Signature=AC7fEQyoB0h53fuZcdMvQ7d8JVPoEtiQ7WrGKs8k8IOo7RqVmyrK~2aKu-MMBvEKaaQ-d~Imk-tsHJOq40fy5VcdJ1sXV9ynJRLxMqJ7UKpR1eGsVjke7HVqVLlJtHnfq7ohYi0nr73QTfI4aijFgcYDOXftoQVq8YsQ~C~QnfrFSu14LAc4Nxj~6Afx2M25-h23xSZr6Fe2eNq3GBE9KrZFOTfJQLyWB3Q2dNEXDE3Wfvd0R~HhlYQCWi3ERxXzl1PThn6qmW~oK41yyBXbsxpkDazdj-SzxoU9pTFPkU1od7uzgktCbq8nXgiLe5U5FZ9BqVZIws1kzgroj4ixuA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+          "textureUrls": [
+            {
+              "colorMapUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/texture_0.png?sign=1793923200-9932013cc495e13d57164f071f265e81",
+              "metallicMapUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/texture_0_metallic.png?sign=1793923200-e9447325f6ae476ce70f37c22ae790f8",
+              "roughnessMapUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/texture_0_roughness.png?sign=1793923200-4c7966f4d911952a5d61e01aae0de98d",
+              "normalMapUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/texture_0_normal.png?sign=1793923200-2d93ce02b16ac9ff5824c944ea3dc900"
+            }
+          ]
+        },
+        "stylize": null,
+        "animate": null,
+        "textureEdit": null,
+        "smartHeal": null,
+        "textToImage": null,
+        "threeDToImage": null,
+        "video": null,
+        "image": null,
+        "extract3DBody": null,
+        "isExample": false,
+        "printability": {
+          "status": "error",
+          "issueCount": 4,
+          "errorCount": 3,
+          "warningCount": 1,
+          "evaluatedAt": 1786174804484
+        }
+      },
+      "errMsg": "",
+      "errorCode": "",
+      "errorDetail": ""
+    },
+    {
+      "id": "01a1b2c3-2222-7333-8444-555566667777",
+      "name": "Fox reference",
+      "userId": "0f1e2d3c-4b5a-4968-8778-695a4b3c2d1e",
+      "status": "SUCCEEDED",
+      "progress": 0,
+      "phase": "text-to-image",
+      "showcaseId": "",
+      "showcaseSlug": "",
+      "labels": null,
+      "retryCount": 0,
+      "mode": "text-to-image",
+      "fromAgent": false,
+      "fromChromeExtension": false,
+      "createdAt": 1793402994853,
+      "updatedAt": 1793402994853,
+      "addedAt": 0,
+      "isDownloaded": true,
+      "isPublished": false,
+      "canPublishToCommunity": false,
+      "isNSFW": false,
+      "sketchfabModelUid": "",
+      "coarseModelId": "",
+      "rootId": "01a1b2c3-2222-7333-8444-555566667777",
+      "parent": "",
+      "license": "cc0",
+      "workspaceId": "",
+      "sceneId": "",
+      "topology": "triangle",
+      "triangleCount": 3122660,
+      "vertexCount": 1663795,
+      "faceCount": 3122660,
+      "aabb": [
+        -0.6150400042533875, -0.7465839982032776, -0.9515619874000549, 0.6082339882850647, 0.7240610122680664,
+        0.9407950043678284
+      ],
+      "comments": 0,
+      "downloads": 0,
+      "rating": null,
+      "args": {
+        "draft": {
+          "aiModel": "blueberry",
+          "modelType": "standard",
+          "topology": "",
+          "prompt": "A sleepy fox curled up as a keychain charm. Flat back, round loop on top.",
+          "imageId": "019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png",
+          "imageIds": ["019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png"],
+          "symmetryMode": 0,
+          "seed": 437703491,
+          "license": "",
+          "shouldTransferImageStyle": true,
+          "ultraMode": true,
+          "multiView": false,
+          "imageUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/mes-10160/uploads/019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png?sign=1793923200-8c19dc1775cda5885b8e6c8342ad8034",
+          "imageUrls": [
+            "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/mes-10160/uploads/019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png?sign=1793923200-8c19dc1775cda5885b8e6c8342ad8034"
+          ]
+        },
+        "generate": {
+          "draftIds": null,
+          "modelId": "",
+          "name": "",
+          "enableOriginalUV": false,
+          "license": ""
+        },
+        "remesh": null,
+        "texture": {
+          "prompt": "A sleepy fox curled up as a keychain charm. Flat back, round loop on top.",
+          "imageId": "019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png",
+          "imageIds": null,
+          "seed": 1349471539,
+          "artStyle": "realistic",
+          "aiModel": "blueberry",
+          "enablePBR": true,
+          "srMode": "none",
+          "textureSize": 8192,
+          "imageUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/mes-10160/uploads/019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png?sign=1793923200-8c19dc1775cda5885b8e6c8342ad8034"
+        },
+        "stylize": null,
+        "animate": null,
+        "textToImage": null,
+        "image": null,
+        "threeDToImage": null,
+        "video": null,
+        "extract3DBody": null
+      },
+      "result": {
+        "previewUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/preview.png?sign=1793923200-24b249dbce1bfe129f10669386837d85",
+        "draft": null,
+        "generate": null,
+        "texture": null,
+        "textToImage": {
+          "imageUrls": [
+            "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/preview.png?sign=1793923200-24b249dbce1bfe129f10669386837d85"
+          ]
+        },
+        "isExample": false
+      },
+      "errMsg": "",
+      "errorCode": "",
+      "errorDetail": ""
+    },
+    {
+      "id": "01a18f26-a4c0-7762-a46c-2c16edc01022",
+      "name": "Anxious Adventurer Panda",
+      "userId": "0f1e2d3c-4b5a-4968-8778-695a4b3c2d1e",
+      "status": "SUCCEEDED",
+      "progress": 0,
+      "phase": "texture",
+      "showcaseId": "",
+      "showcaseSlug": "",
+      "labels": null,
+      "retryCount": 0,
+      "mode": "texture",
+      "fromAgent": false,
+      "fromChromeExtension": false,
+      "createdAt": 1793402994853,
+      "updatedAt": 1793402994853,
+      "addedAt": 0,
+      "isDownloaded": true,
+      "isPublished": false,
+      "canPublishToCommunity": false,
+      "isNSFW": false,
+      "sketchfabModelUid": "",
+      "coarseModelId": "",
+      "rootId": "01a18f26-a4c0-7762-a46c-2c16edc01022",
+      "parent": "",
+      "license": "cc0",
+      "workspaceId": "",
+      "sceneId": "",
+      "topology": "triangle",
+      "triangleCount": 3122660,
+      "vertexCount": 1663795,
+      "faceCount": 3122660,
+      "aabb": [
+        -0.6150400042533875, -0.7465839982032776, -0.9515619874000549, 0.6082339882850647, 0.7240610122680664,
+        0.9407950043678284
+      ],
+      "comments": 0,
+      "downloads": 0,
+      "rating": null,
+      "args": {
+        "draft": {
+          "aiModel": "blueberry",
+          "modelType": "standard",
+          "topology": "",
+          "prompt": "Anxious Adventurer Panda",
+          "imageId": "019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png",
+          "imageIds": ["019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png"],
+          "symmetryMode": 0,
+          "seed": 437703491,
+          "license": "",
+          "shouldTransferImageStyle": true,
+          "ultraMode": true,
+          "multiView": false,
+          "imageUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/mes-10160/uploads/019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png?sign=1793923200-8c19dc1775cda5885b8e6c8342ad8034",
+          "imageUrls": [
+            "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/mes-10160/uploads/019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png?sign=1793923200-8c19dc1775cda5885b8e6c8342ad8034"
+          ]
+        },
+        "generate": {
+          "draftIds": null,
+          "modelId": "",
+          "name": "",
+          "enableOriginalUV": false,
+          "license": ""
+        },
+        "remesh": null,
+        "texture": {
+          "prompt": "",
+          "imageId": "019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png",
+          "imageIds": null,
+          "seed": 1349471539,
+          "artStyle": "realistic",
+          "aiModel": "blueberry",
+          "enablePBR": true,
+          "srMode": "none",
+          "textureSize": 8192,
+          "imageUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/mes-10160/uploads/019fe033-4c4b-7f4c-8bd6-3faf12e6bcb4.png?sign=1793923200-8c19dc1775cda5885b8e6c8342ad8034"
+        },
+        "stylize": null,
+        "animate": null,
+        "textToImage": null,
+        "image": null,
+        "threeDToImage": null,
+        "video": null,
+        "extract3DBody": null
+      },
+      "result": {
+        "previewUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/preview.png?sign=1793923200-24b249dbce1bfe129f10669386837d85",
+        "previewLogoUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/preview_watermark.png?sign=1793923200-8a15d2134956547714d1eb3cd2ef9084",
+        "previewLogoPlayUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/preview_watermark_play.png?sign=1793923200-c7914dbf6ed04d9b56306ecfb00c5a4d",
+        "draft": null,
+        "generate": null,
+        "texture": {
+          "modelUrl": "https://api.meshy.ai/misc/cdn-models/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/model.meshy?sign=1793923200-16aa4581d51e195fe28492ece7fa63b9",
+          "quadJsonUrl": "https://assets.meshy.ai/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/model.json?Expires=1793923200&Signature=AC7fEQyoB0h53fuZcdMvQ7d8JVPoEtiQ7WrGKs8k8IOo7RqVmyrK~2aKu-MMBvEKaaQ-d~Imk-tsHJOq40fy5VcdJ1sXV9ynJRLxMqJ7UKpR1eGsVjke7HVqVLlJtHnfq7ohYi0nr73QTfI4aijFgcYDOXftoQVq8YsQ~C~QnfrFSu14LAc4Nxj~6Afx2M25-h23xSZr6Fe2eNq3GBE9KrZFOTfJQLyWB3Q2dNEXDE3Wfvd0R~HhlYQCWi3ERxXzl1PThn6qmW~oK41yyBXbsxpkDazdj-SzxoU9pTFPkU1od7uzgktCbq8nXgiLe5U5FZ9BqVZIws1kzgroj4ixuA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+          "textureUrls": [
+            {
+              "colorMapUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/texture_0.png?sign=1793923200-9932013cc495e13d57164f071f265e81",
+              "metallicMapUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/texture_0_metallic.png?sign=1793923200-e9447325f6ae476ce70f37c22ae790f8",
+              "roughnessMapUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/texture_0_roughness.png?sign=1793923200-4c7966f4d911952a5d61e01aae0de98d",
+              "normalMapUrl": "https://api.meshy.ai/misc/cdn-images/common/pre-generated-tasks/cms/tasks/01a08cdd-8a5e-7784-b0ea-129726ff30a3/output/texture_0_normal.png?sign=1793923200-2d93ce02b16ac9ff5824c944ea3dc900"
+            }
+          ]
+        },
+        "stylize": null,
+        "animate": null,
+        "textureEdit": null,
+        "smartHeal": null,
+        "textToImage": null,
+        "threeDToImage": null,
+        "video": null,
+        "image": null,
+        "extract3DBody": null,
+        "isExample": true,
+        "sourceTaskId": "01a08cdd-8a5e-7784-b0ea-129726ff30a3",
+        "examplePresetId": "01a08cdd-8a5e-7784-b0ea-129726ff30a3",
+        "printability": {
+          "status": "error",
+          "issueCount": 4,
+          "errorCount": 3,
+          "warningCount": 1,
+          "evaluatedAt": 1786174804484
+        }
+      },
+      "errMsg": "",
+      "errorCode": "",
+      "errorDetail": ""
+    }
+  ],
+  "total": 3
+}

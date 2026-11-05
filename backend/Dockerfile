@@ -33,6 +33,8 @@ COPY --from=dependencies /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package*.json ./
 COPY prisma ./prisma
+# The fonts Studio draws text in (scripts/sync-studio.mjs copies them here from the frontend).
+COPY assets ./assets
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # node:24-alpine already ships a "node" user/group at uid/gid 1000; remove it first so our own
 # "appuser"/"appgroup" (which docker-entrypoint.sh re-aligns to PUID/PGID at container start)

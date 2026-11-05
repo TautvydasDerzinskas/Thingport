@@ -29,6 +29,8 @@ function loadFace(font: ToolFont): void {
 type Props = {
   /** The parameter's name, for the field's accessible name. */
   name: string;
+  /** Shown on the field, where it has no label of its own beside it. */
+  label?: string;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
@@ -40,7 +42,7 @@ type Props = {
  * A script written for a site with other fonts may start on one that isn't here. It stays in the list under its own
  * name, saying what it comes out in instead, rather than the field quietly claiming something else was chosen.
  */
-export default function FontField({ name, value, onChange, disabled }: Props) {
+export default function FontField({ name, label, value, onChange, disabled }: Props) {
   const { t } = useTranslation("models");
   // A style after the family, "PT Sans:style=Bold", is still that family.
   const family = value.split(":")[0].trim();
@@ -80,10 +82,12 @@ export default function FontField({ name, value, onChange, disabled }: Props) {
       select
       size="small"
       fullWidth
+      label={label}
       disabled={disabled}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       slotProps={{
+        inputLabel: label ? { shrink: true } : undefined,
         htmlInput: { "aria-label": name },
         select: {
           // Twenty-one files, so only once someone actually looks.

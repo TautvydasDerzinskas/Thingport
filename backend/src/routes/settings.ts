@@ -1,4 +1,4 @@
-import type { AiConnection, ReasoningEffort } from "@prisma/client";
+import type { AiConnection, AiProviderKind, ReasoningEffort } from "@prisma/client";
 import { currentStorageMove, startStorageMove, type StorageMoveRun } from "../services/storageMoveService";
 import {
   currentFileReuseBackfill,
@@ -46,6 +46,9 @@ import {
   setAiDescriptionPrefs,
   type AiCategorizationPrefs,
   type AiDescriptionPrefs,
+  getStudioAssistantPrefs,
+  setStudioAssistantPrefs,
+  type StudioAssistantPrefs,
   getWidgetSources,
   getMcpAccess,
   setWidgetSources,
@@ -1076,15 +1079,62 @@ router.patch(
   }),
 );
 
+function studioAssistantPrefsOut(prefs: StudioAssistantPrefs) {
+  return {
+    enabled: prefs.enabled,
+    ai_connection_ids: prefs.aiConnectionIds,
+    default_ai_connection_id: prefs.defaultAiConnectionId,
+    compact_ai_connection_ids: prefs.compactAiConnectionIds,
+  };
+}
+
+router.get(
+  "/settings/studio-assistant",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json(studioAssistantPrefsOut(await getStudioAssistantPrefs()));
+  }),
+);
+
+const studioAssistantPrefsSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    // The AIs people may pick in Studio's prompt; any not offered here are refused, whatever the page sends.
+    ai_connection_ids: z.array(z.string().min(1)).max(100).optional(),
+    default_ai_connection_id: z.string().nullable().optional(),
+    // Of those, the ones given the compact tool set, for small local models.
+    compact_ai_connection_ids: z.array(z.string().min(1)).max(100).optional(),
+  })
+  .strict();
+router.patch(
+  "/settings/studio-assistant",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(studioAssistantPrefsSchema, req.body);
+    for (const id of body.ai_connection_ids ?? []) await getAiConnection(id);
+    const prefs = await setStudioAssistantPrefs({
+      ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
+      ...(body.ai_connection_ids !== undefined ? { aiConnectionIds: body.ai_connection_ids } : {}),
+      ...(body.default_ai_connection_id !== undefined ? { defaultAiConnectionId: body.default_ai_connection_id } : {}),
+      ...(body.compact_ai_connection_ids !== undefined
+        ? { compactAiConnectionIds: body.compact_ai_connection_ids }
+        : {}),
+    });
+    res.json(studioAssistantPrefsOut(prefs));
+  }),
+);
+
 function aiConnectionOut(connection: AiConnection) {
   return {
     id: connection.id,
+    kind: connection.kind,
     base_url: connection.baseUrl,
     model: connection.model,
     has_api_key: Boolean(connection.apiKey),
     timeout_ms: connection.timeoutMs,
     concurrency: connection.concurrency,
     reasoning_effort: connection.reasoningEffort,
+    vision: connection.vision,
     is_default: connection.isDefault,
   };
 }
@@ -1099,6 +1149,8 @@ router.get(
 
 // api_key: omitted keeps the saved one, null or "" means none.
 const aiConnectionFields = {
+  // OpenAI-compatible, or Claude through Anthropic's own API.
+  kind: z.enum(["openai", "anthropic"]),
   base_url: z.string().trim().min(1),
   model: z.string().trim().min(1),
   api_key: z.string().nullable().optional(),
@@ -1106,12 +1158,15 @@ const aiConnectionFields = {
   concurrency: z.number().int().min(1).max(4),
   // Null sends no reasoning_effort at all.
   reasoning_effort: z.enum(["none", "low", "medium", "high"]).nullable(),
+  // It takes pictures in a prompt; a new one left without it is guessed from its model.
+  vision: z.boolean(),
 };
 
 /** A saved AI (or the defaults, for a new one) with the form's values on top. */
 async function providerFrom(
   id: string | undefined,
   body: Partial<{
+    kind: AiProviderKind;
     base_url: string;
     model: string;
     api_key: string | null;
@@ -1120,8 +1175,11 @@ async function providerFrom(
   }>,
 ) {
   const saved = id ? await getAiConnection(id) : null;
+  const kind = body.kind ?? saved?.kind ?? DEFAULT_AI_PROVIDER.kind;
   return {
-    baseUrl: body.base_url !== undefined ? normalizeAiBaseUrl(body.base_url) : (saved?.baseUrl ?? null),
+    kind,
+    // The saved URL too, so moving an AI to the other kind alone gives it that kind's form: Claude's has no /v1.
+    baseUrl: normalizeAiBaseUrl(body.base_url !== undefined ? body.base_url : saved?.baseUrl, kind),
     model: body.model ?? saved?.model ?? null,
     apiKey: body.api_key !== undefined ? body.api_key || null : (saved?.apiKey ?? DEFAULT_AI_PROVIDER.apiKey),
     timeoutMs: body.timeout_ms ?? saved?.timeoutMs ?? DEFAULT_AI_PROVIDER.timeoutMs,
@@ -1142,9 +1200,11 @@ async function requireAnswer(provider: Awaited<ReturnType<typeof providerFrom>>)
 const aiConnectionCreateSchema = z
   .object({
     ...aiConnectionFields,
+    kind: aiConnectionFields.kind.optional(),
     timeout_ms: aiConnectionFields.timeout_ms.optional(),
     concurrency: aiConnectionFields.concurrency.optional(),
     reasoning_effort: aiConnectionFields.reasoning_effort.optional(),
+    vision: aiConnectionFields.vision.optional(),
   })
   .strict();
 router.post(
@@ -1155,12 +1215,14 @@ router.post(
     const provider = await providerFrom(undefined, body);
     await requireAnswer(provider);
     const connection = await createAiConnection({
+      kind: provider.kind,
       baseUrl: provider.baseUrl!,
       model: provider.model!,
       apiKey: provider.apiKey,
       timeoutMs: provider.timeoutMs,
       reasoningEffort: provider.reasoningEffort,
       concurrency: body.concurrency ?? DEFAULT_AI_PROVIDER.concurrency,
+      vision: body.vision,
     });
     res.status(201).json(aiConnectionOut(connection));
   }),
@@ -1173,8 +1235,9 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(aiConnectionUpdateSchema, req.body);
     const provider = await providerFrom(req.params.id, body);
-    // Concurrency and reasoning effort don't change whether it answers.
+    // Concurrency, reasoning effort and pictures don't change whether it answers.
     if (
+      body.kind !== undefined ||
       body.base_url !== undefined ||
       body.model !== undefined ||
       body.api_key !== undefined ||
@@ -1183,12 +1246,14 @@ router.patch(
       await requireAnswer(provider);
     }
     const connection = await updateAiConnection(req.params.id, {
-      ...(body.base_url !== undefined ? { baseUrl: provider.baseUrl! } : {}),
+      ...(body.kind !== undefined ? { kind: body.kind } : {}),
+      ...(body.base_url !== undefined || body.kind !== undefined ? { baseUrl: provider.baseUrl! } : {}),
       ...(body.model !== undefined ? { model: provider.model! } : {}),
       ...(body.api_key !== undefined ? { apiKey: provider.apiKey } : {}),
       ...(body.timeout_ms !== undefined ? { timeoutMs: body.timeout_ms } : {}),
       ...(body.concurrency !== undefined ? { concurrency: body.concurrency } : {}),
       ...(body.reasoning_effort !== undefined ? { reasoningEffort: body.reasoning_effort } : {}),
+      ...(body.vision !== undefined ? { vision: body.vision } : {}),
     });
     res.json(aiConnectionOut(connection));
   }),
@@ -1199,6 +1264,12 @@ router.delete(
   requireAdmin,
   asyncHandler(async (req, res) => {
     await deleteAiConnection(req.params.id);
+    // Studio's assistant stops offering it; its default, if it was, moves to the next one offered.
+    const assistant = await getStudioAssistantPrefs();
+    if (assistant.aiConnectionIds.includes(req.params.id))
+      await setStudioAssistantPrefs({
+        aiConnectionIds: assistant.aiConnectionIds.filter((id) => id !== req.params.id),
+      });
     // With no model left every feature switches off, so adding one later doesn't quietly start them again.
     if (!(await listAiConnections()).length) {
       await setAiCategorizationPrefs({ enabled: false, aiConnectionId: null });
@@ -1228,6 +1299,7 @@ router.post(
 const aiModelListSchema = z
   .object({
     id: z.string().optional(),
+    kind: aiConnectionFields.kind.optional(),
     base_url: z.string().trim().min(1).optional(),
     api_key: z.string().nullable().optional(),
   })

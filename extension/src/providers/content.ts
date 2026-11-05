@@ -7,6 +7,7 @@ import { parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
 import { crealitycloudUserId, loadCrealitycloudProfiles } from "./crealitycloud/content";
 import { isUnboughtCgtraderModel } from "./cgtrader/content";
 import { isUnboughtCults3dModel } from "./cults3d/content";
+import { isMeshyPlanLocked } from "./meshy/content";
 import { loadMakeronlineProfiles } from "./makeronline/content";
 import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } from "./makerworld/pageData";
 import { loadNexprintProfiles } from "./nexprint/content";
@@ -118,11 +119,23 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   // (owlcad/background.ts), not on the page the panel is shown on.
   owlcad: {},
   cults3d: {
-    async blockReason() {
-      return isUnboughtCults3dModel()
+    async blockReason(url) {
+      return (await isUnboughtCults3dModel(url))
         ? {
             title: "Paid model",
             hint: "Buy it on Cults3D first. Once it's in your downloads, Thingport imports it from there.",
+          }
+        : null;
+    },
+  },
+  // Its collections are anyone's to read, and the user's generations are their own workspace's. Meshy keeps community
+  // models for its Pro and Studio plans, so one the account's plan can't download isn't tried.
+  meshy: {
+    async blockReason(url) {
+      return (await isMeshyPlanLocked(url))
+        ? {
+            title: "Needs Meshy Pro",
+            hint: "Meshy only lets Pro and Studio plans download community models. Your own generations import on any plan.",
           }
         : null;
     },

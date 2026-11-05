@@ -57,6 +57,9 @@ export type LogAction =
   | "file_reuse_changed"
   | "file_reuse_backfill_started"
   | "custom_widgets_changed"
+  | "tool_installed"
+  | "tool_uninstalled"
+  | "tools_access_changed"
   | "user_invited"
   | "authors_linked"
   | "descriptions_refetched"
@@ -67,7 +70,9 @@ export type LogAction =
   | "model_reimported"
   | "model_linked"
   | "model_deleted"
+  | "models_merged"
   | "models_repaired"
+  | "model_copied"
   | "collection_created"
   | "collection_edited"
   | "collection_deleted"
@@ -86,7 +91,11 @@ export type LogAction =
   | "sign_in_connected"
   | "sign_in_disconnected"
   | "grab_connected"
-  | "grab_disconnected";
+  | "grab_disconnected"
+  | "social_settings_changed"
+  | "chat_room_created"
+  | "chat_room_edited"
+  | "chat_room_deleted";
 
 export type LogEntry = {
   id: string;

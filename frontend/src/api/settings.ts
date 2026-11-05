@@ -127,6 +127,7 @@ export type DashboardLayout = "left" | "top" | "right" | "bottom" | "topTwo" | "
 /** What model pictures lead with, on cards, dashboard lists and tag tiles: the model's own pictures, or our render
  *  tinted with the render colour. */
 export type CardPreview = "images" | "renders";
+/** Where Studio's assistant shows its conversation: in the bar under the view, or in a panel beside it. */
 /** Only the widgets the user has switched; the rest follow their default. */
 export type DashboardWidgetChoices = Partial<Record<DashboardWidgetId, boolean>>;
 // Kept in sync by hand with the backend's DASHBOARD_BREAKPOINTS.
@@ -241,6 +242,16 @@ export type AiCategorizationSettings = {
 
 export type AiCategorizationSettingsInput = Partial<AiCategorizationSettings>;
 
+/** Studio's assistant: on or off, the AIs people may pick in its prompt, and the one picked first. */
+export type StudioAssistantSettings = {
+  enabled: boolean;
+  ai_connection_ids: string[];
+  /** One of ai_connection_ids; null while none is offered. */
+  default_ai_connection_id: string | null;
+  /** Offered AIs given the compact tool set, for small local models. */
+  compact_ai_connection_ids: string[];
+};
+
 export type SmtpSettings = {
   host: string | null;
   port: number;
@@ -342,6 +353,24 @@ export const settingsApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update AI categorization settings"));
     invalidateAiCategorizationStatus();
+    return res.json();
+  },
+
+  getStudioAssistant: async (): Promise<StudioAssistantSettings> => {
+    const res = await fetch(`${apiBase()}/settings/studio-assistant`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the Studio assistant's settings");
+    return res.json();
+  },
+
+  updateStudioAssistant: async (payload: Partial<StudioAssistantSettings>): Promise<StudioAssistantSettings> => {
+    const res = await fetch(`${apiBase()}/settings/studio-assistant`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the Studio assistant's settings"));
     return res.json();
   },
 

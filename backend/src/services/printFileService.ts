@@ -159,7 +159,8 @@ async function normalizeGeneratorScript(tempPath: string, filename: string): Pro
 
 /**
  * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes
- * from the filename (a .3mf containing gcode becomes PREPARED); a new PREPARED file replaces the existing one.
+ * from the filename (a .3mf containing gcode becomes PREPARED) unless `role` is given, as for a copy of a file whose
+ * role is already known; a new PREPARED file replaces the existing one.
  */
 export async function saveFileFromTemp(
   userId: string,
@@ -167,12 +168,13 @@ export async function saveFileFromTemp(
   tempPath: string,
   originalFilename: string,
   contentType: string | null | undefined,
+  { role: givenRole }: { role?: "SUPPORTING" | "PREPARED" } = {},
 ): Promise<Print> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new HttpError(404, "Print not found");
 
   const safeName = sanitizeFilename(originalFilename || "supporting-file");
-  let role: "SUPPORTING" | "PREPARED" = isPreparedPrintFilename(safeName) ? "PREPARED" : "SUPPORTING";
+  let role: "SUPPORTING" | "PREPARED" = givenRole ?? (isPreparedPrintFilename(safeName) ? "PREPARED" : "SUPPORTING");
   const mime = mimeFromContentType(contentType, safeName);
 
   const record = await prisma.printFile.create({
@@ -217,7 +219,7 @@ export async function saveFileFromTemp(
     if (role === "PREPARED" || safeName.toLowerCase().endsWith(".3mf")) {
       metadata = (await inspectPreparedPrint(destination, safeName)) as Record<string, unknown> | null;
     }
-    if (metadata) role = "PREPARED";
+    if (metadata && !givenRole) role = "PREPARED";
 
     let oldPreparedPath: string | null = null;
     let oldPreparedId: string | null = null;

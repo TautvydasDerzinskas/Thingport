@@ -50,6 +50,8 @@ export type McpToolInfo = {
   description: string;
   /** False for a tool that changes the library. */
   read_only: boolean;
+  /** Shown and turned on together with the others in it, as one row: "studio" for Studio's many small steps. */
+  group: string | null;
 };
 
 export type UpdateProfileInput = {

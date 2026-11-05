@@ -42,6 +42,8 @@ export const PREVIEWS = path.join(STORAGE, "previews");
 export const DESCRIPTION_IMAGES = path.join(STORAGE, "description-images");
 // 3D previews, and the failure markers of renders.
 export const MODEL_PREVIEWS = path.join(STORAGE, "model-previews");
+// Studio's copies of the meshes its designs imported, as studio/u-<user>/<design>/<asset>.tpsm.
+export const STUDIO_ASSETS = path.join(STORAGE, "studio");
 // One picture per tag for the Tags page, built from its models' pictures.
 export const TAG_MOSAICS = path.join(STORAGE, "tag-mosaics");
 // Icons users uploaded, by id; see services/iconService.ts.
@@ -153,6 +155,9 @@ export const COLLECTION_SYNC_ITEM_DELAY_MS = envInt("COLLECTION_SYNC_ITEM_DELAY_
 export const IMPORT_PREVIEW_IMAGE_DELAY_MS = envInt("IMPORT_PREVIEW_IMAGE_DELAY_MS", 250);
 export const IMPORT_BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36";
+
+// Studio, the CAD page under Tools, and its MCP tools: off unless "true", while it's new.
+export const STUDIO_ENABLED = (process.env.STUDIO_ENABLED ?? "").trim().toLowerCase() === "true";
 
 export const FLARESOLVERR_URL = (process.env.FLARESOLVERR_URL || "").trim();
 // Opt-in: once every setup can, plaintext HTTP is refused for any solver but the local ones (System Health says when).
