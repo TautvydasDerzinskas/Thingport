@@ -52,10 +52,21 @@ function design(designId: string) {
     tags: ["phoenix"],
     coverUrl: "https://makerworld.bblmw.com/phoenix/cover.jpg",
     designCreator: DESIGNER,
-    defaultInstanceId: 2,
+    // Unique across designs: a profile's download is asked for by its instance id alone.
+    defaultInstanceId: Number(`2${designId}`),
     instances: [
-      { id: 1, profileId: Number(`1${designId}`), title: "Single-colour version", instanceCreator: DESIGNER },
-      { id: 2, profileId: Number(`2${designId}`), title: "multi-colored version", instanceCreator: DESIGNER },
+      {
+        id: Number(`1${designId}`),
+        profileId: Number(`1${designId}`),
+        title: "Single-colour version",
+        instanceCreator: DESIGNER,
+      },
+      {
+        id: Number(`2${designId}`),
+        profileId: Number(`2${designId}`),
+        title: "multi-colored version",
+        instanceCreator: DESIGNER,
+      },
     ],
   };
 }
@@ -99,12 +110,11 @@ function mockFetch() {
         headers: { server: "cloudflare", "cf-mitigated": "challenge" },
       });
     }
-    const profile = url.match(
-      /^https:\/\/api\.bambulab\.com\/v1\/iot-service\/api\/user\/profile\/(\d+)\?model_id=US(\d+)/,
-    );
+    // The fixture's instance ids are the design id with a profile's digit in front.
+    const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/design-service\/instance\/(\d(\d+))\/f3mf/);
     if (profile) {
       if (limited.has(profile[2])) return json({ code: -1, error: "You've reached your daily download limit." }, 400);
-      return json({ message: "success", url: `https://s3.example.com/phoenix-${profile[1]}.stl`, filename: "p.stl" });
+      return json({ url: `https://s3.example.com/phoenix-${profile[1]}.stl`, name: "p.stl" });
     }
     const file = url.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl$/);
     if (file) {

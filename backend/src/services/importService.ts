@@ -521,7 +521,8 @@ export async function openImportResponse(
         }
       }
     }
-    if (!downloadUrl) {
+    // A MakerWorld page links no file its resolver didn't try, only its profiles' 3D previews.
+    if (!downloadUrl && !URLS.makerworld.isHost(pageHost)) {
       downloadUrl = findDownloadUrl(html, finalUrl);
     }
     if (!downloadUrl) {

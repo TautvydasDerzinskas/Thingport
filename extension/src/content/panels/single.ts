@@ -40,6 +40,11 @@ async function profileIdsFor(): Promise<((scope: ProfileScope) => string[]) | nu
   return (await CONTENT_MODULES[classification.provider].loadProfiles?.(url)) ?? null;
 }
 
+/** The page offers a print profile, whose download is always one 3MF. */
+async function hasPrintProfiles(): Promise<boolean> {
+  return ((await profileIdsFor())?.("all").length ?? 0) > 0;
+}
+
 /** The page's selected profile first, then "designer's" and "all" where they'd import more. */
 async function profilesPickerHtml(): Promise<string> {
   const ids = await profileIdsFor();
@@ -138,8 +143,9 @@ export async function loadSingleItem(): Promise<void> {
     `);
     return;
   }
-  // A link that may be a zip of raw files is looked at first; every other site's is a model page the instance reads.
-  const skipInspect = !manifestOf(provider).capabilities.rawFilesZip;
+  // A design without print profiles may download as a zip of its raw files, so it's looked at first. Not one with
+  // them: that would only wait on the instance resolving a 3MF. Every other site's link is a model page it reads.
+  const skipInspect = !manifestOf(provider).capabilities.rawFilesZip || (await hasPrintProfiles());
 
   let zipFilename: string | null = null;
   if (skipInspect) {
@@ -274,10 +280,10 @@ async function loadZipEntries(): Promise<void> {
   }
   const rows = result.entries
     .map(
-      (entry) => `
+      ({ path }) => `
         <label class="tg-entry">
-          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(entry)}" checked />
-          <span class="tg-entry__name">${escapeHtml(entry)}</span>
+          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(path)}" checked />
+          <span class="tg-entry__name">${escapeHtml(path)}</span>
         </label>
       `,
     )

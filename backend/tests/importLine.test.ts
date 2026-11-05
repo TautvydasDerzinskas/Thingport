@@ -1047,13 +1047,12 @@ describe("the line from outside", () => {
           ],
         });
       }
-      const profile = target.match(/^https:\/\/api\.bambulab\.com\/v1\/iot-service\/api\/user\/profile\/(\d+)/);
+      const profile = target.match(/^https:\/\/api\.bambulab\.com\/v1\/design-service\/instance\/(\d+)\/f3mf/);
       if (profile) {
         if (goneProfiles.has(profile[1])) return new Response("gone", { status: 404 });
         return json({
-          message: "success",
           url: `https://s3.example.com/phoenix-${profile[1]}.stl`,
-          filename: `phoenix-${profile[1]}.stl`,
+          name: `phoenix-${profile[1]}.stl`,
         });
       }
       const file = target.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl$/);
@@ -1665,7 +1664,7 @@ describe("the line from outside", () => {
 
     it("stays print profiles' final counts, however late their progress lands", async () => {
       const landed = slowFirstStep();
-      goneProfiles.add("102");
+      goneProfiles.add("2");
       const id = await join(ann, "/import/makerworld/profiles?queue=1", { url: modelUrl(newId()), scope: "designer" });
       await runLine();
       await landed();
@@ -1938,7 +1937,7 @@ describe("the line from outside", () => {
       expect(await cardOf(ann, id)).toMatchObject({ attention: true, can_retry: true, can_start: false });
 
       gone.delete(String(modelId));
-      goneProfiles.add("101");
+      goneProfiles.add("1");
       await retry(ann, id).expect(202);
       await importWorkerIdle();
       const partly = await reload(id);

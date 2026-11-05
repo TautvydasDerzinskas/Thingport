@@ -128,12 +128,11 @@ function mockFetch() {
       }
       return json(design(id));
     }
-    const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/iot-service\/api\/user\/profile\/(\d+)/);
+    const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/design-service\/instance\/(\d+)\/f3mf/);
     if (profile) {
       return json({
-        message: "success",
         url: `https://s3.example.com/phoenix-${profile[1]}.stl`,
-        filename: `phoenix-${profile[1]}.stl`,
+        name: `phoenix-${profile[1]}.stl`,
       });
     }
     const file = url.match(/^https:\/\/s3\.example\.com\/phoenix-(\d+)\.stl$/);

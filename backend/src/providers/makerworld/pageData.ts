@@ -316,7 +316,8 @@ async function fetchMakerworldInstanceDownloadUrl(
   pageUrl: string,
   cookie: string | null,
 ): Promise<string | null> {
-  const apiUrl = `${MAKERWORLD_API}/design-service/instance/${instanceId}/f3mf?type=download&fileType=3mfstl`;
+  // As the page's "Download 3MF" asks; `3mfstl` would bring a zip of the profile's STLs instead.
+  const apiUrl = `${MAKERWORLD_API}/design-service/instance/${instanceId}/f3mf?type=download&fileType=`;
   const data = await fetchJsonFromUrl(apiUrl, pageUrl, makerworldApiHeaders(pageUrl, null, cookie));
   return makerworldDownloadUrlOrCaptcha(data, apiUrl);
 }
@@ -330,6 +331,11 @@ async function fetchMakerworldModelDownloadUrl(
   const apiUrl = `${MAKERWORLD_API}/models/${modelId}/download`;
   const data = await fetchJsonFromUrl(apiUrl, pageUrl, makerworldApiHeaders(pageUrl, nonce, cookie));
   return makerworldDownloadUrlOrCaptcha(data, apiUrl);
+}
+
+/** A profile's 3D preview, which the page data carries as a mesh zipped on its own: nothing to print. */
+function isPreviewMesh(url: string): boolean {
+  return /\/instance\/\w+_compression_glb\//.test(url);
 }
 
 /** `requestedInstanceId` is passed separately because `pageUrl` never carries the hash. Every
@@ -362,7 +368,7 @@ export async function resolveMakerworldDownloadUrl(
     // A generic URL in the page data belongs to the default profile.
     if (!requestedInstanceId || instanceId !== requestedInstanceId) {
       const url = findDownloadUrlInJson(nextData, pageUrl);
-      if (url) return asDefault(url);
+      if (url && !isPreviewMesh(url)) return asDefault(url);
     }
     designId = makerworldDesignIdFromNextData(nextData);
     nonce = makerworldNonceFromNextData(nextData);
@@ -399,7 +405,7 @@ export async function resolveMakerworldDownloadUrl(
     const data = await fetchJsonFromUrl(apiUrl, pageUrl);
     if (!data) continue;
     const found = findDownloadUrlInJson(data, apiUrl);
-    if (found) return asDefault(found);
+    if (found && !isPreviewMesh(found)) return asDefault(found);
   }
   return null;
 }

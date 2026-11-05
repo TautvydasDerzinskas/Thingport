@@ -30,9 +30,11 @@ vi.mock("./collectionPicker", () => ({
 
 vi.mock("../pageModel", () => ({ pageImage: () => null, pageTitle: () => "Thing" }));
 
-// What sites do of their own on a page: nothing here, so every provider goes the same way through the panel.
+// What sites do of their own on a page: nothing, unless a test gives one something, so every provider goes the same
+// way through the panel.
+const contentModules: Record<string, Record<string, unknown>> = {};
 vi.mock("../../providers/content", () => ({
-  CONTENT_MODULES: new Proxy({}, { get: () => ({}) }),
+  CONTENT_MODULES: new Proxy({}, { get: (_target, provider: string) => contentModules[provider] ?? {} }),
 }));
 
 vi.stubGlobal("fetch", async () => {
@@ -61,6 +63,16 @@ const { getState } = await import("../../background/config");
 const { loadSingleItem } = await import("./single");
 
 const last = () => rendered[rendered.length - 1];
+
+const asked = (path: string) => messages.some(({ type, payload }) => type === "API_CALL" && payload.path === path);
+
+/** A MakerWorld design whose profiles are the page's own and `designer` more of the designer's. */
+function withProfiles(designer: number): void {
+  const ids = Array.from({ length: designer + 1 }, (_, index) => String(index + 1));
+  contentModules.makerworld = {
+    loadProfiles: async () => (scope: string) => (scope === "url" ? ids.slice(0, 1) : ids),
+  };
+}
 
 function atProvider(provider: ProviderId, access: { canQueue: boolean; importQueue: boolean }): void {
   setContext({
@@ -104,6 +116,7 @@ describe("the single-model panel", () => {
     rendered.length = 0;
     messages.length = 0;
     actions.clear();
+    for (const provider of Object.keys(contentModules)) delete contentModules[provider];
     answers = {
       "POST /import/inspect": { title: "Thing", is_zip: false },
     };
@@ -233,6 +246,44 @@ describe("the single-model panel", () => {
 
       expect(html).toContain("Something went wrong");
       expect(html).toContain("Not found");
+    });
+  });
+
+  describe("on MakerWorld", () => {
+    it("opens a design with print profiles without waiting on the instance, its profiles offered", async () => {
+      withProfiles(1);
+      atProvider("makerworld", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+
+      expect(asked("/import/inspect")).toBe(false);
+      expect(last()).toContain('id="tg-profiles"');
+      expect(last()).toContain("All designer print profiles (2)");
+      expect(last()).not.toContain('data-action="choose-files"');
+    });
+
+    it("still looks first at a design without them, which may come as a zip of raw files", async () => {
+      withProfiles(-1);
+      answers["POST /import/inspect"] = { title: "Thing", is_zip: true, filename: "raw.zip" };
+      atProvider("makerworld", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+
+      expect(asked("/import/inspect")).toBe(true);
+      expect(last()).toContain("raw.zip contains multiple files.");
+      expect(last()).toContain('data-action="choose-files"');
+    });
+
+    it("lists a zip's files by path, as the instance sends them", async () => {
+      withProfiles(-1);
+      answers["POST /import/inspect"] = { title: "Thing", is_zip: true, filename: "raw.zip" };
+      // What /import/zip/entries answers (services/zipService.ts): files only, folders already left out.
+      answers["POST /import/zip/entries"] = { entries: [{ path: "parts/hull.stl", size: 120 }] };
+      atProvider("makerworld", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+      await click("choose-files");
+
+      expect(last()).toContain('value="parts/hull.stl"');
+      expect(last()).toContain(">parts/hull.stl<");
+      expect(last()).not.toContain("[object Object]");
     });
   });
 });

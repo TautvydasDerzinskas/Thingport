@@ -510,8 +510,8 @@ describe("importing from MakerWorld", () => {
           instances: [{ id: 1, profileId: Number(profileId) }],
           categories: [],
         }),
-      [`https://api.bambulab.com/v1/iot-service/api/user/profile/${profileId}`]: () =>
-        json({ message: "success", url: "https://s3.example-bucket.com/benchy.3mf?sig=1", filename: "benchy.3mf" }),
+      ["https://api.bambulab.com/v1/design-service/instance/1/f3mf"]: () =>
+        json({ url: "https://s3.example-bucket.com/benchy.3mf?sig=1", name: "benchy.3mf" }),
       [`https://makerworld.com/api/v1/design-user-service/user/profile/${creator.uid}`]: profileReachable
         ? () =>
             json({
