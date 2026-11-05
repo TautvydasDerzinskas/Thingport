@@ -159,7 +159,7 @@ library.
 
 ### Studio assistant
 
-On an instance with [Studio](studio.md) on, a third tile, **Studio assistant**, lets people ask an AI in Studio's
+A third tile, **Studio assistant**, lets people ask an AI in [Studio](studio.md)'s
 **Ask AI** box to build and change their designs. It's off until you switch it on. Click it to pick:
 
 - **Available models**: the AIs people may pick from in Studio. A new AI isn't offered until you switch it on here, so
