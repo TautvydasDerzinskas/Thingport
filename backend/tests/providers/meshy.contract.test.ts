@@ -300,6 +300,25 @@ describe("Meshy specifics", () => {
     expect(await ctx.prints()).toHaveLength(0);
   });
 
+  it("renews a sign-in Meshy turns down while asking why it refused, and still says it's the plan", async () => {
+    await connect(ctx.userId);
+    let asked = 0;
+    const stub = ctx.install(
+      handlerFor("ok", {
+        [`/v2/tasks/${OWN_TASK}/asset-url`]: () => json(loadFixture("meshy", "asset-url-limit"), 403),
+        [`/v2/tasks/${OWN_TASK}/downloadable-status`]: () =>
+          ++asked === 1
+            ? json(loadFixture("meshy", "invalid-token"), 401)
+            : json(loadFixture("meshy", "downloadable-status-forbidden")),
+      }),
+    );
+    const res = await ctx.importUrl(`https://www.meshy.ai/workspace?task=${OWN_TASK}`);
+    expect(res.status).toBe(403);
+    expect(res.body.detail).toContain("paid plans");
+    expect(stub.callsTo("auth.meshy.ai")).toHaveLength(1);
+    expect((await getMeshyConnection(ctx.userId)).state).toBe("connected");
+  });
+
   it("imports the user's own post as their own generation, which Meshy lets a free plan download", async () => {
     await connect(ctx.userId);
     const post = loadFixture("meshy", "post");
@@ -404,7 +423,7 @@ describe("Meshy specifics", () => {
     await connect(ctx.userId);
     const posts = loadFixture("meshy", "collection-posts");
     // The first two posts are the user's own: Meshy keeps the first one's model from the plan.
-    const ownPosts = posts.result.slice(0, 2).map((post: { id: string }) => post.id);
+    const ownPosts = new Set(posts.result.slice(0, 2).map((post: { id: string }) => post.id));
     const forbidden = posts.result[0].coverItem.refId;
     const stub = ctx.install(
       handlerFor("ok", {
@@ -413,7 +432,7 @@ describe("Meshy specifics", () => {
           json({
             ...posts,
             result: posts.result.map((post: { id: string; author: object }) =>
-              ownPosts.includes(post.id) ? { ...post, author: { ...post.author, id: MESHY_USER } } : post,
+              ownPosts.has(post.id) ? { ...post, author: { ...post.author, id: MESHY_USER } } : post,
             ),
           }),
         [`/v2/tasks/${forbidden}/downloadable-status`]: () =>

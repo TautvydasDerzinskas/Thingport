@@ -6097,7 +6097,7 @@
       "blocked": {
         "community": {
           "title": "Requiere Meshy Pro",
-          "hint": "Meshy reserva los modelos de la comunidad de otras personas para sus planes Pro y Studio. Los tuyos se importan con un plan gratuito."
+          "hint": "Meshy reserva los modelos de la comunidad de otras personas para sus planes Pro y Studio. Los tuyos se importan con un plan gratuito, salvo los que hizo su agente de IA."
         },
         "own": {
           "title": "Requiere un plan de pago de Meshy",

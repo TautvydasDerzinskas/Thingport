@@ -44,7 +44,9 @@ export type ContentModule = {
 const MESHY_BLOCKS: Record<MeshyPlanLock, ImportBlock> = {
   community: {
     title: "Needs Meshy Pro",
-    hint: "Meshy keeps other people's community models for its Pro and Studio plans. Your own import on a free plan.",
+    hint:
+      "Meshy keeps other people's community models for its Pro and Studio plans. Your own import on a free plan, " +
+      "unless its AI agent made them.",
   },
   own: {
     title: "Needs a paid Meshy plan",

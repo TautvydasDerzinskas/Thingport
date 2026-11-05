@@ -6110,7 +6110,7 @@
       "blocked": {
         "community": {
           "title": "Nécessite Meshy Pro",
-          "hint": "Meshy réserve les modèles communautaires des autres à ses forfaits Pro et Studio. Les vôtres s'importent avec un forfait gratuit."
+          "hint": "Meshy réserve les modèles communautaires des autres à ses forfaits Pro et Studio. Les vôtres s'importent avec un forfait gratuit, sauf ceux créés par son agent IA."
         },
         "own": {
           "title": "Nécessite un forfait Meshy payant",

@@ -6314,7 +6314,7 @@
       "blocked": {
         "community": {
           "title": "Reikia Meshy Pro",
-          "hint": "Kitų žmonių bendruomenės modelius Meshy palieka Pro ir Studio planams. Jūsų pačių modeliai importuojami ir su nemokamu planu."
+          "hint": "Kitų žmonių bendruomenės modelius Meshy palieka Pro ir Studio planams. Jūsų pačių modeliai importuojami ir su nemokamu planu, nebent juos sukūrė Meshy DI agentas."
         },
         "own": {
           "title": "Reikia mokamo Meshy plano",

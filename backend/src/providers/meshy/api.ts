@@ -407,11 +407,14 @@ export async function resolveMeshyTask(
 }
 
 /** Whether Meshy keeps a model from the account's plan altogether, as its pages ask before they show Download. False
- *  when it can't be asked. */
+ *  when it can't be asked; a refused sign-in is thrown, so it can be renewed and asked again. */
 async function isPlanForbidden(taskId: string, type: MeshyModelResolution["type"], auth: MeshyAuth): Promise<boolean> {
   const path = `/v2/tasks/${encodeURIComponent(taskId)}/downloadable-status?${query({ type })}`;
-  const status = asRecord((await call(path, { auth }).catch(() => null))?.result);
-  return status?.downloadableStatus === "Forbidden";
+  const answer = await call(path, { auth }).catch((err: unknown) => {
+    if (err instanceof MeshyAuthError) throw err;
+    return null;
+  });
+  return asRecord(answer?.result)?.downloadableStatus === "Forbidden";
 }
 
 /** The signed link to a mesh, converted for the signed-in account. Throws MeshyPlanError for a model the plan can't
@@ -464,7 +467,7 @@ export async function meshyPlanBlocks(
       meshyTaskIdOf(entry.externalId) ??
       entry.modelTaskId ??
       (await resolveMeshyPost(entry.externalId).catch(() => null))?.meshes[0]?.taskId;
-    if (taskId && (await isPlanForbidden(taskId, "Task", auth))) blocks.set(entry.externalId, "own");
+    if (taskId && (await isPlanForbidden(taskId, "Task", auth).catch(() => false))) blocks.set(entry.externalId, "own");
   });
   return blocks;
 }
