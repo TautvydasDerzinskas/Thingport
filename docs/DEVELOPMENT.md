@@ -341,8 +341,14 @@ The dialog fetches its content from `main`, so it can be written after the relea
 
 1. [`release-notes/latest-release-notes.json`](../release-notes/latest-release-notes.json) when its `version` is the
    instance's backend version.
-2. Otherwise `backend/CHANGELOG.md` for that version, with the `frontend/CHANGELOG.md` release that went out with
+2. Otherwise [`release-notes/archive/`](../release-notes/archive)`<version>.json`, the notes of an earlier release,
+   for an instance still on it.
+3. Otherwise `backend/CHANGELOG.md` for that version, with the `frontend/CHANGELOG.md` release that went out with
    it. An instance that skipped versions gets every release since the one it ran before, up to five.
+
+The dialog's history button lists the earlier releases that have notes, the latest file's when it's behind and the
+archive's, and opens any of them in place of the ones it opened on, with **Back to latest** to return. The archive
+needs no index: the backend asks for a file by each version in `backend/CHANGELOG.md`, and caches the misses.
 
 To write the notes for a release, first copy the current file into
 [`release-notes/archive/`](../release-notes/archive) under the version it names, so the release it describes isn't
@@ -352,9 +358,8 @@ lost when the file is overwritten:
 cp release-notes/latest-release-notes.json "release-notes/archive/$(node -p 'require("./release-notes/latest-release-notes.json").version').json"
 ```
 
-Nothing reads the archive -- an instance that skipped a release still falls back to `CHANGELOG.md` for the ones in
-between -- and an archived file's `images` stay relative to `release-notes/`, where they were read from. Then
-replace the file's contents:
+An archived file's `images` stay relative to `release-notes/`, where they were read from, so name the file after the
+version inside it: one that names another is never shown. Then replace the file's contents:
 
 ```json
 {
@@ -382,6 +387,8 @@ replace the file's contents:
 - `images` are relative to the file (put them in `release-notes/screenshots/`, named after the version) or full
   `https://` URLs; up to six per item. Crop them to the control being shown rather than the whole page; WebP keeps them
   small. Everything but `type` and `title` is optional.
+- Limits: `title` 200 characters, `summary` and `description` 2000, `code` 1000. One item past a limit fails the
+  whole file, which then falls back to the changelog, so check the longest one-line fixes.
 - A file that doesn't parse falls back to the changelog, as does one naming a version outside the running
   release's `x.y` line. One naming an earlier patch of that line still counts, for the quiet hotfixes below.
 - `RELEASE_NOTES_URL` points a backend at another copy of the repo files; an empty value turns fetching off.

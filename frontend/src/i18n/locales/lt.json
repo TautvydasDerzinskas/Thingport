@@ -2893,7 +2893,10 @@
       "empty": "Šiai versijai naujienų dar nėra.",
       "openGithub": "Atidaryti GitHub",
       "zoom": "Padidinti ekrano vaizdą",
-      "highlight": "Svarbiausia"
+      "highlight": "Svarbiausia",
+      "earlier": "Ankstesnės versijos",
+      "backToLatest": "Grįžti į naujausią",
+      "latest": "Naujausia"
     },
     "codeBlock": {
       "copy": "Kopijuoti",
