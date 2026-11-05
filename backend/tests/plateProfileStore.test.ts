@@ -191,4 +191,20 @@ describe("the 3MF profile of a plate", () => {
     expect(await storePlateProfile(plateId, "model.3mf", filePath)).toBeNull();
     expect((await stored(plateId)).profileMeta).toBeNull();
   });
+
+  it("stores nothing for a 3MF whose slice_info is too large to read whole", async () => {
+    const zip = new JSZip();
+    zip.file(
+      "3D/3dmodel.model",
+      `<model><metadata name="ProfileTitle">${TITLE}</metadata><!-- ${nonce()} --><resources/></model>`,
+    );
+    zip.file("Metadata/slice_info.config", `<config>${" ".repeat(1024 * 1024 + 10)}</config>`);
+    const source = path.join(dir, `${nonce()}.3mf`);
+    fs.writeFileSync(source, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    const { plateId } = await makePlate("model.3mf", source);
+    expect((await stored(plateId)).profileMeta).toBeNull();
+    const filePath = resolvePlateFilePath(await stored(plateId))!;
+    expect(await storePlateProfile(plateId, "model.3mf", filePath)).toBeNull();
+    expect((await stored(plateId)).profileMeta).toBeNull();
+  });
 });
