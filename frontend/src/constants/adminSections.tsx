@@ -7,6 +7,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PublicIcon from "@mui/icons-material/Public";
+import ShareIcon from "@mui/icons-material/Share";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import ViewInArIcon from "@mui/icons-material/ViewInAr";
 
@@ -34,6 +35,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   { path: "/admin-tools", icon: <HandymanOutlinedIcon fontSize="small" />, labelKey: "adminSettings.tools.heading" },
   { path: "/admin-ai", icon: <AutoAwesomeIcon fontSize="small" />, labelKey: "adminSettings.ai.heading" },
   { path: "/admin-users", icon: <PeopleIcon fontSize="small" />, labelKey: "adminSettings.users.heading" },
+  { path: "/admin-social", icon: <ShareIcon fontSize="small" />, labelKey: "adminSettings.social.heading" },
   { path: "/admin-logs", icon: <HistoryIcon fontSize="small" />, labelKey: "adminSettings.logs.heading" },
   { path: "/admin-connections", icon: <CableIcon fontSize="small" />, labelKey: "adminSettings.connections.heading" },
   { path: "/admin-captcha", icon: <VerifiedUserIcon fontSize="small" />, labelKey: "adminSettings.captcha.heading" },

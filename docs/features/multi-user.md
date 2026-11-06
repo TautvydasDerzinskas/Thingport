@@ -25,8 +25,8 @@ All of these are under **Administration → Auth** and **Administration → Capt
 
 ## Sharing with each other
 
-Libraries are private until an admin turns on **Social features**, the switch at the top of **Administration →
-Users**. It's off by default. With it on:
+Libraries are private until an admin turns on **Social features** in **Administration → Social**. It's off by default.
+With it on:
 
 - **A collection can be public.** Its form offers **Private** or **Public**, and new collections start private.
 - **So can your own models**: the ones under **My models**, from the lock beside **Edit profile** there. Only a public
@@ -48,8 +48,8 @@ it's back on, and copies people made stay theirs.
 
 ## Chats
 
-With social features on, an admin can also turn on **Chats**, from the cog beside the social features switch. It's off
-by default. **Chats** then appears in everyone's sidebar, with a count of unread messages, and opens its list of chats
+With social features on, an admin can also turn on **Chats**, the switch under them in **Administration → Social**. It's
+off by default. **Chats** then appears in everyone's sidebar, with a count of unread messages, and opens its list of chats
 beside it.
 
 - **Direct messages**: find someone by any part of their name, or by their whole email, which is never shown, and
@@ -73,8 +73,8 @@ Turning chats off hides every chat; nothing is deleted, and it's all back when t
 The **Users** page lists everyone with their model and collection counts, how they sign in, and whether their
 MakerWorld account is connected. From each person's ⋮ menu, admins change roles, delete all their models while keeping
 the account, or delete the account with its models. They follow what each person does in **Administration → Logs**,
-and see everyone's imports under **Everyone** in the [import queue](importing.md#the-import-queue). The switch for
-[social features](#sharing-with-each-other) is at the top of the page, with [chats](#chats) behind its cog. See
+and see everyone's imports under **Everyone** in the [import queue](importing.md#the-import-queue). The switches for
+[social features](#sharing-with-each-other) and [chats](#chats) are in **Administration → Social**. See
 [administration](administration.md).
 
 Any admin can do these to a member; only the owner, the first account, can do them to another admin, and nobody to the

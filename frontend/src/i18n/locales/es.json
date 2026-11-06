@@ -2508,6 +2508,8 @@
         "toolsAria": "Herramientas que recibe {{model}}"
       },
       "social": {
+        "heading": "Social",
+        "subtitle": "Compartir modelos y chatear entre los usuarios de esta instancia.",
         "label": "Funciones sociales",
         "summary": "Activa la página Explorar y las colecciones públicas, para que los usuarios de esta instancia compartan modelos entre sí.",
         "infoTitle": "Qué hacen las funciones sociales",
@@ -2517,20 +2519,16 @@
         "infoOff": "Al desactivarlo, todo lo compartido vuelve a ocultarse. Cada colección conserva su ajuste Pública o Privada para cuando se vuelva a activar.",
         "loadFailed": "No se pudieron cargar los ajustes sociales.",
         "saveFailed": "No se pudieron guardar los ajustes sociales.",
-        "settingsTitle": "Ajustes de las funciones sociales",
-        "settingsOff": "Activa las funciones sociales para cambiar sus ajustes",
         "chats": {
           "label": "Chats",
           "summary": "Mensajes directos entre los usuarios de esta instancia, y salas que crean los administradores.",
-          "switch": "Chats",
           "infoTitle": "Qué hacen los chats",
           "infoDirect": "Chats aparece en la barra lateral. Cualquiera puede encontrar a otro usuario por su nombre, o por su correo completo, y escribirle.",
           "infoRooms": "Los administradores crean salas: públicas, que cualquiera puede leer y unirse, y privadas, para las personas que elijan.",
           "infoNotify": "Quien no está leyendo un chat ve sus mensajes nuevos en la barra lateral y como notificación. Los mensajes llegan en unos segundos, no al instante.",
           "infoOff": "Al desactivarlo se ocultan todos los chats. No se elimina nada, y todo vuelve cuando se reactivan.",
-          "onHint": "Activado: Chats está en la barra lateral de todos.",
-          "offHint": "Desactivado por defecto. Actívalo para que los usuarios se escriban.",
-          "infoModels": "Un modelo enviado en un chat lo puede abrir, descargar y copiar cualquiera que pueda leer ese chat, mientras el mensaje siga ahí."
+          "infoModels": "Un modelo enviado en un chat lo puede abrir, descargar y copiar cualquiera que pueda leer ese chat, mientras el mensaje siga ahí.",
+          "needsSocial": "Activa primero las funciones sociales"
         }
       }
     },

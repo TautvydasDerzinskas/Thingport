@@ -2508,6 +2508,8 @@
         "toolsAria": "Outils donnés à {{model}}"
       },
       "social": {
+        "heading": "Social",
+        "subtitle": "Partage de modèles et discussions entre les utilisateurs de cette instance.",
         "label": "Fonctions sociales",
         "summary": "Active la page Explorer et les collections publiques, pour que les utilisateurs de cette instance partagent des modèles entre eux.",
         "infoTitle": "Ce que font les fonctions sociales",
@@ -2517,20 +2519,16 @@
         "infoOff": "Désactiver masque de nouveau tout ce qui est partagé. Chaque collection garde son réglage Publique ou Privée pour le jour où c'est réactivé.",
         "loadFailed": "Impossible de charger les réglages sociaux.",
         "saveFailed": "Impossible d'enregistrer les réglages sociaux.",
-        "settingsTitle": "Réglages des fonctions sociales",
-        "settingsOff": "Activez les fonctions sociales pour modifier leurs réglages",
         "chats": {
           "label": "Discussions",
           "summary": "Messages directs entre les utilisateurs de cette instance, et salons créés par les administrateurs.",
-          "switch": "Discussions",
           "infoTitle": "Ce que font les discussions",
           "infoDirect": "Discussions apparaît dans la barre latérale. Chacun peut trouver un autre utilisateur par son nom, ou par son e-mail complet, et lui écrire.",
           "infoRooms": "Les administrateurs créent des salons : publics, que tout le monde peut lire et rejoindre, et privés, pour les personnes qu'ils choisissent.",
           "infoNotify": "Qui ne lit pas une discussion voit ses nouveaux messages dans la barre latérale et en notification. Les messages arrivent en quelques secondes, pas instantanément.",
           "infoOff": "Désactiver masque toutes les discussions. Rien n'est supprimé, et tout revient quand elles sont réactivées.",
-          "onHint": "Activé : Discussions est dans la barre latérale de chacun.",
-          "offHint": "Désactivé par défaut. Activez-le pour que les utilisateurs s'écrivent.",
-          "infoModels": "Un modèle envoyé dans une discussion peut être ouvert, téléchargé et copié par tous ceux qui peuvent la lire, tant que le message reste."
+          "infoModels": "Un modèle envoyé dans une discussion peut être ouvert, téléchargé et copié par tous ceux qui peuvent la lire, tant que le message reste.",
+          "needsSocial": "Activez d'abord les fonctions sociales"
         }
       }
     },

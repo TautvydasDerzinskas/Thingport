@@ -19,7 +19,6 @@ import { adminApi, type AdminUser } from "../../api/admin";
 import UserActionsMenu from "./UserActionsMenu";
 import RoleIcon, { roleKind, useRoleLabel, type UserRoleKind } from "./RoleIcon";
 import { TableRowSkeletons } from "../../components/ListSkeleton";
-import SocialSection from "./SocialSection";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -62,7 +61,6 @@ export default function UsersPage({ onUnauthorized }: Props) {
 
   return (
     <Stack spacing={3}>
-      <SocialSection onUnauthorized={onUnauthorized} />
       {error && (
         <Alert severity="error" onClose={() => setError(null)}>
           {error}
