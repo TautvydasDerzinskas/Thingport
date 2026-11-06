@@ -1,4 +1,3 @@
-import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { getSocialSettings } from "../services/settingsService";
 
@@ -39,15 +38,18 @@ export async function getFederationSettings(): Promise<FederationSettings> {
   return value;
 }
 
+/** Changes only the fields in `patch`, merged in the database: a check finishing while an admin turns it off can't
+ *  put the old switch back. */
 export async function updateFederationSettings(patch: Partial<FederationSettings>): Promise<FederationSettings> {
-  const next = { ...(await getFederationSettings()), ...patch };
-  await prisma.setting.upsert({
-    where: { key: SETTINGS_KEY },
-    create: { key: SETTINGS_KEY, value: next as unknown as Prisma.InputJsonValue },
-    update: { value: next as unknown as Prisma.InputJsonValue },
-  });
-  cached = { value: next, at: Date.now() };
-  return next;
+  const value = JSON.stringify(patch);
+  await prisma.$executeRaw`
+    INSERT INTO "Setting" ("key", "value") VALUES (${SETTINGS_KEY}, ${value}::jsonb)
+    ON CONFLICT ("key") DO UPDATE SET "value" = CASE
+      WHEN jsonb_typeof("Setting"."value") = 'object' THEN "Setting"."value" || EXCLUDED."value"
+      ELSE EXCLUDED."value"
+    END`;
+  cached = null;
+  return getFederationSettings();
 }
 
 /** On, and live: it builds on social features, so it's quiet while they're off too. */

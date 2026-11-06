@@ -59,13 +59,18 @@ export default function InstancesSection({ onUnauthorized }: Props) {
   const [key, setKey] = React.useState<Peer | null>(null);
   const ago = (iso: string | null) => (iso ? relativeTime(iso, i18n.language) : null);
 
+  // Only the latest read counts: a poll answered after the read that followed a change would undo it on screen.
+  const latest = React.useRef(0);
   const load = React.useCallback(() => {
+    const asked = ++latest.current;
     federationApi.instances().then(
       (value) => {
+        if (asked !== latest.current) return;
         setData(value);
         setLoadFailed(false);
       },
       (err) => {
+        if (asked !== latest.current) return;
         if (err instanceof UnauthorizedError) onUnauthorized?.();
         else setLoadFailed(true);
       },
@@ -89,13 +94,19 @@ export default function InstancesSection({ onUnauthorized }: Props) {
   // Opened from a notification: that request, in its own dialog.
   const asked = searchParams.get("request");
   const reviewing = asked ? (data?.incoming.find((request) => request.id === asked) ?? null) : null;
+  // Not in the list: it may have come in since the last read, so read again once before saying it's been answered.
+  const readAgainFor = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (!asked || !data) return;
-    if (!data.incoming.some((request) => request.id === asked)) {
-      showToast({ message: t(k("alreadyAnswered")), severity: "info" });
-      setSearchParams({}, { replace: true });
+    if (data.incoming.some((request) => request.id === asked)) return;
+    if (readAgainFor.current !== asked) {
+      readAgainFor.current = asked;
+      load();
+      return;
     }
-  }, [asked, data, setSearchParams, showToast, t]);
+    showToast({ message: t(k("alreadyAnswered")), severity: "info" });
+    setSearchParams({}, { replace: true });
+  }, [asked, data, load, setSearchParams, showToast, t]);
   const closeReview = () => setSearchParams({}, { replace: true });
 
   const reviewed = (request: IncomingRequest, outcome: ReviewOutcome) => {

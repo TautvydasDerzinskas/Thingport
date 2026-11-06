@@ -12,14 +12,18 @@ const TICK_MS = 5_000;
 const PURGE_EVERY_MS = 60 * 60 * 1000;
 
 /** Queues an activity for one instance. `origin` is the only place it may go, which also lets a goodbye reach an
- *  instance that's no longer a partner. */
-export async function enqueueActivity(params: {
-  origin: string;
-  inboxUrl: string;
-  peerId?: string | null;
-  activity: unknown;
-}): Promise<void> {
-  await prisma.federationDelivery.create({
+ *  instance that's no longer a partner. Inside a caller's transaction (`tx`), the caller kicks the worker once it's
+ *  committed. */
+export async function enqueueActivity(
+  params: {
+    origin: string;
+    inboxUrl: string;
+    peerId?: string | null;
+    activity: unknown;
+  },
+  tx?: Prisma.TransactionClient,
+): Promise<void> {
+  await (tx ?? prisma).federationDelivery.create({
     data: {
       origin: params.origin,
       inboxUrl: params.inboxUrl,
@@ -28,7 +32,7 @@ export async function enqueueActivity(params: {
       activity: params.activity as Prisma.InputJsonValue,
     },
   });
-  kick();
+  if (!tx) kick();
 }
 
 let timer: NodeJS.Timeout | null = null;
@@ -53,6 +57,11 @@ function kick(): void {
   setImmediate(() => void tick());
 }
 
+/** Sends what's queued now rather than at the next tick. */
+export function kickDelivery(): void {
+  kick();
+}
+
 /** Sends what's due. One run at a time; a kick during a run runs once more after it. */
 export async function tick(now = () => new Date()): Promise<void> {
   if (running) {
@@ -69,7 +78,11 @@ export async function tick(now = () => new Date()): Promise<void> {
         orderBy: { createdAt: "asc" },
         take: BATCH,
       });
-      for (const row of due) await deliver(row, now());
+      for (const row of due) {
+        // Turned off meanwhile: the rest wait for it to be on again.
+        if (!(await isFederationLive())) return;
+        await deliver(row, now());
+      }
       if (Date.now() - lastPurge > PURGE_EVERY_MS) {
         lastPurge = Date.now();
         await purgeExpiredKv().catch(() => 0);
@@ -86,6 +99,11 @@ type DeliveryRow = Awaited<ReturnType<typeof prisma.federationDelivery.findMany>
 
 async function deliver(row: DeliveryRow, now: Date): Promise<void> {
   const peer = row.peerId ? await prisma.peer.findUnique({ where: { id: row.peerId } }) : null;
+  // Blocked since it was queued: nothing more goes to it.
+  if (peer?.status === "BLOCKED") {
+    await prisma.federationDelivery.delete({ where: { id: row.id } }).catch(() => {});
+    return;
+  }
   // Paused: kept, and tried again once it's resumed.
   if (peer?.status === "PAUSED") {
     await prisma.federationDelivery.update({

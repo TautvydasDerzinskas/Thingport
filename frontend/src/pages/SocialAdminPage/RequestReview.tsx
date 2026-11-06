@@ -3,11 +3,13 @@ import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
@@ -17,7 +19,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import { UnauthorizedError } from "../../api/client";
-import { federationApi, type IncomingRequest, type RequestDetails } from "../../api/federation";
+import { FederationError, federationApi, type IncomingRequest, type RequestDetails } from "../../api/federation";
 import { useConfirm } from "../../components/ConfirmProvider";
 import HelpTip from "../../components/HelpTip";
 import { federationErrorText } from "./federationErrors";
@@ -39,11 +41,14 @@ function useRequestReview(
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState<ReviewOutcome | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  // Ticked once the key shown matches what their admin reads out: compared again whenever it's read again.
+  const [matches, setMatches] = React.useState(false);
   const k = (name: string) => `adminSettings.social.federation.review.${name}`;
 
   const load = React.useCallback(() => {
     setLoadError(null);
     setDetails(null);
+    setMatches(false);
     federationApi.request(request.id).then(setDetails, (err) => {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setLoadError(federationErrorText(err, t));
@@ -64,15 +69,22 @@ function useRequestReview(
     }
     setBusy(outcome);
     setError(null);
+    // The request that checked out: a newer one under the same address may have been forged and dropped.
+    const id = details?.id ?? request.id;
     try {
-      if (outcome === "approved") await federationApi.approve(request.id, details!.fingerprint);
-      else if (outcome === "declined") await federationApi.decline(request.id);
-      else await federationApi.blockRequest(request.id);
+      if (outcome === "approved") await federationApi.approve(id, details!.fingerprint);
+      else if (outcome === "declined") await federationApi.decline(id);
+      else await federationApi.blockRequest(id);
       onDone(outcome);
     } catch (err) {
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setError(federationErrorText(err, t));
       setBusy(null);
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized?.();
+        return;
+      }
+      // Its key changed since it was read: read it again, to compare the new one.
+      if (err instanceof FederationError && err.code === "key_changed") load();
+      setError(federationErrorText(err, t));
     }
   };
 
@@ -104,6 +116,13 @@ function useRequestReview(
           )}
           {details && <HelpTip text={t(k("keyHelp"))} />}
         </Stack>
+        {details && (
+          <FormControlLabel
+            sx={{ m: 0 }}
+            control={<Checkbox size="small" checked={matches} onChange={(event) => setMatches(event.target.checked)} />}
+            label={<Typography variant="body2">{t(k("compare"), { name: details.name })}</Typography>}
+          />
+        )}
       </Stack>
       <Box>
         <Typography variant="caption" color="text.secondary" fontWeight={700} component="div" sx={{ mb: 0.5 }}>
@@ -181,7 +200,7 @@ function useRequestReview(
         variant="contained"
         startIcon={spinner("approved") ?? <CheckIcon />}
         onClick={() => void act("approved")}
-        disabled={busy !== null || !details}
+        disabled={busy !== null || !details || !matches}
       >
         {t(k("approve"))}
       </Button>

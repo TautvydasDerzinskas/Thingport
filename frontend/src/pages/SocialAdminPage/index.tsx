@@ -1,5 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import type { SocialSettings } from "../../api/social";
 import SectionHeader from "../../components/SectionHeader";
@@ -13,7 +15,7 @@ type Props = {
 
 /** Administration → Social: what this instance's users share with each other, chats, and connected instances. */
 export default function SocialAdminPage({ onUnauthorized }: Props) {
-  const { t } = useTranslation("app");
+  const { t } = useTranslation(["app", "common"]);
   const [social, setSocial] = React.useState<SocialSettings | null>(null);
   const federation = useFederationSettings(onUnauthorized);
   const socialEnabled = social?.enabled ?? false;
@@ -33,6 +35,18 @@ export default function SocialAdminPage({ onUnauthorized }: Props) {
           />
         }
       />
+      {federation.loadFailed && (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={federation.reload}>
+              {t("common:retry")}
+            </Button>
+          }
+        >
+          {t("adminSettings.social.federation.settingsLoadFailed")}
+        </Alert>
+      )}
       {federation.settings?.enabled && socialEnabled && <InstancesSection onUnauthorized={onUnauthorized} />}
     </Stack>
   );

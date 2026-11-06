@@ -3,18 +3,25 @@ import { prisma } from "../db";
 // Partners we're connected with or have asked: the only instances this one talks to.
 let cached: { origins: Set<string>; at: number } | null = null;
 const CACHE_MS = 10_000;
+// Bumped by every change: a read that started before one is read again, so a partner just paused or blocked isn't
+// put back.
+let generation = 0;
 
 // Instances an admin is looking at right now: checking an address before connecting, or a request before approving.
 const temporary = new Map<string, number>();
 
 async function peerOrigins(): Promise<Set<string>> {
-  if (cached && Date.now() - cached.at < CACHE_MS) return cached.origins;
-  const peers = await prisma.peer.findMany({
-    where: { status: { in: ["ACTIVE", "OUTGOING"] } },
-    select: { origin: true },
-  });
-  cached = { origins: new Set(peers.map((peer) => peer.origin)), at: Date.now() };
-  return cached.origins;
+  for (;;) {
+    if (cached && Date.now() - cached.at < CACHE_MS) return cached.origins;
+    const asked = generation;
+    const peers = await prisma.peer.findMany({
+      where: { status: { in: ["ACTIVE", "OUTGOING"] } },
+      select: { origin: true },
+    });
+    if (asked !== generation) continue;
+    cached = { origins: new Set(peers.map((peer) => peer.origin)), at: Date.now() };
+    return cached.origins;
+  }
 }
 
 /** Whether this instance may fetch from, or accept signed requests from, `origin`. */
@@ -37,5 +44,6 @@ export async function withAllowedOrigin<T>(origin: string, fn: () => Promise<T>)
 
 /** After a partner is added, removed or changes status. */
 export function invalidateAllowlist(): void {
+  generation += 1;
   cached = null;
 }

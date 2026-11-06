@@ -99,10 +99,14 @@ router.patch(
   }),
 );
 
-/** Looking an instance up and connecting need this instance's own identity, which exists once it's turned on. */
+/** Looking an instance up and connecting need this instance's own identity, which exists once it's turned on, and
+ *  social features, which it builds on and is quiet without. */
 async function assertOn(): Promise<void> {
   if (!(await getFederationSettings()).enabled) {
     throw new HttpError(409, "Turn connected instances on first", "federation_off");
+  }
+  if (!(await getSocialSettings()).enabled) {
+    throw new HttpError(409, "Turn social features on first", "social_off");
   }
 }
 
@@ -110,7 +114,7 @@ router.get(
   "/federation/lookup",
   asyncHandler(async (req, res) => {
     await assertOn();
-    const address = z.string().min(1).max(500).parse(req.query.address);
+    const address = parseBody(z.string().min(1).max(500), req.query.address);
     res.json(await lookupInstance(address));
   }),
 );

@@ -6,8 +6,9 @@ instance. This page is for working on it; the admin's side is in
 
 ## The rules
 
-- **Off means absent.** With connected instances off (the default), nothing under `/api/ap` answers, no keys exist and
-  Fedify isn't even loaded: it's imported only once an admin turns it on. Keep it that way: no top-level import of
+- **Off means absent.** With connected instances off (the default), nothing under `/api/ap` answers and Fedify isn't
+  even loaded: it's imported only once an admin turns it on. The keys are made the first time it's turned on and kept
+  when it's turned off, so partners know it again once it's back. Keep it that way: no top-level import of
   `@fedify/*` outside `import type`.
 - **Admins decide who this instance talks to.** It fetches from, and accepts signed requests from, only approved
   partners and the instance an admin is looking at right then (`allowlist.ts`). Nothing a stranger or a user sends may
@@ -18,7 +19,8 @@ instance. This page is for working on it; the admin's side is in
   (or why it stays local), and `tests/federationSurfaces.test.ts` fails for one that isn't. A new social feature
   decides its federation when it's written, not later.
 - **Plain HTTP stays supported** (see `.claude/CLAUDE.md`): requests are signed, the UI shows **Plain HTTP**, and admins
-  compare key fingerprints out of band.
+  compare key fingerprints out of band. What's compared is what counts: Fedify's loaders refuse a partner's document
+  that publishes any other key (`pinning.ts`), so a key swapped in on the way can't sign for it.
 
 ## How it fits together
 
@@ -31,6 +33,7 @@ body exactly as it came), plus the admin API in `routes/federation.ts`.
 | `keys.ts`                                  | The instance's RSA (HTTP signatures) and Ed25519 (object proofs) keys, made on first enable, and their fingerprint: six groups of four hex digits of the SHA-256 of both public keys' SPKI.                                                         |
 | `runtime.ts`                               | Fedify, built lazily per Public URL origin: the instance actor (`/api/ap/actors/instance`, readable by anyone, since checking a signature needs the signer's key), the inbox (`/api/ap/inbox`), and the loaders.                                    |
 | `addresses.ts`, `fetch.ts`, `allowlist.ts` | Outgoing requests: only to allowed origins, never to this machine, link-local (cloud metadata) or reserved ranges, resolved once per connection against DNS rebinding, no redirects, 1 MB at most.                                                  |
+| `pinning.ts`                               | The keys compared when connecting are the only ones a partner has: a document from it publishing another is refused by the loaders Fedify verifies with.                                                                                            |
 | `edge.ts`                                  | In front of the inbox: a partner's request goes on to Fedify; a blocked instance's is dropped; a paused one gets 503 and retries; from anyone else only a `Follow` of the instance actor, by the origin that signed it, is kept as a `PeerRequest`. |
 | `peers.ts`                                 | Every change to who we're connected with: looking an instance up, asking, approving, declining, pausing, disconnecting, blocking, and what partners send.                                                                                           |
 | `delivery.ts`                              | Our own outbox: signed POSTs with retries over about three days. Fedify's own delivery refuses private addresses, which home instances live on.                                                                                                     |
@@ -46,11 +49,16 @@ Two instance actors, one `Follow` and one `Accept`:
 
 1. Admin A looks B up (`GET /api/ap/instance` and B's actor), compares B's fingerprint with B's admin, and connects:
    a `Peer` (`OUTGOING`) and a `Follow` from A's instance actor, with the note as `content`.
-2. B's edge filter keeps it as a `PeerRequest` without fetching anything, and notifies B's admins.
-3. B's admin opens it: only now does B fetch A's key and check the stored signature (any age: the handshake after it
-   proves both sides are live). Approving creates B's `Peer` (`ACTIVE`) and sends an `Accept`.
-4. A's `Peer` becomes `ACTIVE` on the `Accept`. Disconnecting sends `Undo(Follow)` from whoever asked and
-   `Reject(Follow)` from whoever approved; blocking says nothing.
+2. B's edge filter keeps it as a `PeerRequest` without fetching anything, and notifies B's admins. Another one under
+   A's address is kept beside it, a few at most: anyone can send one claiming to be A.
+3. B's admin opens it: only now does B look A up, and check A's requests newest first against the key in that lookup
+   (any age: the handshake after it proves both sides are live) and against `GET /api/ap/follows/<id>` on A, which
+   answers only while A's request stands. The first that passes is the request; forged and withdrawn ones are dropped.
+   Approving creates B's `Peer` (`ACTIVE`) and queues the `Accept` in one transaction.
+4. A's `Peer` becomes `ACTIVE` on an `Accept` of its own `Follow`, if it's still `OUTGOING`. Disconnecting sends
+   `Undo(Follow)` from whoever asked and `Reject(Follow)` from whoever approved; blocking says nothing. Pairing
+   activities count only from the instance actor connected with; an `Undo` of their `Follow` of us ends it whatever
+   its id, since when both admins asked at once each side keeps its own.
 
 ### Making a social feature federate
 
@@ -71,7 +79,7 @@ Two instance actors, one `Follow` and one `Accept`:
 - `tests/federation.test.ts`: the routes and the inbox filter on a test database.
 - `tests/federationSurfaces.test.ts`: the rule above.
 - `tests/federationPairing.e2e.test.ts`: two real instances, each its own server and database, pairing over HTTP. It
-  needs two empty, migrated databases and is skipped without them:
+  needs two empty, migrated databases and is skipped without them. From `backend/`:
 
   ```sh
   createdb fed_a && createdb fed_b

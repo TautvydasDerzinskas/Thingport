@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import type { webcrypto } from "node:crypto";
-import type { Peer, Prisma } from "@prisma/client";
+import type { Peer, PeerRequest, Prisma } from "@prisma/client";
 import type * as Vocab from "@fedify/vocab";
 import { prisma } from "../db";
 import { createLog } from "../services/auditLog";
@@ -8,7 +8,7 @@ import { createNotification } from "../services/notificationService";
 import { HttpError } from "../utils/fileUtils";
 import { originOf } from "./addresses";
 import { invalidateAllowlist, isAllowedOrigin, withAllowedOrigin } from "./allowlist";
-import { enqueueActivity, pendingDeliveryCounts } from "./delivery";
+import { enqueueActivity, kickDelivery, pendingDeliveryCounts } from "./delivery";
 import { FederationFetchError, federationFetch, readJson } from "./fetch";
 import { keyFingerprint } from "./keys";
 import { AP_PREFIX, getRuntime, INSTANCE, type Runtime } from "./runtime";
@@ -16,6 +16,9 @@ import { AP_PREFIX, getRuntime, INSTANCE, type Runtime } from "./runtime";
 type CryptoKey = webcrypto.CryptoKey;
 
 const MAX_PENDING_INCOMING = 50;
+// A few per instance: a forged one under its address can't push out the one it really sent.
+const MAX_PENDING_PER_ORIGIN = 3;
+const REQUESTS_LOCK = 74_210_305;
 const MAX_NOTE = 1000;
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -44,6 +47,13 @@ export function normalizeInstanceAddress(input: string): string {
 /** What an instance says about itself, and its key: only fetched because an admin asked, and only from that
  *  instance. Checks it's a Thingport instance that takes connections, and that its actor is its own. */
 export async function lookupInstance(input: string): Promise<InstanceInfo> {
+  return (await lookupWithActor(input)).info;
+}
+
+/** The actor document a lookup read, so a request can be checked against exactly the key an admin compared. */
+type ActorDocument = { url: string; document: unknown };
+
+async function lookupWithActor(input: string): Promise<{ info: InstanceInfo; actor: ActorDocument }> {
   const origin = normalizeInstanceAddress(input);
   const runtime = await getRuntime();
   if (origin === runtime.origin) throw new HttpError(400, "That's this instance", "same_instance");
@@ -55,6 +65,7 @@ export async function lookupInstance(input: string): Promise<InstanceInfo> {
         { headers: { Accept: "application/json" } },
         isAllowedOrigin,
       );
+      if (!response.ok) await response.body?.cancel().catch(() => {});
       if (response.status === 404) {
         throw new HttpError(422, "That instance doesn't take connections", "not_accepting");
       }
@@ -67,13 +78,17 @@ export async function lookupInstance(input: string): Promise<InstanceInfo> {
     if (about.software !== "thingport" || typeof about.actor !== "string" || originOf(about.actor) !== origin) {
       throw new HttpError(422, "That isn't a Thingport instance", "not_thingport");
     }
-    const actor = await fetchActor(runtime, about.actor);
+    const { document, ...actor } = await fetchActor(runtime, about.actor);
     return {
-      origin,
-      name: typeof about.name === "string" && about.name.trim() ? about.name.trim().slice(0, 80) : new URL(origin).host,
-      version: typeof about.version === "string" ? about.version.slice(0, 40) : null,
-      ...actor,
-      http: origin.startsWith("http:"),
+      info: {
+        origin,
+        name:
+          typeof about.name === "string" && about.name.trim() ? about.name.trim().slice(0, 80) : new URL(origin).host,
+        version: typeof about.version === "string" ? about.version.slice(0, 40) : null,
+        ...actor,
+        http: origin.startsWith("http:"),
+      },
+      actor: { url: about.actor, document },
     };
   });
 }
@@ -81,11 +96,12 @@ export async function lookupInstance(input: string): Promise<InstanceInfo> {
 async function fetchActor(
   runtime: Runtime,
   actorUrl: string,
-): Promise<Pick<InstanceInfo, "fingerprint" | "actorUrl" | "inboxUrl" | "publicKeys">> {
+): Promise<Pick<InstanceInfo, "fingerprint" | "actorUrl" | "inboxUrl" | "publicKeys"> & { document: unknown }> {
   const options = { documentLoader: runtime.documentLoader as never, contextLoader: runtime.contextLoader as never };
   let actor: Vocab.Object;
+  let document: unknown;
   try {
-    const { document } = await runtime.documentLoader(actorUrl);
+    ({ document } = await runtime.documentLoader(actorUrl));
     actor = await runtime.vocab.Object.fromJsonLd(document, options);
   } catch (err) {
     if (err instanceof FederationFetchError && err.code === "network") {
@@ -116,6 +132,7 @@ async function fetchActor(
     actorUrl,
     inboxUrl: inbox.href,
     publicKeys,
+    document,
   };
 }
 
@@ -138,35 +155,37 @@ export async function connect(adminId: string, input: string, note: string | nul
   if (theirs) return approveRequest(adminId, theirs.id, info.fingerprint);
 
   const runtime = await getRuntime();
-  const peer = await prisma.peer.create({
-    data: {
-      origin: info.origin,
-      name: info.name,
-      version: info.version,
-      actorUrl: info.actorUrl,
-      inboxUrl: info.inboxUrl,
-      publicKeys: info.publicKeys as Prisma.InputJsonValue,
-      fingerprint: info.fingerprint,
-      status: "OUTGOING",
-      initiatedBy: "us",
-      note: clean(note),
-    },
+  // The request and its sending, together: a peer waiting on a Follow that never went out would wait for good.
+  const peer = await prisma.$transaction(async (tx) => {
+    const created = await tx.peer.create({
+      data: {
+        origin: info.origin,
+        name: info.name,
+        version: info.version,
+        actorUrl: info.actorUrl,
+        inboxUrl: info.inboxUrl,
+        publicKeys: info.publicKeys as Prisma.InputJsonValue,
+        fingerprint: info.fingerprint,
+        status: "OUTGOING",
+        initiatedBy: "us",
+        note: clean(note),
+      },
+    });
+    const follow = new runtime.vocab.Follow({
+      id: new URL(`${AP_PREFIX}/follows/${created.id}`, runtime.origin),
+      actor: runtime.actorUrl,
+      object: new URL(info.actorUrl),
+      name: new URL(runtime.origin).host,
+      content: created.note ? escapeHtml(created.note) : null,
+    });
+    await enqueueActivity(
+      { origin: info.origin, inboxUrl: info.inboxUrl, peerId: created.id, activity: await runtime.toJson(follow) },
+      tx,
+    );
+    return tx.peer.update({ where: { id: created.id }, data: { followId: follow.id!.href } });
   });
-  const follow = new runtime.vocab.Follow({
-    id: new URL(`${AP_PREFIX}/follows/${peer.id}`, runtime.origin),
-    actor: runtime.actorUrl,
-    object: new URL(info.actorUrl),
-    name: new URL(runtime.origin).host,
-    content: peer.note ? escapeHtml(peer.note) : null,
-  });
-  await prisma.peer.update({ where: { id: peer.id }, data: { followId: follow.id!.href } });
   invalidateAllowlist();
-  await enqueueActivity({
-    origin: info.origin,
-    inboxUrl: info.inboxUrl,
-    peerId: peer.id,
-    activity: await runtime.toJson(follow),
-  });
+  kickDelivery();
   void createLog({
     userId: adminId,
     action: "federation_requested",
@@ -180,6 +199,7 @@ export async function connect(adminId: string, input: string, note: string | nul
 export async function cancelOutgoing(adminId: string, peerId: string): Promise<void> {
   const peer = await prisma.peer.findUnique({ where: { id: peerId } });
   if (!peer || peer.status !== "OUTGOING") throw new HttpError(404, "No such request", "not_found");
+  await dropQueued(peer.id);
   await sayGoodbye(peer);
   await prisma.peer.delete({ where: { id: peer.id } });
   invalidateAllowlist();
@@ -205,14 +225,15 @@ type IncomingFollow = {
 };
 
 /** A stranger's Follow of this instance, kept as it came for an admin: nothing in it is fetched or trusted until an
- *  admin opens it. Called by edge.ts before Fedify sees the request. */
+ *  admin opens it. Called by edge.ts before Fedify sees the request. Another one under the same address is kept beside
+ *  the first, not over it: either may be forged, and opening them tells which. */
 export async function storeIncomingRequest(params: {
   origin: string;
   url: string;
   headers: Record<string, string>;
   raw: string;
   follow: IncomingFollow;
-}): Promise<"stored" | "updated" | "full"> {
+}): Promise<"stored" | "another" | "full"> {
   const { follow } = params;
   const mentions = Array.isArray(follow.tag)
     ? (follow.tag as { type?: unknown; href?: unknown; name?: unknown }[])
@@ -221,92 +242,160 @@ export async function storeIncomingRequest(params: {
     (m) => m?.type === "Mention" && typeof m.href === "string" && originOf(m.href) === params.origin,
   );
   const target = mentions.find((m) => m?.type === "Mention" && m !== requester && typeof m.name === "string");
+  const name = typeof follow.name === "string" ? follow.name.trim().slice(0, 80) || null : null;
   const data = {
+    kind: "INCOMING" as const,
+    origin: params.origin,
     url: params.url,
     headers: params.headers as Prisma.InputJsonValue,
     activity: params.raw,
-    requesterName: null,
+    requesterName: name,
     requesterHandle: typeof requester?.name === "string" ? requester.name.replace(/^@/, "").slice(0, 200) : null,
     requesterUrl: typeof requester?.href === "string" ? requester.href.slice(0, 500) : null,
     targetHandle: typeof target?.name === "string" ? target.name.replace(/^@/, "").slice(0, 200) : null,
     note: typeof follow.content === "string" ? clean(stripHtml(follow.content)) : null,
   };
-  const name = typeof follow.name === "string" ? follow.name.trim().slice(0, 80) || null : null;
-  const pending = await prisma.peerRequest.findFirst({
-    where: { kind: "INCOMING", status: "PENDING", origin: params.origin },
+  // Counted and stored as one, so a burst can't slip past the limits.
+  const outcome = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${REQUESTS_LOCK})`;
+    const waiting = { kind: "INCOMING" as const, status: "PENDING" as const };
+    const fromOrigin = await tx.peerRequest.count({ where: { ...waiting, origin: params.origin } });
+    // Full: the sender is told to try again later, and its delivery does, for days.
+    if (fromOrigin >= MAX_PENDING_PER_ORIGIN) return { kind: "full" as const };
+    if (fromOrigin === 0 && (await tx.peerRequest.count({ where: waiting })) >= MAX_PENDING_INCOMING) {
+      return { kind: "full" as const };
+    }
+    const created = await tx.peerRequest.create({ data });
+    return { kind: fromOrigin ? ("another" as const) : ("stored" as const), id: created.id };
   });
-  if (pending) {
-    await prisma.peerRequest.update({ where: { id: pending.id }, data: { ...data, requesterName: name } });
-    return "updated";
-  }
-  const count = await prisma.peerRequest.count({ where: { kind: "INCOMING", status: "PENDING" } });
-  if (count >= MAX_PENDING_INCOMING) return "full";
-  const created = await prisma.peerRequest.create({
-    data: { ...data, requesterName: name, kind: "INCOMING", origin: params.origin },
-  });
+  if (outcome.kind !== "stored") return outcome.kind;
   const who = name ?? new URL(params.origin).host;
   await notifyAdmins({
     title: `${who} wants to connect`,
     body: data.note ?? `${params.origin} asks to connect with this instance.`,
-    internalPath: `/admin-social?request=${created.id}`,
+    internalPath: `/admin-social?request=${outcome.id}`,
   });
   return "stored";
 }
 
 export type RequestDetails = InstanceInfo & { id: string; verified: true };
 
-/** An incoming request, checked: its signature against the key the instance publishes now. Fetches from that
- *  instance, which is fine since an admin opened it. */
+/** An incoming request, checked: its signature against the key the instance publishes now, and that the instance
+ *  still stands by it. Fetches from that instance, which is fine since an admin opened it. */
 export async function requestDetails(id: string): Promise<RequestDetails> {
-  const request = await prisma.peerRequest.findUnique({ where: { id } });
-  if (!request || request.kind !== "INCOMING" || request.status !== "PENDING") {
-    throw new HttpError(404, "No such request", "not_found");
-  }
-  const info = await lookupInstance(request.origin);
-  await verifyStored(request.origin, request);
+  const asked = await pendingIncoming(id);
+  const { info, actor } = await lookupWithActor(asked.origin);
+  const { request } = await currentRequest(asked.origin, actor);
   return { ...info, id: request.id, verified: true };
 }
 
-async function verifyStored(
-  origin: string,
-  request: { url: string | null; headers: Prisma.JsonValue; activity: Prisma.JsonValue },
-): Promise<Vocab.Follow> {
-  const runtime = await getRuntime();
-  return withAllowedOrigin(origin, async () => {
-    const raw = typeof request.activity === "string" ? request.activity : "";
-    const signed = new Request(request.url ?? `${runtime.origin}${AP_PREFIX}/inbox`, {
-      method: "POST",
-      headers: (request.headers ?? {}) as Record<string, string>,
-      body: raw,
-    });
-    // An old signature is fine: the request waited for an admin, and the handshake after it proves both sides live.
-    const key = await runtime.fedify
-      .verifyRequest(signed, {
-        documentLoader: runtime.documentLoader as never,
-        contextLoader: runtime.contextLoader as never,
-        timeWindow: false,
-      })
-      .catch(() => null);
-    if (!key?.id || key.id.origin !== origin) {
-      throw new HttpError(422, "That request's signature doesn't match the instance's key", "bad_signature");
-    }
-    const follow = await runtime.vocab.Follow.fromJsonLd(JSON.parse(raw), {
-      documentLoader: runtime.documentLoader as never,
-      contextLoader: runtime.contextLoader as never,
-    });
-    if (!follow.id || follow.actorId?.origin !== origin || follow.objectId?.href !== runtime.actorUrl.href) {
-      throw new HttpError(422, "That request isn't a request to connect with this instance", "bad_signature");
-    }
-    return follow;
-  });
-}
-
-export async function approveRequest(adminId: string, id: string, fingerprint: string) {
+async function pendingIncoming(id: string): Promise<PeerRequest> {
   const request = await prisma.peerRequest.findUnique({ where: { id } });
   if (!request || request.kind !== "INCOMING" || request.status !== "PENDING") {
     throw new HttpError(404, "No such request", "not_found");
   }
-  const info = await lookupInstance(request.origin);
+  return request;
+}
+
+/** An instance's waiting requests, newest first, until one checks out: signed with the key an admin compared, and
+ *  still wanted by the instance that sent it. Those that don't are dropped on the way. Failing to reach the instance
+ *  stops it and drops nothing. */
+async function currentRequest(
+  origin: string,
+  actor: ActorDocument,
+): Promise<{ request: PeerRequest; follow: Vocab.Follow }> {
+  const candidates = await prisma.peerRequest.findMany({
+    where: { kind: "INCOMING", status: "PENDING", origin },
+    orderBy: { createdAt: "desc" },
+  });
+  let failure: unknown = new HttpError(404, "No such request", "not_found");
+  for (const request of candidates) {
+    try {
+      const follow = await verifyStored(origin, request, actor);
+      await assertStillAsked(origin, follow);
+      return { request, follow };
+    } catch (err) {
+      const code = err instanceof HttpError ? err.code : null;
+      if (code !== "bad_signature" && code !== "withdrawn") throw err;
+      failure = err;
+      await prisma.peerRequest.update({
+        where: { id: request.id },
+        data: { status: code === "withdrawn" ? "CANCELLED" : "DECLINED", decidedAt: new Date() },
+      });
+    }
+  }
+  throw failure;
+}
+
+/** The stored request's signature, checked against the actor document the admin's lookup read: the key they compared,
+ *  not one fetched again. */
+async function verifyStored(
+  origin: string,
+  request: { url: string | null; headers: Prisma.JsonValue; activity: Prisma.JsonValue },
+  actor: ActorDocument,
+): Promise<Vocab.Follow> {
+  const runtime = await getRuntime();
+  const raw = typeof request.activity === "string" ? request.activity : "";
+  const signed = new Request(request.url ?? `${runtime.origin}${AP_PREFIX}/inbox`, {
+    method: "POST",
+    headers: (request.headers ?? {}) as Record<string, string>,
+    body: raw,
+  });
+  const fromLookup = async (url: string) => {
+    if (url.split("#")[0] !== actor.url) throw new Error(`Not the compared actor: ${url}`);
+    return { contextUrl: null, document: actor.document, documentUrl: actor.url };
+  };
+  // An old signature is fine: the request waited for an admin, and the handshake after it proves both sides live.
+  const key = await runtime.fedify
+    .verifyRequest(signed, {
+      documentLoader: fromLookup as never,
+      contextLoader: runtime.contextLoader as never,
+      timeWindow: false,
+    })
+    .catch(() => null);
+  if (!key?.id || key.id.origin !== origin) {
+    throw new HttpError(422, "That request's signature doesn't match the instance's key", "bad_signature");
+  }
+  let follow: Vocab.Follow;
+  try {
+    follow = await runtime.vocab.Follow.fromJsonLd(JSON.parse(raw), {
+      documentLoader: fromLookup as never,
+      contextLoader: runtime.contextLoader as never,
+    });
+  } catch {
+    throw new HttpError(422, "That request isn't a request to connect with this instance", "bad_signature");
+  }
+  if (
+    follow.id?.origin !== origin ||
+    follow.actorId?.href !== actor.url ||
+    follow.objectId?.href !== runtime.actorUrl.href
+  ) {
+    throw new HttpError(422, "That request isn't a request to connect with this instance", "bad_signature");
+  }
+  return follow;
+}
+
+/** Whether the instance that sent a request still stands by it: it withdrew it, or it's one from before a disconnect
+ *  played back, when its Follow no longer answers. */
+async function assertStillAsked(origin: string, follow: Vocab.Follow): Promise<void> {
+  let response: Response;
+  try {
+    response = await withAllowedOrigin(origin, () =>
+      federationFetch(follow.id!.href, { headers: { Accept: "application/activity+json" } }, isAllowedOrigin),
+    );
+  } catch (err) {
+    throw new HttpError(502, `Couldn't reach ${origin}: ${(err as Error).message}`, "unreachable", true);
+  }
+  await response.body?.cancel().catch(() => {});
+  if (response.status === 404 || response.status === 410) {
+    throw new HttpError(410, "That instance withdrew its request", "withdrawn");
+  }
+  if (!response.ok) throw new HttpError(502, `That instance answered ${response.status}`, "unreachable", true);
+}
+
+export async function approveRequest(adminId: string, id: string, fingerprint: string) {
+  const asked = await pendingIncoming(id);
+  const { info, actor } = await lookupWithActor(asked.origin);
   if (info.fingerprint !== fingerprint) {
     throw new HttpError(
       409,
@@ -314,7 +403,7 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
       "key_changed",
     );
   }
-  const follow = await verifyStored(request.origin, request);
+  const { request, follow } = await currentRequest(asked.origin, actor);
   const runtime = await getRuntime();
   const existing = await prisma.peer.findUnique({ where: { origin: request.origin } });
   if (existing?.status === "BLOCKED")
@@ -332,25 +421,30 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
     connectedAt: new Date(),
     lastError: null,
   };
-  const peer = existing
-    ? await prisma.peer.update({ where: { id: existing.id }, data })
-    : await prisma.peer.create({ data: { origin: request.origin, ...data } });
-  await prisma.peerRequest.update({
-    where: { id: request.id },
-    data: { status: "APPROVED", decidedById: adminId, decidedAt: new Date() },
-  });
-  invalidateAllowlist();
   const accept = new runtime.vocab.Accept({
     id: activityId(runtime, "accept"),
     actor: runtime.actorUrl,
     object: follow,
   });
-  await enqueueActivity({
-    origin: peer.origin,
-    inboxUrl: info.inboxUrl,
-    peerId: peer.id,
-    activity: await runtime.toJson(accept),
+  const activity = await runtime.toJson(accept);
+  // Connected, answered and the rest of its requests settled, together.
+  const peer = await prisma.$transaction(async (tx) => {
+    const saved = existing
+      ? await tx.peer.update({ where: { id: existing.id }, data })
+      : await tx.peer.create({ data: { origin: request.origin, ...data } });
+    await tx.peerRequest.update({
+      where: { id: request.id },
+      data: { status: "APPROVED", decidedById: adminId, decidedAt: new Date() },
+    });
+    await tx.peerRequest.updateMany({
+      where: { kind: "INCOMING", status: "PENDING", origin: request.origin },
+      data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
+    });
+    await enqueueActivity({ origin: saved.origin, inboxUrl: info.inboxUrl, peerId: saved.id, activity }, tx);
+    return saved;
   });
+  invalidateAllowlist();
+  kickDelivery();
   void createLog({
     userId: adminId,
     action: "federation_approved",
@@ -362,36 +456,45 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
 
 /** Declined, and they're told when their request checks out; one that doesn't is just dropped. */
 export async function declineRequest(adminId: string, id: string): Promise<void> {
-  const request = await prisma.peerRequest.findUnique({ where: { id } });
-  if (!request || request.kind !== "INCOMING" || request.status !== "PENDING") {
-    throw new HttpError(404, "No such request", "not_found");
-  }
-  await prisma.peerRequest.update({
-    where: { id },
-    data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
+  const asked = await pendingIncoming(id);
+  const candidates = await prisma.peerRequest.findMany({
+    where: { kind: "INCOMING", status: "PENDING", origin: asked.origin },
+    orderBy: { createdAt: "desc" },
   });
-  void createLog({ userId: adminId, action: "federation_declined", targetId: id, details: { origin: request.origin } });
+  let told = false;
   try {
-    const follow = await verifyStored(request.origin, request);
-    const info = await lookupInstance(request.origin);
+    const { info, actor } = await lookupWithActor(asked.origin);
     const runtime = await getRuntime();
-    const reject = new runtime.vocab.Reject({
-      id: activityId(runtime, "reject"),
-      actor: runtime.actorUrl,
-      object: follow,
-    });
-    await enqueueActivity({ origin: request.origin, inboxUrl: info.inboxUrl, activity: await runtime.toJson(reject) });
+    for (const request of candidates) {
+      const follow = await verifyStored(asked.origin, request, actor).catch(() => null);
+      if (!follow) continue;
+      const reject = new runtime.vocab.Reject({
+        id: activityId(runtime, "reject"),
+        actor: runtime.actorUrl,
+        object: follow,
+      });
+      await enqueueActivity({ origin: asked.origin, inboxUrl: info.inboxUrl, activity: await runtime.toJson(reject) });
+      told = true;
+      break;
+    }
   } catch {
     // Unreachable or not what it claimed: nothing to tell.
   }
+  await prisma.peerRequest.updateMany({
+    where: { id: { in: candidates.map((request) => request.id) } },
+    data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
+  });
+  void createLog({
+    userId: adminId,
+    action: "federation_declined",
+    targetId: id,
+    details: { origin: asked.origin, told },
+  });
 }
 
 /** Blocked without a word: this request is declined, and whatever comes from that instance later is dropped. */
 export async function blockRequest(adminId: string, id: string): Promise<void> {
-  const request = await prisma.peerRequest.findUnique({ where: { id } });
-  if (!request || request.kind !== "INCOMING" || request.status !== "PENDING") {
-    throw new HttpError(404, "No such request", "not_found");
-  }
+  const request = await pendingIncoming(id);
   await prisma.peerRequest.updateMany({
     where: { origin: request.origin, kind: "INCOMING", status: "PENDING" },
     data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
@@ -456,8 +559,11 @@ export async function listInstances() {
     pendingDeliveryCounts(),
   ]);
   const out = (peer: Peer) => peerOut(peer, pending.get(peer.id) ?? 0);
+  // One row per instance: the newest of its requests, which opening it checks along with the rest.
+  const seen = new Set<string>();
+  const newest = incoming.filter((request) => !seen.has(request.origin) && seen.add(request.origin));
   return {
-    incoming: incoming.map((request) => ({
+    incoming: newest.map((request) => ({
       id: request.id,
       origin: request.origin,
       // As the request named itself: confirmed only once an admin opens it.
@@ -498,6 +604,7 @@ export async function pausePeer(adminId: string, id: string, paused: boolean): P
 export async function disconnectPeer(adminId: string, id: string): Promise<void> {
   const peer = await findPeer(id);
   if (peer.status === "BLOCKED") throw new HttpError(409, "That instance is blocked", "blocked");
+  await dropQueued(peer.id);
   await sayGoodbye(peer);
   await prisma.peer.delete({ where: { id } });
   invalidateAllowlist();
@@ -511,6 +618,7 @@ export async function disconnectPeer(adminId: string, id: string): Promise<void>
 
 export async function blockPeer(adminId: string, id: string): Promise<PeerOut> {
   const peer = await findPeer(id);
+  await dropQueued(peer.id);
   if (peer.status !== "BLOCKED") await sayGoodbye(peer);
   const updated = await prisma.peer.update({ where: { id }, data: { status: "BLOCKED", lastError: null } });
   invalidateAllowlist();
@@ -548,6 +656,12 @@ export async function checkPeer(id: string): Promise<PeerOut> {
   }
 }
 
+/** What was waiting to go to an instance we're done with: a request or an answer sent after that would start it
+ *  again over there. The goodbye that follows is queued apart from it. */
+async function dropQueued(peerId: string): Promise<void> {
+  await prisma.federationDelivery.deleteMany({ where: { peerId } });
+}
+
 /** Tells a partner, or an instance we asked, that we're done: Undo our Follow, or Reject theirs. */
 async function sayGoodbye(peer: Peer): Promise<void> {
   if (!peer.followId || !peer.actorUrl || !peer.inboxUrl) return;
@@ -572,74 +686,88 @@ async function sayGoodbye(peer: Peer): Promise<void> {
 // ---------------------------------------------------------------------------------------------------------------------
 // What partners send (inbox.ts), already verified
 
-async function touch(origin: string): Promise<Peer | null> {
-  const peer = await prisma.peer.findUnique({ where: { origin } });
-  if (!peer) return null;
+/** The instance we know at `actor`'s origin, when `actor` is the very instance actor connected with: any other actor
+ *  there doesn't speak for it. */
+async function peerOf(actor: URL, touch: boolean): Promise<Peer | null> {
+  const peer = await prisma.peer.findUnique({ where: { origin: actor.origin } });
+  if (!peer || peer.actorUrl !== actor.href) return null;
+  if (!touch) return peer;
   return prisma.peer.update({ where: { id: peer.id }, data: { lastInboundAt: new Date(), lastSeenAt: new Date() } });
 }
 
 /** A Follow from an instance we asked (we both asked) or are connected with (it asks again): accepted. */
-export async function onFollowReceived(origin: string, follow: Vocab.Follow): Promise<void> {
-  const peer = await touch(origin);
+export async function onFollowReceived(actor: URL, follow: Vocab.Follow): Promise<void> {
+  const peer = await peerOf(actor, true);
   if (!peer || (peer.status !== "OUTGOING" && peer.status !== "ACTIVE")) return;
   const runtime = await getRuntime();
   if (follow.objectId?.href !== runtime.actorUrl.href || !peer.inboxUrl) return;
-  if (peer.status === "OUTGOING") await becomeConnected(peer);
+  if (peer.status === "OUTGOING" && !(await becomeConnected(peer))) return;
   const accept = new runtime.vocab.Accept({
     id: activityId(runtime, "accept"),
     actor: runtime.actorUrl,
     object: follow,
   });
-  await enqueueActivity({ origin, inboxUrl: peer.inboxUrl, peerId: peer.id, activity: await runtime.toJson(accept) });
+  await enqueueActivity({
+    origin: peer.origin,
+    inboxUrl: peer.inboxUrl,
+    peerId: peer.id,
+    activity: await runtime.toJson(accept),
+  });
 }
 
-export async function onAcceptReceived(origin: string, objectId: string | null): Promise<void> {
-  const peer = await touch(origin);
-  if (!peer || peer.status !== "OUTGOING" || (objectId && peer.followId && objectId !== peer.followId)) return;
+/** Their yes to our request: only to the one we sent. */
+export async function onAcceptReceived(actor: URL, objectId: string | null): Promise<void> {
+  const peer = await peerOf(actor, true);
+  if (!peer || peer.status !== "OUTGOING" || !objectId || objectId !== peer.followId) return;
   await becomeConnected(peer);
 }
 
-export async function onRejectReceived(origin: string, objectId: string | null): Promise<void> {
-  const peer = await prisma.peer.findUnique({ where: { origin } });
+/** Their no to our request, or their end of a connection they approved: either way about the Follow we keep. */
+export async function onRejectReceived(actor: URL, objectId: string | null): Promise<void> {
+  const peer = await peerOf(actor, false);
+  if (!peer || peer.status === "BLOCKED" || !objectId || objectId !== peer.followId) return;
+  await endedByThem(peer, peer.status === "OUTGOING" ? "declined" : "disconnected");
+}
+
+/** An Undo of their Follow of us (`theirFollow`; when both admins asked at once its id isn't the one we keep), or a
+ *  Block of this instance: they ended it. */
+export async function onDisconnectReceived(actor: URL, objectId: string | null, theirFollow: boolean): Promise<void> {
+  const peer = await peerOf(actor, false);
   if (!peer || peer.status === "BLOCKED") return;
-  if (objectId && peer.followId && objectId !== peer.followId) return;
-  await prisma.peer.delete({ where: { id: peer.id } });
+  if (!theirFollow && (!objectId || objectId !== peer.followId)) return;
+  await endedByThem(peer, peer.status === "OUTGOING" ? "withdrew" : "disconnected");
+}
+
+async function endedByThem(peer: Peer, how: "declined" | "withdrew" | "disconnected"): Promise<void> {
+  // Only as it was read: an admin's block meanwhile stays.
+  const { count } = await prisma.peer.deleteMany({ where: { id: peer.id, status: peer.status } });
+  if (!count) return;
   invalidateAllowlist();
-  const who = peer.name ?? new URL(origin).host;
+  const who = peer.name ?? new URL(peer.origin).host;
   await notifyAdmins(
-    peer.status === "OUTGOING"
+    how === "declined"
       ? { title: `${who} declined to connect`, body: null, internalPath: "/admin-social" }
-      : {
-          title: `${who} disconnected`,
-          body: "It's no longer a partner of this instance.",
-          internalPath: "/admin-social",
-        },
+      : how === "withdrew"
+        ? { title: `${who} withdrew its request`, body: null, internalPath: "/admin-social" }
+        : {
+            title: `${who} disconnected`,
+            body: "It's no longer a partner of this instance.",
+            internalPath: "/admin-social",
+          },
   );
 }
 
-/** An Undo of their Follow, or a Block: they ended it. */
-export async function onDisconnectReceived(origin: string, objectId: string | null): Promise<void> {
-  const peer = await prisma.peer.findUnique({ where: { origin } });
-  if (!peer || peer.status === "BLOCKED") return;
-  if (objectId && peer.followId && objectId !== peer.followId) return;
-  await prisma.peer.delete({ where: { id: peer.id } });
-  invalidateAllowlist();
-  const who = peer.name ?? new URL(origin).host;
-  await notifyAdmins({
-    title: peer.status === "OUTGOING" ? `${who} withdrew its request` : `${who} disconnected`,
-    body: null,
-    internalPath: "/admin-social",
-  });
-}
-
-async function becomeConnected(peer: Peer): Promise<void> {
-  await prisma.peer.update({
-    where: { id: peer.id },
+/** Connected, if it's still waiting on us: an admin may have blocked or withdrawn it meanwhile. */
+async function becomeConnected(peer: Peer): Promise<boolean> {
+  const { count } = await prisma.peer.updateMany({
+    where: { id: peer.id, status: "OUTGOING" },
     data: { status: "ACTIVE", connectedAt: new Date(), lastError: null },
   });
+  if (!count) return false;
   invalidateAllowlist();
   const who = peer.name ?? new URL(peer.origin).host;
   await notifyAdmins({ title: `Connected with ${who}`, body: `${who} accepted.`, internalPath: "/admin-social" });
+  return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

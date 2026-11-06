@@ -6,6 +6,7 @@ import { isAllowedOrigin } from "./allowlist";
 import { FederationFetchError, federationFetch, readJson } from "./fetch";
 import { getInstanceKeys, type InstanceKeys } from "./keys";
 import { PrismaKvStore } from "./kvStore";
+import { assertComparedKeys } from "./pinning";
 import { registerInbox } from "./inbox";
 
 type CryptoKey = webcrypto.CryptoKey;
@@ -71,25 +72,30 @@ async function build(origin: string): Promise<Runtime> {
     if (url in preloadedContexts) return { contextUrl: null, document: preloadedContexts[url], documentUrl: url };
     throw new FederationFetchError(`Unknown JSON-LD context: ${url}`, "not_allowed");
   };
+  // `pinned` for what Fedify loads to verify what partners send: only the keys compared when connecting count. A
+  // lookup isn't pinned, so it can show a key that changed.
   const makeLoader =
-    (identity?: { keyId: URL; privateKey: CryptoKey }): DocumentLoader =>
+    (identity?: { keyId: URL; privateKey: CryptoKey }, pinned = false): DocumentLoader =>
     async (url) => {
       if (url in preloadedContexts) return contextLoader(url);
       let request = new Request(url, { headers: { Accept: ACCEPT } });
       if (identity) request = await fedify.signRequest(request, identity.privateKey as never, identity.keyId);
       const response = await federationFetch(url, { headers: request.headers }, isAllowedOrigin);
       if (!response.ok) {
+        await response.body?.cancel().catch(() => {});
         throw new FederationFetchError(`HTTP ${response.status} from ${url}`, "status", response.status);
       }
-      return { contextUrl: null, document: await readJson(response), documentUrl: url };
+      const document = await readJson(response);
+      if (pinned) await assertComparedKeys(url, document);
+      return { contextUrl: null, document, documentUrl: url };
     };
 
   const federation = fedify.createFederation<void>({
     kv: new PrismaKvStore(),
     origin,
-    documentLoaderFactory: () => makeLoader() as never,
+    documentLoaderFactory: () => makeLoader(undefined, true) as never,
     contextLoaderFactory: () => contextLoader as never,
-    authenticatedDocumentLoaderFactory: (identity) => makeLoader(identity as never) as never,
+    authenticatedDocumentLoaderFactory: (identity) => makeLoader(identity as never, true) as never,
   });
 
   federation

@@ -46,16 +46,19 @@ export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props
     else setError(federationErrorText(err, t));
   };
 
-  const lookUp = async (event?: React.FormEvent) => {
+  /** Whether the lookup found it. `force` is for a lookup the dialog starts itself while it's already busy. */
+  const lookUp = async (event?: React.FormEvent, force = false): Promise<boolean> => {
     event?.preventDefault();
-    if (!address.trim() || busy) return;
+    if (!address.trim() || (busy && !force)) return false;
     setBusy(true);
     setError(null);
     try {
       setInfo(await federationApi.lookup(address.trim()));
       setMatches(false);
+      return true;
     } catch (err) {
       fail(err);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -69,10 +72,11 @@ export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props
       const { peer } = await federationApi.connect(info.origin, info.fingerprint, note.trim() || null);
       onSent(peer);
     } catch (err) {
-      // Its key changed meanwhile: compare the new one.
+      // Its key changed meanwhile: look it up again, busy all the while, to compare the new one, and say why.
       if (err instanceof FederationError && err.code === "key_changed") {
         setInfo(null);
-        void lookUp();
+        if (await lookUp(undefined, true)) fail(err);
+        return;
       }
       fail(err);
       setBusy(false);

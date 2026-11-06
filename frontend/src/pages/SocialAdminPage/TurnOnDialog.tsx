@@ -23,9 +23,16 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { UnauthorizedError } from "../../api/client";
-import { canTurnOn, federationApi, type FederationSettings, type Reachability } from "../../api/federation";
+import {
+  canTurnOn,
+  FederationError,
+  federationApi,
+  type FederationSettings,
+  type Reachability,
+} from "../../api/federation";
 import HelpTip from "../../components/HelpTip";
 import { prefersReducedMotion } from "../../components/storageAnimations/parts";
+import { federationErrorText } from "./federationErrors";
 import { statusTint, type StatusTone } from "../../theme";
 import { Mono } from "./parts";
 
@@ -67,7 +74,7 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
       setRound((value) => value + 1);
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setError(err instanceof Error ? err.message : t(key("failed")));
+      else setError(err instanceof FederationError ? federationErrorText(err, t) : t(key("failed")));
     } finally {
       setChecking(false);
     }
@@ -83,9 +90,19 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
     try {
       onTurnedOn(await federationApi.setEnabled(true));
     } catch (err) {
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setError(err instanceof Error ? err.message : t(key("failed")));
       setSaving(false);
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized?.();
+        return;
+      }
+      // Checked again on turning on, and no longer reachable: show the new result, and say so about this instance
+      // (the shared message is about another one).
+      if (err instanceof FederationError && err.code === "unreachable") {
+        await check();
+        setError(t(key("notReachableNow")));
+        return;
+      }
+      setError(err instanceof FederationError ? federationErrorText(err, t) : t(key("failed")));
     }
   };
 

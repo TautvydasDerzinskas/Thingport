@@ -128,9 +128,29 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     expect(JSON.stringify(notices.body)).toContain("Connected with");
 
     expect((await call(a, "POST", `/federation/peers/${partner.id}/disconnect`)).status).toBe(204);
-    await until(
-      "B sees it gone",
-      async () => (await call(b, "GET", "/federation/instances")).body.partners.length === 0,
+    // Gone altogether: a peer left blocked or waiting would stand in the way of connecting again.
+    await until("B sees it gone", async () => {
+      const { partners, outgoing, blocked } = (await call(b, "GET", "/federation/instances")).body;
+      return partners.length === 0 && outgoing.length === 0 && blocked.length === 0;
+    });
+  }, 120_000);
+
+  it("won't approve a request its sender withdrew", async () => {
+    const lookup = await call(a, "GET", `/federation/lookup?address=${encodeURIComponent(b.base)}`);
+    const asked = await call(a, "POST", "/federation/connect", {
+      address: b.base,
+      fingerprint: lookup.body.fingerprint,
+    });
+    const incoming = await until(
+      "B gets the request",
+      async () => (await call(b, "GET", "/federation/instances")).body.incoming[0],
     );
+    // Withdrawn before B's admin answered: B isn't a partner of A's, so its goodbye doesn't get through.
+    expect((await call(a, "POST", `/federation/peers/${asked.body.peer.id}/disconnect`)).status).toBe(204);
+    const details = await call(b, "GET", `/federation/requests/${incoming.id}`);
+    expect(details.body.code).toBe("withdrawn");
+    const after = (await call(b, "GET", "/federation/instances")).body;
+    expect(after.incoming).toEqual([]);
+    expect(after.partners).toEqual([]);
   }, 120_000);
 });
