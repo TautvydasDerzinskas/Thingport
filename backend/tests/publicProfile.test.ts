@@ -466,6 +466,46 @@ describe("a user's avatar", () => {
     fs.rmSync(recent, { force: true });
   });
 
+  it("sweeps past an entry it can't remove, without rejecting", async () => {
+    const dir = path.join(AVATARS, "gravatar");
+    // A directory: rm without recursive refuses it, force or not.
+    const stuck = path.join(dir, `${"2".repeat(64)}.webp`);
+    const old = path.join(dir, `${"3".repeat(64)}.webp`);
+    fs.mkdirSync(stuck, { recursive: true });
+    fs.writeFileSync(old, "x");
+    const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000);
+    fs.utimesSync(stuck, fortyDaysAgo, fortyDaysAgo);
+    fs.utimesSync(old, fortyDaysAgo, fortyDaysAgo);
+    try {
+      await expect(sweepGravatarCache()).resolves.toBeUndefined();
+      expect(fs.existsSync(old)).toBe(false);
+    } finally {
+      fs.rmSync(stuck, { recursive: true, force: true });
+      fs.rmSync(old, { force: true });
+    }
+  });
+
+  it("falls back to the one picked for them when Gravatar can't be reached and that can't be noted", async () => {
+    const who = await register("unwritable");
+    const email = (await prisma.user.findUniqueOrThrow({ where: { id: who.id } })).email;
+    const hash = crypto.createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+    // A directory where the "has none" note goes, older than a day so it's not taken as one.
+    const note = path.join(AVATARS, "gravatar", `${hash}.none`);
+    fs.mkdirSync(note);
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    fs.utimesSync(note, twoDaysAgo, twoDaysAgo);
+    gravatar(async () => {
+      throw new TypeError("fetch failed");
+    });
+    try {
+      const served = await get((await userOf(who)).avatar_url);
+      expect(served.status).toBe(200);
+      expect(served.headers["content-type"]).toContain("image/svg+xml");
+    } finally {
+      fs.rmSync(note, { recursive: true, force: true });
+    }
+  });
+
   it("falls back to the one picked for them when Gravatar can't be reached", async () => {
     const who = await register("offline");
     gravatar(async () => {

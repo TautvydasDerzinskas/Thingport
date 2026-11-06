@@ -118,12 +118,15 @@ export async function gravatarFile(email: string): Promise<string | null> {
   return pending;
 }
 
-/** Drops cached Gravatars older than GRAVATAR_EVICT_MS. A copy in use is fetched again daily, which renews it. */
+/** Drops cached Gravatars older than GRAVATAR_EVICT_MS. A copy in use is fetched again daily, which renews it. Never
+ *  rejects: it runs unawaited, and one entry it can't remove waits for the next sweep. */
 export async function sweepGravatarCache(): Promise<void> {
   const names = await fs.readdir(GRAVATAR_DIR).catch(() => [] as string[]);
   for (const name of names) {
     const age = await ageOf(path.join(GRAVATAR_DIR, name));
-    if (age !== null && age > GRAVATAR_EVICT_MS) await fs.rm(path.join(GRAVATAR_DIR, name), { force: true });
+    if (age !== null && age > GRAVATAR_EVICT_MS) {
+      await fs.rm(path.join(GRAVATAR_DIR, name), { force: true }).catch(() => undefined);
+    }
   }
 }
 let lastSweep = 0;
@@ -149,14 +152,19 @@ async function fetchGravatar(key: string, file: string, missing: string): Promis
     return file;
   } catch {
     // The copy from before, if any, rather than nothing; either way not asked again for an hour, so a page of avatars
-    // doesn't wait on a server it can't reach.
+    // doesn't wait on a server it can't reach. Noting that is best effort: a cache that can't be written to only means
+    // asking again sooner.
     const asIfOlder = new Date(Date.now() - DAY_MS + UNREACHABLE_RETRY_MS);
-    if ((await ageOf(file)) !== null) {
-      await fs.utimes(file, asIfOlder, asIfOlder);
-      return file;
-    }
-    await fs.writeFile(missing, "");
-    await fs.utimes(missing, asIfOlder, asIfOlder);
+    // Touching it is also the check that it's there, so a sweep removing it meanwhile isn't an error.
+    const kept = await fs
+      .utimes(file, asIfOlder, asIfOlder)
+      .then(() => true)
+      .catch(() => false);
+    if (kept) return file;
+    await fs
+      .writeFile(missing, "")
+      .then(() => fs.utimes(missing, asIfOlder, asIfOlder))
+      .catch(() => undefined);
     return null;
   }
 }
