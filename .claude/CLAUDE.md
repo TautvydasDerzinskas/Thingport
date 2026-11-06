@@ -26,6 +26,19 @@ document directly in a component, and don't add a second way to. A command's des
 it: say the units, axes, origin, ids and what happens to what's already there. After changing anything in `frontend/src/studio/`, run `npm run studio:sync`
 for the backend's copies. Read [docs/STUDIO_DEVELOPMENT.md](../docs/STUDIO_DEVELOPMENT.md) before working on Studio.
 
+## Connected instances
+
+Thingport instances pair over ActivityPub (`backend/src/federation/`) so a partner's people see this instance's as if
+they were on one. Read [docs/FEDERATION_DEVELOPMENT.md](../docs/FEDERATION_DEVELOPMENT.md) before touching it or any
+social feature:
+
+- **Every social feature federates.** A route added to `routes/social.ts` or `routes/chats.ts` gets an entry in
+  `src/federation/socialSurfaces.ts` saying how it crosses to partners (or why it stays local); a test fails otherwise.
+- **Off means absent**: nothing under `/api/ap` answers and Fedify isn't loaded until an admin turns it on. Import
+  `@fedify/*` only as types or with `await import()`.
+- **Only admins open a connection.** Nothing a stranger or a user sends may make the server fetch anything; outgoing
+  requests go through `federationFetch` with the allowlist, never plain `fetch`.
+
 ## Plain HTTP instances
 
 Thingport is self-hosted, and many instances run on a LAN or locally over plain HTTP with no TLS certificate. That is

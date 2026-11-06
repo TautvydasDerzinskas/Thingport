@@ -148,6 +148,7 @@ model User {
   chatMemberships          ChatMember[]
   chatMessages             ChatMessage[]
   chatsCreated             Chat[]               @relation("ChatCreatedBy")
+  peerRequests             PeerRequest[]
   createdAt                DateTime             @default(now())
   updatedAt                DateTime             @updatedAt
 }
@@ -1085,4 +1086,121 @@ model ChatAttachment {
 
   @@index([messageId])
   @@index([printId])
+}
+
+// Connected instances (src/federation): other Thingport instances this one is paired with over ActivityPub.
+
+enum PeerStatus {
+  /// We asked; their admin hasn't answered yet.
+  OUTGOING
+  ACTIVE
+  /// Ours to pause: nothing is sent to it, and what it sends is turned away to be retried later.
+  PAUSED
+  /// Whatever it sends is dropped without a word.
+  BLOCKED
+}
+
+/// Another instance: asked by us, connected, paused or blocked. One asking us is a PeerRequest until an admin approves.
+model Peer {
+  id            String               @id @default(cuid())
+  /// Scheme, host and port, as all of its addresses start: who it is here.
+  origin        String               @unique
+  name          String?
+  version       String?
+  /// Its instance actor and shared inbox, as it published them.
+  actorUrl      String?
+  inboxUrl      String?
+  /// Its public keys as JWKs, kept from when an admin compared their fingerprint.
+  publicKeys    Json?
+  fingerprint   String?
+  status        PeerStatus
+  /// The Follow that paired us, ours or theirs: what an Undo or a Reject refers to.
+  followId      String?
+  /// "us" when we asked, "them" when they did.
+  initiatedBy   String               @default("us")
+  /// Ours, sent with our request.
+  note          String?
+  connectedAt   DateTime?
+  /// When it last answered us, and when it last reached us: the second proves it can.
+  lastSeenAt    DateTime?
+  lastInboundAt DateTime?
+  lastError     String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  deliveries    FederationDelivery[]
+
+  @@index([status])
+}
+
+enum PeerRequestKind {
+  /// Another instance asking to connect.
+  INCOMING
+  /// One of our users asking to reach someone on an instance we aren't connected with.
+  LOCAL
+}
+
+enum PeerRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+/// A request waiting for an admin here.
+model PeerRequest {
+  id              String            @id @default(cuid())
+  kind            PeerRequestKind
+  status          PeerRequestStatus @default(PENDING)
+  origin          String
+  /// Who on the asking side asked, and whom they want to reach, as the request named them.
+  requesterName   String?
+  requesterHandle String?
+  requesterUrl    String?
+  targetHandle    String?
+  note            String?
+  /// INCOMING: the signed Follow exactly as it came, checked only once an admin approves, so a stranger can't make
+  /// this instance fetch anything.
+  activity        Json?
+  headers         Json?
+  url             String?
+  /// LOCAL: our user who asked.
+  userId          String?
+  user            User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decidedById     String?
+  decidedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([status, kind])
+  @@index([origin])
+  @@index([userId])
+}
+
+/// An activity on its way to another instance. Our own queue: Fedify's refuses addresses on a local network.
+model FederationDelivery {
+  id            String   @id @default(cuid())
+  peerId        String?
+  peer          Peer?    @relation(fields: [peerId], references: [id], onDelete: SetNull)
+  /// The one origin it may go to, which also lets a goodbye reach an instance no longer connected.
+  origin        String
+  inboxUrl      String
+  /// Who signs it: "instance", or a user's id.
+  actor         String
+  activity      Json
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime @default(now())
+  lastError     String?
+  createdAt     DateTime @default(now())
+
+  @@index([nextAttemptAt])
+  @@index([peerId])
+}
+
+/// Fedify's key-value store: public keys it fetched and activities it handled, each with an expiry.
+model FederationKv {
+  key       String    @id
+  value     Json
+  expiresAt DateTime?
+
+  @@index([expiresAt])
 }

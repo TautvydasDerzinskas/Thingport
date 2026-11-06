@@ -174,6 +174,9 @@ export const SEARCH_PAGES: SearchPage[] = [
     "sharing",
     "chats",
     "rooms",
+    "connected instances",
+    "federation",
+    "partners",
   ]),
   adminPage("adminLogs", "/admin-logs", "app:adminSettings.logs.heading", ["logs", "audit", "events"]),
   adminPage("adminConnections", "/admin-connections", "app:adminSettings.connections.heading", [

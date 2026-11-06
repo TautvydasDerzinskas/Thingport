@@ -83,6 +83,15 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   chat_room_created: "info",
   chat_room_edited: "default",
   chat_room_deleted: "error",
+  federation_settings_changed: "warning",
+  federation_requested: "info",
+  federation_approved: "info",
+  federation_declined: "default",
+  federation_paused: "warning",
+  federation_resumed: "info",
+  federation_disconnected: "warning",
+  federation_blocked: "error",
+  federation_unblocked: "default",
 };
 
 function isoDateOnly(d: Date): string {
@@ -173,6 +182,19 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "chat_room_edited":
       case "chat_room_deleted":
         return typeof d.name === "string" ? d.name : "";
+      case "federation_settings_changed":
+        return typeof d.enabled === "boolean"
+          ? t(d.enabled ? "adminSettings.logs.federationOn" : "adminSettings.logs.federationOff")
+          : "";
+      case "federation_requested":
+      case "federation_approved":
+      case "federation_declined":
+      case "federation_paused":
+      case "federation_resumed":
+      case "federation_disconnected":
+      case "federation_blocked":
+      case "federation_unblocked":
+        return typeof d.origin === "string" ? d.origin : "";
       case "descriptions_refetched":
         return t("adminSettings.logs.descriptionsRefetched", {
           email: typeof d.email === "string" ? d.email : "",

@@ -28,6 +28,8 @@ import providerRoutes, { providerBodyLimits } from "./providers/routes";
 import collectionsRoutes from "./routes/collections";
 import socialRoutes from "./routes/social";
 import chatRoutes from "./routes/chats";
+import federationRoutes, { federationProbeRoutes } from "./routes/federation";
+import apRoutes from "./federation/apRoutes";
 import collectionSyncsRoutes from "./routes/collectionSyncs";
 import providerCollectionsRoutes from "./routes/providerCollections";
 import bookmarksRoutes from "./routes/bookmarks";
@@ -56,6 +58,9 @@ export function createApp(): Express {
     }),
   );
 
+  // Other instances' ActivityPub requests, before any JSON parsing: their signatures cover the body as it came.
+  app.use("/api/ap", apRoutes);
+
   app.use(pathToken);
   // A widget's script, HTML and fetch body are larger than the default 100 kB; their own validation sets the limits.
   app.use("/api/widgets", express.json({ limit: "8mb" }));
@@ -74,6 +79,7 @@ export function createApp(): Express {
 
   // The frontend's nginx proxies /api/* here unmodified.
   app.use("/api", healthRoutes);
+  app.use("/api", federationProbeRoutes);
   // Before the routers that apply requireAuth to every path: see routes/mcp.ts.
   app.use("/api", mcpRoutes);
   // Also before them: an icon's file is public.
@@ -101,6 +107,7 @@ export function createApp(): Express {
   app.use("/api", collectionsRoutes);
   app.use("/api", socialRoutes);
   app.use("/api", chatRoutes);
+  app.use("/api", federationRoutes);
   app.use("/api", collectionSyncsRoutes);
   app.use("/api", providerCollectionsRoutes);
   app.use("/api", bookmarksRoutes);

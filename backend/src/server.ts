@@ -17,6 +17,8 @@ import { resumeStorageMove } from "./services/storageMoveService";
 import { resumeFileReuseBackfill } from "./services/fileReuseBackfill";
 import { seedProviderCategoryIds } from "./services/categorySiteIds";
 import { linkUnattributedPrints } from "./services/authorService";
+import { startDeliveryWorker } from "./federation/delivery";
+import { getFederationSettings } from "./federation/settings";
 
 const app = createApp();
 
@@ -46,6 +48,12 @@ async function boot(): Promise<void> {
     startCollectionSyncScheduler();
     startNotificationCleanup();
     startSystemNotificationSync();
+    // Only where an admin turned connected instances on; elsewhere Fedify is never even loaded.
+    getFederationSettings()
+      .then((settings) => {
+        if (settings.enabled) startDeliveryWorker();
+      })
+      .catch((err) => console.error("Failed to start connected instances:", err));
     announceVersionUpdate().catch((err) => console.error("Failed to announce the version update:", err));
     resumeStorageMove()
       .catch((err) => console.error("Failed to resume moving model files:", err))

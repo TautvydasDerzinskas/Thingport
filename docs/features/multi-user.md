@@ -46,6 +46,9 @@ With it on:
 Turning social features off hides everything shared again. Each collection keeps its Public or Private setting for when
 it's back on, and copies people made stay theirs.
 
+Admins can also connect this instance with other Thingport instances, on the same network, a VPN or the internet, so
+their people show up here too. See [connected instances](../guides/connected-instances.md).
+
 ## Chats
 
 With social features on, an admin can also turn on **Chats**, the switch under them in **Administration → Social**. It's

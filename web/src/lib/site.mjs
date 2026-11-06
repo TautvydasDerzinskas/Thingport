@@ -321,6 +321,15 @@ export const DOCS = [
       "Let people sign in to Thingport with Authentik, Pocket ID, Keycloak or any other OpenID Connect provider.",
   },
   {
+    slug: "guides/connected-instances",
+    source: "docs/guides/connected-instances.md",
+    group: "Administration",
+    title: "Connected instances",
+    nav: "Connected instances",
+    description:
+      "Connect Thingport instances on your network, a VPN or the internet, so their people and public models show up on each other's Explore.",
+  },
+  {
     slug: "guides/api-token",
     source: "docs/guides/api-token.md",
     group: "Integrations",

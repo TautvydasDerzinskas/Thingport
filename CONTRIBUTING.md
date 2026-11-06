@@ -105,6 +105,13 @@ Studio, the CAD page, has one rule: everything a person can do to a design is a 
 an AI can do it too. How that's built and the steps for a new command are in
 [docs/STUDIO_DEVELOPMENT.md](docs/STUDIO_DEVELOPMENT.md).
 
+## Working on social features
+
+Connected Thingport instances see each other's people as if they were on one instance, so every social feature has to
+work for a partner's people too. Each social route says how it crosses to partners in
+`backend/src/federation/socialSurfaces.ts`, and a test fails for one that doesn't. How it's built, the security rules
+and the steps for a federating feature are in [docs/FEDERATION_DEVELOPMENT.md](docs/FEDERATION_DEVELOPMENT.md).
+
 ## Code style
 
 - **Match the surrounding code.** This codebase uses long explanatory comments that say _why_

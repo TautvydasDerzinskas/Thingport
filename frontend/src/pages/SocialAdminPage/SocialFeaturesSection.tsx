@@ -17,6 +17,10 @@ import FeatureRow from "./FeatureRow";
 
 type Props = {
   onUnauthorized?: () => void;
+  /** Told whenever the settings shown change: what else on the page depends on social features follows. */
+  onSettings?: (settings: SocialSettings) => void;
+  /** A row of its own under chats. */
+  extraRow?: React.ReactNode;
 };
 
 /** A title and a list, for a feature's `HelpTip`. */
@@ -36,7 +40,7 @@ function HelpList({ title, points }: { title: string; points: string[] }) {
 }
 
 /** Social features and chats, a row each. Saves as switched. */
-export default function SocialFeaturesSection({ onUnauthorized }: Props) {
+export default function SocialFeaturesSection({ onUnauthorized, onSettings, extraRow }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const [settings, setSettings] = React.useState<SocialSettings | null>(null);
   // Which switch is saving, for its spinner.
@@ -126,6 +130,10 @@ export default function SocialFeaturesSection({ onUnauthorized }: Props) {
     }
   };
 
+  React.useEffect(() => {
+    if (settings) onSettings?.(settings);
+  }, [settings, onSettings]);
+
   const enabled = settings?.enabled ?? false;
   const chats = settings?.chats ?? false;
   const socialPoints = (["infoPublic", "infoExplore", "infoCopy", "infoOff"] as const).map((key) =>
@@ -174,6 +182,12 @@ export default function SocialFeaturesSection({ onUnauthorized }: Props) {
           blockedReason={settings !== null && !enabled ? t("adminSettings.social.chats.needsSocial") : undefined}
           onChange={(checked) => void save({ chats: checked })}
         />
+        {extraRow && (
+          <>
+            <Divider />
+            {extraRow}
+          </>
+        )}
       </Paper>
       {saveError && (
         <Alert severity="error" onClose={() => setSaveError(null)}>

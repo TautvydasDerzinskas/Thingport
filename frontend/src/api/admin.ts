@@ -99,7 +99,16 @@ export type LogAction =
   | "social_settings_changed"
   | "chat_room_created"
   | "chat_room_edited"
-  | "chat_room_deleted";
+  | "chat_room_deleted"
+  | "federation_settings_changed"
+  | "federation_requested"
+  | "federation_approved"
+  | "federation_declined"
+  | "federation_paused"
+  | "federation_resumed"
+  | "federation_disconnected"
+  | "federation_blocked"
+  | "federation_unblocked";
 
 export type LogEntry = {
   id: string;
