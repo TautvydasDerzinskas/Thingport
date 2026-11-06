@@ -10,6 +10,7 @@ import {
   markAsBambuProject,
   mapSettingsToSlic3r,
   parsePlates,
+  recenterOnOrcaBed,
   normalize3mf,
   normalizeProjectSettings,
   stateToMaterialIndex,
@@ -89,6 +90,7 @@ async function makeBambuZip(overrides: { rootXml?: string } = {}): Promise<Uint8
       machine_start_gcode: "M104 S200",
       printable_area: ["0x0", "180x180"],
       printable_height: "180",
+      nozzle_diameter: ["0.4", "0.4"],
       print_settings_id: "0.20mm Standard @BBL A1M",
       printer_settings_id: "Bambu Lab A1 mini 0.4 nozzle",
     }),
@@ -447,6 +449,31 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.printer_settings_id).toBe("");
     expect(project.filament_settings_id).toEqual(["", ""]);
     expect(project.printable_height).toBe("180");
+    // One nozzle per designer extruder would show Snapmaker Orca a dual-nozzle printer.
+    expect(project.nozzle_diameter).toBeUndefined();
+  });
+
+  it("moves each plate's items from the designer's bed to the middle of a 270 mm bed", () => {
+    const bed = { width: 330, depth: 320, centerX: 165, centerY: 160 };
+    const item = (id: number, x: number, y: number) =>
+      `<item objectid="${id}" transform="1 0 0 0 1 0 0 0 1 ${x} ${y} 5" printable="1"/>`;
+    const xml = `<model><build>${item(1, 165, 160)}${item(2, 561, 160)}${item(3, 165, -224)}${item(9, 7, 7)}</build></model>`;
+    const plate = (id: number, objectId: number) => ({
+      id: String(id),
+      name: "",
+      instances: [{ objectId: String(objectId), instanceId: 0, identifyId: "" }],
+    });
+    const moved = recenterOnOrcaBed(xml, [plate(1, 1), plate(2, 2), plate(3, 3)], bed)!;
+    // Plate 1 is the first column of the first row, plate 2 the second column, plate 3 the second row.
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 135 135 5"');
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 459 135 5"');
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 135 -189 5"');
+    // An item on no plate keeps its place.
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 7 7 5"');
+    // Nothing to do without a known bed, without plates, or when the bed is already 270 mm.
+    expect(recenterOnOrcaBed(xml, [plate(1, 1)], null)).toBeNull();
+    expect(recenterOnOrcaBed(xml, [], bed)).toBeNull();
+    expect(recenterOnOrcaBed(xml, [plate(1, 1)], { width: 270, depth: 270, centerX: 135, centerY: 135 })).toBeNull();
   });
 
   it("sets the Application tag to a Bambu Studio version Snapmaker Orca accepts", () => {
