@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import { normalizeTargetFor } from "../shared/slicers";
-import { markAsBambuProject, normalize3mf, recenterOnOrcaBed } from "./threeMfNormalizer";
+import { mapObjectShellSettings, markAsBambuProject, normalize3mf, recenterOnOrcaBed } from "./threeMfNormalizer";
 
 const NS =
   'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" requiredextensions="p"';
@@ -89,9 +89,9 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.printer_model).toBeUndefined();
     expect(project.machine_start_gcode).toBeUndefined();
     // Snapmaker Orca crashes without these keys: kept, but naming no preset of the designer's printer.
-    expect(project.print_settings_id).toBe("");
-    expect(project.printer_settings_id).toBe("");
-    expect(project.filament_settings_id).toEqual([""]);
+    expect(project.print_settings_id).toBe("0.20mm Standard @Snapmaker U1 (0.4 nozzle)");
+    expect(project.printer_settings_id).toBe("Snapmaker U1 (0.4 nozzle)");
+    expect(project.filament_settings_id).toEqual(["Snapmaker PLA Basic @U1"]);
     expect(project.printable_height).toBe("270");
     expect(project.use_relative_e_distances).toBe("0");
     expect(project.printable_area).toEqual(["0.5x1", "270.5x1", "270.5x271", "0.5x271"]);
@@ -110,6 +110,15 @@ describe("normalize3mf for an Orca fork", () => {
     expect(recenterOnOrcaBed(xml, [plate(1, 1)], null)).toBeNull();
     expect(recenterOnOrcaBed(xml, [], bed)).toBeNull();
     expect(recenterOnOrcaBed(xml, [plate(1, 1)], { width: 270, depth: 270, centerX: 135, centerY: 135 })).toBeNull();
+  });
+
+  it("maps per-object Bambu shell values in model_settings.config", () => {
+    const xml =
+      '<metadata key="ensure_vertical_shell_thickness" value="partial"/><metadata key="ensure_vertical_shell_thickness" value="enabled"/>';
+    const out = mapObjectShellSettings(xml)!;
+    expect(out).toContain('value="ensure_moderate"');
+    expect(out).toContain('value="ensure_all"');
+    expect(mapObjectShellSettings("<x/>")).toBeNull();
   });
 
   it("flat (the default) still flattens the production layout", async () => {

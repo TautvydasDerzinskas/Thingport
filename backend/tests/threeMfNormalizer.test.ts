@@ -444,9 +444,9 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.printer_model).toBeUndefined();
     expect(project.machine_start_gcode).toBeUndefined();
     // Snapmaker Orca crashes without these keys: kept, but naming no preset of the designer's printer.
-    expect(project.print_settings_id).toBe("");
-    expect(project.printer_settings_id).toBe("");
-    expect(project.filament_settings_id).toEqual(["", ""]);
+    expect(project.print_settings_id).toBe("0.20mm Standard @Snapmaker U1 (0.4 nozzle)");
+    expect(project.printer_settings_id).toBe("Snapmaker U1 (0.4 nozzle)");
+    expect(project.filament_settings_id).toEqual(["Snapmaker PLA Basic @U1", "Snapmaker PLA Basic @U1"]);
     expect(project.printable_height).toBe("270");
     expect(project.use_relative_e_distances).toBe("0");
     expect(project.printable_area).toEqual(["0.5x1", "270.5x1", "270.5x271", "0.5x271"]);
