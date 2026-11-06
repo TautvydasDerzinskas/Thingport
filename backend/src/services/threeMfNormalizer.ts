@@ -1212,7 +1212,7 @@ function isSlicedOutput(relativePath: string): boolean {
 
 /**
  * Snapmaker Orca crashes on a project settings file without these four keys, so the printer-profile strip keeps
- * them for the Orca target: the preset names blank (no preset of the designer's printer is named), the height as is.
+ * them for the Orca target: the preset names blank (no preset of the designer's printer is named). The U1's bed and height replace the designer's.
  */
 function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   for (const key of ["print_settings_id", "printer_settings_id"]) {
@@ -1221,9 +1221,17 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   const filaments = original.filament_settings_id;
   if (Array.isArray(filaments)) cleaned.filament_settings_id = filaments.map(() => "");
   else if ("filament_settings_id" in original) cleaned.filament_settings_id = "";
-  if ("printable_height" in original) cleaned.printable_height = original.printable_height;
-  // One value per designer extruder (the H2C has two) would give Snapmaker Orca a dual-nozzle printer.
-  delete cleaned.nozzle_diameter;
+  // The copy is for the Snapmaker U1, so its bed replaces the designer's (Orca would otherwise use a small default).
+  cleaned.printable_area = ["0.5x1", "270.5x1", "270.5x271", "0.5x271"];
+  cleaned.printable_height = "270";
+  // The U1 prints with absolute extrusion on Klipper; Orca otherwise refuses relative extrusion without a G92 E0 per layer.
+  cleaned.use_relative_e_distances = "0";
+  cleaned.gcode_flavor = "klipper";
+  // One nozzle, the designer's first: one value per designer extruder (the H2C has two) shows a dual-nozzle printer,
+  // and none leaves the nozzle diameter empty.
+  const nozzles = original.nozzle_diameter;
+  if (Array.isArray(nozzles) && nozzles.length > 0) cleaned.nozzle_diameter = [nozzles[0]];
+  else delete cleaned.nozzle_diameter;
   return cleaned;
 }
 
