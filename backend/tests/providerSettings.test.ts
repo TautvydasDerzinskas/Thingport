@@ -115,12 +115,41 @@ describe("turning providers off", () => {
     expect((await send(admin, { providers: [], enabled: false })).status).toBe(400);
     expect((await send(admin, { providers: ["no-such-site"], enabled: false })).status).toBe(400);
 
+    const saved = async () => enabledMap((await request(app).get("/api/settings/providers").set(as(member))).body);
     const off = await send(admin, { providers: ["pinshape", "grabcad", "pinshape"], enabled: false });
     expect(off.status).toBe(200);
     expect(enabledMap(off.body)).toMatchObject({ pinshape: false, grabcad: false, printables: true });
+    expect(await saved()).toMatchObject({ pinshape: false, grabcad: false, printables: true });
 
     const on = await send(admin, { providers: ["pinshape", "grabcad"], enabled: true });
     expect(enabledMap(on.body)).toMatchObject({ pinshape: true, grabcad: true });
+    expect(await saved()).toMatchObject({ pinshape: true, grabcad: true });
+  });
+
+  it("keeps both of two changes made at once", async () => {
+    // The list is stored whole, so it must exist for the row to be held.
+    await setProviderEnabled("pinshape", true);
+    const send = (providers: string[]) =>
+      request(app).patch("/api/settings/providers").set(as(admin)).send({ providers, enabled: false });
+    let first: Promise<request.Response> | undefined;
+    let second: Promise<request.Response> | undefined;
+    // An outside transaction holds the stored list while both requests start: each has read it, unchanged, by the
+    // time it's let go, unless the reads wait their turn.
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT key FROM "Setting" WHERE key = 'disabled_providers' FOR UPDATE`;
+        first = send(["pinshape"]).then((res) => res);
+        second = send(["grabcad"]).then((res) => res);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      },
+      { timeout: 10_000 },
+    );
+    expect((await first!).status).toBe(200);
+    expect((await second!).status).toBe(200);
+    const saved = enabledMap((await request(app).get("/api/settings/providers").set(as(member))).body);
+    expect(saved).toMatchObject({ pinshape: false, grabcad: false });
+    await setProviderEnabled("pinshape", true);
+    await setProviderEnabled("grabcad", true);
   });
 
   it("refuses new imports from a provider that's off, and only from it", async () => {

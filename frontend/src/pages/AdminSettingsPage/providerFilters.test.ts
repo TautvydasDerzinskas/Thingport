@@ -38,6 +38,13 @@ describe("provider filters", () => {
     expect(shown({ needs: ["flaresolverr"] })).toEqual(["printables", "thingiverse", "myminifactory", "cgtrader"]);
   });
 
+  it("applies every kind of filter at once", () => {
+    expect(shown({ status: "off", features: ["paidModels"] }, ["pinshape", "toymakr3d"])).toEqual(["toymakr3d"]);
+    expect(shown({ features: ["paidModels"], signIns: ["key"] })).toEqual(["myminifactory"]);
+    expect(shown({ features: ["likes"], needs: ["flaresolverr"] })).toEqual(["printables", "thingiverse", "cgtrader"]);
+    expect(shown({ signIns: ["none"], needs: ["grabOnly"] })).toEqual([]);
+  });
+
   it("counts the status as one filter", () => {
     expect(activeFilterCount({ status: "off", features: ["likes"], signIns: ["none", "user"], needs: [] })).toBe(4);
   });
