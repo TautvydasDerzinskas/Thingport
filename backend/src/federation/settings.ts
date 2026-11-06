@@ -25,17 +25,24 @@ const SETTINGS_KEY = "federation";
 // Read on every request to /api/ap, so kept for a moment; a change here clears it at once.
 let cached: { value: FederationSettings; at: number } | null = null;
 const CACHE_MS = 5_000;
+// Bumped by every change: a read that started before one is read again, so turning it off isn't undone by a read
+// that was already on its way.
+let generation = 0;
 
 export async function getFederationSettings(): Promise<FederationSettings> {
-  if (cached && Date.now() - cached.at < CACHE_MS) return cached.value;
-  const row = await prisma.setting.findUnique({ where: { key: SETTINGS_KEY } });
-  const stored = (row?.value ?? {}) as Partial<FederationSettings>;
-  const value: FederationSettings = {
-    enabled: stored.enabled === true,
-    reachability: stored.reachability ?? null,
-  };
-  cached = { value, at: Date.now() };
-  return value;
+  for (;;) {
+    if (cached && Date.now() - cached.at < CACHE_MS) return cached.value;
+    const asked = generation;
+    const row = await prisma.setting.findUnique({ where: { key: SETTINGS_KEY } });
+    if (asked !== generation) continue;
+    const stored = (row?.value ?? {}) as Partial<FederationSettings>;
+    const value: FederationSettings = {
+      enabled: stored.enabled === true,
+      reachability: stored.reachability ?? null,
+    };
+    cached = { value, at: Date.now() };
+    return value;
+  }
 }
 
 /** Changes only the fields in `patch`, merged in the database: a check finishing while an admin turns it off can't
@@ -48,6 +55,7 @@ export async function updateFederationSettings(patch: Partial<FederationSettings
       WHEN jsonb_typeof("Setting"."value") = 'object' THEN "Setting"."value" || EXCLUDED."value"
       ELSE EXCLUDED."value"
     END`;
+  generation += 1;
   cached = null;
   return getFederationSettings();
 }
@@ -61,5 +69,6 @@ export async function isFederationLive(): Promise<boolean> {
 
 /** For tests: forget what was read. */
 export function clearFederationSettingsCache(): void {
+  generation += 1;
   cached = null;
 }

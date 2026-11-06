@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import nodeCrypto from "node:crypto";
 import path from "node:path";
 import type { Prisma } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -9,10 +10,10 @@ import { enqueueActivity, tick } from "../src/federation/delivery";
 import { canonicalHeaders, keyIdOf } from "../src/federation/edge";
 import { getInstanceKeys } from "../src/federation/keys";
 import { onAcceptReceived, onDisconnectReceived } from "../src/federation/peers";
-import { onlyComparedKeys } from "../src/federation/pinning";
+import { onlyComparedKeys, publishedKeys } from "../src/federation/pinning";
 import { invalidateAllowlist } from "../src/federation/allowlist";
 import { probeProof } from "../src/federation/reachability";
-import { resetRuntime } from "../src/federation/runtime";
+import { getRuntime, resetRuntime } from "../src/federation/runtime";
 import {
   clearFederationSettingsCache,
   getFederationSettings,
@@ -182,15 +183,34 @@ describe("connected instances, on", () => {
       await crypto.subtle.exportKey("jwk", keys.rsa.publicKey),
       await crypto.subtle.exportKey("jwk", keys.ed25519.publicKey),
     ];
-    expect(onlyComparedKeys(body, compared)).toBe(true);
-    expect(onlyComparedKeys(body, compared.slice(0, 1))).toBe(false);
-    const other = await crypto.subtle.generateKey(
-      { name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
-      true,
-      ["sign", "verify"],
-    );
-    expect(onlyComparedKeys(body, [await crypto.subtle.exportKey("jwk", other.publicKey), compared[1]])).toBe(false);
-    expect(onlyComparedKeys({ type: "Note" }, compared)).toBe(true);
+    const runtime = await getRuntime();
+    const published = await runtime.keysIn(body);
+    expect(published).toHaveLength(3);
+    expect(onlyComparedKeys(published, compared)).toBe(true);
+    expect(onlyComparedKeys(published, compared.slice(0, 1))).toBe(false);
+    const other = nodeCrypto.generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+      publicKeyEncoding: { type: "spki", format: "pem" },
+      privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    });
+    const otherJwk = nodeCrypto.createPublicKey(other.publicKey).export({ format: "jwk" });
+    expect(onlyComparedKeys(published, [otherJwk, compared[1]])).toBe(false);
+    expect(await runtime.keysIn({ "@context": "https://www.w3.org/ns/activitystreams", type: "Note" })).toEqual([]);
+    // A key renamed through the document's own context: missed by name, still read the way Fedify reads it.
+    const actorId = `${ORIGIN}/api/ap/actors/instance`;
+    const renamed = {
+      "@context": [
+        "https://www.w3.org/ns/activitystreams",
+        "https://w3id.org/security/v1",
+        { pem: "sec:publicKeyPem" },
+      ],
+      id: actorId,
+      type: "Application",
+      inbox: `${ORIGIN}/api/ap/inbox`,
+      publicKey: { id: `${actorId}#main-key`, owner: actorId, pem: other.publicKey },
+    };
+    expect(publishedKeys(renamed)).toEqual([]);
+    expect(onlyComparedKeys(await runtime.keysIn(renamed), compared)).toBe(false);
     expect((await request(app).get("/api/ap/actors/someone").set("Accept", "application/activity+json")).status).toBe(
       404,
     );

@@ -8,7 +8,9 @@ import { FederationFetchError } from "./fetch";
 
 type Jwk = { kty?: string; n?: string; e?: string; crv?: string; x?: string };
 
-/** The keys a document publishes, as an actor (`publicKey`, `assertionMethod`) or as a key of its own. */
+/** The keys a document publishes under their usual names, as an actor (`publicKey`, `assertionMethod`) or as a key
+ *  of its own. Renamed through a JSON-LD context they're missed here, which is why Fedify's own reading is checked
+ *  too. */
 export function publishedKeys(document: unknown): Jwk[] {
   const keys: Jwk[] = [];
   const visit = (value: unknown) => {
@@ -70,18 +72,19 @@ function sameKey(a: Jwk, b: Jwk): boolean {
   return a.kty === "RSA" ? a.n === b.n && a.e === b.e : a.crv === b.crv && a.x === b.x;
 }
 
-/** Whether every key `document` publishes is one of `compared`. */
-export function onlyComparedKeys(document: unknown, compared: Jwk[]): boolean {
-  return publishedKeys(document).every((key) => compared.some((known) => sameKey(key, known)));
+/** Whether every one of `published` is one of `compared`. */
+export function onlyComparedKeys(published: Jwk[], compared: Jwk[]): boolean {
+  return published.every((key) => compared.some((known) => sameKey(key, known)));
 }
 
-/** Refuses a document from a connected (or asked) instance that publishes a key other than the ones compared. */
-export async function assertComparedKeys(url: string, document: unknown): Promise<void> {
+/** Refuses a document from a connected (or asked) instance that publishes a key other than the ones compared.
+ *  `published` is what both a plain read and Fedify's own (JSON-LD aware, see runtime.ts) find in it. */
+export async function assertComparedKeys(url: string, published: Jwk[]): Promise<void> {
   const origin = originOf(url);
   if (!origin) return;
   const peer = await prisma.peer.findUnique({ where: { origin }, select: { status: true, publicKeys: true } });
   if (!peer || peer.status === "BLOCKED" || !Array.isArray(peer.publicKeys)) return;
-  if (!onlyComparedKeys(document, peer.publicKeys as Jwk[])) {
+  if (!onlyComparedKeys(published, peer.publicKeys as Jwk[])) {
     await prisma.peer
       .update({ where: { origin }, data: { lastError: "It signed with a key other than the one compared" } })
       .catch(() => {});

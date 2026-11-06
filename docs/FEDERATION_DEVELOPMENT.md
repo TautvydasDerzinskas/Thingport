@@ -56,7 +56,8 @@ Two instance actors, one `Follow` and one `Accept`:
    answers only while A's request stands. The first that passes is the request; forged and withdrawn ones are dropped.
    Approving creates B's `Peer` (`ACTIVE`) and queues the `Accept` in one transaction.
 4. A's `Peer` becomes `ACTIVE` on an `Accept` of its own `Follow`, if it's still `OUTGOING`. Disconnecting sends
-   `Undo(Follow)` from whoever asked and `Reject(Follow)` from whoever approved; blocking says nothing. Pairing
+   `Undo(Follow)` from whoever asked and `Reject(Follow)` from whoever approved. Blocking a partner disconnects it the
+   same way first, then drops what it sends; blocking a request sends nothing at all. Pairing
    activities count only from the instance actor connected with; an `Undo` of their `Follow` of us ends it whatever
    its id, since when both admins asked at once each side keeps its own.
 
