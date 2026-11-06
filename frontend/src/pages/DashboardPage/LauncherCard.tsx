@@ -94,6 +94,7 @@ export function LauncherIcon({
             fontWeight: 700,
             fontSize: Math.round(size * 0.45),
             lineHeight: 1,
+            // A coloured icon sits on white, so the initial takes the accent itself, not the panel-tuned accentText.
             color: colored ? "primary.main" : "text.primary",
           }}
         >

@@ -156,7 +156,7 @@ function Editor({ widget, onClose, onSaved, onUnauthorized }: Omit<Props, "open"
           borderColor: "divider",
         }}
       >
-        <Box sx={{ display: "flex", color: "primary.main" }}>
+        <Box sx={{ display: "flex", color: (theme) => theme.thingport.accentText }}>
           <WidgetIcon iconUrl={manifest.iconUrl} size={20} />
         </Box>
         <Typography

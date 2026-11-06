@@ -12,6 +12,33 @@ export type PreparedPrint = {
   removable: boolean;
 };
 
+/** Slicer settings read from a 3MF; every field is null when the file does not carry it. */
+export type PlateProfile = {
+  title: string | null;
+  printer: string | null;
+  nozzle_mm: number | null;
+  layer_height_mm: number | null;
+  materials: string[];
+  plates: number | null;
+  estimated_seconds: number | null;
+  weight_g: number | null;
+  /** Per sliced plate; empty when unknown. Values the plate doesn't give are null. */
+  plate_stats: PlateStat[];
+  /** Wall loops. Optional only so older fixtures stay valid; the API always sends all four. */
+  walls?: number | null;
+  /** Sparse infill density in percent. */
+  infill_density_pct?: number | null;
+  /** The slicer's key for the infill pattern, lower-case (gyroid, grid, zig-zag ...). */
+  infill_pattern?: string | null;
+  supports?: "none" | "normal" | "tree" | null;
+};
+
+export type PlateStat = {
+  index: number; // as slice_info.config numbers plates (1-based)
+  estimated_seconds: number | null;
+  weight_g: number | null;
+};
+
 export type Plate = {
   id: string;
   print_id: string;
@@ -25,6 +52,8 @@ export type Plate = {
   preview_glb_url?: string | null; // /plate/{plateId}/preview.glb?v=... once background pre-render finishes
   render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
   own_colors?: boolean; // the file carries colours of its own, so our picture of it is a colour render
+  profile?: PlateProfile | null; // slicer profile of a 3MF; null for other formats, when unreadable or not read yet
+  is_default?: boolean; // the source site offers this file as its default; normally one file of a model
 };
 
 export type PrintFile = {

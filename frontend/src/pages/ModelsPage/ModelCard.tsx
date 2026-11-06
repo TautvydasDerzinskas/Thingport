@@ -260,9 +260,9 @@ export default function ModelCard({
               spacing={0.75}
               sx={{
                 minWidth: 0,
-                color: "#858585",
+                color: "text.secondary",
                 ...((author || showViewerAsAuthor) && !selectMode
-                  ? { cursor: "pointer", "&:hover": { color: "primary.main" } }
+                  ? { cursor: "pointer", "&:hover": { color: (th) => th.thingport.accentText } }
                   : undefined),
               }}
               onClick={(e) => {
@@ -276,7 +276,7 @@ export default function ModelCard({
               ) : (
                 <Avatar
                   src={authorAvatarUrl || undefined}
-                  sx={{ width: 20, height: 20, fontSize: 11, color: "inherit !important" }}
+                  sx={{ width: 20, height: 20, fontSize: 11, color: "common.white", bgcolor: "grey.700" }}
                 >
                   {(authorName || "?").slice(0, 1).toUpperCase()}
                 </Avatar>
@@ -288,12 +288,12 @@ export default function ModelCard({
           </AuthorHoverCard>
           {owner ? (
             // Whose it is, where the owner's own counts would be, and whether the viewer has it already.
-            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: "#858585", flexShrink: 0 }}>
+            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: "text.secondary", flexShrink: 0 }}>
               {item.library_copy_id && (
                 <Tooltip title={t("models:shared.inLibrary")}>
                   <LibraryAddCheckOutlinedIcon
                     aria-label={t("models:shared.inLibrary")}
-                    sx={{ fontSize: 16, color: "primary.main" }}
+                    sx={{ fontSize: 16, color: (th) => th.thingport.accentText }}
                   />
                 </Tooltip>
               )}
@@ -307,7 +307,7 @@ export default function ModelCard({
               )}
             </Stack>
           ) : (
-            <Stack direction="row" spacing={1.5} sx={{ color: "#858585", flexShrink: 0 }}>
+            <Stack direction="row" spacing={1.5} sx={{ color: "text.secondary", flexShrink: 0 }}>
               <Stack direction="row" alignItems="center" spacing={0.4}>
                 <VisibilityIcon sx={{ fontSize: 14 }} />
                 <Typography variant="caption">{item.view_count}</Typography>

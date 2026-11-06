@@ -38,6 +38,7 @@ import {
   type ParametricSourceInfo,
 } from "./importResolvers";
 import {
+  makerworldDefaultInstanceId,
   makerworldHtmlHeaders,
   makerworldInstanceCover,
   makerworldInstanceTitles,
@@ -209,6 +210,7 @@ function extensionProfile(url: string, body: ImportRequestBody): MakerworldProfi
   const cover = makerworldInstanceCover(design, instanceId);
   return {
     instanceId,
+    defaultInstanceId: makerworldDefaultInstanceId(design),
     coverUrl: isMakerworldCdnUrl(cover) ? cover : null,
     titles: makerworldInstanceTitles(design),
   };
@@ -227,6 +229,11 @@ function profileDetailsOf(
     titles: names ? Object.fromEntries(profiles.map((p) => [p.id, p.title])) : undefined,
     covers: Object.fromEntries(profiles.flatMap((p) => (p.coverUrl ? [[p.id, p.coverUrl]] : []))),
   };
+}
+
+/** Whether a download is the profile the design itself marks as its default. False when the design says nothing. */
+function isMakerworldDefaultProfile(profile: MakerworldProfileRef | null | undefined): boolean {
+  return Boolean(profile?.instanceId) && profile?.instanceId === profile?.defaultInstanceId;
 }
 
 function makerworldProfileDetails(profile: MakerworldProfileRef | null | undefined): ProfileDetails {
@@ -491,7 +498,10 @@ export async function openImportResponse(
       // Skipped for an extension-resolved URL: these calls can trip the CAPTCHA cooloff.
       if (body.resolved_download_url) {
         downloadUrl = body.resolved_download_url;
-        resolvedMeta.makerworldProfile = { instanceId: body.resolved_instance_id ?? null };
+        resolvedMeta.makerworldProfile = {
+          instanceId: body.resolved_instance_id ?? null,
+          defaultInstanceId: extensionProfile(validatedUrl, body).defaultInstanceId ?? null,
+        };
       } else {
         if (!makerworldCookie) makerworldCookie = resolveMakerworldCookie(body);
         const requestedInstanceId = parseMakerworldModelUrl(validatedUrl)?.requestedInstanceId ?? null;
@@ -840,7 +850,7 @@ async function addMakerworldProfileToPrint(
   const { tempPath, filename, mime } = await saveImportResponseToTemp(opened, body);
   return addProfilePlateWithDetails(
     existing,
-    { filename, mime, tempFilePath: tempPath },
+    { filename, mime, tempFilePath: tempPath, isSourceDefault: isMakerworldDefaultProfile(profile) },
     instanceId,
     makerworldProfileDetails(profile),
   );
@@ -865,7 +875,10 @@ async function addProfilePlate(
         if ((await plateFileSize(plate)) !== downloadedSize) continue;
         if ((await plateContentSha256(plate)) !== downloadedSha) continue;
         try {
-          await prisma.plate.update({ where: { id: plate.id }, data: { sourceInstanceId: instanceId } });
+          await prisma.plate.update({
+            where: { id: plate.id },
+            data: { sourceInstanceId: instanceId, isSourceDefault: file.isSourceDefault ?? false },
+          });
         } catch (err) {
           // Race guard: a concurrent import of this same profile won.
           if (!isUniqueConstraintError(err)) throw err;
@@ -1404,7 +1417,15 @@ async function importLinkedFile(
     throw err;
   }
   if (!plates.length) {
-    plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
+    plates = [
+      {
+        filename,
+        mime,
+        tempFilePath: tempPath,
+        sourceInstanceId: meta.makerworldProfile?.instanceId ?? null,
+        isSourceDefault: isMakerworldDefaultProfile(meta.makerworldProfile),
+      },
+    ];
   }
   // A zip of raw files already gave up its scripts above; anything else has to fetch them separately.
   if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
@@ -1530,7 +1551,15 @@ export async function downloadLinkedModelFiles(url: string, body: ImportRequestB
     throw err;
   }
   if (!plates.length) {
-    plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
+    plates = [
+      {
+        filename,
+        mime,
+        tempFilePath: tempPath,
+        sourceInstanceId: meta.makerworldProfile?.instanceId ?? null,
+        isSourceDefault: isMakerworldDefaultProfile(meta.makerworldProfile),
+      },
+    ];
   }
   if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
   const profiles = makerworldProfileDetails(meta.makerworldProfile);

@@ -160,7 +160,7 @@ function WidgetRow({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "primary.main",
+          color: (theme) => theme.thingport.accentText,
         }}
       >
         <WidgetIcon iconUrl={manifest.iconUrl} size={28} />
@@ -518,7 +518,12 @@ function Share() {
   return (
     <Stack spacing={1.5}>
       <Paper variant="outlined" sx={{ p: 2 }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, color: "primary.main" }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ mb: 1, color: (theme) => theme.thingport.accentText }}
+        >
           <AutoAwesomeOutlinedIcon fontSize="small" />
           <Typography variant="subtitle2" color="text.primary">
             {t("dashboard.custom.share.aiTitle")}
@@ -537,7 +542,12 @@ function Share() {
         </Button>
       </Paper>
       <Paper variant="outlined" sx={{ p: 2 }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, color: "primary.main" }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ mb: 1, color: (theme) => theme.thingport.accentText }}
+        >
           <PublishOutlinedIcon fontSize="small" />
           <Typography variant="subtitle2" color="text.primary">
             {t("dashboard.custom.share.publishTitle")}

@@ -89,7 +89,11 @@ function ActionTile({
       }}
     >
       <Stack direction="row" spacing={1.25} alignItems="flex-start" sx={{ minWidth: 0 }}>
-        <Box sx={{ color: destructive ? "error.main" : "primary.main", display: "flex", mt: 0.25 }}>{icon}</Box>
+        <Box
+          sx={{ color: destructive ? "error.main" : (theme) => theme.thingport.accentText, display: "flex", mt: 0.25 }}
+        >
+          {icon}
+        </Box>
         <Stack spacing={0.25} sx={{ minWidth: 0 }}>
           <Typography variant="subtitle2">{title}</Typography>
           <Typography variant="caption" color="text.secondary">

@@ -290,7 +290,7 @@ function AboutView({ id, accent, onClose }: { id: ProviderId; accent: string; on
               border: 1,
               borderColor: on ? alpha(accent, 0.4) : "divider",
               bgcolor: on ? alpha(accent, 0.1) : "transparent",
-              color: on ? "text.primary" : "text.disabled",
+              color: on ? "text.primary" : "text.secondary",
               textDecoration: on ? "none" : "line-through",
               ...enter,
               animationDelay: `${index * 40}ms`,

@@ -635,9 +635,14 @@ export type CachedBambuGlb = {
 };
 
 /** "failed": the browser mustn't try either, since it would exhaust its memory. "fallback": parse
- *  the raw file in the browser. */
+ *  the raw file in the browser. "unsupported": the server found no usable geometry; the browser may still try
+ *  (a layout the server doesn't read can be one it does), but the viewer then knows an empty result is final. */
 export type CachedGlbOutcome =
-  { status: "ready"; glb: CachedBambuGlb } | { status: "generating" } | { status: "failed" } | { status: "fallback" };
+  | { status: "ready"; glb: CachedBambuGlb }
+  | { status: "generating" }
+  | { status: "failed" }
+  | { status: "fallback" }
+  | { status: "unsupported" };
 
 async function previewErrorCode(res: Response): Promise<string | null> {
   try {
@@ -655,6 +660,7 @@ export async function loadCachedBambuGlb(url: string): Promise<CachedGlbOutcome>
       const code = res.status === 404 ? await previewErrorCode(res) : null;
       if (code === "PREVIEW_GENERATING") return { status: "generating" };
       if (code === "PREVIEW_FAILED") return { status: "failed" };
+      if (code === "PREVIEW_UNSUPPORTED") return { status: "unsupported" };
       return { status: "fallback" };
     }
     const arrayBuffer = await res.arrayBuffer();

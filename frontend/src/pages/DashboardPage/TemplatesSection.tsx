@@ -143,7 +143,7 @@ export default function TemplatesSection({ config, onChange }: Props) {
                 color: "text.secondary",
                 opacity: full ? 0.5 : 1,
                 transition: "border-color 150ms, color 150ms",
-                "&:hover": { borderColor: "primary.main", color: "primary.main" },
+                "&:hover": { borderColor: "primary.main", color: (theme) => theme.thingport.accentText },
                 "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
               }}
             >

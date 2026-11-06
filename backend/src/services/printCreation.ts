@@ -33,6 +33,7 @@ import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
+import { storePlateProfile } from "./plateProfile";
 import { importingQuietly } from "../utils/quietImport";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
@@ -47,6 +48,8 @@ export type NewPlateInput = {
   copyFromPath?: string; // copied into managed storage, source left intact
   sourcePath?: string; // no-copy: file stays at this path, storagePath is still rendered/recorded
   sourceInstanceId?: string | null;
+  /** The source site marks this file as its default (MakerWorld's default profile). Stored as given; false if unset. */
+  isSourceDefault?: boolean;
 };
 
 /** A file that is a script a model can be generated from, rather than geometry to print. */
@@ -136,6 +139,11 @@ async function thumbnailAndSniff(plateId: string, filename: string, mime: string
   if (mime.toLowerCase().startsWith("image/") && IMAGE_EXTS.has(ext)) {
     await saveThumbFromFile(plateId, effectivePath);
   } else if (ext === ".3mf") {
+    try {
+      await storePlateProfile(plateId, filename, effectivePath);
+    } catch (err) {
+      console.error(`Reading the 3MF profile of plate ${plateId} failed:`, err);
+    }
     await ensurePlateThumbnail(plateId, effectivePath);
     // "on-demand" builds the preview on first view, "disabled" never. Not awaited: it can be slow.
     if ((await getPreviewMode()) === "automatic") void generateModelPreviewGlb(plateId, effectivePath);
@@ -196,6 +204,7 @@ async function createPlateAtPosition(
         storagePath,
         sourcePath: input.sourcePath ?? null,
         sourceInstanceId: input.sourceInstanceId ?? null,
+        isSourceDefault: input.isSourceDefault ?? false,
         contentSha256,
         ...marker,
       },
@@ -207,6 +216,8 @@ async function createPlateAtPosition(
   }
 
   await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
+  // Reloaded: reading the 3MF profile stored it on the row after it was created.
+  record = (await prisma.plate.findUnique({ where: { id: record.id } })) ?? record;
   return { record, effectivePath };
 }
 
@@ -399,13 +410,22 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
   if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
 }
 
+function isThreeMf(filename: string): boolean {
+  return path.extname(filename).toLowerCase() === ".3mf";
+}
+
 /** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
 export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
   const plate = await prisma.plate.findUnique({ where: { id: plateId } });
   if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
   const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id);
   if (nextFilename !== plate.filename) {
-    await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
+    // A file that is no longer a .3mf keeps no slicer profile read from the old one.
+    const dropsProfile = isThreeMf(plate.filename) && !isThreeMf(nextFilename);
+    await prisma.plate.update({
+      where: { id: plate.id },
+      data: { filename: nextFilename, ...(dropsProfile && { profileMeta: Prisma.DbNull }) },
+    });
     await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
     if (plate.position === 0) await refreshAutoPreparedMetadata(print.id);
   }

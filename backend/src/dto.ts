@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { plateProfileOut, type PlateProfile } from "./services/plateProfile";
 import { LIKES_ID_PREFIX, PROVIDER_IDS, type ProviderId } from "./providers/index.generated";
 import { syncLikesUsername } from "./providers/names";
 import { nextSyncAt, syncNowAvailableAt } from "./services/collectionSyncSchedule";
@@ -117,6 +118,13 @@ export type PlateOut = {
   /** The file carries colours of its own -- a painted project, or a script's `color()` calls. True once the
    *  render found them, so its picture of the model is a colour one rather than the grey cards tint. */
   own_colors: boolean;
+  /** What the 3MF says about its slicer profile; null for other files and 3MFs that say nothing. For a 3MF it can
+   *  also mean "not read yet": a single model and the bounded lookups (search, collection covers, bulk actions) read
+   *  it on first use, but the model list (GET /prints) never does, since that could read the whole library. */
+  profile: PlateProfile | null;
+  /** The source site itself offers this file as its default (MakerWorld's default print profile). Set when the file is
+   *  imported, so false for models imported before it was recorded, and always false for other providers and uploads. */
+  is_default: boolean;
 };
 
 export type PrintFileOut = {
@@ -275,6 +283,8 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     preview_glb_url: previewGlbUrl(plate),
     render_url: renderUrl(plate, home),
     own_colors: modelColorImagePath(plate.id, home) !== null,
+    profile: plateProfileOut(plate.profileMeta),
+    is_default: plate.isSourceDefault,
   };
 }
 

@@ -7,6 +7,7 @@ import ListSubheader from "@mui/material/ListSubheader";
 import Box from "@mui/material/Box";
 import PrintIcon from "@mui/icons-material/Print";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import DefaultFileChip, { defaultFirst } from "./DefaultFileChip";
 import { fileRowText } from "./fileRowText";
 import type { SlicerTarget } from "./useOpenInSlicer";
 import type { NormalizeState } from "./useNormalizedOpen";
@@ -41,7 +42,7 @@ export default function SlicerFileMenu({
   normalized,
   matchAnchorWidth = false,
 }: Props) {
-  const { t } = useTranslation(["models"]);
+  const { t, i18n } = useTranslation(["models"]);
   const paperSx =
     matchAnchorWidth && anchorEl instanceof HTMLElement ? { width: anchorEl.offsetWidth } : { maxWidth: 360 };
   return (
@@ -58,9 +59,9 @@ export default function SlicerFileMenu({
       <ListSubheader sx={{ lineHeight: "32px" }}>
         {title ?? t("models:detail.openInSlicer", { slicer: slicerLabel })}
       </ListSubheader>
-      {targets.map((target) => {
+      {defaultFirst(targets, (target) => target.plate?.is_default === true).map((target) => {
         const text = target.plate
-          ? fileRowText(t, target.filename, target.index)
+          ? fileRowText(t, target.filename, target.index, target.plate.profile, i18n.resolvedLanguage ?? i18n.language)
           : { primary: t("models:detail.preparedPrintFile"), secondary: target.filename };
         const state = normalized?.stateOf(target) ?? "idle";
         if (state === "preparing") text.secondary = t("models:detail.normalizePreparingShort");
@@ -94,9 +95,15 @@ export default function SlicerFileMenu({
             </ListItemIcon>
             <ListItemText
               {...text}
-              primaryTypographyProps={{ variant: "body2", noWrap: true }}
+              primaryTypographyProps={{ variant: "body2", fontWeight: 600, noWrap: true }}
               secondaryTypographyProps={{ variant: "caption", noWrap: true }}
+              sx={{ minWidth: 0 }}
             />
+            {target.plate?.is_default && (
+              <Box sx={{ flexShrink: 0, ml: 1 }}>
+                <DefaultFileChip />
+              </Box>
+            )}
           </MenuItem>
         );
       })}

@@ -223,7 +223,7 @@ export default function CollectionCard({
               <Stack
                 alignItems="center"
                 justifyContent="center"
-                sx={{ width: "100%", height: "100%", color: "text.disabled" }}
+                sx={{ width: "100%", height: "100%", color: "text.primary" }}
               >
                 <Typography variant="caption">{t("models:collections.card.empty")}</Typography>
               </Stack>
@@ -308,7 +308,7 @@ export default function CollectionCard({
                     {displayName}
                   </Typography>
                 </Stack>
-                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, color: "#858585" }}>
+                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.5, color: "text.secondary" }}>
                   {owner ? (
                     <>
                       <UserAvatar user={owner} size={16} />

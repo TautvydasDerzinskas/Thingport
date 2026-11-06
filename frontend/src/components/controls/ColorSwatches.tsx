@@ -1,7 +1,7 @@
 import CheckIcon from "@mui/icons-material/Check";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
-import type { Theme } from "@mui/material/styles";
+import { alpha, type Theme } from "@mui/material/styles";
 
 const SIZE = 22;
 const trackBg = (theme: Theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)");
@@ -60,8 +60,13 @@ export default function ColorSwatches<T extends string>({ value, options, onChan
                 bgcolor: option.color,
                 color: option.contrast,
                 // A gap in the page's colour, then a ring in the swatch's own.
-                boxShadow: (theme) =>
-                  chosen ? `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${option.color}` : "none",
+                // A hairline in the text colour keeps swatches close to the surface (Graphite in dark, Light grey in light) visible.
+                boxShadow: (theme) => {
+                  const edge = `inset 0 0 0 1px ${alpha(theme.palette.text.primary, 0.3)}`;
+                  return chosen
+                    ? `${edge}, 0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${option.color}`
+                    : edge;
+                },
                 transform: chosen ? "scale(1)" : "scale(0.9)",
                 transition: "transform 150ms, box-shadow 150ms",
                 "&:hover": { transform: "scale(1.05)" },

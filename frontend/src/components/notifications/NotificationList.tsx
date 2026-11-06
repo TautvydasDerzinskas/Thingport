@@ -172,7 +172,7 @@ function NotificationRow({
             </Typography>
           )}
           <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Typography variant="caption" color="text.disabled">
+            <Typography variant="caption" color="text.secondary">
               {timeLabel(notification.created_at, t, locale)}
             </Typography>
             {notification.external_url && (

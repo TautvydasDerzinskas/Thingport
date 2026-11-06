@@ -1,4 +1,12 @@
-import { alpha, createTheme, darken, lighten, type Theme, type ThemeOptions } from "@mui/material/styles";
+import {
+  alpha,
+  createTheme,
+  darken,
+  getContrastRatio,
+  lighten,
+  type Theme,
+  type ThemeOptions,
+} from "@mui/material/styles";
 import { DEFAULT_ACCENT, type AccentColor, type RenderColor, type ResolvedTheme } from "./constants/settingsOptions";
 
 export type { AccentColor, ResolvedTheme };
@@ -25,6 +33,10 @@ declare module "@mui/material/styles" {
       /** A `background` value: dark mode's is a gradient. */
       selectedNavBackground: string;
       selectedNavText: string;
+      /** The accent as text (tabs, links): the accent itself, shifted just far enough to reach 4.5:1 on the panel.
+       *  Filled buttons keep `palette.primary.main`;
+       *  text and outlined primary buttons use this. */
+      accentText: string;
       /** White in dark mode, text.primary in light. */
       headingText: string;
     };
@@ -39,6 +51,7 @@ declare module "@mui/material/styles" {
       navInactiveText: string;
       selectedNavBackground: string;
       selectedNavText: string;
+      accentText: string;
       headingText: string;
     };
   }
@@ -66,10 +79,12 @@ type ThemeDef = {
   navInactiveText: string;
   selectedNavBackground: string;
   selectedNavText: string;
+  accentText: string;
   headingText: string;
 };
 
-type AccentKeys = "accent" | "accentLight" | "accentStrong" | "accentSoft" | "accentContrast" | "selectedNavText";
+type AccentKeys =
+  "accentText" | "accent" | "accentLight" | "accentStrong" | "accentSoft" | "accentContrast" | "selectedNavText";
 /** A theme before its accent: where the two tinted backgrounds are left out, they're taken from the accent. */
 type BaseThemeDef = Omit<ThemeDef, AccentKeys | "subnavBackground" | "selectedNavBackground"> &
   Partial<Pick<ThemeDef, "subnavBackground" | "selectedNavBackground">>;
@@ -83,12 +98,12 @@ const THEME_DEFS: Record<ResolvedTheme, BaseThemeDef> = {
     border: "#ebebeb",
     borderStrong: "#ebebeb",
     text: "#1f1f1f",
-    textMuted: "#858585",
-    textSubtle: "#858585",
+    textMuted: "#707070",
+    textSubtle: "#707070",
     altText: "rgb(255, 114, 32)",
     modelColor: "#cbd5e1",
     modelEmissive: "#94a3b8",
-    navInactiveText: "#858585",
+    navInactiveText: "#6b6b6b",
     headingText: "#1f1f1f",
   },
   dark: {
@@ -100,9 +115,10 @@ const THEME_DEFS: Record<ResolvedTheme, BaseThemeDef> = {
     panelStrong: "#1e2746",
     border: "#333a54",
     borderStrong: "#333a54",
-    text: "#828690",
-    textMuted: "#828690",
-    textSubtle: "#828690",
+    // Primary is near-white (11:1 on the panel); muted and subtle are a step down but stay above 4.5:1 on page, panel and sub-nav.
+    text: "#e6e8ee",
+    textMuted: "#9aa0ad",
+    textSubtle: "#9aa0ad",
     altText: "rgb(255, 114, 32)",
     modelColor: "#e2e8f0",
     modelEmissive: "#475569",
@@ -168,6 +184,15 @@ function mixHex(base: string, color: string, weight: number): string {
     .join("")}`;
 }
 
+/** `color` shifted away from `background` (darker on a light one, lighter on a dark one) until it reads at 4.5:1. */
+function readableOn(color: string, background: string, mode: "light" | "dark"): string {
+  let out = color;
+  for (let step = 0; step < 10 && getContrastRatio(out, background) < 4.5; step++) {
+    out = mode === "light" ? darken(out, 0.1) : lighten(out, 0.1);
+  }
+  return out;
+}
+
 function withAccent(d: BaseThemeDef, accent: AccentColor): ThemeDef {
   const def = ACCENTS[accent];
   const a =
@@ -175,6 +200,7 @@ function withAccent(d: BaseThemeDef, accent: AccentColor): ThemeDef {
       ? { ...def, main: def.darkMain, light: undefined, contrastText: def.darkContrastText ?? def.contrastText }
       : def;
   const light = a.light ?? lighten(a.main, 0.35);
+  const accentText = readableOn(d.mode === "light" ? (a.lightText ?? a.main) : a.main, d.panel, d.mode);
   return {
     ...d,
     subnavBackground: d.subnavBackground ?? a.lightSubnav ?? mixHex("#f2f2f2", a.main, 0.06),
@@ -184,7 +210,8 @@ function withAccent(d: BaseThemeDef, accent: AccentColor): ThemeDef {
     accentStrong: darken(a.main, 0.15),
     accentSoft: alpha(a.main, 0.16),
     accentContrast: a.contrastText ?? "#ffffff",
-    selectedNavText: d.mode === "light" ? (a.lightText ?? a.main) : a.main,
+    selectedNavText: accentText,
+    accentText,
   };
 }
 
@@ -227,7 +254,19 @@ export function buildTheme(id: ResolvedTheme, accent: AccentColor = DEFAULT_ACCE
             ownerState.invisible ? {} : { backgroundColor: veilColor(d.mode), backdropFilter: VEIL_BLUR },
         },
       },
-      MuiButton: { styleOverrides: { root: { borderRadius: 8 } } },
+      // Accent text on the panel (tabs, links) uses the readable shade; indicators and fills keep the accent.
+      MuiTab: { styleOverrides: { root: { "&.Mui-selected": { color: d.accentText } } } },
+      MuiLink: {
+        styleOverrides: { root: ({ ownerState }) => (ownerState.color === "primary" ? { color: d.accentText } : {}) },
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: ({ ownerState }) => ({
+            borderRadius: 8,
+            ...(ownerState.color === "primary" && ownerState.variant !== "contained" ? { color: d.accentText } : {}),
+          }),
+        },
+      },
       MuiChip: { styleOverrides: { root: { borderRadius: 6 } } },
       MuiTooltip: { styleOverrides: { tooltip: { backgroundColor: d.panelStrong, color: d.text } } },
       // Success toasts use the accent, not MUI's success palette.
@@ -269,6 +308,7 @@ export function buildTheme(id: ResolvedTheme, accent: AccentColor = DEFAULT_ACCE
       navInactiveText: d.navInactiveText,
       selectedNavBackground: d.selectedNavBackground,
       selectedNavText: d.selectedNavText,
+      accentText: d.accentText,
       headingText: d.headingText,
     },
   };

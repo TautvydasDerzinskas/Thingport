@@ -255,7 +255,7 @@ export default function WeatherCard({ unit, showLater, place, onPlace }: Props) 
           {`${t(`dashboard.weather.conditions.${condition}`)} · ${t("dashboard.weather.highLow", { high: weather.high, low: weather.low })}`}
         </Typography>
         {showLater && (
-          <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.disabled" }}>
+          <Typography sx={{ fontFamily: "inherit", fontSize: "0.75rem", color: "text.secondary" }}>
             {t("dashboard.weather.later", {
               hours: weather.later.hours,
               temperature: weather.later.temperature,

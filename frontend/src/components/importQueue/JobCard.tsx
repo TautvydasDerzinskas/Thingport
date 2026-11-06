@@ -322,7 +322,7 @@ export function LinkRow({ job, item }: { job: QueueJob; item: ImportJobItem }) {
               color: "text.secondary",
               textDecoration: "none",
               wordBreak: "break-all",
-              "&:hover": { color: "primary.main", textDecoration: "underline" },
+              "&:hover": { color: (theme) => theme.thingport.accentText, textDecoration: "underline" },
             }}
           >
             {item.url}

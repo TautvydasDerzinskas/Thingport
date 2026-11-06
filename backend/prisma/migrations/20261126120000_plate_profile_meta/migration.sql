@@ -1,0 +1,1 @@
+ALTER TABLE "Plate" ADD COLUMN IF NOT EXISTS "profileMeta" JSONB;

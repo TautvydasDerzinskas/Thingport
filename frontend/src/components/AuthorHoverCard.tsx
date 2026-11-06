@@ -123,7 +123,7 @@ function AuthorPreviewCard({ authorId, viewer }: CardProps) {
             textAlign: "left",
             bgcolor: "background.paper",
             boxShadow: 2,
-            "&:hover .author-popup-name": { color: "primary.main" },
+            "&:hover .author-popup-name": { color: (theme) => theme.thingport.accentText },
           }}
         >
           <Avatar src={avatarUrl || undefined} sx={{ width: 44, height: 44, flexShrink: 0 }}>

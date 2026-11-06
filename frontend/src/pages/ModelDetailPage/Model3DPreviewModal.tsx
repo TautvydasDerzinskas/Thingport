@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import Dialog from "@mui/material/Dialog";
 import { useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -13,24 +14,26 @@ import ListItemText from "@mui/material/ListItemText";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import LayersIcon from "@mui/icons-material/Layers";
+import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { type Print, printsApi } from "../../api/prints";
+import { type PlateProfile, type Print, printsApi } from "../../api/prints";
 import { MODEL_EXTS } from "../../constants/fileTypes";
-import { extOf } from "../../utils/fileExtensions";
+import { extOf, stemOf } from "../../utils/fileExtensions";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import ProfileDetails, { plateStatText, platesToList, statForPlate } from "../../components/ProfileDetails";
 import ModelViewer, {
   type CameraView,
   type ModelViewerHandle,
   type RenderStyle,
 } from "../../components/media/ModelViewer";
 import type { PlateSummary } from "../../utils/bambuThreeMf";
+import { profileSummary } from "./fileRowText";
 import PreviewToolbar from "./PreviewToolbar";
 import type { RenderColor } from "../../constants/settingsOptions";
 import { useRenderColor } from "../../hooks/useAccentColor";
 import { renderSwatch } from "../../theme";
-import { fileRowText } from "./fileRowText";
 
 // Light mode keeps a product-shot style grey; dark mode uses the page background so it doesn't glare.
 const LIGHT_PREVIEW_BG = "#e7e7ea";
@@ -43,25 +46,54 @@ const overlayButtonSx = {
   "&:hover": { bgcolor: "rgba(0, 0, 0, 0.65)" },
 };
 
+// The profile of the active file sits below in ProfileDetails, so a row only needs to tell the files apart.
+function compactFileText(
+  t: TFunction,
+  filename: string,
+  index: number,
+  profile: PlateProfile | null | undefined,
+  locale: string,
+) {
+  const title = (profile && profileSummary(t, profile, locale)) || profile?.title || null;
+  const stem = stemOf(filename);
+  const type = extOf(filename).toUpperCase();
+  const plain = type
+    ? t("models:detail.fileMeta", { n: index + 1, type })
+    : t("models:detail.fileLabel", { n: index + 1 });
+  return { primary: title || stem, secondary: title ? stem : plain };
+}
+
+// A few rows are visible, the rest scrolls inside the panel.
+const scrollListSx = { overflowY: "auto", minHeight: 0, maxHeight: 240 } as const;
+
 type Props = {
   print: Print;
+  /** The plate shown first; the first plate when it's missing or isn't one of the model's. */
+  initialPlateId?: string | null;
   onClose: () => void;
 };
 
 /** The plate list is always shown, even for one plate, so the layout doesn't jump. */
-export default function Model3DPreviewModal({ print, onClose }: Props) {
-  const { t } = useTranslation(["models", "library", "common"]);
+export default function Model3DPreviewModal({ print, initialPlateId, onClose }: Props) {
+  const { t, i18n } = useTranslation(["models", "library", "common"]);
+  const locale = i18n.resolvedLanguage ?? i18n.language;
   const muiTheme = useTheme();
   const themeMode = muiTheme.palette.mode;
   const previewBg = themeMode === "dark" ? muiTheme.thingport.pageBackground : LIGHT_PREVIEW_BG;
   const sortedPlates = useMemo(() => print.plates.toSorted((a, b) => a.position - b.position), [print.plates]);
-  const [activePlateId, setActivePlateId] = useState<string | null>(sortedPlates[0]?.id ?? null);
+  const [activePlateId, setActivePlateId] = useState<string | null>(initialPlateId ?? sortedPlates[0]?.id ?? null);
   const activePlate = sortedPlates.find((p) => p.id === activePlateId) || sortedPlates[0];
   const ext = activePlate ? extOf(activePlate.filename) : "";
   const is3d = Boolean(activePlate) && MODEL_EXTS.has(ext);
 
   // Plates inside the active .3mf, reset when the file changes.
-  const [internalPlates, setInternalPlates] = useState<PlateSummary[]>([]);
+  const [viewerPlates, setViewerPlates] = useState<PlateSummary[]>([]);
+  // The file loaded but holds no model (a sliced .gcode.3mf): the plate list then comes from its profile.
+  const [noGeometry, setNoGeometry] = useState(false);
+  const internalPlates = useMemo(
+    () => platesToList(viewerPlates, activePlate?.profile, noGeometry),
+    [viewerPlates, activePlate?.profile, noGeometry],
+  );
   const [internalThumbnails, setInternalThumbnails] = useState<Record<number, string | null>>({});
   const [selectedInternalPlateId, setSelectedInternalPlateId] = useState<number | null>(null);
 
@@ -87,7 +119,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
   const showFileRows = sortedPlates.length > 1 || internalPlates.length === 0;
 
   const handlePlatesDetected = (plates: PlateSummary[], getThumbnail: (index: number) => Promise<string | null>) => {
-    setInternalPlates(plates);
+    setViewerPlates(plates);
     setSelectedInternalPlateId(plates[0]?.index ?? null);
     setInternalThumbnails({});
     Promise.all(plates.map(async (plate) => [plate.index, await getThumbnail(plate.index)] as const)).then((pairs) => {
@@ -102,9 +134,15 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
     // The next file answers for itself; until it does, the palette shouldn't stay disabled on the strength
     // of the last one.
     setOwnColor(false);
-    setInternalPlates([]);
+    setViewerPlates([]);
+    setNoGeometry(false);
     setInternalThumbnails({});
     setSelectedInternalPlateId(null);
+  };
+
+  const handleNoGeometry = () => {
+    setNoGeometry(true);
+    setOwnColor(false);
   };
 
   return (
@@ -131,16 +169,19 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
             top: 16,
             left: 16,
             zIndex: 2,
-            width: 240,
-            maxHeight: "calc(100% - 32px)",
-            overflow: "auto",
+            width: 280,
+            // Leaves the bottom toolbar free; the lists scroll, the profile details stay in view.
+            maxHeight: "calc(100% - 104px)",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
             p: 1,
             borderRadius: "12px",
             ...(themeMode === "dark" && { "& .MuiListItemText-primary": { color: "#FFFFFF" } }),
           }}
         >
           {showFileRows && (
-            <List disablePadding>
+            <List disablePadding sx={{ ...scrollListSx, flex: "0 1 auto" }}>
               {sortedPlates.map((plate, idx) => (
                 // Named by file: "plate" is kept for the build plates inside a 3MF.
                 <ListItemButton
@@ -148,13 +189,13 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                   selected={plate.id === activePlate?.id}
                   onClick={() => selectPlate(plate.id)}
                   title={plate.filename}
-                  sx={{ borderRadius: 1, mb: 0.5 }}
+                  sx={{ borderRadius: 1, mb: 0.25, py: 0.5 }}
                 >
                   <ListItemIcon sx={{ minWidth: 40 }}>
                     <PlateThumbnail plate={plate} />
                   </ListItemIcon>
                   <ListItemText
-                    {...fileRowText(t, plate.filename, idx)}
+                    {...compactFileText(t, plate.filename, idx, plate.profile, locale)}
                     primaryTypographyProps={{ variant: "body2", noWrap: true }}
                     secondaryTypographyProps={{ variant: "caption", noWrap: true }}
                   />
@@ -172,13 +213,14 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                   </Typography>
                 </Divider>
               )}
-              <List disablePadding>
+              {/* Four rows fit whole; more scroll with the next row peeking out (168 hid the 4th plate completely, B-16). */}
+              <List disablePadding sx={{ ...scrollListSx, flex: "0 1 auto" }}>
                 {internalPlates.map((plate) => (
                   <ListItemButton
                     key={plate.index}
-                    selected={plate.index === selectedInternalPlateId}
+                    selected={plate.index === (selectedInternalPlateId ?? internalPlates[0]?.index)}
                     onClick={() => setSelectedInternalPlateId(plate.index)}
-                    sx={{ borderRadius: 1, mb: 0.5 }}
+                    sx={{ borderRadius: 1, mb: 0.25, py: 0.5 }}
                   >
                     <ListItemIcon sx={{ minWidth: 40 }}>
                       {internalThumbnails[plate.index] ? (
@@ -210,19 +252,47 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
                           ? t("models:detail.plateLabel", { n: plate.index }) + ` — ${plate.name}`
                           : t("models:detail.plateLabel", { n: plate.index })
                       }
-                      secondary={t("models:detail.internalPlateObjectCount", { count: plate.objectCount })}
+                      secondary={[
+                        noGeometry ? null : t("models:detail.internalPlateObjectCount", { count: plate.objectCount }),
+                        plateStatText(statForPlate(activePlate?.profile, plate.index), locale),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                       primaryTypographyProps={{ variant: "body2", noWrap: true }}
-                      secondaryTypographyProps={{ variant: "caption" }}
+                      secondaryTypographyProps={{ variant: "caption", noWrap: true }}
                     />
                   </ListItemButton>
                 ))}
               </List>
             </>
           )}
+
+          {activePlate && (
+            <Box sx={{ flexShrink: 0 }}>
+              <Divider sx={{ my: 1 }} />
+              <ProfileDetails filename={activePlate.filename} profile={activePlate.profile} />
+            </Box>
+          )}
         </Paper>
 
         <Box sx={{ width: "100%", height: "100%" }}>
-          {is3d && activePlate ? (
+          {is3d && activePlate && noGeometry ? (
+            // Centred in the space right of the 280px side panel, so it isn't half under it.
+            <Stack
+              spacing={0.5}
+              alignItems="center"
+              justifyContent="center"
+              sx={{ height: "100%", pl: "312px", pr: 2, textAlign: "center" }}
+            >
+              <ViewInArOutlinedIcon color="disabled" sx={{ fontSize: 40 }} />
+              <Typography color="text.primary" fontWeight={600}>
+                {t("models:detail.noGeometry")}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {t("models:detail.noGeometryHint")}
+              </Typography>
+            </Stack>
+          ) : is3d && activePlate ? (
             <ModelViewer
               ref={viewerRef}
               key={activePlate.id}
@@ -238,6 +308,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
               selectedPlateId={selectedInternalPlateId}
               previewGlbUrl={activePlate.preview_glb_url ? printsApi.fileUrl(activePlate.preview_glb_url) : null}
               onPlatesDetected={handlePlatesDetected}
+              onNoGeometry={handleNoGeometry}
               onOwnColorChange={setOwnColor}
             />
           ) : (
@@ -247,7 +318,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
           )}
         </Box>
 
-        {is3d && (
+        {is3d && !noGeometry && (
           // Lined up with the close button, just above the viewer's orientation cube (72px, 12px from the corner).
           <Stack spacing={1} sx={{ position: "absolute", bottom: 92, right: 10, zIndex: 2 }}>
             <IconButton
@@ -267,7 +338,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
           </Stack>
         )}
 
-        {is3d && (
+        {is3d && !noGeometry && (
           <PreviewToolbar
             cameraView={cameraView}
             onCameraView={handleCameraView}

@@ -90,7 +90,12 @@ export default function PanelSettingsDialog({ widgets, template, isAdmin, onChan
             return (
               <Stack key={instance} spacing={1.5}>
                 {shown.length > 1 && (
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "primary.main" }}>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={1}
+                    sx={{ color: (theme) => theme.thingport.accentText }}
+                  >
                     {widget.icon}
                     <Typography variant="subtitle2" color="text.primary">
                       {labelOf(t, widget)}

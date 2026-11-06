@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { unzipSync, strFromU8 } from "fflate";
-import { readBaseMaterials, readTriangleMaterial } from "./bambuThreeMf";
+import { loadCachedBambuGlb, readBaseMaterials, readTriangleMaterial } from "./bambuThreeMf";
 import { offToThreeMf } from "../sdk/threeMf";
 
 // Both readers only ever ask a node for an attribute or for its children by tag, so plain objects stand in for
@@ -133,5 +133,27 @@ describe("the customizer's own files", () => {
     const slotOf = readTriangleMaterial(materials, pid);
     const written1 = [...xml.matchAll(/<triangle [^>]*\bp1="([^"]+)"/g)].map((m) => m[1]);
     expect(written1.map((p1) => slotOf(triangle({ p1 })))).toEqual([0, 1]);
+  });
+});
+
+describe("loadCachedBambuGlb", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const answer = (status: number, code?: string) =>
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ code }), { status })));
+
+  it("hands a 404 PREVIEW_UNSUPPORTED on as its own outcome, not as a plain fallback", async () => {
+    answer(404, "PREVIEW_UNSUPPORTED");
+    expect(await loadCachedBambuGlb("/x/preview.glb")).toEqual({ status: "unsupported" });
+  });
+
+  it("keeps the other codes apart", async () => {
+    answer(404, "PREVIEW_GENERATING");
+    expect(await loadCachedBambuGlb("/x")).toEqual({ status: "generating" });
+    answer(404, "PREVIEW_FAILED");
+    expect(await loadCachedBambuGlb("/x")).toEqual({ status: "failed" });
+    answer(404, "SOMETHING_ELSE");
+    expect(await loadCachedBambuGlb("/x")).toEqual({ status: "fallback" });
+    answer(500, "PREVIEW_UNSUPPORTED");
+    expect(await loadCachedBambuGlb("/x")).toEqual({ status: "fallback" });
   });
 });

@@ -4,10 +4,12 @@ import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
-import type { Prisma } from "@prisma/client";
+import JSZip from "jszip";
+import { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS, mcpImportTiming } from "../src/mcp/tools";
+import { createPrint } from "../src/services/printCreation";
 import { setMcpAccess } from "../src/services/settingsService";
 
 // /api/mcp end to end: who gets in, which tools each token sees, and that every tool only ever
@@ -369,6 +371,64 @@ describe("the tools", () => {
     expect(data.files[0].api_path).toBe(`/api/print/${dragonId}/plate/${data.files[0].id}/file/dragon.stl`);
     const file = await callTool(alice.token, "get_model_file", { model_id: dragonId, file_id: data.files[0].id });
     expect(Buffer.from(file.data.base64, "base64").toString()).toBe("solid dragon.stl\nendsolid dragon.stl\n");
+  });
+
+  it("list_model_files gives 3MF plates their profile, reading it for a plate that has none stored yet", async () => {
+    const zip = new JSZip();
+    zip.file("3D/3dmodel.model", '<model><metadata name="ProfileTitle">Fast</metadata></model>');
+    zip.file("Metadata/project_settings.config", JSON.stringify({ printer_model: "Bambu Lab A1 mini" }));
+    const temp = path.join(os.tmpdir(), `mcp-profile-${Date.now()}.3mf`);
+    fs.writeFileSync(temp, await zip.generateAsync({ type: "nodebuffer" }));
+    const { print } = await createPrint(alice.userId, { title: "Profiled" }, "profiled", [
+      { filename: "profiled.3mf", tempFilePath: temp },
+    ]);
+    await prisma.printFile.create({
+      data: {
+        printId: print.id,
+        filename: "notes.txt",
+        mime: "text/plain",
+        size: 1,
+        role: "SUPPORTING",
+        storagePath: `mcp-profile/${Date.now()}.txt`,
+      },
+    });
+    // As on a plate imported before profiles were stored: the tool reads the file and saves what it found.
+    await prisma.plate.updateMany({ where: { printId: print.id }, data: { profileMeta: Prisma.JsonNull } });
+    const { data } = await callTool(alice.token, "list_model_files", { model_id: print.id });
+    const plate = data.files.find((f: { kind: string }) => f.kind === "plate");
+    expect(plate.profile).toMatchObject({ title: "Fast", printer: "Bambu Lab A1 mini" });
+    expect(data.files.find((f: { kind: string }) => f.kind === "supporting")).not.toHaveProperty("profile");
+    const stored = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    expect(stored.profileMeta).toMatchObject({ title: "Fast", printer: "Bambu Lab A1 mini" });
+  });
+
+  it("list_model_files marks the source's default plate with is_default, and only plates carry it", async () => {
+    const temps = ["a", "b"].map((name) => {
+      const file = path.join(os.tmpdir(), `mcp-default-${name}-${Date.now()}.stl`);
+      fs.writeFileSync(file, `solid ${name}\nendsolid ${name}\n`);
+      return file;
+    });
+    const { print } = await createPrint(alice.userId, { title: "Defaulted" }, "defaulted", [
+      { filename: "a.stl", tempFilePath: temps[0], sourceInstanceId: "1" },
+      { filename: "b.stl", tempFilePath: temps[1], sourceInstanceId: "2", isSourceDefault: true },
+    ]);
+    await prisma.printFile.create({
+      data: {
+        printId: print.id,
+        filename: "notes.txt",
+        mime: "text/plain",
+        size: 1,
+        role: "SUPPORTING",
+        storagePath: `mcp-default/${Date.now()}.txt`,
+      },
+    });
+    const { data } = await callTool(alice.token, "list_model_files", { model_id: print.id });
+    const plates = data.files.filter((f: { kind: string }) => f.kind === "plate");
+    expect(plates.map((f: { name: string; is_default: boolean }) => [f.name, f.is_default])).toEqual([
+      ["a.stl", false],
+      ["b.stl", true],
+    ]);
+    expect(data.files.find((f: { kind: string }) => f.kind === "supporting")).not.toHaveProperty("is_default");
   });
 
   it("get_model_file won't read another user's model, nor a file of another model", async () => {

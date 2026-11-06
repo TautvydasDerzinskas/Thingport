@@ -122,7 +122,7 @@ function MiniCollection({ collection }: { collection: Collection }) {
           >
             {collectionDisplayName(collection, t)}
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, color: "#858585" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.25, color: "text.secondary" }}>
             <Inventory2OutlinedIcon sx={{ fontSize: 9 }} />
             <Typography variant="caption" sx={{ fontSize: "0.6rem", lineHeight: 1.3 }}>
               {t("models:collections.card.itemCount", { count: collection.item_count })}

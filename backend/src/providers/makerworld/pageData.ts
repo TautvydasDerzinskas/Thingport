@@ -213,9 +213,21 @@ export function makerworldAuthorFromDesignCreator(creator: unknown): ImportedAut
  *  name by id, which tells the design's profile files apart when they share a filename. */
 export type MakerworldProfileRef = {
   instanceId: string | null;
+  /** The design's own default profile, when the design still has it; null or absent when it names none. */
+  defaultInstanceId?: string | null;
   coverUrl?: string | null;
   titles?: Record<string, string>;
 };
+
+/** The profile MakerWorld marks as the design's default (`defaultInstanceId`), only when the design still has it:
+ *  unlike makerworldInstanceIdFromNextData it never falls back to the first profile. */
+export function makerworldDefaultInstanceId(design: unknown): string | null {
+  if (!design || typeof design !== "object") return null;
+  const record = design as Record<string, unknown>;
+  const id = record.defaultInstanceId;
+  if (id == null || id === "") return null;
+  return makerworldDesignHasInstance(record, String(id)) ? String(id) : null;
+}
 
 /** Every profile's name, by id. */
 export function makerworldInstanceTitles(design: unknown): Record<string, string> {
@@ -344,6 +356,7 @@ export async function resolveMakerworldDownloadUrl(
     downloadUrl,
     profile: {
       instanceId: defaultInstanceId,
+      defaultInstanceId: makerworldDefaultInstanceId(design),
       coverUrl: makerworldInstanceCover(design, defaultInstanceId),
       titles: makerworldInstanceTitles(design),
     },
@@ -365,7 +378,15 @@ export async function resolveMakerworldDownloadUrl(
     const url = await fetchMakerworldInstanceDownloadUrl(instanceId, pageUrl, makerworldCookie);
     if (url) {
       const coverUrl = makerworldInstanceCover(design, instanceId);
-      return { downloadUrl: url, profile: { instanceId, coverUrl, titles: makerworldInstanceTitles(design) } };
+      return {
+        downloadUrl: url,
+        profile: {
+          instanceId,
+          defaultInstanceId: makerworldDefaultInstanceId(design),
+          coverUrl,
+          titles: makerworldInstanceTitles(design),
+        },
+      };
     }
   }
 

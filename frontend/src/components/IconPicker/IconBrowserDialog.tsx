@@ -205,7 +205,10 @@ export default function IconBrowserDialog({ open, value, onClose, onPick }: Prop
               ...tileSx,
               border: `1px dashed ${alpha(theme.palette.text.primary, 0.3)}`,
               color: "text.secondary",
-              "&:hover, &.Mui-focusVisible": { borderColor: theme.palette.primary.main, color: "primary.main" },
+              "&:hover, &.Mui-focusVisible": {
+                borderColor: theme.palette.primary.main,
+                color: (th) => th.thingport.accentText,
+              },
             })}
           >
             <AddPhotoAlternateOutlinedIcon />

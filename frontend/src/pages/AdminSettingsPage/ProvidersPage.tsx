@@ -157,7 +157,7 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
             <Box sx={{ flexShrink: 0, lineHeight: 0, opacity: 0.45, filter: "grayscale(1)" }}>
               <ProviderLogo id={id} size={32} />
             </Box>
-            <Typography variant="body1" fontWeight={600} color="text.disabled" sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body1" fontWeight={600} color="text.secondary" sx={{ flex: 1, minWidth: 0 }}>
               {name}
             </Typography>
             <Chip size="small" variant="outlined" label={t("providers.comingSoon")} sx={{ color: "text.secondary" }} />

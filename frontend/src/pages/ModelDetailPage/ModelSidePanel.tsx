@@ -33,11 +33,12 @@ import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { importProviderInfo } from "../../constants/importProviders";
 import { useDownloadPrint } from "./useDownloadPrint";
-import { useOpenInSlicer } from "./useOpenInSlicer";
+import { type ModelFile, useOpenInSlicer } from "./useOpenInSlicer";
+import { selectedModelFile } from "./mainPreview";
 import { useOpenInStudio } from "./useOpenInStudio";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
-import ModelFileSelect from "./ModelFileSelect";
+import ModelFileList from "./ModelFileList";
 import OpenInSlicerButton from "./OpenInSlicerButton";
 import { useNormalizedOpen } from "./useNormalizedOpen";
 import AddToCollectionModal from "./AddToCollectionModal";
@@ -84,6 +85,9 @@ type Props = {
   onUpdated?: (print: Print) => void;
   /** Shown as the author of a direct upload, which has none. */
   viewer?: AuthUser | null;
+  /** The file picked in the file list (a `ModelFile` key), held by the page so its large preview can follow it. */
+  selectedFileKey: string | null;
+  onSelectFile: (file: ModelFile) => void;
 };
 
 /** The detail page's sticky summary card. */
@@ -95,6 +99,8 @@ export default function ModelSidePanel({
   onUnauthorized,
   onUpdated,
   viewer,
+  selectedFileKey,
+  onSelectFile,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
@@ -107,9 +113,8 @@ export default function ModelSidePanel({
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
   const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor } = useOpenInSlicer(print);
-  // Every action below applies to this file; the first until one is picked.
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const selectedFile = files.find((file) => file.key === selectedKey) ?? files[0] ?? null;
+  // Every action below applies to this file; the source's default (else the first) until one is picked.
+  const selectedFile = selectedModelFile(files, selectedFileKey);
   const normalizedTarget = normalizedTargetFor(selectedFile);
 
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
@@ -200,7 +205,7 @@ export default function ModelSidePanel({
         p: 2.5,
         borderRadius: "12px",
         borderColor: dividerBorderColor,
-        position: { xs: "static", md: "sticky" },
+        position: { xs: "static", lg: "sticky" },
         // Stick just below the sticky TopBar, which can wrap taller.
         top: "var(--topbar-height, 80px)",
       }}
@@ -233,7 +238,7 @@ export default function ModelSidePanel({
                 mx: -0.5,
                 gap: 1,
                 color: (muiTheme) => muiTheme.thingport.headingText,
-                "&:hover": { color: "primary.main" },
+                "&:hover": { color: (theme) => theme.thingport.accentText },
                 "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main" },
               }}
             >
@@ -263,7 +268,9 @@ export default function ModelSidePanel({
                   width: "fit-content",
                   cursor: print.author || showViewerAsAuthor ? "pointer" : "default",
                   color: (muiTheme) => muiTheme.thingport.headingText,
-                  ...(print.author || showViewerAsAuthor ? { "&:hover": { color: "primary.main" } } : undefined),
+                  ...(print.author || showViewerAsAuthor
+                    ? { "&:hover": { color: (theme) => theme.thingport.accentText } }
+                    : undefined),
                 }}
                 onClick={() => {
                   if (print.author) navigate(`/authors/${print.author.id}`);
@@ -272,7 +279,7 @@ export default function ModelSidePanel({
               >
                 <Avatar
                   src={authorAvatarUrl || undefined}
-                  sx={{ width: 28, height: 28, fontSize: 13, color: "inherit !important" }}
+                  sx={{ width: 28, height: 28, fontSize: 13, color: "common.white", bgcolor: "grey.700" }}
                 >
                   {(authorName || "?").slice(0, 1).toUpperCase()}
                 </Avatar>
@@ -298,7 +305,7 @@ export default function ModelSidePanel({
                 mx: -0.5,
                 gap: 0.75,
                 color: (muiTheme) => muiTheme.thingport.headingText,
-                "&:hover": { color: "primary.main" },
+                "&:hover": { color: (theme) => theme.thingport.accentText },
               }}
             >
               <FolderIcon fontSize="small" />
@@ -456,9 +463,7 @@ export default function ModelSidePanel({
           </Stack>
         )}
 
-        {selectedFile && files.length > 1 && (
-          <ModelFileSelect files={files} selected={selectedFile} onSelect={(file) => setSelectedKey(file.key)} />
-        )}
+        {selectedFile && <ModelFileList files={files} selected={selectedFile} onSelect={onSelectFile} />}
         {selectedFile && (
           <OpenInSlicerButton
             file={selectedFile}

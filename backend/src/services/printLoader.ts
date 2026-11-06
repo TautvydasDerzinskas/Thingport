@@ -1,4 +1,5 @@
 import { prisma } from "../db";
+import { ensurePlateProfiles } from "./plateProfile";
 import { HttpError } from "../utils/fileUtils";
 import { toPrintOut, type PrintOut } from "../dto";
 import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCategorizationService";
@@ -45,6 +46,7 @@ export async function printOutById(
     aiCategoryPaths(userId),
     aiSuggestionsShown(),
   ]);
+  await ensurePlateProfiles(full.plates);
   return toPrintOut(
     full.print,
     full.plates,
@@ -87,6 +89,10 @@ export async function printOutsByIds(
     aiCategoryPaths(userId),
     aiSuggestionsShown(),
   ]);
+  // Callers pass a bounded id list (search results, cover ids, at most 500 bulk ids), and each plate is read once.
+  // Only plates of prints the caller owns are read: the plate query doesn't filter by user.
+  const owned = new Set(prints.map((p) => p.id));
+  await ensurePlateProfiles(plates.filter((p) => owned.has(p.printId)));
   const platesByPrint = groupByPrintId(plates);
   const filesByPrint = groupByPrintId(files);
   const previewsByPrint = groupByPrintId(previewImages);

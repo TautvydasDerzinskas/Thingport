@@ -74,13 +74,7 @@ export default function ProviderCategoryMappings({ value, onChange, categoryName
                   <Typography variant="body2" fontWeight={600} noWrap>
                     {name}
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    color={ids.length ? "text.secondary" : "text.disabled"}
-                    noWrap
-                    component="p"
-                    title={names.join(", ")}
-                  >
+                  <Typography variant="caption" color={"text.secondary"} noWrap component="p" title={names.join(", ")}>
                     {ids.length ? names.join(", ") : t("categories.manager.mapping.none")}
                   </Typography>
                 </Box>
