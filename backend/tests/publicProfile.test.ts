@@ -9,6 +9,7 @@ import { prisma } from "../src/db";
 import { AVATARS, COVERS } from "../src/config";
 import { COVER_PRESETS, defaultCoverPreset } from "../src/services/publicProfileService";
 import { randomAvatarStyle } from "../src/services/avatarArt";
+import { sweepGravatarCache } from "../src/services/avatarService";
 import { linkAuthorToUser, upsertAuthorFromImport } from "../src/services/authorService";
 import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
 
@@ -133,8 +134,12 @@ describe("a user's cover", () => {
       avatarUrl: null,
       backgroundUrl: "https://cdn.thingiverse.com/cover.jpg",
     });
-    // Linking fills in a cover only where there's none of the user's own; a drawn one they picked isn't a picture.
+    // A drawn cover they picked is their own: linking the author doesn't replace it.
     await linkAuthorToUser(me.id, author!.id);
+    expect((await request(app).get("/api/me").set(as(me))).body.user).toMatchObject({
+      background_url: null,
+      cover_preset: "ascii",
+    });
     await patch(me, { cover_preset: "retro" });
 
     const taken = await patch(me, { cover_author_id: author!.id });
@@ -172,6 +177,26 @@ describe("a user's bio", () => {
   });
 });
 
+describe("an upload the database couldn't take", () => {
+  it("leaves no file behind", async () => {
+    const who = await register("db-fails");
+    const files = (dir: string) => fs.readdirSync(dir).filter((name) => name.endsWith(".webp")).length;
+    const covers = files(COVERS);
+    const avatars = files(AVATARS);
+    const failing = vi.spyOn(prisma.user, "update").mockRejectedValue(new Error("database gone"));
+    expect((await upload(who, await picture(600, 200))).status).toBe(500);
+    const avatar = await request(app)
+      .post("/api/me/avatar")
+      .set(as(who))
+      .attach("file", await picture(200, 200), "a.jpg");
+    expect(avatar.status).toBe(500);
+    expect(failing).toHaveBeenCalled();
+    failing.mockRestore();
+    expect(files(COVERS)).toBe(covers);
+    expect(files(AVATARS)).toBe(avatars);
+  });
+});
+
 describe("deleting the account", () => {
   it("deletes the cover it uploaded", async () => {
     const admin = await register("admin");
@@ -184,11 +209,17 @@ describe("deleting the account", () => {
       .attach("file", await picture(300, 300), "me.jpg");
     const avatar = (await prisma.user.findUniqueOrThrow({ where: { id: leaving.id } })).avatarUrl!;
     const avatarFile = path.join(AVATARS, path.basename(avatar));
+    // And the Gravatar Thingport kept a copy of for the others to see.
+    const email = (await prisma.user.findUniqueOrThrow({ where: { id: leaving.id } })).email;
+    const hash = crypto.createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+    const gravatarCopy = path.join(AVATARS, "gravatar", `${hash}.webp`);
+    fs.writeFileSync(gravatarCopy, "x");
     expect(fs.existsSync(fileOf(url))).toBe(true);
     expect(fs.existsSync(avatarFile)).toBe(true);
     expect((await request(app).delete(`/api/admin/users/${leaving.id}`).set(as(admin))).status).toBe(200);
     expect(fs.existsSync(fileOf(url))).toBe(false);
     expect(fs.existsSync(avatarFile)).toBe(false);
+    expect(fs.existsSync(gravatarCopy)).toBe(false);
   });
 });
 
@@ -328,6 +359,16 @@ describe("a user's own models, made public", () => {
     expect(page.body.collections).toEqual([]);
   });
 
+  it("count as shared when they were made public, however old they are", async () => {
+    const late = await register("late");
+    const old = await model(late.id, "from 2020", { createdAt: new Date("2020-01-01T00:00:00Z") });
+    await patch(late, { models_public: true });
+    const overview = await request(app).get("/api/explore").set(as(viewer));
+    expect(overview.body.people[0].id).toBe(late.id);
+    expect(overview.body.recent_models[0].id).toBe(old);
+    await patch(late, { models_public: false });
+  });
+
   it("go private again", async () => {
     await patch(owner, { models_public: false });
     expect((await listed(viewer)).status).toBe(404);
@@ -387,6 +428,42 @@ describe("a user's avatar", () => {
     const served = await get((await userOf(who)).avatar_url);
     expect(served.headers["content-type"]).toBe("image/webp");
     expect((await sharp(served.body as Buffer).metadata()).width).toBe(256);
+  });
+
+  it("serves an old Gravatar while Gravatar can't be reached, without asking again for an hour", async () => {
+    const who = await register("stale-gravatar");
+    const png = await sharp({ create: { width: 64, height: 64, channels: 3, background: "#00aa88" } })
+      .png()
+      .toBuffer();
+    gravatar(async () => new Response(new Uint8Array(png), { status: 200, headers: { "Content-Type": "image/png" } }));
+    const url = (await userOf(who)).avatar_url;
+    await get(url);
+    // A copy from two days ago, and Gravatar gone.
+    const email = (await prisma.user.findUniqueOrThrow({ where: { id: who.id } })).email;
+    const hash = crypto.createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    fs.utimesSync(path.join(AVATARS, "gravatar", `${hash}.webp`), twoDaysAgo, twoDaysAgo);
+    vi.restoreAllMocks();
+    const unreachable = gravatar(async () => {
+      throw new TypeError("fetch failed");
+    });
+    expect((await get(url)).headers["content-type"]).toBe("image/webp");
+    expect((await get(url)).headers["content-type"]).toBe("image/webp");
+    expect(unreachable).toHaveBeenCalledTimes(1);
+  });
+
+  it("drops cached Gravatars no one has needed for a month", async () => {
+    const dir = path.join(AVATARS, "gravatar");
+    const old = path.join(dir, `${"0".repeat(64)}.webp`);
+    const recent = path.join(dir, `${"1".repeat(64)}.none`);
+    fs.writeFileSync(old, "x");
+    fs.writeFileSync(recent, "");
+    const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000);
+    fs.utimesSync(old, fortyDaysAgo, fortyDaysAgo);
+    await sweepGravatarCache();
+    expect(fs.existsSync(old)).toBe(false);
+    expect(fs.existsSync(recent)).toBe(true);
+    fs.rmSync(recent, { force: true });
   });
 
   it("falls back to the one picked for them when Gravatar can't be reached", async () => {
@@ -511,5 +588,7 @@ describe("a user's avatar", () => {
     expect(page.body.user.avatar_url).toBe((await userOf(who)).avatar_url);
     const email = (await prisma.user.findUniqueOrThrow({ where: { id: who.id } })).email;
     expect(JSON.stringify(page.body)).not.toContain(email);
+    const hash = crypto.createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+    expect(JSON.stringify(page.body)).not.toContain(hash);
   });
 });

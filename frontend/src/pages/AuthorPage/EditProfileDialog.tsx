@@ -88,11 +88,13 @@ type Props = {
   linkedAuthors: Author[];
   onClose: () => void;
   onSaved: (user: AuthUser) => void;
+  /** Each step of a save that went through, so the page keeps up when a later one fails. */
+  onUpdated?: (user: AuthUser) => void;
   onUnauthorized?: () => void;
 };
 
 /** The user's cover and bio, as the other users see them. Nothing is kept until Save, an upload included. */
-export default function EditProfileDialog({ user, linkedAuthors, onClose, onSaved, onUnauthorized }: Props) {
+export default function EditProfileDialog({ user, linkedAuthors, onClose, onSaved, onUpdated, onUnauthorized }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const [initial] = useState(() => initialChoice(user, linkedAuthors));
   const initialPosition = user.cover_position_y ?? 50;
@@ -106,6 +108,8 @@ export default function EditProfileDialog({ user, linkedAuthors, onClose, onSave
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  // The picture already put up by a save whose next step failed: trying again doesn't upload it twice.
+  const uploaded = useRef<{ file: File; positionY: number } | null>(null);
   const preview = useRef<HTMLDivElement>(null);
   const drag = useRef<{ startY: number; startPosition: number; range: number } | null>(null);
   // The picture's own size, for how far a drag can move it.
@@ -117,11 +121,16 @@ export default function EditProfileDialog({ user, linkedAuthors, onClose, onSave
 
   useEffect(() => {
     if (!movable) return;
+    let cancelled = false;
     const image = new Image();
+    // A picture chosen before this one can finish loading after it: its size isn't this one's.
     image.addEventListener("load", () => {
-      natural.current = { url, width: image.naturalWidth, height: image.naturalHeight };
+      if (!cancelled) natural.current = { url, width: image.naturalWidth, height: image.naturalHeight };
     });
     image.src = url;
+    return () => {
+      cancelled = true;
+    };
   }, [url, movable]);
 
   const uploadUrl = upload?.url;
@@ -210,13 +219,21 @@ export default function EditProfileDialog({ user, linkedAuthors, onClose, onSave
     setError(null);
     try {
       let saved = user;
-      if (choice.kind === "upload") saved = await profileApi.uploadCover(choice.file, positionY);
+      if (choice.kind === "upload" && uploaded.current?.file !== choice.file) {
+        saved = await profileApi.uploadCover(choice.file, positionY);
+        uploaded.current = { file: choice.file, positionY };
+        onUpdated?.(saved);
+      }
       const patch: PublicProfilePatch = {};
       if (bioChanged) patch.bio = trimmedBio || null;
       if (linksChanged) patch.links = cleanLinks;
       if (coverChanged && choice.kind === "preset") patch.cover_preset = choice.preset;
       if (coverChanged && choice.kind === "author") patch.cover_author_id = choice.authorId;
       if (choice.kind !== "upload" && (coverChanged || positionChanged)) patch.cover_position_y = Math.round(positionY);
+      // Moved since the upload that went through.
+      if (choice.kind === "upload" && uploaded.current && uploaded.current.positionY !== positionY) {
+        patch.cover_position_y = Math.round(positionY);
+      }
       if (Object.keys(patch).length) saved = await profileApi.update(patch);
       onSaved(saved);
     } catch (err) {

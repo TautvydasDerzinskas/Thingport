@@ -92,12 +92,21 @@ export async function saveCoverUpload(userId: string, buffer: Buffer, positionY:
     throw new HttpError(400, "Not a picture");
   }
   const id = crypto.randomBytes(16).toString("hex");
-  await fs.writeFile(path.join(COVERS, `${id}.webp`), data);
-  const before = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { backgroundUrl: true } });
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: { backgroundUrl: `/api/covers/${id}.webp`, coverPreset: null, coverPositionY: positionY },
-  });
+  const file = path.join(COVERS, `${id}.webp`);
+  await fs.writeFile(file, data);
+  let before: { backgroundUrl: string | null };
+  let user: User;
+  try {
+    before = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { backgroundUrl: true } });
+    user = await prisma.user.update({
+      where: { id: userId },
+      data: { backgroundUrl: `/api/covers/${id}.webp`, coverPreset: null, coverPositionY: positionY },
+    });
+  } catch (err) {
+    // Nothing points at it, and nothing would ever clear it.
+    await fs.rm(file, { force: true });
+    throw err;
+  }
   await removeOwnCover(before.backgroundUrl);
   return user;
 }
@@ -160,12 +169,16 @@ export async function updatePublicProfile(userId: string, patch: PublicProfilePa
   }
   if (patch.cover_position_y !== undefined) data.coverPositionY = patch.cover_position_y;
   if (patch.links !== undefined) data.profileLinks = [...new Set(patch.links)];
-  if (patch.models_public !== undefined) data.modelsPublic = patch.models_public;
 
   const before = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { backgroundUrl: true, avatarUrl: true },
+    select: { backgroundUrl: true, avatarUrl: true, modelsPublic: true },
   });
+  if (patch.models_public !== undefined) {
+    data.modelsPublic = patch.models_public;
+    if (!patch.models_public) data.modelsPublicAt = null;
+    else if (!before.modelsPublic) data.modelsPublicAt = new Date();
+  }
   const user = await prisma.user.update({ where: { id: userId }, data });
   if (before.backgroundUrl !== user.backgroundUrl) await removeOwnCover(before.backgroundUrl);
   if (before.avatarUrl !== user.avatarUrl) await removeOwnAvatar(before.avatarUrl);

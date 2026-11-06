@@ -128,20 +128,6 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
     return false;
   };
 
-  // The user kept from signing in can predate a change made elsewhere, or covers themselves.
-  useEffect(() => {
-    if (!isSelf) return;
-    let cancelled = false;
-    profileApi
-      .me()
-      .then((fresh) => !cancelled && onUserUpdated?.(fresh))
-      .catch((err) => !cancelled && handleError(err));
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelf]);
-
   useEffect(() => {
     if (!authorId) return;
     let cancelled = false;
@@ -507,6 +493,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
             setEditing(false);
             showToast({ message: t("models:author.editProfile.saved") });
           }}
+          onUpdated={onUserUpdated}
           onUnauthorized={onUnauthorized}
         />
       )}

@@ -134,7 +134,10 @@ export async function linkAuthorToUser(userId: string, authorId: string): Promis
   const bio = author.bio || author.bioTranslated;
   const patch: { bio?: string; backgroundUrl?: string; avatarUrl?: string } = {};
   if (!currentUser.bio && bio) patch.bio = bio;
-  if (!currentUser.backgroundUrl && author.backgroundUrl) patch.backgroundUrl = author.backgroundUrl;
+  // A drawn cover they picked is theirs too; only the one picked for them gives way.
+  if (!currentUser.backgroundUrl && !currentUser.coverPreset && author.backgroundUrl) {
+    patch.backgroundUrl = author.backgroundUrl;
+  }
   if (!currentUser.avatarUrl && currentUser.avatarStyle === null && author.avatarUrl)
     patch.avatarUrl = author.avatarUrl;
   const user = Object.keys(patch).length

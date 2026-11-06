@@ -8,7 +8,7 @@ import type { AuthUser } from "../../api/auth";
 import { UnauthorizedError } from "../../api/client";
 import type { Print, PrintSortMode } from "../../api/prints";
 import type { PreviewMode } from "../../api/settings";
-import { socialApi } from "../../api/social";
+import { SocialOffError, socialApi } from "../../api/social";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import type { ResolvedTheme } from "../../constants/settingsOptions";
@@ -24,7 +24,8 @@ type Props = {
   previewMode: PreviewMode;
   viewer?: AuthUser | null;
   onUnauthorized?: () => void;
-  /** Their models went private, or social features off, since the page was read: the page reads itself again. */
+  /** Their models went private, or social features off, since the page was read: the page reads itself again. Until
+   *  it shows otherwise, this offers to try again. */
   onGone: () => void;
 };
 
@@ -48,22 +49,31 @@ export default function ExploreUserModels({
   // A page asked for before the list was read again belongs to the old list, and is dropped.
   const run = useRef(0);
 
+  // Stops paging until the user tries again; a gone list sends the page to read itself again too.
   const failedWith = (err: unknown) => {
-    if (err instanceof UnauthorizedError) onUnauthorized?.();
-    else setFailed(true);
+    if (err instanceof UnauthorizedError) return onUnauthorized?.();
+    setFailed(true);
+    if (err instanceof SocialOffError) onGone();
+  };
+  const gone = () => {
+    setFailed(true);
+    onGone();
   };
 
   useEffect(() => {
     const mine = ++run.current;
+    // Another sort's or person's list isn't this one's: nothing of it stays to be paged on from.
+    setItems([]);
+    setHasMore(false);
     setLoading(true);
     setFailed(false);
     socialApi.userModels(userId, { order_by: sortMode, limit: PAGE_SIZE, offset: 0 }).then(
       (page) => {
         if (mine !== run.current) return;
-        if (!page) return onGone();
+        setLoading(false);
+        if (!page) return gone();
         setItems(page.items);
         setHasMore(page.hasMore);
-        setLoading(false);
       },
       (err) => {
         if (mine !== run.current) return;
@@ -71,26 +81,30 @@ export default function ExploreUserModels({
         failedWith(err);
       },
     );
+    // Gone from the page, or read again: what's still on its way is dropped.
+    return () => {
+      run.current += 1;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, sortMode, attempt]);
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMore || !hasMore || failed) return;
     const mine = run.current;
     setLoadingMore(true);
     try {
       const page = await socialApi.userModels(userId, { order_by: sortMode, limit: PAGE_SIZE, offset: items.length });
       if (mine !== run.current) return;
-      if (!page) return onGone();
+      if (!page) return gone();
       setItems((prev) => [...prev, ...page.items]);
       setHasMore(page.hasMore);
     } catch (err) {
-      failedWith(err);
+      if (mine === run.current) failedWith(err);
     } finally {
-      setLoadingMore(false);
+      if (mine === run.current) setLoadingMore(false);
     }
   };
-  const sentinelRef = useInfiniteScroll(loadMore, hasMore, loading || loadingMore);
+  const sentinelRef = useInfiniteScroll(loadMore, hasMore && !failed, loading || loadingMore);
   const replace = (updated: Print) => setItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
 
   if (loading) {
@@ -135,7 +149,16 @@ export default function ExploreUserModels({
         ))}
         {loadingMore && <CardSkeletons count={5} />}
       </Box>
-      {hasMore && <Box ref={sentinelRef} sx={{ height: 1 }} />}
+      {failed ? (
+        <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ color: "text.secondary" }}>
+          <Typography variant="body2">{t("models:explore.modelsLoadFailed")}</Typography>
+          <Button size="small" onClick={() => setFailed(false)}>
+            {t("common:retry")}
+          </Button>
+        </Stack>
+      ) : (
+        hasMore && <Box ref={sentinelRef} sx={{ height: 1 }} />
+      )}
     </Stack>
   );
 }

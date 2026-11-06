@@ -4,6 +4,7 @@ ADD COLUMN     "avatarUrl" TEXT,
 ADD COLUMN     "coverPositionY" INTEGER,
 ADD COLUMN     "coverPreset" TEXT,
 ADD COLUMN     "modelsPublic" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "modelsPublicAt" TIMESTAMP(3),
 ADD COLUMN     "profileLinks" TEXT[] DEFAULT ARRAY[]::TEXT[];
 
 -- The others went on seeing the picture of the first author a user linked as themselves: it stays their avatar.

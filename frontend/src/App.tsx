@@ -464,14 +464,17 @@ export default function App() {
       } catch {}
     })();
   }, [token]);
+  // Counts the user's own changes, so a read that started before one doesn't undo it when it lands.
+  const userRevision = React.useRef(0);
   // The user kept from signing in can be older than a change made elsewhere, or than what this version shows of them
   // (their avatar): read afresh once a session starts.
   React.useEffect(() => {
     if (!token) return;
     let active = true;
+    const revision = userRevision.current;
     profileApi.me().then(
       (fresh) => {
-        if (!active) return;
+        if (!active || revision !== userRevision.current) return;
         storeUser(fresh);
         setUser(fresh);
       },
@@ -635,6 +638,7 @@ export default function App() {
 
   // PATCH /profile doesn't reissue a token, so only the local user object changes.
   const handleUserUpdated = (updatedUser: AuthUser) => {
+    userRevision.current += 1;
     storeUser(updatedUser);
     setUser(updatedUser);
   };

@@ -36,14 +36,20 @@ const sentInChatsOf = (userId: string): Prisma.PrintWhereInput => ({
 
 /** The models of every user who made their own public: as their My models lists them, and only theirs -- another
  *  user's import of the same design stays that user's. One query; few users share. */
-async function publicDesigns(): Promise<Prisma.PrintWhereInput[]> {
+async function publicDesigners(): Promise<{ userId: string; since: number; where: Prisma.PrintWhereInput }[]> {
   const users = await prisma.user.findMany({
     where: { modelsPublic: true },
-    select: { id: true, authorLinks: { select: { authorId: true } } },
+    select: { id: true, modelsPublicAt: true, authorLinks: { select: { authorId: true } } },
   });
   return users.map((user) => ({
-    AND: [{ userId: user.id }, ownDesignsWhere(user.authorLinks.map((link) => link.authorId))],
+    userId: user.id,
+    since: user.modelsPublicAt?.getTime() ?? 0,
+    where: { AND: [{ userId: user.id }, ownDesignsWhere(user.authorLinks.map((link) => link.authorId))] },
   }));
+}
+
+async function publicDesigns(): Promise<Prisma.PrintWhereInput[]> {
+  return (await publicDesigners()).map((designer) => designer.where);
 }
 
 /** What anyone's models the others can see: one in a public collection, or one of a user's own they made public. */
@@ -269,8 +275,11 @@ const MOST_COLLECTED = 12;
 /** Everything Explore's page shows `viewerId`. Their own collections and models are left out: they're not news to them. */
 export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
   const othersPublic = { isPublic: true, userId: { not: viewerId } } satisfies Prisma.CollectionWhereInput;
-  const designs = await publicDesigns();
-  const othersDesigns: Prisma.PrintWhereInput = { userId: { not: viewerId }, OR: designs };
+  const designers = (await publicDesigners()).filter((designer) => designer.userId !== viewerId);
+  const designs = designers.map((designer) => designer.where);
+  const othersDesigns: Prisma.PrintWhereInput = { OR: designs };
+  // Making their models public is sharing them: they count as new from then, however old they are.
+  const sinceOf = new Map(designers.map((designer) => [designer.userId, designer.since]));
   // A collection changes when it's made public or renamed (updatedAt), or something is put in it: whichever was last.
   // Ranked in the database, as it takes the latest of each collection's items.
   const [recentCollectionIds, collectionSharers, designSharers, recentItems, recentDesigns, collected] =
@@ -302,14 +311,17 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
         orderBy: { _max: { createdAt: "desc" } },
         take: RECENT_MODELS,
       }),
-      designs.length
-        ? prisma.print.findMany({
-            where: othersDesigns,
+      // Each designer's newest few: which of them are newest overall depends on when each went public.
+      Promise.all(
+        designers.map((designer) =>
+          prisma.print.findMany({
+            where: designer.where,
             orderBy: { createdAt: "desc" },
             take: RECENT_MODELS,
-            select: { id: true, createdAt: true },
-          })
-        : Promise.resolve([]),
+            select: { id: true, userId: true, createdAt: true },
+          }),
+        ),
+      ).then((lists) => lists.flat()),
       prisma.print.findMany({
         where: { userId: { not: viewerId }, AND: [{ OR: [IN_PUBLIC_COLLECTION, ...designs] }], copies: { some: {} } },
         orderBy: [{ copies: { _count: "desc" } }, { createdAt: "desc" }],
@@ -324,10 +336,11 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
   const byChange = collectionIds.flatMap((id) => recentCollections.find((collection) => collection.id === id) ?? []);
 
   const sharedLast = new Map<string, number>();
-  const shared = (id: string, at: Date | null | undefined) =>
-    sharedLast.set(id, Math.max(sharedLast.get(id) ?? 0, at?.getTime() ?? 0));
-  for (const row of collectionSharers) shared(row.userId, row.at);
-  for (const row of designSharers) shared(row.userId, row._max.createdAt);
+  const shared = (id: string, at: number) => sharedLast.set(id, Math.max(sharedLast.get(id) ?? 0, at));
+  for (const row of collectionSharers) shared(row.userId, row.at.getTime());
+  for (const row of designSharers) {
+    shared(row.userId, Math.max(row._max.createdAt?.getTime() ?? 0, sinceOf.get(row.userId) ?? 0));
+  }
   const sharers = [...sharedLast.entries()]
     .toSorted((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, PEOPLE)
@@ -335,8 +348,10 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
 
   const latest = new Map<string, number>();
   for (const item of recentItems) latest.set(item.printId, item._max.createdAt?.getTime() ?? 0);
-  for (const print of recentDesigns)
-    latest.set(print.id, Math.max(latest.get(print.id) ?? 0, print.createdAt.getTime()));
+  for (const print of recentDesigns) {
+    const at = Math.max(print.createdAt.getTime(), sinceOf.get(print.userId) ?? 0);
+    latest.set(print.id, Math.max(latest.get(print.id) ?? 0, at));
+  }
   const recentIds = [...latest.entries()]
     .toSorted((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, RECENT_MODELS)

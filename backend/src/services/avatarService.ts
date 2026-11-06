@@ -22,6 +22,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // After Gravatar couldn't be reached at all (an instance without internet): asked again this much sooner.
 const UNREACHABLE_RETRY_MS = 60 * 60 * 1000;
 const GRAVATAR_TIMEOUT_MS = 4000;
+// A copy no one has needed refreshing in this long is dropped: a deleted account's, or an address someone left.
+const GRAVATAR_EVICT_MS = 30 * DAY_MS;
 
 type AvatarFields = Pick<User, "id" | "email" | "avatarUrl" | "avatarStyle">;
 export type AvatarSource = "picture" | "thingport" | "auto";
@@ -92,15 +94,18 @@ const ageOf = async (file: string): Promise<number | null> => {
   }
 };
 
+const gravatarCache = (email: string) => {
+  const key = crypto.createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+  return { key, file: path.join(GRAVATAR_DIR, `${key}.webp`), missing: path.join(GRAVATAR_DIR, `${key}.none`) };
+};
+
 // One fetch per address at a time, however many of a person's avatars a page shows at once.
 const fetching = new Map<string, Promise<string | null>>();
 
 /** The user's Gravatar as a file of ours, fetched at most once a day; null when they have none, or Gravatar can't be
  *  reached and there's no earlier copy. */
 export async function gravatarFile(email: string): Promise<string | null> {
-  const key = crypto.createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
-  const file = path.join(GRAVATAR_DIR, `${key}.webp`);
-  const missing = path.join(GRAVATAR_DIR, `${key}.none`);
+  const { key, file, missing } = gravatarCache(email);
   const fileAge = await ageOf(file);
   if (fileAge !== null && fileAge < DAY_MS) return file;
   const missingAge = await ageOf(missing);
@@ -113,7 +118,22 @@ export async function gravatarFile(email: string): Promise<string | null> {
   return pending;
 }
 
+/** Drops cached Gravatars older than GRAVATAR_EVICT_MS. A copy in use is fetched again daily, which renews it. */
+export async function sweepGravatarCache(): Promise<void> {
+  const names = await fs.readdir(GRAVATAR_DIR).catch(() => [] as string[]);
+  for (const name of names) {
+    const age = await ageOf(path.join(GRAVATAR_DIR, name));
+    if (age !== null && age > GRAVATAR_EVICT_MS) await fs.rm(path.join(GRAVATAR_DIR, name), { force: true });
+  }
+}
+let lastSweep = 0;
+
 async function fetchGravatar(key: string, file: string, missing: string): Promise<string | null> {
+  // At most daily, and only on this path, which waits on the network anyway.
+  if (Date.now() - lastSweep > DAY_MS) {
+    lastSweep = Date.now();
+    void sweepGravatarCache();
+  }
   try {
     const res = await fetch(`https://gravatar.com/avatar/${key}?s=${GRAVATAR_SIZE}&d=404`, {
       signal: AbortSignal.timeout(GRAVATAR_TIMEOUT_MS),
@@ -128,11 +148,14 @@ async function fetchGravatar(key: string, file: string, missing: string): Promis
     await fs.rm(missing, { force: true });
     return file;
   } catch {
-    // The copy from before, if any, rather than nothing; and not asked again for an hour, so a page of avatars doesn't
-    // wait on a server it can't reach.
-    if ((await ageOf(file)) !== null) return file;
-    await fs.writeFile(missing, "");
+    // The copy from before, if any, rather than nothing; either way not asked again for an hour, so a page of avatars
+    // doesn't wait on a server it can't reach.
     const asIfOlder = new Date(Date.now() - DAY_MS + UNREACHABLE_RETRY_MS);
+    if ((await ageOf(file)) !== null) {
+      await fs.utimes(file, asIfOlder, asIfOlder);
+      return file;
+    }
+    await fs.writeFile(missing, "");
     await fs.utimes(missing, asIfOlder, asIfOlder);
     return null;
   }
@@ -160,15 +183,27 @@ export async function saveAvatarUpload(userId: string, buffer: Buffer): Promise<
     throw new HttpError(400, "Not a picture");
   }
   const id = crypto.randomBytes(16).toString("hex");
-  await fs.writeFile(path.join(AVATARS, `${id}.webp`), data);
-  const before = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { avatarUrl: true } });
-  const user = await prisma.user.update({ where: { id: userId }, data: { avatarUrl: `/api/avatars/${id}.webp` } });
+  const file = path.join(AVATARS, `${id}.webp`);
+  await fs.writeFile(file, data);
+  let before: { avatarUrl: string | null };
+  let user: User;
+  try {
+    before = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { avatarUrl: true } });
+    user = await prisma.user.update({ where: { id: userId }, data: { avatarUrl: `/api/avatars/${id}.webp` } });
+  } catch (err) {
+    // Nothing points at it, and nothing would ever clear it.
+    await fs.rm(file, { force: true });
+    throw err;
+  }
   await removeOwnAvatar(before.avatarUrl);
   return user;
 }
 
-/** The avatar file of a user who's being deleted; the row goes with the account. */
+/** The avatar files of a user who's being deleted, their cached Gravatar included; the row goes with the account. */
 export async function removeUserAvatar(userId: string): Promise<void> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } });
-  await removeOwnAvatar(user?.avatarUrl ?? null);
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true, email: true } });
+  if (!user) return;
+  await removeOwnAvatar(user.avatarUrl);
+  const { file, missing } = gravatarCache(user.email);
+  await Promise.all([fs.rm(file, { force: true }), fs.rm(missing, { force: true })]);
 }

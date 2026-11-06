@@ -113,6 +113,8 @@ model User {
   profileLinks             String[]             @default([])
   // Their own models, as My models lists them, shown to the other users on Explore while social features are on.
   modelsPublic             Boolean              @default(false)
+  // When they last made them public: on Explore, sharing them counts as recent then, however old the models are.
+  modelsPublicAt           DateTime?
   // Their avatar: a picture (one uploaded, /api/avatars/..., or a linked Author's). Null shows avatarStyle's design.
   avatarUrl                String?
   // The Thingport avatar they designed (avatarArt.ts's AvatarStyle), kept while a picture is shown. Null with no

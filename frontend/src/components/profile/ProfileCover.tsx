@@ -5,6 +5,7 @@ import type { SxProps, Theme } from "@mui/material/styles";
 import { coverImageUrl, type ProfileCoverValue } from "../../constants/profileCovers";
 
 const fadeIn = keyframes`from { opacity: 0; } to { opacity: 1; }`;
+const FADE_MS = 250;
 
 type Props = {
   cover: ProfileCoverValue | null | undefined;
@@ -40,6 +41,13 @@ export default function ProfileCover({ cover, height, positionY, children, sx }:
     };
   }, [url]);
 
+  // The one before goes once the new one has faded in: a transparent or broken new picture mustn't show it through.
+  useEffect(() => {
+    if (!layers.under) return;
+    const timer = window.setTimeout(() => setLayers((prev) => ({ under: null, over: prev.over })), FADE_MS + 50);
+    return () => window.clearTimeout(timer);
+  }, [layers.under]);
+
   const y = positionY ?? cover?.cover_position_y ?? 50;
   const layerSx = (layerUrl: string) => ({
     position: "absolute",
@@ -64,7 +72,7 @@ export default function ProfileCover({ cover, height, positionY, children, sx }:
           aria-hidden
           sx={{
             ...layerSx(layers.over),
-            animation: `${fadeIn} 250ms ease-out`,
+            animation: `${fadeIn} ${FADE_MS}ms ease-out`,
             "@media (prefers-reduced-motion: reduce)": { animation: "none" },
           }}
         />
