@@ -62,9 +62,11 @@ export default function ExploreUserModels({
 
   useEffect(() => {
     const mine = ++run.current;
-    // Another sort's or person's list isn't this one's: nothing of it stays to be paged on from.
+    // Another sort's or person's list isn't this one's: nothing of it stays to be paged on from. A page of it still on
+    // its way won't clear loadingMore, so it's cleared here.
     setItems([]);
     setHasMore(false);
+    setLoadingMore(false);
     setLoading(true);
     setFailed(false);
     socialApi.userModels(userId, { order_by: sortMode, limit: PAGE_SIZE, offset: 0 }).then(
