@@ -7,6 +7,7 @@ import {
   decodePaintState,
   encodePaintState,
   extractBambuSettings,
+  markAsBambuProject,
   mapSettingsToSlic3r,
   parsePlates,
   normalize3mf,
@@ -419,6 +420,47 @@ describe("normalize3mf", () => {
   });
 });
 
+describe("normalize3mf for an Orca fork", () => {
+  it("keeps the production layout, parts and painting, and drops only G-code and the printer profile", async () => {
+    const result = await normalize3mf(await makeBambuZip(), "orca");
+    const out = await JSZip.loadAsync(result.bytes);
+    expect(out.file("3D/Objects/object_1.model")).not.toBeNull();
+    expect(await readOut(result.bytes, "3D/Objects/object_1.model")).toContain('paint_color="4"');
+    expect(await readOut(result.bytes, "3D/3dmodel.model")).toContain('p:path="/3D/Objects/object_1.model"');
+    expect(await readOut(result.bytes, "Metadata/model_settings.config")).toContain("DesignerPart");
+    expect(out.file("3D/_rels/3dmodel.model.rels")).not.toBeNull();
+    expect(out.file("Metadata/plate_1.gcode")).toBeNull();
+    expect(out.file("Metadata/slice_info.config")).toBeNull();
+    expect(out.file("Metadata/Slic3r_PE.config")).toBeNull();
+    expect(out.file("Metadata/Slic3r_PE_model.config")).toBeNull();
+    const project = JSON.parse(await readOut(result.bytes, "Metadata/project_settings.config"));
+    expect(project.wall_loops).toBe("3");
+    expect(project.filament_colour).toEqual(["#FFFFFF", "#C52C18"]);
+    expect(project.printer_model).toBeUndefined();
+    expect(project.machine_start_gcode).toBeUndefined();
+    expect(project.printable_area).toBeUndefined();
+  });
+
+  it("keeps a Bambu Studio Application tag and marks a foreign one as Bambu Studio", () => {
+    const own = modelXml(SINGLE_COMPONENT_ROOT);
+    expect(markAsBambuProject(own)).toBeNull();
+    expect(markAsBambuProject(own.replace("BambuStudio-02.07.01.57", "Snapmaker_Orca-2.2.0"))).toBeNull();
+    expect(markAsBambuProject(own.replace("BambuStudio-02.07.01.57", "OrcaSlicer-2.3.0"))).toContain(
+      '<metadata name="Application">BambuStudio-2.3.0</metadata>',
+    );
+    const withoutTag = own.replace(/ <metadata name="Application">[^<]*<\/metadata>\r?\n/, "");
+    expect(withoutTag).not.toContain("Application");
+    expect(markAsBambuProject(withoutTag)).toContain('<metadata name="Application">BambuStudio-02.00.00.00</metadata>');
+  });
+
+  it("falls back to the original settings file when it isn't JSON", async () => {
+    const zip = await JSZip.loadAsync(await makeBambuZip());
+    zip.file("Metadata/project_settings.config", "not json");
+    const result = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+    expect(await readOut(result.bytes, "Metadata/project_settings.config")).toBe("not json");
+  });
+});
+
 describe("normalized3mfFor", () => {
   it("normalizes in a worker, caches the copy and falls back to null for a broken file", async () => {
     const storage = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-normalize-"));
@@ -437,6 +479,13 @@ describe("normalized3mfFor", () => {
     const broken = path.join(storage, "broken.3mf");
     fs.writeFileSync(broken, "not a zip");
     expect(await normalized3mfFor("plate-b", broken)).toBeNull();
+
+    // The Orca copy is kept apart from the flat one for the same plate.
+    const orca = await normalized3mfFor("plate-a", src, "orca");
+    expect(orca).not.toBeNull();
+    expect(orca).not.toBe(first);
+    expect((await JSZip.loadAsync(fs.readFileSync(orca!))).file("3D/Objects/object_1.model")).not.toBeNull();
+    expect(await readOut(fs.readFileSync(first!), "3D/3dmodel.model")).toMatch(/Thingport/);
     fs.rmSync(storage, { recursive: true, force: true });
   });
 });

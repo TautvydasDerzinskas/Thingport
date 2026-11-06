@@ -1,13 +1,13 @@
 // Runs the 3MF normalizer in a worker so a big model doesn't freeze the tab. Where the page's CSP
 // won't allow a blob: worker, it runs here instead.
 
-import { normalize3mf } from "../../normalizer/threeMfNormalizer";
-import type { WorkerReply } from "../../normalizer/worker";
+import { normalize3mf, type NormalizeTarget } from "../../normalizer/threeMfNormalizer";
+import type { WorkerReply, WorkerRequest } from "../../normalizer/worker";
 import workerSource from "../../normalizer/worker?worker";
 
 class WorkerUnavailable extends Error {}
 
-function normalizeInWorker(input: ArrayBuffer): Promise<Uint8Array> {
+function normalizeInWorker(input: ArrayBuffer, target: NormalizeTarget): Promise<Uint8Array> {
   const url = URL.createObjectURL(new Blob([workerSource], { type: "text/javascript" }));
   return new Promise<Uint8Array>((resolve, reject) => {
     let worker: Worker;
@@ -23,7 +23,7 @@ function normalizeInWorker(input: ArrayBuffer): Promise<Uint8Array> {
       if (message.type === "ready") {
         started = true;
         // Copied rather than transferred, so the fallback still has it if this fails.
-        worker.postMessage(input);
+        worker.postMessage({ bytes: input, target } satisfies WorkerRequest);
         return;
       }
       worker.terminate();
@@ -37,13 +37,13 @@ function normalizeInWorker(input: ArrayBuffer): Promise<Uint8Array> {
   }).finally(() => URL.revokeObjectURL(url));
 }
 
-export async function normalizeBambu3mf(input: ArrayBuffer): Promise<Uint8Array> {
+export async function normalizeBambu3mf(input: ArrayBuffer, target: NormalizeTarget = "flat"): Promise<Uint8Array> {
   try {
-    return await normalizeInWorker(input);
+    return await normalizeInWorker(input, target);
   } catch (err) {
     if (!(err instanceof WorkerUnavailable)) throw err;
   }
   // Let the "Normalizing…" state paint before the main thread is busy.
   await new Promise((resolve) => setTimeout(resolve, 50));
-  return (await normalize3mf(new Uint8Array(input))).bytes;
+  return (await normalize3mf(new Uint8Array(input), target)).bytes;
 }

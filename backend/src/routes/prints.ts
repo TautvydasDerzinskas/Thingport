@@ -26,6 +26,7 @@ import { fillSourceGaps } from "../services/fillGapsService";
 import { linkPrintToSource } from "../services/modelLinkService";
 import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
+import type { NormalizeTarget } from "../services/threeMfNormalizer";
 import {
   listPrints,
   listPrintSources,
@@ -459,6 +460,13 @@ router.post(
   }),
 );
 
+// `?normalize=1` asks for the flat copy (PrusaSlicer, Cura...), `?normalize=orca` for the Orca-fork one; anything
+// else means the original.
+function normalizeTargetOf(query: unknown): NormalizeTarget | null {
+  if (query === "1") return "flat";
+  return query === "orca" ? "orca" : null;
+}
+
 router.get(
   "/print/:id/plate/:plateId/file/:filename",
   asyncHandler(async (req, res) => {
@@ -470,8 +478,9 @@ router.get(
     let filePath = resolvePlateFilePath(plate);
     if (!filePath) throw new HttpError(404, "Not found");
     // Only "Open normalized in <slicer>" asks for it; a plate that is itself a sliced print is never touched.
-    if (req.query.normalize === "1" && plate.print.preparedMetadata === null && isNormalizable3mf(plate.filename)) {
-      filePath = (await normalized3mfFor(plate.id, filePath)) ?? filePath;
+    const target = normalizeTargetOf(req.query.normalize);
+    if (target && plate.print.preparedMetadata === null && isNormalizable3mf(plate.filename)) {
+      filePath = (await normalized3mfFor(plate.id, filePath, target)) ?? filePath;
     }
     res.setHeader("Content-Type", plate.mime || "application/octet-stream");
     res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(plate.filename)}"`);
@@ -494,7 +503,8 @@ router.post(
     }
     const filePath = resolvePlateFilePath(plate);
     if (!filePath) throw new HttpError(404, "Not found");
-    res.json({ status: await normalize3mfStatus(plate.id, filePath) });
+    const target = normalizeTargetOf(req.query.normalize) ?? "flat";
+    res.json({ status: await normalize3mfStatus(plate.id, filePath, target) });
   }),
 );
 

@@ -3,6 +3,7 @@ import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { MODEL_PREVIEW_MAX_MEMORY_MB, NORMALIZE_3MF_TIMEOUT_SECONDS, NORMALIZED_3MFS } from "../config";
 import { workerBootstrap } from "../utils/workerBootstrap";
+import type { NormalizeTarget } from "./threeMfNormalizer";
 import type { Normalize3mfWorkerInput, Normalize3mfWorkerResult } from "./normalize3mfWorker";
 
 // Part of the cache filename, so bumping it rebuilds older copies on next request.
@@ -10,13 +11,20 @@ const NORMALIZE_FORMAT_VERSION = 1;
 
 const WORKER_BOOTSTRAP = workerBootstrap(__dirname, "normalize3mfWorker");
 
-function normalizedPath(plateId: string): string {
-  return path.join(NORMALIZED_3MFS, `${plateId}.v${NORMALIZE_FORMAT_VERSION}.3mf`);
+const TARGETS: readonly NormalizeTarget[] = ["flat", "orca"];
+
+// The flat copy keeps its original filename; the others carry their target, so one plate can hold both.
+function stem(plateId: string, target: NormalizeTarget): string {
+  return target === "flat" ? plateId : `${plateId}.${target}`;
+}
+
+function normalizedPath(plateId: string, target: NormalizeTarget): string {
+  return path.join(NORMALIZED_3MFS, `${stem(plateId, target)}.v${NORMALIZE_FORMAT_VERSION}.3mf`);
 }
 
 // Marks a source the normalizer rejected, so each request doesn't redo the work to fail again.
-function errorPath(plateId: string): string {
-  return path.join(NORMALIZED_3MFS, `${plateId}.v${NORMALIZE_FORMAT_VERSION}.error`);
+function errorPath(plateId: string, target: NormalizeTarget): string {
+  return path.join(NORMALIZED_3MFS, `${stem(plateId, target)}.v${NORMALIZE_FORMAT_VERSION}.error`);
 }
 
 /** Sliced .gcode.3mf plates are left alone: dropping their G-code would leave nothing to print. */
@@ -60,19 +68,19 @@ function normalizeInWorker(input: Normalize3mfWorkerInput): Promise<Normalize3mf
   });
 }
 
-async function buildNormalized(plateId: string, srcPath: string): Promise<string | null> {
-  const dest = normalizedPath(plateId);
+async function buildNormalized(plateId: string, srcPath: string, target: NormalizeTarget): Promise<string | null> {
+  const dest = normalizedPath(plateId, target);
   const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
   await fs.mkdir(NORMALIZED_3MFS, { recursive: true });
   try {
-    const result = await normalizeInWorker({ srcPath, destPath: tmp });
+    const result = await normalizeInWorker({ srcPath, destPath: tmp, target });
     if (result.status === "ok") {
       await fs.rename(tmp, dest);
-      await fs.rm(errorPath(plateId), { force: true });
+      await fs.rm(errorPath(plateId, target), { force: true });
       return dest;
     }
     console.warn(`Normalizing 3MF for plate ${plateId} failed; serving the original:`, result.error);
-    await fs.writeFile(errorPath(plateId), result.error);
+    await fs.writeFile(errorPath(plateId, target), result.error);
     return null;
   } finally {
     await fs.rm(tmp, { force: true }).catch(() => undefined);
@@ -86,22 +94,23 @@ let queue: Promise<unknown> = Promise.resolve();
 // A failure is retried after this, so a timeout on a busy server doesn't block the plate for good.
 const ERROR_RETRY_MS = 60 * 60 * 1000;
 
-async function recentlyFailed(plateId: string, srcMtimeMs: number): Promise<boolean> {
+async function recentlyFailed(plateId: string, target: NormalizeTarget, srcMtimeMs: number): Promise<boolean> {
   try {
-    const { mtimeMs } = await fs.stat(errorPath(plateId));
+    const { mtimeMs } = await fs.stat(errorPath(plateId, target));
     return mtimeMs >= srcMtimeMs && Date.now() - mtimeMs < ERROR_RETRY_MS;
   } catch {
     return false;
   }
 }
 
-function startJob(plateId: string, srcPath: string): Promise<string | null> {
-  let pending = inFlight.get(plateId);
+function startJob(plateId: string, srcPath: string, target: NormalizeTarget): Promise<string | null> {
+  const key = stem(plateId, target);
+  let pending = inFlight.get(key);
   if (!pending) {
-    pending = queue.then(() => buildNormalized(plateId, srcPath));
+    pending = queue.then(() => buildNormalized(plateId, srcPath, target));
     queue = pending.catch(() => undefined);
-    inFlight.set(plateId, pending);
-    void pending.finally(() => inFlight.delete(plateId)).catch(() => undefined);
+    inFlight.set(key, pending);
+    void pending.finally(() => inFlight.delete(key)).catch(() => undefined);
   }
   return pending;
 }
@@ -109,13 +118,17 @@ function startJob(plateId: string, srcPath: string): Promise<string | null> {
 export type Normalize3mfStatus = "ready" | "preparing" | "failed";
 
 /** Starts a normalize in the background when there's no usable copy yet. Never throws. */
-export async function normalize3mfStatus(plateId: string, srcPath: string): Promise<Normalize3mfStatus> {
+export async function normalize3mfStatus(
+  plateId: string,
+  srcPath: string,
+  target: NormalizeTarget = "flat",
+): Promise<Normalize3mfStatus> {
   try {
     const { mtimeMs } = await fs.stat(srcPath);
-    if (await isFresh(normalizedPath(plateId), mtimeMs)) return "ready";
-    if (inFlight.has(plateId)) return "preparing";
-    if (await recentlyFailed(plateId, mtimeMs)) return "failed";
-    void startJob(plateId, srcPath).catch(() => undefined);
+    if (await isFresh(normalizedPath(plateId, target), mtimeMs)) return "ready";
+    if (inFlight.has(stem(plateId, target))) return "preparing";
+    if (await recentlyFailed(plateId, target, mtimeMs)) return "failed";
+    void startJob(plateId, srcPath, target).catch(() => undefined);
     return "preparing";
   } catch (err) {
     console.error(`Normalizing 3MF for plate ${plateId} failed:`, err);
@@ -125,12 +138,16 @@ export async function normalize3mfStatus(plateId: string, srcPath: string): Prom
 
 /** Path to a slicer-compatible copy of the plate's 3MF, waiting for one if needed, or null to serve
  *  the original. Never throws. */
-export async function normalized3mfFor(plateId: string, srcPath: string): Promise<string | null> {
+export async function normalized3mfFor(
+  plateId: string,
+  srcPath: string,
+  target: NormalizeTarget = "flat",
+): Promise<string | null> {
   try {
     const { mtimeMs } = await fs.stat(srcPath);
-    if (await isFresh(normalizedPath(plateId), mtimeMs)) return normalizedPath(plateId);
-    if (!inFlight.has(plateId) && (await recentlyFailed(plateId, mtimeMs))) return null;
-    return await startJob(plateId, srcPath);
+    if (await isFresh(normalizedPath(plateId, target), mtimeMs)) return normalizedPath(plateId, target);
+    if (!inFlight.has(stem(plateId, target)) && (await recentlyFailed(plateId, target, mtimeMs))) return null;
+    return await startJob(plateId, srcPath, target);
   } catch (err) {
     console.error(`Normalizing 3MF for plate ${plateId} failed:`, err);
     return null;
@@ -138,6 +155,8 @@ export async function normalized3mfFor(plateId: string, srcPath: string): Promis
 }
 
 export async function deleteNormalized3mf(plateId: string): Promise<void> {
-  await fs.rm(normalizedPath(plateId), { force: true }).catch(() => undefined);
-  await fs.rm(errorPath(plateId), { force: true }).catch(() => undefined);
+  for (const target of TARGETS) {
+    await fs.rm(normalizedPath(plateId, target), { force: true }).catch(() => undefined);
+    await fs.rm(errorPath(plateId, target), { force: true }).catch(() => undefined);
+  }
 }
