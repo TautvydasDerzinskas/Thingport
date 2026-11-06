@@ -42,6 +42,7 @@ export type LogAction =
   | "tags_merged"
   | "user_role_changed"
   | "user_deleted"
+  | "user_models_deleted"
   | "provider_toggled"
   | "sign_in_connected"
   | "sign_in_disconnected"

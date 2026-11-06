@@ -70,7 +70,15 @@ export async function setUserRole(actorId: string, targetId: string, role: Role)
 export async function deleteUserModels(actorId: string, targetId: string): Promise<number> {
   const [actor, target] = await Promise.all([loadActor(actorId), loadTarget(targetId)]);
   if (!permissionsOver(actor, target).canDeleteModels) throw new HttpError(403, "You can't delete this user's models");
-  return deleteAllPrintsForUser(target.id);
+  const models = await deleteAllPrintsForUser(target.id);
+  // The admin's, naming whose: the user's own model_deleted entries aren't written for these.
+  void createLog({
+    userId: actor.id,
+    action: "user_models_deleted",
+    targetId: target.id,
+    details: { email: target.email, name: target.displayName, models },
+  });
+  return models;
 }
 
 /** Everything of the user's: their models and every file of them, their own folders, then the account, whose

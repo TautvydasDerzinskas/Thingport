@@ -405,6 +405,12 @@ describe("installing", () => {
     const mine = await prisma.print.create({
       data: { userId: memberId, name: "Mine", nameNormalized: "mine", title: "Mine", tags: ["keep"] },
     });
+    // The Users page counts only what deleting them takes.
+    const users = (await request(app).get("/api/admin/users").set(auth(adminToken))).body as Array<{
+      id: string;
+      print_count: number;
+    }>;
+    expect(users.find((user) => user.id === memberId)?.print_count).toBe(1);
 
     const wiped = await request(app).post(`/api/admin/users/${memberId}/delete-all-prints`).set(auth(adminToken));
     expect(wiped.status).toBe(200);

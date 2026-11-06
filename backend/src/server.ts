@@ -16,6 +16,7 @@ import { announceVersionUpdate } from "./services/releaseNotesService";
 import { resumeStorageMove } from "./services/storageMoveService";
 import { resumeFileReuseBackfill } from "./services/fileReuseBackfill";
 import { seedProviderCategoryIds } from "./services/categorySiteIds";
+import { linkUnattributedPrints } from "./services/authorService";
 
 const app = createApp();
 
@@ -26,6 +27,8 @@ const bootedAt = new Date();
 seedFlaresolverrUrl().catch((err) => console.error("Failed to seed the FlareSolverr URL setting:", err));
 seedPublicUrl().catch((err) => console.error("Failed to seed the public URL setting:", err));
 seedProviderCategoryIds().catch((err) => console.error("Failed to seed a new provider's starter category ids:", err));
+// Name-only models get the author another import has since saved, where only one fits. Nothing is fetched.
+linkUnattributedPrints().catch((err) => console.error("Failed to link models to their authors:", err));
 
 async function boot(): Promise<void> {
   // Nothing can have started yet, so this takes all that's RUNNING. A machine without a clock battery can boot behind

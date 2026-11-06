@@ -1,8 +1,12 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { upsertAuthorFromImport } from "../src/services/authorService";
+import { linkUnattributedPrints, upsertAuthorFromImport } from "../src/services/authorService";
+import { createPrint } from "../src/services/printCreation";
 import type { ImportedAuthorInfo } from "../src/services/importResolvers";
 
 // Name-only models link to an author record, but only when the match is unambiguous.
@@ -96,6 +100,53 @@ describe("linking earlier imports to their author", () => {
     await upsertAuthorFromImport(authorInfo("makerworld", "taken", `Taken${stamp}`));
     expect(await authorOf(linked.id)).toBe(other!.id);
     expect(await authorOf(reset.id)).toBeNull();
+  });
+
+  it("links every model an author already saved matches, as on startup", async () => {
+    // Saved straight away, without the import that would link the model at once.
+    const author = await prisma.author.create({
+      data: {
+        id: `makerworld:startup-${stamp}`,
+        provider: "makerworld",
+        externalId: `startup-${stamp}`,
+        name: `Startup Author ${stamp}`,
+      },
+    });
+    const print = await unattributedPrint("startup", "makerworld", `@startup author ${stamp}`);
+    expect(await linkUnattributedPrints()).toBeGreaterThanOrEqual(1);
+    expect(await authorOf(print.id)).toBe(author.id);
+  });
+});
+
+describe("importing a model with only its author's name", () => {
+  const STL =
+    "solid t\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid t\n";
+  const importNamed = async (label: string, provider: string, creator: string) => {
+    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "authors-")), "part.stl");
+    fs.writeFileSync(file, STL);
+    const name = `${label} ${stamp}`;
+    const { print } = await createPrint(
+      userId,
+      { title: name, creator, sourceProvider: provider, sourceExternalId: `${label}-${stamp}` },
+      name,
+      [{ filename: "part.stl", tempFilePath: file }],
+      { describe: false, classify: false },
+    );
+    return print;
+  };
+
+  it("gets the author another import saved, by name or handle", async () => {
+    const author = await upsertAuthorFromImport(authorInfo("printables", "known", `Known ${stamp}`, `known_${stamp}`));
+    expect((await importNamed("by-name", "printables", `known ${stamp}`)).authorId).toBe(author!.id);
+    expect((await importNamed("by-handle", "printables", `@KNOWN_${stamp}`)).authorId).toBe(author!.id);
+  });
+
+  it("gets nobody for another provider's author, or a name two authors share", async () => {
+    await upsertAuthorFromImport(authorInfo("thingiverse", "elsewhere", `Elsewhere ${stamp}`));
+    expect((await importNamed("other-site", "printables", `Elsewhere ${stamp}`)).authorId).toBeNull();
+    await upsertAuthorFromImport(authorInfo("printables", "pair-a", `Pair ${stamp}`));
+    await upsertAuthorFromImport(authorInfo("printables", "pair-b", `pair ${stamp}`));
+    expect((await importNamed("shared-name", "printables", `Pair ${stamp}`)).authorId).toBeNull();
   });
 });
 

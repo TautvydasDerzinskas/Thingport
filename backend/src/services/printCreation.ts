@@ -34,6 +34,7 @@ import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
+import { authorIdByName } from "./authorService";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -275,6 +276,12 @@ export async function createPrint(
   }
   const baseName = (meta.title || "").trim() || nameHint;
   const finalName = await availableModelName(userId, baseName, meta.categoryId ?? null);
+  // An import that couldn't fetch the author still has their name: the author another import saved, if only one goes
+  // by it. Never fails the import.
+  const creator = meta.creator?.trim() || null;
+  const authorId =
+    meta.authorId ??
+    (creator && meta.sourceProvider ? await authorIdByName(meta.sourceProvider, creator).catch(() => null) : null);
 
   const print = await prisma.print.create({
     data: {
@@ -283,11 +290,11 @@ export async function createPrint(
       nameNormalized: finalName.trim().toLowerCase(),
       title: meta.title ?? null,
       notes: meta.notes ?? null,
-      creator: meta.creator?.trim() || null,
+      creator,
       tags: normalizeTags(meta.tags || []),
       categoryId: meta.categoryId ?? null,
       categorySource: meta.categoryId ? (meta.categorySource ?? "MANUAL") : null,
-      authorId: meta.authorId ?? null,
+      authorId,
       sourceProvider: meta.sourceProvider ?? null,
       sourceExternalId: meta.sourceExternalId ?? null,
       generatorScriptWithheld: meta.generatorScriptWithheld ?? false,

@@ -15,6 +15,7 @@ export type AdminUser = {
   can_demote: boolean;
   can_delete: boolean;
   can_delete_models: boolean;
+  /** Their own models, which deleting them takes: a tool's aren't counted. */
   print_count: number;
   collection_count: number;
   makerworld_connected: boolean;
@@ -89,6 +90,7 @@ export type LogAction =
   | "tags_merged"
   | "user_role_changed"
   | "user_deleted"
+  | "user_models_deleted"
   | "provider_toggled"
   | "sign_in_connected"
   | "sign_in_disconnected"
