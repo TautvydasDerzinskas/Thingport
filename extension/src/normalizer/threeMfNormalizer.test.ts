@@ -46,6 +46,10 @@ const SETTINGS = {
   filament_colour: ["#FFFFFF"],
   printer_model: "Bambu Lab X1C",
   machine_start_gcode: "G28",
+  printable_height: "250",
+  print_settings_id: "0.20mm Standard @BBL X1C",
+  printer_settings_id: "Bambu Lab X1C 0.4 nozzle",
+  filament_settings_id: ["Bambu PLA Basic @BBL X1C"],
 };
 
 async function bambuZip(): Promise<Uint8Array> {
@@ -75,6 +79,11 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.wall_loops).toBe("3");
     expect(project.printer_model).toBeUndefined();
     expect(project.machine_start_gcode).toBeUndefined();
+    // Snapmaker Orca crashes without these keys: kept, but naming no preset of the designer's printer.
+    expect(project.print_settings_id).toBe("");
+    expect(project.printer_settings_id).toBe("");
+    expect(project.filament_settings_id).toEqual([""]);
+    expect(project.printable_height).toBe("250");
   });
 
   it("flat (the default) still flattens the production layout", async () => {
@@ -82,14 +91,15 @@ describe("normalize3mf for an Orca fork", () => {
     expect(await read(bytes, "3D/3dmodel.model")).not.toContain("p:path");
   });
 
-  it("marks a foreign Application tag as Bambu Studio and leaves Bambu and Snapmaker Orca ones", () => {
-    expect(markAsBambuProject(ROOT)).toBeNull();
-    expect(markAsBambuProject(ROOT.replace("BambuStudio-02.07.01.57", "Snapmaker_Orca-2.2.0"))).toBeNull();
-    expect(markAsBambuProject(ROOT.replace("BambuStudio-02.07.01.57", "OrcaSlicer-2.3.0"))).toContain(
-      '<metadata name="Application">BambuStudio-2.3.0</metadata>',
-    );
+  it("sets the Application tag to a Bambu Studio version Snapmaker Orca accepts", () => {
+    const tag = '<metadata name="Application">BambuStudio-01.10.01.50</metadata>';
+    // MakerWorld files carry a newer Bambu Studio than Snapmaker Orca, which refuses those.
+    expect(markAsBambuProject(ROOT)).toContain(tag);
+    expect(markAsBambuProject(ROOT.replace("BambuStudio-02.07.01.57", "Snapmaker_Orca-2.4.1"))).toContain(tag);
+    expect(markAsBambuProject(ROOT.replace("BambuStudio-02.07.01.57", "OrcaSlicer-2.3.0"))).toContain(tag);
+    expect(markAsBambuProject(ROOT.replace("BambuStudio-02.07.01.57", "BambuStudio-01.10.01.50"))).toBeNull();
     const untagged = ROOT.replace(/ <metadata name="Application">[^<]*<\/metadata>\n/, "");
-    expect(markAsBambuProject(untagged)).toContain('name="Application">BambuStudio-02.00.00.00<');
+    expect(markAsBambuProject(untagged)).toContain(tag);
   });
 
   it("falls back to the original settings file when it isn't JSON", async () => {

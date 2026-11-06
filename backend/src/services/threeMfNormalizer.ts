@@ -1183,30 +1183,46 @@ async function buildNormalizedZip(input: Buffer | Uint8Array): Promise<{ out: JS
 export type NormalizeTarget = "flat" | "orca";
 
 // Orca forks treat a 3MF as Bambu's own only by this prefix; anything else gets its instances split and
-// its transforms baked into the geometry.
-const BAMBU_APPLICATION_PREFIXES = ["bambustudio-", "snapmaker_orca-"];
+// its transforms baked into the geometry. They also refuse a file whose version is newer than their own, and
+// MakerWorld files carry the designer's Bambu Studio (02.x), so the tag is set to the oldest Snapmaker Orca
+// that reads this layout (older tags are accepted by newer builds).
 const APPLICATION_RE = /(<metadata\b[^>]*\bname\s*=\s*"Application"[^>]*>)([^<]*)(<\/metadata>)/i;
-const DEFAULT_BAMBU_VERSION = "02.00.00.00";
+const ORCA_FORK_APPLICATION = "BambuStudio-01.10.01.50";
 
-/** The model's XML with its generator marked as Bambu Studio, or null when it already is. */
+/** The model's XML with its generator set to a Bambu Studio version Orca forks accept, or null when it already is. */
 export function markAsBambuProject(modelXml: string): string | null {
   const found = APPLICATION_RE.exec(modelXml);
-  const current = found ? found[2].trim() : "";
-  if (BAMBU_APPLICATION_PREFIXES.some((prefix) => current.toLowerCase().startsWith(prefix))) return null;
-  const version = /-(\d[\w.]*)$/.exec(current)?.[1] ?? DEFAULT_BAMBU_VERSION;
-  const tag = `BambuStudio-${version}`;
+  if (found && found[2].trim() === ORCA_FORK_APPLICATION) return null;
   if (found)
-    return modelXml.replace(APPLICATION_RE, (_all, open: string, _old: string, close: string) => open + tag + close);
+    return modelXml.replace(
+      APPLICATION_RE,
+      (_all, open: string, _old: string, close: string) => open + ORCA_FORK_APPLICATION + close,
+    );
   return modelXml.replace(
     /<model\b[^>]*>/i,
     (open) => `${open}
- <metadata name="Application">${tag}</metadata>`,
+ <metadata name="Application">${ORCA_FORK_APPLICATION}</metadata>`,
   );
 }
 
 function isSlicedOutput(relativePath: string): boolean {
   const p = pathKey(relativePath);
   return p.includes(".gcode") || p.includes("slice_info");
+}
+
+/**
+ * Snapmaker Orca crashes on a project settings file without these four keys, so the printer-profile strip keeps
+ * them for the Orca target: the preset names blank (no preset of the designer's printer is named), the height as is.
+ */
+function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
+  for (const key of ["print_settings_id", "printer_settings_id"]) {
+    if (key in original) cleaned[key] = "";
+  }
+  const filaments = original.filament_settings_id;
+  if (Array.isArray(filaments)) cleaned.filament_settings_id = filaments.map(() => "");
+  else if ("filament_settings_id" in original) cleaned.filament_settings_id = "";
+  if ("printable_height" in original) cleaned.printable_height = original.printable_height;
+  return cleaned;
 }
 
 async function buildOrcaZip(input: Buffer | Uint8Array): Promise<{ out: JSZip; report: () => NormalizeReport }> {
@@ -1223,7 +1239,8 @@ async function buildOrcaZip(input: Buffer | Uint8Array): Promise<{ out: JSZip; r
     if (key === "metadata/project_settings.config") {
       let cleaned: Settings | null = null;
       try {
-        cleaned = normalizeProjectSettings(JSON.parse(await rec.entry.async("string")));
+        const original = JSON.parse(await rec.entry.async("string"));
+        cleaned = restoreKeysOrcaNeeds(normalizeProjectSettings(original), original);
       } catch {}
       if (!cleaned) {
         out.file(rec.relativePath, await rec.entry.async("uint8array"));
