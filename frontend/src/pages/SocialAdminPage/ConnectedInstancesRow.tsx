@@ -30,13 +30,23 @@ import KeyDialog from "./KeyDialog";
 import { Mono, ToneChip } from "./parts";
 import TurnOnDialog from "./TurnOnDialog";
 
-/** Connected instances' settings, read on opening and again when the tab comes back. */
+export type SettingsUpdate = FederationSettings | ((previous: FederationSettings | null) => FederationSettings | null);
+
+/** Connected instances' settings, read on opening and again when the tab comes back. A read that started before a
+ *  change made here is dropped: it would put back what the change replaced. */
 export function useFederationSettings(onUnauthorized?: () => void) {
   const [settings, setSettings] = React.useState<FederationSettings | null>(null);
   const [loadFailed, setLoadFailed] = React.useState(false);
+  const changes = React.useRef(0);
+  const update = React.useCallback((next: SettingsUpdate) => {
+    changes.current += 1;
+    setSettings(next);
+  }, []);
   const load = React.useCallback(() => {
+    const asked = changes.current;
     federationApi.getSettings().then(
       (value) => {
+        if (asked !== changes.current) return;
         setSettings(value);
         setLoadFailed(false);
       },
@@ -54,12 +64,12 @@ export function useFederationSettings(onUnauthorized?: () => void) {
     document.addEventListener("visibilitychange", onReturn);
     return () => document.removeEventListener("visibilitychange", onReturn);
   }, [load]);
-  return { settings, setSettings, loadFailed, reload: load };
+  return { settings, setSettings: update, loadFailed, reload: load };
 }
 
 type Props = {
   settings: FederationSettings | null;
-  onSettings: (settings: FederationSettings) => void;
+  onSettings: (update: SettingsUpdate) => void;
   socialEnabled: boolean;
   onUnauthorized?: () => void;
 };
@@ -107,7 +117,8 @@ export default function ConnectedInstancesRow({ settings, onSettings, socialEnab
     setChecking(true);
     try {
       const { reachability } = await federationApi.check();
-      onSettings({ ...settings, reachability });
+      // Onto the settings as they are by now: it may have been turned off meanwhile.
+      onSettings((current) => current && { ...current, reachability });
     } catch (err) {
       fail(err);
     } finally {

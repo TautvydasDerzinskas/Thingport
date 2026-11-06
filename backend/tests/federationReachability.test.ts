@@ -60,6 +60,23 @@ describe("checkReachability", () => {
     expect(probed).toBe(false);
   });
 
+  it("counts an answer cut off on the way as none, not as someone else's", async () => {
+    const result = await checkReachability({
+      publicUrl: async () => "https://things.example.org",
+      classify: async () => ({ kind: "public", addresses: ["192.0.2.10"] }),
+      fetch: async () =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode('{"proof":'));
+              controller.error(new Error("Body timeout"));
+            },
+          }),
+        ),
+    });
+    expect(result.kind).toBe("public_unverified");
+  });
+
   it("only lets reachable results turn federation on", () => {
     expect(["local", "public", "public_unverified"].every((kind) => canTurnOn(kind as never))).toBe(true);
     expect(["not_set", "elsewhere", "unreachable"].some((kind) => canTurnOn(kind as never))).toBe(false);

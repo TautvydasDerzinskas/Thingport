@@ -4,12 +4,23 @@ import chatRoutes from "../src/routes/chats";
 import socialRoutes from "../src/routes/social";
 import { SOCIAL_SURFACES } from "../src/federation/socialSurfaces";
 
-type Layer = { route?: { path: string; methods: Record<string, boolean> } };
+type Layer = {
+  route?: { path: string; methods: Record<string, boolean> };
+  name?: string;
+  handle?: { stack?: unknown };
+};
 
+// A route on a child router would slip past the list below: there's none, and one added fails here until this
+// walks into it with its mount path.
 function routesOf(router: Router): string[] {
-  return (router.stack as unknown as Layer[]).flatMap((layer) =>
-    layer.route ? Object.keys(layer.route.methods).map((method) => `${method.toUpperCase()} ${layer.route!.path}`) : [],
-  );
+  return (router.stack as unknown as Layer[]).flatMap((layer) => {
+    if (layer.name === "router" || Array.isArray(layer.handle?.stack)) {
+      throw new Error("A social router mounts a child router: list its routes here too");
+    }
+    return layer.route
+      ? Object.keys(layer.route.methods).map((method) => `${method.toUpperCase()} ${layer.route!.path}`)
+      : [];
+  });
 }
 
 // Everything social has to work for partners' people too: a social route nobody has thought about federating fails

@@ -36,6 +36,8 @@ const dispatcher = new Agent({
 });
 
 const MAX_BODY = 1024 * 1024;
+// For the whole exchange, body included: an instance dripping its answer out doesn't hold the request open.
+const DEADLINE_MS = 30_000;
 
 /** A request to another instance. Only to an origin `allowed` accepts, never to this machine, link-local (cloud
  *  metadata) or reserved addresses, and no redirects: an instance's documents live where it says they do. */
@@ -53,7 +55,12 @@ export async function federationFetch(
     throw new FederationFetchError("That address points at this machine or a reserved range", "address");
   }
   try {
-    return await fetch(url, { ...init, redirect: "manual", dispatcher } as RequestInit & { dispatcher: Agent });
+    return await fetch(url, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(DEADLINE_MS),
+      redirect: "manual",
+      dispatcher,
+    } as RequestInit & { dispatcher: Agent });
   } catch (err) {
     const cause = (err as { cause?: Error }).cause;
     throw new FederationFetchError(cause?.message || (err as Error).message || "Network error", "network");
@@ -63,7 +70,10 @@ export async function federationFetch(
 /** The body as JSON, refusing anything over 1 MB: an instance's documents are small. */
 export async function readJson(response: Response, max = MAX_BODY): Promise<unknown> {
   const declared = Number(response.headers.get("content-length") ?? "0");
-  if (declared > max) throw new FederationFetchError("Response too large", "too_large");
+  if (declared > max) {
+    await response.body?.cancel().catch(() => {});
+    throw new FederationFetchError("Response too large", "too_large");
+  }
   const reader = response.body?.getReader();
   if (!reader) return null;
   const chunks: Uint8Array[] = [];

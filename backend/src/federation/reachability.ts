@@ -2,7 +2,8 @@ import crypto from "node:crypto";
 import { AUTH_SECRET } from "../config";
 import { prisma } from "../db";
 import { getPublicUrl } from "../services/settingsService";
-import { classifyHost, type AddressKind } from "./addresses";
+import { classifyHost, originOf, type AddressKind } from "./addresses";
+import { FederationFetchError, federationFetch, readJson } from "./fetch";
 import { updateFederationSettings, type Reachability, type ReachabilityKind } from "./settings";
 
 const PROBE_TIMEOUT_MS = 8_000;
@@ -15,7 +16,7 @@ export function probeProof(nonce: string): string {
 type Deps = {
   publicUrl?: () => Promise<string>;
   classify?: (host: string) => Promise<{ kind: AddressKind; addresses: string[] }>;
-  fetch?: typeof fetch;
+  fetch?: (url: string, init: RequestInit) => Promise<Response>;
 };
 
 /** Whether other instances could reach this one at its Public URL: that the address leads back here (it answers a
@@ -43,11 +44,20 @@ export async function checkReachability(deps: Deps = {}): Promise<Reachability> 
   const nonce = crypto.randomBytes(16).toString("hex");
   let answered: "self" | "other" | "none" = "none";
   try {
-    const response = await (deps.fetch ?? fetch)(`${url}/api/federation/probe/${nonce}`, {
-      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
-      headers: { Accept: "application/json" },
-    });
-    const body = (await response.json().catch(() => null)) as { proof?: unknown } | null;
+    // Through the same guard as every request to another instance: only to the Public URL's own origin, never to
+    // this machine or a reserved range whatever its name resolves to now, and no redirects.
+    const probe = `${url}/api/federation/probe/${nonce}`;
+    const init = { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS), headers: { Accept: "application/json" } };
+    const response = await (
+      deps.fetch ?? ((target, options) => federationFetch(target, options, (origin) => origin === originOf(url)))
+    )(probe, init);
+    let body = null as { proof?: unknown } | null;
+    try {
+      body = (await readJson(response, 64 * 1024)) as typeof body;
+    } catch (err) {
+      // Not JSON, or too big: something else answers. Cut off on the way: no answer, below.
+      if (!(err instanceof FederationFetchError)) throw err;
+    }
     answered = body?.proof === probeProof(nonce) ? "self" : "other";
   } catch (err) {
     console.warn(

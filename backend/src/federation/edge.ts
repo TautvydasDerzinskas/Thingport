@@ -70,6 +70,10 @@ export async function edgeFilter(req: Request, res: Response, next: NextFunction
     res.status(400).json({ error: "Not JSON" });
     return;
   }
+  if (!follow || typeof follow !== "object" || Array.isArray(follow)) {
+    res.status(401).json({ error: "Not a connected instance" });
+    return;
+  }
   const idOf = (value: unknown): string | null =>
     typeof value === "string"
       ? value

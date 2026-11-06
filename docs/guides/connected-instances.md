@@ -63,7 +63,9 @@ key, who asked and their note. You can also open it in place under **Requests â†
 - **Decline** tells them no; they can ask again.
 - **Block** declines it without telling them, and drops whatever that instance sends later.
 
-A request is only checked once you open it: until then Thingport doesn't contact the instance that sent it.
+A request is only checked once you open it: until then Thingport doesn't contact the instance that sent it. Opening
+it checks that it's signed with the key you see, and that the instance still stands by it: one it withdrew meanwhile
+says so and disappears.
 
 ## When your users ask
 
@@ -95,12 +97,18 @@ menu (or a right-click) has:
 
 - **Check connection**: looks it up again, and warns if its key changed since you connected.
 - **Show key**: the key it had when you connected.
-- **Pause**: stops talking to it for now; what either side sends waits and goes through after **Resume**.
+- **Pause**: stops talking to it for now; what either side sends waits and goes through after **Resume**. Each side
+  keeps trying for about three days, so for a longer pause, if the partner disconnected meanwhile, it may still be
+  listed here after **Resume**: disconnect it then.
 - **Disconnect**: ends it, and it's told. What came from it disappears here; copies people made stay.
 - **Block**: disconnects it and drops whatever it sends later, without telling it. Unblock it under **Blocked**.
 
-Turning **Connected instances** off keeps everything as it is: partners can't reach this instance meanwhile, and it's
-all back when it's on again.
+Turning **Connected instances** off keeps everything as it is, keys included: partners can't reach this instance
+meanwhile, and it's all back when it's on again, as the same instance.
+
+Everything a partner sends must be signed with the key you compared when connecting. If it ever signs with another
+one (its database was reset, say, or something in between swapped it), what it sends is dropped and it shows as
+unreachable: compare the new key with its admin, then disconnect and connect again.
 
 ## Plain HTTP
 
