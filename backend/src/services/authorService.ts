@@ -53,7 +53,7 @@ export async function upsertAuthorFromImport(info: ImportedAuthorInfo | null): P
 /** Models that only know their author by name, paired with the one author that name or handle
  * belongs to within the same provider (case-insensitive, ignoring a leading "@"). A name shared
  * by two authors matches nobody. */
-export const LINKABLE_PRINTS = Prisma.sql`
+const LINKABLE_PRINTS = Prisma.sql`
   SELECT p2.id AS print_id, min(a.id) AS author_id
   FROM "Print" p2
   JOIN "Author" a ON a.provider = p2."sourceProvider"
@@ -66,12 +66,12 @@ export const LINKABLE_PRINTS = Prisma.sql`
   HAVING count(*) = 1
 `;
 
-/** With `authorId`, only that author's models. Returns how many were linked. */
-export async function linkUnattributedPrints(authorId: string | null = null): Promise<number> {
+/** Links the author's name-only models to them. Returns how many were linked. */
+export async function linkUnattributedPrints(authorId: string): Promise<number> {
   return prisma.$executeRaw`
     UPDATE "Print" p SET "authorId" = m.author_id
     FROM (${LINKABLE_PRINTS}) m
-    WHERE p.id = m.print_id AND (${authorId}::text IS NULL OR m.author_id = ${authorId}::text)
+    WHERE p.id = m.print_id AND m.author_id = ${authorId}
   `;
 }
 

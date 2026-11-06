@@ -18,8 +18,6 @@ export type LogAction =
   | "tool_uninstalled"
   | "tools_access_changed"
   | "user_invited"
-  | "authors_linked"
-  | "descriptions_refetched"
   | "model_uploaded"
   | "model_imported"
   | "import_completed"

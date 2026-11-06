@@ -41,7 +41,6 @@ import { useStudioEnabled } from "./hooks/useStudioEnabled";
 import UsersPage from "./pages/UsersPage";
 import LogsPage from "./pages/LogsPage";
 import NotificationsPage from "./pages/NotificationsPage";
-import TriggersPage from "./pages/TriggersPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import CaptchaPage from "./pages/CaptchaPage";
 import ExplorePage from "./pages/ExplorePage";
@@ -392,10 +391,6 @@ function AppShell({
         <Route
           path="/admin-logs"
           element={isAdmin ? <LogsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/admin-triggers"
-          element={isAdmin ? <TriggersPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/admin-connections"

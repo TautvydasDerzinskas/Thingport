@@ -150,9 +150,6 @@ function useRouteChrome() {
   } else if (path.startsWith("/admin-logs")) {
     title = t("adminSettings.logs.heading");
     onBack = () => navigate("/admin");
-  } else if (path.startsWith("/admin-triggers")) {
-    title = t("adminSettings.triggers.heading");
-    onBack = () => navigate("/admin");
   } else if (path.startsWith("/admin-connections")) {
     title = t("adminSettings.connections.heading");
     onBack = () => navigate("/admin");

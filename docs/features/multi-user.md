@@ -69,7 +69,11 @@ Turning chats off hides every chat; nothing is deleted, and it's all back when t
 ## For admins
 
 The **Users** page lists everyone with their model and collection counts, how they sign in, and whether their
-MakerWorld account is connected. Admins can change roles, delete an account with all its models, follow what each
-person does in **Administration → Logs**, and see everyone's imports under **Everyone** in the
-[import queue](importing.md#the-import-queue). The switch for [social features](#sharing-with-each-other) is at the
-top of the page, with [chats](#chats) behind its cog. See [administration](administration.md).
+MakerWorld account is connected. From each person's ⋮ menu, admins change roles, delete all their models while keeping
+the account, or delete the account with its models. They follow what each person does in **Administration → Logs**,
+and see everyone's imports under **Everyone** in the [import queue](importing.md#the-import-queue). The switch for
+[social features](#sharing-with-each-other) is at the top of the page, with [chats](#chats) behind its cog. See
+[administration](administration.md).
+
+Any admin can do these to a member; only the owner, the first account, can do them to another admin, and nobody to the
+owner. An admin can also delete their own models here, but not their own account.

@@ -25,8 +25,8 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Every account, under the switch for what they share with each other; admins promote, demote and delete from each
- *  row's menu. */
+/** Every account, under the switch for what they share with each other; admins promote, demote, delete models and
+ *  delete accounts from each row's menu. */
 export default function UsersPage({ onUnauthorized }: Props) {
   const { t, i18n } = useTranslation(["app", "common"]);
   const [users, setUsers] = React.useState<AdminUser[]>([]);

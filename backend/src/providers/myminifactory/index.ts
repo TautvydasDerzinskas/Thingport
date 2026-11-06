@@ -206,12 +206,6 @@ export const myminifactoryDetails: ProviderDetails = {
   read: async (_userId, objectId) => detailsOf(await resolveMyminifactoryObject(objectId, await requireApiKey())),
   missingMessage: MISSING,
   mapError: myminifactoryImport.mapError,
-  unavailable: { check: async () => ((await getMyminifactoryApiKey()) ? null : "myminifactory_no_key") },
-  problemOf(err) {
-    if (err instanceof MyminifactoryAuthError) return { problem: "myminifactory_key_rejected" };
-    if (err instanceof MyminifactoryRateLimitError) return { problem: "myminifactory_rate_limited" };
-    return null;
-  },
 };
 
 /** The instance's API key, tested against the API. */

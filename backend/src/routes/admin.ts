@@ -5,7 +5,7 @@ import { HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
 import { z } from "zod";
 import { parseBody } from "../utils/validate";
-import { deleteAllPrintsForUser, getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
+import { getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
 import { createLog } from "../services/auditLog";
 import { communityWidgetsSource, communityWidgetUsage, widgetsInUse } from "../services/customWidgetsService";
 import { getToolsAccess, setToolsAccess, TOOLS_AUDIENCES } from "../services/settingsService";
@@ -20,7 +20,7 @@ import {
   uninstallRepoTool,
 } from "../services/toolsService";
 import { listStorageFolder } from "../services/storageBrowserService";
-import { deleteUser, permissionsOver, setUserRole } from "../services/userAdminService";
+import { deleteUser, deleteUserModels, permissionsOver, setUserRole } from "../services/userAdminService";
 import { getHealthReport, HEALTH_COMPONENTS, testHealth } from "../services/systemHealthService";
 import { INVITATION_TTL_DAYS, inviteUser } from "../services/invitationService";
 import { listJobItems } from "../services/importJobService";
@@ -40,12 +40,6 @@ import {
   startQueueJob,
 } from "../services/importQueueService";
 import { toAdminImportJobOut, toAdminQueueJobOut, toImportJobItemOut } from "../dto";
-import { authorLinkingSummary, currentAuthorLinkingRun, startAuthorLinking } from "../services/authorLinkingService";
-import {
-  currentDescriptionRefetch,
-  refetchableCounts,
-  startDescriptionRefetch,
-} from "../services/descriptionRefetchService";
 
 // Mounted at /api/admin (app.ts), so these guards only see admin routes.
 const router = Router();
@@ -70,6 +64,7 @@ router.get(
           can_promote: allowed.canPromote,
           can_demote: allowed.canDemote,
           can_delete: allowed.canDelete,
+          can_delete_models: allowed.canDeleteModels,
           print_count: u.printCount,
           collection_count: u.collectionCount,
           makerworld_connected: u.makerworldConnected,
@@ -187,51 +182,11 @@ router.delete(
   }),
 );
 
-// Irreversible; the UI handles the confirmation.
+// Irreversible: every model of theirs and its files, keeping the account. The UI handles the confirmation.
 router.post(
   "/users/:id/delete-all-prints",
   asyncHandler(async (req, res) => {
-    const user = await prisma.user.findUnique({ where: { id: req.params.id } });
-    if (!user) throw new HttpError(404, "User not found");
-    const deleted = await deleteAllPrintsForUser(user.id);
-    res.json({ ok: true, deleted });
-  }),
-);
-
-router.get(
-  "/triggers/link-authors",
-  asyncHandler(async (_req, res) => {
-    res.json({ ...(await authorLinkingSummary()), run: currentAuthorLinkingRun() });
-  }),
-);
-
-router.post(
-  "/triggers/link-authors",
-  asyncHandler(async (req, res) => {
-    const run = startAuthorLinking(req.userId!);
-    if (!run) throw new HttpError(409, "Linking is already running");
-    res.json({ run });
-  }),
-);
-
-router.get(
-  "/triggers/refetch-descriptions",
-  asyncHandler(async (_req, res) => {
-    res.json({ counts: await refetchableCounts(), run: currentDescriptionRefetch() });
-  }),
-);
-
-const refetchSchema = z.object({ user_id: z.string().min(1) });
-// Overwrites the user's descriptions, edits included; the UI handles the confirmation.
-router.post(
-  "/triggers/refetch-descriptions",
-  asyncHandler(async (req, res) => {
-    const body = parseBody(refetchSchema, req.body);
-    const user = await prisma.user.findUnique({ where: { id: body.user_id } });
-    if (!user) throw new HttpError(404, "User not found");
-    const run = startDescriptionRefetch(req.userId!, user);
-    if (!run) throw new HttpError(409, "Descriptions are already being refetched");
-    res.json({ run });
+    res.json({ ok: true, deleted: await deleteUserModels(req.userId!, req.params.id) });
   }),
 );
 

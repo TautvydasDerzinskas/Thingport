@@ -14,6 +14,7 @@ export type AdminUser = {
   can_promote: boolean;
   can_demote: boolean;
   can_delete: boolean;
+  can_delete_models: boolean;
   print_count: number;
   collection_count: number;
   makerworld_connected: boolean;
@@ -61,6 +62,7 @@ export type LogAction =
   | "tool_uninstalled"
   | "tools_access_changed"
   | "user_invited"
+  // Written by runs since removed; older logs still have them.
   | "authors_linked"
   | "descriptions_refetched"
   | "model_uploaded"
@@ -153,37 +155,6 @@ export type StorageListing = {
   files: StorageFile[];
 };
 
-/** Each provider's own, worded under admin's author-linking problems. */
-export type AuthorLookupProblem = `${ProviderId}_${string}`;
-
-export type AuthorLinkingRun = {
-  running: boolean;
-  startedAt: string;
-  finishedAt: string | null;
-  toLookUp: number;
-  lookedUp: number;
-  linked: number;
-  notFound: number;
-  problems: AuthorLookupProblem[];
-};
-
-export type DescriptionRefetchRun = {
-  running: boolean;
-  userId: string;
-  startedAt: string;
-  finishedAt: string | null;
-  total: number;
-  done: number;
-  updated: number;
-  failed: number;
-  problems: AuthorLookupProblem[];
-};
-
-/** `counts`: per user id, how many models have a source to refetch from. */
-export type DescriptionRefetchStatus = { counts: Record<string, number>; run: DescriptionRefetchRun | null };
-
-export type AuthorLinkingStatus = { linkable: number; lookup: number; run: AuthorLinkingRun | null };
-
 /** Any user's batch import, as the admin import queue lists it. */
 export type AdminImportJob = ImportJob & {
   owner: { id: string; display_name: string; email: string };
@@ -270,44 +241,14 @@ export const adminApi = {
     return res.json();
   },
 
-  getAuthorLinking: async (): Promise<AuthorLinkingStatus> => {
-    const res = await fetch(`${apiBase()}/admin/triggers/link-authors`, { headers: authHeaders() });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to check for unlinked authors"));
-    return res.json();
-  },
-
-  startAuthorLinking: async (): Promise<{ run: AuthorLinkingRun }> => {
-    const res = await fetch(`${apiBase()}/admin/triggers/link-authors`, { method: "POST", headers: authHeaders() });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to start linking authors"));
-    return res.json();
-  },
-
-  getDescriptionRefetch: async (): Promise<DescriptionRefetchStatus> => {
-    const res = await fetch(`${apiBase()}/admin/triggers/refetch-descriptions`, { headers: authHeaders() });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to load description refetching"));
-    return res.json();
-  },
-
-  startDescriptionRefetch: async (userId: string): Promise<{ run: DescriptionRefetchRun }> => {
-    const res = await fetch(`${apiBase()}/admin/triggers/refetch-descriptions`, {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ user_id: userId }),
-    });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to start refetching descriptions"));
-    return res.json();
-  },
-
-  deleteAllPrintsForUser: async (userId: string): Promise<{ deleted: number }> => {
-    const res = await fetch(`${apiBase()}/admin/users/${userId}/delete-all-prints`, {
+  /** Every model of theirs and its files; the account stays. */
+  deleteUserModels: async (userId: string): Promise<{ deleted: number }> => {
+    const res = await fetch(`${apiBase()}/admin/users/${encodeURIComponent(userId)}/delete-all-prints`, {
       method: "POST",
       headers: authHeaders(),
     });
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to delete models"));
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to delete the models"));
     return res.json();
   },
 

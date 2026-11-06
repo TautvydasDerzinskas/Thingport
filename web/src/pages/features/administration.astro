@@ -24,8 +24,6 @@ import importQueue from "../../../../frontend/src/assets/screenshots/light/24_ad
 import importQueueDark from "../../../../frontend/src/assets/screenshots/dark/24_admin_queue.png";
 import logs from "../../../../frontend/src/assets/screenshots/light/25_admin_logs.png";
 import logsDark from "../../../../frontend/src/assets/screenshots/dark/25_admin_logs.png";
-import triggers from "../../../../frontend/src/assets/screenshots/light/26_admin_triggers.png";
-import triggersDark from "../../../../frontend/src/assets/screenshots/dark/26_admin_triggers.png";
 import connections from "../../../../frontend/src/assets/screenshots/light/27_admin_connections.png";
 import connectionsDark from "../../../../frontend/src/assets/screenshots/dark/27_admin_connections.png";
 import rendering from "../../../../frontend/src/assets/screenshots/light/28_admin_rendering.png";
@@ -151,7 +149,7 @@ const SECTIONS: FeatureSection[] = [
       "Model and collection counts per person, and whether their MakerWorld account is connected.",
       "Make members admins. Only the instance owner, the first account, can take that back.",
       "See how each person signs in, with a warning for anyone left with no way in.",
-      "Delete an account with all its models, after typing its email to confirm.",
+      "Delete all of someone's models but keep the account, or delete the account with them, after typing its email to confirm.",
       "Turn on social features, so people can share collections and find them on Explore, and chats behind its cog.",
     ],
     image: users,
@@ -204,12 +202,6 @@ const MORE = [
     text: "Ask for a captcha on sign-in, registration, import or account changes. Off everywhere by default.",
     image: captcha,
     dark: captchaDark,
-  },
-  {
-    title: "Triggers",
-    text: "One-off maintenance jobs: link missing authors, refetch descriptions, or clear out a user's models.",
-    image: triggers,
-    dark: triggersDark,
   },
 ];
 ---

@@ -13,7 +13,6 @@ import importsRoutes from "../src/routes/imports";
 import settingsRoutes from "../src/routes/settings";
 import providerCollectionsRoutes from "../src/routes/providerCollections";
 import { identifySourceModel } from "../src/services/importService";
-import { LOOKUP_PROVIDERS } from "../src/services/authorLinkingService";
 import { MANIFESTS, PROVIDER_IDS } from "../src/providers/index.generated";
 import { PROFILE_PROVIDERS } from "../src/providers/registry";
 
@@ -153,29 +152,6 @@ describe("provider-module freeze", () => {
     ]);
   });
 
-  it("pins author lookup provider IDs", () => {
-    expect([...LOOKUP_PROVIDERS]).toEqual([
-      "makerworld",
-      "printables",
-      "thingiverse",
-      "myminifactory",
-      "snapmaker",
-      "makeronline",
-      "crealitycloud",
-      "nexprint",
-      "thangs",
-      "cults3d",
-      "eufymake",
-      "pinshape",
-      "owlcad",
-      "toymakr3d",
-      "makerables",
-      "cgtrader",
-      "grabcad",
-      "meshy",
-    ]);
-  });
-
   it("pins profile provider IDs", () => {
     expect([...PROFILE_PROVIDERS]).toEqual(["makerworld", "snapmaker", "makeronline", "crealitycloud", "nexprint"]);
   });
@@ -220,37 +196,6 @@ describe("provider-module freeze", () => {
     );
     expect(readFileSync(new URL("../src/services/authorService.ts", import.meta.url), "utf8")).toContain(
       '"PROVIDER_ALREADY_LINKED"',
-    );
-  });
-
-  it("pins provider-specific author lookup problem codes sent in job results", () => {
-    // Each provider's own, in its details (providers/<id>/index.ts, MakerWorld's details.ts).
-    const codes = PROVIDER_IDS.flatMap((id) =>
-      [`../src/providers/${id}/index.ts`, `../src/providers/${id}/details.ts`].flatMap((file) => {
-        let text: string;
-        try {
-          text = readFileSync(new URL(file, import.meta.url), "utf8");
-        } catch {
-          return [];
-        }
-        const details = text.match(/Details: ProviderDetails = \{([\s\S]*?)\n\};/)?.[1] ?? "";
-        return [...details.matchAll(new RegExp(`"(${id}_[a-z_]+)"`, "g"))].map((part) => part[1]);
-      }),
-    );
-    expect([...new Set(codes)].toSorted()).toEqual(
-      [
-        "thingiverse_no_token",
-        "thingiverse_token_rejected",
-        "thingiverse_rate_limited",
-        "myminifactory_no_key",
-        "myminifactory_key_rejected",
-        "myminifactory_rate_limited",
-        "makerworld_captcha",
-        "makerworld_login_rejected",
-        "cults3d_no_key",
-        "cults3d_key_rejected",
-        "cults3d_rate_limited",
-      ].toSorted(),
     );
   });
 

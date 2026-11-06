@@ -3,8 +3,6 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { setProviderEnabled } from "../src/services/providerSettingsService";
-import { runAuthorLinking, type AuthorLinkingRun } from "../src/services/authorLinkingService";
-import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 
 const app = createApp();
 let admin: string;
@@ -246,30 +244,6 @@ describe("turning providers off", () => {
     expect(res.status).toBeLessThan(300);
     expect(await prisma.collectionSync.findUnique({ where: { collectionId: collection.id } })).toBeNull();
     await setProviderEnabled("printables", true);
-  });
-
-  it("doesn't report a turned-off provider's missing token as a problem when linking authors", async () => {
-    const previous = await getThingiverseAccessToken();
-    await setThingiverseAccessToken(null);
-    // All off, so the run has nothing to look up online in a shared database; afterAll turns them back on.
-    for (const provider of ["makerworld", "printables", "thingiverse"] as const)
-      await setProviderEnabled(provider, false);
-    try {
-      const run: AuthorLinkingRun = {
-        running: true,
-        startedAt: new Date().toISOString(),
-        finishedAt: null,
-        toLookUp: 0,
-        lookedUp: 0,
-        linked: 0,
-        notFound: 0,
-        problems: [],
-      };
-      await runAuthorLinking(run);
-      expect(run.problems).not.toContain("thingiverse_no_token");
-    } finally {
-      await setThingiverseAccessToken(previous);
-    }
   });
 
   it("won't list a provider's collections to sync with while it's off", async () => {
