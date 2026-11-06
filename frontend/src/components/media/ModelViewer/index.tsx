@@ -56,9 +56,9 @@ type ModelViewerProps = {
   selectedPlateId?: number | null;
   /** Server pre-rendered GLB, tried before parsing a 3MF client-side. */
   previewGlbUrl?: string | null;
-  /** Fired once a 3MF's internal plates are known. `getThumbnail` reuses the fetched bytes. */
   /** The file loaded but holds no geometry (a sliced `.gcode.3mf`). Without it the viewer shows its "unsupported" overlay. */
   onNoGeometry?: () => void;
+  /** Fired once a 3MF's internal plates are known. `getThumbnail` reuses the fetched bytes. */
   onPlatesDetected?: (plates: PlateSummary[], getThumbnail: (index: number) => Promise<string | null>) => void;
   renderStyle?: RenderStyle;
   showBuildPlate?: boolean;

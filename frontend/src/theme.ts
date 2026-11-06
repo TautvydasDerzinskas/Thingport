@@ -34,7 +34,8 @@ declare module "@mui/material/styles" {
       selectedNavBackground: string;
       selectedNavText: string;
       /** The accent as text (tabs, links): the accent itself, shifted just far enough to reach 4.5:1 on the panel.
-       *  Fills and buttons keep `palette.primary.main`. */
+       *  Filled buttons keep `palette.primary.main`;
+       *  text and outlined primary buttons use this. */
       accentText: string;
       /** White in dark mode, text.primary in light. */
       headingText: string;

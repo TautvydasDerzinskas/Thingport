@@ -78,10 +78,6 @@ export function hasProfileBadges(profile: PlateProfile): boolean {
 }
 
 /**
- * A 3MF's slicer profile as small icon + value pairs: printer, nozzle, layer height, material, plates,
- * print time, weight. Whatever the file doesn't say is left out; renders nothing when there's nothing to show.
- */
-/**
  * One badge. When its value is cut off by an ellipsis it takes a tab stop, so a keyboard user can focus it and get
  * the tooltip with the full value (hover alone would leave them without it); a badge that fits stays out of the tab
  * order. Enter and Space stop here, so the row around it isn't picked by accident.
@@ -111,7 +107,13 @@ function Badge({ item: i }: { item: Item }) {
         // The MUI tooltip is the hover text; without this an ancestor's title (the file name) shows too.
         title=""
         tabIndex={cut ? 0 : undefined}
-        onKeyDown={cut ? (e) => e.stopPropagation() : undefined}
+        onKeyDown={
+          cut
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") e.stopPropagation();
+              }
+            : undefined
+        }
         data-item={i.key}
         sx={{
           display: "inline-flex",
@@ -133,6 +135,10 @@ function Badge({ item: i }: { item: Item }) {
   );
 }
 
+/**
+ * A 3MF's slicer profile as small icon + value pairs: printer, nozzle, layer height, material, plates,
+ * print time, weight. Whatever the file doesn't say is left out; renders nothing when there's nothing to show.
+ */
 export default function ProfileBadges({ profile }: { profile: PlateProfile }) {
   const { t, i18n } = useTranslation(["models"]);
   const locale = i18n.resolvedLanguage ?? i18n.language;
