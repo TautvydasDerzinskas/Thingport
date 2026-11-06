@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import { normalizeTargetFor } from "../shared/slicers";
-import { markAsBambuProject, normalize3mf } from "./threeMfNormalizer";
+import { markAsBambuProject, normalize3mf, recenterOnOrcaBed } from "./threeMfNormalizer";
 
 const NS =
   'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" requiredextensions="p"';
@@ -47,6 +47,7 @@ const SETTINGS = {
   printer_model: "Bambu Lab X1C",
   machine_start_gcode: "G28",
   printable_height: "250",
+  nozzle_diameter: ["0.4", "0.4"],
   print_settings_id: "0.20mm Standard @BBL X1C",
   printer_settings_id: "Bambu Lab X1C 0.4 nozzle",
   filament_settings_id: ["Bambu PLA Basic @BBL X1C"],
@@ -66,6 +67,14 @@ async function read(bytes: Uint8Array, name: string): Promise<string> {
   return (await (await JSZip.loadAsync(bytes)).file(name)!.async("string")) as string;
 }
 
+const item = (id: number, x: number, y: number) =>
+  `<item objectid="${id}" transform="1 0 0 0 1 0 0 0 1 ${x} ${y} 5" printable="1"/>`;
+const plate = (id: number, objectId: number) => ({
+  id: String(id),
+  name: "",
+  instances: [{ objectId: String(objectId), instanceId: 0, identifyId: "" }],
+});
+
 describe("normalize3mf for an Orca fork", () => {
   it("keeps the production layout and painting, and drops only G-code and the printer profile", async () => {
     const { bytes } = await normalize3mf(await bambuZip(), "orca");
@@ -84,6 +93,21 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.printer_settings_id).toBe("");
     expect(project.filament_settings_id).toEqual([""]);
     expect(project.printable_height).toBe("250");
+    // One nozzle per designer extruder would show Snapmaker Orca a dual-nozzle printer.
+    expect(project.nozzle_diameter).toBeUndefined();
+  });
+
+  it("moves each plate's items from the designer's bed to the middle of a 270 mm bed", () => {
+    const bed = { width: 330, depth: 320, centerX: 165, centerY: 160 };
+    const xml = `<model><build>${item(1, 165, 160)}${item(2, 561, 160)}${item(3, 165, -224)}${item(9, 7, 7)}</build></model>`;
+    const moved = recenterOnOrcaBed(xml, [plate(1, 1), plate(2, 2), plate(3, 3)], bed)!;
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 135 135 5"');
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 459 135 5"');
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 135 -189 5"');
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 7 7 5"');
+    expect(recenterOnOrcaBed(xml, [plate(1, 1)], null)).toBeNull();
+    expect(recenterOnOrcaBed(xml, [], bed)).toBeNull();
+    expect(recenterOnOrcaBed(xml, [plate(1, 1)], { width: 270, depth: 270, centerX: 135, centerY: 135 })).toBeNull();
   });
 
   it("flat (the default) still flattens the production layout", async () => {

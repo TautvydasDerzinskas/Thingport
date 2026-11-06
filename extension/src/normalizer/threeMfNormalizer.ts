@@ -1285,7 +1285,79 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   if (Array.isArray(filaments)) cleaned.filament_settings_id = filaments.map(() => "");
   else if ("filament_settings_id" in original) cleaned.filament_settings_id = "";
   if ("printable_height" in original) cleaned.printable_height = original.printable_height;
+  // One value per designer extruder (the H2C has two) would give Snapmaker Orca a dual-nozzle printer.
+  delete cleaned.nozzle_diameter;
   return cleaned;
+}
+
+// The designer's objects sit at coordinates for the designer's bed (a MakerWorld printer such as the H2C, 330 x 320 mm),
+// so on a smaller bed they land beside the plate. Orca lays plates out in a grid, each one a bed wide plus this gap.
+const ORCA_PLATE_GAP = 0.2;
+// Snapmaker's U1, the printer these copies are for; its other models are close enough to need the same re-centring.
+const ORCA_FORK_BED_MM = 270;
+
+type Bed = { width: number; depth: number; centerX: number; centerY: number };
+
+function bedFromPrintableArea(area: unknown): Bed | null {
+  if (!Array.isArray(area)) return null;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const point of area) {
+    const [x, y] = String(point).split("x").map(Number);
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      xs.push(x);
+      ys.push(y);
+    }
+  }
+  if (xs.length < 2) return null;
+  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  if (maxX <= minX || maxY <= minY) return null;
+  return { width: maxX - minX, depth: maxY - minY, centerX: (minX + maxX) / 2, centerY: (minY + maxY) / 2 };
+}
+
+// Orca's own column count for a grid of plates: the square root, rounded up when the rounding went down.
+function plateColumns(count: number): number {
+  const root = Math.sqrt(count);
+  return root > Math.round(root) ? Math.round(root) + 1 : Math.round(root);
+}
+
+/**
+ * The model's XML with every item that stands on a plate moved from the designer's bed to the middle of the same
+ * plate on a square bed of `ORCA_FORK_BED_MM`, or null when nothing needs to move. Items on no plate stay put.
+ */
+export function recenterOnOrcaBed(modelXml: string, plates: PlateSettings[], designerBed: Bed | null): string | null {
+  if (!designerBed || plates.length === 0) return null;
+  const target = ORCA_FORK_BED_MM;
+  const columns = plateColumns(plates.length);
+  const plateOf = new Map<string, number>();
+  plates.forEach((plate, index) => {
+    for (const inst of plate.instances) plateOf.set(`${inst.objectId}:${inst.instanceId}`, index);
+  });
+  const seen: Record<string, number> = {};
+  let moved = false;
+  const out = modelXml.replace(/<item\b([^>]*?)(\/?)>/gi, (whole, attrStr: string, close: string) => {
+    const attrs = parseAttrs(attrStr);
+    if (!attrs.objectid) return whole;
+    const instance = seen[attrs.objectid] ?? 0;
+    seen[attrs.objectid] = instance + 1;
+    const plate = plateOf.get(`${attrs.objectid}:${instance}`);
+    if (plate === undefined) return whole;
+    const column = plate % columns;
+    const row = Math.floor(plate / columns);
+    const dx = column * (1 + ORCA_PLATE_GAP) * (target - designerBed.width) + (target / 2 - designerBed.centerX);
+    const dy = -row * (1 + ORCA_PLATE_GAP) * (target - designerBed.depth) + (target / 2 - designerBed.centerY);
+    if (dx === 0 && dy === 0) return whole;
+    moved = true;
+    const m = parseTransform(attrs.transform);
+    m[9] += dx;
+    m[10] += dy;
+    const transform = `transform="${formatTransform(m)}"`;
+    const rest = /\btransform\s*=\s*"[^"]*"/i.test(attrStr)
+      ? attrStr.replace(/\btransform\s*=\s*"[^"]*"/i, transform)
+      : `${attrStr} ${transform}`;
+    return `<item${rest}${close}>`;
+  });
+  return moved ? out : null;
 }
 
 async function buildOrcaZip(input: Uint8Array): Promise<{ out: JSZip; report: () => NormalizeReport }> {
@@ -1293,6 +1365,14 @@ async function buildOrcaZip(input: Uint8Array): Promise<{ out: JSZip; report: ()
   const filesByKey = indexZipFiles(zip);
   const rootRec = filesByKey["3d/3dmodel.model"];
   if (!rootRec) throw new Error(NO_MODEL);
+
+  let originalSettings: Settings | null = null;
+  try {
+    const settingsRec = filesByKey["metadata/project_settings.config"];
+    if (settingsRec) originalSettings = JSON.parse(await settingsRec.entry.async("string"));
+  } catch {}
+  const modelSettingsRec = filesByKey["metadata/model_settings.config"];
+  const plates = modelSettingsRec ? parsePlates(await modelSettingsRec.entry.async("string")) : [];
 
   const out = new JSZip();
   let cleanedKeys: string[] = [];
@@ -1302,8 +1382,8 @@ async function buildOrcaZip(input: Uint8Array): Promise<{ out: JSZip; report: ()
     if (key === "metadata/project_settings.config") {
       let cleaned: Settings | null = null;
       try {
-        const original = JSON.parse(await rec.entry.async("string"));
-        cleaned = restoreKeysOrcaNeeds(normalizeProjectSettings(original), original);
+        if (originalSettings)
+          cleaned = restoreKeysOrcaNeeds(normalizeProjectSettings(originalSettings), originalSettings);
       } catch {}
       if (!cleaned) {
         out.file(rec.relativePath, await rec.entry.async("uint8array"));
@@ -1314,8 +1394,10 @@ async function buildOrcaZip(input: Uint8Array): Promise<{ out: JSZip; report: ()
       continue;
     }
     if (key === "3d/3dmodel.model") {
-      const marked = markAsBambuProject(await rec.entry.async("string"));
-      out.file(rec.relativePath, marked ?? (await rec.entry.async("uint8array")));
+      let xml = await rec.entry.async("string");
+      xml = markAsBambuProject(xml) ?? xml;
+      xml = recenterOnOrcaBed(xml, plates, bedFromPrintableArea(originalSettings?.printable_area)) ?? xml;
+      out.file(rec.relativePath, xml);
       continue;
     }
     out.file(rec.relativePath, await rec.entry.async("uint8array"));
