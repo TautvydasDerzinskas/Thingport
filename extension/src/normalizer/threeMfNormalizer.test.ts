@@ -43,6 +43,7 @@ const MESH = `<?xml version="1.0" encoding="UTF-8"?>
 
 const SETTINGS = {
   wall_loops: "3",
+  layer_height: "0.15",
   filament_colour: ["#FFFFFF"],
   printer_model: "Bambu Lab X1C",
   machine_start_gcode: "G28",
@@ -89,7 +90,7 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.printer_model).toBeUndefined();
     expect(project.machine_start_gcode).toBeUndefined();
     // Snapmaker Orca crashes without these keys: kept, but naming no preset of the designer's printer.
-    expect(project.print_settings_id).toBe("0.20mm Standard @Snapmaker U1 (0.4 nozzle)");
+    expect(project.print_settings_id).toBe("0.16mm Standard @Snapmaker U1 (0.4 nozzle)");
     expect(project.printer_settings_id).toBe("Snapmaker U1 (0.4 nozzle)");
     expect(project.filament_settings_id).toEqual(["Snapmaker PLA Basic @U1"]);
     expect(project.printable_height).toBe("270");
