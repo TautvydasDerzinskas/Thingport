@@ -68,18 +68,20 @@ const scrollListSx = { overflowY: "auto", minHeight: 0, maxHeight: 240 } as cons
 
 type Props = {
   print: Print;
+  /** The plate shown first; the first plate when it's missing or isn't one of the model's. */
+  initialPlateId?: string | null;
   onClose: () => void;
 };
 
 /** The plate list is always shown, even for one plate, so the layout doesn't jump. */
-export default function Model3DPreviewModal({ print, onClose }: Props) {
+export default function Model3DPreviewModal({ print, initialPlateId, onClose }: Props) {
   const { t, i18n } = useTranslation(["models", "library", "common"]);
   const locale = i18n.resolvedLanguage ?? i18n.language;
   const muiTheme = useTheme();
   const themeMode = muiTheme.palette.mode;
   const previewBg = themeMode === "dark" ? muiTheme.thingport.pageBackground : LIGHT_PREVIEW_BG;
   const sortedPlates = useMemo(() => print.plates.toSorted((a, b) => a.position - b.position), [print.plates]);
-  const [activePlateId, setActivePlateId] = useState<string | null>(sortedPlates[0]?.id ?? null);
+  const [activePlateId, setActivePlateId] = useState<string | null>(initialPlateId ?? sortedPlates[0]?.id ?? null);
   const activePlate = sortedPlates.find((p) => p.id === activePlateId) || sortedPlates[0];
   const ext = activePlate ? extOf(activePlate.filename) : "";
   const is3d = Boolean(activePlate) && MODEL_EXTS.has(ext);

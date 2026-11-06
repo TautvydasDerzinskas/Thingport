@@ -33,7 +33,8 @@ import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { importProviderInfo } from "../../constants/importProviders";
 import { useDownloadPrint } from "./useDownloadPrint";
-import { defaultFile, useOpenInSlicer } from "./useOpenInSlicer";
+import { type ModelFile, useOpenInSlicer } from "./useOpenInSlicer";
+import { selectedModelFile } from "./mainPreview";
 import { useOpenInStudio } from "./useOpenInStudio";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
@@ -84,6 +85,9 @@ type Props = {
   onUpdated?: (print: Print) => void;
   /** Shown as the author of a direct upload, which has none. */
   viewer?: AuthUser | null;
+  /** The file picked in the file list (a `ModelFile` key), held by the page so its large preview can follow it. */
+  selectedFileKey: string | null;
+  onSelectFile: (file: ModelFile) => void;
 };
 
 /** The detail page's sticky summary card. */
@@ -95,6 +99,8 @@ export default function ModelSidePanel({
   onUnauthorized,
   onUpdated,
   viewer,
+  selectedFileKey,
+  onSelectFile,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
@@ -108,8 +114,7 @@ export default function ModelSidePanel({
 
   const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor } = useOpenInSlicer(print);
   // Every action below applies to this file; the source's default (else the first) until one is picked.
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const selectedFile = files.find((file) => file.key === selectedKey) ?? defaultFile(files);
+  const selectedFile = selectedModelFile(files, selectedFileKey);
   const normalizedTarget = normalizedTargetFor(selectedFile);
 
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
@@ -458,9 +463,7 @@ export default function ModelSidePanel({
           </Stack>
         )}
 
-        {selectedFile && (
-          <ModelFileList files={files} selected={selectedFile} onSelect={(file) => setSelectedKey(file.key)} />
-        )}
+        {selectedFile && <ModelFileList files={files} selected={selectedFile} onSelect={onSelectFile} />}
         {selectedFile && (
           <OpenInSlicerButton
             file={selectedFile}

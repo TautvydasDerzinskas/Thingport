@@ -30,6 +30,8 @@ import Model3DPreviewModal from "./Model3DPreviewModal";
 import ModelActionsMenu from "./ModelActionsMenu";
 import FavoriteButton from "./FavoriteButton";
 import ModelSidePanel, { type CollectionCount } from "./ModelSidePanel";
+import { modelFiles } from "./useOpenInSlicer";
+import { mainPreviewPlates } from "./mainPreview";
 import MarkdownDescription from "../../components/MarkdownDescription";
 import AiDescriptionReview, { AiDescriptionChip } from "./AiDescriptionReview";
 import Skeleton from "@mui/material/Skeleton";
@@ -44,6 +46,48 @@ type Props = {
   viewer?: AuthUser | null;
 };
 
+/** A picture fitted into the large preview, with its own blurred copy filling the bars around it. */
+function FitPicture({ src, alt }: { src: string; alt: string }) {
+  return (
+    <>
+      {/* A blurred, edge-to-edge crop of the same image behind the sharp contained one --
+          the common "photo viewer" backdrop that fills the letterboxed bars around any
+          image whose aspect ratio doesn't match this box's 16:10, instead of showing flat
+          background color. scale(1.15) pushes the blur's own soft edge outside the box
+          so no unblurred fringe peeks in. */}
+      <Box
+        component="img"
+        src={src}
+        alt=""
+        aria-hidden="true"
+        sx={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          maxWidth: "100%",
+          objectFit: "cover",
+          filter: "blur(30px)",
+          transform: "scale(1.15)",
+        }}
+      />
+      <Box
+        component="img"
+        src={src}
+        alt={alt}
+        sx={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          maxWidth: "100%",
+          objectFit: "contain",
+        }}
+      />
+    </>
+  );
+}
+
 export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorized, viewer }: Props) {
   const { printId } = useParams<{ printId: string }>();
   const navigate = useNavigate();
@@ -56,6 +100,9 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const [renderUnavailable, setRenderUnavailable] = useState(false);
   const onRenderUnavailable = useCallback(() => setRenderUnavailable(true), []);
   const [previewOpen, setPreviewOpen] = useState(false);
+  // The file picked in the side panel's file list, and whether the large preview is showing it.
+  const [selectedFileKey, setSelectedFileKey] = useState<string | null>(null);
+  const [showFile, setShowFile] = useState(false);
   const { quality, outcome } = useQualityCheck(printId ?? "", onUnauthorized);
   // The header's menu stays across models, so an answer for the one before (a copy finishing, say) can arrive here
   // after another has opened: it's dropped rather than shown as this one.
@@ -99,6 +146,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
         setPrint(data);
         setActiveImageIndex(0);
         setRenderUnavailable(false);
+        setSelectedFileKey(null);
+        setShowFile(false);
       } catch (err) {
         if (cancelled) return;
         if (err instanceof UnauthorizedError) {
@@ -190,7 +239,12 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const hasImages = images.length > 0;
   const activeImage = images[activeImageIndex] || images[0];
   const firstPlate = print.plates[0];
-  const canPreview3d = Boolean(firstPlate) && MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
+  const { selectedPlate, plate3d } = mainPreviewPlates(print, modelFiles(print), selectedFileKey);
+  // A file picked in the side panel's list is shown large, until the arrows or a thumbnail go back to the
+  // pictures. Without pictures or a render the preview shows that file (else the default) anyway.
+  const showingFile = showFile && selectedPlate !== null && (hasImages || showRender);
+  const previewPlate = selectedPlate ?? firstPlate;
+  const canPreview3d = plate3d !== null;
   // With no preview image yet, show the live 3D view and generate a snapshot in the background.
   // The server's render doesn't need one: it saves its own picture.
   // Only for the owner, whose picture it saves.
@@ -201,8 +255,12 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     Boolean(firstPlate) &&
     MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
 
-  const goPrevImage = () => setActiveImageIndex((i) => (i - 1 + images.length) % images.length);
-  const goNextImage = () => setActiveImageIndex((i) => (i + 1) % images.length);
+  // From the picked file, either arrow goes back to the picture shown before it.
+  const goPrevImage = () =>
+    showingFile ? setShowFile(false) : setActiveImageIndex((i) => (i - 1 + images.length) % images.length);
+  const goNextImage = () => (showingFile ? setShowFile(false) : setActiveImageIndex((i) => (i + 1) % images.length));
+  const showArrows = images.length > 1 || showingFile;
+  const showStrip = images.length > 1 || (showingFile && hasImages);
 
   return (
     <Box sx={{ maxWidth: "1390px", mx: "auto" }}>
@@ -229,43 +287,15 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               bgcolor: "background.paper",
             }}
           >
-            {hasImages ? (
-              <>
-                {/* A blurred, edge-to-edge crop of the same image behind the sharp contained one --
-                    the common "photo viewer" backdrop that fills the letterboxed bars around any
-                    image whose aspect ratio doesn't match this box's 16:10, instead of showing flat
-                    background color. scale(1.15) pushes the blur's own soft edge outside the box
-                    so no unblurred fringe peeks in. */}
-                <Box
-                  component="img"
-                  src={printsApi.fileUrl(activeImage.url)}
-                  alt=""
-                  aria-hidden="true"
-                  sx={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    maxWidth: "100%",
-                    objectFit: "cover",
-                    filter: "blur(30px)",
-                    transform: "scale(1.15)",
-                  }}
-                />
-                <Box
-                  component="img"
-                  src={printsApi.fileUrl(activeImage.url)}
-                  alt={print.title || print.name}
-                  sx={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    maxWidth: "100%",
-                    objectFit: "contain",
-                  }}
-                />
-              </>
+            {showingFile && selectedPlate ? (
+              // The file's own picture (a 3MF's plate image, or our render of it), else the live view of the file.
+              selectedPlate.thumb_url ? (
+                <FitPicture src={printsApi.fileUrl(selectedPlate.thumb_url)} alt={selectedPlate.filename} />
+              ) : (
+                renderPreviewContent(print, "modal", theme, t, "automatic", selectedPlate)
+              )
+            ) : hasImages ? (
+              <FitPicture src={printsApi.fileUrl(activeImage.url)} alt={print.title || print.name} />
             ) : showRender ? (
               <ModelRender
                 key={print.id}
@@ -274,10 +304,10 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                 onUnavailable={onRenderUnavailable}
               />
             ) : (
-              firstPlate && renderPreviewContent(print, "modal", theme, t, "automatic", firstPlate)
+              previewPlate && renderPreviewContent(print, "modal", theme, t, "automatic", previewPlate)
             )}
 
-            {images.length > 1 && (
+            {showArrows && (
               <>
                 <IconButton
                   onClick={goPrevImage}
@@ -343,19 +373,22 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
             sx={{ position: "absolute", top: 12, left: 12, zIndex: 1 }}
           />
 
-          {images.length > 1 && (
+          {showStrip && (
             <Stack direction="row" spacing={1} sx={{ mt: 1.5, overflowX: "auto", pb: 0.5 }}>
               {images.map((image, idx) => (
                 <ButtonBase
                   key={image.id}
-                  onClick={() => setActiveImageIndex(idx)}
+                  onClick={() => {
+                    setActiveImageIndex(idx);
+                    setShowFile(false);
+                  }}
                   sx={{
                     width: 84,
                     height: 64,
                     borderRadius: 1.5,
                     overflow: "hidden",
                     border: "2px solid",
-                    borderColor: idx === activeImageIndex ? "primary.main" : "divider",
+                    borderColor: !showingFile && idx === activeImageIndex ? "primary.main" : "divider",
                     flexShrink: 0,
                   }}
                 >
@@ -464,11 +497,18 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
             onUnauthorized={onUnauthorized}
             onUpdated={updatePrint}
             viewer={viewer}
+            selectedFileKey={selectedFileKey}
+            onSelectFile={(file) => {
+              setSelectedFileKey(file.key);
+              setShowFile(true);
+            }}
           />
         </Box>
       </Box>
 
-      {previewOpen && <Model3DPreviewModal print={print} onClose={() => setPreviewOpen(false)} />}
+      {previewOpen && (
+        <Model3DPreviewModal print={print} initialPlateId={plate3d?.id} onClose={() => setPreviewOpen(false)} />
+      )}
     </Box>
   );
 }
