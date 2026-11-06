@@ -5907,7 +5907,25 @@
           "not_available": "Cette instance ne se connecte pas à la sienne.",
           "exists": "Vous avez déjà demandé à joindre cette personne.",
           "request_limit": "Attendez d'abord que votre administrateur réponde à vos demandes."
-        }
+        },
+        "on": "Sur {{name}}",
+        "from": "De {{name}}",
+        "fileCount_one": "{{count}} fichier",
+        "fileCount_many": "{{count}} fichiers",
+        "fileCount_other": "{{count}} fichiers",
+        "copyHandle": "Copier son adresse",
+        "more": "Afficher plus",
+        "gone": "Ce n'est plus partagé, ou l'instance où c'est n'est plus connectée.",
+        "noPictures": "Aucune image",
+        "picture": "Image {{number}}",
+        "files": "Fichiers",
+        "inCollections": "Dans les collections",
+        "comingNext": "Le télécharger, l'ouvrir dans un trancheur et le copier dans votre bibliothèque arrivent dans la prochaine mise à jour."
+      },
+      "scope": {
+        "label": "Afficher",
+        "all": "Partout",
+        "here": "Cette instance"
       }
     }
   },

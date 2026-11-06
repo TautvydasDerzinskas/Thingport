@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { originOf } from "./addresses";
 import { canonicalHeaders, edgeFilter, keyIdOf } from "./edge";
 import { instanceFingerprint } from "./keys";
+import { collectionsOf, directory, modelsPage, sendMedia, signingPartner } from "./publish";
 import { getRuntime } from "./runtime";
 import { isFederationLive } from "./settings";
 
@@ -26,9 +27,10 @@ router.use(
     }
     const known = { status: { in: KNOWN } };
     let waiting = false;
-    if (req.method === "POST") {
-      const origin = originOf(keyIdOf(req.headers) ?? "");
-      if (origin) waiting = Boolean(await prisma.peer.findFirst({ where: { origin, ...known }, select: { id: true } }));
+    const signedBy = originOf(keyIdOf(req.headers) ?? "");
+    if (signedBy) {
+      // A partner sending, or reading what this instance shares.
+      waiting = Boolean(await prisma.peer.findFirst({ where: { origin: signedBy, ...known }, select: { id: true } }));
     } else if (req.method === "GET" && FOLLOW_PATH.test(req.path)) {
       // An instance we asked, checking we still want what we asked for before its admin approves.
       const id = FOLLOW_PATH.exec(req.path)![1];
@@ -84,6 +86,45 @@ router.get(
       actor: runtime.actorUrl.href,
       object: peer.actorUrl,
     });
+  }),
+);
+
+// What this instance's people share, for partners only: see publish.ts.
+const partnerOnly = asyncHandler(async (req, res, next) => {
+  if (await signingPartner(req)) next();
+  else res.status(401).json({ error: "Not a connected instance" });
+});
+const activityJson = (res: Response, body: unknown) => res.type("application/activity+json").send(JSON.stringify(body));
+
+router.get(
+  "/directory",
+  partnerOnly,
+  asyncHandler(async (_req, res) => {
+    activityJson(res, await directory());
+  }),
+);
+router.get(
+  "/actors/:id/models",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    const page = Number(req.query.page ?? 0);
+    const body = Number.isInteger(page) && page >= 0 && page < 1000 ? await modelsPage(req.params.id, page) : null;
+    if (body) activityJson(res, body);
+    else res.status(404).json({ error: "Not found" });
+  }),
+);
+router.get(
+  "/actors/:id/collections",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    activityJson(res, await collectionsOf(req.params.id));
+  }),
+);
+router.get(
+  "/media/:kind/:id",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    await sendMedia(res, req.params.kind, req.params.id);
   }),
 );
 

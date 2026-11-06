@@ -58,6 +58,66 @@ async function sharedPrintWhere(): Promise<Prisma.PrintWhereInput> {
   return { OR: [IN_PUBLIC_COLLECTION, ...(await publicDesigns())] };
 }
 
+/** Everyone who shares, with when they last did -- filed something in a public collection, made one public or
+ *  renamed it, or added one of their own models once those are public -- the latest first. What partner instances
+ *  are told this instance's people share (federation/publish.ts). */
+export async function sharers(): Promise<{ userId: string; at: Date }[]> {
+  const [fromCollections, designers] = await Promise.all([
+    prisma.$queryRaw<{ userId: string; at: Date }[]>`
+      SELECT c."userId", MAX(GREATEST(c."updatedAt", COALESCE(i."createdAt", c."updatedAt"))) AS at
+      FROM "Collection" c
+      LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
+      WHERE c."isPublic"
+      GROUP BY c."userId"`,
+    publicDesigners(),
+  ]);
+  const last = new Map<string, number>();
+  const seen = (userId: string, at: number) => last.set(userId, Math.max(last.get(userId) ?? 0, at));
+  for (const row of fromCollections) seen(row.userId, row.at.getTime());
+  const designs = designers.length
+    ? await prisma.print.groupBy({
+        by: ["userId"],
+        where: { OR: designers.map((d) => d.where) },
+        _max: { createdAt: true },
+      })
+    : [];
+  const since = new Map(designers.map((designer) => [designer.userId, designer.since]));
+  for (const row of designs) seen(row.userId, Math.max(row._max.createdAt?.getTime() ?? 0, since.get(row.userId) ?? 0));
+  return [...last.entries()]
+    .toSorted((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([userId, at]) => ({ userId, at: new Date(at) }));
+}
+
+/** What one user shares of their own models, as everyone else here sees it: those in their public collections, and
+ *  their own designs once they made those public. */
+export async function sharedModelsWhere(userId: string): Promise<Prisma.PrintWhereInput> {
+  return { userId, AND: [await sharedPrintWhere()] };
+}
+
+/** When each model was shared: filed in a public collection, or for a public designer's own, added or made public,
+ *  whichever was later. */
+export async function sharedAtOf(
+  prints: { id: string; userId: string; createdAt: Date }[],
+): Promise<Map<string, Date>> {
+  if (!prints.length) return new Map();
+  const [filed, designers] = await Promise.all([
+    prisma.collectionItem.groupBy({
+      by: ["printId"],
+      where: { printId: { in: prints.map((print) => print.id) }, collection: { isPublic: true } },
+      _max: { createdAt: true },
+    }),
+    publicDesigners(),
+  ]);
+  const since = new Map(designers.map((designer) => [designer.userId, designer.since]));
+  const at = new Map(filed.map((row) => [row.printId, row._max.createdAt?.getTime() ?? 0]));
+  return new Map(
+    prints.map((print) => {
+      const own = since.has(print.userId) ? Math.max(print.createdAt.getTime(), since.get(print.userId) ?? 0) : 0;
+      return [print.id, new Date(Math.max(at.get(print.id) ?? 0, own) || print.createdAt.getTime())];
+    }),
+  );
+}
+
 /** Whether Explore and Chats are offered: social features are on (and chats with them), and there's someone else on the
  *  instance to explore or talk to. */
 export type SocialStatusOut = {
@@ -285,6 +345,17 @@ export type ExploreOut = {
   recent_collections: CollectionOut[];
   /** Other users' shared models the instance's users copied most, with how many did. */
   most_collected: { model: PrintOut; copies: number }[];
+  /** When each person, model and collection above was last shared, by id: what puts partners' beside them in order. */
+  shared_at: { people: Record<string, string>; models: Record<string, string>; collections: Record<string, string> };
+};
+
+/** Nothing of this instance's own: Explore narrowed to one partner. */
+export const EMPTY_EXPLORE: ExploreOut = {
+  people: [],
+  recent_models: [],
+  recent_collections: [],
+  most_collected: [],
+  shared_at: { people: {}, models: {}, collections: {} },
 };
 
 const PEOPLE = 48;
@@ -304,8 +375,8 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
   // Ranked in the database, as it takes the latest of each collection's items.
   const [recentCollectionIds, collectionSharers, designSharers, recentItems, recentDesigns, collected] =
     await Promise.all([
-      prisma.$queryRaw<{ id: string }[]>`
-        SELECT c.id FROM "Collection" c
+      prisma.$queryRaw<{ id: string; at: Date }[]>`
+        SELECT c.id, GREATEST(c."updatedAt", COALESCE(MAX(i."createdAt"), c."updatedAt")) AS at FROM "Collection" c
         LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
         WHERE c."isPublic" AND c."userId" <> ${viewerId}
         GROUP BY c.id
@@ -361,7 +432,7 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
   for (const row of designSharers) {
     shared(row.userId, Math.max(row._max.createdAt?.getTime() ?? 0, sinceOf.get(row.userId) ?? 0));
   }
-  const sharers = [...sharedLast.entries()]
+  const sharerIds = [...sharedLast.entries()]
     .toSorted((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, PEOPLE)
     .map(([userId]) => userId);
@@ -378,7 +449,7 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
     .map(([id]) => id);
 
   const [peopleOut, recentModels, recentCollectionOuts, collectedModels] = await Promise.all([
-    people(sharers),
+    people(sharerIds),
     readablePrintOuts(viewerId, recentIds),
     collectionOutsFor(viewerId, byChange),
     readablePrintOuts(
@@ -393,6 +464,11 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
     recent_models: recentModels,
     recent_collections: recentCollectionOuts,
     most_collected: collectedModels.map((model) => ({ model, copies: copiesOf.get(model.id) ?? 0 })),
+    shared_at: {
+      people: Object.fromEntries(sharerIds.map((id) => [id, new Date(sharedLast.get(id) ?? 0).toISOString()])),
+      models: Object.fromEntries(recentIds.map((id) => [id, new Date(latest.get(id) ?? 0).toISOString()])),
+      collections: Object.fromEntries(recentCollectionIds.map((row) => [row.id, row.at.toISOString()])),
+    },
   };
 }
 

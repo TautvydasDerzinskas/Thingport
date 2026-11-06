@@ -69,6 +69,11 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/explore",
       "/explore/user/:id",
       "/explore/user/:id/models",
+      "/explore/elsewhere/person/:id",
+      "/explore/elsewhere/person/:id/models",
+      "/explore/elsewhere/model/:id",
+      "/explore/elsewhere/collection/:id",
+      "/explore/elsewhere/media/:token",
     ],
   },
   {

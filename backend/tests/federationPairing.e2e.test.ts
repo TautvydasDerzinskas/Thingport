@@ -206,4 +206,50 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     );
     expect(JSON.stringify((await call(sam, "GET", "/notifications")).body)).toContain("Connected with");
   }, 120_000);
+
+  it("shows what a partner's people share on Explore, and forgets it on disconnecting", async () => {
+    // Rūta on B shares a collection with a model in it; A and B are partners from the test before.
+    const ruta: Instance = { ...b, token: undefined };
+    ruta.token = (
+      await call(ruta, "POST", "/register", { displayName: "Rūta", email: "ruta@example.com", password: "password123" })
+    ).body.token;
+    const form = new FormData();
+    form.append("files", new Blob(["solid bin endsolid"]), "gridfinity-bin.stl");
+    const uploaded = await fetch(`${b.base}/api/upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${ruta.token}` },
+      body: form,
+    });
+    const printId = (await uploaded.json()).prints[0].id;
+    const collection = await call(ruta, "POST", "/collections", { name: "Tool wall", is_public: true });
+    await call(ruta, "POST", `/collection/${collection.body.id}/items/${printId}`);
+
+    // A's admin checks the connection, which reads what B shares again.
+    const partner = (await call(a, "GET", "/federation/instances")).body.partners[0];
+    expect((await call(a, "POST", `/federation/peers/${partner.id}/check`)).status).toBe(200);
+    const explore = await until("A's Explore shows Rūta", async () => {
+      const res = await call(a, "GET", "/explore");
+      return (
+        res.body.elsewhere.people.some((person: { display_name: string }) => person.display_name === "Rūta") && res.body
+      );
+    });
+    const person = explore.elsewhere.people.find((item: { display_name: string }) => item.display_name === "Rūta");
+    expect(person).toMatchObject({ model_count: 1, collection_count: 1, instance: { id: partner.id } });
+    expect(explore.elsewhere.recent_models[0]).toMatchObject({ title: "gridfinity-bin", file_count: 1 });
+    expect(explore.elsewhere.recent_collections[0]).toMatchObject({ name: "Tool wall", item_count: 1 });
+
+    // Her avatar comes through A, which fetched it signed from B.
+    const avatar = await fetch(`${a.base}/api${person.avatar_url}`, {
+      headers: { Authorization: `Bearer ${a.token}` },
+    });
+    expect(avatar.status).toBe(200);
+    expect(avatar.headers.get("content-type")).toMatch(/^image\//);
+    // B answers no one else.
+    expect((await fetch(`${b.base}/api/ap/directory`)).status).toBe(401);
+
+    expect((await call(a, "POST", `/federation/peers/${partner.id}/disconnect`)).status).toBe(204);
+    const after = await call(a, "GET", "/explore");
+    expect(after.body.elsewhere.people).toEqual([]);
+    expect((await call(a, "GET", `/explore/elsewhere/person/${person.id}`)).status).toBe(404);
+  }, 120_000);
 });

@@ -6119,7 +6119,26 @@
           "not_available": "Šis serveris su jų serveriu nesijungia.",
           "exists": "Jūs jau paprašėte jį pasiekti.",
           "request_limit": "Pirma palaukite, kol administratorius atsakys į jūsų prašymus."
-        }
+        },
+        "on": "Serveryje {{name}}",
+        "from": "Iš {{name}}",
+        "fileCount_one": "{{count}} failas",
+        "fileCount_few": "{{count}} failai",
+        "fileCount_many": "{{count}} failo",
+        "fileCount_other": "{{count}} failų",
+        "copyHandle": "Kopijuoti jo adresą",
+        "more": "Rodyti daugiau",
+        "gone": "Tai nebebendrinama, arba serveris, kuriame tai yra, nebesujungtas.",
+        "noPictures": "Nuotraukų nėra",
+        "picture": "Nuotrauka {{number}}",
+        "files": "Failai",
+        "inCollections": "Kolekcijose",
+        "comingNext": "Atsisiųsti, atidaryti pjaustyklėje ir nukopijuoti į savo biblioteką bus galima kitame atnaujinime."
+      },
+      "scope": {
+        "label": "Rodyti",
+        "all": "Visur",
+        "here": "Šiame serveryje"
       }
     }
   },

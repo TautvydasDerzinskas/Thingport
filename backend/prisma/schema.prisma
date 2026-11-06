@@ -1131,8 +1131,86 @@ model Peer {
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
   deliveries    FederationDelivery[]
+  /// When what it shares was last read into the index below, and why the last try failed.
+  syncedAt      DateTime?
+  syncError     String?
+  people        RemotePerson[]
+  models        RemoteModel[]
+  collections   RemoteCollection[]
 
   @@index([status])
+}
+
+/// A partner's person who shares something, as its directory last said: what Explore here shows of them. Read again
+/// on every sync; gone with the partner.
+model RemotePerson {
+  id              String             @id @default(cuid())
+  peerId          String
+  peer            Peer               @relation(fields: [peerId], references: [id], onDelete: Cascade)
+  /// Their Person actor's id, on the partner's origin.
+  apId            String             @unique
+  username        String?
+  displayName     String
+  bio             String?
+  links           String[]
+  /// Pictures, at the partner: fetched through this instance (federation/media.ts), never by a viewer's browser.
+  avatarUrl       String?
+  coverUrl        String?
+  coverPreset     String?
+  coverPositionY  Int                @default(50)
+  modelCount      Int                @default(0)
+  collectionCount Int                @default(0)
+  /// When they last shared something there: how Explore orders people.
+  sharedAt        DateTime?
+  joinedAt        DateTime?
+  syncedAt        DateTime           @default(now())
+  models          RemoteModel[]
+  collections     RemoteCollection[]
+
+  @@index([peerId])
+  @@index([sharedAt])
+}
+
+/// A model a partner's person shares: read-only here until downloading and copying come.
+model RemoteModel {
+  id          String       @id @default(cuid())
+  peerId      String
+  peer        Peer         @relation(fields: [peerId], references: [id], onDelete: Cascade)
+  personId    String
+  person      RemotePerson @relation(fields: [personId], references: [id], onDelete: Cascade)
+  apId        String       @unique
+  title       String
+  /// Markdown, as its owner wrote it.
+  description String?
+  images      String[]
+  /// `{ name, size, mediaType }` per file.
+  files       Json         @default("[]")
+  sharedAt    DateTime?
+  updatedAt   DateTime?
+  syncedAt    DateTime     @default(now())
+
+  @@index([peerId])
+  @@index([personId])
+  @@index([sharedAt])
+}
+
+/// A partner's person's public collection, and the models in it by their ids there.
+model RemoteCollection {
+  id          String       @id @default(cuid())
+  peerId      String
+  peer        Peer         @relation(fields: [peerId], references: [id], onDelete: Cascade)
+  personId    String
+  person      RemotePerson @relation(fields: [personId], references: [id], onDelete: Cascade)
+  apId        String       @unique
+  name        String
+  description String?
+  modelApIds  String[]
+  updatedAt   DateTime?
+  syncedAt    DateTime     @default(now())
+
+  @@index([peerId])
+  @@index([personId])
+  @@index([updatedAt])
 }
 
 enum PeerRequestKind {

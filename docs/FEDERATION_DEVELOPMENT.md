@@ -41,6 +41,10 @@ body exactly as it came), plus the admin API in `routes/federation.ts`.
 | `reachability.ts`                          | The check before turning on: the Public URL fetches a nonce back with this instance's secret, and its address is classified.                                                                                                                        |
 | `inbox.ts`                                 | Fedify's inbox handlers, passing each activity to `peers.ts`.                                                                                                                                                                                       |
 | `apRoutes.ts`                              | The Express side: `/api/ap/instance` (what a lookup reads), the actor and the inbox, handed to Fedify at the URL the Public URL gives.                                                                                                              |
+| `publish.ts`                               | What this instance's people share, for partners' signed GETs only: the directory, models, collections, pictures.                                                                                                                                    |
+| `remoteIndex.ts`                           | The copy kept of what partners share, read on connecting, every 15 minutes, and when Explore finds it stale.                                                                                                                                        |
+| `remoteExplore.ts`                         | Explore's rows and pages of partners' things, from that copy.                                                                                                                                                                                       |
+| `media.ts`                                 | Partners' pictures, fetched signed through this instance and kept, at addresses signed with its secret.                                                                                                                                             |
 | `socialSurfaces.ts`                        | How each social route crosses to partners.                                                                                                                                                                                                          |
 
 ### Pairing
@@ -74,6 +78,29 @@ Handles are `User.username` (`services/usernames.ts`) at the Public URL's host. 
 first `GET /api/me` for older accounts, and backfilled by the migration that added the column. They're unique on the
 instance, never reused as a path segment (actor URLs use the user's id), so renaming one breaks nothing.
 
+### What partners share
+
+Explore across instances is read from a copy each instance keeps of what its partners share, not fetched as someone
+looks: Explore stays fast, and shows a partner's things while it's away.
+
+- **Serving** (`publish.ts`, under `/api/ap`, answering only an `ACTIVE` partner's signed GET, checked against the key
+  compared): `/directory`, the people who share, as `Person`s with their counts; `/actors/<id>/models?page=N`, their
+  shared models; `/actors/<id>/collections`, their public collections with the models in each; `/media/<kind>/<id>`,
+  avatars, uploaded covers and models' pictures. Shaped like Manyfold's (a model is a `Service`, a collection a
+  `Group`, with `f3di:concreteType`), Thingport's additions under `thingport:`. What's shared is decided by the same
+  rules as Explore here (`sharers`, `sharedModelsWhere` in `services/socialService.ts`).
+- **Keeping the copy** (`remoteIndex.ts`): `RemotePerson`, `RemoteModel`, `RemoteCollection`, read on connecting, by
+  **Check connection**, every 15 minutes (the delivery worker's tick), and when Explore is opened and it's two minutes
+  old. Everything a partner says is checked: ids and pictures on its own origin, text cut to size. Rows keep their ids
+  across reads (upserted by `apId`), so links to them stay; what's no longer listed goes. Disconnecting or blocking
+  removes it all, pictures included.
+- **Pictures** (`media.ts`): the web app gets `/explore/elsewhere/media/<url>.<signature>`, signed with this instance's
+  secret, so a user can't make the server fetch anything else; it's fetched signed from that partner, only while it's
+  `ACTIVE`, kept under `federation-media/<peer>/`, and served with the session in the address like other files.
+- **Showing it** (`remoteExplore.ts`, `routes/social.ts`): `GET /explore?scope=all|here|<peer id>` adds `elsewhere`
+  and `instances`, plus `shared_at` for this instance's own, so the web app can put both in one order;
+  `/explore/elsewhere/person|model|collection/:id` for the pages. Paused partners are left out.
+
 ### Making a social feature federate
 
 1. Say in `socialSurfaces.ts` how it crosses: which ActivityPub objects and activities, and what a partner's person
@@ -91,6 +118,7 @@ instance, never reused as a path segment (actor URLs use the user's id), so rena
 - `tests/federationAddresses.test.ts`, `tests/federationReachability.test.ts`: the address rules and the check, with
   the network faked, including the public cases.
 - `tests/federation.test.ts`: the routes and the inbox filter on a test database.
+- `tests/federationExplore.test.ts`: what partners are shown, and Explore with what a partner shares.
 - `tests/federationSurfaces.test.ts`: the rule above.
 - `tests/federationPairing.e2e.test.ts`: two real instances, each its own server and database, pairing over HTTP. It
   needs two empty, migrated databases and is skipped without them. From `backend/`:

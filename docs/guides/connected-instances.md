@@ -8,7 +8,8 @@ they are.
 It's off by default, and most instances never need it. While it's off nothing about it answers on the network, so
 nothing tells a visitor this instance could connect at all.
 
-> For now, connecting pairs two instances. Explore, models and chats across them come in the next releases.
+> For now, a partner's models can be looked at, not downloaded or copied: that, and chats across instances, come in the
+> next releases.
 
 ## Before you start
 
@@ -90,12 +91,29 @@ profile: that's what people on other instances ask for. Usernames are made from 
 letters, digits, dots, dashes and underscores, unique on the instance. The host part is the
 [Public URL](#before-you-start)'s.
 
+## What partners see
+
+Once two instances are connected, each one's **Explore** shows the other's people who share something, their public
+collections and their models, beside its own, each with the instance they're on. **Everywhere**, **This instance** and
+each partner at the top narrow it down. A partner's person opens their profile; a model shows its pictures, description
+and files, and which of its owner's collections it's in.
+
+- **What goes across is what's shared**: what anyone signed in here could see of someone else, and nothing else.
+  Libraries, private collections, settings and emails stay where they are.
+- **Each instance keeps a copy** of what its partners share, read when they connect and every 15 minutes after, and
+  again when someone opens Explore and it's a couple of minutes old. **Check connection** reads it right away. A model
+  made private there is gone here by the next read.
+- **Pictures come through this instance**, which fetches and keeps them: a viewer's browser never talks to a partner.
+  For the same reason, images inside a partner's descriptions aren't shown.
+- **Paused** partners are hidden from Explore until **Resume**; **Disconnect** and **Block** remove everything of theirs.
+
 ## Partners
 
 Connected instances are under **Partners**, with when they connected and when they were last heard from. Each one's ⋮
 menu (or a right-click) has:
 
-- **Check connection**: looks it up again, and warns if its key changed since you connected.
+- **Check connection**: looks it up again, warns if its key changed since you connected, and reads what it shares
+  again.
 - **Show key**: the key it had when you connected.
 - **Pause**: stops talking to it for now. What this instance has for it waits until **Resume**; what the partner
   sends meanwhile is turned away to be retried, for about three days, so after a longer pause some of it is lost. If
