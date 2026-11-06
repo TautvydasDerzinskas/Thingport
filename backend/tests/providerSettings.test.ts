@@ -108,6 +108,21 @@ describe("turning providers off", () => {
     });
   });
 
+  it("switches several at once, for admins only", async () => {
+    const send = (token: string, body: unknown) =>
+      request(app).patch("/api/settings/providers").set(as(token)).send(body);
+    expect((await send(member, { providers: ["pinshape"], enabled: false })).status).toBe(403);
+    expect((await send(admin, { providers: [], enabled: false })).status).toBe(400);
+    expect((await send(admin, { providers: ["no-such-site"], enabled: false })).status).toBe(400);
+
+    const off = await send(admin, { providers: ["pinshape", "grabcad", "pinshape"], enabled: false });
+    expect(off.status).toBe(200);
+    expect(enabledMap(off.body)).toMatchObject({ pinshape: false, grabcad: false, printables: true });
+
+    const on = await send(admin, { providers: ["pinshape", "grabcad"], enabled: true });
+    expect(enabledMap(on.body)).toMatchObject({ pinshape: true, grabcad: true });
+  });
+
   it("refuses new imports from a provider that's off, and only from it", async () => {
     await setProviderEnabled("thingiverse", false);
     const blocked = await request(app)

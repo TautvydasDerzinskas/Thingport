@@ -1387,7 +1387,59 @@
         "turnOn": "Įjungti {{name}}",
         "disableTitle": "Išjungti {{name}}?",
         "disableMessage": "Niekas negalės importuoti iš {{name}}, kol jis vėl nebus įjungtas: nuorodos, Thingport Grab ir importų eilė bus atmetamos, jo kolekcijų sinchronizacija sustabdyta, o foniniai darbai jį praleis. Jau importuoti modeliai lieka.",
-        "disableConfirm": "Išjungti"
+        "disableConfirm": "Išjungti",
+        "sortOldest": "Seniausi",
+        "status": {
+          "label": "Rodyti",
+          "all": "Visi ({{n}})",
+          "on": "Įjungti ({{n}})",
+          "off": "Išjungti ({{n}})"
+        },
+        "filters": {
+          "signIn": {
+            "none": "Nereikia",
+            "optional": "Nebūtinas",
+            "user": "Kiekvieno naudotojo",
+            "key": "Administratoriaus raktas"
+          },
+          "grabOnly": "Tik per Grab"
+        },
+        "chips": {
+          "profiles": "Profiliai",
+          "paid": "Mokami",
+          "modelsOnly": "Tik modeliai"
+        },
+        "signInLine": {
+          "none": "Prisijungti nereikia",
+          "userOptional": "Prisijungimas nebūtinas",
+          "user": "Naudotojai prisijungia",
+          "admin": "Administratoriaus raktas",
+          "adminUser": "Administratoriaus raktas, naudotojai prisijungia"
+        },
+        "keyMissing": "Nėra rakto",
+        "shown": "Rodoma {{shown}} iš {{total}}",
+        "noMatch": "Nė vienas tiekėjas neatitinka filtrų.",
+        "selection": {
+          "enter": "Pasirinkti tiekėjus",
+          "toolbar": "Veiksmai su pasirinktais tiekėjais",
+          "turnOn": "Įjungti",
+          "turnOff": "Išjungti",
+          "allOn": "Visi pasirinkti jau įjungti",
+          "allOff": "Visi pasirinkti jau išjungti"
+        },
+        "bulkDisableTitle_one": "Išjungti {{count}} tiekėją?",
+        "bulkDisableTitle_few": "Išjungti {{count}} tiekėjus?",
+        "bulkDisableTitle_many": "Išjungti {{count}} tiekėjo?",
+        "bulkDisableTitle_other": "Išjungti {{count}} tiekėjų?",
+        "bulkDisableMessage": "Niekas negalės importuoti iš {{names}}, kol jie vėl nebus įjungti: nuorodos, Thingport Grab ir importų eilė bus atmetamos, jų kolekcijų sinchronizacija sustabdyta, o foniniai darbai juos praleis. Jau importuoti modeliai lieka.",
+        "turnedOn_one": "{{name}} įjungtas",
+        "turnedOn_few": "Įjungti {{count}} tiekėjai",
+        "turnedOn_many": "Įjungta {{count}} tiekėjo",
+        "turnedOn_other": "Įjungta {{count}} tiekėjų",
+        "turnedOff_one": "{{name}} išjungtas",
+        "turnedOff_few": "Išjungti {{count}} tiekėjai",
+        "turnedOff_many": "Išjungta {{count}} tiekėjo",
+        "turnedOff_other": "Išjungta {{count}} tiekėjų"
       },
       "storageSettings": {
         "heading": "Saugykla"

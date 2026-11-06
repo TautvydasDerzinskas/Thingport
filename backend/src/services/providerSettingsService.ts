@@ -20,9 +20,16 @@ export async function getDisabledProviders(): Promise<Set<Provider>> {
 }
 
 export async function setProviderEnabled(provider: Provider, enabled: boolean): Promise<Set<Provider>> {
+  return setProvidersEnabled([provider], enabled);
+}
+
+/** One write for all of them: the list is read, changed and saved whole, so separate calls at once would race. */
+export async function setProvidersEnabled(providers: readonly Provider[], enabled: boolean): Promise<Set<Provider>> {
   const disabled = await getDisabledProviders();
-  if (enabled) disabled.delete(provider);
-  else disabled.add(provider);
+  for (const provider of providers) {
+    if (enabled) disabled.delete(provider);
+    else disabled.add(provider);
+  }
   const value = [...disabled] as unknown as Prisma.InputJsonValue;
   await prisma.setting.upsert({ where: { key: SETTING_KEY }, create: { key: SETTING_KEY, value }, update: { value } });
   return disabled;

@@ -81,6 +81,7 @@
   "PATCH /api/settings/myminifactory-session",
   "PATCH /api/settings/nexprint-session",
   "PATCH /api/settings/pinshape-session",
+  "PATCH /api/settings/providers",
   "PATCH /api/settings/providers/:provider",
   "PATCH /api/settings/public-url",
   "PATCH /api/settings/quality-checks",

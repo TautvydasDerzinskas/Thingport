@@ -1377,7 +1377,56 @@
         "turnOn": "Activar {{name}}",
         "disableTitle": "¿Desactivar {{name}}?",
         "disableMessage": "Nadie podrá importar desde {{name}} hasta que vuelva a estar activado: se rechazarán los enlaces, Thingport Grab y la cola de importación, se pausarán las sincronizaciones de sus colecciones y las tareas en segundo plano lo omitirán. Los modelos ya importados de él se conservan tal cual.",
-        "disableConfirm": "Desactivar"
+        "disableConfirm": "Desactivar",
+        "sortOldest": "Más antiguos",
+        "status": {
+          "label": "Mostrar",
+          "all": "Todos ({{n}})",
+          "on": "Activados ({{n}})",
+          "off": "Desactivados ({{n}})"
+        },
+        "filters": {
+          "signIn": {
+            "none": "Ninguno",
+            "optional": "Opcional",
+            "user": "De cada usuario",
+            "key": "Clave del administrador"
+          },
+          "grabOnly": "Solo con Grab"
+        },
+        "chips": {
+          "profiles": "Perfiles",
+          "paid": "De pago",
+          "modelsOnly": "Solo modelos"
+        },
+        "signInLine": {
+          "none": "Sin inicio de sesión",
+          "userOptional": "Inicio de sesión opcional",
+          "user": "Cada usuario inicia sesión",
+          "admin": "Clave del administrador",
+          "adminUser": "Clave del administrador y sesión de cada usuario"
+        },
+        "keyMissing": "Falta la clave",
+        "shown": "{{shown}} de {{total}} mostrados",
+        "noMatch": "Ningún proveedor coincide con estos filtros.",
+        "selection": {
+          "enter": "Seleccionar proveedores",
+          "toolbar": "Acciones para los proveedores seleccionados",
+          "turnOn": "Activar",
+          "turnOff": "Desactivar",
+          "allOn": "Los seleccionados ya están todos activados",
+          "allOff": "Los seleccionados ya están todos desactivados"
+        },
+        "bulkDisableTitle_one": "¿Desactivar {{count}} proveedor?",
+        "bulkDisableTitle_many": "¿Desactivar {{count}} proveedores?",
+        "bulkDisableTitle_other": "¿Desactivar {{count}} proveedores?",
+        "bulkDisableMessage": "Nadie podrá importar desde {{names}} hasta que vuelvan a estar activados: se rechazarán los enlaces, Thingport Grab y la cola de importación, se pausarán las sincronizaciones de sus colecciones y las tareas en segundo plano los omitirán. Los modelos ya importados de ellos se conservan tal cual.",
+        "turnedOn_one": "{{name}} activado",
+        "turnedOn_many": "{{count}} proveedores activados",
+        "turnedOn_other": "{{count}} proveedores activados",
+        "turnedOff_one": "{{name}} desactivado",
+        "turnedOff_many": "{{count}} proveedores desactivados",
+        "turnedOff_other": "{{count}} proveedores desactivados"
       },
       "storageSettings": {
         "heading": "Almacenamiento"
