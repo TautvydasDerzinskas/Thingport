@@ -3,10 +3,20 @@ import { prisma } from "../db";
 import { toCollectionOut, type CollectionOut, type PrintOut, type UserCardOut } from "../dto";
 import { printOutById, printOutsByIds } from "./printLoader";
 import { getSocialSettings } from "./settingsService";
+import { profileOut, type PublicProfileOut } from "./publicProfileService";
+import { avatarUrlOf } from "./avatarService";
+import {
+  listPrints,
+  ownDesignsWhere,
+  SELF_AUTHOR_ID,
+  type PrintFilters,
+  type PrintListPage,
+  type PrintSortMode,
+} from "./printQuery";
 
 // Social features: while an admin has them on, a collection its owner made public is shown to the instance's other
 // users on Explore, and every model in one can be opened, downloaded and copied by them -- what the owner can do with
-// it, short of changing it. So can a model sent in a chat, by whoever can read that chat, while chats are on too.
+// it, short of changing it. So can a user's own models, as their My models lists them, once they made those public. So can a model sent in a chat, by whoever can read that chat, while chats are on too.
 // Changing a model, a collection or anything else stays its owner's alone: every write keeps its `{ userId }`, and only
 // what reads goes through readablePrintWhere.
 
@@ -24,6 +34,23 @@ const sentInChatsOf = (userId: string): Prisma.PrintWhereInput => ({
   },
 });
 
+/** The models of every user who made their own public: as their My models lists them, and only theirs -- another
+ *  user's import of the same design stays that user's. One query; few users share. */
+async function publicDesigns(): Promise<Prisma.PrintWhereInput[]> {
+  const users = await prisma.user.findMany({
+    where: { modelsPublic: true },
+    select: { id: true, authorLinks: { select: { authorId: true } } },
+  });
+  return users.map((user) => ({
+    AND: [{ userId: user.id }, ownDesignsWhere(user.authorLinks.map((link) => link.authorId))],
+  }));
+}
+
+/** What anyone's models the others can see: one in a public collection, or one of a user's own they made public. */
+async function sharedPrintWhere(): Promise<Prisma.PrintWhereInput> {
+  return { OR: [IN_PUBLIC_COLLECTION, ...(await publicDesigns())] };
+}
+
 /** Whether Explore and Chats are offered: social features are on (and chats with them), and there's someone else on the
  *  instance to explore or talk to. */
 export async function socialStatus(): Promise<{ enabled: boolean; explore: boolean; chats: boolean }> {
@@ -34,12 +61,14 @@ export async function socialStatus(): Promise<{ enabled: boolean; explore: boole
 }
 
 /** The models `userId` may open, download and copy: their own, and while social features are on, every model in a
- *  public collection, and with chats on, every model sent in a chat they can read. Only for reading: whatever changes a
+ *  public collection or a public profile, and with chats on, every model sent in a chat they can read. Only for reading: whatever changes a
  *  model stays `{ userId }`. */
 export async function readablePrintWhere(userId: string): Promise<Prisma.PrintWhereInput> {
   const { enabled, chats } = await getSocialSettings();
   if (!enabled) return { userId };
-  return { OR: [{ userId }, IN_PUBLIC_COLLECTION, ...(chats ? [sentInChatsOf(userId)] : [])] };
+  return {
+    OR: [{ userId }, IN_PUBLIC_COLLECTION, ...(await publicDesigns()), ...(chats ? [sentInChatsOf(userId)] : [])],
+  };
 }
 
 /** A collection `userId` may open: their own, or while social features are on, a public one. */
@@ -50,28 +79,16 @@ export async function readableCollection(userId: string, collectionId: string): 
   return collection.isPublic && (await getSocialSettings()).enabled ? collection : null;
 }
 
-/** How each user is shown to the others: their name, and the picture of the provider profile they linked as themselves. */
+/** How each user is shown to the others: their name and their avatar -- never their email. */
 export async function userCards(userIds: string[]): Promise<Map<string, UserCardOut>> {
   const unique = [...new Set(userIds)];
   if (!unique.length) return new Map();
   const users = await prisma.user.findMany({
     where: { id: { in: unique } },
-    select: {
-      id: true,
-      displayName: true,
-      authorLinks: {
-        where: { author: { avatarUrl: { not: null } } },
-        orderBy: { createdAt: "asc" },
-        take: 1,
-        select: { author: { select: { avatarUrl: true } } },
-      },
-    },
+    select: { id: true, displayName: true, email: true, avatarUrl: true, avatarStyle: true },
   });
   return new Map(
-    users.map((user) => [
-      user.id,
-      { id: user.id, display_name: user.displayName, avatar_url: user.authorLinks[0]?.author.avatarUrl ?? null },
-    ]),
+    users.map((user) => [user.id, { id: user.id, display_name: user.displayName, avatar_url: avatarUrlOf(user) }]),
   );
 }
 
@@ -215,10 +232,11 @@ export type ExplorePersonOut = UserCardOut & { collection_count: number; model_c
 /** The users, in the order given, with what each shares: three queries however many there are. */
 async function people(userIds: string[]): Promise<ExplorePersonOut[]> {
   if (!userIds.length) return [];
+  const shared = await sharedPrintWhere();
   const [cards, collections, models] = await Promise.all([
     userCards(userIds),
     prisma.collection.groupBy({ by: ["userId"], where: { userId: { in: userIds }, isPublic: true }, _count: true }),
-    prisma.print.groupBy({ by: ["userId"], where: { userId: { in: userIds }, ...IN_PUBLIC_COLLECTION }, _count: true }),
+    prisma.print.groupBy({ by: ["userId"], where: { userId: { in: userIds }, AND: [shared] }, _count: true }),
   ]);
   const countOf = (rows: { userId: string; _count: number }[]) => new Map(rows.map((row) => [row.userId, row._count]));
   const [collectionCounts, modelCounts] = [countOf(collections), countOf(models)];
@@ -232,9 +250,10 @@ async function people(userIds: string[]): Promise<ExplorePersonOut[]> {
 }
 
 export type ExploreOut = {
-  /** The other users with a public collection, those who shared most recently first; the most recent few dozen. */
+  /** The other users who share a collection or their models, those who shared most recently first; the most recent
+   *  few dozen. */
   people: ExplorePersonOut[];
-  /** The models most recently put in another user's public collection. */
+  /** The models most recently put in another user's public collection, or added to a public profile. */
   recent_models: PrintOut[];
   /** Other users' public collections, the most recently changed or added to first. */
   recent_collections: CollectionOut[];
@@ -250,51 +269,82 @@ const MOST_COLLECTED = 12;
 /** Everything Explore's page shows `viewerId`. Their own collections and models are left out: they're not news to them. */
 export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
   const othersPublic = { isPublic: true, userId: { not: viewerId } } satisfies Prisma.CollectionWhereInput;
+  const designs = await publicDesigns();
+  const othersDesigns: Prisma.PrintWhereInput = { userId: { not: viewerId }, OR: designs };
   // A collection changes when it's made public or renamed (updatedAt), or something is put in it: whichever was last.
   // Ranked in the database, as it takes the latest of each collection's items.
-  const [recentCollectionIds, sharers, recentItems, collected] = await Promise.all([
-    prisma.$queryRaw<{ id: string }[]>`
-      SELECT c.id FROM "Collection" c
-      LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
-      WHERE c."isPublic" AND c."userId" <> ${viewerId}
-      GROUP BY c.id
-      ORDER BY GREATEST(c."updatedAt", COALESCE(MAX(i."createdAt"), c."updatedAt")) DESC, c.id
-      LIMIT ${RECENT_COLLECTIONS}`,
-    // Those who share, by when they last did.
-    prisma.$queryRaw<{ userId: string }[]>`
-      SELECT c."userId" FROM "Collection" c
-      LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
-      WHERE c."isPublic" AND c."userId" <> ${viewerId}
-      GROUP BY c."userId"
-      ORDER BY MAX(GREATEST(c."updatedAt", COALESCE(i."createdAt", c."updatedAt"))) DESC, c."userId"
-      LIMIT ${PEOPLE}`,
-    // Each model once, by when it was last filed: one filed in many collections doesn't fill the row.
-    prisma.collectionItem.groupBy({
-      by: ["printId"],
-      where: { collection: othersPublic },
-      _max: { createdAt: true },
-      orderBy: { _max: { createdAt: "desc" } },
-      take: RECENT_MODELS,
-    }),
-    prisma.print.findMany({
-      where: { userId: { not: viewerId }, ...IN_PUBLIC_COLLECTION, copies: { some: {} } },
-      orderBy: [{ copies: { _count: "desc" } }, { createdAt: "desc" }],
-      take: MOST_COLLECTED,
-      select: { id: true, _count: { select: { copies: true } } },
-    }),
-  ]);
+  const [recentCollectionIds, collectionSharers, designSharers, recentItems, recentDesigns, collected] =
+    await Promise.all([
+      prisma.$queryRaw<{ id: string }[]>`
+        SELECT c.id FROM "Collection" c
+        LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
+        WHERE c."isPublic" AND c."userId" <> ${viewerId}
+        GROUP BY c.id
+        ORDER BY GREATEST(c."updatedAt", COALESCE(MAX(i."createdAt"), c."updatedAt")) DESC, c.id
+        LIMIT ${RECENT_COLLECTIONS}`,
+      // Those who share, by when they last did: filed something in a public collection, or added one of their own.
+      prisma.$queryRaw<{ userId: string; at: Date }[]>`
+        SELECT c."userId", MAX(GREATEST(c."updatedAt", COALESCE(i."createdAt", c."updatedAt"))) AS at
+        FROM "Collection" c
+        LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
+        WHERE c."isPublic" AND c."userId" <> ${viewerId}
+        GROUP BY c."userId"
+        ORDER BY at DESC, c."userId"
+        LIMIT ${PEOPLE}`,
+      designs.length
+        ? prisma.print.groupBy({ by: ["userId"], where: othersDesigns, _max: { createdAt: true } })
+        : Promise.resolve([]),
+      // Each model once, by when it was last filed: one filed in many collections doesn't fill the row.
+      prisma.collectionItem.groupBy({
+        by: ["printId"],
+        where: { collection: othersPublic },
+        _max: { createdAt: true },
+        orderBy: { _max: { createdAt: "desc" } },
+        take: RECENT_MODELS,
+      }),
+      designs.length
+        ? prisma.print.findMany({
+            where: othersDesigns,
+            orderBy: { createdAt: "desc" },
+            take: RECENT_MODELS,
+            select: { id: true, createdAt: true },
+          })
+        : Promise.resolve([]),
+      prisma.print.findMany({
+        where: { userId: { not: viewerId }, AND: [{ OR: [IN_PUBLIC_COLLECTION, ...designs] }], copies: { some: {} } },
+        orderBy: [{ copies: { _count: "desc" } }, { createdAt: "desc" }],
+        take: MOST_COLLECTED,
+        select: { id: true, _count: { select: { copies: true } } },
+      }),
+    ]);
 
   const collectionIds = recentCollectionIds.map((row) => row.id);
   // Still public: one made private since it was ranked isn't shown.
   const recentCollections = await prisma.collection.findMany({ where: { id: { in: collectionIds }, ...othersPublic } });
   const byChange = collectionIds.flatMap((id) => recentCollections.find((collection) => collection.id === id) ?? []);
 
+  const sharedLast = new Map<string, number>();
+  const shared = (id: string, at: Date | null | undefined) =>
+    sharedLast.set(id, Math.max(sharedLast.get(id) ?? 0, at?.getTime() ?? 0));
+  for (const row of collectionSharers) shared(row.userId, row.at);
+  for (const row of designSharers) shared(row.userId, row._max.createdAt);
+  const sharers = [...sharedLast.entries()]
+    .toSorted((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, PEOPLE)
+    .map(([userId]) => userId);
+
+  const latest = new Map<string, number>();
+  for (const item of recentItems) latest.set(item.printId, item._max.createdAt?.getTime() ?? 0);
+  for (const print of recentDesigns)
+    latest.set(print.id, Math.max(latest.get(print.id) ?? 0, print.createdAt.getTime()));
+  const recentIds = [...latest.entries()]
+    .toSorted((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, RECENT_MODELS)
+    .map(([id]) => id);
+
   const [peopleOut, recentModels, recentCollectionOuts, collectedModels] = await Promise.all([
-    people(sharers.map((row) => row.userId)),
-    readablePrintOuts(
-      viewerId,
-      recentItems.map((item) => item.printId),
-    ),
+    people(sharers),
+    readablePrintOuts(viewerId, recentIds),
     collectionOutsFor(viewerId, byChange),
     readablePrintOuts(
       viewerId,
@@ -304,7 +354,7 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
   const copiesOf = new Map(collected.map((print) => [print.id, print._count.copies]));
   return {
     // Someone who stopped sharing since they were listed.
-    people: peopleOut.filter((person) => person.collection_count > 0),
+    people: peopleOut.filter((person) => person.collection_count > 0 || person.model_count > 0),
     recent_models: recentModels,
     recent_collections: recentCollectionOuts,
     most_collected: collectedModels.map((model) => ({ model, copies: copiesOf.get(model.id) ?? 0 })),
@@ -312,25 +362,49 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
 }
 
 export type ExploreUserOut = {
-  user: ExplorePersonOut & { bio: string | null; joined_at: string };
+  user: ExplorePersonOut & { joined_at: string } & PublicProfileOut;
   collections: CollectionOut[];
 };
 
-/** One user's page: who they are and their public collections. Null for no such user, and for one who shares nothing:
- *  they never chose to be seen. The viewer's own always, so they can see what the others see of them. */
+/** One user's page: who they are, their public collections, and whether their own models are public. Null for no such
+ *  user, and for one who shares nothing: they never chose to be seen. The viewer's own always, so they can see what the
+ *  others see of them. */
 export async function exploreUser(viewerId: string, userId: string): Promise<ExploreUserOut | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, bio: true, createdAt: true },
+    select: {
+      id: true,
+      bio: true,
+      createdAt: true,
+      backgroundUrl: true,
+      coverPreset: true,
+      coverPositionY: true,
+      profileLinks: true,
+      modelsPublic: true,
+    },
   });
   if (!user) return null;
   const [[person], collections] = await Promise.all([
     people([user.id]),
     prisma.collection.findMany({ where: { userId, isPublic: true }, orderBy: { createdAt: "desc" } }),
   ]);
-  if (!person || (!collections.length && userId !== viewerId)) return null;
+  if (!person || (!collections.length && !person.model_count && userId !== viewerId)) return null;
   return {
-    user: { ...person, bio: user.bio, joined_at: user.createdAt.toISOString() },
+    user: { ...person, joined_at: user.createdAt.toISOString(), ...profileOut(user) },
     collections: await collectionOutsFor(viewerId, collections),
   };
+}
+
+/** A page of a user's own models, as their My models lists them, for `viewerId`; null unless they made them public. */
+export async function exploreUserModels(
+  viewerId: string,
+  userId: string,
+  filters: Pick<PrintFilters, "generative" | "excludeProviders">,
+  options: { sort: PrintSortMode; limit: number; offset: number },
+): Promise<PrintListPage | null> {
+  const owner = await prisma.user.findUnique({ where: { id: userId }, select: { modelsPublic: true } });
+  if (!owner?.modelsPublic) return null;
+  const page = await listPrints(userId, { ...filters, authorId: SELF_AUTHOR_ID }, options);
+  if (userId !== viewerId) page.prints = await withOwners(viewerId, page.prints);
+  return page;
 }

@@ -111,8 +111,8 @@ export async function getLinkedAuthorIds(userId: string): Promise<string[]> {
   return links.map((l) => l.authorId);
 }
 
-/** Enforces AuthorLink's rules, then copies the author's bio/backgroundUrl onto the user where
- * those are still empty. */
+/** Enforces AuthorLink's rules, then copies the author's bio, cover and picture onto the user where they have none of
+ *  their own: no avatar they chose, a Gravatar included, as the others saw the author's picture before avatars came. */
 export async function linkAuthorToUser(userId: string, authorId: string): Promise<{ author: Author; user: User }> {
   const author = await prisma.author.findUnique({ where: { id: authorId } });
   if (!author) throw new HttpError(404, "Author not found");
@@ -132,9 +132,11 @@ export async function linkAuthorToUser(userId: string, authorId: string): Promis
 
   const currentUser = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
   const bio = author.bio || author.bioTranslated;
-  const patch: { bio?: string; backgroundUrl?: string } = {};
+  const patch: { bio?: string; backgroundUrl?: string; avatarUrl?: string } = {};
   if (!currentUser.bio && bio) patch.bio = bio;
   if (!currentUser.backgroundUrl && author.backgroundUrl) patch.backgroundUrl = author.backgroundUrl;
+  if (!currentUser.avatarUrl && currentUser.avatarStyle === null && author.avatarUrl)
+    patch.avatarUrl = author.avatarUrl;
   const user = Object.keys(patch).length
     ? await prisma.user.update({ where: { id: userId }, data: patch })
     : currentUser;

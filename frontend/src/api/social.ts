@@ -1,7 +1,8 @@
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOkWithMessage, readErrorMessage, UnauthorizedError } from "./client";
 import type { Collection } from "./collections";
-import type { Print } from "./prints";
+import type { ListPrintsResult, Print, PrintSortMode } from "./prints";
+import type { ProfileCoverValue } from "../constants/profileCovers";
 
 /** Another of the instance's users, as social features show them: never their email. */
 export type UserCard = {
@@ -40,7 +41,13 @@ export type ExploreOverview = {
 };
 
 export type ExploreUserPage = {
-  user: ExplorePerson & { bio: string | null; joined_at: string };
+  user: ExplorePerson & {
+    bio: string | null;
+    joined_at: string;
+    links: string[];
+    /** Whether their own models are shown: the Models tab. */
+    models_public: boolean;
+  } & ProfileCoverValue;
   collections: Collection[];
 };
 
@@ -70,6 +77,30 @@ export const socialApi = {
   explore: () => getJson<ExploreOverview>("/explore", "Failed to load Explore"),
 
   /** Null for someone who shares nothing (or no such user): told apart from a request that failed. */
+  /** A page of a user's own models, once they made them public; null while they're private. */
+  userModels: async (
+    userId: string,
+    params: { order_by?: PrintSortMode; limit: number; offset: number },
+  ): Promise<ListPrintsResult | null> => {
+    const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
+    if (params.order_by) qs.set("orderBy", params.order_by);
+    const res = await fetch(`${apiBase()}/explore/user/${encodeURIComponent(userId)}/models?${qs}`, {
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (res.status === 404) {
+      const body = (await res.json().catch(() => ({}))) as { code?: string };
+      if (body.code === "social_off") throw new SocialOffError();
+      return null;
+    }
+    await assertOkWithMessage(res, "Failed to load the models");
+    return {
+      items: await res.json(),
+      hasMore: res.headers.get("X-Has-More") === "true",
+      total: Number(res.headers.get("X-Total-Count") ?? 0),
+    };
+  },
+
   user: async (userId: string): Promise<ExploreUserPage | null> => {
     const res = await fetch(`${apiBase()}/explore/user/${encodeURIComponent(userId)}`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();

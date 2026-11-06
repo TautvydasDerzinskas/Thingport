@@ -19,7 +19,6 @@ import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { renderPreviewContent } from "../../components/media/renderPreviewContent";
 import ProviderBadge from "../../components/ProviderBadge";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
-import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import StarToggle from "../../components/StarToggle";
 import HoverSlideshow from "../../components/media/HoverSlideshow";
 import { useHoverSlideshowEnabled } from "../../hooks/useHoverSlideshowEnabled";
@@ -97,7 +96,7 @@ export default function ModelCard({
   const author = item.author;
   // Another user's model, from one of their public collections: theirs to favourite and count, not the viewer's.
   const owner = item.owner ?? null;
-  const viewerAvatarUrl = useGravatarUrl(viewer?.email, 40);
+  const viewerAvatarUrl = viewer?.avatar_url;
   // Not clickable: there's no Author id behind this fallback. A direct upload is its uploader's: on someone else's
   // model, that's its owner.
   const unauthored = !author?.name && !author?.handle && !item.creator && !item.source_provider;
@@ -261,14 +260,17 @@ export default function ModelCard({
               sx={{
                 minWidth: 0,
                 color: "#858585",
-                ...((author || showViewerAsAuthor) && !selectMode
+                ...((author || showViewerAsAuthor || showOwnerAsAuthor) && !selectMode
                   ? { cursor: "pointer", "&:hover": { color: "primary.main" } }
                   : undefined),
               }}
               onClick={(e) => {
-                if (selectMode || (!author && !showViewerAsAuthor)) return;
+                if (selectMode || (!author && !showViewerAsAuthor && !showOwnerAsAuthor)) return;
                 e.stopPropagation();
-                navigate(`/authors/${author ? author.id : SELF_AUTHOR_ID}`);
+                // Another user's own upload: their profile on Explore, where the rest of theirs is.
+                navigate(
+                  showOwnerAsAuthor ? `/explore/users/${owner!.id}` : `/authors/${author ? author.id : SELF_AUTHOR_ID}`,
+                );
               }}
             >
               {showOwnerAsAuthor ? (

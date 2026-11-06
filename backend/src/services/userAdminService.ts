@@ -9,6 +9,8 @@ import { createLog } from "./auditLog";
 import { deleteAuthorIfOrphaned } from "./authorService";
 import { removeUserTagMosaics } from "./tagMosaicService";
 import { removeUserIcons } from "./iconService";
+import { removeUserCover } from "./publicProfileService";
+import { removeUserAvatar } from "./avatarService";
 
 // Any admin manages members; only the owner (the first admin) manages other admins. Nobody demotes or
 // deletes the owner, or themselves, so the instance always keeps an admin who can. Emptying a library follows the same
@@ -98,6 +100,8 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
   ).map((print) => print.authorId!);
   await removeUserTagMosaics(target.id);
   await removeUserIcons(target.id);
+  await removeUserCover(target.id);
+  await removeUserAvatar(target.id);
   // Model files live under u-<id>; anything left there (a file the database lost track of) goes too.
   await fs.rm(path.join(STORAGE, `u-${target.id}`), { recursive: true, force: true });
   // And the meshes their Studio designs imported, which the designs' rows took with them.

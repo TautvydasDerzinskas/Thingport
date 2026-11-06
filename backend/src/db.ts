@@ -1,10 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
-import { STORAGE, MODEL_PREVIEWS, NORMALIZED_3MFS, TAG_MOSAICS, ICONS } from "./config";
+import { STORAGE, MODEL_PREVIEWS, NORMALIZED_3MFS, TAG_MOSAICS, ICONS, COVERS, AVATARS } from "./config";
 
 // THUMBS, PREVIEWS, DESCRIPTION_IMAGES and BUNDLES are only read now, for models the storage move hasn't reached.
-for (const dir of [STORAGE, MODEL_PREVIEWS, NORMALIZED_3MFS, TAG_MOSAICS, ICONS]) {
+for (const dir of [
+  STORAGE,
+  MODEL_PREVIEWS,
+  NORMALIZED_3MFS,
+  TAG_MOSAICS,
+  ICONS,
+  COVERS,
+  path.join(AVATARS, "gravatar"),
+]) {
   fs.mkdirSync(dir, { recursive: true });
 }
 // The cache's name before it became NORMALIZED_3MFS; nothing reads it any more.

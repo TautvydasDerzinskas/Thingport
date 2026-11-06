@@ -54,6 +54,20 @@ export function matchesTagList(printTags: string[], tagList: string[]): boolean 
   return tagList.every((t) => printTagsLower.has(t.toLowerCase()));
 }
 
+/** "My models", which Explore shows the other users when they're public: what the user uploaded here, and what an
+ *  author they linked as themselves made. Not a copy of another user's model they collected, which keeps its
+ *  original's author, nor a tool's parts. */
+export function ownDesignsWhere(linkedAuthorIds: string[]): Prisma.PrintWhereInput {
+  return {
+    originalId: null,
+    toolId: null,
+    OR: [
+      { authorId: null, creator: null, sourceProvider: null },
+      ...(linkedAuthorIds.length ? [{ authorId: { in: linkedAuthorIds } }] : []),
+    ],
+  };
+}
+
 /** `rankedIds` is set when `q` is: the matches, best first, for orderBy=relevance. Tags aren't in
  *  `where`: see matchesTagList. */
 export async function buildPrintWhere(
@@ -71,14 +85,7 @@ export async function buildPrintWhere(
   if (categoryIds.length === 1) where.categoryId = categoryIds[0];
   else if (categoryIds.length > 1) where.categoryId = { in: categoryIds };
   if (authorId === SELF_AUTHOR_ID) {
-    // "My models": prints with no author at all, or by an Author the user linked as themselves.
-    const linkedAuthorIds = await getLinkedAuthorIds(userId);
-    andClauses.push({
-      OR: [
-        { authorId: null, creator: null, sourceProvider: null },
-        ...(linkedAuthorIds.length ? [{ authorId: { in: linkedAuthorIds } }] : []),
-      ],
-    });
+    andClauses.push(ownDesignsWhere(await getLinkedAuthorIds(userId)));
   } else if (authorId) {
     where.authorId = authorId;
   }

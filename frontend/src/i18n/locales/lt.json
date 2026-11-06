@@ -400,7 +400,7 @@
             },
             "collections": {
               "title": "Kolekcijos",
-              "description": "Jūsų kolekcijos ir kas jose yra, ir tos, kuriomis dalijasi kiti."
+              "description": "Jūsų kolekcijos ir kas jose yra, ir kolekcijos bei modeliai, kuriais dalijasi kiti."
             },
             "tags": {
               "title": "Žymos",
@@ -5120,6 +5120,49 @@
       "linkConfirmLabel": "Taip, tai aš",
       "linkSuccess": "„{{name}}“ susieta su jūsų paskyra",
       "linkFailed": "Nepavyko susieti šio autoriaus su jūsų paskyra",
+      "editProfile": {
+        "button": "Redaguoti profilį",
+        "title": "Redaguoti profilį",
+        "changeCover": "Keisti viršelį",
+        "cover": "Viršelis",
+        "coverHelp": "Pasirinkite nupieštą viršelį, susietos paskyros viršelį arba įkelkite iki 10 MB nuotrauką. Tempkite nuotrauką, kad pasirinktumėte, kuri jos dalis matoma.",
+        "presets": {
+          "retro": "Retro",
+          "pixel": "Pikselių menas",
+          "mosaic": "Mozaika",
+          "ascii": "ASCII",
+          "blueprint": "Brėžinys"
+        },
+        "yourPicture": "Jūsų nuotrauka",
+        "fromAccount": "Iš {{provider}}",
+        "upload": "Įkelti",
+        "uploadHint": "Įkelti nuotrauką, iki 10 MB",
+        "uploadTooBig": "Ši nuotrauka didesnė nei 10 MB.",
+        "notAPicture": "Šis failas nėra nuotrauka.",
+        "drag": "Tempkite, kad perkeltumėte",
+        "position": "Viršelio padėtis",
+        "bio": "Biografija",
+        "bioHelp": "Rodoma jūsų profilyje kitiems šio serverio naudotojams. Galima naudoti Markdown.",
+        "bioPlaceholder": "Keli žodžiai apie jus ir tai, ką kuriate",
+        "saved": "Profilis išsaugotas",
+        "saveFailed": "Nepavyko išsaugoti profilio.",
+        "links": "Nuorodos",
+        "linksHelp": "Iki {{count}} interneto adresų, rodomų po jūsų biografija: jūsų puslapis modelių svetainėje, parduotuvė, portfolio.",
+        "addLink": "Pridėti nuorodą",
+        "removeLink": "Pašalinti nuorodą",
+        "linkLabel": "Nuoroda {{n}}",
+        "linkInvalid": "Įveskite interneto adresą, pvz., https://example.com"
+      },
+      "visibility": {
+        "toggle": "Rodyti mano modelius skiltyje „Naršyti“",
+        "privateTip": "Privatūs: šiuos modelius matote tik jūs. Spustelėkite, kad jie būtų rodomi skiltyje „Naršyti“.",
+        "publicTip": "Vieši: šiuos modelius skiltyje „Naršyti“ mato visi šio serverio naudotojai. Spustelėkite, kad jie taptų privatūs.",
+        "confirmTitle": "Rodyti jūsų modelius skiltyje „Naršyti“?",
+        "confirmMessage": "Tada visi šio serverio naudotojai galės matyti, atsisiųsti ir kopijuoti šiame puslapyje esančius modelius iš jūsų profilio skiltyje „Naršyti“. Keisti ar ištrinti juos galėsite tik jūs, o privačiais juos vėl galite padaryti bet kada.",
+        "confirmLabel": "Padaryti viešus",
+        "nowPublic": "Jūsų modeliai dabar rodomi skiltyje „Naršyti“",
+        "nowPrivate": "Jūsų modeliai dabar privatūs"
+      },
       "popup": {
         "modelCount_one": "{{count}} modelis importuotas iš {{provider}}",
         "modelCount_few": "{{count}} modeliai importuoti iš {{provider}}",
@@ -5129,6 +5172,78 @@
         "selfModelCount_other": "{{count}} modelių įkelta",
         "loadFailed": "Nepavyko įkelti autoriaus."
       }
+    },
+    "avatar": {
+      "change": "Keisti avatarą",
+      "title": "Avataras",
+      "modes": {
+        "thingport": "Thingport",
+        "picture": "Nuotrauka",
+        "auto": "Automatinis"
+      },
+      "shuffle": "Sumaišyti",
+      "parts": {
+        "hair": "Plaukai",
+        "glasses": "Akiniai",
+        "mouth": "Burna",
+        "hair_color": "Plaukų spalva",
+        "background": "Fonas"
+      },
+      "none": "Nėra",
+      "hair": {
+        "spiky": "Pasišiaušę",
+        "sideSwept": "Sušukuoti į šoną",
+        "curly": "Garbanoti",
+        "long": "Ilgi",
+        "topBun": "Kuodas",
+        "mohawk": "Irokezas",
+        "ponytail": "Uodegėlė",
+        "flatTop": "Plokščias viršus",
+        "bob": "Kare",
+        "spaceBuns": "Du kuodeliai"
+      },
+      "glasses": {
+        "round": "Apvalūs",
+        "square": "Kampuoti",
+        "sunglasses": "Akiniai nuo saulės",
+        "catEye": "Katės akies",
+        "threeD": "3D"
+      },
+      "mouth": {
+        "smile": "Šypsena",
+        "toothy": "Dantukai",
+        "wobbly": "Nervingas",
+        "surprised": "Nustebęs",
+        "cheeky": "Išdykęs"
+      },
+      "hair_color": {
+        "black": "Juodi",
+        "darkBrown": "Tamsiai rudi",
+        "brown": "Rudi",
+        "blonde": "Šviesūs",
+        "ginger": "Rusvai raudoni",
+        "grey": "Žili",
+        "blue": "Mėlyni",
+        "pink": "Rožiniai"
+      },
+      "background": {
+        "mint": "Mėtinis",
+        "sky": "Dangaus",
+        "peach": "Persikinis",
+        "lavender": "Levandų",
+        "sand": "Smėlio",
+        "teal": "Žalsvai mėlynas",
+        "stone": "Akmens",
+        "rose": "Rožinis"
+      },
+      "upload": "Įkelti",
+      "uploadHint": "Įkelti nuotrauką, iki 10 MB",
+      "pictureHelp": "Iki 10 MB nuotrauka, apkirpta į kvadratą aplink tai, kas joje, arba susietos paskyros nuotrauka.",
+      "yourPicture": "Jūsų nuotrauka",
+      "fromAccount": "Iš {{provider}}",
+      "autoHint": "Jūsų Gravatar, jei jį turite, arba jums parinktas Thingport avataras.",
+      "saved": "Avataras atnaujintas",
+      "saveFailed": "Nepavyko išsaugoti avataro."
     },
     "collections": {
       "pageTitle": "Kolekcijos",
@@ -5716,9 +5831,9 @@
     },
     "explore": {
       "people": "Žmonės",
-      "peopleHelp": "Šio serverio naudotojai, kurie dalijasi kolekcijomis. Atidarykite, kad pamatytumėte visas.",
+      "peopleHelp": "Šio serverio naudotojai, kurie dalijasi savo modeliais ar kolekcijomis. Atidarykite, kad pamatytumėte, kuo jie dalijasi.",
       "recentModels": "Nauji modeliai",
-      "recentModelsHelp": "Modeliai, neseniai įdėti į kieno nors viešą kolekciją.",
+      "recentModelsHelp": "Modeliai, neseniai įdėti į kieno nors viešą kolekciją ar viešą profilį.",
       "recentCollections": "Neseniai atnaujintos kolekcijos",
       "recentCollectionsHelp": "Viešos kolekcijos: pirmiausia neseniai paviešintos ar papildytos.",
       "mostCollected": "Dažniausiai kaupiami",
@@ -5734,7 +5849,7 @@
       "modelCount_few": "{{count}} modeliai",
       "modelCount_other": "{{count}} modelių",
       "emptyTitle": "Kol kas niekuo nesidalijama",
-      "emptyHint": "Kai kas nors padarys kolekciją viešą, ji atsiras čia.",
+      "emptyHint": "Kai kas nors padarys savo modelius ar kolekciją viešus, jie atsiras čia.",
       "emptyAction": "Eiti į mano kolekcijas",
       "unavailable": "Naršyti šiuo metu nepasiekiama.",
       "userNotFound": "Šis naudotojas niekuo nesidalija.",
@@ -5742,7 +5857,11 @@
       "joined": "Prisijungė {{date}}",
       "ownEmpty": "Dar nepadarėte jokios kolekcijos viešos.",
       "loadFailed": "Nepavyko įkelti šio puslapio.",
-      "refreshFailed": "Nepavyko įkelti naujausių skaičių."
+      "refreshFailed": "Nepavyko įkelti naujausių skaičių.",
+      "sections": "Kuo dalijasi",
+      "noModels": "Modelių dar nėra.",
+      "modelsLoadFailed": "Nepavyko įkelti modelių.",
+      "noCollections": "{{name}} dar nepadarė jokios kolekcijos viešos."
     }
   },
   "providers": {

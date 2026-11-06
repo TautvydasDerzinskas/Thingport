@@ -8,7 +8,8 @@ import { createLog } from "../services/auditLog";
 import { copyPrintToLibrary } from "../services/modelCopyService";
 import { printOutById } from "../services/printLoader";
 import { getSocialSettings, setSocialSettings } from "../services/settingsService";
-import { exploreOverview, exploreUser, socialStatus } from "../services/socialService";
+import { exploreOverview, exploreUser, exploreUserModels, socialStatus } from "../services/socialService";
+import { parseSortMode, splitList } from "../services/printQuery";
 
 const router = Router();
 router.use(requireAuth);
@@ -61,6 +62,32 @@ router.get(
     const page = await exploreUser(req.userId!, req.params.id);
     if (!page) throw new HttpError(404, "User not found");
     res.json(page);
+  }),
+);
+
+// A user's own models, once they made them public: answered like GET /prints, a page with its count in the headers.
+router.get(
+  "/explore/user/:id/models",
+  asyncHandler(async (req, res) => {
+    await assertSocialOn();
+    const limit = Number(req.query.limit ?? 24);
+    const offset = Number(req.query.offset ?? 0);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new HttpError(400, "Invalid limit");
+    if (!Number.isInteger(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
+    const page = await exploreUserModels(
+      req.userId!,
+      req.params.id,
+      {
+        generative: req.query.generative === "1" || req.query.generative === "true",
+        excludeProviders: splitList(req.query.hide_providers),
+      },
+      { sort: parseSortMode(req.query.orderBy), limit, offset },
+    );
+    if (!page) throw new HttpError(404, "This user's models aren't public");
+    res.setHeader("X-Has-More", page.hasMore ? "true" : "false");
+    res.setHeader("X-Next-Offset", String(page.nextOffset));
+    res.setHeader("X-Total-Count", String(page.total));
+    res.json(page.prints);
   }),
 );
 

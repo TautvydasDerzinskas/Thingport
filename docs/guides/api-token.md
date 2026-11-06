@@ -5,7 +5,7 @@ REST API it can't change anything: it only reads. The only way it can change you
 turn on for it yourself (see [Connect an AI assistant](#connect-an-ai-assistant)).
 
 Each user has their own token, and it sees what that user sees: their own library and, while an admin has social
-features on, the collections other users made public, under the Collections permission.
+features on, the collections and models other users made public, under the Collections permission.
 
 ## Generate a token
 
@@ -55,7 +55,7 @@ data to **Allow** or **Deny**:
 | Models          | `/api/prints`, the sites they came from, the files check, `/api/print/{id}` and its print quality report                                                                              |
 | Dashboard       | `/api/dashboard/...`: library totals, most viewed, printed and recently added, top authors, the featured model, and the weather, feeds, monitors and trending models its widgets show |
 | Activity        | `/api/activity` and `/api/activity/feed`                                                                                                                                              |
-| Collections     | `/api/collections`, `/api/collection/{id}`, a model's collections, your bookmarks and Explore (`/api/explore`)                                                                        |
+| Collections     | `/api/collections`, `/api/collection/{id}`, a model's collections, your bookmarks and Explore (`/api/explore`, with a user's page and their public models)                            |
 | Chats           | `/api/chats`, a chat and its messages, the unread count and finding people. Off for a new token                                                                                       |
 | Tags            | `/api/tags`, `/api/tags/summary` and your bookmarked tags                                                                                                                             |
 | Categories      | `/api/categories`                                                                                                                                                                     |

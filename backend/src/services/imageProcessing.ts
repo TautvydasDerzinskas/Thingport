@@ -33,6 +33,24 @@ export async function rasterIconPng(input: Buffer, size: number): Promise<Buffer
     .toBuffer();
 }
 
+/** A profile cover: the first frame, upright, no bigger than `maxSize` either way, and without its metadata. */
+export async function coverWebp(input: Buffer, maxSize: number): Promise<Buffer> {
+  return sharp(input, { animated: false })
+    .autoOrient()
+    .resize(maxSize, maxSize, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toBuffer();
+}
+
+/** An avatar: the first frame, upright, cut to a square around what draws the eye, and without its metadata. */
+export async function avatarWebp(input: Buffer, size: number): Promise<Buffer> {
+  return sharp(input, { animated: false })
+    .autoOrient()
+    .resize(size, size, { fit: "cover", position: "attention" })
+    .webp({ quality: 85 })
+    .toBuffer();
+}
+
 /** Provider copies are small and deliberately omit private camera metadata. */
 export async function aiPreviewJpeg(input: Buffer): Promise<Buffer> {
   return sharp(input).autoOrient().resize(512, 512, { fit: "inside" }).jpeg().toBuffer();

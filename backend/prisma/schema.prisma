@@ -101,9 +101,23 @@ model User {
   hoverSlideshowEnabled    Boolean              @default(true)
   // Links sent from Thingport Grab's "Add to the queue" join the line by themselves instead of waiting on hold.
   startGrabLinks           Boolean              @default(false)
-  // Filled from the first linked Author with this data; later links never overwrite it.
+  // Set on My models, or filled from the first linked Author with this data while still empty.
   bio                      String?
+  // The cover picture: one uploaded (/api/covers/...) or a linked Author's. Null shows a drawn cover, coverPreset.
   backgroundUrl            String?
+  // One of COVER_PRESETS (profileCoverService.ts); null is the one their id picks.
+  coverPreset              String?
+  // Where the cover is cropped, 0 (its top) to 100 (its bottom); null is the middle.
+  coverPositionY           Int?
+  // Up to five web addresses of theirs, shown under the bio.
+  profileLinks             String[]             @default([])
+  // Their own models, as My models lists them, shown to the other users on Explore while social features are on.
+  modelsPublic             Boolean              @default(false)
+  // Their avatar: a picture (one uploaded, /api/avatars/..., or a linked Author's). Null shows avatarStyle's design.
+  avatarUrl                String?
+  // The Thingport avatar they designed (avatarArt.ts's AvatarStyle), kept while a picture is shown. Null with no
+  // picture either: their Gravatar, else a design picked from their id.
+  avatarStyle              Json?
   // When they last had Thingport in front of them, as Chats' unread poll says: what shows them online to the others.
   lastSeenAt               DateTime?
   categories               Category[]

@@ -30,6 +30,8 @@ import {
 } from "./services/modelPreviewCache";
 import { buildImportSourceUrl } from "./services/importService";
 import { openSourceGaps, type SourceGap } from "./services/sourceGaps";
+import { profileOut, type PublicProfileOut } from "./services/publicProfileService";
+import { avatarOut, type AvatarOut } from "./services/avatarService";
 import { parseQueuedLinkOptions, SYNC_RESUME_MARKS } from "./services/importJobRunner";
 import { jobPayload } from "./services/importJobService";
 import type { LineOut, OwnQueue, QueueJobRow, QueueJobView } from "./services/importQueueService";
@@ -41,9 +43,8 @@ export type UserOut = {
   display_name: string;
   role: "ADMIN" | "MEMBER";
   pending_email: string | null;
-  bio: string | null;
-  background_url: string | null;
-};
+} & PublicProfileOut &
+  AvatarOut;
 
 export function toUserOut(user: User): UserOut {
   return {
@@ -52,8 +53,8 @@ export function toUserOut(user: User): UserOut {
     display_name: user.displayName,
     role: user.role,
     pending_email: user.pendingEmail,
-    bio: user.bio,
-    background_url: user.backgroundUrl,
+    ...profileOut(user),
+    ...avatarOut(user),
   };
 }
 
