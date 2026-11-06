@@ -13,19 +13,36 @@ export type Provider = ProviderId;
 const SETTING_KEY = "disabled_providers";
 export const PROVIDER_DISABLED_CODE = "provider_disabled";
 
-export async function getDisabledProviders(): Promise<Set<Provider>> {
-  const row = await prisma.setting.findUnique({ where: { key: SETTING_KEY } });
+// Any number, as long as only this list's writers take it. The list is read, changed and saved whole: two admins
+// switching different providers at once would otherwise both read it unchanged, and the later save would undo the
+// other's change.
+const LIST_LOCK = 74_210_304;
+
+export async function getDisabledProviders(
+  db: Pick<Prisma.TransactionClient, "setting"> = prisma,
+): Promise<Set<Provider>> {
+  const row = await db.setting.findUnique({ where: { key: SETTING_KEY } });
   const value = Array.isArray(row?.value) ? row.value : [];
   return new Set(value.filter((p): p is Provider => (PROVIDERS as readonly unknown[]).includes(p)));
 }
 
 export async function setProviderEnabled(provider: Provider, enabled: boolean): Promise<Set<Provider>> {
-  const disabled = await getDisabledProviders();
-  if (enabled) disabled.delete(provider);
-  else disabled.add(provider);
-  const value = [...disabled] as unknown as Prisma.InputJsonValue;
-  await prisma.setting.upsert({ where: { key: SETTING_KEY }, create: { key: SETTING_KEY, value }, update: { value } });
-  return disabled;
+  return setProvidersEnabled([provider], enabled);
+}
+
+/** One write for all of them, one writer at a time. */
+export async function setProvidersEnabled(providers: readonly Provider[], enabled: boolean): Promise<Set<Provider>> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${LIST_LOCK})`;
+    const disabled = await getDisabledProviders(tx);
+    for (const provider of providers) {
+      if (enabled) disabled.delete(provider);
+      else disabled.add(provider);
+    }
+    const value = [...disabled] as unknown as Prisma.InputJsonValue;
+    await tx.setting.upsert({ where: { key: SETTING_KEY }, create: { key: SETTING_KEY, value }, update: { value } });
+    return disabled;
+  });
 }
 
 export async function isProviderEnabled(provider: string): Promise<boolean> {

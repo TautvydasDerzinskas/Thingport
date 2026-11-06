@@ -567,6 +567,18 @@ export const settingsApi = {
     return ((await res.json()) as { providers: ProviderSetting[] }).providers;
   },
 
+  /** Several in one write; separate calls at once would overwrite each other's change. */
+  setProvidersEnabled: async (providers: ImportProvider[], enabled: boolean): Promise<ProviderSetting[]> => {
+    const res = await fetch(`${apiBase()}/settings/providers`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ providers, enabled }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the providers"));
+    return ((await res.json()) as { providers: ProviderSetting[] }).providers;
+  },
+
   getAuth: async (): Promise<AuthSettings> => {
     const res = await fetch(`${apiBase()}/settings/auth`, { headers: authHeaders() });
     assertOk(res, "Failed to load session settings");

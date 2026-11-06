@@ -114,7 +114,12 @@ import {
   setDefaultAiConnection,
   updateAiConnection,
 } from "../services/aiConnectionService";
-import { getDisabledProviders, PROVIDERS, setProviderEnabled } from "../services/providerSettingsService";
+import {
+  getDisabledProviders,
+  PROVIDERS,
+  setProviderEnabled,
+  setProvidersEnabled,
+} from "../services/providerSettingsService";
 import { type AuthSlot, MANIFESTS, type ProviderId } from "../providers/index.generated";
 import { PROVIDERS as PROVIDER_BACKENDS } from "../providers/registry";
 import { CARD_PREVIEWS, getCardPreview, setCardPreview } from "../services/cardPreviewService";
@@ -130,6 +135,23 @@ router.get(
   "/settings/providers",
   asyncHandler(async (_req, res) => {
     const disabled = await getDisabledProviders();
+    res.json({ providers: PROVIDERS.map((id) => ({ id, enabled: !disabled.has(id) })) });
+  }),
+);
+
+// Several at once, as the admin page's bulk actions send them.
+router.patch(
+  "/settings/providers",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { providers, enabled } = parseBody(
+      z.object({ providers: z.array(z.enum(PROVIDERS)).min(1).max(PROVIDERS.length), enabled: z.boolean() }),
+      req.body,
+    );
+    const changed = [...new Set(providers)];
+    const disabled = await setProvidersEnabled(changed, enabled);
+    for (const provider of changed)
+      void createLog({ userId: req.userId!, action: "provider_toggled", details: { provider, enabled } });
     res.json({ providers: PROVIDERS.map((id) => ({ id, enabled: !disabled.has(id) })) });
   }),
 );

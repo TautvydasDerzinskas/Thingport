@@ -1377,7 +1377,56 @@
         "turnOn": "Activer {{name}}",
         "disableTitle": "Désactiver {{name}} ?",
         "disableMessage": "Personne ne pourra importer depuis {{name}} tant qu’il ne sera pas réactivé : les liens, Thingport Grab et la file d’attente d’importation seront refusés, la synchronisation de ses collections sera suspendue, et les tâches de fond l’ignoreront. Les modèles déjà importés depuis ce site restent tels quels.",
-        "disableConfirm": "Désactiver"
+        "disableConfirm": "Désactiver",
+        "sortOldest": "Plus anciens",
+        "status": {
+          "label": "Afficher",
+          "all": "Tous ({{n}})",
+          "on": "Activés ({{n}})",
+          "off": "Désactivés ({{n}})"
+        },
+        "filters": {
+          "signIn": {
+            "none": "Aucune",
+            "optional": "Facultative",
+            "user": "Celle de chacun",
+            "key": "Clé de l’administrateur"
+          },
+          "grabOnly": "Grab seulement"
+        },
+        "chips": {
+          "profiles": "Profils",
+          "paid": "Payants",
+          "modelsOnly": "Modèles seuls"
+        },
+        "signInLine": {
+          "none": "Aucune connexion requise",
+          "userOptional": "Connexion facultative",
+          "user": "Chacun se connecte",
+          "admin": "Clé de l’administrateur",
+          "adminUser": "Clé de l’administrateur, chacun se connecte"
+        },
+        "keyMissing": "Clé manquante",
+        "shown": "{{shown}} sur {{total}} affichés",
+        "noMatch": "Aucun fournisseur ne correspond à ces filtres.",
+        "selection": {
+          "enter": "Sélectionner des fournisseurs",
+          "toolbar": "Actions pour les fournisseurs sélectionnés",
+          "turnOn": "Activer",
+          "turnOff": "Désactiver",
+          "allOn": "Ceux sélectionnés sont déjà tous activés",
+          "allOff": "Ceux sélectionnés sont déjà tous désactivés"
+        },
+        "bulkDisableTitle_one": "Désactiver {{count}} fournisseur ?",
+        "bulkDisableTitle_many": "Désactiver {{count}} fournisseurs ?",
+        "bulkDisableTitle_other": "Désactiver {{count}} fournisseurs ?",
+        "bulkDisableMessage": "Personne ne pourra importer depuis {{names}} tant qu’ils ne seront pas réactivés : les liens, Thingport Grab et la file d’attente d’importation seront refusés, la synchronisation de leurs collections sera suspendue, et les tâches de fond les ignoreront. Les modèles déjà importés depuis ces sites restent tels quels.",
+        "turnedOn_one": "{{name}} activé",
+        "turnedOn_many": "{{count}} fournisseurs activés",
+        "turnedOn_other": "{{count}} fournisseurs activés",
+        "turnedOff_one": "{{name}} désactivé",
+        "turnedOff_many": "{{count}} fournisseurs désactivés",
+        "turnedOff_other": "{{count}} fournisseurs désactivés"
       },
       "storageSettings": {
         "heading": "Stockage"

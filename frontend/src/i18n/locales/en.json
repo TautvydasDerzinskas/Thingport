@@ -1350,7 +1350,53 @@
         "turnOn": "Turn {{name}} on",
         "disableTitle": "Turn {{name}} off?",
         "disableMessage": "Nobody can import from {{name}} until it's back on: links, Thingport Grab and the import queue are refused, its collection syncs pause, and background jobs skip it. Models already imported from it stay as they are.",
-        "disableConfirm": "Turn off"
+        "disableConfirm": "Turn off",
+        "sortOldest": "Oldest",
+        "status": {
+          "label": "Show",
+          "all": "All ({{n}})",
+          "on": "On ({{n}})",
+          "off": "Off ({{n}})"
+        },
+        "filters": {
+          "signIn": {
+            "none": "None",
+            "optional": "Optional",
+            "user": "Each user's",
+            "key": "Admin's key"
+          },
+          "grabOnly": "Grab only"
+        },
+        "chips": {
+          "profiles": "Profiles",
+          "paid": "Paid",
+          "modelsOnly": "Models only"
+        },
+        "signInLine": {
+          "none": "No sign-in needed",
+          "userOptional": "Sign-in optional",
+          "user": "Users sign in",
+          "admin": "Admin's key",
+          "adminUser": "Admin's key, users sign in"
+        },
+        "keyMissing": "Key missing",
+        "shown": "{{shown}} of {{total}} shown",
+        "noMatch": "No providers match these filters.",
+        "selection": {
+          "enter": "Select providers",
+          "toolbar": "Actions for the selected providers",
+          "turnOn": "Turn on",
+          "turnOff": "Turn off",
+          "allOn": "The selected ones are all on",
+          "allOff": "The selected ones are all off"
+        },
+        "bulkDisableTitle_one": "Turn {{count}} provider off?",
+        "bulkDisableTitle_other": "Turn {{count}} providers off?",
+        "bulkDisableMessage": "Nobody can import from {{names}} until they're back on: links, Thingport Grab and the import queue are refused, their collection syncs pause, and background jobs skip them. Models already imported from them stay as they are.",
+        "turnedOn_one": "{{name}} turned on",
+        "turnedOn_other": "{{count}} providers turned on",
+        "turnedOff_one": "{{name}} turned off",
+        "turnedOff_other": "{{count}} providers turned off"
       },
       "storageSettings": {
         "heading": "Storage"
