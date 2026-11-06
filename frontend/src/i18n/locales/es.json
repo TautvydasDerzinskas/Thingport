@@ -144,6 +144,7 @@
       "selectAll": "Seleccionar todo",
       "clear": "Desmarcar todo",
       "alreadyImported": "Ya está en la biblioteca",
+      "blocked": "No se puede importar",
       "noEntries": "No se han encontrado modelos en esta colección.",
       "importSelected": "Importar seleccionados",
       "importing": "Importando...",
@@ -6145,6 +6146,16 @@
           "Importa cualquier enlace de publicación, o sincroniza una colección o tus propias generaciones desde la pestaña Explorar.",
           "Con un plan gratuito solo se descargan tus propias generaciones: Meshy reserva los modelos de la comunidad para Pro y Studio."
         ]
+      },
+      "blocked": {
+        "community": {
+          "title": "Requiere Meshy Pro",
+          "hint": "Meshy reserva los modelos de la comunidad de otras personas para sus planes Pro y Studio. Los tuyos se importan con un plan gratuito, salvo los que hizo su agente de IA."
+        },
+        "own": {
+          "title": "Requiere un plan de pago de Meshy",
+          "hint": "Meshy reserva para los planes de pago los modelos que hizo su agente de IA, incluso los tuyos."
+        }
       },
       "admin": {
         "description": "Publicaciones de la comunidad, colecciones y las generaciones de cada usuario, todo descargado con el inicio de sesión del propio usuario. Los modelos de la comunidad necesitan un plan Meshy Pro o Studio."

@@ -144,6 +144,7 @@
       "selectAll": "Tout sélectionner",
       "clear": "Tout désélectionner",
       "alreadyImported": "Déjà dans la bibliothèque",
+      "blocked": "Import impossible",
       "noEntries": "Aucun modèle trouvé dans cette collection.",
       "importSelected": "Importer la sélection",
       "importing": "Importation...",
@@ -6158,6 +6159,16 @@
           "Importez n’importe quel lien de publication, ou synchronisez une collection ou vos propres générations depuis l’onglet Parcourir.",
           "Avec un forfait gratuit, seules vos propres générations se téléchargent : Meshy réserve les modèles communautaires aux forfaits Pro et Studio."
         ]
+      },
+      "blocked": {
+        "community": {
+          "title": "Nécessite Meshy Pro",
+          "hint": "Meshy réserve les modèles communautaires des autres à ses forfaits Pro et Studio. Les vôtres s'importent avec un forfait gratuit, sauf ceux créés par son agent IA."
+        },
+        "own": {
+          "title": "Nécessite un forfait Meshy payant",
+          "hint": "Meshy réserve aux forfaits payants les modèles créés par son agent IA, même les vôtres."
+        }
       },
       "admin": {
         "description": "Les publications de la communauté, les collections et les générations de chaque utilisateur, toutes téléchargées avec la connexion de l’utilisateur. Les modèles communautaires demandent un forfait Meshy Pro ou Studio."

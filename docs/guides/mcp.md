@@ -15,10 +15,11 @@ you open Thingport at, and the assistant signs in with your [API token](api-toke
 3. Click the cog next to the token to open **Token permissions**, and under **MCP permissions** set each tool to **Allow** or
    **Deny**. Changes apply at once, to the token you already have.
 
-A new token gets every tool that only reads, plus `save_widget`, `save_tool` and `upload_icon`, so an assistant can
-make you a dashboard widget or a tool straight away. The other tools that change your library are marked **Changes your library**, stay off
-until you turn them on, and ask you to confirm when you do. The token still can't change anything over the REST API,
-and an MCP tool is only reachable if it's allowed here. Regenerating the token sets its tools back to these defaults.
+A new token gets every tool that only reads, apart from [Studio's](#the-tools), plus `save_widget`, `save_tool` and
+`upload_icon`, so an assistant can make you a dashboard widget or a tool straight away. The other tools that change your
+library are marked **Changes your library**, stay off until you turn them on, and ask you to confirm when you do. The
+token still can't change anything over the REST API, and an MCP tool is only reachable if it's allowed here.
+Regenerating the token sets its tools back to these defaults.
 
 ## 2. Add Thingport to your assistant
 
@@ -90,7 +91,7 @@ good, `add_model_files` replaces a model's sliced print, `edit_model` and `renam
 `remove_from_collection` takes models out of a collection (not your library), and `save_widget` and `save_tool` replace
 a widget or a tool with the same folder name.
 
-**Studio designs**, when an admin has turned [Studio](studio.md) on, is one permission for all of Studio's tools:
+**Studio designs** is one permission for all of [Studio](studio.md)'s tools:
 `studio_guide`, which an assistant reads first for how Studio works, `studio_list_designs`, `studio_get_design` and
 `studio_view_design` to read and look at a design, `studio_inspect_body` for a body's faces and edges as the tools name
 them, `studio_create_design` and `studio_delete_design`, and one tool for each step you can take on the page, from

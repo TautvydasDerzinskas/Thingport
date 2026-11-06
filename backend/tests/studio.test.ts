@@ -1,14 +1,9 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
-
-// config.ts reads STUDIO_ENABLED once, when it's first imported.
-vi.hoisted(() => {
-  process.env.STUDIO_ENABLED = "true";
-});
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";

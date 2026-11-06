@@ -4,7 +4,7 @@ import { tidy } from "../../services/descriptionMarkdown";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
-import { sleep } from "../../utils/concurrency";
+import { mapWithConcurrency, sleep } from "../../utils/concurrency";
 import manifest from "./manifest.generated";
 import {
   meshyCollectionUrl,
@@ -70,14 +70,15 @@ export class MeshyAuthError extends Error {
   }
 }
 
-/** A download the account's plan doesn't include: community models are Pro and Studio's, and so are a free plan's
- *  generations from Meshy's newest models. */
+/** A download the account's plan doesn't include: other people's community models are Pro and Studio's, and so are
+ *  the user's own generations that Meshy's AI agent made. */
 export class MeshyPlanError extends Error {
   constructor(community = true) {
     super(
       community
-        ? "Meshy only lets Pro and Studio plans download community models. Your own generations import on any plan."
-        : "Meshy's plan on this account doesn't include downloading this generation.",
+        ? "Meshy only lets Pro and Studio plans download other people's community models. Your own import on a free " +
+            "plan too, unless its AI agent made them."
+        : "Meshy only lets paid plans download this generation of yours, as it does with its AI agent's models.",
     );
     this.name = "MeshyPlanError";
   }
@@ -405,9 +406,19 @@ export async function resolveMeshyTask(
   };
 }
 
-/** The signed link to a mesh, converted for the signed-in account. Throws MeshyPlanError for a community model a free
- *  plan can't have, MeshyDownloadLimitError once the month's downloads are used up; null when the model has nothing
- *  to convert. */
+/** Whether Meshy keeps a model from the account's plan altogether, as its pages ask before they show Download. False
+ *  when it can't be asked; a refused sign-in is thrown, so it can be renewed and asked again. */
+async function isPlanForbidden(taskId: string, type: MeshyModelResolution["type"], auth: MeshyAuth): Promise<boolean> {
+  const path = `/v2/tasks/${encodeURIComponent(taskId)}/downloadable-status?${query({ type })}`;
+  const answer = await call(path, { auth }).catch((err: unknown) => {
+    if (err instanceof MeshyAuthError) throw err;
+    return null;
+  });
+  return asRecord(answer?.result)?.downloadableStatus === "Forbidden";
+}
+
+/** The signed link to a mesh, converted for the signed-in account. Throws MeshyPlanError for a model the plan can't
+ *  have, MeshyDownloadLimitError once the month's downloads are used up; null when the model has nothing to convert. */
 export async function meshyDownloadUrl(
   mesh: MeshyMesh,
   type: MeshyModelResolution["type"],
@@ -417,9 +428,48 @@ export async function meshyDownloadUrl(
   try {
     return webImage((await call(path, { auth, timeoutMs: CONVERT_TIMEOUT_MS }))?.result);
   } catch (err) {
-    if (err instanceof MeshyPlanError) throw new MeshyPlanError(type === "Showcase");
+    // A generation the plan can't have at all is refused as a used-up limit, its limit being none.
+    const forbidden =
+      err instanceof MeshyPlanError ||
+      (err instanceof MeshyDownloadLimitError && (await isPlanForbidden(mesh.taskId, type, auth)));
+    if (forbidden) throw new MeshyPlanError(type === "Showcase");
     throw err;
   }
+}
+
+/** Why the account's plan can't download a model: someone else's community model, or one of the user's own. */
+export type MeshyPlanBlock = "community" | "own";
+
+// The plans Meshy's pages ask a model's download status for; any other downloads every model, so they don't ask.
+const ASKED_TIERS = new Set(["free", "starter"]);
+const BLOCK_CHECKS_AT_ONCE = 4;
+
+/** The models of a listing that Meshy keeps from the account's plan, by id, asked as its pages ask, and only on the
+ *  plans they ask for. A free plan is kept from every other person's community model -- over forty asked, featured or
+ *  not, all said so -- so only the user's own are asked of, as their generations. One it can't tell of is left out. */
+export async function meshyPlanBlocks(
+  entries: MeshySummary[],
+  accountId: string,
+  auth: MeshyAuth,
+): Promise<Map<string, MeshyPlanBlock>> {
+  const blocks = new Map<string, MeshyPlanBlock>();
+  const tier = asText(asRecord((await call("/v1/me/tier", { auth }).catch(() => null))?.result)?.tier);
+  if (!tier || !ASKED_TIERS.has(tier)) return blocks;
+  const own: MeshySummary[] = [];
+  for (const entry of entries) {
+    if (meshyTaskIdOf(entry.externalId) || entry.authorId === accountId) own.push(entry);
+    // Starter's community downloads are counted, not kept from it.
+    else if (tier === "free" && entry.authorId) blocks.set(entry.externalId, "community");
+  }
+  await mapWithConcurrency(own, BLOCK_CHECKS_AT_ONCE, async (entry) => {
+    // A post whose cover is a picture says which its model is only when it's read.
+    const taskId =
+      meshyTaskIdOf(entry.externalId) ??
+      entry.modelTaskId ??
+      (await resolveMeshyPost(entry.externalId).catch(() => null))?.meshes[0]?.taskId;
+    if (taskId && (await isPlanForbidden(taskId, "Task", auth).catch(() => false))) blocks.set(entry.externalId, "own");
+  });
+  return blocks;
 }
 
 /** Tells Meshy the download happened, as the site does after its own, so it counts toward the model's downloads. A
@@ -439,7 +489,16 @@ export function isMeshyFileHost(hostname: string): boolean {
 
 // ---- Listings ----
 
-export type MeshySummary = { externalId: string; title: string; cover: string | null; likes: number | null };
+export type MeshySummary = {
+  externalId: string;
+  title: string;
+  cover: string | null;
+  likes: number | null;
+  /** Who posted it; a generation has no one but the user. */
+  authorId?: string | null;
+  /** The task its cover model was generated as, where its cover is one. */
+  modelTaskId?: string | null;
+};
 
 export type MeshyListing = { entries: MeshySummary[]; total: number; truncated: boolean };
 
@@ -455,6 +514,8 @@ function postSummary(post: Record<string, unknown>): MeshySummary | null {
     title: title ?? (author ? `Meshy post by ${author}` : "Meshy post"),
     cover: cover ? itemPicture(cover) : null,
     likes: asCount(asRecord(post.stats)?.likesCount),
+    authorId: asText(asRecord(post.author)?.id),
+    modelTaskId: cover?.kind === "model" ? asText(cover.refId) : null,
   };
 }
 

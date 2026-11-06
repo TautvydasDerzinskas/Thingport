@@ -144,6 +144,7 @@
       "selectAll": "Select all",
       "clear": "Clear",
       "alreadyImported": "Already in library",
+      "blocked": "Can't be imported",
       "noEntries": "No models found in this collection.",
       "importSelected": "Import selected",
       "importing": "Importing...",
@@ -6089,6 +6090,16 @@
           "Import any post link, or sync a collection or your own generations from the Browse tab.",
           "On a free plan only your own generations download: Meshy keeps community models for Pro and Studio."
         ]
+      },
+      "blocked": {
+        "community": {
+          "title": "Needs Meshy Pro",
+          "hint": "Meshy keeps other people's community models for its Pro and Studio plans. Your own import on a free plan, unless its AI agent made them."
+        },
+        "own": {
+          "title": "Needs a paid Meshy plan",
+          "hint": "Meshy keeps the models its AI agent made for paid plans, even yours."
+        }
       },
       "admin": {
         "description": "Community posts, collections and each user's own generations, all downloaded with the user's own sign-in. Community models need a Meshy Pro or Studio plan."

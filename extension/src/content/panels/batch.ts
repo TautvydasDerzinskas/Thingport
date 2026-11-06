@@ -3,7 +3,7 @@
 // Printables collection is read as its owner (providers/printables/content.ts), and Snapmaker's likes and bookmarks
 // share one page, which the panel switches between.
 
-import type { BatchEntriesResult, ImportJob, SyncLookup } from "../../shared/api";
+import type { BatchEntriesResult, BatchEntry, ImportJob, SyncLookup } from "../../shared/api";
 import { ctx, setContext } from "../context";
 import { MANIFESTS, manifestOf } from "../../providers/index.generated";
 import { parseSnapmakerListUrl, snapmakerListUrl, type SnapmakerList } from "../../shared/urls";
@@ -15,6 +15,7 @@ import { loadingModelsPhrases, renderFunStatus } from "./funStatus";
 import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncToggleHtml } from "./syncToggle";
 import { printablesToken, readCollectionForPanel } from "../../providers/printables/content";
 import { pushPrintablesNow } from "../../providers/printables/content";
+import { CONTENT_MODULES, type ImportBlock } from "../../providers/content";
 
 const SNAPMAKER_LISTS: { list: SnapmakerList; label: string }[] = [
   { list: "likes", label: "Likes" },
@@ -125,8 +126,20 @@ async function loadEntries(): Promise<PanelEntries> {
   return { entries: [] };
 }
 
+/** The notes over the list for its models the provider keeps from the user: one per reason, with how many. */
+function blockedNotesHtml(blocked: ImportBlock[]): string {
+  const counts = new Map<ImportBlock, number>();
+  for (const block of blocked) counts.set(block, (counts.get(block) ?? 0) + 1);
+  return [...counts]
+    .map(
+      ([block, count]) => `<div class="tg-hint">${escapeHtml(block.title)} (${count}): ${escapeHtml(block.hint)}</div>`,
+    )
+    .join("");
+}
+
 export async function loadBatchEntries(): Promise<void> {
-  renderFunStatus(loadingModelsPhrases(ctx().classification.provider));
+  const { provider } = ctx().classification;
+  renderFunStatus(loadingModelsPhrases(provider));
   let result: PanelEntries;
   let sync: SyncLookup | null;
   try {
@@ -137,22 +150,30 @@ export async function loadBatchEntries(): Promise<void> {
     return;
   }
   const allImported = result.entries.every((entry) => entry.already_imported);
+  // A reason the provider has no words for leaves its model as any other.
+  const blockOf = (entry: BatchEntry) =>
+    entry.blocked && !entry.already_imported ? CONTENT_MODULES[provider].listBlocks?.[entry.blocked] : undefined;
   const rows = result.entries
-    .map(
-      (entry) => `
-        <label class="tg-entry${entry.already_imported ? " tg-entry--imported" : ""}">
-          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(entry.design_id)}" ${entry.already_imported ? "" : "checked"} />
+    .map((entry) => {
+      const block = blockOf(entry);
+      const state = entry.already_imported ? " tg-entry--imported" : block ? " tg-entry--blocked" : "";
+      const badge = entry.already_imported ? "already imported" : block?.title;
+      return `
+        <label class="tg-entry${state}"${block ? ` title="${escapeHtml(block.hint)}"` : ""}>
+          <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(entry.design_id)}" ${entry.already_imported || block ? "" : "checked"}${block ? " disabled" : ""} />
           <span class="tg-entry__name">${escapeHtml(entry.title || entry.design_id)}</span>
-          ${entry.already_imported ? '<span class="tg-badge">already imported</span>' : ""}
+          ${badge ? `<span class="tg-badge">${escapeHtml(badge)}</span>` : ""}
         </label>
-      `,
-    )
+      `;
+    })
     .join("");
-  const found = `${result.entries.length} models found${result.truncated ? " (more available on the site)" : ""}`;
+  const count = result.entries.length;
+  const found = `${count} model${count === 1 ? "" : "s"} found${result.truncated ? " (more available on the site)" : ""}`;
   renderPanel(`
     ${snapmakerListSwitchHtml()}
     <div class="tg-title">${escapeHtml(result.title || "Import models")}</div>
     <div class="tg-hint">${allImported && result.entries.length ? `${found}, all already in your library.` : found}</div>
+    ${blockedNotesHtml(result.entries.flatMap((entry) => blockOf(entry) ?? []))}
     <div class="tg-entries">${rows}</div>
     ${syncToggleHtml(sync)}
     <button class="tg-btn" type="button" data-action="import">${allImported && sync ? "Save" : "Import selected"}</button>

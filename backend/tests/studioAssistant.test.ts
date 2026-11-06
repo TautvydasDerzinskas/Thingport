@@ -1,12 +1,7 @@
 import http from "node:http";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
-
-// config.ts reads STUDIO_ENABLED once, when it's first imported.
-vi.hoisted(() => {
-  process.env.STUDIO_ENABLED = "true";
-});
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";

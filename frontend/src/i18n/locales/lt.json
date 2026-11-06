@@ -147,6 +147,7 @@
       "selectAll": "Pažymėti visus",
       "clear": "Išvalyti",
       "alreadyImported": "Jau bibliotekoje",
+      "blocked": "Negalima importuoti",
       "noEntries": "Šioje kolekcijoje modelių nerasta.",
       "importSelected": "Importuoti pažymėtus",
       "importing": "Importuojama...",
@@ -6365,6 +6366,16 @@
           "Importuokite bet kurio įrašo nuorodą arba sinchronizuokite kolekciją ar savo sugeneruotus modelius iš skilties Naršyti.",
           "Su nemokamu planu atsisiunčiami tik jūsų sugeneruoti modeliai: bendruomenės modelius Meshy palieka Pro ir Studio planams."
         ]
+      },
+      "blocked": {
+        "community": {
+          "title": "Reikia Meshy Pro",
+          "hint": "Kitų žmonių bendruomenės modelius Meshy palieka Pro ir Studio planams. Jūsų pačių modeliai importuojami ir su nemokamu planu, nebent juos sukūrė Meshy DI agentas."
+        },
+        "own": {
+          "title": "Reikia mokamo Meshy plano",
+          "hint": "Modelius, kuriuos sukūrė Meshy DI agentas, Meshy palieka mokamiems planams, net jūsų."
+        }
       },
       "admin": {
         "description": "Bendruomenės įrašai, kolekcijos ir kiekvieno naudotojo sugeneruoti modeliai – visi atsisiunčiami su paties naudotojo prisijungimu. Bendruomenės modeliams reikia Meshy Pro arba Studio plano."

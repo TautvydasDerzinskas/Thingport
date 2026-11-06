@@ -36,6 +36,11 @@
   &--imported {
     opacity: 0.6;
   }
+
+  &--blocked {
+    opacity: 0.6;
+    cursor: default;
+  }
 }
 
 .tg-badge {

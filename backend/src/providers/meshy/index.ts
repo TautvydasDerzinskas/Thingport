@@ -13,7 +13,7 @@ import type { NewPlateInput } from "../../services/printCreation";
 import { HttpError } from "../../utils/fileUtils";
 import { detailsOf } from "../details";
 import { MANIFESTS } from "../index.generated";
-import type { ProviderDetails, ProviderList, ProviderLists, ProviderTrending, SourcedImport } from "../types";
+import type { ProviderDetails, ProviderLists, ProviderTrending, SourcedImport } from "../types";
 import {
   fetchMeshyCollection,
   fetchMeshyCollectionPosts,
@@ -36,8 +36,11 @@ import {
   resolveMeshyPost,
   resolveMeshyTask,
   type MeshyAccount,
+  meshyPlanBlocks,
   type MeshyAuth,
+  type MeshyListing,
   type MeshyModelResolution,
+  type MeshyPlanBlock,
 } from "./api";
 import { getUserMeshyAuth, markMeshySessionRejected, MESHY_CONNECT, withMeshyAuth } from "./session";
 
@@ -92,12 +95,15 @@ export const meshyImport: SourcedImport<Connected, MeshyModelResolution> = {
   nameHint: (externalId) => `meshy-${meshyTaskIdOf(externalId) ?? externalId}`,
   async downloadModel(target, resolved, connected, _requested, kit) {
     let auth = connected.auth;
+    // The user's own post is their own generation to Meshy, which a free plan downloads; as a community model it doesn't.
+    const own = resolved.type === "Showcase" && resolved.meta.author?.externalId === connected.account.userId;
+    const type = own ? "Task" : resolved.type;
     const downloaded: NewPlateInput[] = [];
     try {
       for (const mesh of resolved.meshes) {
         const url = await withMeshyAuth(target.userId, auth, (fresh) => {
           auth = fresh;
-          return meshyDownloadUrl(mesh, resolved.type, fresh);
+          return meshyDownloadUrl(mesh, type, fresh);
         });
         if (!url) continue;
         const inputs = (await kit.downloadSignedFile({ url, name: mesh.name }, isMeshyFileHost, BLOCKED)) ?? [];
@@ -116,26 +122,38 @@ export const meshyTrending: ProviderTrending = { fetch: (_userId, limit) => fetc
 
 /** A collection, anyone's to read, or the user's own generations, read with their sign-in. Either way every file
  *  needs the sign-in, so a list is only offered with one. */
-async function listOf(userId: string, url: string): Promise<ProviderList & { title: string }> {
+async function listOf(
+  userId: string,
+  url: string,
+): Promise<{ title: string; listing: MeshyListing; connected: Connected }> {
   const collection = parseMeshyCollectionUrl(url);
   const generations = collection ? null : parseMeshyGenerationsUrl(url);
   if (!collection && !generations) throw new HttpError(400, "Not a link to a Meshy collection or your generations");
   try {
     const connected = await requireMeshy(userId);
-    let title: string;
-    let listing: Awaited<ReturnType<typeof fetchMeshyCollectionPosts>>;
     if (collection) {
       const found = await fetchMeshyCollection(collection.collectionId);
       if (!found) throw new HttpError(404, "That Meshy collection can't be found. It may have been deleted.");
-      title = found.name;
-      listing = await fetchMeshyCollectionPosts(found.id);
-    } else {
-      if (connected.account.userId !== generations!.userId) {
-        throw new HttpError(400, "Those are another Meshy account's generations: only your own can be imported.");
-      }
-      title = MESHY_GENERATIONS_NAME;
-      listing = await withMeshyAuth(userId, connected.auth, (auth) => fetchMeshyGenerations(auth));
+      return { title: found.name, listing: await fetchMeshyCollectionPosts(found.id), connected };
     }
+    if (connected.account.userId !== generations!.userId) {
+      throw new HttpError(400, "Those are another Meshy account's generations: only your own can be imported.");
+    }
+    const listing = await withMeshyAuth(userId, connected.auth, (auth) => fetchMeshyGenerations(auth));
+    return { title: MESHY_GENERATIONS_NAME, listing, connected };
+  } catch (err) {
+    throw await meshyFailure(userId, err);
+  }
+}
+
+export const meshyLists: ProviderLists = {
+  async read(userId, url) {
+    const { title, listing, connected } = await listOf(userId, url);
+    if (!listing.entries.length) throw new HttpError(400, `"${title}" has no models Thingport can import`);
+    // Only shown beside the list, so a check that can't be made leaves its models unmarked.
+    const blocks = await meshyPlanBlocks(listing.entries, connected.account.userId, connected.auth).catch(
+      () => new Map<string, MeshyPlanBlock>(),
+    );
     return {
       title,
       total: listing.total,
@@ -144,18 +162,9 @@ async function listOf(userId: string, url: string): Promise<ProviderList & { tit
         externalId: entry.externalId,
         title: entry.title,
         cover: entry.cover,
+        blocked: blocks.get(entry.externalId),
       })),
     };
-  } catch (err) {
-    throw await meshyFailure(userId, err);
-  }
-}
-
-export const meshyLists: ProviderLists = {
-  async read(userId, url) {
-    const list = await listOf(userId, url);
-    if (!list.entries.length) throw new HttpError(400, `"${list.title}" has no models Thingport can import`);
-    return list;
   },
   modelIds: z
     .array(

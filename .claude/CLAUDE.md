@@ -18,7 +18,7 @@ Before adding or changing a provider (a model site Thingport imports from), read
 
 ## Studio
 
-Studio (`/studio`, behind `STUDIO_ENABLED`) is a CAD page that an AI must be able to drive completely. **Every change a
+Studio (`/studio`) is a CAD page that an AI must be able to drive completely. **Every change a
 person can make to a design must be a command in `frontend/src/studio/commands.ts`**, run through `run()` from
 `useStudioDesign`: that one list is what the toolbar, the REST endpoint, the `studio_*` MCP tools and Studio's own
 assistant are all made from, so an action added any other way is one an AI can't take. Never change a design's

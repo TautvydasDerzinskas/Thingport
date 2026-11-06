@@ -1,5 +1,34 @@
 # Thingport frontend changelog
 
+# [thingport-frontend-v1.5.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.4.0...thingport-frontend-v1.5.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* guard provider credentials and remote imports ([#151](https://github.com/TautvydasDerzinskas/Thingport/issues/151)) ([6b12b97](https://github.com/TautvydasDerzinskas/Thingport/commit/6b12b9727a60a1a86b1a6cb8ecee267367f0d97f))
+* import bought Cults3D models, and offer them in Grab ([#236](https://github.com/TautvydasDerzinskas/Thingport/issues/236)) ([c1c30cb](https://github.com/TautvydasDerzinskas/Thingport/commit/c1c30cb9b733bce4dbdd12d39a5d5082aa397f16)), closes [#232](https://github.com/TautvydasDerzinskas/Thingport/issues/232)
+* import your own Meshy posts on a free plan, and say which Meshy models a plan can't download ([#245](https://github.com/TautvydasDerzinskas/Thingport/issues/245)) ([e1933d0](https://github.com/TautvydasDerzinskas/Thingport/commit/e1933d0e8c83be0ebe752f67144188ab33c5d580))
+* only trust a link preview fetched for the current link ([f88ba70](https://github.com/TautvydasDerzinskas/Thingport/commit/f88ba70197599f9aedef4e9d2a1d97e8f84d479c))
+
+
+### Features
+
+* a persistent import queue, with its own modal and top-bar indicator ([#218](https://github.com/TautvydasDerzinskas/Thingport/issues/218)) ([6392e77](https://github.com/TautvydasDerzinskas/Thingport/commit/6392e773edd49e966fa5f015a39840aeec568ed8)), closes [#169](https://github.com/TautvydasDerzinskas/Thingport/issues/169)
+* add chats to social features, with direct messages and rooms ([#238](https://github.com/TautvydasDerzinskas/Thingport/issues/238)) ([e714fe2](https://github.com/TautvydasDerzinskas/Thingport/commit/e714fe206d74819c198a3129b184293ae27c2f15))
+* add Claude as an AI, through Anthropic's own API ([#233](https://github.com/TautvydasDerzinskas/Thingport/issues/233)) ([2d73475](https://github.com/TautvydasDerzinskas/Thingport/commit/2d73475d9701ac6acae819881306692991338887))
+* add Studio, a CAD page an AI can drive ([#235](https://github.com/TautvydasDerzinskas/Thingport/issues/235)) ([9dab716](https://github.com/TautvydasDerzinskas/Thingport/commit/9dab71656e691cc499c0ab958e270f4bbe7cc2f0))
+* **frontend:** a collections chip on the model page, and creating a collection where you pick one ([#211](https://github.com/TautvydasDerzinskas/Thingport/issues/211)) ([6e7a601](https://github.com/TautvydasDerzinskas/Thingport/commit/6e7a60137cd2ffa2ef36351f54c70b07ef43dd09))
+* **frontend:** a compact top bar with two-tone icons ([#215](https://github.com/TautvydasDerzinskas/Thingport/issues/215)) ([2fd8f19](https://github.com/TautvydasDerzinskas/Thingport/commit/2fd8f19dadbe2860671d6abc2ece112c417c8523))
+* **frontend:** filter tags by model count and collections by type ([#227](https://github.com/TautvydasDerzinskas/Thingport/issues/227)) ([4530b42](https://github.com/TautvydasDerzinskas/Thingport/commit/4530b42e48a4ca7e71e7708344a9c9770b69b757))
+* **frontend:** show the unread count on the tab's icon and title ([#220](https://github.com/TautvydasDerzinskas/Thingport/issues/220)) ([6f87dc1](https://github.com/TautvydasDerzinskas/Thingport/commit/6f87dc173974009a95ecf8832a09e4dd468523ec))
+* import from Meshy, its community models and your own AI generations ([#240](https://github.com/TautvydasDerzinskas/Thingport/issues/240)) ([c7aaf4d](https://github.com/TautvydasDerzinskas/Thingport/commit/c7aaf4d4b1e281f433f3edc303678f12891d754c))
+* import glTF models, packing a .gltf and its files into one .glb ([#212](https://github.com/TautvydasDerzinskas/Thingport/issues/212)) ([46744b7](https://github.com/TautvydasDerzinskas/Thingport/commit/46744b7a4ab8fc5cfe08ef5605a2a59d04edc444))
+* link a model with no source to its page on a provider ([b2be095](https://github.com/TautvydasDerzinskas/Thingport/commit/b2be095880fe046e52d8546516a1fb587ee2ddbd))
+* merge uploaded models into one, and assign a category to several at once ([#228](https://github.com/TautvydasDerzinskas/Thingport/issues/228)) ([b4f1b6a](https://github.com/TautvydasDerzinskas/Thingport/commit/b4f1b6a6f6e992edb02c5bf112666f39caba5c36))
+* share collections between users, with an Explore page ([#237](https://github.com/TautvydasDerzinskas/Thingport/issues/237)) ([25d4d0d](https://github.com/TautvydasDerzinskas/Thingport/commit/25d4d0dee5cab07253616a7561ee87bce347c29b))
+* turn Studio on for every instance, without STUDIO_ENABLED ([#243](https://github.com/TautvydasDerzinskas/Thingport/issues/243)) ([f7a3f73](https://github.com/TautvydasDerzinskas/Thingport/commit/f7a3f73e760286580ead0b92150650adc302e61e))
+* **widgets:** offer community widgets from the checkout when run from one ([#226](https://github.com/TautvydasDerzinskas/Thingport/issues/226)) ([db10b26](https://github.com/TautvydasDerzinskas/Thingport/commit/db10b260ad2376f20ad54f89d17716dae2dbe78d))
+
 # [thingport-frontend-v1.4.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.3.1...thingport-frontend-v1.4.0) (2026-10-30)
 
 

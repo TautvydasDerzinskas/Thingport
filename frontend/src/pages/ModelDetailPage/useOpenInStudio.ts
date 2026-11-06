@@ -9,8 +9,8 @@ import { useStudioEnabled } from "../../hooks/useStudioEnabled";
 import { extOf } from "../../utils/fileExtensions";
 import { openModelAsDesign, type StudioArrival } from "../StudioPage/openModel";
 
-// Opening a model's 3D file in Thingport Studio as a new design, while the instance has Studio on: from the model's
-// page, and from its menu wherever the model is a tile.
+// Opening a model's 3D file in Thingport Studio as a new design, when the backend has Studio: from the model's page,
+// and from its menu wherever the model is a tile.
 
 export function useOpenInStudio(print: Print, onUnauthorized?: () => void) {
   const { t } = useTranslation("app");
@@ -18,7 +18,7 @@ export function useOpenInStudio(print: Print, onUnauthorized?: () => void) {
   const showToast = useToast();
   const studioEnabled = useStudioEnabled() === true;
   const [opening, setOpening] = useState(false);
-  /** The model's files Studio can open, in the model's order; none while Studio is off. */
+  /** The model's files Studio can open, in the model's order; none on a backend without Studio. */
   const files = studioEnabled
     ? print.plates.filter((plate) => MODEL_EXTS.has(extOf(plate.filename).toLowerCase()))
     : [];

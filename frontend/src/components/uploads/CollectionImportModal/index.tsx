@@ -12,10 +12,13 @@ import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import type { ImportCollectionEntry } from "../../../api/imports";
+import type { ProviderId } from "../../../providers/index.generated";
 import CollectionEntryList from "./CollectionEntryList";
 
 export type CollectionPromptConfig = {
   label: string;
+  /** Whose list it is, for the provider's words on the models it can't import. */
+  provider?: ProviderId;
   loadEntries: () => Promise<{
     title: string | null;
     total: number;
@@ -30,6 +33,9 @@ type CollectionPromptState = {
 };
 
 type PromptStage = "loading" | "select" | "error";
+
+/** One the user can pick: not in their library already, and not one the provider keeps from them. */
+const isImportable = (entry: ImportCollectionEntry) => !entry.already_imported && !entry.blocked;
 
 function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error && err.message.trim()) return err.message;
@@ -76,7 +82,7 @@ export function useCollectionImportPrompt() {
       setTotal(result.total);
       setTruncated(result.truncated);
       setEntries(result.entries);
-      setSelected(new Set(result.entries.filter((entry) => !entry.already_imported).map((entry) => entry.design_id)));
+      setSelected(new Set(result.entries.filter(isImportable).map((entry) => entry.design_id)));
       setStage("select");
     } catch (err) {
       setError(errorMessage(err, t("collectionImport.loadError")));
@@ -117,7 +123,7 @@ export function useCollectionImportPrompt() {
 
   const toggleEntry = (designId: string) => {
     const entry = entries.find((e) => e.design_id === designId);
-    if (entry?.already_imported) return;
+    if (entry && !isImportable(entry)) return;
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(designId)) next.delete(designId);
@@ -126,7 +132,7 @@ export function useCollectionImportPrompt() {
     });
   };
 
-  const selectableEntries = entries.filter((entry) => !entry.already_imported);
+  const selectableEntries = entries.filter(isImportable);
 
   const selectAll = () => {
     setSelected(new Set(selectableEntries.map((entry) => entry.design_id)));
@@ -142,6 +148,7 @@ export function useCollectionImportPrompt() {
   const modal = state ? (
     <CollectionImportModalView
       label={state.config.label}
+      provider={state.config.provider}
       stage={stage}
       collectionTitle={collectionTitle}
       total={total}
@@ -165,6 +172,7 @@ export function useCollectionImportPrompt() {
 
 export function CollectionImportModalView({
   label,
+  provider,
   stage,
   collectionTitle,
   total,
@@ -182,6 +190,7 @@ export function CollectionImportModalView({
   onClearAll,
 }: {
   label: string;
+  provider?: ProviderId;
   stage: PromptStage;
   collectionTitle: string | null;
   total: number;
@@ -259,6 +268,7 @@ export function CollectionImportModalView({
               </Stack>
 
               <CollectionEntryList
+                provider={provider}
                 entries={entries}
                 selected={selected}
                 busy={busy}

@@ -9,7 +9,7 @@ import { providerNames } from "../providers/names";
 import { prisma } from "../db";
 import { toAuthorOut, type PrintOut } from "../dto";
 import { HttpError, sanitizeFilename } from "../utils/fileUtils";
-import { IMPORT_MAX_BYTES, STUDIO_ENABLED } from "../config";
+import { IMPORT_MAX_BYTES } from "../config";
 import type { McpAccess } from "../services/settingsService";
 import {
   addModelsToCollection,
@@ -1486,9 +1486,7 @@ export const MCP_TOOL_NAMES = MCP_TOOLS.map((tool) => tool.name);
 /** The tools the instance's MCP access lets a token reach, ticked or not. */
 export function mcpToolsFor(access: McpAccess): readonly McpToolDefinition[] {
   if (access === "off") return [];
-  // Studio's are left out while it's off, though a token keeps them ticked for when it's on.
-  const offered = STUDIO_ENABLED ? MCP_TOOLS : MCP_TOOLS.filter((tool) => tool.group !== "studio");
-  return access === "read" ? offered.filter((tool) => tool.readOnly) : offered;
+  return access === "read" ? MCP_TOOLS.filter((tool) => tool.readOnly) : MCP_TOOLS;
 }
 
 /** What the profile page offers to tick under this access. */

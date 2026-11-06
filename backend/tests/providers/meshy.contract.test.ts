@@ -170,6 +170,7 @@ function handlerFor(scenario: string, answers: Record<string, Answer> = {}): Fet
     if (!signedIn(headers) || scenario === "rejected") return json(loadFixture("meshy", "invalid-token"), 401);
     assertThat(headers["x-device-id"] === DEVICE, "calls go as the browser's device");
     if (path === "/v1/me/info") return json(loadFixture("meshy", "me"));
+    if (path === "/v1/me/tier") return json(tierOf("pro"));
     if (path === "/v2/tasks") return json(loadFixture("meshy", "tasks"));
     if (path === `/v2/tasks/${OWN_TASK}`) return json(loadFixture("meshy", "task"));
     if (path === `/v2/tasks/${EXAMPLE_TASK}`) {
@@ -181,10 +182,17 @@ function handlerFor(scenario: string, answers: Record<string, Answer> = {}): Fet
       assertThat(url.searchParams.get("format") === "3mf", "a model is converted to a 3MF");
       return json(loadFixture("meshy", "asset-url"));
     }
+    if (path.endsWith("/downloadable-status")) return json(loadFixture("meshy", "downloadable-status"));
     if (path.endsWith("/mark-downloaded")) return json(loadFixture("meshy", "mark-downloaded"));
     return undefined;
   };
 }
+
+/** Meshy's answer for the account's plan, recorded from a free one. */
+const tierOf = (tier: string) => {
+  const answer = loadFixture("meshy", "tier");
+  return { ...answer, result: { ...answer.result, tier } };
+};
 
 const connect = (userId: string, accessToken = TOKEN) => setUserMeshySession(userId, sessionOf(accessToken), ACCOUNT);
 
@@ -292,6 +300,57 @@ describe("Meshy specifics", () => {
     expect(await ctx.prints()).toHaveLength(0);
   });
 
+  it("renews a sign-in Meshy turns down while asking why it refused, and still says it's the plan", async () => {
+    await connect(ctx.userId);
+    let asked = 0;
+    const stub = ctx.install(
+      handlerFor("ok", {
+        [`/v2/tasks/${OWN_TASK}/asset-url`]: () => json(loadFixture("meshy", "asset-url-limit"), 403),
+        [`/v2/tasks/${OWN_TASK}/downloadable-status`]: () =>
+          ++asked === 1
+            ? json(loadFixture("meshy", "invalid-token"), 401)
+            : json(loadFixture("meshy", "downloadable-status-forbidden")),
+      }),
+    );
+    const res = await ctx.importUrl(`https://www.meshy.ai/workspace?task=${OWN_TASK}`);
+    expect(res.status).toBe(403);
+    expect(res.body.detail).toContain("paid plans");
+    expect(stub.callsTo("auth.meshy.ai")).toHaveLength(1);
+    expect((await getMeshyConnection(ctx.userId)).state).toBe("connected");
+  });
+
+  it("imports the user's own post as their own generation, which Meshy lets a free plan download", async () => {
+    await connect(ctx.userId);
+    const post = loadFixture("meshy", "post");
+    const stub = ctx.install(
+      handlerFor("ok", {
+        [`/public/community/posts/${POST_ID}`]: () =>
+          json({ ...post, result: { ...post.result, author: { ...post.result.author, id: MESHY_USER } } }),
+      }),
+    );
+    expectStatus(await ctx.importUrl(), 200);
+    const convert = stub.calls.find((call) => call.url.pathname.endsWith("/asset-url"));
+    expect(convert?.url.searchParams.get("type")).toBe("Task");
+  });
+
+  it("says the plan stops a generation Meshy keeps from it, though Meshy refuses it as a used-up limit", async () => {
+    await connect(ctx.userId);
+    const stub = ctx.install(
+      handlerFor("ok", {
+        [`/v2/tasks/${OWN_TASK}/asset-url`]: () => json(loadFixture("meshy", "asset-url-limit"), 403),
+        [`/v2/tasks/${OWN_TASK}/downloadable-status`]: () =>
+          json(loadFixture("meshy", "downloadable-status-forbidden")),
+      }),
+    );
+    const res = await ctx.importUrl(`https://www.meshy.ai/workspace?task=${OWN_TASK}`);
+    expect(res.status).toBe(403);
+    expect(res.body.code).not.toBe("MESHY_DOWNLOAD_LIMIT");
+    expect(res.body.detail).toContain("paid plans");
+    const status = stub.calls.find((call) => call.url.pathname.endsWith("/downloadable-status"));
+    expect(status?.url.searchParams.get("type")).toBe("Task");
+    expect(await ctx.prints()).toHaveLength(0);
+  });
+
   it("renews an access token that has run out, and keeps the refresh token Supabase hands back", async () => {
     await connect(ctx.userId, EXPIRED);
     const stub = ctx.stub("ok");
@@ -358,6 +417,65 @@ describe("Meshy specifics", () => {
     });
     expect(someoneElse.status).toBe(400);
     expect(someoneElse.body.detail).toContain("another Meshy account");
+  });
+
+  it("marks the models of a list a free plan can't download: others' community posts, and its own the plan keeps", async () => {
+    await connect(ctx.userId);
+    const posts = loadFixture("meshy", "collection-posts");
+    // The first two posts are the user's own: Meshy keeps the first one's model from the plan.
+    const ownPosts = new Set(posts.result.slice(0, 2).map((post: { id: string }) => post.id));
+    const forbidden = posts.result[0].coverItem.refId;
+    const stub = ctx.install(
+      handlerFor("ok", {
+        "/v1/me/tier": () => json(tierOf("free")),
+        "/public/community/posts": () =>
+          json({
+            ...posts,
+            result: posts.result.map((post: { id: string; author: object }) =>
+              ownPosts.has(post.id) ? { ...post, author: { ...post.author, id: MESHY_USER } } : post,
+            ),
+          }),
+        [`/v2/tasks/${forbidden}/downloadable-status`]: () =>
+          json(loadFixture("meshy", "downloadable-status-forbidden")),
+      }),
+    );
+    const res = await ctx.post("/api/import/meshy/list/entries", { url: COLLECTION_URL });
+    expectStatus(res, 200);
+    expect(res.body.entries.map((entry: { blocked?: string }) => entry.blocked)).toEqual([
+      "own",
+      undefined,
+      "community",
+      "community",
+      "community",
+      "community",
+    ]);
+    // Only the user's own are asked of, as their generations.
+    const asked = stub.calls.filter((call) => call.url.pathname.endsWith("/downloadable-status"));
+    expect(asked).toHaveLength(2);
+    expect(asked.every((call) => call.url.searchParams.get("type") === "Task")).toBe(true);
+  });
+
+  it("marks nothing on a plan Meshy's pages don't ask about, and asks Meshy nothing for it", async () => {
+    await connect(ctx.userId);
+    const stub = ctx.stub("ok");
+    const res = await ctx.post("/api/import/meshy/list/entries", { url: COLLECTION_URL });
+    expectStatus(res, 200);
+    expect(res.body.entries.some((entry: { blocked?: string }) => entry.blocked)).toBe(false);
+    expect(stub.calls.some((call) => call.url.pathname.endsWith("/downloadable-status"))).toBe(false);
+  });
+
+  it("marks the user's own generation a free plan can't download", async () => {
+    await connect(ctx.userId);
+    ctx.install(
+      handlerFor("ok", {
+        "/v1/me/tier": () => json(tierOf("free")),
+        [`/v2/tasks/${OWN_TASK}/downloadable-status`]: () =>
+          json(loadFixture("meshy", "downloadable-status-forbidden")),
+      }),
+    );
+    const res = await ctx.post("/api/import/meshy/list/entries", { url: GENERATIONS_URL });
+    expectStatus(res, 200);
+    expect(res.body.entries).toEqual([expect.objectContaining({ design_id: `task-${OWN_TASK}`, blocked: "own" })]);
   });
 
   it("asks for a sign-in before listing anything, as every file needs one", async () => {

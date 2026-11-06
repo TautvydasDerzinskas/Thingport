@@ -230,23 +230,23 @@ are accepted.
 
 The What's new pictures are a different set: cropped to the thing each one is about, WebP, and named after the
 release. `regression/release-shots.mjs` captures them from a running instance into `release-notes/screenshots/`,
-the same way, and skips the shots whose tool isn't installed or whose model wasn't named rather than failing the
-run.
+the same way, and skips the shots the instance has nothing for (no Claude AI, chats off, no second account) rather
+than failing the run. It holds the current release's shots; earlier ones are in its git history.
 
 ```bash
 cd regression
-THINGPORT_PASSWORD='…' npm run release-shots -- --url https://thingport.example --email you@example.com \
-  --model <a multicolour model> --generative-model <a model that came with its script>
-npm run release-shots -- --url … --email … --only tools,admin-tools   # just some shots
+THINGPORT_PASSWORD='…' THINGPORT_VIEWER_PASSWORD='…' npm run release-shots -- --url https://thingport.example \
+  --email you@example.com --viewer-email someone@example.com --studio-design <id> --chat <id>
+npm run release-shots -- --url … --email … --only studio-ai,chats   # just some shots
 ```
 
 A shot's file is what an item's `images` then names, so the two are written together -- an item naming a picture
 nothing captures leaves a gap in the dialog. Thingport Grab's own pictures come from
 `npm --prefix extension run screenshots` instead, and are converted to WebP by hand.
 
-The editor shots (`tools-ai`, `tool-editor`) need **Users' own tools**, a setting for the whole instance. If it's off
-the script turns it on for the run, so everyone who sees tools can make their own meanwhile, and off again at the end.
-A run stopped with Ctrl+C or killed leaves it on, so check **Administration → Tools** after one.
+What the shots show has to be on the instance first: a Studio design Ask AI built, social features and chats on, a
+public collection of yours for the viewer's Explore (which leaves out your own), and a chat with a model sent in it.
+The script only switches your Studio prompt layout and both accounts' themes for the run, and restores them.
 
 ## Quality checks
 
