@@ -90,7 +90,8 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.printer_model).toBeUndefined();
     expect(project.machine_start_gcode).toBeUndefined();
     // Snapmaker Orca crashes without these keys: kept, but naming no preset of the designer's printer.
-    expect(project.print_settings_id).toBe("0.16mm Standard @Snapmaker U1 (0.4 nozzle)");
+    // The base the designer started from (0.20mm in the name), not the preset nearest their 0.15 layer height.
+    expect(project.print_settings_id).toBe("0.20mm Standard @Snapmaker U1 (0.4 nozzle)");
     expect(project.printer_settings_id).toBe("Snapmaker U1 (0.4 nozzle)");
     expect(project.filament_settings_id).toEqual(["Snapmaker PLA Basic @U1"]);
     expect(project.printable_height).toBe("270");
@@ -98,6 +99,15 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.printable_area).toEqual(["0.5x1", "270.5x1", "270.5x271", "0.5x271"]);
     // One nozzle, not one per designer extruder (that would show a dual-nozzle printer).
     expect(project.nozzle_diameter).toEqual(["0.4"]);
+  });
+
+  it("falls back to the preset nearest the layer height when the designer's preset has no height", async () => {
+    const zip = await JSZip.loadAsync(await bambuZip());
+    const settings = { ...SETTINGS, print_settings_id: "My own preset", layer_height: "0.275" };
+    zip.file("Metadata/project_settings.config", JSON.stringify(settings));
+    const { bytes } = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+    const project = JSON.parse(await read(bytes, "Metadata/project_settings.config"));
+    expect(project.print_settings_id).toBe("0.28mm Standard @Snapmaker U1 (0.4 nozzle)");
   });
 
   it("moves each plate's items from the designer's bed to the middle of a 270 mm bed", () => {

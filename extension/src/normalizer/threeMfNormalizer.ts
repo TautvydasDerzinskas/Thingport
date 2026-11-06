@@ -1281,7 +1281,7 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   // Orca needs a printer: without a named preset it shows the file's name as the printer and nothing fits. Names
   // are the U1 presets Snapmaker Orca ships (0.4 nozzle); a filament slot per designer filament.
   cleaned.printer_settings_id = ORCA_PRINTER_PRESET;
-  cleaned.print_settings_id = orcaPrintPreset(original.layer_height);
+  cleaned.print_settings_id = orcaPrintPreset(original.print_settings_id, original.layer_height);
   const filaments = original.filament_settings_id;
   if (Array.isArray(filaments)) cleaned.filament_settings_id = filaments.map(() => ORCA_FILAMENT_PRESET);
   else cleaned.filament_settings_id = ORCA_FILAMENT_PRESET;
@@ -1301,9 +1301,17 @@ const ORCA_PRINTER_PRESET = "Snapmaker U1 (0.4 nozzle)";
 // Layer heights of the U1's "Standard" process presets for the 0.4 nozzle.
 const ORCA_PRINT_LAYER_HEIGHTS = ["0.08", "0.12", "0.16", "0.20", "0.24", "0.28"];
 
-/** The U1 process preset whose layer height is closest to the designer's (0.20 mm when it has none). */
-function orcaPrintPreset(layerHeight: unknown): string {
-  const wanted = Number(firstValue(layerHeight));
+/**
+ * The U1 "Standard" process preset for the designer's project. The base is the one the designer started from, read
+ * from the leading height of their preset name ("0.20mm Standard @BBL H2S" -> 0.20): their changes (a 0.275 layer
+ * height, line widths) were made on top of that base, so another base would change every value they left alone.
+ * Without such a name, the preset closest to their layer height; 0.20 mm without either.
+ */
+function orcaPrintPreset(printSettingsId: unknown, layerHeight: unknown): string {
+  const name = String(firstValue(printSettingsId) ?? "");
+  const mm = name.indexOf("mm");
+  const fromName = mm > 0 && mm <= 6 ? Number(name.slice(0, mm)) : NaN;
+  const wanted = fromName > 0 ? fromName : Number(firstValue(layerHeight));
   let best = "0.20";
   if (Number.isFinite(wanted) && wanted > 0) {
     for (const h of ORCA_PRINT_LAYER_HEIGHTS)
