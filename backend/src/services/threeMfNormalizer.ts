@@ -1215,12 +1215,13 @@ function isSlicedOutput(relativePath: string): boolean {
  * them for the Orca target: the preset names blank (no preset of the designer's printer is named). The U1's bed and height replace the designer's.
  */
 function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
-  for (const key of ["print_settings_id", "printer_settings_id"]) {
-    if (key in original) cleaned[key] = "";
-  }
+  // Orca needs a printer: without a named preset it shows the file's name as the printer and nothing fits. Names
+  // are the U1 presets Snapmaker Orca ships (0.4 nozzle); a filament slot per designer filament.
+  cleaned.printer_settings_id = ORCA_PRINTER_PRESET;
+  cleaned.print_settings_id = ORCA_PRINT_PRESET;
   const filaments = original.filament_settings_id;
-  if (Array.isArray(filaments)) cleaned.filament_settings_id = filaments.map(() => "");
-  else if ("filament_settings_id" in original) cleaned.filament_settings_id = "";
+  if (Array.isArray(filaments)) cleaned.filament_settings_id = filaments.map(() => ORCA_FILAMENT_PRESET);
+  else cleaned.filament_settings_id = ORCA_FILAMENT_PRESET;
   // The copy is for the Snapmaker U1, so its bed replaces the designer's (Orca would otherwise use a small default).
   cleaned.printable_area = ["0.5x1", "270.5x1", "270.5x271", "0.5x271"];
   cleaned.printable_height = "270";
@@ -1229,10 +1230,21 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   cleaned.gcode_flavor = "klipper";
   // One nozzle, the designer's first: one value per designer extruder (the H2C has two) shows a dual-nozzle printer,
   // and none leaves the nozzle diameter empty.
-  const nozzles = original.nozzle_diameter;
-  if (Array.isArray(nozzles) && nozzles.length > 0) cleaned.nozzle_diameter = [nozzles[0]];
-  else delete cleaned.nozzle_diameter;
+  cleaned.nozzle_diameter = ["0.4"];
   return cleaned;
+}
+
+const ORCA_PRINTER_PRESET = "Snapmaker U1 (0.4 nozzle)";
+const ORCA_PRINT_PRESET = "0.20mm Standard @Snapmaker U1 (0.4 nozzle)";
+const ORCA_FILAMENT_PRESET = "Snapmaker PLA Basic @U1";
+
+/** Per-object values of the Bambu enums in model_settings.config, mapped like the project settings. */
+export function mapObjectShellSettings(xml: string): string | null {
+  const out = xml.replace(
+    /(<metadata key="ensure_vertical_shell_thickness" value=")([^"]*)(")/g,
+    (_m, a: string, v: string, c: string) => a + String(mapVerticalShellThickness(v)) + c,
+  );
+  return out === xml ? null : out;
 }
 
 // The designer's objects sit at coordinates for the designer's bed (a MakerWorld printer such as the H2C, 330 x 320 mm),
@@ -1343,6 +1355,11 @@ async function buildOrcaZip(input: Buffer | Uint8Array): Promise<{ out: JSZip; r
       xml = markAsBambuProject(xml) ?? xml;
       xml = recenterOnOrcaBed(xml, plates, bedFromPrintableArea(originalSettings?.printable_area)) ?? xml;
       out.file(rec.relativePath, xml);
+      continue;
+    }
+    if (key === "metadata/model_settings.config") {
+      const xml = await rec.entry.async("string");
+      out.file(rec.relativePath, mapObjectShellSettings(xml) ?? xml);
       continue;
     }
     out.file(rec.relativePath, await rec.entry.async("uint8array"));
