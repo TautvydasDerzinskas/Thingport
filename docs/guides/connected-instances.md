@@ -65,6 +65,29 @@ key, who asked and their note. You can also open it in place under **Requests �
 
 A request is only checked once you open it: until then Thingport doesn't contact the instance that sent it.
 
+## When your users ask
+
+Anyone on the instance can ask to reach someone on another one: **Explore → Someone elsewhere**, with that person's
+handle (`name@their.instance`) and a note. Nothing goes to that instance yet. Every admin here gets a notification,
+and the request waits under **Requests → From your users**:
+
+- **Connect…** opens [Connect to an instance](#connect-to-an-instance) with the address guessed from the handle (plain
+  HTTP for a local address or name like `.lan`, HTTPS otherwise; change it if it's wrong). The note their admin sees
+  says who asked, and whom they want to reach. The person who asked is told once the instances connect, or if the
+  other admin declines.
+- **Decline** tells only the person who asked.
+
+A person can have up to ten requests waiting, and withdraw one from the same dialog while it waits for you. Asking for
+someone on an instance that's already a partner, already asked or blocked says so straight away.
+
+## Handles
+
+While connected instances are on, everyone has a handle, `username@this-instance`, shown under their name on their
+profile: that's what people on other instances ask for. Usernames are made from display names (`Rūta K.` becomes
+`ruta-k`), and anyone can change theirs with the pencil beside it, or under **Edit profile**: up to 30 lowercase
+letters, digits, dots, dashes and underscores, unique on the instance. The host part is the
+[Public URL](#before-you-start)'s.
+
 ## Partners
 
 Connected instances are under **Partners**, with when they connected and when they were last heard from. Each one's ⋮

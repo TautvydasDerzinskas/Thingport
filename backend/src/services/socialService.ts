@@ -2,7 +2,8 @@ import { Prisma, type Collection, type Print } from "@prisma/client";
 import { prisma } from "../db";
 import { toCollectionOut, type CollectionOut, type PrintOut, type UserCardOut } from "../dto";
 import { printOutById, printOutsByIds } from "./printLoader";
-import { getSocialSettings } from "./settingsService";
+import { getPublicUrl, getSocialSettings } from "./settingsService";
+import { isFederationLive } from "../federation/settings";
 import { profileOut, type PublicProfileOut } from "./publicProfileService";
 import { avatarUrlOf } from "./avatarService";
 import {
@@ -59,11 +60,30 @@ async function sharedPrintWhere(): Promise<Prisma.PrintWhereInput> {
 
 /** Whether Explore and Chats are offered: social features are on (and chats with them), and there's someone else on the
  *  instance to explore or talk to. */
-export async function socialStatus(): Promise<{ enabled: boolean; explore: boolean; chats: boolean }> {
+export type SocialStatusOut = {
+  enabled: boolean;
+  explore: boolean;
+  chats: boolean;
+  /** Connected instances are on: usernames show as handles, and people can ask to reach someone elsewhere. */
+  federation: boolean;
+  /** What follows the @ in this instance's handles, while federation is on. */
+  instance_host: string | null;
+};
+
+export async function socialStatus(): Promise<SocialStatusOut> {
   const { enabled, chats } = await getSocialSettings();
-  if (!enabled) return { enabled, explore: false, chats: false };
+  if (!enabled) return { enabled, explore: false, chats: false, federation: false, instance_host: null };
   const others = (await prisma.user.count({ take: 2 })) > 1;
-  return { enabled, explore: others, chats: chats && others };
+  const federation = await isFederationLive();
+  const publicUrl = federation ? await getPublicUrl() : "";
+  return {
+    enabled,
+    // One person alone still gets Explore while connected: it's where they ask to reach someone elsewhere.
+    explore: others || federation,
+    chats: chats && others,
+    federation,
+    instance_host: publicUrl ? new URL(publicUrl).host : null,
+  };
 }
 
 /** The models `userId` may open, download and copy: their own, and while social features are on, every model in a

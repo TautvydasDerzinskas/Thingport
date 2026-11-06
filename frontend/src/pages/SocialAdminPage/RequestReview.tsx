@@ -116,6 +116,13 @@ function useRequestReview(
               : t(k("person"), { who: request.requesterHandle })
             : t(k("theirAdmin"))}
         </Typography>
+        {details && request.targetHandle && (
+          <Typography variant="caption" color={details.target ? "text.secondary" : "warning.main"} component="div">
+            {details.target
+              ? t(k("targetHere"), { name: details.target.displayName, handle: `@${details.target.username}` })
+              : t(k("targetMissing"), { handle: request.targetHandle })}
+          </Typography>
+        )}
       </Box>
       {request.note && (
         <Typography

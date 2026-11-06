@@ -41,6 +41,8 @@ export type UserOut = {
   id: string;
   email: string;
   display_name: string;
+  /** Null only until /me makes one: see services/usernames.ts. */
+  username: string | null;
   role: "ADMIN" | "MEMBER";
   pending_email: string | null;
 } & PublicProfileOut &
@@ -51,6 +53,7 @@ export function toUserOut(user: User): UserOut {
     id: user.id,
     email: user.email,
     display_name: user.displayName,
+    username: user.username,
     role: user.role,
     pending_email: user.pendingEmail,
     ...profileOut(user),

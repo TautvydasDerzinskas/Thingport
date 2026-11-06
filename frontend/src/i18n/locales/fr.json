@@ -2138,7 +2138,8 @@
           "federation_resumed": "Instance reprise",
           "federation_disconnected": "Instance déconnectée",
           "federation_blocked": "Instance bloquée",
-          "federation_unblocked": "Instance débloquée"
+          "federation_unblocked": "Instance débloquée",
+          "federation_user_requested": "A demandé à joindre quelqu'un d'ailleurs"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -2611,12 +2612,15 @@
             "stepKey": "Comparer la clé",
             "address": "Son adresse",
             "addressHelp": "L'URL publique de l'autre instance, comme http://192.168.1.30:8000",
+            "addressGuessed": "Déduite de son adresse. Changez-la si son instance est ailleurs.",
             "compare": "Demandez à l'administrateur de {{name}} de lire la clé de sa page Social. Si elle est différente, quelque chose est au milieu : n'envoyez pas.",
             "matches": "Les clés correspondent",
             "note": "Note pour son administrateur (facultatif)",
             "noteHelp": "Qui vous êtes, et pourquoi.",
             "send": "Envoyer la demande",
-            "lookUp": "Rechercher"
+            "lookUp": "Rechercher",
+            "forPerson": "Pour {{who}}, pour joindre {{whom}}",
+            "forPersonInstance": "Pour {{who}}"
           },
           "errors": {
             "invalid_address": "Ce n'est pas l'adresse d'une instance.",
@@ -2651,7 +2655,9 @@
             "blockTitle": "Bloquer {{name}} ?",
             "blockText": "Sa demande est refusée, et ce qu'elle enverra ensuite est ignoré sans la prévenir.",
             "declineTitle": "Refuser {{name}} ?",
-            "declineText": "Elle est prévenue, et peut redemander."
+            "declineText": "Elle est prévenue, et peut redemander.",
+            "targetHere": "{{name}} ({{handle}}) est sur cette instance",
+            "targetMissing": "Personne ici ne s'appelle {{handle}}"
           },
           "keyDialog": {
             "ours": "Clé de cette instance",
@@ -2672,6 +2678,7 @@
             "noRequestsHint": "Connectez-vous à une instance, ou attendez qu'une le demande.",
             "asking": "Demandent à se connecter",
             "waiting": "En attente de leur réponse",
+            "fromUsers": "De vos utilisateurs",
             "askedByPerson": "Demandé par {{who}}",
             "askedByAdmin": "Demandé par son administrateur",
             "hide": "Masquer",
@@ -2722,7 +2729,15 @@
             "blocked": "{{name}} bloquée",
             "blockedHint": "Ce qu'elle envoie est ignoré",
             "unblock": "Débloquer",
-            "unblocked": "{{name}} débloquée"
+            "unblocked": "{{name}} débloquée",
+            "wantsToReach": "{{who}} veut joindre {{whom}}",
+            "wantsToConnect": "{{who}} veut se connecter",
+            "someone": "Quelqu'un",
+            "decline": "Refuser",
+            "connectFor": "Connecter…",
+            "declineUserTitle": "Refuser la demande de {{who}} ?",
+            "declineUserText": "{{who}} est prévenu. Rien n'est envoyé à {{host}}.",
+            "declinedUser": "Demande de {{who}} refusée"
           }
         }
       }
@@ -5262,6 +5277,21 @@
         "selfModelCount_one": "{{count}} modèle téléversé",
         "selfModelCount_other": "{{count}} modèles téléversés",
         "loadFailed": "Impossible de charger cet auteur."
+      },
+      "username": {
+        "label": "Nom d'utilisateur",
+        "why": "Votre adresse, utilisateur@cette-instance, permet aux personnes des instances connectées de vous trouver et de vous joindre.",
+        "help": "Minuscules, chiffres, points, tirets et tirets bas.",
+        "invalid": "Jusqu'à 30 minuscules, chiffres, points, tirets ou tirets bas, commençant et finissant par une lettre ou un chiffre.",
+        "taken": "Quelqu'un l'a déjà.",
+        "free": "Il est libre.",
+        "checking": "Vérification",
+        "copy": "Copier votre adresse",
+        "copied": "Adresse copiée",
+        "copyFailed": "Impossible de la copier",
+        "change": "Changer votre nom d'utilisateur",
+        "saved": "Nom d'utilisateur changé",
+        "saveFailed": "Impossible de changer le nom d'utilisateur"
       }
     },
     "avatar": {
@@ -5844,7 +5874,37 @@
       "sections": "Ce qu’il partage",
       "noModels": "Aucun modèle pour le moment.",
       "modelsLoadFailed": "Impossible de charger les modèles.",
-      "noCollections": "{{name}} n’a encore rendu aucune collection publique."
+      "noCollections": "{{name}} n’a encore rendu aucune collection publique.",
+      "elsewhere": {
+        "open": "Quelqu'un d'ailleurs",
+        "title": "Se connecter avec quelqu'un d'ailleurs",
+        "intro": "Quelqu'un sur une autre instance Thingport. Votre administrateur approuve d'abord, puis le sien.",
+        "handle": "Son adresse",
+        "handlePlaceholder": "nom@son.instance",
+        "note": "Note (facultative)",
+        "ask": "Demander à se connecter",
+        "sent": "Demande pour joindre {{handle}} envoyée. Votre administrateur la verra.",
+        "withdrawn": "Demande pour joindre {{handle}} retirée",
+        "failed": "Impossible de l'envoyer",
+        "yours": "Vos demandes",
+        "withdraw": "Retirer",
+        "status": {
+          "waiting_admin": "En attente de votre administrateur",
+          "waiting_them": "En attente de leur administrateur",
+          "connected": "Connecté",
+          "declined": "Refusée"
+        },
+        "errors": {
+          "federation_off": "Les instances connectées sont désactivées.",
+          "invalid_handle": "Saisissez une adresse comme nom@son.instance.",
+          "same_instance": "C'est quelqu'un de cette instance : cette personne est dans Personnes.",
+          "already_connected": "Son instance est déjà connectée : cette personne est dans Personnes.",
+          "already_asked": "Votre administrateur a déjà demandé à son instance de se connecter.",
+          "not_available": "Cette instance ne se connecte pas à la sienne.",
+          "exists": "Vous avez déjà demandé à joindre cette personne.",
+          "request_limit": "Attendez d'abord que votre administrateur réponde à vos demandes."
+        }
+      }
     }
   },
   "providers": {

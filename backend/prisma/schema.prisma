@@ -40,6 +40,9 @@ model User {
   // Null for someone who has only ever signed in through an OIDC provider.
   passwordHash             String?
   displayName              String
+  /// What people on connected instances call them, as username@this-instance: lower case, unique, editable.
+  /// Made from the display name; null only until something reads it (ensureUsername).
+  username                 String?              @unique
   role                     Role                 @default(MEMBER)
   // The first admin: may demote and delete other admins, and can be neither demoted nor deleted.
   isOwner                  Boolean              @default(false)

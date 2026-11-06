@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutlined";
 import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -20,10 +21,12 @@ import { socialApi, type ExploreOverview } from "../../api/social";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
+import { useSocialStatus } from "../../hooks/useSocialStatus";
 import ModelCard from "../ModelsPage/ModelCard";
 import CollectionCard from "../CollectionsPage/CollectionCard";
 import ExploreSection from "./ExploreSection";
 import PersonCard from "./PersonCard";
+import SomeoneElsewhereDialog from "./SomeoneElsewhereDialog";
 
 type Props = {
   theme: ResolvedTheme;
@@ -44,6 +47,9 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   const navigate = useNavigate();
   const [overview, setOverview] = useState<ExploreOverview | null>(null);
   const [failed, setFailed] = useState(false);
+  const [elsewhereOpen, setElsewhereOpen] = useState(false);
+  // With connected instances on, someone on another instance can be asked for, here.
+  const federation = useSocialStatus()?.federation === true;
 
   useEffect(() => {
     let active = true;
@@ -72,6 +78,15 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
           most_collected: prev.most_collected.map((e) => (e.model.id === updated.id ? { ...e, model: updated } : e)),
         },
     );
+
+  const elsewhereButton = federation && (
+    <Button size="small" startIcon={<HubOutlinedIcon />} onClick={() => setElsewhereOpen(true)}>
+      {t("models:explore.elsewhere.open")}
+    </Button>
+  );
+  const elsewhereDialog = elsewhereOpen && (
+    <SomeoneElsewhereDialog onClose={() => setElsewhereOpen(false)} onUnauthorized={onUnauthorized} />
+  );
 
   const modelCard = (model: Print) => (
     <ModelCard
@@ -120,9 +135,13 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
           {t("models:explore.emptyTitle")}
         </Typography>
         <Typography variant="body2">{t("models:explore.emptyHint")}</Typography>
-        <Button variant="outlined" size="small" onClick={() => navigate("/models/collections")}>
-          {t("models:explore.emptyAction")}
-        </Button>
+        <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center" useFlexGap>
+          <Button variant="outlined" size="small" onClick={() => navigate("/models/collections")}>
+            {t("models:explore.emptyAction")}
+          </Button>
+          {elsewhereButton}
+        </Stack>
+        {elsewhereDialog}
       </Stack>
     );
   }
@@ -135,6 +154,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
         help={t("models:explore.peopleHelp")}
         icon={<GroupOutlinedIcon fontSize="small" />}
         order={order++}
+        action={elsewhereButton}
       >
         <Box sx={peopleGridSx}>
           {overview.people.map((person) => (
@@ -198,6 +218,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
           </Box>
         </ExploreSection>
       )}
+      {elsewhereDialog}
     </Stack>
   );
 }

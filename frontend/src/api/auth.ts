@@ -9,6 +9,8 @@ export type AuthUser = {
   id: string;
   email: string;
   display_name: string;
+  /** What people on connected instances call them, as username@this-instance. */
+  username: string | null;
   role: "ADMIN" | "MEMBER";
   pending_email: string | null;
   bio: string | null;

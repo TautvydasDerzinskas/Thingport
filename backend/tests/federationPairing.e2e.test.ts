@@ -133,4 +133,57 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
       async () => (await call(b, "GET", "/federation/instances")).body.partners.length === 0,
     );
   }, 120_000);
+
+  it("connects for someone who asked to reach a person elsewhere", async () => {
+    // Sam on A wants to reach Bob on B; neither is an admin.
+    const sam: Instance = { ...a, token: undefined };
+    sam.token = (
+      await call(sam, "POST", "/register", { displayName: "Sam", email: "sam@example.com", password: "password123" })
+    ).body.token;
+    const bob: Instance = { ...b, token: undefined };
+    bob.token = (
+      await call(bob, "POST", "/register", { displayName: "Bob", email: "bob@example.com", password: "password123" })
+    ).body.token;
+    const bHost = new URL(b.base).host;
+
+    const asked = await call(sam, "POST", "/me/connection-requests", {
+      handle: `bob@${bHost}`,
+      note: "Gridfinity bins",
+    });
+    expect(asked.status).toBe(201);
+    expect(asked.body).toMatchObject({ handle: `bob@${bHost}`, status: "waiting_admin" });
+
+    // A's admin sees it under their people's requests, and connects for Sam.
+    const local = (await call(a, "GET", "/federation/instances")).body.local[0];
+    expect(local).toMatchObject({ userName: "Sam", targetHandle: `bob@${bHost}`, note: "Gridfinity bins" });
+    const lookup = await call(a, "GET", `/federation/lookup?address=${encodeURIComponent(local.origin)}`);
+    const sent = await call(a, "POST", "/federation/connect", {
+      address: local.origin,
+      fingerprint: lookup.body.fingerprint,
+      requestId: local.id,
+    });
+    expect(sent.body.peer.status).toBe("OUTGOING");
+    expect((await call(sam, "GET", "/me/connection-requests")).body[0].status).toBe("waiting_them");
+
+    // B's admin sees who asked for whom, and that Bob is one of theirs.
+    const incoming = await until(
+      "B gets the request",
+      async () => (await call(b, "GET", "/federation/instances")).body.incoming[0],
+    );
+    const aHost = new URL(a.base).host;
+    expect(incoming).toMatchObject({ requesterHandle: `sam@${aHost}`, targetHandle: `bob@${bHost}` });
+    const details = await call(b, "GET", `/federation/requests/${incoming.id}`);
+    expect(details.body.target).toEqual({ username: "bob", displayName: "Bob" });
+    await call(b, "POST", `/federation/requests/${incoming.id}/approve`, { fingerprint: details.body.fingerprint });
+
+    // Bob hears who asked; Sam hears it's connected.
+    await until("Sam's request connected", async () => {
+      const mine = await call(sam, "GET", "/me/connection-requests");
+      return mine.body[0].status === "connected";
+    });
+    expect(JSON.stringify((await call(bob, "GET", "/notifications")).body)).toContain(
+      `sam@${aHost} asked to reach you`,
+    );
+    expect(JSON.stringify((await call(sam, "GET", "/notifications")).body)).toContain("Connected with");
+  }, 120_000);
 });

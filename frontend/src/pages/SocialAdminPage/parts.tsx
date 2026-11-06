@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
-import { useTheme } from "@mui/material/styles";
 import { visuallyHiddenSx } from "../../components/importQueue/queueParts";
+import ToneChip from "../../components/ToneChip";
+
+export { ToneChip };
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import LockOpenOutlinedIcon from "@mui/icons-material/LockOpenOutlined";
-import { statusTint, type StatusTone } from "../../theme";
 
 const mono = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" } as const;
 
@@ -94,36 +94,6 @@ export function InstanceAvatar({ origin, name, size = 36 }: { origin: string; na
     >
       {initials || <HubOutlinedIcon sx={{ fontSize: size * 0.55 }} />}
     </Avatar>
-  );
-}
-
-/** A small status chip in a tone's soft colours. */
-export function ToneChip({
-  tone,
-  label,
-  icon,
-}: {
-  tone: StatusTone | "neutral";
-  label: string;
-  icon?: React.ReactElement;
-}) {
-  const theme = useTheme();
-  const tint = tone === "neutral" ? null : statusTint(theme, tone);
-  return (
-    <Chip
-      size="small"
-      icon={icon}
-      label={label}
-      variant={tint ? "filled" : "outlined"}
-      sx={{
-        height: 22,
-        borderRadius: "6px",
-        fontSize: "0.72rem",
-        ...(tint ? { bgcolor: tint.background, color: tint.text } : { color: "text.secondary" }),
-        "& .MuiChip-label": { px: 0.75 },
-        "& .MuiChip-icon": { fontSize: 14, ml: 0.75, mr: -0.25, color: "inherit" },
-      }}
-    />
   );
 }
 

@@ -92,6 +92,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   federation_disconnected: "warning",
   federation_blocked: "error",
   federation_unblocked: "default",
+  federation_user_requested: "info",
 };
 
 function isoDateOnly(d: Date): string {
@@ -195,6 +196,8 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "federation_blocked":
       case "federation_unblocked":
         return typeof d.origin === "string" ? d.origin : "";
+      case "federation_user_requested":
+        return typeof d.handle === "string" ? d.handle : "";
       case "descriptions_refetched":
         return t("adminSettings.logs.descriptionsRefetched", {
           email: typeof d.email === "string" ? d.email : "",

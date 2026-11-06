@@ -76,11 +76,15 @@ export default function ProfileLayout({
             <Typography variant="h5" fontWeight={700} sx={{ mt: 2, color: (theme) => theme.thingport.headingText }}>
               {name}
             </Typography>
-            {subtitle && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-                {subtitle}
-              </Typography>
-            )}
+            {/* Text in a line of its own; anything else (a handle with its buttons) can't sit in a paragraph. */}
+            {subtitle &&
+              (typeof subtitle === "string" ? (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                  {subtitle}
+                </Typography>
+              ) : (
+                subtitle
+              ))}
             {actions}
 
             <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 3, mb: 1 }}>

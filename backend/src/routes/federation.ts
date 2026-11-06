@@ -25,6 +25,7 @@ import {
 } from "../federation/peers";
 import { canTurnOn, confirmedByPartners, probeProof, runReachabilityCheck } from "../federation/reachability";
 import { getFederationSettings, updateFederationSettings } from "../federation/settings";
+import { cancelUserRequest, createUserRequest, listMyRequests } from "../federation/userRequests";
 import { prisma } from "../db";
 
 /** Without signing in, so mounted beside the health check, ahead of the routers that ask for it: the reachability
@@ -119,13 +120,17 @@ const connectSchema = z.object({
   address: z.string().min(1).max(500),
   fingerprint: z.string().min(1).max(64),
   note: z.string().max(1000).nullish(),
+  /** One of this instance's people asked for it: their request is answered, and the Follow names them. */
+  requestId: z.string().min(1).max(64).nullish(),
 });
 router.post(
   "/federation/connect",
   asyncHandler(async (req, res) => {
     await assertOn();
     const body = parseBody(connectSchema, req.body);
-    res.status(201).json(await connect(req.userId!, body.address, body.note ?? null, body.fingerprint));
+    res
+      .status(201)
+      .json(await connect(req.userId!, body.address, body.note ?? null, body.fingerprint, body.requestId ?? null));
   }),
 );
 
@@ -207,6 +212,38 @@ router.post(
   "/federation/peers/:id/unblock",
   asyncHandler(async (req, res) => {
     await unblockPeer(req.userId!, req.params.id);
+    res.status(204).end();
+  }),
+);
+
+// People's own requests to reach someone on an instance this one isn't connected with: kept for the admins, nothing
+// fetched (federation/userRequests.ts).
+router.get(
+  "/me/connection-requests",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    res.json(await listMyRequests(req.userId!));
+  }),
+);
+
+const userRequestSchema = z.object({
+  handle: z.string().min(3).max(300),
+  note: z.string().max(1000).nullish(),
+});
+router.post(
+  "/me/connection-requests",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(userRequestSchema, req.body);
+    res.status(201).json(await createUserRequest(req.userId!, body.handle, body.note ?? null));
+  }),
+);
+
+router.delete(
+  "/me/connection-requests/:id",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await cancelUserRequest(req.userId!, req.params.id);
     res.status(204).end();
   }),
 );

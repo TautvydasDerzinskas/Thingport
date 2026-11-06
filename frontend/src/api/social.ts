@@ -26,6 +26,10 @@ export type SocialStatus = {
   explore: boolean;
   /** And chats are on too: the sidebar offers Chats. */
   chats: boolean;
+  /** Connected instances are on: usernames show as handles, and people can ask to reach someone elsewhere. */
+  federation: boolean;
+  /** What follows the @ in this instance's handles, while federation is on. */
+  instance_host: string | null;
 };
 
 /** Administration > Users' social features card and its settings. `chats` counts only while `enabled` is on. */

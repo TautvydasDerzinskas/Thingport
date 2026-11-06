@@ -20,20 +20,23 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import { UnauthorizedError } from "../../api/client";
-import { FederationError, federationApi, type InstanceInfo, type Peer } from "../../api/federation";
+import { FederationError, federationApi, type InstanceInfo, type LocalRequest, type Peer } from "../../api/federation";
 import { HttpChip, InstanceAvatar, KeyBlocks, Mono, ToneChip } from "./parts";
 import { federationErrorText } from "./federationErrors";
 
 type Props = {
+  /** One of this instance's people's request to reach someone there: its address to start from, and it's settled
+   *  by sending. */
+  request?: LocalRequest | null;
   onClose: () => void;
   onSent: (peer: Peer) => void;
   onUnauthorized?: () => void;
 };
 
 /** Asking another instance to connect: its address, then its key compared with its admin before anything is sent. */
-export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props) {
+export default function ConnectDialog({ request = null, onClose, onSent, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
-  const [address, setAddress] = React.useState("");
+  const [address, setAddress] = React.useState(request?.origin ?? "");
   const [info, setInfo] = React.useState<InstanceInfo | null>(null);
   const [matches, setMatches] = React.useState(false);
   const [note, setNote] = React.useState("");
@@ -66,7 +69,7 @@ export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props
     setBusy(true);
     setError(null);
     try {
-      const { peer } = await federationApi.connect(info.origin, info.fingerprint, note.trim() || null);
+      const { peer } = await federationApi.connect(info.origin, info.fingerprint, note.trim() || null, request?.id);
       onSent(peer);
     } catch (err) {
       // Its key changed meanwhile: compare the new one.
@@ -99,6 +102,18 @@ export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props
               <StepLabel>{t(k("stepKey"))}</StepLabel>
             </Step>
           </Stepper>
+          {request && (
+            <Alert severity="info" icon={false}>
+              {request.targetHandle
+                ? t(k("forPerson"), { who: request.userName ?? request.requesterHandle, whom: request.targetHandle })
+                : t(k("forPersonInstance"), { who: request.userName ?? request.requesterHandle })}
+              {request.note && (
+                <Typography variant="body2" sx={{ mt: 0.5, fontStyle: "italic", overflowWrap: "anywhere" }}>
+                  “{request.note}”
+                </Typography>
+              )}
+            </Alert>
+          )}
           {!info ? (
             <Box component="form" onSubmit={(event) => void lookUp(event)}>
               <TextField
@@ -110,7 +125,7 @@ export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props
                 value={address}
                 onChange={(event) => setAddress(event.target.value)}
                 disabled={busy}
-                helperText={t(k("addressHelp"))}
+                helperText={t(k(request ? "addressGuessed" : "addressHelp"))}
                 inputProps={{ spellCheck: false, autoCapitalize: "off" }}
               />
             </Box>

@@ -52,6 +52,19 @@ Two instance actors, one `Follow` and one `Accept`:
 4. A's `Peer` becomes `ACTIVE` on the `Accept`. Disconnecting sends `Undo(Follow)` from whoever asked and
    `Reject(Follow)` from whoever approved; blocking says nothing.
 
+### Users asking
+
+A person asks to reach `bob@prints.example` from Explore (`POST /api/me/connection-requests`, `userRequests.ts`). That's
+a `PeerRequest` of kind `LOCAL`: a note for this instance's admins, with the origin guessed from the handle. Nothing
+is fetched from what a person typed -- only an admin's **Connect** reaches out, through the usual lookup and key
+comparison, with the request's id (`requestId`). Its `Follow` then carries two `Mention` tags, the person asking (their
+actor URL and `@handle`) and the person asked for (`@bob@prints.example`), which the other side shows its admins and,
+on approval, uses to tell `bob`. `listMyRequests` derives each request's status from the `Peer` it led to.
+
+Handles are `User.username` (`services/usernames.ts`) at the Public URL's host. Every account gets one: on sign-up, on
+first `GET /api/me` for older accounts, and backfilled by the migration that added the column. They're unique on the
+instance, never reused as a path segment (actor URLs use the user's id), so renaming one breaks nothing.
+
 ### Making a social feature federate
 
 1. Say in `socialSurfaces.ts` how it crosses: which ActivityPub objects and activities, and what a partner's person

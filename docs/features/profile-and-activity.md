@@ -26,6 +26,10 @@ if you have one, and otherwise a Thingport avatar picked for you. To show the ot
 anything that comes from your email, Thingport fetches it from Gravatar itself, once a day; an instance that can't reach
 the internet shows the picked avatar instead.
 
+While [connected instances](../guides/connected-instances.md#handles) are on, your handle shows under your name:
+`username@this-instance`, which people on other instances use to reach you. Copy it with the button beside it, or
+change the username with the pencil.
+
 While social features are on, the lock beside **Edit profile** makes the models on the page public: a globe then, and
 your profile on Explore opens on them. Everyone on the instance can see, download and copy them, and only you can change
 them. Copies you collected from someone else aren't listed as yours.

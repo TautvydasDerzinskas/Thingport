@@ -2176,7 +2176,8 @@
           "federation_resumed": "Vėl aktyvus serveris",
           "federation_disconnected": "Atjungtas serveris",
           "federation_blocked": "Užblokuotas serveris",
-          "federation_unblocked": "Atblokuotas serveris"
+          "federation_unblocked": "Atblokuotas serveris",
+          "federation_user_requested": "Paprašyta pasiekti ką nors kitur"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -2668,12 +2669,15 @@
             "stepKey": "Palyginkite raktą",
             "address": "Jo adresas",
             "addressHelp": "Kito serverio viešas adresas, pvz., http://192.168.1.30:8000",
+            "addressGuessed": "Atspėta iš adreso. Pakeiskite, jei jų serveris kitur.",
             "compare": "Paprašykite {{name}} administratoriaus perskaityti raktą iš jų puslapio Bendruomenė. Jei jis kitoks, kažkas yra per vidurį: nesiųskite.",
             "matches": "Raktai sutampa",
             "note": "Žinutė jų administratoriui (nebūtina)",
             "noteHelp": "Kas esate ir kodėl.",
             "send": "Siųsti prašymą",
-            "lookUp": "Ieškoti"
+            "lookUp": "Ieškoti",
+            "forPerson": "{{who}}, norinčiam pasiekti {{whom}}",
+            "forPersonInstance": "Naudotojui {{who}}"
           },
           "errors": {
             "invalid_address": "Tai ne serverio adresas.",
@@ -2708,7 +2712,9 @@
             "blockTitle": "Blokuoti {{name}}?",
             "blockText": "Jo prašymas atmetamas, o viskas, ką jis atsiųs vėliau, išmetama jam nepranešant.",
             "declineTitle": "Atmesti {{name}}?",
-            "declineText": "Jam pranešama, ir jis gali paprašyti dar kartą."
+            "declineText": "Jam pranešama, ir jis gali paprašyti dar kartą.",
+            "targetHere": "{{name}} ({{handle}}) yra šiame serveryje",
+            "targetMissing": "Čia nėra {{handle}}"
           },
           "keyDialog": {
             "ours": "Šio serverio raktas",
@@ -2729,6 +2735,7 @@
             "noRequestsHint": "Susijunkite su serveriu arba palaukite, kol kuris nors paprašys.",
             "asking": "Prašo susijungti",
             "waiting": "Laukiama jų",
+            "fromUsers": "Iš jūsų naudotojų",
             "askedByPerson": "Paprašė {{who}}",
             "askedByAdmin": "Paprašė jų administratorius",
             "hide": "Slėpti",
@@ -2780,7 +2787,15 @@
             "blocked": "{{name}} užblokuotas",
             "blockedHint": "Tai, ką jis siunčia, išmetama",
             "unblock": "Atblokuoti",
-            "unblocked": "{{name}} atblokuotas"
+            "unblocked": "{{name}} atblokuotas",
+            "wantsToReach": "{{who}} nori pasiekti {{whom}}",
+            "wantsToConnect": "{{who}} nori susijungti",
+            "someone": "Kažkas",
+            "decline": "Atmesti",
+            "connectFor": "Sujungti…",
+            "declineUserTitle": "Atmesti {{who}} prašymą?",
+            "declineUserText": "{{who}} bus pranešta. Į {{host}} nieko nesiunčiama.",
+            "declinedUser": "{{who}} prašymas atmestas"
           }
         }
       }
@@ -5366,6 +5381,21 @@
         "selfModelCount_few": "{{count}} modeliai įkelti",
         "selfModelCount_other": "{{count}} modelių įkelta",
         "loadFailed": "Nepavyko įkelti autoriaus."
+      },
+      "username": {
+        "label": "Naudotojo vardas",
+        "why": "Jūsų adresas, vardas@šis-serveris: pagal jį jus randa ir pasiekia žmonės sujungtuose serveriuose.",
+        "help": "Mažosios raidės, skaitmenys, taškai, brūkšneliai ir pabraukimai.",
+        "invalid": "Iki 30 mažųjų lotyniškų raidžių, skaitmenų, taškų, brūkšnelių ar pabraukimų; pradžioje ir pabaigoje raidė arba skaitmuo.",
+        "taken": "Toks jau yra.",
+        "free": "Laisvas.",
+        "checking": "Tikrinama",
+        "copy": "Kopijuoti adresą",
+        "copied": "Adresas nukopijuotas",
+        "copyFailed": "Nepavyko nukopijuoti",
+        "change": "Keisti naudotojo vardą",
+        "saved": "Naudotojo vardas pakeistas",
+        "saveFailed": "Nepavyko pakeisti naudotojo vardo"
       }
     },
     "avatar": {
@@ -6056,7 +6086,37 @@
       "sections": "Kuo dalijasi",
       "noModels": "Modelių dar nėra.",
       "modelsLoadFailed": "Nepavyko įkelti modelių.",
-      "noCollections": "{{name}} dar nepadarė jokios kolekcijos viešos."
+      "noCollections": "{{name}} dar nepadarė jokios kolekcijos viešos.",
+      "elsewhere": {
+        "open": "Kas nors kitur",
+        "title": "Susisiekti su kuo nors kitur",
+        "intro": "Su žmogumi kitame Thingport serveryje. Pirma patvirtina jūsų administratorius, paskui jų.",
+        "handle": "Jo adresas",
+        "handlePlaceholder": "vardas@jų.serveris",
+        "note": "Pastaba (nebūtina)",
+        "ask": "Prašyti susijungti",
+        "sent": "Paprašyta pasiekti {{handle}}. Jūsų administratorius tai pamatys.",
+        "withdrawn": "Prašymas pasiekti {{handle}} atšauktas",
+        "failed": "Nepavyko išsiųsti",
+        "yours": "Jūsų prašymai",
+        "withdraw": "Atšaukti",
+        "status": {
+          "waiting_admin": "Laukia jūsų administratoriaus",
+          "waiting_them": "Laukia jų administratoriaus",
+          "connected": "Sujungta",
+          "declined": "Atmesta"
+        },
+        "errors": {
+          "federation_off": "Sujungti serveriai išjungti.",
+          "invalid_handle": "Įveskite adresą, pvz., vardas@jų.serveris.",
+          "same_instance": "Tai žmogus šiame serveryje: jis yra skiltyje „Žmonės“.",
+          "already_connected": "Jų serveris jau sujungtas: žmogus yra skiltyje „Žmonės“.",
+          "already_asked": "Jūsų administratorius jau paprašė jų serverio susijungti.",
+          "not_available": "Šis serveris su jų serveriu nesijungia.",
+          "exists": "Jūs jau paprašėte jį pasiekti.",
+          "request_limit": "Pirma palaukite, kol administratorius atsakys į jūsų prašymus."
+        }
+      }
     }
   },
   "providers": {
