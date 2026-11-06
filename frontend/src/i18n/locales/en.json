@@ -2468,6 +2468,8 @@
         "toolsAria": "Tools {{model}} gets"
       },
       "social": {
+        "heading": "Social",
+        "subtitle": "Sharing models and chatting between this instance's users.",
         "label": "Social features",
         "summary": "Turns on the Explore page and public collections, so this instance's users can share models with each other.",
         "infoTitle": "What social features do",
@@ -2477,20 +2479,16 @@
         "infoOff": "Turning this off hides everything shared again. Each collection keeps its Public or Private setting for when it's back on.",
         "loadFailed": "Couldn't load the social settings.",
         "saveFailed": "Couldn't save the social settings.",
-        "settingsTitle": "Social features settings",
-        "settingsOff": "Turn social features on to change their settings",
         "chats": {
           "label": "Chats",
           "summary": "Direct messages between this instance's users, and rooms that admins make.",
-          "switch": "Chats",
           "infoTitle": "What chats do",
           "infoDirect": "Chats appears in the sidebar. Anyone can find another user by name, or by their whole email, and write to them.",
           "infoRooms": "Admins make rooms: public ones anyone can read and join, and private ones for the people they pick.",
           "infoNotify": "Someone who isn't reading a chat sees its new messages in the sidebar and as a notification. Messages arrive within a few seconds, not instantly.",
           "infoOff": "Turning this off hides every chat. Nothing is deleted, and it's all back when chats are turned on again.",
-          "onHint": "On: Chats is in everyone's sidebar.",
-          "offHint": "Off by default. Turn on to let users message each other.",
-          "infoModels": "A model sent in a chat can be opened, downloaded and copied by everyone who can read that chat, for as long as the message stays."
+          "infoModels": "A model sent in a chat can be opened, downloaded and copied by everyone who can read that chat, for as long as the message stays.",
+          "needsSocial": "Turn social features on first"
         }
       }
     },

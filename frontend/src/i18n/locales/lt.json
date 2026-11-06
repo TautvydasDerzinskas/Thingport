@@ -2564,6 +2564,8 @@
         "toolsAria": "Įrankiai, kuriuos gauna {{model}}"
       },
       "social": {
+        "heading": "Bendruomenė",
+        "subtitle": "Modelių dalijimasis ir pokalbiai tarp šio serverio naudotojų.",
         "label": "Socialinės funkcijos",
         "summary": "Įjungia skiltį Naršyti ir viešas kolekcijas, kad šio serverio naudotojai galėtų dalytis modeliais tarpusavyje.",
         "infoTitle": "Ką daro socialinės funkcijos",
@@ -2573,20 +2575,16 @@
         "infoOff": "Išjungus vėl paslepiama viskas, kuo dalijamasi. Kiekviena kolekcija išsaugo savo nustatymą Vieša ar Privati tam kartui, kai vėl įjungsite.",
         "loadFailed": "Nepavyko įkelti socialinių nustatymų.",
         "saveFailed": "Nepavyko išsaugoti socialinių nustatymų.",
-        "settingsTitle": "Socialinių funkcijų nustatymai",
-        "settingsOff": "Įjunkite socialines funkcijas, kad galėtumėte keisti jų nustatymus",
         "chats": {
           "label": "Pokalbiai",
           "summary": "Asmeninės žinutės tarp šio egzemplioriaus naudotojų ir administratorių kuriami kambariai.",
-          "switch": "Pokalbiai",
           "infoTitle": "Ką daro pokalbiai",
           "infoDirect": "Šoninėje juostoje atsiranda Pokalbiai. Bet kas gali rasti kitą naudotoją pagal vardą arba visą el. pašto adresą ir jam parašyti.",
           "infoRooms": "Administratoriai kuria kambarius: viešus, kuriuos gali skaityti ir prie jų prisijungti bet kas, ir privačius – jų pasirinktiems žmonėms.",
           "infoNotify": "Kas neskaito pokalbio, jo naujas žinutes mato šoninėje juostoje ir kaip pranešimą. Žinutės ateina per kelias sekundes, ne akimirksniu.",
           "infoOff": "Išjungus paslepiami visi pokalbiai. Niekas neištrinama – įjungus vėl viskas sugrįžta.",
-          "onHint": "Įjungta: Pokalbiai yra visų šoninėje juostoje.",
-          "offHint": "Iš pradžių išjungta. Įjunkite, kad naudotojai galėtų susirašinėti.",
-          "infoModels": "Pokalbyje išsiųstą modelį gali atidaryti, atsisiųsti ir nusikopijuoti visi, kas gali skaityti tą pokalbį, kol žinutė lieka."
+          "infoModels": "Pokalbyje išsiųstą modelį gali atidaryti, atsisiųsti ir nusikopijuoti visi, kas gali skaityti tą pokalbį, kol žinutė lieka.",
+          "needsSocial": "Pirmiausia įjunkite socialines funkcijas"
         }
       }
     },
