@@ -5816,6 +5816,7 @@
         "sent": "Asked to reach {{handle}}. Your admin will see it.",
         "withdrawn": "Withdrew the request to reach {{handle}}",
         "failed": "Couldn't send it",
+        "loadFailed": "Couldn't load your requests.",
         "yours": "Your requests",
         "withdraw": "Withdraw",
         "status": {
@@ -5832,7 +5833,8 @@
           "already_asked": "Your admin has already asked their instance to connect.",
           "not_available": "This instance doesn't connect with theirs.",
           "exists": "You've already asked to reach them.",
-          "request_limit": "Wait for your admin to answer the requests you've made first."
+          "request_limit": "Wait for your admin to answer the requests you've made first.",
+          "daily_limit": "You've asked to reach people elsewhere a lot today. Try again tomorrow."
         },
         "on": "On {{name}}",
         "from": "From {{name}}",

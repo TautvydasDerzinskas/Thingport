@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { asksIn } from "../src/federation/peers";
 import { parseHandle } from "../src/federation/userRequests";
 import { checkUsername, usernameFrom } from "../src/services/usernames";
 
@@ -41,11 +42,61 @@ describe("handles", () => {
     expect(parseHandle("bob@printer.local").origin).toBe("http://printer.local");
     expect(parseHandle("bob@nas:8000").origin).toBe("http://nas:8000");
     expect(parseHandle("Bob@Prints.Example").host).toBe("prints.example");
+    // As a URL has it: the default port is no port.
+    expect(parseHandle("bob@prints.example:443")).toMatchObject({
+      host: "prints.example",
+      origin: "https://prints.example",
+    });
   });
 
   it("refuse what isn't one", () => {
-    for (const bad of ["bob", "bob@", "@prints.example", "bob@prints.example:99999", "bob@exa mple.com", "b b@x.y"]) {
+    for (const bad of [
+      "bob",
+      "bob@",
+      "@prints.example",
+      "bob@prints.example:99999",
+      "bob@exa mple.com",
+      "b b@x.y",
+      "bob@[:::]",
+      "bob@[1.2.3.4]",
+    ]) {
       expect(() => parseHandle(bad)).toThrow(/handle/);
     }
+  });
+});
+
+describe("who asked whom, as a request names them", () => {
+  const from = "http://a.example:8000";
+  const mention = (name: string, href?: string) => ({ type: "Mention", name, ...(href ? { href } : {}) });
+
+  it("pairs each person asking with whom they asked for", () => {
+    const asks = asksIn(
+      {
+        tag: [
+          mention("@sam@a.example:8000", `${from}/api/ap/actors/u1`),
+          mention("@bob@b.example"),
+          mention("@tom@a.example:8000", `${from}/api/ap/actors/u2`),
+          mention("@bea@b.example"),
+        ],
+      },
+      from,
+    );
+    expect(asks).toEqual([
+      {
+        requesterHandle: "sam@a.example:8000",
+        requesterUrl: `${from}/api/ap/actors/u1`,
+        targetHandle: "bob@b.example",
+      },
+      {
+        requesterHandle: "tom@a.example:8000",
+        requesterUrl: `${from}/api/ap/actors/u2`,
+        targetHandle: "bea@b.example",
+      },
+    ]);
+  });
+
+  it("takes a lone Mention, and no one on another instance as the one asking", () => {
+    expect(asksIn({ tag: mention("@sam", `${from}/api/ap/actors/u1`) }, from)).toHaveLength(1);
+    expect(asksIn({ tag: [mention("@eve", "http://elsewhere.example/actors/e"), mention("@bob")] }, from)).toEqual([]);
   });
 });

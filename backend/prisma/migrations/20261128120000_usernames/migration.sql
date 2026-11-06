@@ -28,16 +28,24 @@ SET "username" = CASE WHEN numbered.n = 1 THEN numbered.candidate ELSE left(numb
 FROM numbered
 WHERE u.id = numbered.id;
 
--- A suffixed name can still meet one someone already had (two "alex" and an "alex-2"): those take part of their id,
--- which no one shares.
-UPDATE "User" u
-SET "username" = left(u."username", 20) || '-' || right(u.id, 9)
-WHERE u.id IN (
-  SELECT id FROM (
-    SELECT id, row_number() OVER (PARTITION BY "username" ORDER BY "createdAt", id) AS n FROM "User"
-  ) duplicates
-  WHERE duplicates.n > 1
-);
+-- A suffixed name can still meet one someone already had (two "alex" and an "alex-2"), and in principle so can a
+-- replacement: renamed with a random ending until no two are the same, so the index below can't fail.
+DO $$
+BEGIN
+  LOOP
+    UPDATE "User" u
+    SET "username" = left(u."username", 20) || '-' || substr(md5(random()::text || u.id), 1, 8)
+    WHERE u.id IN (
+      SELECT id FROM (
+        SELECT id, row_number() OVER (PARTITION BY "username" ORDER BY "createdAt", id) AS n
+        FROM "User"
+        WHERE "username" IS NOT NULL
+      ) duplicates
+      WHERE duplicates.n > 1
+    );
+    EXIT WHEN NOT FOUND;
+  END LOOP;
+END $$;
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_username_key" ON "User"("username");

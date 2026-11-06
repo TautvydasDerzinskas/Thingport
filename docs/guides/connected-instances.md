@@ -76,11 +76,12 @@ and the request waits under **Requests → From your users**:
 
 - **Connect…** opens [Connect to an instance](#connect-to-an-instance) with the address guessed from the handle (plain
   HTTP for a local address or name like `.lan`, HTTPS otherwise; change it if it's wrong). The note their admin sees
-  says who asked, and whom they want to reach. The person who asked is told once the instances connect, or if the
-  other admin declines.
+  says who asked, and whom they want to reach: everyone here waiting to reach someone on that instance goes in the
+  same request. Each person who asked is told once the instances connect, or if the other admin declines.
 - **Decline** tells only the person who asked.
 
-A person can have up to ten requests waiting, and withdraw one from the same dialog while it waits for you. Asking for
+A person can have up to ten requests waiting, and make twenty a day, withdrawn ones included; they can withdraw one
+from the same dialog while it waits for you. Asking for
 someone on an instance that's already a partner, already asked or blocked says so straight away.
 
 ## Handles

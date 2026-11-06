@@ -6102,6 +6102,7 @@
         "sent": "Paprašyta pasiekti {{handle}}. Jūsų administratorius tai pamatys.",
         "withdrawn": "Prašymas pasiekti {{handle}} atšauktas",
         "failed": "Nepavyko išsiųsti",
+        "loadFailed": "Nepavyko įkelti jūsų prašymų.",
         "yours": "Jūsų prašymai",
         "withdraw": "Atšaukti",
         "status": {
@@ -6118,7 +6119,8 @@
           "already_asked": "Jūsų administratorius jau paprašė jų serverio susijungti.",
           "not_available": "Šis serveris su jų serveriu nesijungia.",
           "exists": "Jūs jau paprašėte jį pasiekti.",
-          "request_limit": "Pirma palaukite, kol administratorius atsakys į jūsų prašymus."
+          "request_limit": "Pirma palaukite, kol administratorius atsakys į jūsų prašymus.",
+          "daily_limit": "Šiandien jau daug kartų prašėte pasiekti žmones kitur. Pabandykite rytoj."
         },
         "on": "Serveryje {{name}}",
         "from": "Iš {{name}}",

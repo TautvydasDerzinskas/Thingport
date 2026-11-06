@@ -5890,6 +5890,7 @@
         "sent": "Demande pour joindre {{handle}} envoyée. Votre administrateur la verra.",
         "withdrawn": "Demande pour joindre {{handle}} retirée",
         "failed": "Impossible de l'envoyer",
+        "loadFailed": "Impossible de charger vos demandes.",
         "yours": "Vos demandes",
         "withdraw": "Retirer",
         "status": {
@@ -5906,7 +5907,8 @@
           "already_asked": "Votre administrateur a déjà demandé à son instance de se connecter.",
           "not_available": "Cette instance ne se connecte pas à la sienne.",
           "exists": "Vous avez déjà demandé à joindre cette personne.",
-          "request_limit": "Attendez d'abord que votre administrateur réponde à vos demandes."
+          "request_limit": "Attendez d'abord que votre administrateur réponde à vos demandes.",
+          "daily_limit": "Vous avez déjà demandé à joindre beaucoup de personnes ailleurs aujourd'hui. Réessayez demain."
         },
         "on": "Sur {{name}}",
         "from": "De {{name}}",

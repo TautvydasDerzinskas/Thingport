@@ -29,6 +29,8 @@ const TONE: Record<MyRequestStatus, StatusTone> = {
   declined: "error",
 };
 
+const REFRESH_MS = 15_000;
+
 type Props = {
   onClose: () => void;
   onUnauthorized?: () => void;
@@ -44,15 +46,35 @@ export default function SomeoneElsewhereDialog({ onClose, onUnauthorized }: Prop
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [mine, setMine] = React.useState<MyRequest[] | null>(null);
+  const [loadFailed, setLoadFailed] = React.useState(false);
   const k = (name: string) => `explore.elsewhere.${name}`;
 
+  // Only the latest read counts.
+  const latest = React.useRef(0);
   const load = React.useCallback(() => {
-    connectionRequestsApi.mine().then(setMine, (err) => {
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setMine([]);
-    });
+    const asked = ++latest.current;
+    connectionRequestsApi.mine().then(
+      (value) => {
+        if (asked !== latest.current) return;
+        setMine(value);
+        setLoadFailed(false);
+      },
+      (err) => {
+        if (asked !== latest.current) return;
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else setLoadFailed(true);
+      },
+    );
   }, [onUnauthorized]);
-  React.useEffect(load, [load]);
+  // An admin may answer while it's open: read again now and then, so Withdraw goes once it can't.
+  React.useEffect(() => {
+    load();
+    const timer = window.setInterval(load, REFRESH_MS);
+    return () => {
+      window.clearInterval(timer);
+      latest.current += 1;
+    };
+  }, [load]);
 
   const send = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -132,46 +154,62 @@ export default function SomeoneElsewhereDialog({ onClose, onUnauthorized }: Prop
           </Box>
         </Stack>
 
-        {mine === null ? (
-          <Box sx={{ mt: 2 }}>
-            <ListRowSkeletons count={2} lead="circle" leadSize={32} />
-          </Box>
-        ) : (
-          mine.length > 0 && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="caption" fontWeight={700} color="text.secondary" component="h3" sx={{ m: 0 }}>
-                {t(k("yours"))}
-              </Typography>
-              <Stack divider={<Divider flexItem />} sx={{ mt: 1 }}>
-                {mine.map((request) => (
-                  <Stack key={request.id} direction="row" spacing={1.5} alignItems="center" sx={{ py: 1 }}>
-                    <Avatar sx={{ width: 32, height: 32, fontSize: 14 }} aria-hidden>
-                      {request.handle[0]?.toUpperCase()}
-                    </Avatar>
-                    <Stack sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" fontWeight={600} noWrap>
-                        {request.handle.split("@")[0]}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", overflowWrap: "anywhere" }}
-                      >
-                        {request.handle}
-                      </Typography>
-                    </Stack>
-                    <ToneChip tone={TONE[request.status]} label={t(k(`status.${request.status}`))} />
-                    {request.status === "waiting_admin" && (
-                      <Button size="small" color="inherit" onClick={() => void withdraw(request)}>
-                        {t(k("withdraw"))}
-                      </Button>
-                    )}
-                  </Stack>
-                ))}
-              </Stack>
-            </Box>
-          )
+        {loadFailed && (
+          <Alert
+            severity="warning"
+            sx={{ mt: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={load}>
+                {t("common:retry")}
+              </Button>
+            }
+          >
+            {t(k("loadFailed"))}
+          </Alert>
         )}
+        {mine === null
+          ? !loadFailed && (
+              <Box sx={{ mt: 2 }}>
+                <ListRowSkeletons count={2} lead="circle" leadSize={32} />
+              </Box>
+            )
+          : mine.length > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="caption" fontWeight={700} color="text.secondary" component="h3" sx={{ m: 0 }}>
+                  {t(k("yours"))}
+                </Typography>
+                <Stack divider={<Divider flexItem />} sx={{ mt: 1 }}>
+                  {mine.map((request) => (
+                    <Stack key={request.id} direction="row" spacing={1.5} alignItems="center" sx={{ py: 1 }}>
+                      <Avatar sx={{ width: 32, height: 32, fontSize: 14 }} aria-hidden>
+                        {request.handle[0]?.toUpperCase()}
+                      </Avatar>
+                      <Stack sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight={600} noWrap>
+                          {request.handle.split("@")[0]}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                            overflowWrap: "anywhere",
+                          }}
+                        >
+                          {request.handle}
+                        </Typography>
+                      </Stack>
+                      <ToneChip tone={TONE[request.status]} label={t(k(`status.${request.status}`))} />
+                      {request.status === "waiting_admin" && (
+                        <Button size="small" color="inherit" onClick={() => void withdraw(request)}>
+                          {t(k("withdraw"))}
+                        </Button>
+                      )}
+                    </Stack>
+                  ))}
+                </Stack>
+              </Box>
+            )}
       </DialogContent>
     </Dialog>
   );

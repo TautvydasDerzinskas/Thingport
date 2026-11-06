@@ -59,6 +59,8 @@ export type IncomingRequest = {
   http: boolean;
   requesterHandle: string | null;
   targetHandle: string | null;
+  /** Every person asking and whom, when their admin sent on several at once. */
+  asks?: { requesterHandle: string | null; targetHandle: string | null }[];
   note: string | null;
   createdAt: string;
 };
@@ -89,6 +91,16 @@ export type RequestDetails = InstanceInfo & {
   verified: true;
   /** The person here they asked to reach, when the request names one. */
   target: { username: string; displayName: string } | null;
+  /** What the request that checked out says: a newer one under the same address, forged, may have said otherwise. */
+  request?: {
+    requesterName: string | null;
+    note: string | null;
+    asks: {
+      requesterHandle: string | null;
+      targetHandle: string | null;
+      target: { username: string; displayName: string } | null;
+    }[];
+  };
 };
 
 export type MyRequestStatus = "waiting_admin" | "waiting_them" | "connected" | "declined";

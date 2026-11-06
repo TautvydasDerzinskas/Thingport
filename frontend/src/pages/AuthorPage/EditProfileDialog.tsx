@@ -592,7 +592,8 @@ export default function EditProfileDialog({ user, linkedAuthors, onClose, onSave
         <Button
           variant="contained"
           onClick={save}
-          disabled={saving || !dirty || !linksValid || !usernameSavable(usernameState)}
+          // The username counts only while its field shows: hidden, it isn't saved either.
+          disabled={saving || !dirty || !linksValid || (Boolean(handleHost) && !usernameSavable(usernameState))}
           startIcon={saving ? <CircularProgress size={14} /> : undefined}
         >
           {t("common:save")}

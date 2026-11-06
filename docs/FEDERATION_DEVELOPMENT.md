@@ -70,9 +70,12 @@ Two instance actors, one `Follow` and one `Accept`:
 A person asks to reach `bob@prints.example` from Explore (`POST /api/me/connection-requests`, `userRequests.ts`). That's
 a `PeerRequest` of kind `LOCAL`: a note for this instance's admins, with the origin guessed from the handle. Nothing
 is fetched from what a person typed -- only an admin's **Connect** reaches out, through the usual lookup and key
-comparison, with the request's id (`requestId`). Its `Follow` then carries two `Mention` tags, the person asking (their
-actor URL and `@handle`) and the person asked for (`@bob@prints.example`), which the other side shows its admins and,
-on approval, uses to tell `bob`. `listMyRequests` derives each request's status from the `Peer` it led to.
+comparison, with the request's id (`requestId`). Its `Follow` then carries a pair of `Mention` tags for every request
+here waiting on that instance: the person asking (their actor URL and `@handle`, as they're called now) and the
+person asked for (`@bob@prints.example`, at the address the admin checked). The other side reads every pair
+(`asksIn`), shows them to its admins and, on approval, tells each person asked for. Settling those requests and queuing
+the `Follow` are one transaction, and only requests still waiting are settled, so one withdrawn or declined meanwhile
+stays so. `listMyRequests` derives each request's status from the `Peer` it led to.
 
 Handles are `User.username` (`services/usernames.ts`) at the Public URL's host. Every account gets one: on sign-up, on
 first `GET /api/me` for older accounts, and backfilled by the migration that added the column. They're unique on the

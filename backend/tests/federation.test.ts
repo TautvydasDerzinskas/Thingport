@@ -359,6 +359,45 @@ describe("connected instances, on", () => {
     expect(after.body.map((item: { id: string }) => item.id)).not.toContain(id);
   });
 
+  it("lets someone have ten requests waiting, and only so many a day", async () => {
+    const ask = (handle: string) => request(app).post("/api/me/connection-requests").set(auth(admin)).send({ handle });
+    const made: string[] = [];
+    for (let n = 0; n < 10; n++) {
+      const res = await ask(`p${n}@198.51.100.4${n}`);
+      expect(res.status).toBe(201);
+      made.push(res.body.id);
+    }
+    const eleventh = await ask("p10@198.51.100.50");
+    expect(eleventh.status).toBe(429);
+    expect(eleventh.body.code).toBe("request_limit");
+    // Withdrawing makes room, but not endlessly: each one still told every admin.
+    for (const id of made) await request(app).delete(`/api/me/connection-requests/${id}`).set(auth(admin));
+    const more: string[] = [];
+    for (let n = 0; n < 10; n++) {
+      const res = await ask(`q${n}@198.51.100.6${n}`);
+      expect(res.status).toBe(201);
+      more.push(res.body.id);
+    }
+    await request(app).delete(`/api/me/connection-requests/${more[0]}`).set(auth(admin));
+    const daily = await ask("q@198.51.100.70");
+    expect(daily.status).toBe(429);
+    expect(daily.body.code).toBe("daily_limit");
+    // Every one still waiting is listed, however many were answered or withdrawn after.
+    const mine = await request(app).get("/api/me/connection-requests").set(auth(admin));
+    expect(mine.body.filter((item: { status: string }) => item.status === "waiting_admin")).toHaveLength(9);
+  });
+
+  it("won't decline a request withdrawn meanwhile", async () => {
+    const res = await request(app)
+      .post("/api/me/connection-requests")
+      .set(auth(member))
+      .send({ handle: "gone@198.51.100.22" });
+    await request(app).delete(`/api/me/connection-requests/${res.body.id}`).set(auth(member));
+    expect((await request(app).post(`/api/federation/requests/${res.body.id}/decline`).set(auth(admin))).status).toBe(
+      404,
+    );
+  });
+
   it("tells someone their admin declined, without a word to the other instance", async () => {
     const res = await request(app)
       .post("/api/me/connection-requests")

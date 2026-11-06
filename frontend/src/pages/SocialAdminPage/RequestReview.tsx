@@ -103,6 +103,26 @@ function useRequestReview(
   };
 
   const help = [t(k("helpShare")), t(k("helpLater"))];
+  // Once it's checked, what the request that checked out says; until then, what the list had, as it came.
+  const verified = details?.request;
+  const listed = request.asks?.length
+    ? request.asks
+    : request.requesterHandle
+      ? [{ requesterHandle: request.requesterHandle, targetHandle: request.targetHandle }]
+      : [];
+  const asks = (
+    verified
+      ? verified.asks
+      : listed.map(({ requesterHandle, targetHandle }) => ({ requesterHandle, targetHandle, target: null }))
+  )
+    .filter((ask) => ask.requesterHandle)
+    .map(({ requesterHandle, targetHandle, target }, position) => ({
+      requesterHandle,
+      targetHandle,
+      target,
+      key: `${position}:${requesterHandle}`,
+    }));
+  const note = verified ? verified.note : request.note;
   const content = (
     <Stack spacing={2}>
       <Stack spacing={1.25}>
@@ -142,27 +162,35 @@ function useRequestReview(
         <Typography variant="caption" color="text.secondary" fontWeight={700} component="div" sx={{ mb: 0.5 }}>
           {t(k("askedBy"))}
         </Typography>
-        <Typography variant="body2">
-          {request.requesterHandle
-            ? request.targetHandle
-              ? t(k("personForPerson"), { who: request.requesterHandle, whom: request.targetHandle })
-              : t(k("person"), { who: request.requesterHandle })
-            : t(k("theirAdmin"))}
-        </Typography>
-        {details && request.targetHandle && (
-          <Typography variant="caption" color={details.target ? "text.secondary" : "warning.main"} component="div">
-            {details.target
-              ? t(k("targetHere"), { name: details.target.displayName, handle: `@${details.target.username}` })
-              : t(k("targetMissing"), { handle: request.targetHandle })}
-          </Typography>
+        {asks.length ? (
+          <Stack spacing={0.75}>
+            {asks.map((ask) => (
+              <Box key={ask.key}>
+                <Typography variant="body2">
+                  {ask.targetHandle
+                    ? t(k("personForPerson"), { who: ask.requesterHandle, whom: ask.targetHandle })
+                    : t(k("person"), { who: ask.requesterHandle })}
+                </Typography>
+                {details && ask.targetHandle && (
+                  <Typography variant="caption" color={ask.target ? "text.secondary" : "warning.main"} component="div">
+                    {ask.target
+                      ? t(k("targetHere"), { name: ask.target.displayName, handle: `@${ask.target.username}` })
+                      : t(k("targetMissing"), { handle: ask.targetHandle })}
+                  </Typography>
+                )}
+              </Box>
+            ))}
+          </Stack>
+        ) : (
+          <Typography variant="body2">{t(k("theirAdmin"))}</Typography>
         )}
       </Box>
-      {request.note && (
+      {note && (
         <Typography
           variant="body2"
           sx={{ bgcolor: "action.hover", borderRadius: 1, px: 1.5, py: 1, overflowWrap: "anywhere" }}
         >
-          {request.note}
+          {note}
         </Typography>
       )}
       {loadError && (
