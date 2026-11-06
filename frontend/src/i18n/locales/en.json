@@ -397,7 +397,7 @@
             },
             "collections": {
               "title": "Collections",
-              "description": "Your collections and what's in them, and the ones others share."
+              "description": "Your collections and what's in them, and the collections and models others share."
             },
             "tags": {
               "title": "Tags",
@@ -4950,6 +4950,49 @@
       "linkConfirmLabel": "Yes, it's me",
       "linkSuccess": "Linked \"{{name}}\" to your account",
       "linkFailed": "Failed to link this author to your account",
+      "editProfile": {
+        "button": "Edit profile",
+        "title": "Edit profile",
+        "changeCover": "Change cover",
+        "cover": "Cover",
+        "coverHelp": "Pick a drawn cover, the cover of an account you linked, or upload a picture of up to 10 MB. Drag a picture to choose the part that shows.",
+        "presets": {
+          "retro": "Retro",
+          "pixel": "Pixel art",
+          "mosaic": "Mosaic",
+          "ascii": "ASCII",
+          "blueprint": "Blueprint"
+        },
+        "yourPicture": "Your picture",
+        "fromAccount": "From {{provider}}",
+        "upload": "Upload",
+        "uploadHint": "Upload a picture, up to 10 MB",
+        "uploadTooBig": "That picture is larger than 10 MB.",
+        "notAPicture": "That file isn't a picture.",
+        "drag": "Drag to reposition",
+        "position": "Cover position",
+        "bio": "Bio",
+        "bioHelp": "Shown on your profile to the other people on this instance. Markdown works.",
+        "bioPlaceholder": "A few words about you and what you make",
+        "saved": "Profile saved",
+        "saveFailed": "Couldn't save your profile.",
+        "links": "Links",
+        "linksHelp": "Up to {{count}} web addresses, shown under your bio: your page on a model site, a shop, a portfolio.",
+        "addLink": "Add link",
+        "removeLink": "Remove link",
+        "linkLabel": "Link {{n}}",
+        "linkInvalid": "Enter a web address, like https://example.com"
+      },
+      "visibility": {
+        "toggle": "Show my models on Explore",
+        "privateTip": "Private: only you see these models. Click to show them on Explore.",
+        "publicTip": "Public: everyone on this instance sees these models on Explore. Click to make them private.",
+        "confirmTitle": "Show your models on Explore?",
+        "confirmMessage": "Everyone on this instance can then see, download and copy the models on this page, from your profile on Explore. Changing or deleting them stays yours alone, and you can make them private again any time.",
+        "confirmLabel": "Make public",
+        "nowPublic": "Your models are on Explore now",
+        "nowPrivate": "Your models are private now"
+      },
       "popup": {
         "modelCount_one": "{{count}} model imported from {{provider}}",
         "modelCount_other": "{{count}} models imported from {{provider}}",
@@ -4957,6 +5000,78 @@
         "selfModelCount_other": "{{count}} models uploaded",
         "loadFailed": "Couldn't load this author."
       }
+    },
+    "avatar": {
+      "change": "Change avatar",
+      "title": "Avatar",
+      "modes": {
+        "thingport": "Thingport",
+        "picture": "Picture",
+        "auto": "Automatic"
+      },
+      "shuffle": "Shuffle",
+      "parts": {
+        "hair": "Hair",
+        "glasses": "Glasses",
+        "mouth": "Mouth",
+        "hair_color": "Hair colour",
+        "background": "Background"
+      },
+      "none": "None",
+      "hair": {
+        "spiky": "Spiky",
+        "sideSwept": "Side swept",
+        "curly": "Curly",
+        "long": "Long",
+        "topBun": "Top bun",
+        "mohawk": "Mohawk",
+        "ponytail": "Ponytail",
+        "flatTop": "Flat top",
+        "bob": "Bob",
+        "spaceBuns": "Space buns"
+      },
+      "glasses": {
+        "round": "Round",
+        "square": "Square",
+        "sunglasses": "Sunglasses",
+        "catEye": "Cat-eye",
+        "threeD": "3D"
+      },
+      "mouth": {
+        "smile": "Smile",
+        "toothy": "Toothy",
+        "wobbly": "Wobbly",
+        "surprised": "Surprised",
+        "cheeky": "Cheeky"
+      },
+      "hair_color": {
+        "black": "Black",
+        "darkBrown": "Dark brown",
+        "brown": "Brown",
+        "blonde": "Blonde",
+        "ginger": "Ginger",
+        "grey": "Grey",
+        "blue": "Blue",
+        "pink": "Pink"
+      },
+      "background": {
+        "mint": "Mint",
+        "sky": "Sky",
+        "peach": "Peach",
+        "lavender": "Lavender",
+        "sand": "Sand",
+        "teal": "Teal",
+        "stone": "Stone",
+        "rose": "Rose"
+      },
+      "upload": "Upload",
+      "uploadHint": "Upload a picture, up to 10 MB",
+      "pictureHelp": "A picture of up to 10 MB, cut to a square around what's in it, or the picture of an account you linked.",
+      "yourPicture": "Your picture",
+      "fromAccount": "From {{provider}}",
+      "autoHint": "Your Gravatar, if you have one, or else the Thingport avatar picked for you.",
+      "saved": "Avatar updated",
+      "saveFailed": "Couldn't save your avatar."
     },
     "collections": {
       "pageTitle": "Collections",
@@ -5437,9 +5552,9 @@
     },
     "explore": {
       "people": "People",
-      "peopleHelp": "The instance's users who share collections. Open one to see them all.",
+      "peopleHelp": "The instance's users who share their models or collections. Open one to see what they share.",
       "recentModels": "New models",
-      "recentModelsHelp": "The models most recently added to someone's public collection.",
+      "recentModelsHelp": "The models most recently added to someone's public collection or public profile.",
       "recentCollections": "Recently updated collections",
       "recentCollectionsHelp": "Public collections, the ones made public or added to most recently first.",
       "mostCollected": "Most collected",
@@ -5452,7 +5567,7 @@
       "modelCount_one": "{{count}} model",
       "modelCount_other": "{{count}} models",
       "emptyTitle": "Nothing shared yet",
-      "emptyHint": "When someone makes a collection public, it shows up here.",
+      "emptyHint": "When someone makes their models or a collection public, it shows up here.",
       "emptyAction": "Go to my collections",
       "unavailable": "Explore isn't available right now.",
       "userNotFound": "This user doesn't share anything.",
@@ -5460,7 +5575,11 @@
       "joined": "Joined {{date}}",
       "ownEmpty": "You haven't made any collection public yet.",
       "loadFailed": "Couldn't load this page.",
-      "refreshFailed": "Couldn't load the latest counts."
+      "refreshFailed": "Couldn't load the latest counts.",
+      "sections": "What they share",
+      "noModels": "No models yet.",
+      "modelsLoadFailed": "Couldn't load the models.",
+      "noCollections": "{{name}} hasn't made any collection public yet."
     }
   },
   "providers": {

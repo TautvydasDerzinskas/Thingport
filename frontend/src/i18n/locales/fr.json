@@ -397,7 +397,7 @@
             },
             "collections": {
               "title": "Collections",
-              "description": "Vos collections et leur contenu, et celles que les autres partagent."
+              "description": "Vos collections et leur contenu, et les collections et modèles que les autres partagent."
             },
             "tags": {
               "title": "Étiquettes",
@@ -5020,6 +5020,49 @@
       "linkConfirmLabel": "Oui, c’est moi",
       "linkSuccess": "« {{name}} » relié à votre compte",
       "linkFailed": "Impossible de relier cet auteur à votre compte",
+      "editProfile": {
+        "button": "Modifier le profil",
+        "title": "Modifier le profil",
+        "changeCover": "Changer la couverture",
+        "cover": "Couverture",
+        "coverHelp": "Choisissez une couverture dessinée, celle d’un compte que vous avez relié, ou téléversez une image de 10 Mo maximum. Faites glisser une image pour choisir la partie visible.",
+        "presets": {
+          "retro": "Rétro",
+          "pixel": "Pixel art",
+          "mosaic": "Mosaïque",
+          "ascii": "ASCII",
+          "blueprint": "Plan"
+        },
+        "yourPicture": "Votre image",
+        "fromAccount": "Depuis {{provider}}",
+        "upload": "Téléverser",
+        "uploadHint": "Téléverser une image, 10 Mo maximum",
+        "uploadTooBig": "Cette image dépasse 10 Mo.",
+        "notAPicture": "Ce fichier n’est pas une image.",
+        "drag": "Faites glisser pour repositionner",
+        "position": "Position de la couverture",
+        "bio": "Biographie",
+        "bioHelp": "Affichée sur votre profil pour les autres personnes de cette instance. Le Markdown est pris en charge.",
+        "bioPlaceholder": "Quelques mots sur vous et ce que vous créez",
+        "saved": "Profil enregistré",
+        "saveFailed": "Impossible d’enregistrer votre profil.",
+        "links": "Liens",
+        "linksHelp": "Jusqu’à {{count}} adresses web, affichées sous votre biographie : votre page sur un site de modèles, une boutique, un portfolio.",
+        "addLink": "Ajouter un lien",
+        "removeLink": "Retirer le lien",
+        "linkLabel": "Lien {{n}}",
+        "linkInvalid": "Saisissez une adresse web, par exemple https://example.com"
+      },
+      "visibility": {
+        "toggle": "Afficher mes modèles dans Explorer",
+        "privateTip": "Privés : vous seul voyez ces modèles. Cliquez pour les afficher dans Explorer.",
+        "publicTip": "Publics : tout le monde sur cette instance voit ces modèles dans Explorer. Cliquez pour les rendre privés.",
+        "confirmTitle": "Afficher vos modèles dans Explorer ?",
+        "confirmMessage": "Tout le monde sur cette instance pourra alors voir, télécharger et copier les modèles de cette page depuis votre profil dans Explorer. Les modifier ou les supprimer reste à vous seul, et vous pouvez les rendre privés à tout moment.",
+        "confirmLabel": "Rendre publics",
+        "nowPublic": "Vos modèles sont maintenant dans Explorer",
+        "nowPrivate": "Vos modèles sont maintenant privés"
+      },
       "popup": {
         "modelCount_one": "{{count}} modèle importé depuis {{provider}}",
         "modelCount_other": "{{count}} modèles importés depuis {{provider}}",
@@ -5027,6 +5070,78 @@
         "selfModelCount_other": "{{count}} modèles téléversés",
         "loadFailed": "Impossible de charger cet auteur."
       }
+    },
+    "avatar": {
+      "change": "Changer d’avatar",
+      "title": "Avatar",
+      "modes": {
+        "thingport": "Thingport",
+        "picture": "Image",
+        "auto": "Automatique"
+      },
+      "shuffle": "Mélanger",
+      "parts": {
+        "hair": "Cheveux",
+        "glasses": "Lunettes",
+        "mouth": "Bouche",
+        "hair_color": "Couleur des cheveux",
+        "background": "Fond"
+      },
+      "none": "Aucun",
+      "hair": {
+        "spiky": "En pétard",
+        "sideSwept": "Mèche sur le côté",
+        "curly": "Bouclés",
+        "long": "Longs",
+        "topBun": "Chignon",
+        "mohawk": "Iroquoise",
+        "ponytail": "Queue de cheval",
+        "flatTop": "Brosse plate",
+        "bob": "Carré",
+        "spaceBuns": "Deux chignons"
+      },
+      "glasses": {
+        "round": "Rondes",
+        "square": "Carrées",
+        "sunglasses": "Lunettes de soleil",
+        "catEye": "Œil de chat",
+        "threeD": "3D"
+      },
+      "mouth": {
+        "smile": "Sourire",
+        "toothy": "Dents de lapin",
+        "wobbly": "Inquiet",
+        "surprised": "Surpris",
+        "cheeky": "Espiègle"
+      },
+      "hair_color": {
+        "black": "Noirs",
+        "darkBrown": "Châtain foncé",
+        "brown": "Châtains",
+        "blonde": "Blonds",
+        "ginger": "Roux",
+        "grey": "Gris",
+        "blue": "Bleus",
+        "pink": "Roses"
+      },
+      "background": {
+        "mint": "Menthe",
+        "sky": "Ciel",
+        "peach": "Pêche",
+        "lavender": "Lavande",
+        "sand": "Sable",
+        "teal": "Turquoise",
+        "stone": "Pierre",
+        "rose": "Rose"
+      },
+      "upload": "Téléverser",
+      "uploadHint": "Téléverser une image, 10 Mo maximum",
+      "pictureHelp": "Une image de 10 Mo maximum, recadrée en carré autour de son sujet, ou l’image d’un compte que vous avez relié.",
+      "yourPicture": "Votre image",
+      "fromAccount": "Depuis {{provider}}",
+      "autoHint": "Votre Gravatar si vous en avez un, sinon l’avatar Thingport choisi pour vous.",
+      "saved": "Avatar mis à jour",
+      "saveFailed": "Impossible d’enregistrer votre avatar."
     },
     "collections": {
       "pageTitle": "Collections",
@@ -5509,9 +5624,9 @@
     },
     "explore": {
       "people": "Personnes",
-      "peopleHelp": "Les utilisateurs de l'instance qui partagent des collections. Ouvrez-en un pour toutes les voir.",
+      "peopleHelp": "Les utilisateurs de l'instance qui partagent leurs modèles ou des collections. Ouvrez-en un pour voir ce qu'il partage.",
       "recentModels": "Nouveaux modèles",
-      "recentModelsHelp": "Les modèles ajoutés le plus récemment à la collection publique de quelqu'un.",
+      "recentModelsHelp": "Les modèles ajoutés le plus récemment à la collection publique ou au profil public de quelqu'un.",
       "recentCollections": "Collections récemment mises à jour",
       "recentCollectionsHelp": "Les collections publiques, d'abord celles rendues publiques ou complétées le plus récemment.",
       "mostCollected": "Les plus collectionnés",
@@ -5524,7 +5639,7 @@
       "modelCount_one": "{{count}} modèle",
       "modelCount_other": "{{count}} modèles",
       "emptyTitle": "Rien n'est encore partagé",
-      "emptyHint": "Quand quelqu'un rend une collection publique, elle apparaît ici.",
+      "emptyHint": "Quand quelqu'un rend ses modèles ou une collection publics, ils apparaissent ici.",
       "emptyAction": "Aller à mes collections",
       "unavailable": "Explorer n'est pas disponible pour le moment.",
       "userNotFound": "Cet utilisateur ne partage rien.",
@@ -5532,7 +5647,11 @@
       "joined": "Inscrit en {{date}}",
       "ownEmpty": "Vous n'avez encore rendu aucune collection publique.",
       "loadFailed": "Impossible de charger cette page.",
-      "refreshFailed": "Impossible de charger les derniers chiffres."
+      "refreshFailed": "Impossible de charger les derniers chiffres.",
+      "sections": "Ce qu’il partage",
+      "noModels": "Aucun modèle pour le moment.",
+      "modelsLoadFailed": "Impossible de charger les modèles.",
+      "noCollections": "{{name}} n’a encore rendu aucune collection publique."
     }
   },
   "providers": {

@@ -397,7 +397,7 @@
             },
             "collections": {
               "title": "Colecciones",
-              "description": "Tus colecciones y lo que contienen, y las que comparten otros."
+              "description": "Tus colecciones y lo que contienen, y las colecciones y modelos que comparten otros."
             },
             "tags": {
               "title": "Etiquetas",
@@ -5007,6 +5007,49 @@
       "linkConfirmLabel": "Sí, soy yo",
       "linkSuccess": "«{{name}}» vinculado a tu cuenta",
       "linkFailed": "No se pudo vincular este autor a tu cuenta",
+      "editProfile": {
+        "button": "Editar perfil",
+        "title": "Editar perfil",
+        "changeCover": "Cambiar portada",
+        "cover": "Portada",
+        "coverHelp": "Elige una portada dibujada, la de una cuenta que hayas vinculado o sube una imagen de hasta 10 MB. Arrastra una imagen para elegir la parte que se ve.",
+        "presets": {
+          "retro": "Retro",
+          "pixel": "Pixel art",
+          "mosaic": "Mosaico",
+          "ascii": "ASCII",
+          "blueprint": "Plano"
+        },
+        "yourPicture": "Tu imagen",
+        "fromAccount": "De {{provider}}",
+        "upload": "Subir",
+        "uploadHint": "Subir una imagen de hasta 10 MB",
+        "uploadTooBig": "Esa imagen pesa más de 10 MB.",
+        "notAPicture": "Ese archivo no es una imagen.",
+        "drag": "Arrastra para recolocar",
+        "position": "Posición de la portada",
+        "bio": "Biografía",
+        "bioHelp": "Se muestra en tu perfil a las demás personas de esta instancia. Admite Markdown.",
+        "bioPlaceholder": "Unas palabras sobre ti y lo que creas",
+        "saved": "Perfil guardado",
+        "saveFailed": "No se pudo guardar tu perfil.",
+        "links": "Enlaces",
+        "linksHelp": "Hasta {{count}} direcciones web, mostradas bajo tu biografía: tu página en un sitio de modelos, una tienda, un portafolio.",
+        "addLink": "Añadir enlace",
+        "removeLink": "Quitar enlace",
+        "linkLabel": "Enlace {{n}}",
+        "linkInvalid": "Escribe una dirección web, como https://example.com"
+      },
+      "visibility": {
+        "toggle": "Mostrar mis modelos en Explorar",
+        "privateTip": "Privados: solo tú ves estos modelos. Haz clic para mostrarlos en Explorar.",
+        "publicTip": "Públicos: todos en esta instancia ven estos modelos en Explorar. Haz clic para hacerlos privados.",
+        "confirmTitle": "¿Mostrar tus modelos en Explorar?",
+        "confirmMessage": "Todos en esta instancia podrán ver, descargar y copiar los modelos de esta página desde tu perfil en Explorar. Cambiarlos o eliminarlos sigue siendo solo cosa tuya, y puedes volver a hacerlos privados cuando quieras.",
+        "confirmLabel": "Hacer públicos",
+        "nowPublic": "Tus modelos ya están en Explorar",
+        "nowPrivate": "Tus modelos ahora son privados"
+      },
       "popup": {
         "modelCount_one": "{{count}} modelo importado de {{provider}}",
         "modelCount_other": "{{count}} modelos importados de {{provider}}",
@@ -5014,6 +5057,78 @@
         "selfModelCount_other": "{{count}} modelos subidos",
         "loadFailed": "No se pudo cargar este autor."
       }
+    },
+    "avatar": {
+      "change": "Cambiar avatar",
+      "title": "Avatar",
+      "modes": {
+        "thingport": "Thingport",
+        "picture": "Imagen",
+        "auto": "Automático"
+      },
+      "shuffle": "Mezclar",
+      "parts": {
+        "hair": "Pelo",
+        "glasses": "Gafas",
+        "mouth": "Boca",
+        "hair_color": "Color de pelo",
+        "background": "Fondo"
+      },
+      "none": "Ninguno",
+      "hair": {
+        "spiky": "De punta",
+        "sideSwept": "Peinado de lado",
+        "curly": "Rizado",
+        "long": "Largo",
+        "topBun": "Moño",
+        "mohawk": "Cresta",
+        "ponytail": "Coleta",
+        "flatTop": "Plano",
+        "bob": "Bob",
+        "spaceBuns": "Dos moños"
+      },
+      "glasses": {
+        "round": "Redondas",
+        "square": "Cuadradas",
+        "sunglasses": "Gafas de sol",
+        "catEye": "Ojo de gato",
+        "threeD": "3D"
+      },
+      "mouth": {
+        "smile": "Sonrisa",
+        "toothy": "Dientes de conejo",
+        "wobbly": "Nervioso",
+        "surprised": "Sorprendido",
+        "cheeky": "Pícaro"
+      },
+      "hair_color": {
+        "black": "Negro",
+        "darkBrown": "Castaño oscuro",
+        "brown": "Castaño",
+        "blonde": "Rubio",
+        "ginger": "Pelirrojo",
+        "grey": "Gris",
+        "blue": "Azul",
+        "pink": "Rosa"
+      },
+      "background": {
+        "mint": "Menta",
+        "sky": "Cielo",
+        "peach": "Melocotón",
+        "lavender": "Lavanda",
+        "sand": "Arena",
+        "teal": "Turquesa",
+        "stone": "Piedra",
+        "rose": "Rosa"
+      },
+      "upload": "Subir",
+      "uploadHint": "Subir una imagen de hasta 10 MB",
+      "pictureHelp": "Una imagen de hasta 10 MB, recortada en un cuadrado alrededor de lo que contiene, o la imagen de una cuenta que hayas vinculado.",
+      "yourPicture": "Tu imagen",
+      "fromAccount": "De {{provider}}",
+      "autoHint": "Tu Gravatar si tienes uno, o si no, el avatar de Thingport elegido para ti.",
+      "saved": "Avatar actualizado",
+      "saveFailed": "No se pudo guardar tu avatar."
     },
     "collections": {
       "pageTitle": "Colecciones",
@@ -5496,9 +5611,9 @@
     },
     "explore": {
       "people": "Personas",
-      "peopleHelp": "Los usuarios de la instancia que comparten colecciones. Abre uno para verlas todas.",
+      "peopleHelp": "Los usuarios de la instancia que comparten sus modelos o colecciones. Abre uno para ver lo que comparte.",
       "recentModels": "Modelos nuevos",
-      "recentModelsHelp": "Los modelos añadidos más recientemente a la colección pública de alguien.",
+      "recentModelsHelp": "Los modelos añadidos más recientemente a la colección pública o al perfil público de alguien.",
       "recentCollections": "Colecciones actualizadas recientemente",
       "recentCollectionsHelp": "Colecciones públicas, primero las que se hicieron públicas o se ampliaron más recientemente.",
       "mostCollected": "Más coleccionados",
@@ -5511,7 +5626,7 @@
       "modelCount_one": "{{count}} modelo",
       "modelCount_other": "{{count}} modelos",
       "emptyTitle": "Aún no se comparte nada",
-      "emptyHint": "Cuando alguien haga pública una colección, aparecerá aquí.",
+      "emptyHint": "Cuando alguien haga públicos sus modelos o una colección, aparecerán aquí.",
       "emptyAction": "Ir a mis colecciones",
       "unavailable": "Explorar no está disponible ahora mismo.",
       "userNotFound": "Este usuario no comparte nada.",
@@ -5519,7 +5634,11 @@
       "joined": "Se unió en {{date}}",
       "ownEmpty": "Aún no has hecho pública ninguna colección.",
       "loadFailed": "No se pudo cargar esta página.",
-      "refreshFailed": "No se pudieron cargar los recuentos más recientes."
+      "refreshFailed": "No se pudieron cargar los recuentos más recientes.",
+      "sections": "Lo que comparte",
+      "noModels": "Aún no hay modelos.",
+      "modelsLoadFailed": "No se pudieron cargar los modelos.",
+      "noCollections": "{{name}} aún no ha hecho pública ninguna colección."
     }
   },
   "providers": {

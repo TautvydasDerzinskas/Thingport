@@ -52,6 +52,7 @@ import { healthApi, type HealthInfo } from "./api/health";
 import { authApi, type AuthUser } from "./api/auth";
 import { settingsApi, type PreviewMode } from "./api/settings";
 import { UnauthorizedError } from "./api/client";
+import { profileApi } from "./api/profile";
 import {
   clearToken,
   clearUser,
@@ -291,7 +292,14 @@ function AppShell({
         />
         <Route
           path="/explore/users/:userId"
-          element={<ExploreUserPage theme={resolvedTheme} previewMode={previewMode} onUnauthorized={onUnauthorized} />}
+          element={
+            <ExploreUserPage
+              theme={resolvedTheme}
+              previewMode={previewMode}
+              onUnauthorized={onUnauthorized}
+              viewer={user}
+            />
+          }
         />
         <Route
           path="/explore/collections/:collectionId"
@@ -331,7 +339,10 @@ function AppShell({
             />
           }
         />
-        <Route path="/profile" element={<ProfilePage user={user} onUnauthorized={onUnauthorized} />} />
+        <Route
+          path="/profile"
+          element={<ProfilePage user={user} onUserUpdated={onUserUpdated} onUnauthorized={onUnauthorized} />}
+        />
         <Route
           path="/profile/email"
           element={<ChangeEmailPage user={user} onUserUpdated={onUserUpdated} onUnauthorized={onUnauthorized} />}
@@ -452,6 +463,26 @@ export default function App() {
         setPreviewMode((await settingsApi.getPreviews()).mode);
       } catch {}
     })();
+  }, [token]);
+  // Counts the user's own changes, so a read that started before one doesn't undo it when it lands.
+  const userRevision = React.useRef(0);
+  // The user kept from signing in can be older than a change made elsewhere, or than what this version shows of them
+  // (their avatar): read afresh once a session starts.
+  React.useEffect(() => {
+    if (!token) return;
+    let active = true;
+    const revision = userRevision.current;
+    profileApi.me().then(
+      (fresh) => {
+        if (!active || revision !== userRevision.current) return;
+        storeUser(fresh);
+        setUser(fresh);
+      },
+      () => undefined,
+    );
+    return () => {
+      active = false;
+    };
   }, [token]);
   React.useEffect(() => {
     // The accent is the account's, so another account signing in on this tab doesn't inherit it.
@@ -607,6 +638,7 @@ export default function App() {
 
   // PATCH /profile doesn't reissue a token, so only the local user object changes.
   const handleUserUpdated = (updatedUser: AuthUser) => {
+    userRevision.current += 1;
     storeUser(updatedUser);
     setUser(updatedUser);
   };

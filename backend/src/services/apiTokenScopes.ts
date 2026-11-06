@@ -59,7 +59,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
   {
     id: "collections",
     title: "Collections",
-    description: "Your collections and what's in them, and the ones others share.",
+    description: "Your collections and what's in them, and the collections and models others share.",
     paths: [
       "/collections",
       "/collection/:id",
@@ -68,6 +68,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/social",
       "/explore",
       "/explore/user/:id",
+      "/explore/user/:id/models",
     ],
   },
   {

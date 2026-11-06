@@ -88,7 +88,7 @@ export const SEARCH_PAGES: SearchPage[] = [
     id: "myModels",
     path: `/authors/${SELF_AUTHOR_ID}`,
     labelKey: "app:userMenu.myModels",
-    terms: ["my models", "my uploads", "uploads", "mine"],
+    terms: ["my models", "my uploads", "uploads", "mine", "cover", "bio"],
   },
   {
     id: "profile",

@@ -28,18 +28,20 @@ All of these are under **Administration → Auth** and **Administration → Capt
 Libraries are private until an admin turns on **Social features**, the switch at the top of **Administration →
 Users**. It's off by default. With it on:
 
-- **A collection can be public.** Its form offers **Private** or **Public**, and new collections start private. Only a
-  public collection, and the models in it, can be seen by anyone else.
+- **A collection can be public.** Its form offers **Private** or **Public**, and new collections start private.
+- **So can your own models**: the ones under **My models**, from the lock beside **Edit profile** there. Only a public
+  collection and the models in it, and public models, can be seen by anyone else.
 - **Explore** appears in the sidebar once the instance has more than one user. It lists the people who share, with how
-  many collections and models each one shares, the newest models put in public collections, recently updated public
-  collections, and the models that get copied most. A person's card opens their public collections. Your own shares
-  aren't listed there, since they're not news to you.
+  many collections and models each one shares, the newest models shared, recently updated public collections, and the
+  models that get copied most. A person's card opens their profile, as their **My models** page looks to you: their
+  models, when they made them public, and a **Collections** tab with their public collections. Your own shares aren't
+  listed there, since they're not news to you.
 - **Someone else's model** opens with whose it is. You can download it, open it in your slicer or in
   [Studio](../guides/studio.md), and customize it, but not change it.
 - **Adding it to a collection of yours**, or **Copy to my library**, makes a copy of your own: its files, pictures and
   description. The copy stays when the original is changed, made private or deleted. Adding the same model again finds
   the copy you have rather than making another.
-- **Others see your display name**, never your email.
+- **Others see your display name** and [avatar](profile-and-activity.md#your-profile), never your email.
 
 Turning social features off hides everything shared again. Each collection keeps its Public or Private setting for when
 it's back on, and copies people made stay theirs.

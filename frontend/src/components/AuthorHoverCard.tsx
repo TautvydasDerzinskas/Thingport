@@ -13,8 +13,8 @@ import type { AuthUser } from "../api/auth";
 import { type Print, printsApi } from "../api/prints";
 import { printProviderInfo } from "../constants/importProviders";
 import { SELF_AUTHOR_ID } from "../constants/selfAuthor";
-import { useGravatarUrl } from "../hooks/useGravatarUrl";
 import { useAuthorPreviewEnabled } from "../hooks/useAuthorPreviewEnabled";
+import { coverImageUrl } from "../constants/profileCovers";
 
 const PREVIEW_MODEL_COUNT = 3;
 // Width = PREVIEW_MODEL_COUNT squares + 6px gaps + 12px side padding.
@@ -61,7 +61,6 @@ function AuthorPreviewCard({ authorId, viewer }: CardProps) {
   const { t } = useTranslation(["models"]);
   const navigate = useNavigate();
   const isSelf = authorId === SELF_AUTHOR_ID;
-  const viewerAvatarUrl = useGravatarUrl(isSelf ? viewer?.email : undefined, 88);
   const [preview, setPreview] = useState<AuthorPreview | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -84,8 +83,9 @@ function AuthorPreviewCard({ authorId, viewer }: CardProps) {
   const providerInfo = author ? printProviderInfo(author.provider) : null;
   const name = isSelf ? viewer?.display_name : author?.name || author?.handle;
   const handle = isSelf ? null : author?.handle;
-  const avatarUrl = isSelf ? viewerAvatarUrl : (author?.avatar_url ?? undefined);
-  const coverUrl = isSelf ? viewer?.background_url : author?.background_url;
+  const avatarUrl = isSelf ? viewer?.avatar_url : (author?.avatar_url ?? undefined);
+  const coverUrl = isSelf ? coverImageUrl(viewer) : author?.background_url;
+  const coverY = isSelf ? (viewer?.cover_position_y ?? 50) : 50;
   const loading = !preview && !failed;
 
   const countLabel = preview
@@ -106,7 +106,7 @@ function AuthorPreviewCard({ authorId, viewer }: CardProps) {
             ? `url("${coverUrl}")`
             : "linear-gradient(135deg, rgba(255,255,255,0.18), rgba(0,0,0,0.25))",
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: `center ${coverY}%`,
         }}
       >
         <ButtonBase

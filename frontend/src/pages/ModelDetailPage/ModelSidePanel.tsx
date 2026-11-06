@@ -27,7 +27,6 @@ import { aiCategorizationApi } from "../../api/aiCategorization";
 import { UnauthorizedError } from "../../api/client";
 import { useToast } from "../../components/ToastProvider";
 import type { AuthUser } from "../../api/auth";
-import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import { switchSlicer } from "../../hooks/useSlicerPreference";
 import { dividerBorderColor } from "../../theme";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
@@ -103,7 +102,7 @@ export default function ModelSidePanel({
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   // The provider whose own category this maps from, when it isn't AI's answer.
   const suggestedBy = importProviderInfo(print.ai_suggestion?.provider)?.label;
-  const viewerAvatarUrl = useGravatarUrl(viewer?.email, 56);
+  const viewerAvatarUrl = viewer?.avatar_url;
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
   const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor } = useOpenInSlicer(print);
