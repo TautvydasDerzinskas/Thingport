@@ -172,9 +172,17 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     });
     expect(asked.status).toBe(201);
     expect(asked.body).toMatchObject({ handle: `bob@${bHost}`, status: "waiting_admin" });
+    // Tom asks for Bea there too, before A's admin gets to it: one request goes, naming both.
+    const tom: Instance = { ...a, token: undefined };
+    tom.token = (
+      await call(tom, "POST", "/register", { displayName: "Tom", email: "tom@example.com", password: "password123" })
+    ).body.token;
+    expect((await call(tom, "POST", "/me/connection-requests", { handle: `bea@${bHost}` })).status).toBe(201);
 
     // A's admin sees it under their people's requests, and connects for Sam.
-    const local = (await call(a, "GET", "/federation/instances")).body.local[0];
+    const local = (await call(a, "GET", "/federation/instances")).body.local.find(
+      (item: { userName: string }) => item.userName === "Sam",
+    );
     expect(local).toMatchObject({ userName: "Sam", targetHandle: `bob@${bHost}`, note: "Gridfinity bins" });
     const lookup = await call(a, "GET", `/federation/lookup?address=${encodeURIComponent(local.origin)}`);
     const sent = await call(a, "POST", "/federation/connect", {
@@ -192,8 +200,16 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     );
     const aHost = new URL(a.base).host;
     expect(incoming).toMatchObject({ requesterHandle: `sam@${aHost}`, targetHandle: `bob@${bHost}` });
+    expect(incoming.asks).toEqual([
+      { requesterHandle: `sam@${aHost}`, targetHandle: `bob@${bHost}` },
+      { requesterHandle: `tom@${aHost}`, targetHandle: `bea@${bHost}` },
+    ]);
     const details = await call(b, "GET", `/federation/requests/${incoming.id}`);
     expect(details.body.target).toEqual({ username: "bob", displayName: "Bob" });
+    expect(details.body.request.asks.map((ask: { target: unknown }) => ask.target)).toEqual([
+      { username: "bob", displayName: "Bob" },
+      { username: "bea", displayName: "Bea" },
+    ]);
     await call(b, "POST", `/federation/requests/${incoming.id}/approve`, { fingerprint: details.body.fingerprint });
 
     // Bob hears who asked; Sam hears it's connected.
@@ -204,6 +220,13 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     expect(JSON.stringify((await call(bob, "GET", "/notifications")).body)).toContain(
       `sam@${aHost} asked to reach you`,
     );
-    expect(JSON.stringify((await call(sam, "GET", "/notifications")).body)).toContain("Connected with");
+    expect(JSON.stringify((await call(b, "GET", "/notifications")).body)).toContain(`tom@${aHost} asked to reach you`);
+    await until("Tom's request connected", async () => {
+      const mine = await call(tom, "GET", "/me/connection-requests");
+      return mine.body[0].status === "connected";
+    });
+    await until("Sam hears it's connected", async () =>
+      JSON.stringify((await call(sam, "GET", "/notifications")).body).includes("Connected with"),
+    );
   }, 120_000);
 });

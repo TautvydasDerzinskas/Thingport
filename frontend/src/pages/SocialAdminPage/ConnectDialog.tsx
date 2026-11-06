@@ -43,6 +43,11 @@ export default function ConnectDialog({ request = null, onClose, onSent, onUnaut
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const k = (name: string) => `adminSettings.social.federation.connect.${name}`;
+  // Whom the request will name: at the address checked, which the admin may have changed from the one guessed.
+  const targetAtInstance =
+    request?.targetHandle && info
+      ? `${request.targetHandle.split("@")[0]}@${new URL(info.origin).host}`
+      : request?.targetHandle;
 
   const fail = (err: unknown) => {
     if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -109,7 +114,7 @@ export default function ConnectDialog({ request = null, onClose, onSent, onUnaut
           {request && (
             <Alert severity="info" icon={false}>
               {request.targetHandle
-                ? t(k("forPerson"), { who: request.userName ?? request.requesterHandle, whom: request.targetHandle })
+                ? t(k("forPerson"), { who: request.userName ?? request.requesterHandle, whom: targetAtInstance })
                 : t(k("forPersonInstance"), { who: request.userName ?? request.requesterHandle })}
               {request.note && (
                 <Typography variant="body2" sx={{ mt: 0.5, fontStyle: "italic", overflowWrap: "anywhere" }}>

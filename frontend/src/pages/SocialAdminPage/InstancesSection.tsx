@@ -407,7 +407,13 @@ function LocalRow({
   const { t } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
   const act = useAct(onChanged, onUnauthorized);
-  const host = new URL(request.origin).host;
+  // A handle stored before addresses were checked can't be read as one: shown as it is.
+  let host = request.origin;
+  try {
+    host = new URL(request.origin).host;
+  } catch {
+    // Kept as the stored text.
+  }
   const who = request.userName ?? request.requesterHandle ?? t(k("someone"));
   const decline = async () => {
     const ok = await confirm({

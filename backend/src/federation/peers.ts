@@ -5,6 +5,7 @@ import type * as Vocab from "@fedify/vocab";
 import { prisma } from "../db";
 import { createLog } from "../services/auditLog";
 import { createNotification } from "../services/notificationService";
+import { ensureUsername } from "../services/usernames";
 import { HttpError } from "../utils/fileUtils";
 import { originOf } from "./addresses";
 import { invalidateAllowlist, isAllowedOrigin, withAllowedOrigin } from "./allowlist";
@@ -141,7 +142,8 @@ async function fetchActor(
 // Asking another instance (admin)
 
 /** Asks another instance to connect. With `requestId`, on behalf of one of this instance's people, whose request it
- *  answers: the Follow then names them and whom they want to reach. */
+ *  answers -- along with any other request here to reach someone there: the Follow names each of them and whom they
+ *  want to reach. */
 export async function connect(
   adminId: string,
   input: string,
@@ -163,7 +165,9 @@ export async function connect(
   if (existing) {
     // Someone's request for an instance already connected, or already asked: nothing more to send.
     if (asked) {
-      await settleUserRequest(asked, adminId, info, existing.status === "OUTGOING" ? "sent" : "connected");
+      const settled = await prisma.$transaction((tx) => settleUserRequests(tx, adminId, info, [asked.id]));
+      if (!settled.length) throw new HttpError(409, "That request was answered meanwhile", "not_found");
+      await tellRequesters(settled, info, existing.status === "OUTGOING" ? "sent" : "connected");
       return { peer: peerOut(existing, 0) };
     }
     throw new HttpError(409, "You're already connected with that instance, or asked it", "exists");
@@ -174,14 +178,58 @@ export async function connect(
   });
   if (theirs) {
     const approved = await approveRequest(adminId, theirs.id, info.fingerprint);
-    if (asked) await settleUserRequest(asked, adminId, info, "connected");
+    if (asked) {
+      const settled = await prisma.$transaction((tx) => settleUserRequests(tx, adminId, info, [asked.id]));
+      await tellRequesters(settled, info, "connected");
+    }
     return approved;
   }
 
   const runtime = await getRuntime();
   if (asked && !note) note = asked.note;
-  // The request and its sending, together: a peer waiting on a Follow that never went out would wait for good.
-  const peer = await prisma.$transaction(async (tx) => {
+  // Everyone here waiting to reach someone at that instance, whatever address their handle guessed.
+  const host = new URL(info.origin).host;
+  const waiting = await prisma.peerRequest.findMany({
+    where: {
+      kind: "LOCAL",
+      status: "PENDING",
+      OR: [...(requestId ? [{ id: requestId }] : []), { origin: { in: [`http://${host}`, `https://${host}`] } }],
+    },
+    orderBy: { createdAt: "asc" },
+  });
+  // As they're called now (a username can change while a request waits), and at the address the admin checked.
+  const ourHost = new URL(runtime.origin).host;
+  const asks = (
+    await Promise.all(
+      waiting.map(async (request) => {
+        if (!request.userId) return null;
+        const username = await ensureUsername(request.userId).catch(() => null);
+        if (!username) return null;
+        const targetName = request.targetHandle?.split("@")[0] ?? null;
+        return {
+          id: request.id,
+          userId: request.userId,
+          requesterHandle: `${username}@${ourHost}`,
+          targetHandle: targetName ? `${targetName}@${host}` : null,
+        };
+      }),
+    )
+  ).filter((ask) => ask !== null);
+
+  // The request, its sending, and the requests it answers, together: a peer waiting on a Follow that never went
+  // out would wait for good, and a request withdrawn or declined meanwhile isn't sent on.
+  const { peer, settled } = await prisma.$transaction(async (tx) => {
+    const settledRows = await settleUserRequests(
+      tx,
+      adminId,
+      info,
+      asks.map((ask) => ask.id),
+      asks,
+    );
+    if (asked && !settledRows.some((row) => row.id === asked.id)) {
+      throw new HttpError(409, "That request was answered meanwhile", "not_found");
+    }
+    const sent = asks.filter((ask) => settledRows.some((row) => row.id === ask.id));
     const created = await tx.peer.create({
       data: {
         origin: info.origin,
@@ -200,28 +248,28 @@ export async function connect(
       id: new URL(`${AP_PREFIX}/follows/${created.id}`, runtime.origin),
       actor: runtime.actorUrl,
       object: new URL(info.actorUrl),
-      name: new URL(runtime.origin).host,
+      name: ourHost,
       content: created.note ? escapeHtml(created.note) : null,
-      // Who asked here, and whom they want to reach there, as Mentions their admin is shown.
-      tags: asked
-        ? [
-            new runtime.vocab.Mention({
-              href: new URL(`${AP_PREFIX}/actors/${asked.userId}`, runtime.origin),
-              name: `@${asked.requesterHandle}`,
-            }),
-            ...(asked.targetHandle ? [new runtime.vocab.Mention({ name: `@${asked.targetHandle}` })] : []),
-          ]
-        : [],
+      // Who asked here, each followed by whom they want to reach there, as Mentions their admin is shown.
+      tags: sent.flatMap((ask) => [
+        new runtime.vocab.Mention({
+          href: new URL(`${AP_PREFIX}/actors/${ask.userId}`, runtime.origin),
+          name: `@${ask.requesterHandle}`,
+        }),
+        ...(ask.targetHandle ? [new runtime.vocab.Mention({ name: `@${ask.targetHandle}` })] : []),
+      ]),
     });
     await enqueueActivity(
       { origin: info.origin, inboxUrl: info.inboxUrl, peerId: created.id, activity: await runtime.toJson(follow) },
       tx,
     );
-    return tx.peer.update({ where: { id: created.id }, data: { followId: follow.id!.href } });
+    const saved = await tx.peer.update({ where: { id: created.id }, data: { followId: follow.id!.href } });
+    return { peer: saved, settled: settledRows };
   });
   invalidateAllowlist();
+  // Told before it can be answered: their answer finds these requests sent on already.
+  await tellRequesters(settled, info, "sent");
   kickDelivery();
-  if (asked) await settleUserRequest(asked, adminId, info, "sent");
   void createLog({
     userId: adminId,
     action: "federation_requested",
@@ -231,27 +279,66 @@ export async function connect(
   return { peer: peerOut(peer, 0) };
 }
 
-/** A person's request, answered by an admin's Connect: they're told it went on, or that the instance is already
- *  connected. */
-async function settleUserRequest(
-  request: { id: string; userId: string | null },
+/** People's requests, answered by an admin's Connect: only those still waiting, so one withdrawn or declined
+ *  meanwhile stays so. Each now names the instance at the address the admin checked, and its people as they're
+ *  called now. */
+async function settleUserRequests(
+  tx: Prisma.TransactionClient,
   adminId: string,
-  info: Pick<InstanceInfo, "origin" | "name">,
+  info: Pick<InstanceInfo, "origin">,
+  ids: string[],
+  asks: { id: string; requesterHandle: string; targetHandle: string | null }[] = [],
+): Promise<{ id: string; userId: string | null }[]> {
+  const settled: { id: string; userId: string | null }[] = [];
+  for (const id of ids) {
+    const ask = asks.find((item) => item.id === id);
+    const { count } = await tx.peerRequest.updateMany({
+      where: { id, kind: "LOCAL", status: "PENDING" },
+      data: {
+        status: "APPROVED",
+        origin: info.origin,
+        decidedById: adminId,
+        decidedAt: new Date(),
+        ...(ask ? { requesterHandle: ask.requesterHandle, targetHandle: ask.targetHandle } : {}),
+      },
+    });
+    if (count) {
+      const row = await tx.peerRequest.findUniqueOrThrow({ where: { id }, select: { id: true, userId: true } });
+      settled.push(row);
+    }
+  }
+  return settled;
+}
+
+/** Those whose requests an admin sent on: told it went, or that the instance is already connected. */
+async function tellRequesters(
+  requests: { userId: string | null }[],
+  info: Pick<InstanceInfo, "name">,
   outcome: "sent" | "connected",
 ): Promise<void> {
-  await prisma.peerRequest.update({
-    where: { id: request.id },
-    data: { status: "APPROVED", origin: info.origin, decidedById: adminId, decidedAt: new Date() },
-  });
-  if (!request.userId) return;
-  await createNotification(request.userId, {
-    type: "federation",
-    title:
-      outcome === "sent" ? `Your admin asked ${info.name} to connect` : `${info.name} is connected with this instance`,
-    body: outcome === "sent" ? `You'll be told when ${info.name} answers.` : null,
-    internalPath: "/explore",
-  }).catch(() => {});
+  const users = [...new Set(requests.flatMap((request) => (request.userId ? [request.userId] : [])))];
+  await Promise.all(
+    users.map((userId) =>
+      createNotification(userId, {
+        type: "federation",
+        title:
+          outcome === "sent"
+            ? `Your admin asked ${info.name} to connect`
+            : `${info.name} is connected with this instance`,
+        body: outcome === "sent" ? `You'll be told when ${info.name} answers.` : null,
+        internalPath: "/explore",
+      }).catch(() => {}),
+    ),
+  );
 }
+
+const hostOrOrigin = (origin: string) => {
+  try {
+    return new URL(origin).host;
+  } catch {
+    return origin;
+  }
+};
 
 /** Ours, before they answer: withdrawn, and they're told. */
 export async function cancelOutgoing(adminId: string, peerId: string): Promise<void> {
@@ -293,17 +380,7 @@ export async function storeIncomingRequest(params: {
   follow: IncomingFollow;
 }): Promise<"stored" | "another" | "full"> {
   const { follow } = params;
-  // JSON-LD compaction leaves a lone Mention as an object rather than a one-item list.
-  const tags = Array.isArray(follow.tag)
-    ? follow.tag
-    : follow.tag && typeof follow.tag === "object"
-      ? [follow.tag]
-      : [];
-  const mentions = tags as { type?: unknown; href?: unknown; name?: unknown }[];
-  const requester = mentions.find(
-    (m) => m?.type === "Mention" && typeof m.href === "string" && originOf(m.href) === params.origin,
-  );
-  const target = mentions.find((m) => m?.type === "Mention" && m !== requester && typeof m.name === "string");
+  const [first] = asksIn(follow, params.origin);
   const name = typeof follow.name === "string" ? follow.name.trim().slice(0, 80) || null : null;
   const data = {
     kind: "INCOMING" as const,
@@ -312,9 +389,9 @@ export async function storeIncomingRequest(params: {
     headers: params.headers as Prisma.InputJsonValue,
     activity: params.raw,
     requesterName: name,
-    requesterHandle: typeof requester?.name === "string" ? requester.name.replace(/^@/, "").slice(0, 200) : null,
-    requesterUrl: typeof requester?.href === "string" ? requester.href.slice(0, 500) : null,
-    targetHandle: typeof target?.name === "string" ? target.name.replace(/^@/, "").slice(0, 200) : null,
+    requesterHandle: first?.requesterHandle ?? null,
+    requesterUrl: first?.requesterUrl ?? null,
+    targetHandle: first?.targetHandle ?? null,
     note: typeof follow.content === "string" ? clean(stripHtml(follow.content)) : null,
   };
   // Counted and stored as one, so a burst can't slip past the limits.
@@ -340,12 +417,51 @@ export async function storeIncomingRequest(params: {
   return "stored";
 }
 
+export type Ask = { requesterHandle: string | null; requesterUrl: string | null; targetHandle: string | null };
+
+/** Who on the asking instance wants to reach whom here, as a request's Mentions name them: each person asking (a
+ *  Mention with their actor's address, on that instance), then whom they asked for (a Mention by name). A request an
+ *  admin sent on for several people carries a pair for each. */
+export function asksIn(follow: IncomingFollow, origin: string): Ask[] {
+  // JSON-LD compaction leaves a lone Mention as an object rather than a one-item list.
+  const tags = Array.isArray(follow.tag)
+    ? follow.tag
+    : follow.tag && typeof follow.tag === "object"
+      ? [follow.tag]
+      : [];
+  const asks: Ask[] = [];
+  const handle = (value: unknown) =>
+    typeof value === "string" && value.trim() ? value.trim().replace(/^@/, "").slice(0, 200) : null;
+  for (const tag of tags as { type?: unknown; href?: unknown; name?: unknown }[]) {
+    if (tag?.type !== "Mention") continue;
+    if (typeof tag.href === "string" && originOf(tag.href) === origin) {
+      asks.push({ requesterHandle: handle(tag.name), requesterUrl: tag.href.slice(0, 500), targetHandle: null });
+    } else if (asks.length && asks[asks.length - 1].targetHandle === null) {
+      asks[asks.length - 1].targetHandle = handle(tag.name);
+    }
+  }
+  return asks.slice(0, 20);
+}
+
+/** A stored request's asks, from the activity kept as it came. */
+function storedAsks(request: Pick<PeerRequest, "activity" | "origin">): Ask[] {
+  try {
+    return typeof request.activity === "string" ? asksIn(JSON.parse(request.activity), request.origin) : [];
+  } catch {
+    return [];
+  }
+}
+
 export type RequestDetails = InstanceInfo & {
   id: string;
   verified: true;
   /** The person here they asked to reach, when the request names someone who's on this instance. */
   target: { username: string; displayName: string } | null;
+  /** What the request that checked out says: a newer one under the same address, forged, may have said otherwise. */
+  request: { requesterName: string | null; note: string | null; asks: (Ask & { target: LocalPersonOut | null })[] };
 };
+
+type LocalPersonOut = { username: string; displayName: string };
 
 /** The person on this instance a handle names, if it's one of ours. */
 async function localPerson(
@@ -355,7 +471,14 @@ async function localPerson(
   const at = handle.lastIndexOf("@");
   if (at < 1) return null;
   const runtime = await getRuntime();
-  if (handle.slice(at + 1).toLowerCase() !== new URL(runtime.origin).host) return null;
+  // As a URL has it: `things.example:443` is `things.example`.
+  let host: string;
+  try {
+    host = new URL(`${new URL(runtime.origin).protocol}//${handle.slice(at + 1).toLowerCase()}`).host;
+  } catch {
+    return null;
+  }
+  if (host !== new URL(runtime.origin).host) return null;
   return prisma.user.findUnique({
     where: { username: handle.slice(0, at).toLowerCase() },
     select: { id: true, username: true, displayName: true },
@@ -368,12 +491,17 @@ export async function requestDetails(id: string): Promise<RequestDetails> {
   const asked = await pendingIncoming(id);
   const { info, actor } = await lookupWithActor(asked.origin);
   const { request } = await currentRequest(asked.origin, actor);
-  const target = await localPerson(request.targetHandle);
+  const person = (found: { username: string; displayName: string } | null) =>
+    found ? { username: found.username, displayName: found.displayName } : null;
+  const asks = await Promise.all(
+    storedAsks(request).map(async (ask) => ({ ...ask, target: person(await localPerson(ask.targetHandle)) })),
+  );
   return {
     ...info,
     id: request.id,
     verified: true,
-    target: target ? { username: target.username, displayName: target.displayName } : null,
+    target: person(await localPerson(request.targetHandle)),
+    request: { requesterName: request.requesterName, note: request.note, asks },
   };
 }
 
@@ -539,14 +667,23 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
     targetId: peer.id,
     details: { origin: peer.origin },
   });
-  const target = await localPerson(request.targetHandle);
-  if (target && request.requesterHandle) {
+  // Everyone here they asked for hears who asked.
+  for (const ask of storedAsks(request)) {
+    const target = await localPerson(ask.targetHandle);
+    if (!target || !ask.requesterHandle) continue;
     await createNotification(target.id, {
       type: "federation",
-      title: `${request.requesterHandle} asked to reach you`,
+      title: `${ask.requesterHandle} asked to reach you`,
       body: `${info.name} is now connected with this instance.`,
       internalPath: "/explore",
     }).catch(() => {});
+  }
+  // We'd asked them too, for people here: those people hear it's connected.
+  if (existing?.status === "OUTGOING") {
+    await notifyRequesters(peer.origin, {
+      title: `Connected with ${info.name}`,
+      body: `You asked to reach someone there, and ${info.name} accepted.`,
+    });
   }
   return { peer: peerOut(peer, 0) };
 }
@@ -556,16 +693,17 @@ export async function declineRequest(adminId: string, id: string): Promise<void>
   const local = await prisma.peerRequest.findUnique({ where: { id } });
   // One of ours, who asked to reach someone elsewhere: only they need telling.
   if (local?.kind === "LOCAL") {
-    if (local.status !== "PENDING") throw new HttpError(404, "No such request", "not_found");
-    await prisma.peerRequest.update({
-      where: { id },
+    // Only while it still waits: withdrawn, or sent on by another admin meanwhile, it stays as it is.
+    const { count } = await prisma.peerRequest.updateMany({
+      where: { id, kind: "LOCAL", status: "PENDING" },
       data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
     });
+    if (!count) throw new HttpError(404, "No such request", "not_found");
     void createLog({ userId: adminId, action: "federation_declined", targetId: id, details: { origin: local.origin } });
     if (local.userId) {
       await createNotification(local.userId, {
         type: "federation",
-        title: `Your admin won't connect with ${new URL(local.origin).host}`,
+        title: `Your admin won't connect with ${hostOrOrigin(local.origin)}`,
         body: local.targetHandle ? `You asked to reach ${local.targetHandle}.` : null,
         internalPath: "/explore",
       }).catch(() => {});
@@ -692,6 +830,8 @@ export async function listInstances() {
       http: request.origin.startsWith("http:"),
       requesterHandle: request.requesterHandle,
       targetHandle: request.targetHandle,
+      /** Every person asking and whom they asked for, when their admin sent on several at once. */
+      asks: storedAsks(request).map(({ requesterHandle, targetHandle }) => ({ requesterHandle, targetHandle })),
       note: request.note,
       createdAt: request.createdAt.toISOString(),
     })),

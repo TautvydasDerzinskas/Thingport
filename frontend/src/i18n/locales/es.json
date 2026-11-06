@@ -5877,6 +5877,7 @@
         "sent": "Has pedido llegar a {{handle}}. Tu administrador lo verá.",
         "withdrawn": "Retiraste la solicitud para llegar a {{handle}}",
         "failed": "No se pudo enviar",
+        "loadFailed": "No se pudieron cargar tus solicitudes.",
         "yours": "Tus solicitudes",
         "withdraw": "Retirar",
         "status": {
@@ -5893,7 +5894,8 @@
           "already_asked": "Tu administrador ya pidió conectar con su instancia.",
           "not_available": "Esta instancia no se conecta con la suya.",
           "exists": "Ya pediste llegar a esa persona.",
-          "request_limit": "Espera a que tu administrador responda primero a tus solicitudes."
+          "request_limit": "Espera a que tu administrador responda primero a tus solicitudes.",
+          "daily_limit": "Hoy ya has pedido llegar a personas de otras instancias muchas veces. Inténtalo mañana."
         }
       }
     }
