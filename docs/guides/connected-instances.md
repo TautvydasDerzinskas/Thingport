@@ -97,18 +97,19 @@ menu (or a right-click) has:
 
 - **Check connection**: looks it up again, and warns if its key changed since you connected.
 - **Show key**: the key it had when you connected.
-- **Pause**: stops talking to it for now; what either side sends waits and goes through after **Resume**. Each side
-  keeps trying for about three days, so for a longer pause, if the partner disconnected meanwhile, it may still be
-  listed here after **Resume**: disconnect it then.
+- **Pause**: stops talking to it for now. What this instance has for it waits until **Resume**; what the partner
+  sends meanwhile is turned away to be retried, for about three days, so after a longer pause some of it is lost. If
+  the partner disconnected meanwhile, it may still be listed here after **Resume**: disconnect it then.
 - **Disconnect**: ends it, and it's told. What came from it disappears here; copies people made stay.
-- **Block**: disconnects it and drops whatever it sends later, without telling it. Unblock it under **Blocked**.
+- **Block**: disconnects it (it's told it was disconnected, not that it's blocked) and drops whatever it sends later.
+  Unblock it under **Blocked**.
 
 Turning **Connected instances** off keeps everything as it is, keys included: partners can't reach this instance
 meanwhile, and it's all back when it's on again, as the same instance.
 
 Everything a partner sends must be signed with the key you compared when connecting. If it ever signs with another
-one (its database was reset, say, or something in between swapped it), what it sends is dropped and it shows as
-unreachable: compare the new key with its admin, then disconnect and connect again.
+one (its database was reset, say, or something in between swapped it), what it sends is dropped, and **Check
+connection** says its key changed. Compare the new key with its admin, then disconnect and connect again.
 
 ## Plain HTTP
 

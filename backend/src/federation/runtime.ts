@@ -6,10 +6,11 @@ import { isAllowedOrigin } from "./allowlist";
 import { FederationFetchError, federationFetch, readJson } from "./fetch";
 import { getInstanceKeys, type InstanceKeys } from "./keys";
 import { PrismaKvStore } from "./kvStore";
-import { assertComparedKeys } from "./pinning";
+import { assertComparedKeys, publishedKeys } from "./pinning";
 import { registerInbox } from "./inbox";
 
 type CryptoKey = webcrypto.CryptoKey;
+type JsonWebKey = webcrypto.JsonWebKey;
 type RemoteDocument = { contextUrl: string | null; document: unknown; documentUrl: string };
 export type DocumentLoader = (url: string) => Promise<RemoteDocument>;
 
@@ -32,6 +33,8 @@ export type Runtime = {
   /** JSON-LD contexts, from Fedify's own copies only: an instance on a LAN may have no internet at all. */
   contextLoader: DocumentLoader;
   toJson(object: Vocab.Object): Promise<unknown>;
+  /** The keys a document publishes, as Fedify reads them: as a key, or an actor's, JSON-LD contexts and all. */
+  keysIn(document: unknown): Promise<JsonWebKey[]>;
 };
 
 export const INSTANCE = "instance";
@@ -72,6 +75,30 @@ async function build(origin: string): Promise<Runtime> {
     if (url in preloadedContexts) return { contextUrl: null, document: preloadedContexts[url], documentUrl: url };
     throw new FederationFetchError(`Unknown JSON-LD context: ${url}`, "not_allowed");
   };
+  // Nothing referenced is fetched to read a document's keys: a key that lives in a document of its own is checked when
+  // that one is loaded.
+  const noFetch = async (url: string): Promise<never> => {
+    throw new FederationFetchError(`Not fetched: ${url}`, "not_allowed");
+  };
+  const keysIn = async (document: unknown): Promise<JsonWebKey[]> => {
+    const options = { documentLoader: noFetch as never, contextLoader: contextLoader as never };
+    const found: CryptoKey[] = [];
+    for (const kind of [vocab.CryptographicKey, vocab.Multikey]) {
+      const key = await kind.fromJsonLd(document, options).catch(() => null);
+      if (key?.publicKey) found.push(key.publicKey as CryptoKey);
+    }
+    const object = await vocab.Object.fromJsonLd(document, options).catch(() => null);
+    if (object && vocab.isActor(object)) {
+      for await (const key of object.getPublicKeys({ ...options, suppressError: true })) {
+        if (key.publicKey) found.push(key.publicKey as CryptoKey);
+      }
+      for await (const method of object.getAssertionMethods({ ...options, suppressError: true })) {
+        if (method.publicKey) found.push(method.publicKey as CryptoKey);
+      }
+    }
+    return Promise.all(found.map(async (key) => (await fedify.exportJwk(key as never)) as JsonWebKey));
+  };
+
   // `pinned` for what Fedify loads to verify what partners send: only the keys compared when connecting count. A
   // lookup isn't pinned, so it can show a key that changed.
   const makeLoader =
@@ -86,7 +113,7 @@ async function build(origin: string): Promise<Runtime> {
         throw new FederationFetchError(`HTTP ${response.status} from ${url}`, "status", response.status);
       }
       const document = await readJson(response);
-      if (pinned) await assertComparedKeys(url, document);
+      if (pinned) await assertComparedKeys(url, [...publishedKeys(document), ...(await keysIn(document))]);
       return { contextUrl: null, document, documentUrl: url };
     };
 
@@ -145,5 +172,6 @@ async function build(origin: string): Promise<Runtime> {
     signedLoader: makeLoader({ keyId: pairs[0].keyId, privateKey: keys.rsa.privateKey }),
     contextLoader,
     toJson: (object) => object.toJsonLd({ format: "compact", contextLoader: contextLoader as never }),
+    keysIn,
   };
 }

@@ -45,16 +45,30 @@ function useRequestReview(
   const [matches, setMatches] = React.useState(false);
   const k = (name: string) => `adminSettings.social.federation.review.${name}`;
 
+  // Only the latest read counts: an older one answering late would show a key other than the one ticked as compared.
+  const latest = React.useRef(0);
   const load = React.useCallback(() => {
+    const asked = ++latest.current;
     setLoadError(null);
     setDetails(null);
     setMatches(false);
-    federationApi.request(request.id).then(setDetails, (err) => {
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setLoadError(federationErrorText(err, t));
-    });
+    federationApi.request(request.id).then(
+      (value) => {
+        if (asked === latest.current) setDetails(value);
+      },
+      (err) => {
+        if (asked !== latest.current) return;
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else setLoadError(federationErrorText(err, t));
+      },
+    );
   }, [request.id, onUnauthorized, t]);
-  React.useEffect(load, [load]);
+  React.useEffect(() => {
+    load();
+    return () => {
+      latest.current += 1;
+    };
+  }, [load]);
 
   const act = async (outcome: ReviewOutcome) => {
     const name = details?.name ?? request.name;
