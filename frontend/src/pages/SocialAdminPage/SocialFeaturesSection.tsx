@@ -45,6 +45,8 @@ export default function SocialFeaturesSection({ onUnauthorized }: Props) {
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [loadFailed, setLoadFailed] = React.useState(false);
   const savingRef = React.useRef(false);
+  // A change made while another saves, sent once that's done.
+  const queued = React.useRef<Partial<SocialSettings> | null>(null);
   const live = React.useRef(true);
   // Moved on as a save starts and as it ends: a read sent before either is from before the save, and its answer --
   // the old value, or a failure the save has since made moot -- is dropped.
@@ -92,30 +94,46 @@ export default function SocialFeaturesSection({ onUnauthorized }: Props) {
   }, [read]);
 
   const save = async (patch: Partial<SocialSettings>) => {
-    // One at a time. The switches stay enabled meanwhile, since disabling the focused one would drop keyboard focus.
-    if (savingRef.current) return;
-    const previous = settings;
-    setSettings({ ...(settings ?? { enabled: false, chats: false }), ...patch });
-    setPending(Object.keys(patch)[0] as keyof SocialSettings);
+    // Shown at once, whatever is saving.
+    setSettings((current) => ({ ...(current ?? { enabled: false, chats: false }), ...patch }));
+    // One save at a time: a change made meanwhile (chats, right after turning social features on) waits and goes next.
+    // The switches stay enabled throughout, since disabling the focused one would drop keyboard focus.
+    if (savingRef.current) {
+      queued.current = { ...queued.current, ...patch };
+      return;
+    }
+    const before = known.current ?? settings;
     savingRef.current = true;
-    saves.current += 1;
     setSaveError(null);
     setLoadFailed(false);
     let failed = false;
+    let next: Partial<SocialSettings> | null = patch;
     try {
-      const saved = await socialApi.updateSettings(patch);
-      setSettings(saved);
-      known.current = saved;
-      // The sidebar's Explore and Chats, and the collection form's Private/Public, follow straight away.
-      void refreshSocialStatus();
-    } catch (err) {
-      failed = true;
-      setSettings(previous);
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setSaveError(err instanceof Error ? err.message : t("adminSettings.social.saveFailed"));
+      while (next) {
+        setPending(Object.keys(next)[0] as keyof SocialSettings);
+        saves.current += 1;
+        try {
+          const saved = await socialApi.updateSettings(next);
+          known.current = saved;
+          next = queued.current;
+          queued.current = null;
+          // What's saved, with anything still waiting shown on top of it.
+          setSettings(next ? { ...saved, ...next } : saved);
+          // The sidebar's Explore and Chats, and the collection form's Private/Public, follow straight away.
+          void refreshSocialStatus();
+        } catch (err) {
+          failed = true;
+          next = null;
+          queued.current = null;
+          setSettings(known.current ?? before);
+          if (err instanceof UnauthorizedError) onUnauthorized?.();
+          else setSaveError(err instanceof Error ? err.message : t("adminSettings.social.saveFailed"));
+        } finally {
+          saves.current += 1;
+        }
+      }
     } finally {
       savingRef.current = false;
-      saves.current += 1;
       setPending(null);
     }
     // What was shown before may not be what's saved, here or elsewhere in the app: another admin may have switched it
@@ -168,7 +186,8 @@ export default function SocialFeaturesSection({ onUnauthorized }: Props) {
             />
           }
           summary={t("adminSettings.social.chats.summary")}
-          checked={chats}
+          // Off while social features are, as chats are then; the saved choice is back with them.
+          checked={enabled && chats}
           disabled={settings === null || !enabled}
           busy={pending === "chats"}
           blockedReason={settings !== null && !enabled ? t("adminSettings.social.chats.needsSocial") : undefined}
