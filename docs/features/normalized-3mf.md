@@ -19,6 +19,11 @@ It prepares a converted copy that keeps painted colours, filament colours, plate
 a form that slicer understands, then opens it. Your stored file is never changed. If a file can't be converted, use the
 regular **Open** instead.
 
+Snapmaker Orca is a fork of Bambu's own slicer family and reads its 3MF layout, so it gets a different copy: parts,
+plates and painting stay as they are, and only the designer's printer profile and any G-code are taken out. (The file
+is also marked as a Bambu project, as Snapmaker Orca would otherwise split its parts apart.) The other slicers above
+get the flat copy.
+
 The [MakerWorld 3MF normalizer](../../tools/makerworld-3mf-normalizer) tool makes such a copy too, of a model's 3MF or
 one on your disk, to download, save as a new model or add to the model it came from. An admin installs it from
 **Administration → Tools**.

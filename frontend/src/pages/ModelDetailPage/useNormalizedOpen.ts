@@ -44,12 +44,12 @@ export function useNormalizedOpen(printId: string, onOpened: () => void, onUnaut
 
       setState(target.key, "preparing");
       try {
-        let { status } = await printsApi.normalizePlate(printId, target.plate.id);
+        let { status } = await printsApi.normalizePlate(printId, target.plate.id, target.normalizeTarget);
         if (status === "ready") return launch();
         while (status === "preparing") {
           await new Promise((resolve) => setTimeout(resolve, POLL_MS));
           if (!mounted.current) return false;
-          ({ status } = await printsApi.normalizePlate(printId, target.plate.id));
+          ({ status } = await printsApi.normalizePlate(printId, target.plate.id, target.normalizeTarget));
         }
         if (status === "failed") throw new Error("Normalizing failed");
         setState(target.key, "ready");

@@ -1175,19 +1175,106 @@ async function buildNormalizedZip(input: Buffer | Uint8Array): Promise<{ out: JS
   };
 }
 
+/**
+ * What the copy is made for. "flat" is the core 3MF that PrusaSlicer, Cura and the like need. "orca" is for
+ * Orca forks that read Bambu's own layout (production extension, parts, plates, painting) such as Snapmaker
+ * Orca: that is kept as it is, and only what belongs to the designer's printer is taken out.
+ */
+export type NormalizeTarget = "flat" | "orca";
+
+// Orca forks treat a 3MF as Bambu's own only by this prefix; anything else gets its instances split and
+// its transforms baked into the geometry.
+const BAMBU_APPLICATION_PREFIXES = ["bambustudio-", "snapmaker_orca-"];
+const APPLICATION_RE = /(<metadata\b[^>]*\bname\s*=\s*"Application"[^>]*>)([^<]*)(<\/metadata>)/i;
+const DEFAULT_BAMBU_VERSION = "02.00.00.00";
+
+/** The model's XML with its generator marked as Bambu Studio, or null when it already is. */
+export function markAsBambuProject(modelXml: string): string | null {
+  const found = APPLICATION_RE.exec(modelXml);
+  const current = found ? found[2].trim() : "";
+  if (BAMBU_APPLICATION_PREFIXES.some((prefix) => current.toLowerCase().startsWith(prefix))) return null;
+  const version = /-(\d[\w.]*)$/.exec(current)?.[1] ?? DEFAULT_BAMBU_VERSION;
+  const tag = `BambuStudio-${version}`;
+  if (found)
+    return modelXml.replace(APPLICATION_RE, (_all, open: string, _old: string, close: string) => open + tag + close);
+  return modelXml.replace(
+    /<model\b[^>]*>/i,
+    (open) => `${open}
+ <metadata name="Application">${tag}</metadata>`,
+  );
+}
+
+function isSlicedOutput(relativePath: string): boolean {
+  const p = pathKey(relativePath);
+  return p.includes(".gcode") || p.includes("slice_info");
+}
+
+async function buildOrcaZip(input: Buffer | Uint8Array): Promise<{ out: JSZip; report: () => NormalizeReport }> {
+  const zip = await JSZip.loadAsync(input);
+  const filesByKey = indexZipFiles(zip);
+  const rootRec = filesByKey["3d/3dmodel.model"];
+  if (!rootRec) throw new Error(NO_MODEL);
+
+  const out = new JSZip();
+  let cleanedKeys: string[] = [];
+  for (const rec of Object.values(filesByKey)) {
+    const key = pathKey(rec.relativePath);
+    if (isSlicedOutput(rec.relativePath)) continue;
+    if (key === "metadata/project_settings.config") {
+      let cleaned: Settings | null = null;
+      try {
+        cleaned = normalizeProjectSettings(JSON.parse(await rec.entry.async("string")));
+      } catch {}
+      if (!cleaned) {
+        out.file(rec.relativePath, await rec.entry.async("uint8array"));
+        continue;
+      }
+      cleanedKeys = Object.keys(cleaned).toSorted();
+      out.file(rec.relativePath, JSON.stringify(cleaned, null, 2));
+      continue;
+    }
+    if (key === "3d/3dmodel.model") {
+      const marked = markAsBambuProject(await rec.entry.async("string"));
+      out.file(rec.relativePath, marked ?? (await rec.entry.async("uint8array")));
+      continue;
+    }
+    out.file(rec.relativePath, await rec.entry.async("uint8array"));
+  }
+  return {
+    out,
+    report: () => ({
+      settings: {},
+      projectKeys: cleanedKeys,
+      objects: 0,
+      buildItems: 0,
+      plates: 0,
+      vertices: 0,
+      triangles: 0,
+      paintColors: 0,
+      materials: 0,
+      flattened: false,
+    }),
+  };
+}
+
 const ZIP_OPTIONS = { compression: "DEFLATE", compressionOptions: { level: 6 } } as const;
 
 export async function normalize3mf(
   input: Buffer | Uint8Array,
+  target: NormalizeTarget = "flat",
 ): Promise<{ bytes: Uint8Array; report: NormalizeReport }> {
-  const { out, report } = await buildNormalizedZip(input);
+  const { out, report } = await (target === "orca" ? buildOrcaZip(input) : buildNormalizedZip(input));
   const bytes = await out.generateAsync({ type: "uint8array", ...ZIP_OPTIONS });
   return { bytes, report: report() };
 }
 
 /** Streams the result to `destPath`, so a large project is never held in memory as one zip. */
-export async function writeNormalized3mf(input: Buffer | Uint8Array, destPath: string): Promise<NormalizeReport> {
-  const { out, report } = await buildNormalizedZip(input);
+export async function writeNormalized3mf(
+  input: Buffer | Uint8Array,
+  destPath: string,
+  target: NormalizeTarget = "flat",
+): Promise<NormalizeReport> {
+  const { out, report } = await (target === "orca" ? buildOrcaZip(input) : buildNormalizedZip(input));
   await pipeline(
     out.generateNodeStream({ type: "nodebuffer", streamFiles: true, ...ZIP_OPTIONS }),
     createWriteStream(destPath),

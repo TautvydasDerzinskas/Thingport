@@ -1,6 +1,10 @@
 import { useCallback, useMemo } from "react";
 import { type Plate, type Print, printsApi } from "../../api/prints";
-import { NORMALIZE_3MF_SLICER_IDS, SLICER_OPTIONS } from "../../constants/settingsOptions";
+import {
+  NORMALIZE_3MF_ORCA_SLICER_IDS,
+  NORMALIZE_3MF_SLICER_IDS,
+  SLICER_OPTIONS,
+} from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 import { isProviderId, manifestOf } from "../../providers/index.generated";
@@ -15,7 +19,8 @@ export type ModelFile = {
   index: number;
   plate: Plate | null;
 };
-export type SlicerTarget = ModelFile & { href: string };
+/** `normalizeTarget` is set on "Open normalized" targets: which kind of copy the server prepares. */
+export type SlicerTarget = ModelFile & { href: string; normalizeTarget?: "flat" | "orca" };
 
 /** Sliced .gcode.3mf plates are never normalized: dropping their G-code would leave nothing to print. */
 function isNormalizable3mf(filename: string): boolean {
@@ -71,6 +76,7 @@ export function useOpenInSlicer(print: Print) {
     }
     // A non-removable prepared print means the plates themselves are the sliced files.
     if (print.prepared_print && !print.prepared_print.removable) return [];
+    const normalizeTarget = NORMALIZE_3MF_ORCA_SLICER_IDS.has(slicerOption.id) ? "orca" : "flat";
     return files
       .filter((file) => file.plate && isNormalizable3mf(file.filename))
       .map(({ key, url, filename, launchFilename, index, plate }) => ({
@@ -80,7 +86,12 @@ export function useOpenInSlicer(print: Print) {
         launchFilename,
         index,
         plate,
-        href: slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(`${url}?normalize=1`), filename),
+        normalizeTarget,
+        href: slicerLaunchUrl(
+          slicerOption.id,
+          printsApi.slicerFileUrl(`${url}?normalize=${normalizeTarget === "orca" ? "orca" : "1"}`),
+          filename,
+        ),
       }));
   }, [files, print.source_provider, print.prepared_print, slicerOption]);
 

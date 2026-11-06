@@ -767,8 +767,13 @@ export const printsApi = {
   },
 
   /** Starts preparing a normalized copy for "Open normalized in <slicer>" if needed; poll until "ready". */
-  normalizePlate: async (printId: string, plateId: string): Promise<{ status: "ready" | "preparing" | "failed" }> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/normalize`, {
+  normalizePlate: async (
+    printId: string,
+    plateId: string,
+    target: "flat" | "orca" = "flat",
+  ): Promise<{ status: "ready" | "preparing" | "failed" }> => {
+    const param = target === "orca" ? "orca" : "1";
+    const res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/normalize?normalize=${param}`, {
       method: "POST",
       headers: authHeaders(),
     });
