@@ -92,9 +92,11 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.print_settings_id).toBe("");
     expect(project.printer_settings_id).toBe("");
     expect(project.filament_settings_id).toEqual([""]);
-    expect(project.printable_height).toBe("250");
-    // One nozzle per designer extruder would show Snapmaker Orca a dual-nozzle printer.
-    expect(project.nozzle_diameter).toBeUndefined();
+    expect(project.printable_height).toBe("270");
+    expect(project.use_relative_e_distances).toBe("0");
+    expect(project.printable_area).toEqual(["0.5x1", "270.5x1", "270.5x271", "0.5x271"]);
+    // One nozzle, not one per designer extruder (that would show a dual-nozzle printer).
+    expect(project.nozzle_diameter).toEqual(["0.4"]);
   });
 
   it("moves each plate's items from the designer's bed to the middle of a 270 mm bed", () => {
