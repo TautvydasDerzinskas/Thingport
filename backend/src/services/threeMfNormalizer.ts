@@ -1218,7 +1218,7 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   // Orca needs a printer: without a named preset it shows the file's name as the printer and nothing fits. Names
   // are the U1 presets Snapmaker Orca ships (0.4 nozzle); a filament slot per designer filament.
   cleaned.printer_settings_id = ORCA_PRINTER_PRESET;
-  cleaned.print_settings_id = ORCA_PRINT_PRESET;
+  cleaned.print_settings_id = orcaPrintPreset(original.layer_height);
   const filaments = original.filament_settings_id;
   if (Array.isArray(filaments)) cleaned.filament_settings_id = filaments.map(() => ORCA_FILAMENT_PRESET);
   else cleaned.filament_settings_id = ORCA_FILAMENT_PRESET;
@@ -1235,7 +1235,19 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
 }
 
 const ORCA_PRINTER_PRESET = "Snapmaker U1 (0.4 nozzle)";
-const ORCA_PRINT_PRESET = "0.20mm Standard @Snapmaker U1 (0.4 nozzle)";
+// Layer heights of the U1's "Standard" process presets for the 0.4 nozzle.
+const ORCA_PRINT_LAYER_HEIGHTS = ["0.08", "0.12", "0.16", "0.20", "0.24", "0.28"];
+
+/** The U1 process preset whose layer height is closest to the designer's (0.20 mm when it has none). */
+function orcaPrintPreset(layerHeight: unknown): string {
+  const wanted = Number(firstValue(layerHeight));
+  let best = "0.20";
+  if (Number.isFinite(wanted) && wanted > 0) {
+    for (const h of ORCA_PRINT_LAYER_HEIGHTS)
+      if (Math.abs(Number(h) - wanted) < Math.abs(Number(best) - wanted)) best = h;
+  }
+  return `${best}mm Standard @Snapmaker U1 (0.4 nozzle)`;
+}
 const ORCA_FILAMENT_PRESET = "Snapmaker PLA Basic @U1";
 
 /** Per-object values of the Bambu enums in model_settings.config, mapped like the project settings. */
