@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE, TAG_MOSAICS } from "../src/config";
@@ -32,6 +32,16 @@ const remove = (who: Account, target: Account) => request(app).delete(`/api/admi
 const removeModels = (who: Account, target: Account) =>
   request(app).post(`/api/admin/users/${target.id}/delete-all-prints`).set(as(who));
 const roleOf = async (target: Account) => (await prisma.user.findUnique({ where: { id: target.id } }))?.role;
+// Written once the response is out, so this waits for the entry rather than a guessed interval.
+const loggedBy = (actor: Account, action: string, target: Account) =>
+  vi.waitFor(
+    async () => {
+      const log = await prisma.log.findFirst({ where: { userId: actor.id, action, targetId: target.id } });
+      expect(log).not.toBeNull();
+      return log!;
+    },
+    { timeout: 5000, interval: 20 },
+  );
 
 let owner: Account;
 let admin: Account;
@@ -131,12 +141,7 @@ describe("deleting a user", () => {
     expect(fs.existsSync(mosaics)).toBe(false);
     // The deleted user's session no longer works.
     expect((await request(app).get("/api/prints").set(as(member))).status).toBe(401);
-    // Logged once the response is out; give it a moment.
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const log = await prisma.log.findFirst({
-      where: { userId: admin.id, action: "user_deleted", targetId: member.id },
-    });
-    expect(log?.details).toMatchObject({ models: 1 });
+    expect((await loggedBy(admin, "user_deleted", member)).details).toMatchObject({ models: 1 });
   });
 
   it("404s for a user that isn't there", async () => {
@@ -166,12 +171,7 @@ describe("deleting a user's models", () => {
     expect(await prisma.print.count({ where: { userId: member.id } })).toBe(0);
     expect(await prisma.user.findUnique({ where: { id: member.id } })).not.toBeNull();
     expect((await request(app).get("/api/prints").set(as(member))).status).toBe(200);
-    // Logged once the response is out; give it a moment.
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const log = await prisma.log.findFirst({
-      where: { userId: admin.id, action: "user_models_deleted", targetId: member.id },
-    });
-    expect(log?.details).toMatchObject({ models: 1 });
+    expect((await loggedBy(admin, "user_models_deleted", member)).details).toMatchObject({ models: 1 });
   });
 
   it("404s for a user that isn't there", async () => {
