@@ -11,12 +11,18 @@ import { removeUserTagMosaics } from "./tagMosaicService";
 import { removeUserIcons } from "./iconService";
 
 // Any admin manages members; only the owner (the first admin) manages other admins. Nobody demotes or
-// deletes the owner, or themselves, so the instance always keeps an admin who can.
+// deletes the owner, or themselves, so the instance always keeps an admin who can. Emptying a library follows the same
+// ranks, but anyone may empty their own: it leaves the account, and its admin, in place.
 
 type Actor = { id: string; isOwner: boolean };
 type Target = { id: string; role: Role; isOwner: boolean };
 
-export type UserPermissions = { canPromote: boolean; canDemote: boolean; canDelete: boolean };
+export type UserPermissions = {
+  canPromote: boolean;
+  canDemote: boolean;
+  canDelete: boolean;
+  canDeleteModels: boolean;
+};
 
 export function permissionsOver(actor: Actor, target: Target): UserPermissions {
   const untouchable = target.isOwner || target.id === actor.id;
@@ -25,6 +31,7 @@ export function permissionsOver(actor: Actor, target: Target): UserPermissions {
     canPromote: !untouchable && target.role === "MEMBER",
     canDemote: !untouchable && !outranked && target.role === "ADMIN",
     canDelete: !untouchable && !outranked,
+    canDeleteModels: target.id === actor.id || (!target.isOwner && !outranked),
   };
 }
 
@@ -57,6 +64,21 @@ export async function setUserRole(actorId: string, targetId: string, role: Role)
     targetId: target.id,
     details: { email: target.email, role },
   });
+}
+
+/** Every model of the user's and its files; the account and the rest of what's theirs stay. Returns how many went. */
+export async function deleteUserModels(actorId: string, targetId: string): Promise<number> {
+  const [actor, target] = await Promise.all([loadActor(actorId), loadTarget(targetId)]);
+  if (!permissionsOver(actor, target).canDeleteModels) throw new HttpError(403, "You can't delete this user's models");
+  const models = await deleteAllPrintsForUser(target.id);
+  // The admin's, naming whose: the user's own model_deleted entries aren't written for these.
+  void createLog({
+    userId: actor.id,
+    action: "user_models_deleted",
+    targetId: target.id,
+    details: { email: target.email, name: target.displayName, models },
+  });
+  return models;
 }
 
 /** Everything of the user's: their models and every file of them, their own folders, then the account, whose

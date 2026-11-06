@@ -75,10 +75,3 @@ export function connectionState(connection: Connection<unknown> | null, honoursE
 export function usableSecret<S>(connection: Connection<S> | null, honoursExpiry = false): S | null {
   return connectionState(connection, honoursExpiry) === "connected" ? connection!.secret : null;
 }
-
-/** SQL for whether the user `user` (an alias of "User") has a usable secret for the provider, for queries that rank by
- *  it. */
-export function hasUsableSecretSql(provider: ProviderId, user: string, slot: UserSlot = "default"): Prisma.Sql {
-  return Prisma.sql`EXISTS (SELECT 1 FROM "ProviderConnection" pc WHERE pc."userId" = ${Prisma.raw(user)}.id
-    AND pc.provider = ${provider} AND pc.slot = ${slot} AND pc.secret IS NOT NULL AND pc."rejectedAt" IS NULL)`;
-}

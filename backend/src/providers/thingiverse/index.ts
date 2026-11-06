@@ -167,13 +167,6 @@ export const thingiverseDetails: ProviderDetails = {
   read: async (_userId, thingId) => detailsOf(await thingiverseImport.resolveModel(thingId, await requireToken())),
   missingMessage: thingiverseImport.missingMessage,
   mapError: thingiverseImport.mapError,
-  unavailable: { check: async () => ((await getThingiverseAccessToken()) ? null : "thingiverse_no_token") },
-  problemOf(err) {
-    if (err instanceof ThingiverseAuthError) return { problem: "thingiverse_token_rejected" };
-    // Cloudflare's 429 is sticky, so every further request would fail the same way.
-    if (err instanceof ThingiverseRateLimitError) return { problem: "thingiverse_rate_limited" };
-    return null;
-  },
 };
 
 /** The instance's App Token, tested against the API. */

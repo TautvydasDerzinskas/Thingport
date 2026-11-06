@@ -50,29 +50,42 @@ export async function upsertAuthorFromImport(info: ImportedAuthorInfo | null): P
   return author;
 }
 
-/** Models that only know their author by name, paired with the one author that name or handle
- * belongs to within the same provider (case-insensitive, ignoring a leading "@"). A name shared
- * by two authors matches nobody. */
-export const LINKABLE_PRINTS = Prisma.sql`
+/** Whether author `a` goes by `creator`: by name or handle, ignoring case and a leading "@". */
+const goesBy = (creator: Prisma.Sql) => Prisma.sql`(
+  lower(ltrim(trim(a.name), '@')) = lower(ltrim(trim(${creator}), '@'))
+  OR lower(ltrim(trim(a.handle), '@')) = lower(ltrim(trim(${creator}), '@'))
+)`;
+
+/** Models that only know their author by name, paired with the one author of the same provider who goes by it. A name
+ *  two authors share matches nobody. */
+const LINKABLE_PRINTS = Prisma.sql`
   SELECT p2.id AS print_id, min(a.id) AS author_id
   FROM "Print" p2
-  JOIN "Author" a ON a.provider = p2."sourceProvider"
-    AND (
-      lower(ltrim(trim(a.name), '@')) = lower(ltrim(trim(p2.creator), '@'))
-      OR lower(ltrim(trim(a.handle), '@')) = lower(ltrim(trim(p2.creator), '@'))
-    )
+  JOIN "Author" a ON a.provider = p2."sourceProvider" AND ${goesBy(Prisma.sql`p2.creator`)}
   WHERE p2."authorId" IS NULL AND p2.creator IS NOT NULL AND trim(p2.creator) <> ''
   GROUP BY p2.id
   HAVING count(*) = 1
 `;
 
-/** With `authorId`, only that author's models. Returns how many were linked. */
-export async function linkUnattributedPrints(authorId: string | null = null): Promise<number> {
+/** Links name-only models to their author: with `authorId`, that author's, as an import saves them; without, every
+ *  one, as on startup. Returns how many were linked. */
+export async function linkUnattributedPrints(authorId?: string): Promise<number> {
   return prisma.$executeRaw`
     UPDATE "Print" p SET "authorId" = m.author_id
     FROM (${LINKABLE_PRINTS}) m
-    WHERE p.id = m.print_id AND (${authorId}::text IS NULL OR m.author_id = ${authorId}::text)
+    WHERE p.id = m.print_id ${authorId ? Prisma.sql`AND m.author_id = ${authorId}` : Prisma.empty}
   `;
+}
+
+/** The one author of `provider` who goes by `creator`, for a model whose import got only the name; null for none, or
+ *  for a name two authors share. */
+export async function authorIdByName(provider: string, creator: string): Promise<string | null> {
+  const [row] = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT min(a.id) AS id FROM "Author" a
+    WHERE a.provider = ${provider} AND ${goesBy(Prisma.sql`${creator}::text`)}
+    HAVING count(*) = 1
+  `;
+  return row?.id ?? null;
 }
 
 /** Authors are shared across users, so this checks every user's prints. */

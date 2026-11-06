@@ -57,7 +57,8 @@ export async function listUsersWithPrintCounts(): Promise<UserWithPrintCount[]> 
       identities: {
         select: { provider: { select: { name: true, enabled: true, position: true } } },
       },
-      _count: { select: { prints: true, collections: true } },
+      // As the library lists them, and as deleting a user's models counts them: a tool's own are the tool's.
+      _count: { select: { prints: { where: { toolId: null } }, collections: true } },
     },
   });
   return users.map((u) => ({

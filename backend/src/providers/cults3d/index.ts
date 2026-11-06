@@ -46,7 +46,6 @@ import {
   setUserCults3dBrowserAccount,
 } from "./session";
 import { z } from "zod";
-import { hasUsableSecretSql } from "../connections";
 import { detailsOf } from "../details";
 
 const SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
@@ -254,14 +253,4 @@ export const cults3dDetails: ProviderDetails = {
   },
   missingMessage: cults3dImport.missingMessage,
   mapError: cults3dImport.mapError,
-  unavailable: {
-    perUser: true,
-    check: async (userId) => ((await getUserCults3dCredentials(userId)) ? null : "cults3d_no_key"),
-  },
-  readableBy: hasUsableSecretSql(MANIFESTS.cults3d.id, "u"),
-  problemOf(err) {
-    if (err instanceof Cults3dAuthError) return { problem: "cults3d_key_rejected", perUser: true };
-    if (err instanceof Cults3dRateLimitError) return { problem: "cults3d_rate_limited" };
-    return null;
-  },
 };

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
@@ -8,13 +9,14 @@ import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { UnauthorizedError } from "../../api/client";
 import { adminApi, type AdminUser } from "../../api/admin";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
-import DeleteUserDialog from "./DeleteUserDialog";
+import DeleteUserDialog, { type DeleteWhat } from "./DeleteUserDialog";
 
 type Props = {
   user: AdminUser;
@@ -23,14 +25,20 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Only what the viewing admin may do to this user, as the server says. */
+/** Only what the viewing admin may do to this user, as the server says: roles, then the destructive ones. */
 export default function UserActionsMenu({ user, onChanged, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
   const showToast = useToast();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  if (!user.can_promote && !user.can_demote && !user.can_delete) return null;
+  const [deleting, setDeleting] = useState<DeleteWhat | null>(null);
+  if (!user.can_promote && !user.can_demote && !user.can_delete && !user.can_delete_models) return null;
+  const canChangeRole = user.can_promote || user.can_demote;
+
+  const openDelete = (what: DeleteWhat) => {
+    setAnchor(null);
+    setDeleting(what);
+  };
 
   const changeRole = async (role: AdminUser["role"]) => {
     setAnchor(null);
@@ -83,14 +91,17 @@ export default function UserActionsMenu({ user, onChanged, onUnauthorized }: Pro
             <ListItemText>{t("adminSettings.users.demote")}</ListItemText>
           </MenuItem>
         )}
+        {canChangeRole && (user.can_delete_models || user.can_delete) && <Divider />}
+        {user.can_delete_models && (
+          <MenuItem onClick={() => openDelete("models")} disabled={user.print_count === 0} sx={{ color: "error.main" }}>
+            <ListItemIcon sx={{ color: "inherit" }}>
+              <DeleteSweepOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("adminSettings.users.deleteModels")}</ListItemText>
+          </MenuItem>
+        )}
         {user.can_delete && (
-          <MenuItem
-            onClick={() => {
-              setAnchor(null);
-              setDeleting(true);
-            }}
-            sx={{ color: "error.main" }}
-          >
+          <MenuItem onClick={() => openDelete("account")} sx={{ color: "error.main" }}>
             <ListItemIcon sx={{ color: "inherit" }}>
               <DeleteOutlineIcon fontSize="small" />
             </ListItemIcon>
@@ -101,9 +112,10 @@ export default function UserActionsMenu({ user, onChanged, onUnauthorized }: Pro
       {deleting && (
         <DeleteUserDialog
           user={user}
-          onClose={() => setDeleting(false)}
+          what={deleting}
+          onClose={() => setDeleting(null)}
           onDeleted={() => {
-            setDeleting(false);
+            setDeleting(null);
             onChanged();
           }}
           onUnauthorized={onUnauthorized}

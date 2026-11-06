@@ -414,7 +414,8 @@ describe("the sync lane", () => {
       expect(started).toEqual([failed]);
       expect(await reload(job.id)).toMatchObject({ failedCount: 0, processed: 2, errorMessage: null });
       expect(await payloadOf(job.id)).not.toHaveProperty("sync_new", ["told"]);
-      expect(await synced(alice.id, sync, "1 new model")).not.toBeNull();
+      // The job says DONE a moment before its notification is written.
+      await eventually(async () => expect(await synced(alice.id, sync, "1 new model")).not.toBeNull());
     });
 
     it("start a job a stop left on hold, what that stop told going with it", async () => {

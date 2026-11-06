@@ -10,12 +10,7 @@ import {
   type ImportedPageMetadata,
   type ParametricSourceInfo,
 } from "../../services/importResolvers";
-import {
-  makerworldAuthorFromDesignCreator,
-  makerworldInstanceCover,
-  makerworldInstanceTitles,
-  makerworldMetaFromDesign,
-} from "./pageData";
+import { makerworldInstanceCover, makerworldInstanceTitles, makerworldMetaFromDesign } from "./pageData";
 import { maybeSleep, sleep } from "../../utils/concurrency";
 import { HttpError } from "../../utils/fileUtils";
 import {
@@ -246,15 +241,6 @@ export async function completeMakerworldAuthor(
     avatarUrl: profile.avatarUrl ?? basic.avatarUrl,
     backgroundUrl: profile.backgroundUrl ?? basic.backgroundUrl,
   };
-}
-
-export async function fetchMakerworldDesignAuthor(
-  designId: string,
-  bearerToken: string,
-  paceMs?: number,
-): Promise<ImportedAuthorInfo | null> {
-  const design = await fetchMakerworldDesign(designId, bearerToken, paceMs);
-  return design ? completeMakerworldAuthor(makerworldAuthorFromDesignCreator(design.designCreator), paceMs) : null;
 }
 
 /** Which print profiles ("instances") to import: the linked one (else the default), the

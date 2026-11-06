@@ -44,7 +44,6 @@ import WebAssetIcon from "@mui/icons-material/WebAsset";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import BoltIcon from "@mui/icons-material/Bolt";
 import CableIcon from "@mui/icons-material/Cable";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
@@ -156,7 +155,6 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   adminAi: <AutoAwesomeIcon />,
   adminUsers: <PeopleIcon />,
   adminLogs: <HistoryIcon />,
-  adminTriggers: <BoltIcon />,
   adminConnections: <CableIcon />,
   adminCaptcha: <VerifiedUserIcon />,
 };

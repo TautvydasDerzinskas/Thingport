@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE, TAG_MOSAICS } from "../src/config";
@@ -29,7 +29,19 @@ const as = (who: Account) => ({ Authorization: `Bearer ${who.token}` });
 const setRole = (who: Account, target: Account, role: "ADMIN" | "MEMBER") =>
   request(app).patch(`/api/admin/users/${target.id}/role`).set(as(who)).send({ role });
 const remove = (who: Account, target: Account) => request(app).delete(`/api/admin/users/${target.id}`).set(as(who));
+const removeModels = (who: Account, target: Account) =>
+  request(app).post(`/api/admin/users/${target.id}/delete-all-prints`).set(as(who));
 const roleOf = async (target: Account) => (await prisma.user.findUnique({ where: { id: target.id } }))?.role;
+// Written once the response is out, so this waits for the entry rather than a guessed interval.
+const loggedBy = (actor: Account, action: string, target: Account) =>
+  vi.waitFor(
+    async () => {
+      const log = await prisma.log.findFirst({ where: { userId: actor.id, action, targetId: target.id } });
+      expect(log).not.toBeNull();
+      return log!;
+    },
+    { timeout: 5000, interval: 20 },
+  );
 
 let owner: Account;
 let admin: Account;
@@ -77,16 +89,27 @@ describe("roles", () => {
         ((await request(app).get("/api/admin/users").set(as(who))).body as { id: string }[]).map((u) => [u.id, u]),
       );
     const byAdmin = await list(admin);
-    expect(byAdmin.get(member.id)).toMatchObject({ can_promote: true, can_demote: false, can_delete: true });
+    expect(byAdmin.get(member.id)).toMatchObject({
+      can_promote: true,
+      can_demote: false,
+      can_delete: true,
+      can_delete_models: true,
+    });
     expect(byAdmin.get(owner.id)).toMatchObject({
       is_owner: true,
       can_promote: false,
       can_demote: false,
       can_delete: false,
+      can_delete_models: false,
     });
-    expect(byAdmin.get(admin.id)).toMatchObject({ can_demote: false, can_delete: false });
+    expect(byAdmin.get(admin.id)).toMatchObject({ can_demote: false, can_delete: false, can_delete_models: true });
     const byOwner = await list(owner);
-    expect(byOwner.get(admin.id)).toMatchObject({ can_promote: false, can_demote: true, can_delete: true });
+    expect(byOwner.get(admin.id)).toMatchObject({
+      can_promote: false,
+      can_demote: true,
+      can_delete: true,
+      can_delete_models: true,
+    });
   });
 });
 
@@ -118,16 +141,41 @@ describe("deleting a user", () => {
     expect(fs.existsSync(mosaics)).toBe(false);
     // The deleted user's session no longer works.
     expect((await request(app).get("/api/prints").set(as(member))).status).toBe(401);
-    // Logged once the response is out; give it a moment.
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const log = await prisma.log.findFirst({
-      where: { userId: admin.id, action: "user_deleted", targetId: member.id },
-    });
-    expect(log?.details).toMatchObject({ models: 1 });
+    expect((await loggedBy(admin, "user_deleted", member)).details).toMatchObject({ models: 1 });
   });
 
   it("404s for a user that isn't there", async () => {
     expect((await request(app).delete("/api/admin/users/nobody").set(as(owner))).status).toBe(404);
+  });
+});
+
+describe("deleting a user's models", () => {
+  it("is for members by any admin, and for admins and the owner only by the owner; yours are yours", async () => {
+    const otherAdmin = await account("admin");
+    expect((await removeModels(admin, owner)).status).toBe(403);
+    expect((await removeModels(admin, otherAdmin)).status).toBe(403);
+    expect((await removeModels(member, admin)).status).toBe(403);
+    expect((await removeModels(owner, otherAdmin)).status).toBe(200);
+    expect((await removeModels(admin, member)).status).toBe(200);
+    expect((await removeModels(admin, admin)).status).toBe(200);
+    expect((await removeModels(owner, owner)).status).toBe(200);
+  });
+
+  it("takes the models, keeps the account, and logs it as the admin's", async () => {
+    const upload = await request(app).post("/api/upload").set(as(member)).attach("files", Buffer.from(STL), "part.stl");
+    expect(upload.status).toBe(200);
+
+    const res = await removeModels(admin, member);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true, deleted: 1 });
+    expect(await prisma.print.count({ where: { userId: member.id } })).toBe(0);
+    expect(await prisma.user.findUnique({ where: { id: member.id } })).not.toBeNull();
+    expect((await request(app).get("/api/prints").set(as(member))).status).toBe(200);
+    expect((await loggedBy(admin, "user_models_deleted", member)).details).toMatchObject({ models: 1 });
+  });
+
+  it("404s for a user that isn't there", async () => {
+    expect((await request(app).post("/api/admin/users/nobody/delete-all-prints").set(as(owner))).status).toBe(404);
   });
 });
 

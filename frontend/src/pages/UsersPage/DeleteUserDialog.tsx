@@ -13,42 +13,67 @@ import { UnauthorizedError } from "../../api/client";
 import { adminApi, type AdminUser } from "../../api/admin";
 import { useToast } from "../../components/ToastProvider";
 
+/** The whole account, or only its models. */
+export type DeleteWhat = "account" | "models";
+
 type Props = {
   user: AdminUser;
+  what: DeleteWhat;
   onClose: () => void;
   onDeleted: () => void;
   onUnauthorized?: () => void;
 };
 
+const KEYS = {
+  account: {
+    title: "adminSettings.users.deleteTitle",
+    warning: "adminSettings.users.deleteWarning",
+    confirm: "adminSettings.users.deleteConfirm",
+    done: "adminSettings.users.deleted",
+    failed: "adminSettings.users.deleteFailed",
+  },
+  models: {
+    title: "adminSettings.users.deleteModelsTitle",
+    warning: "adminSettings.users.deleteModelsWarning",
+    confirm: "adminSettings.users.deleteModelsConfirm",
+    done: "adminSettings.users.modelsDeleted",
+    failed: "adminSettings.users.deleteModelsFailed",
+  },
+} as const;
+
 /** Can't be undone, so the admin types the user's email to confirm. */
-export default function DeleteUserDialog({ user, onClose, onDeleted, onUnauthorized }: Props) {
+export default function DeleteUserDialog({ user, what, onClose, onDeleted, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const showToast = useToast();
   const [typed, setTyped] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const confirmed = typed.trim().toLowerCase() === user.email.toLowerCase();
+  const keys = KEYS[what];
 
   const remove = async () => {
     setDeleting(true);
     setError(null);
     try {
-      const { models } = await adminApi.deleteUser(user.id);
-      showToast({ message: t("adminSettings.users.deleted", { email: user.email, count: models }) });
+      const count =
+        what === "account"
+          ? (await adminApi.deleteUser(user.id)).models
+          : (await adminApi.deleteUserModels(user.id)).deleted;
+      showToast({ message: t(keys.done, { email: user.email, count }) });
       onDeleted();
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setError(err instanceof Error ? err.message : t("adminSettings.users.deleteFailed"));
+      else setError(err instanceof Error ? err.message : t(keys.failed));
       setDeleting(false);
     }
   };
 
   return (
     <Dialog open onClose={deleting ? undefined : onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>{t("adminSettings.users.deleteTitle", { name: user.display_name })}</DialogTitle>
+      <DialogTitle>{t(keys.title, { name: user.display_name })}</DialogTitle>
       <DialogContent>
         <Alert severity="error" sx={{ mb: 2 }}>
-          {t("adminSettings.users.deleteWarning", { count: user.print_count })}
+          {t(keys.warning, { count: user.print_count })}
         </Alert>
         <Typography variant="body2" sx={{ mb: 1 }}>
           {t("adminSettings.users.deleteTypeEmail", { email: user.email })}
@@ -82,7 +107,7 @@ export default function DeleteUserDialog({ user, onClose, onDeleted, onUnauthori
           disabled={!confirmed || deleting}
           startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
-          {t("adminSettings.users.deleteConfirm")}
+          {t(keys.confirm)}
         </Button>
       </DialogActions>
     </Dialog>

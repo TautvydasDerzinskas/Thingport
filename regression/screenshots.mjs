@@ -416,7 +416,6 @@ const SHOTS = [
     },
   },
   { name: "25_admin_logs", run: (page) => open(page, "/admin-logs") },
-  { name: "26_admin_triggers", run: (page) => open(page, "/admin-triggers") },
   { name: "27_admin_connections", run: (page) => open(page, "/admin-connections") },
   { name: "28_admin_rendering", run: (page) => open(page, "/admin-rendering") },
   { name: "29_admin_captcha", run: (page) => open(page, "/admin-captcha") },

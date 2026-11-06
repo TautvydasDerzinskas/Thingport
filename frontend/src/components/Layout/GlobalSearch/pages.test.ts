@@ -22,7 +22,6 @@ const EN: Record<PageId, string> = {
   adminAi: "AI",
   adminUsers: "Users",
   adminLogs: "Logs",
-  adminTriggers: "Triggers",
   adminConnections: "Connections",
   adminCaptcha: "Captcha",
 };

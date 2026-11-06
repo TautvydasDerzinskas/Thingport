@@ -15,6 +15,5 @@ the author's bio and cover picture if you haven't set your own.
 
 ## Missing authors
 
-An import sometimes can't fetch the author at the time, and the model shows only a name. Admins can fix every such
-model at once with **Administration → Triggers → Link missing authors**, which matches them to authors already in
-Thingport or looks them up on the source site.
+An import sometimes can't fetch the author at the time, and the model shows only a name. **Fetch missing details** on
+the model page tries again, and the next import of anything by that author links every such model of theirs to them.

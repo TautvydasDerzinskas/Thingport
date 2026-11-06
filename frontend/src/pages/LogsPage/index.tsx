@@ -73,6 +73,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   tags_merged: "warning",
   user_role_changed: "warning",
   user_deleted: "error",
+  user_models_deleted: "error",
   provider_toggled: "warning",
   sign_in_connected: "info",
   sign_in_disconnected: "default",
@@ -215,10 +216,14 @@ export default function LogsPage({ onUnauthorized }: Props) {
         return t(d.enabled ? "adminSettings.logs.providerOn" : "adminSettings.logs.providerOff", { provider });
       }
       case "user_deleted":
-        return t("adminSettings.logs.userDeleted", {
-          email: typeof d.email === "string" ? d.email : "",
-          count: typeof d.models === "number" ? d.models : 0,
-        });
+      case "user_models_deleted":
+        return t(
+          log.action === "user_deleted" ? "adminSettings.logs.userDeleted" : "adminSettings.logs.userModelsDeleted",
+          {
+            email: typeof d.email === "string" ? d.email : "",
+            count: typeof d.models === "number" ? d.models : 0,
+          },
+        );
       case "collections_merged":
       case "tags_merged":
       case "models_merged":
