@@ -460,8 +460,15 @@ async function runProfilesImport(scope: ProfileScope, collectionId: string | nul
   const parts = [`${added} print profile${added === 1 ? "" : "s"} imported`];
   if (already) parts.push(`${already} already on the model`);
   if (failed) parts.push(`${failed} failed`);
+  // The last failure's reason (a CAPTCHA, the daily limit, the instance's refusal) says what to do about the rest.
+  const reason =
+    failed && lastError ? ` Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}` : "";
   renderPanel(
-    successHtml(`${instanceUrl}/models/${printId}`, `${parts.join(", ")}.`, failed ? "Partly imported" : undefined),
+    successHtml(
+      `${instanceUrl}/models/${printId}`,
+      `${parts.join(", ")}.${reason}`,
+      failed ? "Partly imported" : undefined,
+    ),
   );
 }
 
