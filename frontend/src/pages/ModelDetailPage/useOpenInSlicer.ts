@@ -104,15 +104,6 @@ export function useOpenInSlicer(print: Print) {
     [slicerOption, normalizedTargetsOf],
   );
 
-  /** The normalized counterpart of `file`, if the current slicer offers one. */
-  const normalizedTargetFor = useCallback(
-    (file: ModelFile | null) =>
-      file
-        ? normalizedTargets.find((target) => target.key === normalizedKey(target.normalizeTarget, file.key))
-        : undefined,
-    [normalizedTargets],
-  );
-
   return {
     slicerOption,
     slicerOptions,
@@ -120,7 +111,6 @@ export function useOpenInSlicer(print: Print) {
     canOpen,
     targets,
     normalizedTargets,
-    normalizedTargetFor,
     normalizedTargetsOf,
   };
 }
