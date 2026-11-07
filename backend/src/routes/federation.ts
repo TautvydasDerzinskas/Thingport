@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { startDeliveryWorker, stopDeliveryWorker } from "../federation/delivery";
+import { startLinks, stopLinks } from "../federation/links";
 import { hasInstanceKeys, getInstanceKeys, instanceFingerprint } from "../federation/keys";
 import {
   approveRequest,
@@ -91,9 +92,11 @@ router.patch(
       await getInstanceKeys();
       await updateFederationSettings({ enabled: true });
       startDeliveryWorker();
+      startLinks();
     } else {
       await updateFederationSettings({ enabled: false });
       stopDeliveryWorker();
+      stopLinks();
     }
     void createLog({ userId: req.userId!, action: "federation_settings_changed", details: { enabled } });
     res.json(await settingsOut());
@@ -126,6 +129,8 @@ const connectSchema = z.object({
   note: z.string().max(1000).nullish(),
   /** One of this instance's people asked for it: their request is answered, and the Follow names them. */
   requestId: z.string().min(1).max(64).nullish(),
+  /** Theirs can't reach this instance: this one keeps a link open to it instead. */
+  link: z.boolean().optional(),
 });
 router.post(
   "/federation/connect",
@@ -134,7 +139,16 @@ router.post(
     const body = parseBody(connectSchema, req.body);
     res
       .status(201)
-      .json(await connect(req.userId!, body.address, body.note ?? null, body.fingerprint, body.requestId ?? null));
+      .json(
+        await connect(
+          req.userId!,
+          body.address,
+          body.note ?? null,
+          body.fingerprint,
+          body.requestId ?? null,
+          body.link ?? false,
+        ),
+      );
   }),
 );
 

@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
-import { federationFetch } from "./fetch";
+import { federationFetch, readJson } from "./fetch";
 import { purgeExpiredKv } from "./kvStore";
 import { syncStale } from "./remoteIndex";
 import { getRuntime } from "./runtime";
@@ -155,13 +155,18 @@ async function deliver(row: DeliveryRow, now: Date): Promise<void> {
       { method: "POST", headers: signed.headers, body },
       (origin) => origin === row.origin,
     );
+    // Refused with a reason a person can act on: kept with the error.
+    const code =
+      response.status === 409
+        ? ((await readJson(response, 4096).catch(() => null)) as { code?: unknown } | null)?.code
+        : undefined;
     await response.body?.cancel().catch(() => {});
     if (response.ok) {
       await prisma.federationDelivery.delete({ where: { id: row.id } }).catch(() => {});
       if (peer) await prisma.peer.update({ where: { id: peer.id }, data: { lastSeenAt: now, lastError: null } });
       return;
     }
-    failure = `HTTP ${response.status}`;
+    failure = `HTTP ${response.status}${typeof code === "string" ? ` ${code.slice(0, 40)}` : ""}`;
     // Refused for good; a busy or failing partner is tried again.
     permanent = response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429;
   } catch (err) {

@@ -12,8 +12,10 @@ instance. This page is for working on it; the admin's side is in
   `@fedify/*` outside `import type`.
 - **Admins decide who this instance talks to.** It fetches from, and accepts signed requests from, only approved
   partners and the instance an admin is looking at right then (`allowlist.ts`). Nothing a stranger or a user sends may
-  make the server fetch anything: a stranger's request to connect is kept as it came and checked only when an admin
-  opens it.
+  make the server fetch anything, or keep it from reaching an address: a stranger's request to connect is kept as it
+  came and checked only when an admin opens it. A partner reached through a link (`links.ts`) is never fetched at its
+  address: `federationFetch` sends every request for it down its link, so keep every outgoing request in
+  `federationFetch`.
 - **Everything social federates.** A partner's people get every social feature this instance's own people get. Every
   route in `routes/social.ts` and `routes/chats.ts` is listed in `src/federation/socialSurfaces.ts` with how it crosses
   (or why it stays local), and `tests/federationSurfaces.test.ts` fails for one that isn't. A new social feature
@@ -49,6 +51,7 @@ body exactly as it came), plus the admin API in `routes/federation.ts`.
 | `remoteFiles.ts`                           | Partners' models' files through this instance: streamed to a viewer, or fetched whole to zip or copy. Never kept.                                                                                                                                   |
 | `remoteCopy.ts`                            | A partner's model copied into a viewer's library in the background, file by file, marked with where it came from.                                                                                                                                   |
 | `chats.ts`                                 | Chats with partners' people: sending messages, rooms and deletions, and checking what partners send.                                                                                                                                                |
+| `links.ts`                                 | Links: how an instance that can't be reached keeps a partner that can. The serving side's `/api/ap/link` and its replies, and the side behind NAT keeping its links open and running what comes down them.                                          |
 | `socialSurfaces.ts`                        | How each social route crosses to partners.                                                                                                                                                                                                          |
 
 ### Pairing
@@ -179,6 +182,42 @@ Chats reach partners' people through `chats.ts`; storing what arrives and notify
   `remoteSenderCard`) and drops the copies of its rooms; once it's connected again and its people are read, they're
   back in those direct chats.
 
+### Links: when one side can't be reached
+
+An instance behind NAT can reach out but can't be reached. It keeps a **link** open to a partner on the internet
+instead (`links.ts`), and the partner reaches it through that:
+
+- **Asking.** The home instance asks `GET /api/ap/link` (`Authorization: Link <secret>`), and its partner answers as
+  soon as it has something for it, or after 10 seconds with nothing. It asks again at once. The link is open while it
+  asked within the last 25 seconds.
+- **Everything the partner needs from it** goes down that answer: `federationFetch` sees the origin is linked
+  (`lineFor` in `allowlist.ts`) and hands the request over instead of connecting. The home instance runs each one on its
+  own `/api/ap` routes over loopback (only `/api/ap`, only GET and POST, only the headers a signed request needs) and
+  sends the response up as `POST /api/ap/link/replies/<id>`, its body streamed: a file comes up as it's read. What the
+  home instance sends its partner goes directly, as always.
+- **The secret** is made by the home instance when its admin connects with **Keep a link open**, sent as
+  `thingport:link` in the signed `Follow`, and kept as its SHA-256 by the partner (`PeerRequest.linkToken`, then
+  `Peer.linkToken`), so the link opens while the request waits: the partner's admin reviews and approves it through
+  that link (`throughRequestLink`). Only those checks go through the request's link; approving hands its open link to
+  the new partner (`linkApproved`), so the answer goes at once.
+- **Its address is never fetched.** A linked partner's origin, or one whose partner's link ended in the last 30 days
+  (`thingport:link-only:` in `FederationKv`), never goes to the network: that address, usually a LAN one, may lead to
+  another machine from the partner's side, and something may still be on its way to it. So a partner never sends a
+  linked instance a goodbye: declining, disconnecting or blocking leaves a note (`thingport:link-ended:`) its link
+  reads as `410` with `declined` or `disconnected`, and the home instance lets go.
+- **A waiting request changes nothing.** Anyone can send one naming any address, and a link's address can't be
+  checked, so a request's link carries only its own review, and declining it leaves only the note: an instance really
+  at that address can still be looked up and connected with. The key tells the two apart. A lookup that can't reach
+  an address a request with a link came from says to answer that request (`asked_with_link`), and **Connect** only
+  approves a waiting request without a link, checked against the lookup.
+- **Its signatures** are checked against its actor document as kept when its admin compared the key
+  (`Peer.actorDocument`), so checking one asks it nothing.
+- **Coming down a link proves nothing** about reaching the home instance: such requests carry a mark only this process
+  knows (`cameThroughLink`), and they don't set `lastInboundAt`.
+- **Two at one address**: a request with a link from an address a partner already has, and not that partner's own
+  secret, is turned away with `409 address_taken` at the edge; the home instance shows **Address taken**.
+- When its link opens again after a while closed, what waited for it is sent and what it shares is read again.
+
 ### Making a social feature federate
 
 1. Say in `socialSurfaces.ts` how it crosses: which ActivityPub objects and activities, and what a partner's person
@@ -212,6 +251,14 @@ Chats reach partners' people through `chats.ts`; storing what arrives and notify
   The two instances run on `127.0.0.1`, which `FEDERATION_ALLOW_LOOPBACK=1` lets them talk on. That variable is for
   tests only: in use, this machine is never an instance to talk to.
 
+- `tests/federationLinks.test.ts`: a request down an open link and its answer up, a waiting request's link and its
+  end, and the address check.
+- `tests/federationLink.e2e.test.ts`: two real instances where only one can reach the other, through pairing,
+  Explore, a file, chats and disconnecting. It needs two more databases (`FEDERATION_E2E_DB_C`, `FEDERATION_E2E_DB_D`),
+  and `FEDERATION_E2E_LOGS=<dir>` keeps each instance's output. The one on the internet runs with
+  `FEDERATION_UNREACHABLE=<the other's origin>`, which makes this instance act as if it couldn't reach that origin;
+  for tests only.
+
 ## Gotchas
 
 - **`net.BlockList` checks an IPv4 address against IPv6 rules in its IPv4-mapped form**, so a `::ffff:0:0/96` rule
@@ -226,5 +273,8 @@ Chats reach partners' people through `chats.ts`; storing what arrives and notify
   the Public URL instead.
 - **Routers mounted at `/api` with a bare `router.use(requireAuth)`** answer 401 for any path that reaches them, so the
   unauthenticated probe (`federationProbeRoutes`) is mounted beside the health check, ahead of them.
+- **nginx redirects a location's prefix without its trailing slash**: with `location /api/ap/link/ { proxy_pass … }`,
+  a request for `/api/ap/link` gets a 301, and a link's asks don't follow redirects. The bundled config's location
+  is `/api/ap/link/replies/`, so the asks go through `/api/` as they are.
 - **A new Prisma migration** may come with `DROP INDEX ..._searchVector_idx` and `DROP DEFAULT` on `searchVector`:
   those columns are kept up in raw SQL, so take those lines out.

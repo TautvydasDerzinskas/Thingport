@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -18,6 +19,7 @@ import Typography from "@mui/material/Typography";
 import BlockIcon from "@mui/icons-material/Block";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import LinkIcon from "@mui/icons-material/Link";
 import { UnauthorizedError } from "../../api/client";
 import { FederationError, federationApi, type IncomingRequest, type RequestDetails } from "../../api/federation";
 import { useConfirm } from "../../components/ConfirmProvider";
@@ -39,6 +41,8 @@ function useRequestReview(
   const confirm = useConfirm();
   const [details, setDetails] = React.useState<RequestDetails | null>(null);
   const [loadError, setLoadError] = React.useState<string | null>(null);
+  // Its link closed: nothing can be checked until it opens, which is tried again now and then.
+  const [linkClosed, setLinkClosed] = React.useState(false);
   const [busy, setBusy] = React.useState<ReviewOutcome | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   // Ticked once the key shown matches what their admin reads out: compared again whenever it's read again.
@@ -47,26 +51,40 @@ function useRequestReview(
 
   // Only the latest read counts: an older one answering late would show a key other than the one ticked as compared.
   const latest = React.useRef(0);
-  const load = React.useCallback(() => {
-    const asked = ++latest.current;
-    setLoadError(null);
-    setDetails(null);
-    setMatches(false);
-    federationApi.request(request.id).then(
-      (value) => {
-        if (asked === latest.current) setDetails(value);
-      },
-      (err) => {
-        if (asked !== latest.current) return;
-        if (err instanceof UnauthorizedError) onUnauthorized?.();
-        else setLoadError(federationErrorText(err, t));
-      },
-    );
-  }, [request.id, onUnauthorized, t]);
+  // Its link closed: tried again once the last try has answered, so a slow one isn't overtaken by the next.
+  const retry = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const load = React.useCallback(
+    function loadDetails() {
+      if (retry.current) clearTimeout(retry.current);
+      retry.current = null;
+      const asked = ++latest.current;
+      setLoadError(null);
+      setDetails(null);
+      setMatches(false);
+      federationApi.request(request.id).then(
+        (value) => {
+          if (asked !== latest.current) return;
+          setLinkClosed(false);
+          setDetails(value);
+        },
+        (err) => {
+          if (asked !== latest.current) return;
+          if (err instanceof UnauthorizedError) onUnauthorized?.();
+          else if (err instanceof FederationError && err.code === "link_closed") {
+            setLinkClosed(true);
+            // Once its instance is running again, the review opens by itself.
+            retry.current = setTimeout(loadDetails, 15_000);
+          } else setLoadError(federationErrorText(err, t));
+        },
+      );
+    },
+    [request.id, onUnauthorized, t],
+  );
   React.useEffect(() => {
     load();
     return () => {
       latest.current += 1;
+      if (retry.current) clearTimeout(retry.current);
     };
   }, [load]);
 
@@ -123,8 +141,21 @@ function useRequestReview(
       key: `${position}:${requesterHandle}`,
     }));
   const note = verified ? verified.note : request.note;
+  const name = details?.name ?? request.name;
+  const linkNote = linkClosed ? (
+    <Alert severity="warning">
+      <AlertTitle sx={{ fontSize: "0.875rem", mb: 0.25 }}>{t(k("linkClosedTitle"))}</AlertTitle>
+      {t(k("linkClosedText"), { name })}
+    </Alert>
+  ) : request.link || details?.link ? (
+    <Alert severity="info" icon={<LinkIcon fontSize="inherit" />}>
+      <AlertTitle sx={{ fontSize: "0.875rem", mb: 0.25 }}>{t(k("linkTitle"))}</AlertTitle>
+      {t(k("linkText"), { name })}
+    </Alert>
+  ) : null;
   const content = (
     <Stack spacing={2}>
+      {!header && linkNote}
       <Stack spacing={1.25}>
         {header && (
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -139,17 +170,26 @@ function useRequestReview(
             {request.http && <HttpChip />}
           </Stack>
         )}
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-          <Typography variant="body2" color="text.secondary">
-            {t(k("key"))}
+        {header && linkNote}
+        {/* Nothing to compare until its link opens: no key row meanwhile. */}
+        {!linkClosed && (
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Typography variant="body2" color="text.secondary">
+              {t(k("key"))}
+            </Typography>
+            {details ? (
+              <KeyBlocks fingerprint={details.fingerprint} />
+            ) : loadError || linkClosed ? null : (
+              <Skeleton variant="rounded" width={260} height={22} />
+            )}
+            {details && !details.link && <HelpTip text={t(k("keyHelp"))} />}
+          </Stack>
+        )}
+        {details?.link && (
+          <Typography variant="caption" color="text.secondary">
+            {t(k("linkKey"))}
           </Typography>
-          {details ? (
-            <KeyBlocks fingerprint={details.fingerprint} />
-          ) : loadError ? null : (
-            <Skeleton variant="rounded" width={260} height={22} />
-          )}
-          {details && <HelpTip text={t(k("keyHelp"))} />}
-        </Stack>
+        )}
         {details && (
           <FormControlLabel
             sx={{ m: 0 }}

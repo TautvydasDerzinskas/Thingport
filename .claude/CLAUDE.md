@@ -37,7 +37,8 @@ social feature:
 - **Off means absent**: nothing under `/api/ap` answers and Fedify isn't loaded until an admin turns it on. Import
   `@fedify/*` only as types or with `await import()`.
 - **Only admins open a connection.** Nothing a stranger or a user sends may make the server fetch anything; outgoing
-  requests go through `federationFetch` with the allowlist, never plain `fetch`.
+  requests go through `federationFetch` with the allowlist, never plain `fetch`. That's also what sends a request for a
+  partner behind NAT down the link it keeps open (`links.ts`): its address is never fetched.
 
 ## Plain HTTP instances
 

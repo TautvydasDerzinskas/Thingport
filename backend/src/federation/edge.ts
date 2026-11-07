@@ -2,6 +2,7 @@ import net from "node:net";
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../db";
 import { classifyIp, originOf } from "./addresses";
+import { linkTokenIn, sha256 } from "./links";
 import { storeIncomingRequest } from "./peers";
 import { getRuntime, INSTANCE } from "./runtime";
 
@@ -27,6 +28,18 @@ export function canonicalHeaders(headers: Request["headers"], origin: string): R
   return out;
 }
 
+/** The link secret a request to connect carries, read from its raw body. */
+function linkTokenOf(body: unknown): string | null {
+  if (!Buffer.isBuffer(body)) return null;
+  try {
+    const parsed = JSON.parse(body.toString("utf8")) as unknown;
+    if (!parsed || typeof parsed !== "object" || (parsed as { type?: unknown }).type !== "Follow") return null;
+    return linkTokenIn(parsed as Record<string, unknown>);
+  } catch {
+    return null;
+  }
+}
+
 /** In front of the inbox, before Fedify reads anything: a partner's request goes through to be verified; a blocked
  *  instance's is dropped without a word; a paused one's is turned away to be retried later. From anyone else only a
  *  request to connect is taken, kept as it came for an admin, and nothing it names is fetched. */
@@ -37,7 +50,10 @@ export async function edgeFilter(req: Request, res: Response, next: NextFunction
     res.status(401).json({ error: "Unsigned" });
     return;
   }
-  const peer = await prisma.peer.findUnique({ where: { origin }, select: { status: true } });
+  const peer = await prisma.peer.findUnique({
+    where: { origin },
+    select: { status: true, link: true, linkToken: true },
+  });
   if (peer?.status === "BLOCKED") {
     res.status(202).end();
     return;
@@ -47,6 +63,13 @@ export async function edgeFilter(req: Request, res: Response, next: NextFunction
     return;
   }
   if (peer) {
+    // A request to connect from that address keeping a link of its own: another instance there, on a network of its
+    // own with the same address, unless it's the partner asking again. Turned away, saying why.
+    const token = linkTokenOf(req.body);
+    if (token && !(peer.link === "theirs" && peer.linkToken === sha256(token))) {
+      res.status(409).json({ error: "Another instance at that address is connected already", code: "address_taken" });
+      return;
+    }
     next();
     return;
   }

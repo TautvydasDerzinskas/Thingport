@@ -2,7 +2,7 @@ import type { webcrypto } from "node:crypto";
 import type { Context, Federation } from "@fedify/fedify";
 import type * as Vocab from "@fedify/vocab";
 import { getPublicUrl } from "../services/settingsService";
-import { isAllowedOrigin } from "./allowlist";
+import { isAllowedOrigin, keptActorDocument } from "./allowlist";
 import { FederationFetchError, federationFetch, readJson } from "./fetch";
 import { getInstanceKeys, type InstanceKeys } from "./keys";
 import { PrismaKvStore } from "./kvStore";
@@ -107,6 +107,15 @@ async function build(origin: string): Promise<Runtime> {
     (identity?: { keyId: URL; privateKey: CryptoKey }, pinned = false): DocumentLoader =>
     async (url) => {
       if (url in preloadedContexts) return contextLoader(url);
+      // One reached through its link signs with the key compared when connecting: checked against that, unasked.
+      if (pinned) {
+        const kept = await keptActorDocument(url);
+        if (kept) {
+          // Held to the keys compared, as a document fetched would be.
+          await assertComparedKeys(url, [...publishedKeys(kept), ...(await keysIn(kept))]);
+          return { contextUrl: null, document: kept, documentUrl: url.split("#")[0] };
+        }
+      }
       let request = new Request(url, { headers: { Accept: ACCEPT } });
       if (identity) request = await fedify.signRequest(request, identity.privateKey as never, identity.keyId);
       const response = await federationFetch(url, { headers: request.headers }, isAllowedOrigin);
