@@ -447,12 +447,48 @@ describe("normalize3mf for an Orca fork", () => {
     // Snapmaker Orca crashes without these keys: kept, but naming no preset of the designer's printer.
     expect(project.print_settings_id).toBe("0.20mm Standard @Snapmaker U1 (0.4 nozzle)");
     expect(project.printer_settings_id).toBe("Snapmaker U1 (0.4 nozzle)");
-    expect(project.filament_settings_id).toEqual(["Snapmaker PLA Basic @U1", "Snapmaker PLA Basic @U1"]);
+    expect(project.filament_settings_id).toEqual(["Generic PLA @BBL A1M", "Generic PLA @BBL A1M"]);
     expect(project.printable_height).toBe("270");
     expect(project.use_relative_e_distances).toBe("0");
     expect(project.printable_area).toEqual(["0.5x1", "270.5x1", "270.5x271", "0.5x271"]);
     // One nozzle, not one per designer extruder (that would show a dual-nozzle printer).
     expect(project.nozzle_diameter).toEqual(["0.4"]);
+  });
+
+  async function filamentPresets(extra: Record<string, unknown>): Promise<unknown> {
+    const zip = await JSZip.loadAsync(await makeBambuZip());
+    const settings = { nozzle_diameter: ["0.4"], filament_type: ["PLA"], filament_settings_id: ["x"], ...extra };
+    zip.file("Metadata/project_settings.config", JSON.stringify(settings));
+    const { bytes } = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+    return JSON.parse(await readOut(bytes, "Metadata/project_settings.config")).filament_settings_id;
+  }
+
+  it("keeps the designer's filament preset name per slot, whatever the material or nozzle", async () => {
+    expect(
+      await filamentPresets({
+        filament_type: ["PLA", "PETG", "TPU-AMS", "PA"],
+        filament_settings_id: ["Generic PLA @BBL H2C", "My PETG", "My TPU", "My PA"],
+        nozzle_diameter: ["0.6"],
+      }),
+    ).toEqual(["Generic PLA @BBL H2C", "My PETG", "My TPU", "My PA"]);
+    // A name that is also a U1 preset stays as it is.
+    expect(await filamentPresets({ filament_settings_id: ["Snapmaker PLA Basic @U1"] })).toEqual([
+      "Snapmaker PLA Basic @U1",
+    ]);
+  });
+
+  it('names "Generic" for an empty name, and handles scalar values', async () => {
+    // A blank name becomes "Generic" because Orca crashes without one.
+    expect(await filamentPresets({ filament_type: [""], filament_settings_id: [" "] })).toEqual(["Generic"]);
+    expect(await filamentPresets({ filament_type: ["PLA"], filament_settings_id: [] })).toEqual([]);
+    expect(await filamentPresets({ filament_type: "ASA", filament_settings_id: "Mine" })).toBe("Mine");
+    expect(await filamentPresets({ filament_settings_id: "" })).toBe("Generic");
+  });
+
+  it("keeps one filament name per designer slot", async () => {
+    expect(
+      await filamentPresets({ filament_type: ["PLA", "PLA", "PLA"], filament_settings_id: ["a", "b", "c"] }),
+    ).toHaveLength(3);
   });
 
   it("moves each plate's items from the designer's bed to the middle of a 270 mm bed", () => {
@@ -487,12 +523,49 @@ describe("normalize3mf for an Orca fork", () => {
     };
     const cleaned: Record<string, unknown> = {};
     moveWipeTower(cleaned, original);
-    // Shifted by (-30, -25), then kept inside the bed (a 60 mm tower fits from 0 to 210).
-    expect(cleaned.wipe_tower_x).toEqual(["10", "135", "0"]);
-    expect(cleaned.wipe_tower_y).toEqual(["210", "210", "135"]);
+    // Shifted by (-30, -25), then kept inside the bed: a 60 mm tower with the default 5 mm brim and 2 mm slack
+    // fits from 7 to 203.
+    expect(cleaned.wipe_tower_x).toEqual(["10", "135", "7"]);
+    expect(cleaned.wipe_tower_y).toEqual(["203", "203", "135"]);
     const untouched: Record<string, unknown> = {};
     moveWipeTower(untouched, { printable_area: original.printable_area });
     expect(untouched.wipe_tower_x).toBeUndefined();
+  });
+
+  it("keeps the wipe tower, brim and ribs on the bed whatever the tower settings say", () => {
+    const base = {
+      printable_area: ["0x0", "270x0", "270x270", "0x270"],
+      wipe_tower_x: ["-20", "100", "400"],
+      wipe_tower_y: ["0", "100", "400"],
+    };
+    const run = (extra: Record<string, unknown>): Record<string, unknown> => {
+      const cleaned: Record<string, unknown> = {};
+      moveWipeTower(cleaned, { ...base, ...extra });
+      return cleaned;
+    };
+    // No width or brim: the U1 preset's 30 mm tower and 5 mm brim, so 7 mm to the near edge and 270 - 37 to the far one.
+    expect(run({}).wipe_tower_x).toEqual(["7", "100", "233"]);
+    expect(run({}).wipe_tower_y).toEqual(["7", "100", "233"]);
+    // A width below the preset's 30 does not shrink it; a larger brim and rib extension widen the margins.
+    expect(run({ prime_tower_width: "10" }).wipe_tower_x).toEqual(["7", "100", "233"]);
+    expect(
+      run({
+        prime_tower_width: "40",
+        prime_tower_brim_width: "8",
+        wipe_tower_wall_type: "rib",
+        wipe_tower_extra_rib_length: "8",
+      }).wipe_tower_x,
+    ).toEqual(["10", "100", "212"]);
+    // Ribs only count for the rib wall type; list values (one per extruder) and junk widths are tolerated.
+    expect(
+      run({ prime_tower_width: ["40"], wipe_tower_wall_type: "rectangle", wipe_tower_extra_rib_length: "8" })
+        .wipe_tower_x,
+    ).toEqual(["7", "100", "223"]);
+    expect(run({ prime_tower_width: "abc", prime_tower_brim_width: "-1" }).wipe_tower_x).toEqual(["7", "100", "233"]);
+    // A tower larger than the bed has no room: it sits at the near margin instead of leaving the bed on the other side.
+    expect(run({ prime_tower_width: "300" }).wipe_tower_x).toEqual(["7", "7", "7"]);
+    // A position that is not a number is passed through.
+    expect(run({ wipe_tower_x: ["x"] }).wipe_tower_x).toEqual(["x"]);
   });
 
   it("sets the Application tag to a Bambu Studio version Snapmaker Orca accepts", () => {
