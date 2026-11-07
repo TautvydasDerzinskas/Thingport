@@ -91,6 +91,13 @@ async function filamentPresets(extra: Record<string, unknown>): Promise<unknown>
   return JSON.parse(await read(bytes, "Metadata/project_settings.config")).filament_settings_id;
 }
 
+async function orcaProject(settings: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const zip = await JSZip.loadAsync(await bambuZip());
+  zip.file("Metadata/project_settings.config", JSON.stringify(settings));
+  const { bytes } = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+  return JSON.parse(await read(bytes, "Metadata/project_settings.config"));
+}
+
 describe("normalize3mf for an Orca fork", () => {
   it("keeps the production layout and painting, and drops only G-code and the printer profile", async () => {
     const { bytes } = await normalize3mf(await bambuZip(), "orca");
@@ -166,6 +173,39 @@ describe("normalize3mf for an Orca fork", () => {
     expect(
       await filamentPresets({ filament_type: ["PLA", "PLA", "PLA"], filament_settings_id: ["a", "b", "c"] }),
     ).toHaveLength(3);
+  });
+
+  it("takes nozzle, process preset and filament name from a legacy project's nested settings", async () => {
+    const project = await orcaProject({
+      filament_colour: ["#FFFFFF"],
+      process_settings: {
+        "1": {
+          nozzle_diameter: ["0.6"],
+          print_settings_id: "0.24mm Standard @BBL X1C",
+          filament_settings_id: ["My PETG"],
+        },
+      },
+    });
+    expect(project.nozzle_diameter).toEqual(["0.6"]);
+    expect(project.printer_settings_id).toBe("Snapmaker U1 (0.6 nozzle)");
+    expect(project.print_settings_id).toBe("0.24mm Standard @Snapmaker U1 (0.6 nozzle)");
+    expect(project.filament_settings_id).toEqual(["My PETG"]);
+  });
+
+  it("gives a flat project the same result as before, and falls back without nozzle or names", async () => {
+    const flat = await orcaProject({
+      nozzle_diameter: ["0.6"],
+      print_settings_id: "0.24mm Standard @BBL X1C",
+      filament_settings_id: ["My PETG"],
+    });
+    expect(flat.printer_settings_id).toBe("Snapmaker U1 (0.6 nozzle)");
+    expect(flat.print_settings_id).toBe("0.24mm Standard @Snapmaker U1 (0.6 nozzle)");
+    expect(flat.filament_settings_id).toEqual(["My PETG"]);
+    // A process_settings object without "1" is not nested: nothing to resolve, defaults apply.
+    const empty = await orcaProject({ process_settings: {}, filament_colour: ["#FFFFFF"] });
+    expect(empty.printer_settings_id).toBe("Snapmaker U1 (0.4 nozzle)");
+    expect(empty.print_settings_id).toBe("0.20mm Standard @Snapmaker U1 (0.4 nozzle)");
+    expect(empty.filament_settings_id).toBe("Generic");
   });
 
   it("moves each plate's items from the designer's bed to the middle of a 270 mm bed", () => {

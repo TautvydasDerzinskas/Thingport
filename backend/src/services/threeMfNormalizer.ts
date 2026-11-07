@@ -1429,8 +1429,12 @@ async function buildOrcaZip(input: Buffer | Uint8Array): Promise<{ out: JSZip; r
     if (key === "metadata/project_settings.config") {
       let cleaned: Settings | null = null;
       try {
+        // Legacy projects nest the real values (process_settings["1"]); restore from the resolved ones, as the strip does.
         if (originalSettings)
-          cleaned = restoreKeysOrcaNeeds(normalizeProjectSettings(originalSettings), originalSettings);
+          cleaned = restoreKeysOrcaNeeds(
+            normalizeProjectSettings(originalSettings),
+            extractBambuSettings(originalSettings),
+          );
       } catch {}
       if (!cleaned) {
         out.file(rec.relativePath, await rec.entry.async("uint8array"));
@@ -1443,7 +1447,12 @@ async function buildOrcaZip(input: Buffer | Uint8Array): Promise<{ out: JSZip; r
     if (key === "3d/3dmodel.model") {
       let xml = await rec.entry.async("string");
       xml = markAsBambuProject(xml) ?? xml;
-      xml = recenterOnOrcaBed(xml, plates, bedFromPrintableArea(originalSettings?.printable_area)) ?? xml;
+      xml =
+        recenterOnOrcaBed(
+          xml,
+          plates,
+          bedFromPrintableArea(originalSettings ? extractBambuSettings(originalSettings).printable_area : undefined),
+        ) ?? xml;
       out.file(rec.relativePath, xml);
       continue;
     }
