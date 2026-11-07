@@ -99,7 +99,38 @@ async function orcaProject(settings: Record<string, unknown>): Promise<Record<st
   return JSON.parse(await read(bytes, "Metadata/project_settings.config"));
 }
 
+const instance = (objectId: number) =>
+  `<model_instance><metadata key="object_id" value="${objectId}"/><metadata key="instance_id" value="0"/></model_instance>`;
+const plateXml = (id: number, objectId: number) =>
+  `<plate><metadata key="plater_id" value="${id}"/>${instance(objectId)}</plate>`;
+
+// The "x y z" translation of the build item with this objectid.
+function itemOffset(xml: string, objectId: number): string | undefined {
+  const tag = xml.match(new RegExp(`<item\\b[^>]*\\bobjectid="${objectId}"[^>]*>`))?.[0];
+  return tag?.match(/transform="(?:\S+ ){9}([^"]+)"/)?.[1];
+}
+
 describe("normalize3mf for an Orca fork", () => {
+  it("centres each object on its own plate of a two-plate archive, by the plate assignment", async () => {
+    const zip = await JSZip.loadAsync(await bambuZip());
+    // The designer's bed is 330 x 320 mm; its second plate starts 1.2 beds along x. Object 1 stands on plate 2
+    // and object 2 on plate 1, so the build order and the plate order disagree.
+    zip.file(
+      "3D/3dmodel.model",
+      `<model unit="millimeter"><build>${item(1, 561, 160)}${item(2, 165, 160)}</build></model>`,
+    );
+    zip.file("Metadata/model_settings.config", `<config>${plateXml(1, 2)}${plateXml(2, 1)}</config>`);
+    zip.file(
+      "Metadata/project_settings.config",
+      JSON.stringify({ printable_area: ["0x0", "330x0", "330x320", "0x320"], filament_colour: ["#FFFFFF"] }),
+    );
+    const { bytes } = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+    const model = await read(bytes, "3D/3dmodel.model");
+    // Plate 1 is centred at (135, 135) on the 270 mm bed, plate 2 one bed and 0.2 gap further along x.
+    expect(itemOffset(model, 2)).toBe("135 135 5");
+    expect(itemOffset(model, 1)).toBe("459 135 5");
+  });
+
   it("keeps the production layout and painting, and drops only G-code and the printer profile", async () => {
     const { bytes } = await normalize3mf(await bambuZip(), "orca");
     const out = await JSZip.loadAsync(bytes);
