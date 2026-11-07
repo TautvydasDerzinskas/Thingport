@@ -248,12 +248,22 @@ describe("direct messages with partners' people", () => {
     } finally {
       await prisma.peer.update({ where: { id: partnerId }, data: { status: "ACTIVE" } });
     }
-    // Connected instances off: nothing's written that would never reach them.
+    // Connected instances off: nothing new is written for them meanwhile.
     await updateFederationSettings({ enabled: false });
     try {
       const off = await request(app).post(`/api/chats/${opened.body.id}/messages`).set(auth(local)).send({ body: "?" });
       expect(off.status).toBe(409);
       expect(off.body.code).toBe("federation_off");
+      // One's own message can still be deleted: queued for them, and sent once they're on again.
+      const deleted = await request(app)
+        .delete(`/api/chats/${opened.body.id}/messages/${sent.body.id}`)
+        .set(auth(local));
+      expect(deleted.status).toBe(200);
+      expect(
+        (await deliveries(PARTNER)).some(
+          (item) => item.type === "Delete" && (item.object as unknown) === create.object.id,
+        ),
+      ).toBe(true);
     } finally {
       await updateFederationSettings({ enabled: true });
     }
@@ -332,6 +342,46 @@ describe("rooms with partners' people", () => {
     expect(((after.at(-1)!.object.attachment as { id: string }[]) ?? []).map((member) => member.id)).not.toContain(
       person(PARTNER, "Ruta").id,
     );
+  });
+
+  it("lets a room with them be left, changed and deleted while connected instances are off, for them to hear later", async () => {
+    const created = await request(app)
+      .post("/api/chats/rooms")
+      .set(auth(admin))
+      .send({ name: "Night shift", is_public: false, member_ids: [local.id], remote_member_ids: [rutaId] });
+    const roomId = created.body.id;
+    const room = `${ORIGIN}/api/ap/rooms/${roomId}`;
+    await updateFederationSettings({ enabled: false });
+    try {
+      // Nothing new for them meanwhile: a message, or another of their people.
+      const said = await request(app).post(`/api/chats/${roomId}/messages`).set(auth(admin)).send({ body: "?" });
+      expect(said.body.code).toBe("federation_off");
+      const adding = await request(app)
+        .patch(`/api/chats/rooms/${roomId}`)
+        .set(auth(admin))
+        .send({ add_remote_member_ids: [tomasId] });
+      expect(adding.body.code).toBe("federation_off");
+      // What they can hear about later is made, and queued for them in order.
+      expect((await request(app).post(`/api/chats/${roomId}/leave`).set(auth(local))).status).toBe(200);
+      const renamed = await request(app)
+        .patch(`/api/chats/rooms/${roomId}`)
+        .set(auth(admin))
+        .send({ name: "Day shift" });
+      expect(renamed.status).toBe(200);
+      expect((await request(app).delete(`/api/chats/rooms/${roomId}`).set(auth(admin))).status).toBe(200);
+      const theirs = (await deliveries(PARTNER)).filter(
+        (item) => (item.object as unknown) === room || item.object?.id === room,
+      );
+      expect(theirs.slice(-3).map((item) => [item.type, item.object?.name])).toEqual([
+        ["Update", "Night shift"],
+        ["Update", "Day shift"],
+        ["Delete", undefined],
+      ]);
+      const left = theirs.at(-3)!.object.attachment as { id: string }[];
+      expect(left.map((member) => member.id)).not.toContain(localActor());
+    } finally {
+      await updateFederationSettings({ enabled: true });
+    }
   });
 
   it("keeps a copy of a partner's room, with this instance's people it names", async () => {

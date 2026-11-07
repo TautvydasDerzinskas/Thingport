@@ -1,11 +1,12 @@
 import type { Chat, ChatAttachment, ChatMessage, Peer, Prisma, RemotePerson } from "@prisma/client";
 import crypto from "node:crypto";
 import { prisma } from "../db";
-import { getSocialSettings } from "../services/settingsService";
+import { getPublicUrl, getSocialSettings } from "../services/settingsService";
+import { paragraphOf } from "../utils/htmlEntities";
 import { originOf } from "./addresses";
 import { enqueueActivity, kickDelivery } from "./delivery";
 import { avatarIcon } from "./publish";
-import { AP_PREFIX, getRuntime, type Runtime } from "./runtime";
+import { AP_PREFIX, getRuntime, INSTANCE, type Runtime } from "./runtime";
 import { isFederationLive } from "./settings";
 
 /** Chats with partners' people (docs/FEDERATION_DEVELOPMENT.md, "Chats"). This instance speaks for its own people:
@@ -57,10 +58,13 @@ async function deletedBefore(apId: string, origins: (string | null)[]): Promise<
   return true;
 }
 
-const personUrl = (runtime: Runtime, userId: string) => `${runtime.origin}${AP_PREFIX}/actors/${userId}`;
-const messageUrl = (runtime: Runtime, id: string) => `${runtime.origin}${AP_PREFIX}/messages/${id}`;
-export const roomUrl = (runtime: Runtime, chatId: string) => `${runtime.origin}${AP_PREFIX}/rooms/${chatId}`;
-const modelUrl = (runtime: Runtime, printId: string) => `${runtime.origin}${AP_PREFIX}/models/${printId}`;
+/** Where this instance is, and its actor: all that addressing and queuing something takes. */
+type Here = Pick<Runtime, "origin" | "actorUrl">;
+
+const personUrl = (at: Here, userId: string) => `${at.origin}${AP_PREFIX}/actors/${userId}`;
+const messageUrl = (at: Here, id: string) => `${at.origin}${AP_PREFIX}/messages/${id}`;
+export const roomUrl = (at: Here, chatId: string) => `${at.origin}${AP_PREFIX}/rooms/${chatId}`;
+const modelUrl = (at: Here, printId: string) => `${at.origin}${AP_PREFIX}/models/${printId}`;
 
 /** The id of one of this instance's people, from their actor's address here; null for anything else. */
 function localUserId(runtime: Runtime, url: string): string | null {
@@ -80,12 +84,12 @@ async function live(): Promise<Runtime | null> {
   return (await isFederationLive()) ? getRuntime() : null;
 }
 
-function htmlOf(text: string): string {
-  const escaped = text.replace(
-    /[&<>"']/g,
-    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!,
-  );
-  return `<p>${escaped.replace(/\r?\n/g, "<br>")}</p>`;
+/** Here as the runtime has it, without loading it: a chat change made while connected instances are off (a message
+ *  deleted, someone joining or leaving, a room changed or deleted) is queued for partners all the same, and sent once
+ *  they're on again. */
+async function here(): Promise<Here> {
+  const origin = new URL(await getPublicUrl()).origin;
+  return { origin, actorUrl: new URL(`${origin}${AP_PREFIX}/actors/${INSTANCE}`) };
 }
 
 /** Federation work queued in a transaction of the chat change it follows, so neither is kept without the other. */
@@ -94,7 +98,7 @@ type Db = Prisma.TransactionClient;
 /** Queues `activity` for `peer`. `chat`: the room's address, or the person a direct chat is with; what's queued for one
  *  goes in order. */
 async function send(
-  runtime: Runtime,
+  runtime: Here,
   peer: Pick<Peer, "id" | "origin" | "inboxUrl">,
   chat: string,
   activity: Record<string, unknown>,
@@ -166,7 +170,7 @@ async function noteOf(runtime: Runtime, message: StoredMessage, context: string 
     attributedTo,
     to,
     ...(context ? { context } : {}),
-    content: htmlOf(message.body),
+    content: paragraphOf(message.body),
     source: { content: message.body, mediaType: "text/plain" },
     published: message.createdAt.toISOString(),
     attachment: message.attachments.flatMap((attachment) =>
@@ -247,10 +251,10 @@ const peersIn = (chat: ChatWithRemote): Peer[] => {
  *  without it. */
 export async function messageDeleted(chatId: string, messageId: string, exceptPeerId?: string, tx?: Db): Promise<void> {
   const db = tx ?? prisma;
-  const runtime = await live();
+  const runtime = await here();
   const chat = await chatWithRemote(chatId, db);
   const message = await db.chatMessage.findUnique({ where: { id: messageId }, select: { apId: true, senderId: true } });
-  if (!runtime || !chat || !message) return;
+  if (!chat || !message) return;
   // One written here and deleted before it went out still has the address it went out under.
   const apId = message.apId ?? (message.senderId ? messageUrl(runtime, messageId) : null);
   if (!apId) return;
@@ -281,9 +285,9 @@ function membersWithin(members: GroupMember[]): GroupMember[] {
  *  longer in it drop their copy. */
 export async function roomChanged(chatId: string, formerPeerIds: string[] = [], tx?: Db): Promise<void> {
   const db = tx ?? prisma;
-  const runtime = await live();
+  const runtime = await here();
   const chat = await chatWithRemote(chatId, db);
-  if (!runtime || !chat || chat.kind !== "ROOM" || chat.hostPeerId) return;
+  if (!chat || chat.kind !== "ROOM" || chat.hostPeerId) return;
   const locals = await db.chatMember.findMany({
     where: { chatId },
     select: { user: { select: { id: true, displayName: true, username: true } } },
@@ -326,8 +330,8 @@ export async function roomChanged(chatId: string, formerPeerIds: string[] = [], 
 
 /** A room hosted here deleted: its partners drop their copies. */
 export async function roomDeleted(chatId: string, peerIds: string[], tx?: Db): Promise<void> {
-  const runtime = await live();
-  if (!runtime || !peerIds.length) return;
+  const runtime = await here();
+  if (!peerIds.length) return;
   for (const peer of await (tx ?? prisma).peer.findMany({ where: { id: { in: peerIds }, status: REACHABLE } })) {
     const room = roomUrl(runtime, chatId);
     await send(runtime, peer, room, { type: "Delete", object: room }, tx);
@@ -336,8 +340,8 @@ export async function roomDeleted(chatId: string, peerIds: string[], tx?: Db): P
 
 /** Someone here left a room hosted elsewhere: its host takes them out. */
 export async function roomLeft(chat: Chat, userId: string, tx?: Db): Promise<void> {
-  const runtime = await live();
-  if (!runtime || !chat.hostPeerId || !chat.remoteApId) return;
+  const runtime = await here();
+  if (!chat.hostPeerId || !chat.remoteApId) return;
   const host = await (tx ?? prisma).peer.findUnique({ where: { id: chat.hostPeerId } });
   if (!reachable(host)) return;
   const left = { type: "Remove", object: personUrl(runtime, userId), target: chat.remoteApId };

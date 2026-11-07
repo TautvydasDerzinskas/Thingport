@@ -88,7 +88,9 @@ key, who asked and their note. You can also open it in place under **Requests â†
 
 A request is only checked once you open it: until then Thingport doesn't contact the instance that sent it. Opening
 it checks that it's signed with the key you see, and that the instance still stands by it: one it withdrew meanwhile
-says so and disappears.
+says so and disappears. A request through a link can name any address, so when it names one on the internet and a
+different instance answers there, the review shows that one and its key too: approve only if the request's key is the
+one their admin read out.
 
 ## When your users ask
 
@@ -133,13 +135,15 @@ copied to your library.
 - **A copy is yours**: **Copy to my library** fetches the files, pictures and description into a model of your own,
   file by file, and carries on if you leave the page. It says where it came from, with a link to the original while
   it's still shared; it stays when the partner changes it, stops sharing it or disconnects. A copy is made only once
-  every file has arrived, and no file may be bigger than an upload here.
+  every file has arrived, no file may be bigger than an upload here, and all of them together no bigger than one.
 - **Chats reach partners' people**, with chats on at both instances. They're in **New message** with their instance,
   and a partner's profile has **Message**. An admin can put partners' people in a private room: the room stays on
   this instance, and their instance keeps a copy that gets its messages and sends theirs back. A room a partner hosts
   shows with **Hosted on** and its admin manages it. Only models you share on Explore can be sent elsewhere. Messages
   are kept on both instances, and stay when a partner disconnects. While it's paused, you can't write to its people
-  directly or in the rooms it hosts.
+  directly or in the rooms it hosts. While connected instances are off here, you can't write to partners' people,
+  but you can still delete your messages and join or leave rooms, and an admin can change or delete them: partners
+  hear of it once it's on again.
 - **Paused** partners are hidden from Explore until **Resume**; what's said meanwhile in rooms hosted here waits for
   them and arrives once they're resumed. **Disconnect** and **Block** remove everything of theirs, the copies of rooms they
   host with what was said in them included; direct messages with their people and rooms hosted here stay.

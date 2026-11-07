@@ -387,10 +387,8 @@ async function storeIn(
       where: { apId: person.id },
       create: { apId: person.id, ...personData },
       update: personData,
-      select: { id: true, peerId: true },
+      select: { id: true },
     });
-    // An id claimed by another partner is never taken over.
-    if (saved.peerId !== peer.id) continue;
     if (!allModels) partly.push(saved.id);
     if (!allCollections) partlyCollections.push(saved.id);
     for (const model of models) {

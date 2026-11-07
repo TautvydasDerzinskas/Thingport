@@ -2718,6 +2718,8 @@
             "linkClosedTitle": "Jo ryšys dabar uždarytas",
             "linkClosedText": "{{name}} jus pasiekia per ryšį, o jis uždarytas: galbūt jo serveris išjungtas. Bandoma dar kartą savaime; patvirtinkite, kai jis veiks.",
             "linkKey": "Jo adreso iš čia patikrinti negalima, todėl kad tai jie, žinote iš rakto. Paprašykite jų administratoriaus perskaityti raktą iš jų puslapio Bendruomenė.",
+            "elsewhereTitle": "Tuo adresu atsako kitas serveris",
+            "elsewhereText": "{{other}} tiesiogiai atsako adresu {{address}}, bet su kitu raktu:",
             "compare": "{{name}} administratorius perskaitė tą patį raktą iš savo puslapio Bendruomenė",
             "askedBy": "Paprašė",
             "personForPerson": "{{who}}, norėdamas pasiekti {{whom}}",
@@ -6155,6 +6157,7 @@
           "copy_limit": "Pirma palaukite, kol baigsis vykstantys kopijavimai.",
           "no_files": "Jame nėra failų, kuriuos būtų galima nukopijuoti.",
           "files_missing": "Ne visus jo failus galima gauti iš jo serverio, todėl jo negalima nukopijuoti viso.",
+          "copy_too_big": "Per didelis nukopijuoti čia: visi jo failai kartu didesni, nei šis serveris priima vienu kartu.",
           "zip_busy": "Jau kuriamas kitas ZIP. Pabandykite po akimirkos.",
           "zip_too_big": "Per didelis suarchyvuoti čia: atsisiųskite failus po vieną."
         },

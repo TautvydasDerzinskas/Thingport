@@ -1,4 +1,6 @@
 import crypto from "node:crypto";
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 import type { Prisma } from "@prisma/client";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -8,6 +10,8 @@ import { invalidateAllowlist, lineFor } from "../src/federation/allowlist";
 import { NOT_LINKED, federationFetch } from "../src/federation/fetch";
 import { cameThroughLink, linkOpen, newLinkToken, requestLinkOpen, sha256 } from "../src/federation/links";
 import {
+  answersAt,
+  blockRequest,
   declineRequest,
   disconnectPeer,
   listInstances,
@@ -158,6 +162,28 @@ describe("links", () => {
     expect(await lineFor(origin)).toBeNull();
   });
 
+  it("tells a blocked request's link it was declined, not that it's blocked, so it stops asking", async () => {
+    const origin = "http://192.0.2.98:8000";
+    const token = newLinkToken();
+    await storeIncomingRequest({
+      origin,
+      url: `${ORIGIN}/api/ap/inbox`,
+      headers: {},
+      raw: "{}",
+      follow: {
+        type: "Follow",
+        id: `${origin}/api/ap/follows/f1`,
+        actor: `${origin}/api/ap/actors/instance`,
+        "thingport:link": token,
+      } as never,
+    });
+    const asking = await prisma.peerRequest.findFirstOrThrow({ where: { origin } });
+    await blockRequest("test-admin", asking.id);
+    const told = await request(app).get("/api/ap/link").set("Authorization", `Link ${token}`);
+    expect(told.status).toBe(410);
+    expect(told.body).toEqual({ reason: "declined" });
+  });
+
   it("never fetches a partner's address once its link ended", async () => {
     const origin = "http://192.0.2.96:8000";
     const token = newLinkToken();
@@ -306,6 +332,47 @@ describe("links", () => {
     const listed = (await listInstances()).incoming.filter((item) => item.origin === origin);
     expect(listed.filter((item) => item.link)).toHaveLength(2);
     expect(listed.filter((item) => !item.link)).toHaveLength(1);
+  });
+
+  it("finds the instance that answers directly at an address on the internet, and never asks one at home", async () => {
+    const { publicKey } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+      publicKeyEncoding: { type: "spki", format: "pem" },
+      privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    });
+    let origin = "";
+    const server = http.createServer((req, res) => {
+      const actor = `${origin}/api/ap/actors/instance`;
+      if (req.url === "/api/ap/instance") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ software: "thingport", version: "1", name: "Makerspace", actor }));
+      } else if (req.url === "/api/ap/actors/instance") {
+        res.writeHead(200, { "Content-Type": "application/activity+json" });
+        res.end(
+          JSON.stringify({
+            "@context": ["https://www.w3.org/ns/activitystreams", "https://w3id.org/security/v1"],
+            id: actor,
+            type: "Application",
+            inbox: `${origin}/api/ap/inbox`,
+            publicKey: { id: `${actor}#main-key`, owner: actor, publicKeyPem: publicKey },
+          }),
+        );
+      } else res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    process.env.FEDERATION_ALLOW_LOOPBACK = "1";
+    try {
+      const onTheInternet = async () => ({ kind: "public" as const, addresses: ["203.0.113.7"] });
+      const found = await answersAt(origin, onTheInternet);
+      expect(found?.name).toBe("Makerspace");
+      expect(found?.fingerprint).toMatch(/^[0-9A-F]{4}( [0-9A-F]{4})+$/);
+      // On a home network it may be another machine from here: not asked at all.
+      expect(await answersAt(origin)).toBeNull();
+    } finally {
+      delete process.env.FEDERATION_ALLOW_LOOPBACK;
+      await new Promise((resolve) => server.close(resolve));
+    }
   });
 
   it("tells what came down this instance's own link from what came from outside", () => {

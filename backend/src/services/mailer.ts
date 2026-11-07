@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { escapeHtml } from "../utils/htmlEntities";
 import { getPublicUrl, getSmtpSettings } from "./settingsService";
 
 /** Throws without a host rather than silently dropping the email. */
@@ -13,13 +14,6 @@ async function sendMail(message: { to: string; subject: string; text: string; ht
     auth: smtp.user ? { user: smtp.user, pass: smtp.pass ?? undefined } : undefined,
   });
   await transporter.sendMail({ from: smtp.from, ...message });
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
 }
 
 export async function sendVerificationEmail(to: string, displayName: string, token: string): Promise<void> {

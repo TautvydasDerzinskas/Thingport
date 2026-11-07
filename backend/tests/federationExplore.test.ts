@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import express from "express";
 import { createApp } from "../src/app";
+import { IMPORT_MAX_BYTES } from "../src/config";
 import { prisma } from "../src/db";
 import { invalidateAllowlist } from "../src/federation/allowlist";
 import { MEDIA_DIR, mediaAddress, pruneMedia } from "../src/federation/media";
@@ -450,6 +451,33 @@ describe("Explore with partners", () => {
       copy_id: null,
       error: null,
     });
+  });
+
+  it("won't copy a model whose files together are more than one import", async () => {
+    const half = Math.floor(IMPORT_MAX_BYTES / 2) + 1;
+    const big = await prisma.remoteModel.create({
+      data: {
+        peerId,
+        personId,
+        apId: `${PARTNER}/api/ap/models/big`,
+        title: "Two halves",
+        images: [],
+        sharedAt: new Date(Date.now() - 120_000),
+        files: ["a", "b"].map((name) => ({
+          name: `${name}.stl`,
+          size: half,
+          url: `${PARTNER}/api/ap/files/plate/big/${name}.stl`,
+        })),
+      },
+    });
+    try {
+      // Each would be taken on its own; both, held on disk until the copy is made, aren't.
+      const copy = await request(app).post(`/api/explore/elsewhere/model/${big.id}/copy`).set(auth(viewer));
+      expect(copy.status).toBe(413);
+      expect(copy.body.code).toBe("copy_too_big");
+    } finally {
+      await prisma.remoteModel.delete({ where: { id: big.id } });
+    }
   });
 
   it("says where a copy came from, and offers it rather than another", async () => {

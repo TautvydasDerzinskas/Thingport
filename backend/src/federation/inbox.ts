@@ -1,6 +1,7 @@
 import type { InboxListenerSetters } from "@fedify/fedify";
 import type * as Vocab from "@fedify/vocab";
 import { chatGoneFor, messageArrived, messageDeletedThere } from "../services/chatService";
+import { textOfHtml } from "../utils/htmlEntities";
 import {
   deletionFrom,
   leavingFrom,
@@ -131,7 +132,7 @@ async function noteIn(vocab: typeof Vocab, contextLoader: unknown, object: unkno
   const text =
     source?.content && (!source.mediaType || source.mediaType === "text/plain")
       ? source.content.toString()
-      : textOf(object.content?.toString() ?? "");
+      : textOfHtml(object.content?.toString() ?? "");
   return {
     id: object.id.href,
     attributedTo: author instanceof vocab.Person && author.id ? await personIn(vocab, contextLoader, author) : null,
@@ -143,19 +144,6 @@ async function noteIn(vocab: typeof Vocab, contextLoader: unknown, object: unkno
 }
 
 /** A Note's HTML as the text it says: line breaks kept, tags dropped. */
-function textOf(html: string): string {
-  return html
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>\s*<p[^>]*>/gi, "\n\n")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, "&")
-    .trim();
-}
-
 // An Undo names what it undoes inline; nothing is fetched to find out.
 const noFetch = async (url: string): Promise<never> => {
   throw new Error(`Not fetched: ${url}`);

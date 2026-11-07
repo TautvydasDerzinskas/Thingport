@@ -29,6 +29,7 @@ import { getFederationSettings } from "./settings";
 import { forgetPeerContent, syncPeer } from "./remoteIndex";
 import { notifyRequesters, originsFor } from "./userRequests";
 import { AP_PREFIX, getRuntime, INSTANCE, type Runtime } from "./runtime";
+import { paragraphOf, textOfHtml } from "../utils/htmlEntities";
 
 type CryptoKey = webcrypto.CryptoKey;
 
@@ -329,7 +330,7 @@ export async function connect(
       actor: runtime.actorUrl,
       object: new URL(info.actorUrl),
       name: ourHost,
-      content: created.note ? escapeHtml(created.note) : null,
+      content: created.note ? paragraphOf(created.note) : null,
       // Who asked here, each followed by whom they want to reach there, as Mentions their admin is shown.
       tags: sent.flatMap((ask) => [
         new runtime.vocab.Mention({
@@ -474,7 +475,7 @@ export async function storeIncomingRequest(params: {
     requesterHandle: first?.requesterHandle ?? null,
     requesterUrl: first?.requesterUrl ?? null,
     targetHandle: first?.targetHandle ?? null,
-    note: typeof follow.content === "string" ? clean(stripHtml(follow.content)) : null,
+    note: typeof follow.content === "string" ? clean(textOfHtml(follow.content)) : null,
     linkToken,
   };
   // Counted and stored as one, so a burst can't slip past the limits.
@@ -554,6 +555,8 @@ export type RequestDetails = InstanceInfo & {
   request: { requesterName: string | null; note: string | null; asks: (Ask & { target: LocalPersonOut | null })[] };
   /** It can't be reached from here, and keeps a link open to this instance instead. */
   link: boolean;
+  /** For one with a link: another instance answering at its address directly, with its own key. */
+  elsewhere: { name: string; fingerprint: string } | null;
 };
 
 type LocalPersonOut = { username: string; displayName: string };
@@ -584,10 +587,42 @@ async function localPerson(
  *  still stands by it. Fetches from that instance, which is fine since an admin opened it. */
 export async function requestDetails(id: string): Promise<RequestDetails> {
   const asked = await pendingIncoming(id);
-  return viaItsLink(asked, () => detailsOf(asked));
+  if (!asked.linkToken) return { ...(await detailsOf(asked)), elsewhere: null };
+  // A link's address is only what its request says: where that's an address on the internet, whatever answers there
+  // directly is asked too, side by side, so another instance there is shown.
+  const [details, there] = await Promise.all([viaItsLink(asked, () => detailsOf(asked)), answersAt(asked.origin)]);
+  return { ...details, elsewhere: there && there.fingerprint !== details.fingerprint ? there : null };
 }
 
-async function detailsOf(asked: PeerRequest): Promise<RequestDetails> {
+const ANSWERS_AT_MS = 8_000;
+
+/** The instance answering at `origin` directly, if it's on the internet and does within ANSWERS_AT_MS: null for
+ *  anything else, a home network's address among them (it may lead to another machine from here). */
+export async function answersAt(
+  origin: string,
+  classify: typeof classifyHost = classifyHost,
+): Promise<{ name: string; fingerprint: string } | null> {
+  const kind = await classify(new URL(origin).hostname).then(
+    (found) => found.kind,
+    () => null,
+  );
+  if (kind !== "public") return null;
+  let timer: NodeJS.Timeout | undefined;
+  const gaveUp = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), ANSWERS_AT_MS);
+  });
+  const looked = lookupWithActor(origin).then(
+    ({ info }) => ({ name: info.name, fingerprint: info.fingerprint }),
+    () => null,
+  );
+  try {
+    return await Promise.race([looked, gaveUp]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function detailsOf(asked: PeerRequest): Promise<Omit<RequestDetails, "elsewhere">> {
   const { info, actor } = await lookupWithActor(asked.origin);
   const { request } = await currentRequest(asked.origin, actor, asked);
   const person = (found: { username: string; displayName: string } | null) =>
@@ -908,14 +943,22 @@ export async function declineRequest(adminId: string, id: string): Promise<void>
 /** Blocked without a word: this request is declined, and whatever comes from that instance later is dropped. */
 export async function blockRequest(adminId: string, id: string): Promise<void> {
   const request = await pendingIncoming(id);
-  await prisma.peerRequest.updateMany({
-    where: { origin: request.origin, kind: "INCOMING", status: "PENDING" },
-    data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
-  });
-  await prisma.peer.upsert({
-    where: { origin: request.origin },
-    create: { origin: request.origin, name: request.requesterName, status: "BLOCKED", initiatedBy: "them" },
-    update: { status: "BLOCKED" },
+  await prisma.$transaction(async (tx) => {
+    // One keeping a link hears it was declined, as any other, and stops asking: not that it's blocked.
+    const linked = await tx.peerRequest.findMany({
+      where: { origin: request.origin, kind: "INCOMING", status: "PENDING", linkToken: { not: null } },
+      select: { linkToken: true },
+    });
+    for (const { linkToken } of linked) await linkEnded(tx, linkToken!, "declined");
+    await tx.peerRequest.updateMany({
+      where: { origin: request.origin, kind: "INCOMING", status: "PENDING" },
+      data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
+    });
+    await tx.peer.upsert({
+      where: { origin: request.origin },
+      create: { origin: request.origin, name: request.requesterName, status: "BLOCKED", initiatedBy: "them" },
+      update: { status: "BLOCKED" },
+    });
   });
   invalidateAllowlist();
   void createLog({ userId: adminId, action: "federation_blocked", targetId: id, details: { origin: request.origin } });
@@ -1279,21 +1322,6 @@ function activityId(runtime: Runtime, kind: string): URL {
 function clean(text: string | null | undefined): string | null {
   const trimmed = (text ?? "").replace(/\s+/g, " ").trim().slice(0, MAX_NOTE);
   return trimmed || null;
-}
-
-function stripHtml(html: string): string {
-  return html
-    .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, "&");
-}
-
-function escapeHtml(text: string): string {
-  return `<p>${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")}</p>`;
 }
 
 export { INSTANCE };
