@@ -13,6 +13,7 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import type { ResolvedTheme } from "../../constants/settingsOptions";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import ModelCard from "../ModelsPage/ModelCard";
 
 const PAGE_SIZE = 24;
@@ -40,10 +41,10 @@ export default function ExploreUserModels({
   onGone,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
-  const [items, setItems] = useState<Print[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
+    loadingAtFirst: true,
+  });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   // A page asked for before the list was read again belongs to the old list, and is dropped.
@@ -62,6 +63,11 @@ export default function ExploreUserModels({
 
   useEffect(() => {
     const mine = ++run.current;
+    const dropLate = () => {
+      run.current += 1;
+    };
+    // Back to this list puts it back as it was left. It's someone else's, so it isn't read again unless trying again.
+    if (returning() !== null && !failed) return dropLate;
     // Another sort's or person's list isn't this one's: nothing of it stays to be paged on from. A page of it still on
     // its way won't clear loadingMore, so it's cleared here.
     setItems([]);
@@ -84,9 +90,7 @@ export default function ExploreUserModels({
       },
     );
     // Gone from the page, or read again: what's still on its way is dropped.
-    return () => {
-      run.current += 1;
-    };
+    return dropLate;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, sortMode, attempt]);
 
