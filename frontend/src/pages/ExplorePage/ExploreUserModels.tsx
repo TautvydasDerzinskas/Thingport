@@ -17,6 +17,8 @@ import { useRememberedList } from "../../hooks/useRememberedList";
 import ModelCard from "../ModelsPage/ModelCard";
 
 const PAGE_SIZE = 24;
+// The most models the server answers with at once (pageQuery in backend routes/social.ts).
+const MOST_AT_ONCE = 100;
 
 type Props = {
   userId: string;
@@ -66,8 +68,33 @@ export default function ExploreUserModels({
     const dropLate = () => {
       run.current += 1;
     };
-    // Back to this list puts it back as it was left. It's someone else's, so it isn't read again unless trying again.
-    if (returning() !== null && !failed) return dropLate;
+    // Back to this list puts it back as it was left, then reads it again quietly, so a model copied to the library
+    // meanwhile says so; failing, the list stays as it was.
+    const kept = failed ? null : returning();
+    if (kept !== null) {
+      void (async () => {
+        const fresh: Print[] = [];
+        let more = false;
+        try {
+          for (let offset = 0; offset < kept; offset += MOST_AT_ONCE) {
+            const limit = Math.min(MOST_AT_ONCE, kept - offset);
+            const page = await socialApi.userModels(userId, { order_by: sortMode, limit, offset });
+            if (mine !== run.current) return;
+            if (!page) return gone();
+            fresh.push(...page.items);
+            more = page.hasMore;
+            if (!more) break;
+          }
+        } catch (err) {
+          if (err instanceof UnauthorizedError) onUnauthorized?.();
+          return;
+        }
+        if (mine !== run.current) return;
+        setItems(fresh);
+        setHasMore(more);
+      })();
+      return dropLate;
+    }
     // Another sort's or person's list isn't this one's: nothing of it stays to be paged on from. A page of it still on
     // its way won't clear loadingMore, so it's cleared here.
     setItems([]);

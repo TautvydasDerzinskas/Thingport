@@ -69,7 +69,10 @@ export default function ModelsPage({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>();
+  // The category reaches the address only after it's been picked, so it's named here too: picking one is a new list.
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
+    extra: categoryId ?? "",
+  });
   const [loadingMore, setLoadingMore] = useState(false);
   const selection = useModelSelection(items);
   const [searchParams, setSearchParams] = useSearchParams();

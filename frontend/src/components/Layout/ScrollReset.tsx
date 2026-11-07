@@ -1,9 +1,11 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
 // How long a page reached by back or forward may go without growing before its place is given up on. Counted from
 // the last time it grew, as a page can fill in a step at a time.
 const WAIT_FOR_GROWTH_MS = 3000;
+// The longest a place is followed at all, for a page whose height never settles (something animating, say).
+const RESTORE_AT_MOST_MS = 10000;
 // Any of these means the reader has started scrolling for themselves.
 const READER_INPUT = ["wheel", "touchmove", "keydown", "pointerdown"] as const;
 
@@ -17,16 +19,23 @@ const places = new Map<string, number>();
 function scrollBackTo(top: number, done: () => void): () => void {
   let frame = 0;
   let height = -1;
-  let grewAt = performance.now();
+  let seenAt = window.scrollY;
+  const startedAt = performance.now();
+  let grewAt = startedAt;
   const step = () => {
     const now = document.documentElement.scrollHeight;
+    // Moved while the page stayed the same size: that's the reader, dragging the scrollbar say, which sends none of
+    // READER_INPUT. A change of size can move it too, as the browser keeps what's on screen in place.
+    if (now === height && Math.abs(window.scrollY - seenAt) > 2) return stop();
     if (now !== height) {
       height = now;
       grewAt = performance.now();
       window.scrollTo(0, top);
       if (Math.abs(window.scrollY - top) < 2) return stop();
     }
-    if (performance.now() - grewAt > WAIT_FOR_GROWTH_MS) return stop();
+    seenAt = window.scrollY;
+    const at = performance.now();
+    if (at - grewAt > WAIT_FOR_GROWTH_MS || at - startedAt > RESTORE_AT_MOST_MS) return stop();
     frame = requestAnimationFrame(step);
   };
   function stop() {
@@ -55,7 +64,9 @@ export default function ScrollReset() {
   // (the browser's own restoring scrolls the old page meanwhile), and while a place is being scrolled back to.
   const settling = useRef(false);
 
-  useEffect(() => {
+  // Layout, not passive: signing out unmounts this while App scrolls to the top, and a listener still there when that
+  // scroll arrives would keep the top as the place of the entry being left.
+  useLayoutEffect(() => {
     const keep = () => {
       if (!settling.current) places.set(currentKey.current, window.scrollY);
     };

@@ -23,9 +23,10 @@ type Options<X> = {
  *  puts the same models back at once, so ScrollReset can return to where the reader was, rather than starting again
  *  from the first page. It owns the grid's `items`, `hasMore` and `loading`, which starts false when the list came back.
  *
- *  The page's load effect calls `returning()` once per run: on back or forward to a kept list, it's put on screen and
- *  the count it holds comes back, for a quiet reload of that many (`keepLoaded`), which catches models edited or
- *  removed since. */
+ *  The page's load effect calls `returning()` once in each run that loads (one with nothing to load, like a search
+ *  with no words, needn't): on back or forward to a kept list, it's put on screen and the count it holds comes back,
+ *  for a quiet reload of that many (`keepLoaded`), which catches models edited or removed since. A filter the page
+ *  keeps outside the address goes in `extra`, or changing it would count as the same list. */
 export function useRememberedList<T, X = undefined>({
   loadingAtFirst = false,
   extra = "",
@@ -64,6 +65,8 @@ export function useRememberedList<T, X = undefined>({
   useLayoutEffect(() => {
     const entry = key;
     return () => {
+      // Whatever's on screen now belongs to the entry being left: back to one shown before puts its own list back.
+      shownFor.current = null;
       const { key: showing, loading: halfLoaded, ...list } = shown.current;
       // Another entry's, half loaded, or empty: nothing worth putting back.
       if (showing !== entry || halfLoaded || !list.items.length) return;
