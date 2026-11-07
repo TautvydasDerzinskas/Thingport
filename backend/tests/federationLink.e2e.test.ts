@@ -1,6 +1,7 @@
-// Two real instances pairing when only one can reach the other: a home one behind NAT and one on the internet. The
-// one on the internet is told it can't reach the home one's address (FEDERATION_UNREACHABLE), so whatever it needs
-// from it has to come down the link the home one keeps open. Opt-in, with two empty, migrated databases of its own:
+// Two real instances pairing when only one can reach the other: a home one behind NAT and one on the internet. Nothing
+// answers at the home one's Public URL, not even for itself, as behind a router that can't loop back or a certificate
+// nothing trusts: it turns on all the same, and whatever the other needs from it comes down the link it keeps open.
+// Opt-in, with two empty, migrated databases of its own:
 //   FEDERATION_E2E_DB_C=postgresql://.../fed_c FEDERATION_E2E_DB_D=postgresql://.../fed_d \
 //     npx vitest run tests/federationLink.e2e.test.ts
 import { spawn, type ChildProcess } from "node:child_process";
@@ -13,7 +14,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 const DB_HOME = process.env.FEDERATION_E2E_DB_C;
 const DB_PUBLIC = process.env.FEDERATION_E2E_DB_D;
 
-type Instance = { base: string; process: ChildProcess; token?: string };
+/** `base` is where this test reaches it, `origin` its Public URL, what other instances know it by. */
+type Instance = { base: string; origin: string; process: ChildProcess; token?: string };
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -27,7 +29,7 @@ async function until<T>(label: string, fn: () => Promise<T | null | undefined | 
   }
 }
 
-function start(database: string, port: number, secret: string, env: Record<string, string> = {}): Instance {
+function start(database: string, port: number, secret: string, origin = `http://127.0.0.1:${port}`): Instance {
   const storage = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-link-e2e-"));
   const child = spawn(path.resolve("node_modules/.bin/tsx"), ["src/server.ts"], {
     cwd: path.resolve("."),
@@ -38,9 +40,8 @@ function start(database: string, port: number, secret: string, env: Record<strin
       FLARESOLVERR_URL: "",
       API_PORT: String(port),
       AUTH_SECRET: secret,
-      PUBLIC_URL: `http://127.0.0.1:${port}`,
+      PUBLIC_URL: origin,
       FEDERATION_ALLOW_LOOPBACK: "1",
-      ...env,
     },
     // FEDERATION_E2E_LOGS=<dir> keeps each instance's output there.
     stdio: process.env.FEDERATION_E2E_LOGS
@@ -51,7 +52,7 @@ function start(database: string, port: number, secret: string, env: Record<strin
         ]
       : "ignore",
   });
-  return { base: `http://127.0.0.1:${port}`, process: child };
+  return { base: `http://127.0.0.1:${port}`, origin, process: child };
 }
 
 async function call(instance: Instance, method: string, route: string, body?: unknown) {
@@ -70,10 +71,12 @@ async function call(instance: Instance, method: string, route: string, body?: un
 describe.skipIf(!DB_HOME || !DB_PUBLIC)("pairing through a link", () => {
   let home: Instance;
   let reachable: Instance;
+  const turnedOn = new Map<Instance, { reachability: { kind: string; reason: string | null } }>();
 
   beforeAll(async () => {
-    home = start(DB_HOME!, 8051, "e2e-secret-home");
-    reachable = start(DB_PUBLIC!, 8052, "e2e-secret-public", { FEDERATION_UNREACHABLE: "http://127.0.0.1:8051" });
+    // Listening on 8051, known by an address where nothing does.
+    home = start(DB_HOME!, 8051, "e2e-secret-home", "http://127.0.0.1:8059");
+    reachable = start(DB_PUBLIC!, 8052, "e2e-secret-public");
     for (const [instance, name] of [
       [home, "Hana"],
       [reachable, "Petras"],
@@ -88,6 +91,7 @@ describe.skipIf(!DB_HOME || !DB_PUBLIC)("pairing through a link", () => {
       await call(instance, "PATCH", "/social/settings", { enabled: true, chats: true });
       const on = await call(instance, "PATCH", "/federation/settings", { enabled: true });
       if (on.body?.enabled !== true) throw new Error(`${name}'s instance didn't turn on: ${JSON.stringify(on.body)}`);
+      turnedOn.set(instance, on.body);
     }
   }, 120_000);
 
@@ -97,12 +101,16 @@ describe.skipIf(!DB_HOME || !DB_PUBLIC)("pairing through a link", () => {
   });
 
   it("pairs, shares, chats and disconnects with only the home instance reaching out", async () => {
+    // Not even the home instance reached itself, and it's on: through links only.
+    expect(turnedOn.get(home)?.reachability).toMatchObject({ kind: "unreachable", reason: "refused" });
+    expect(turnedOn.get(reachable)?.reachability).toMatchObject({ kind: "local" });
     // The instance on the internet can't reach the home one to ask it.
-    const cannot = await call(reachable, "GET", `/federation/lookup?address=${encodeURIComponent(home.base)}`);
+    const cannot = await call(reachable, "GET", `/federation/lookup?address=${encodeURIComponent(home.origin)}`);
     expect(cannot.body.code).toBe("unreachable");
 
-    // The home one asks, keeping a link open.
+    // The home one asks, keeping a link open, as its lookup suggests.
     const lookup = await call(home, "GET", `/federation/lookup?address=${encodeURIComponent(reachable.base)}`);
+    expect(lookup.body.suggestLink).toBe("unreachable");
     const asked = await call(home, "POST", "/federation/connect", {
       address: reachable.base,
       fingerprint: lookup.body.fingerprint,
@@ -116,7 +124,7 @@ describe.skipIf(!DB_HOME || !DB_PUBLIC)("pairing through a link", () => {
       const found = (await call(reachable, "GET", "/federation/instances")).body.incoming[0];
       return found?.linkOpen && found;
     });
-    expect(incoming).toMatchObject({ origin: home.base, link: true, note: "From the workshop at home" });
+    expect(incoming).toMatchObject({ origin: home.origin, link: true, note: "From the workshop at home" });
     // Another request from that address with a link of its own, as from an instance with the same address on another
     // network: it's declined with the approval below.
     const elsewhere = crypto.randomBytes(32).toString("base64url");
@@ -124,12 +132,12 @@ describe.skipIf(!DB_HOME || !DB_PUBLIC)("pairing through a link", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/activity+json",
-        Signature: `keyId="${home.base}/api/ap/actors/instance#main-key",signature="x"`,
+        Signature: `keyId="${home.origin}/api/ap/actors/instance#main-key",signature="x"`,
       },
       body: JSON.stringify({
         type: "Follow",
-        id: `${home.base}/api/ap/follows/elsewhere`,
-        actor: `${home.base}/api/ap/actors/instance`,
+        id: `${home.origin}/api/ap/follows/elsewhere`,
+        actor: `${home.origin}/api/ap/actors/instance`,
         object: `${reachable.base}/api/ap/actors/instance`,
         "thingport:link": elsewhere,
       }),
@@ -154,7 +162,7 @@ describe.skipIf(!DB_HOME || !DB_PUBLIC)("pairing through a link", () => {
     });
     expect(partner).toMatchObject({ origin: reachable.base, link: "ours", linkOpen: true });
     const homeThere = (await call(reachable, "GET", "/federation/instances")).body.partners[0];
-    expect(homeThere).toMatchObject({ origin: home.base, link: "theirs", linkOpen: true });
+    expect(homeThere).toMatchObject({ origin: home.origin, link: "theirs", linkOpen: true });
 
     // Rūta at home shares a model; the instance on the internet reads it, picture and file too, through the link.
     const ruta: Instance = { ...home, token: undefined };
@@ -196,7 +204,7 @@ describe.skipIf(!DB_HOME || !DB_PUBLIC)("pairing through a link", () => {
     // Messages both ways: down the link to her, straight back.
     const found = await call(reachable, "GET", `/chats/people?q=${encodeURIComponent("Rūta")}`);
     const rutaThere = found.body.people.find((item: { remote: unknown }) => item.remote);
-    expect(rutaThere).toMatchObject({ display_name: "Rūta", remote: { instance: { origin: home.base } } });
+    expect(rutaThere).toMatchObject({ display_name: "Rūta", remote: { instance: { origin: home.origin } } });
     const direct = await call(reachable, "POST", "/chats/direct", { remote_person_id: rutaThere.id });
     expect(
       (await call(reachable, "POST", `/chats/${direct.body.id}/messages`, { body: "Hi from the club" })).status,

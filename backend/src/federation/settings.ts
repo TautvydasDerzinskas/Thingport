@@ -5,14 +5,23 @@ import { getSocialSettings } from "../services/settingsService";
  *  - `local`: its Public URL leads back here and is on a private network or VPN.
  *  - `public`: the same, on a public address. Partners that reached it confirm it (`Peer.lastInboundAt`).
  *  - `public_unverified`: a public address that didn't answer this instance itself; some routers can't loop back.
- *  - `not_set`, `elsewhere` (answers, but isn't this instance), `unreachable`: nothing else could reach it either. */
+ *  - `elsewhere` (answers, but isn't this instance), `unreachable`: nothing else could reach it either. It can still
+ *    connect to instances it reaches, keeping a link open to each, unless its address is this machine (`reserved`).
+ *  - `not_set`: no Public URL, so nothing to be known by. */
 export type ReachabilityKind = "local" | "public" | "public_unverified" | "not_set" | "elsewhere" | "unreachable";
+
+/** Why the Public URL didn't lead back here: `reserved` is this machine or a reserved range, never asked. */
+export type ProbeFailure = "reserved" | "not_found" | "timeout" | "refused" | "certificate" | "redirect" | "failed";
 
 export type Reachability = {
   kind: ReachabilityKind;
   url: string | null;
   addresses: string[];
   checkedAt: string;
+  /** For `unreachable` and `public_unverified`. */
+  reason?: ProbeFailure | null;
+  /** What the failure said: the error, the redirect's target, or the status something else answered with. */
+  detail?: string | null;
 };
 
 export type FederationSettings = {

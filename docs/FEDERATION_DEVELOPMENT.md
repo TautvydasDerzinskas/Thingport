@@ -40,7 +40,7 @@ body exactly as it came), plus the admin API in `routes/federation.ts`.
 | `peers.ts`                                 | Every change to who we're connected with: looking an instance up, asking, approving, declining, pausing, disconnecting, blocking, and what partners send.                                                                                           |
 | `delivery.ts`                              | Our own outbox: signed POSTs with retries over about three days, a partner's `404` (off there) and `401` among what's retried. Fedify's own delivery refuses private addresses, which home instances live on.                                       |
 | `kvStore.ts`                               | Fedify's key-value store in the `FederationKv` table (its Postgres package would make tables outside Prisma's migrations).                                                                                                                          |
-| `reachability.ts`                          | The check before turning on: the Public URL fetches a nonce back with this instance's secret, and its address is classified.                                                                                                                        |
+| `reachability.ts`                          | The check before turning on: the Public URL fetches a nonce back with this instance's secret, and its address is classified. Only no Public URL, or one on this machine, keeps it off.                                                              |
 | `inbox.ts`                                 | Fedify's inbox handlers, passing each activity to `peers.ts`.                                                                                                                                                                                       |
 | `apRoutes.ts`                              | The Express side: `/api/ap/instance` (what a lookup reads), the actor and the inbox, handed to Fedify at the URL the Public URL gives.                                                                                                              |
 | `publish.ts`                               | What this instance's people share, for partners' signed GETs only: the directory, models, collections, pictures, files.                                                                                                                             |
@@ -260,10 +260,10 @@ instead (`links.ts`), and the partner reaches it through that:
 - `tests/federationLinks.test.ts`: a request down an open link and its answer up, a waiting request's link and its
   end, and the address check.
 - `tests/federationLink.e2e.test.ts`: two real instances where only one can reach the other, through pairing,
-  Explore, a file, chats and disconnecting. It needs two more databases (`FEDERATION_E2E_DB_C`, `FEDERATION_E2E_DB_D`),
-  and `FEDERATION_E2E_LOGS=<dir>` keeps each instance's output. The one on the internet runs with
-  `FEDERATION_UNREACHABLE=<the other's origin>`, which makes this instance act as if it couldn't reach that origin;
-  for tests only.
+  Explore, a file, chats and disconnecting. The home one's Public URL is an address nothing answers at, not even for
+  itself, so it turns on as links only and everything reaches it down its link. It needs two more databases
+  (`FEDERATION_E2E_DB_C`, `FEDERATION_E2E_DB_D`), and `FEDERATION_E2E_LOGS=<dir>` keeps each instance's output.
+  `FEDERATION_UNREACHABLE=<an origin>` makes an instance act as if it couldn't reach that origin; for tests only.
 
 ## Gotchas
 

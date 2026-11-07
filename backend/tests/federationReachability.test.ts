@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { canTurnOn, checkReachability, probeProof } from "../src/federation/reachability";
 import type { AddressKind } from "../src/federation/addresses";
+import { FederationFetchError } from "../src/federation/fetch";
+import type { ReachabilityKind } from "../src/federation/settings";
 
 // The check without a network: the Public URL, what its host resolves to, and what answers the probe there.
 function check(options: { url: string; kind?: AddressKind; answer?: "self" | "other" | "none" }) {
@@ -56,7 +58,7 @@ describe("checkReachability", () => {
         return new Response("{}");
       }) as typeof fetch,
     });
-    expect(result.kind).toBe("unreachable");
+    expect(result).toMatchObject({ kind: "unreachable", reason: "reserved" });
     expect(probed).toBe(false);
   });
 
@@ -77,8 +79,81 @@ describe("checkReachability", () => {
     expect(result.kind).toBe("public_unverified");
   });
 
-  it("only lets reachable results turn federation on", () => {
-    expect(["local", "public", "public_unverified"].every((kind) => canTurnOn(kind as never))).toBe(true);
-    expect(["not_set", "elsewhere", "unreachable"].some((kind) => canTurnOn(kind as never))).toBe(false);
+  it("turns on unreached too, as links still work, but not without a Public URL or with one on this machine", () => {
+    const kinds: ReachabilityKind[] = ["local", "public", "public_unverified", "elsewhere", "unreachable"];
+    expect(kinds.map((kind) => canTurnOn({ kind }))).toEqual(kinds.map(() => true));
+    expect(canTurnOn({ kind: "not_set" })).toBe(false);
+    expect(canTurnOn({ kind: "unreachable", reason: "reserved" })).toBe(false);
+  });
+});
+
+// A failed request as federationFetch throws one: Node's code on the cause.
+function failing(code: string, message: string) {
+  return async () => {
+    throw new FederationFetchError(message, "network", undefined, {
+      cause: Object.assign(new Error(message), { code }),
+    });
+  };
+}
+
+function probing(fetch: (url: string, init: RequestInit) => Promise<Response>, kind: AddressKind = "local") {
+  return checkReachability({
+    publicUrl: async () => "https://thingport.lan",
+    classify: async () => ({ kind, addresses: ["192.168.1.20"] }),
+    fetch,
+    timeoutMs: 50,
+  });
+}
+
+describe("why the Public URL didn't lead back here", () => {
+  it("tells a certificate nothing trusts from no answer, without Node's hint about its own options", async () => {
+    const said =
+      "self-signed certificate; if the root CA is installed locally, try running Node.js with --use-system-ca";
+    const result = await probing(failing("DEPTH_ZERO_SELF_SIGNED_CERT", said));
+    expect(result).toMatchObject({ kind: "unreachable", reason: "certificate", detail: "self-signed certificate" });
+  });
+
+  it("tells a refused connection", async () => {
+    const result = await probing(failing("ECONNREFUSED", "connect ECONNREFUSED 192.168.1.20:443"));
+    expect(result).toMatchObject({ kind: "unreachable", reason: "refused" });
+  });
+
+  it("tells a name that doesn't resolve here", async () => {
+    const result = await checkReachability({
+      publicUrl: async () => "https://thingport.lan",
+      classify: async () => {
+        throw Object.assign(new Error("getaddrinfo ENOTFOUND thingport.lan"), { code: "ENOTFOUND" });
+      },
+    });
+    expect(result).toMatchObject({ kind: "unreachable", reason: "not_found", addresses: [] });
+  });
+
+  it("tells nothing answering in time", async () => {
+    const result = await probing(
+      (_url, init) =>
+        new Promise((_resolve, reject) => init.signal!.addEventListener("abort", () => reject(init.signal!.reason))),
+    );
+    expect(result).toMatchObject({ kind: "unreachable", reason: "timeout" });
+  });
+
+  it("tells a redirect, which isn't followed", async () => {
+    const result = await probing(async () =>
+      Response.redirect("https://login.thingport.lan/?next=%2Fapi%2Ffederation%2Fprobe", 302),
+    );
+    expect(result).toMatchObject({
+      kind: "unreachable",
+      reason: "redirect",
+      detail: "https://login.thingport.lan/?next=%2Fapi%2Ffederation%2Fprobe",
+    });
+  });
+
+  it("says what something else answered with", async () => {
+    const result = await probing(async () => new Response("<h1>Bad gateway</h1>", { status: 502 }));
+    expect(result).toMatchObject({ kind: "elsewhere", detail: "HTTP 502" });
+  });
+
+  it("keeps a public address that failed from inside unconfirmed, whatever failed: a router may answer for it", async () => {
+    const result = await probing(failing("DEPTH_ZERO_SELF_SIGNED_CERT", "self-signed certificate"), "public");
+    expect(result).toMatchObject({ kind: "public_unverified", reason: "certificate" });
   });
 });

@@ -4,11 +4,17 @@ import { apiBase, UnauthorizedError } from "./client";
 /** What the last check found about who can reach this instance. See backend/src/federation/settings.ts. */
 export type ReachabilityKind = "local" | "public" | "public_unverified" | "not_set" | "elsewhere" | "unreachable";
 
+/** Why the Public URL didn't lead back here: `reserved` is this machine or a reserved range. */
+export type ProbeFailure = "reserved" | "not_found" | "timeout" | "refused" | "certificate" | "redirect" | "failed";
+
 export type Reachability = {
   kind: ReachabilityKind;
   url: string | null;
   addresses: string[];
   checkedAt: string;
+  reason?: ProbeFailure | null;
+  /** What the failure said: the error, the redirect's target, or the status something else answered with. */
+  detail?: string | null;
 };
 
 export type FederationSettings = {
@@ -28,9 +34,9 @@ export type InstanceInfo = {
   version: string | null;
   fingerprint: string;
   http: boolean;
-  /** Whether this instance should keep a link open to it: this one isn't known to be reachable from the internet,
-   *  and it's on the internet. */
-  suggestLink?: boolean;
+  /** Why this instance should keep a link open to it, if it should: nothing reaches this one at its Public URL, or
+   *  it's on the internet and this one is on a local network only, or on a public address nothing has confirmed. */
+  suggestLink?: "unreachable" | "local" | "unconfirmed" | null;
 };
 
 export type PeerStatus = "OUTGOING" | "ACTIVE" | "PAUSED" | "BLOCKED";
@@ -189,7 +195,14 @@ export const connectionRequestsApi = {
   cancel: (id: string) => call<void>("DELETE", `/${encodeURIComponent(id)}`, undefined, "/me/connection-requests"),
 };
 
-/** Whether a check result lets federation be turned on. */
-export function canTurnOn(kind: ReachabilityKind | undefined): boolean {
-  return kind === "local" || kind === "public" || kind === "public_unverified";
+/** Whether a check result lets federation be turned on: anything but no Public URL, or one on this machine. One
+ *  nothing reaches still connects to the instances it reaches, keeping a link open to each. */
+export function canTurnOn(reachability: Reachability | null | undefined): boolean {
+  if (!reachability) return false;
+  return reachability.kind !== "not_set" && reachability.reason !== "reserved";
+}
+
+/** Whether only links work: nothing reaches this instance at its Public URL, but it can be turned on. */
+export function linksOnly(reachability: Reachability | null | undefined): boolean {
+  return (reachability?.kind === "unreachable" || reachability?.kind === "elsewhere") && canTurnOn(reachability);
 }
