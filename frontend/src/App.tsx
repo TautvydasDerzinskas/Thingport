@@ -77,6 +77,7 @@ import { resetTools } from "./hooks/useTools";
 import { resetToolsView } from "./hooks/useToolsView";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
+import ScrollReset from "./components/Layout/ScrollReset";
 
 // Heavy (three.js, its gizmos, zod), so only fetched by someone who opens it.
 const StudioPage = React.lazy(() => import("./pages/StudioPage"));
@@ -775,6 +776,7 @@ export default function App() {
   return (
     <>
       <BrowserRouter>
+        <ScrollReset />
         <AppShell
           key={sessionKey}
           isAdmin={isAdmin}
