@@ -17,12 +17,12 @@ import { AP_PREFIX, getRuntime, type Runtime } from "./runtime";
 
 /** What this instance's people share, as partners read it: the people (a directory), each one's models and public
  *  collections, and their pictures. Only an ACTIVE partner's signed request is answered, and it gets what a signed-in
- *  person here sees of the others, nothing more. Shaped like Manyfold's (models as `Service`, collections as `Group`,
- *  each with `f3di:concreteType`), so a bridge to it later reads the same; what Thingport adds is under `thingport:`. */
+ *  person here sees of the others, nothing more. People are `Person`s; models and collections are Thingport's own
+ *  `thingport:Model` and `thingport:Collection`, and whatever else Thingport says is under `thingport:` too. */
 
 export const CONTEXT = [
   "https://www.w3.org/ns/activitystreams",
-  { f3di: "http://purl.org/f3di/ns#", thingport: "https://github.com/TautvydasDerzinskas/Thingport#" },
+  { thingport: "https://github.com/TautvydasDerzinskas/Thingport#" },
 ];
 // A page a partner reads has to fit the 1 MB its fetch takes, whatever is in it.
 export const PAGE_BYTES = 900 * 1024;
@@ -166,7 +166,6 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
       return {
         id,
         type: "Person",
-        "f3di:concreteType": "User",
         preferredUsername: user.username ?? undefined,
         name: user.displayName.slice(0, NAME_MAX),
         source: markdown(user.bio),
@@ -284,8 +283,7 @@ export async function modelsPage(userId: string, after: ModelsCursor | null = nu
         });
     return {
       id: `${runtime.origin}${AP_PREFIX}/models/${print.id}`,
-      type: "Service",
-      "f3di:concreteType": "3DModel",
+      type: "thingport:Model",
       name: (print.title?.trim() || print.name).slice(0, MODEL_NAME_MAX),
       attributedTo: actorUrl(runtime, userId),
       source: markdown(print.notes?.slice(0, MODEL_DESCRIPTION_MAX) ?? null),
@@ -387,8 +385,7 @@ export async function collectionsPage(userId: string, page = 0): Promise<unknown
     next: offset + take < total ? `${base}?page=${page + 1}` : undefined,
     orderedItems: collections.map((collection) => ({
       id: collectionUrl(runtime, collection.id),
-      type: "Group",
-      "f3di:concreteType": "Collection",
+      type: "thingport:Collection",
       name: collection.name.slice(0, COLLECTION_NAME_MAX),
       attributedTo: actorUrl(runtime, userId),
       source: markdown(collection.description?.slice(0, COLLECTION_DESCRIPTION_MAX) ?? null),

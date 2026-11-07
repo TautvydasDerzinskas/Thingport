@@ -206,7 +206,6 @@ describe("what partners are shown", () => {
     const person = body.orderedItems.find((item) => item.id === `${ORIGIN}/api/ap/actors/${owner.id}`);
     expect(person).toMatchObject({
       type: "Person",
-      "f3di:concreteType": "User",
       name: "Sharer",
       "thingport:modelCount": 1,
       "thingport:collectionCount": 1,
@@ -233,12 +232,11 @@ describe("what partners are shown", () => {
     expect(icon ?? "").not.toMatch(/\?v=svg$/);
   });
 
-  it("gives only the shared models, shaped like Manyfold's", async () => {
+  it("gives only the shared models", async () => {
     const page = (await modelsPage(owner.id)) as { orderedItems: Record<string, unknown>[] };
     expect(page.orderedItems.map((item) => item.id)).toEqual([`${ORIGIN}/api/ap/models/${sharedPrint}`]);
     expect(page.orderedItems[0]).toMatchObject({
-      type: "Service",
-      "f3di:concreteType": "3DModel",
+      type: "thingport:Model",
       name: "Shared bin",
       source: { content: "A **bin**.", mediaType: "text/markdown" },
       attributedTo: `${ORIGIN}/api/ap/actors/${owner.id}`,
@@ -253,8 +251,7 @@ describe("what partners are shown", () => {
     expect(body.orderedItems).toEqual([
       expect.objectContaining({
         id: `${ORIGIN}/api/ap/collections/${collectionId}`,
-        type: "Group",
-        "f3di:concreteType": "Collection",
+        type: "thingport:Collection",
         "thingport:models": expect.objectContaining({
           totalItems: 1,
           first: expect.objectContaining({ orderedItems: [`${ORIGIN}/api/ap/models/${sharedPrint}`] }),

@@ -100,9 +100,9 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   rest at `/collections/<id>/models?offset=N`, 1,000 a page. Text, files and pictures go only as far as a partner keeps
   them (20,000 characters of a model's description, 100 files), so every page fits; `/media/<kind>/<id>`, avatars,
   uploaded covers and models' pictures; `/files/plate|file/<id>/<name>`, a shared model's files, the `url` of each
-  `Document` in its `attachment`. Shaped like Manyfold's (a model is a `Service`, a collection a `Group`, with
-  `f3di:concreteType`), Thingport's additions under `thingport:`. What's shared is decided by the same rules as Explore
-  here (`sharers`, `sharedModelsWhere` in `services/socialService.ts`).
+  `Document` in its `attachment`. People are `Person`s; a model is a `thingport:Model`, a collection a
+  `thingport:Collection`, and Thingport's other terms are under `thingport:` too. What's shared is decided by the same
+  rules as Explore here (`sharers`, `sharedModelsWhere` in `services/socialService.ts`).
 - **Keeping the copy** (`remoteIndex.ts`): `RemotePerson`, `RemoteModel`, `RemoteCollection`, read on connecting, by
   **Check connection**, every 15 minutes (the delivery worker's tick), and when Explore is opened and it's two minutes
   old. Everything a partner says is checked: ids and pictures on its own origin, text cut to size, and a listing without

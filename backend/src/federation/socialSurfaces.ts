@@ -38,7 +38,7 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   },
   "GET /explore/elsewhere/person/:id/models": {
     kind: "federates",
-    how: "A partner's person's shared models, paged in from their models collection (Service, f3di:3DModel)",
+    how: "A partner's person's shared models, paged in from their models collection (thingport:Model)",
   },
   "GET /explore/elsewhere/model/:id": {
     kind: "federates",
