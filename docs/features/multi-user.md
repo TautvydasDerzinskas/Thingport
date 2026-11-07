@@ -70,7 +70,9 @@ beside it.
   sidebar's count, as a toast with **Open**, and as one bell notification per chat. People who have Thingport open show
   as online.
 
-Everything stays on your instance: messages, models and emoji, with nothing fetched from outside it. Apps reading the
+With [connected instances](../guides/connected-instances.md#what-partners-see) on, partners' people can be written to
+and put in private rooms too, marked with their instance; what's said with them is kept on both instances. Otherwise
+everything stays on your instance: messages, models and emoji, with nothing fetched from outside it. Apps reading the
 REST API with an [API token](../guides/api-token.md) need its **Chats** permission, which a new token doesn't have.
 Turning chats off hides every chat; nothing is deleted, and it's all back when they're turned on again.
 

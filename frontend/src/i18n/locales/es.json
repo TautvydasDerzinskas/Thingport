@@ -2544,7 +2544,7 @@
         },
         "federation": {
           "label": "Instancias conectadas",
-          "summary": "Conéctate con otras instancias de Thingport, para que sus usuarios y lo que comparten aparezcan en Explorar.",
+          "summary": "Conéctate con otras instancias de Thingport, para que sus usuarios y lo que comparten aparezcan en Explorar y en Chats.",
           "infoTitle": "Qué hace conectar instancias",
           "infoPair": "Las instancias de Thingport con las que te conectas pasan a ser asociadas: sus usuarios, colecciones públicas y modelos aparecen aquí como si estuvieran en esta instancia, y los tuyos allí.",
           "infoApprove": "Apruebas cada instancia antes de que se conecte. Tus usuarios pueden pedirte que te conectes con una.",
@@ -4220,7 +4220,11 @@
           "symbols": "Símbolos",
           "flags": "Banderas"
         }
-      }
+      },
+      "instances_one": "{{count}} instancia",
+      "instances_many": "{{count}} instancias",
+      "instances_other": "{{count}} instancias",
+      "hostedOn": "Alojada en {{name}}"
     },
     "modelPicker": {
       "search": "Buscar en tu biblioteca",
@@ -5918,7 +5922,9 @@
         "ofSize": "{{received}} de {{size}}",
         "filesUnavailable": "Su instancia todavía no ofrece los archivos.",
         "copiedFrom": "Copiado de",
-        "seeOriginal": "Ver el original"
+        "seeOriginal": "Ver el original",
+        "message": "Escribir",
+        "messageFailed": "No se pudo abrir el chat"
       },
       "scope": {
         "label": "Mostrar",

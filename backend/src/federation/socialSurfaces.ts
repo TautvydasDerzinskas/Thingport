@@ -5,9 +5,7 @@
  *  - `planned`: will, in the phase named; `how` is the plan.
  *  - `local`: never crosses, with why: an admin's settings, or a person's own state about something. */
 export type FederationPlan =
-  | { kind: "federates"; how: string }
-  | { kind: "planned"; phase: 3 | 4 | 5; how: string }
-  | { kind: "local"; why: string };
+  { kind: "federates"; how: string } | { kind: "planned"; phase: 6; how: string } | { kind: "local"; why: string };
 
 export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   // routes/social.ts
@@ -68,22 +66,48 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   },
 
   // routes/chats.ts
-  "GET /chats": { kind: "planned", phase: 5, how: "Chats with partners' people listed with the rest" },
-  "GET /chats/unread": { kind: "local", why: "A person's own count of what they haven't read" },
-  "GET /chats/people": { kind: "planned", phase: 5, how: "Partners' people among those to write to" },
-  "POST /chats/direct": { kind: "planned", phase: 5, how: "Create(Note) addressed to a partner's person" },
-  "POST /chats/rooms": { kind: "planned", phase: 5, how: "A room as a Group actor partners' people can join" },
-  "PATCH /chats/rooms/:id": { kind: "planned", phase: 5, how: "Update(Group) to members' instances" },
-  "DELETE /chats/rooms/:id": { kind: "planned", phase: 5, how: "Delete(Group) to members' instances" },
-  "GET /chats/:id": { kind: "planned", phase: 5, how: "Members from partners shown with their instance" },
-  "GET /chats/:id/messages": { kind: "planned", phase: 5, how: "Partners' messages, stored here as they arrive" },
-  "POST /chats/:id/messages": {
-    kind: "planned",
-    phase: 5,
-    how: "Create(Note) to members' instances; a room's Group Announces it",
+  "GET /chats": {
+    kind: "federates",
+    how: "Chats with partners' people, and copies of rooms partners host, beside the rest",
   },
-  "DELETE /chats/:id/messages/:messageId": { kind: "planned", phase: 5, how: "Delete, a Tombstone at the other end" },
+  "GET /chats/unread": { kind: "local", why: "A person's own count of what they haven't read" },
+  "GET /chats/people": {
+    kind: "federates",
+    how: "Partners' people from the index of their directories, after this instance's",
+  },
+  "POST /chats/direct": {
+    kind: "federates",
+    how: "Direct messages with a partner's person: Create(Note) to them, attributedTo the sender, signed by the instance",
+  },
+  "POST /chats/rooms": {
+    kind: "federates",
+    how: "A room hosted here with partners' people: Update(Group) with its members to each of their instances",
+  },
+  "PATCH /chats/rooms/:id": { kind: "federates", how: "Update(Group) to every partner with people in it, or who had" },
+  "DELETE /chats/rooms/:id": { kind: "federates", how: "Delete(Group) to the partners with people in it" },
+  "GET /chats/:id": {
+    kind: "federates",
+    how: "Members on partners shown with their instance; a room hosted elsewhere's as its host said",
+  },
+  "GET /chats/:id/messages": {
+    kind: "federates",
+    how: "Partners' messages, kept here as they arrive (Create, or Announce from a room's host)",
+  },
+  "POST /chats/:id/messages": {
+    kind: "federates",
+    how: "Create(Note) to the other person's instance, to each partner in a room hosted here, or to a room's host",
+  },
+  "DELETE /chats/:id/messages/:messageId": {
+    kind: "federates",
+    how: "Delete of the Note wherever it's kept; a room's host passes it on",
+  },
   "PATCH /chats/:id/membership": { kind: "local", why: "A person's own favourite, muted and read state" },
-  "POST /chats/:id/join": { kind: "planned", phase: 5, how: "Join a partner's public room" },
-  "POST /chats/:id/leave": { kind: "planned", phase: 5, how: "Leave, told to the room's instance" },
+  "POST /chats/:id/join": {
+    kind: "local",
+    why: "Public rooms are this instance's; a partner's people are added to a room by its admin, never join on their own",
+  },
+  "POST /chats/:id/leave": {
+    kind: "federates",
+    how: "Leaving a room hosted elsewhere: Remove of the person from its Group, to its host; one hosted here, Update(Group)",
+  },
 };

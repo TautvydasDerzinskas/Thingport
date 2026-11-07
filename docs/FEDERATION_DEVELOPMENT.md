@@ -48,6 +48,7 @@ body exactly as it came), plus the admin API in `routes/federation.ts`.
 | `media.ts`                                 | Partners' pictures, fetched signed through this instance and kept, at addresses signed with its secret.                                                                                                                                             |
 | `remoteFiles.ts`                           | Partners' models' files through this instance: streamed to a viewer, or fetched whole to zip or copy. Never kept.                                                                                                                                   |
 | `remoteCopy.ts`                            | A partner's model copied into a viewer's library in the background, file by file, marked with where it came from.                                                                                                                                   |
+| `chats.ts`                                 | Chats with partners' people: sending messages, rooms and deletions, and checking what partners send.                                                                                                                                                |
 | `socialSurfaces.ts`                        | How each social route crosses to partners.                                                                                                                                                                                                          |
 
 ### Pairing
@@ -134,6 +135,31 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   than copy it again, and the copy's `copied_from_remote` (on `GET /print/:id`), which links back to the original
   while the partner still shares it and connected instances are on. Copying someone's copy here carries it over. A
   job's progress is in memory: a restart loses one under way, and leaves nothing half made.
+
+### Chats
+
+Chats reach partners' people through `chats.ts`; storing what arrives and notifying stays in `services/chatService.ts`.
+
+- **This instance speaks for its people.** Every activity is the instance actor's, signed with its key; the person a
+  `Note` is from is embedded as its `attributedTo` (`Person`, with their name, username and avatar), so nobody here
+  needs keys of their own. A partner believes a Note only of people on that partner's own origin, with one exception:
+  in a room it hosts.
+- **Direct messages**: `Create(Note)` to the person's actor URL at their instance. Each side keeps its own chat of the
+  two (`directKey` `r:<user>:<their actor URL>`, the person in `ChatRemoteMember`). Someone known only from a chat (they
+  share nothing on Explore) is a `RemotePerson` with `listed: false`: kept while a chat names them, never on Explore.
+- **Rooms** live on the instance that hosts them, which keeps the member list and is the only one that manages them.
+  An admin adds partners' people to a private room; each partner with members gets `Update` of the room's `Group`, its
+  members as `Person` attachments, on every change, and `Delete` when it goes. That partner keeps a copy
+  (`Chat.remoteApId`, `hostPeerId`, `hostMembers`) with its own people as members, and drops it when none are left.
+  Messages there go to the host as `Create(Note)` with the room as `context`; the host keeps them and passes them on to
+  its other partners as `Announce`, which they accept from the room's host whoever wrote. Leaving a room hosted
+  elsewhere sends `Remove` of the person from the Group.
+- **Deleting** sends `Delete` of the Note to wherever it's kept; a partner may delete its own people's messages, and a
+  room's host any in that room, which it passes on.
+- **Models** in a message go as `Link`s to their ids; only ones the sender shares on Explore may be sent, so the other
+  side can open them from its index (a model it hasn't read yet starts a read of that partner).
+- A message is written only while the other instance is `ACTIVE`. Disconnecting or blocking a partner keeps chats with
+  its people (each message keeps the sender as it came, `remoteSenderCard`) and drops the copies of its rooms.
 
 ### Making a social feature federate
 

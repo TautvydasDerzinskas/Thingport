@@ -76,7 +76,7 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
         password: "password123",
       });
       instance.token = registered.body.token;
-      await call(instance, "PATCH", "/social/settings", { enabled: true });
+      await call(instance, "PATCH", "/social/settings", { enabled: true, chats: true });
       const on = await call(instance, "PATCH", "/federation/settings", { enabled: true });
       if (on.body?.enabled !== true || on.body?.reachability?.kind !== "local") {
         throw new Error(`${name}'s instance didn't turn on: ${JSON.stringify(on.body)}`);
@@ -320,6 +320,61 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     expect((await call(a, "POST", `/explore/elsewhere/model/${modelId}/copy`)).body).toMatchObject({
       state: "done",
       copy_id: copied.copy_id,
+    });
+
+    // Alex writes to Rūta, found among the people to write to; it reaches her on B, and her answer him on A.
+    const found = await call(a, "GET", `/chats/people?q=${encodeURIComponent("Rūta")}`);
+    const rutaThere = found.body.people.find((item: { remote: unknown }) => item.remote);
+    expect(rutaThere).toMatchObject({ display_name: "Rūta", remote: { instance: { origin: b.base } } });
+    const direct = await call(a, "POST", "/chats/direct", { remote_person_id: rutaThere.id });
+    expect((await call(a, "POST", `/chats/${direct.body.id}/messages`, { body: "Hi Rūta! Supports?" })).status).toBe(
+      200,
+    );
+    const hers = await until("Rūta has Alex's message", async () => {
+      const chats = await call(ruta, "GET", "/chats");
+      return chats.body.chats.find(
+        (chat: { kind: string; last_message: { body: string } | null }) =>
+          chat.kind === "direct" && chat.last_message?.body === "Hi Rūta! Supports?",
+      );
+    });
+    expect(hers.other).toMatchObject({ display_name: "Alex", remote: { instance: { origin: a.base } } });
+    expect((await call(ruta, "POST", `/chats/${hers.id}/messages`, { body: "None needed" })).status).toBe(200);
+    const answer = await until("Alex has Rūta's answer", async () => {
+      const page = await call(a, "GET", `/chats/${direct.body.id}/messages`);
+      return page.body.messages.find((message: { body: string }) => message.body === "None needed");
+    });
+    expect(answer.sender).toMatchObject({ display_name: "Rūta", remote: { instance: { origin: b.base } } });
+
+    // A room hosted on A with Rūta in it: B keeps a copy for her, and what's said goes both ways.
+    const room = await call(a, "POST", "/chats/rooms", {
+      name: "Print farm",
+      is_public: false,
+      remote_member_ids: [rutaThere.id],
+    });
+    expect(room.status).toBe(200);
+    const copyThere = await until("B has the room for Rūta", async () => {
+      const chats = await call(ruta, "GET", "/chats");
+      return chats.body.chats.find((chat: { name: string | null }) => chat.name === "Print farm");
+    });
+    expect(copyThere).toMatchObject({ kind: "room", hosted_by: { origin: a.base }, joined: true, can_manage: false });
+    expect((await call(ruta, "POST", `/chats/${copyThere.id}/messages`, { body: "Baseplates tonight" })).status).toBe(
+      200,
+    );
+    const inRoom = await until("Alex has Rūta's room message", async () => {
+      const page = await call(a, "GET", `/chats/${room.body.id}/messages`);
+      return page.body.messages.find((message: { body: string }) => message.body === "Baseplates tonight");
+    });
+    expect(inRoom.sender).toMatchObject({ display_name: "Rūta" });
+    expect((await call(a, "POST", `/chats/${room.body.id}/messages`, { body: "Loading PETG" })).status).toBe(200);
+    await until("Rūta has Alex's room message", async () => {
+      const page = await call(ruta, "GET", `/chats/${copyThere.id}/messages`);
+      return page.body.messages.some((message: { body: string }) => message.body === "Loading PETG");
+    });
+    // She leaves: the room on A no longer has her.
+    expect((await call(ruta, "POST", `/chats/${copyThere.id}/leave`)).status).toBe(200);
+    await until("A's room without Rūta", async () => {
+      const detail = await call(a, "GET", `/chats/${room.body.id}`);
+      return !detail.body.members.some((member: { remote: unknown }) => member.remote) && detail.body;
     });
 
     expect((await call(a, "POST", `/federation/peers/${partner.id}/disconnect`)).status).toBe(204);

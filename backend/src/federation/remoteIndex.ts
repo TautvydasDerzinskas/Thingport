@@ -55,7 +55,26 @@ export async function syncStale(maxAgeMs = SYNC_EVERY_MS): Promise<void> {
 export async function forgetPeerContent(peerId: string): Promise<void> {
   await storing.get(peerId)?.catch(() => {});
   await forgetMedia(peerId);
+  // Rooms hosted here go on without its people, their other partners told; the copies of its rooms go. Direct messages
+  // with its people stay, as they said.
+  const rooms = await prisma.chatRemoteMember.findMany({
+    where: { person: { peerId } },
+    select: { chatId: true },
+    distinct: ["chatId"],
+  });
+  const copies = await prisma.chat.findMany({ where: { hostPeerId: peerId }, select: { id: true } });
+  await prisma.chat.deleteMany({ where: { hostPeerId: peerId } });
+  for (const copy of copies) {
+    await prisma.notification.deleteMany({ where: { type: "chat", group: { path: ["chatId"], equals: copy.id } } });
+  }
   await prisma.remotePerson.deleteMany({ where: { peerId } });
+  if (rooms.length) {
+    void import("./chats")
+      .then(async ({ roomChanged }) => {
+        for (const room of rooms) await roomChanged(room.chatId);
+      })
+      .catch(() => {});
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -279,6 +298,7 @@ async function storeIn(
       sharedAt: person["thingport:sharedAt"],
       joinedAt: person.published,
       syncedAt: readAt,
+      listed: true,
     };
     const saved = await tx.remotePerson.upsert({
       where: { apId: person.id },
@@ -338,7 +358,10 @@ async function storeIn(
   const stale = { peerId: peer.id, syncedAt: { lt: readAt } };
   await tx.remoteCollection.deleteMany({ where: stale });
   await tx.remoteModel.deleteMany({ where: { ...stale, personId: { notIn: partly } } });
-  await tx.remotePerson.deleteMany({ where: stale });
+  // Someone no longer listed whom a chat still names is kept for it, off Explore.
+  const inChats = { OR: [{ chats: { some: {} } }, { messages: { some: {} } }] } satisfies Prisma.RemotePersonWhereInput;
+  await tx.remotePerson.updateMany({ where: { ...stale, ...inChats }, data: { listed: false } });
+  await tx.remotePerson.deleteMany({ where: { ...stale, chats: { none: {} }, messages: { none: {} } } });
   // Still a partner: one blocked or disconnected meanwhile keeps nothing of this. The row stays locked until this is
   // written, so a block waits for it, and what it then forgets is everything.
   const { count: still } = await tx.peer.updateMany({

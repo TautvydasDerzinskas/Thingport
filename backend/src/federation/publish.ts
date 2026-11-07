@@ -147,14 +147,7 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
       const cover = coverOut(user);
       const ownCover = /^\/api\/covers\/([a-f0-9]{32}\.webp)$/.exec(cover.background_url ?? "")?.[1];
       const coverFile = ownCover ? coverPath(ownCover) : null;
-      const avatar = await resolveAvatar(userId).catch(() => null);
-      // A drawn avatar is versioned by what's drawn, so a new one gets a new address and isn't shown from a cache.
-      const avatarVersion =
-        avatar?.kind === "file"
-          ? mtime(avatar.path)
-          : avatar?.kind === "svg"
-            ? crypto.createHash("sha256").update(avatar.svg).digest("hex").slice(0, 16)
-            : null;
+      const icon = await avatarIcon(runtime, userId);
       return {
         id,
         type: "Person",
@@ -163,10 +156,7 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
         name: user.displayName.slice(0, NAME_MAX),
         source: markdown(user.bio),
         attachment: user.profileLinks.map((href) => ({ type: "Link", href })),
-        icon:
-          avatarVersion !== null
-            ? { type: "Image", url: mediaUrl(runtime, "avatar", userId, avatarVersion) }
-            : undefined,
+        icon: icon ? { type: "Image", url: icon } : undefined,
         image:
           coverFile && mtime(coverFile) !== null
             ? { type: "Image", url: mediaUrl(runtime, "cover", userId, mtime(coverFile)!) }
@@ -183,6 +173,31 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
     }),
   );
   return items.filter((item): item is NonNullable<typeof item> => item !== null).map(fitPerson);
+}
+
+/** Where a partner gets someone's avatar, versioned so a new one gets a new address: a drawn one by what's drawn. Null
+ *  for none. */
+export async function avatarIcon(runtime: Runtime, userId: string): Promise<string | null> {
+  const avatar = await resolveAvatar(userId).catch(() => null);
+  const version =
+    avatar?.kind === "file"
+      ? mtime(avatar.path)
+      : avatar?.kind === "svg"
+        ? crypto.createHash("sha256").update(avatar.svg).digest("hex").slice(0, 16)
+        : null;
+  return version === null ? null : mediaUrl(runtime, "avatar", userId, version);
+}
+
+/** Someone here in a chat with people on `peer`: their avatar is that partner's to show too. */
+async function inChatWith(userId: string, peerId: string): Promise<boolean> {
+  return (
+    (await prisma.chat.count({
+      where: {
+        members: { some: { userId } },
+        OR: [{ hostPeerId: peerId }, { remoteMembers: { some: { person: { peerId } } } }],
+      },
+    })) > 0
+  );
 }
 
 const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value));
@@ -319,7 +334,7 @@ export async function collectionsOf(userId: string): Promise<unknown> {
 
 /** A picture of something shared, for a partner to show its people: a sharer's avatar or uploaded cover, or a shared
  *  model's picture or plate thumbnail. Answers 404 for anything else. */
-export async function sendMedia(res: Response, kind: string, id: string): Promise<void> {
+export async function sendMedia(res: Response, kind: string, id: string, peer?: Peer | null): Promise<void> {
   const send = (file: string, type: string) => {
     res.setHeader("Content-Type", type);
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -332,7 +347,8 @@ export async function sendMedia(res: Response, kind: string, id: string): Promis
   const sharesSomething = async (userId: string) => (await sharers()).some((row) => row.userId === userId);
 
   if (kind === "avatar" || kind === "cover") {
-    if (!(await sharesSomething(id))) return notFound();
+    const chatting = kind === "avatar" && peer ? await inChatWith(id, peer.id) : false;
+    if (!chatting && !(await sharesSomething(id))) return notFound();
     if (kind === "avatar") {
       const avatar = await resolveAvatar(id).catch(() => null);
       if (avatar?.kind === "file") return send(avatar.path, "image/webp");

@@ -1,5 +1,16 @@
 import type { InboxListenerSetters } from "@fedify/fedify";
 import type * as Vocab from "@fedify/vocab";
+import { chatGoneFor, messageArrived, messageDeletedThere } from "../services/chatService";
+import {
+  deletionFrom,
+  leavingFrom,
+  placeNote,
+  roomChanged,
+  roomFrom,
+  type IncomingGroup,
+  type IncomingNote,
+  type IncomingPerson,
+} from "./chats";
 import { onAcceptReceived, onDisconnectReceived, onFollowReceived, onRejectReceived } from "./peers";
 
 /** What partners send, already verified by Fedify against the key compared when connecting (a stranger's activity
@@ -34,9 +45,114 @@ export function registerInbox(listeners: InboxListenerSetters<void>, vocab: type
         await onDisconnectReceived(block.actorId, null, true);
       }
     })
+    // Chats with partners' people: see chats.ts, which checks each against the partner it came from.
+    .on(vocab.Create, async (ctx, create) => {
+      const note = await noteIn(vocab, ctx.contextLoader, await create.getObject(embedded(ctx)).catch(() => null));
+      if (!create.actorId || !note) return;
+      const placed = await placeNote(create.actorId, note, false);
+      if (placed) await messageArrived({ ...placed, peerId: placed.peer.id });
+    })
+    .on(vocab.Announce, async (ctx, announce) => {
+      const note = await noteIn(vocab, ctx.contextLoader, await announce.getObject(embedded(ctx)).catch(() => null));
+      if (!announce.actorId || !note) return;
+      const placed = await placeNote(announce.actorId, note, true);
+      if (placed) await messageArrived({ ...placed, peerId: placed.peer.id, hostedHere: false });
+    })
+    .on(vocab.Update, async (ctx, update) => {
+      const object = await update.getObject(embedded(ctx)).catch(() => null);
+      if (!update.actorId || !(object instanceof vocab.Group) || !object.id) return;
+      const group: IncomingGroup = {
+        id: object.id.href,
+        name: object.name?.toString() ?? null,
+        summary: object.summary?.toString() ?? null,
+        members: [],
+      };
+      for await (const item of object.getAttachments(embedded(ctx))) {
+        if (item instanceof vocab.Person && item.id) group.members.push(await personIn(vocab, ctx.contextLoader, item));
+        if (group.members.length >= 500) break;
+      }
+      const room = await roomFrom(update.actorId, group);
+      if (room?.removed.length) await chatGoneFor(room.chatId, room.removed);
+    })
+    .on(vocab.Delete, async (_ctx, deletion) => {
+      if (!deletion.actorId || !deletion.objectId) return;
+      const gone = await deletionFrom(deletion.actorId, deletion.objectId.href);
+      if (gone?.kind === "room") await chatGoneFor(gone.chatId, gone.members);
+      if (gone?.kind === "message") {
+        await messageDeletedThere(gone.chatId, gone.messageId, { hostedHere: gone.hostedHere, peerId: gone.peer.id });
+      }
+    })
+    .on(vocab.Remove, async (_ctx, remove) => {
+      if (!remove.actorId || !remove.objectId || !remove.targetId) return;
+      const roomId = await leavingFrom(remove.actorId, remove.objectId.href, remove.targetId.href);
+      if (roomId) await roomChanged(roomId);
+    })
     .onError((_ctx, error) => {
       console.error("[federation] Failed to handle an activity:", error);
     });
+}
+
+type ContextLoader = Parameters<Vocab.Object["getAttribution"]>[0] extends infer O
+  ? O extends { contextLoader?: infer L }
+    ? L
+    : never
+  : never;
+
+/** Objects as an activity carries them, never fetched: what partners say is checked by chats.ts, not refetched. */
+const embedded = (ctx: { contextLoader: unknown }) => ({
+  documentLoader: noFetch,
+  contextLoader: ctx.contextLoader as ContextLoader,
+  crossOrigin: "trust" as const,
+});
+
+async function personIn(vocab: typeof Vocab, contextLoader: unknown, person: Vocab.Person): Promise<IncomingPerson> {
+  const icon = await person.getIcon(embedded({ contextLoader })).catch(() => null);
+  const url = icon instanceof vocab.Image ? icon.url : null;
+  return {
+    id: person.id!.href,
+    name: person.name?.toString() ?? null,
+    preferredUsername: person.preferredUsername?.toString() ?? null,
+    icon: url instanceof URL ? url.href : (url?.href?.href ?? null),
+  };
+}
+
+async function noteIn(vocab: typeof Vocab, contextLoader: unknown, object: unknown): Promise<IncomingNote | null> {
+  if (!(object instanceof vocab.Note) || !object.id) return null;
+  const options = embedded({ contextLoader });
+  const author = await object.getAttribution(options).catch(() => null);
+  const attachments: IncomingNote["attachments"] = [];
+  for await (const item of object.getAttachments(options)) {
+    if (item instanceof vocab.Link && item.href)
+      attachments.push({ href: item.href.href, name: item.name?.toString() ?? "" });
+    if (attachments.length >= 10) break;
+  }
+  const source = object.source;
+  const text =
+    source?.content && (!source.mediaType || source.mediaType === "text/plain")
+      ? source.content.toString()
+      : textOf(object.content?.toString() ?? "");
+  return {
+    id: object.id.href,
+    attributedTo: author instanceof vocab.Person && author.id ? await personIn(vocab, contextLoader, author) : null,
+    to: object.toIds.map((url) => url.href),
+    context: object.contextIds[0]?.href ?? null,
+    text,
+    attachments,
+  };
+}
+
+/** A Note's HTML as the text it says: line breaks kept, tags dropped. */
+function textOf(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>\s*<p[^>]*>/gi, "\n\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .trim();
 }
 
 // An Undo names what it undoes inline; nothing is fetched to find out.

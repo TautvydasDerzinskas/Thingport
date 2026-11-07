@@ -1,14 +1,13 @@
 # Connected instances
 
 Thingport instances can connect with each other. Two connected instances are partners: their people, public
-collections and models show up on each other's Explore, as if everyone were on one instance. You approve every
+collections and models show up on each other's Explore, and their people can write to each other, as if everyone were
+on one instance. You approve every
 instance before it connects, and nothing private ever leaves: libraries, private collections and settings stay where
 they are.
 
 It's off by default, and most instances never need it. While it's off nothing about it answers on the network, so
 nothing tells a visitor this instance could connect at all.
-
-> Chats across instances come in a later release.
 
 ## Before you start
 
@@ -111,7 +110,13 @@ copied to your library.
   file by file, and carries on if you leave the page. It says where it came from, with a link to the original while
   it's still shared; it stays when the partner changes it, stops sharing it or disconnects. A copy is made only once
   every file has arrived, and no file may be bigger than an upload here.
-- **Paused** partners are hidden from Explore until **Resume**; **Disconnect** and **Block** remove everything of theirs.
+- **Chats reach partners' people**, with chats on at both instances. They're in **New message** with their instance,
+  and a partner's profile has **Message**. An admin can put partners' people in a private room: the room stays on
+  this instance, and their instance keeps a copy that gets its messages and sends theirs back. A room a partner hosts
+  shows with **Hosted on** and its admin manages it. Only models you share on Explore can be sent elsewhere. Messages
+  are kept on both instances, and stay when a partner disconnects; while it's paused, nothing more can be sent there.
+- **Paused** partners are hidden from Explore until **Resume**; **Disconnect** and **Block** remove everything of theirs
+  but the chats.
 
 ## Partners
 

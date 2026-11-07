@@ -16,6 +16,7 @@ import { chatsApi, type ChatPerson } from "../../api/chats";
 import { UnauthorizedError } from "../../api/client";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import HelpTip from "../HelpTip";
+import InstanceChip from "../InstanceChip";
 import { ListRowSkeletons } from "../ListSkeleton";
 import UserAvatar from "../UserAvatar";
 import { PersonAvatar } from "./ChatAvatar";
@@ -34,8 +35,10 @@ type Props = {
 };
 
 const NOBODY: string[] = [];
+const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: "text.secondary" } as const;
 
-/** The instance's other users, found by any part of their name or their whole email. */
+/** The instance's other users, found by any part of their name or their whole email; then, while connected instances
+ *  are on, people on partner instances, each with theirs. */
 export default function PeoplePicker({
   onPick,
   selected,
@@ -154,12 +157,27 @@ export default function PeoplePicker({
                   />
                 )}
                 <PersonAvatar person={person} size={32} />
-                <ListItemText
-                  primary={person.display_name}
-                  secondary={person.online ? t("chats.online") : undefined}
-                  primaryTypographyProps={{ variant: "body2", noWrap: true }}
-                  secondaryTypographyProps={{ variant: "caption", color: "success.main" }}
-                />
+                {person.remote ? (
+                  <>
+                    <ListItemText
+                      primary={person.display_name}
+                      secondary={person.remote.handle}
+                      primaryTypographyProps={{ variant: "body2", noWrap: true }}
+                      secondaryTypographyProps={{ variant: "caption", noWrap: true, sx: monoSx }}
+                      sx={{ minWidth: 0 }}
+                    />
+                    <Box sx={{ flexShrink: 0, maxWidth: "40%" }}>
+                      <InstanceChip instance={person.remote.instance} label={person.remote.instance.name} />
+                    </Box>
+                  </>
+                ) : (
+                  <ListItemText
+                    primary={person.display_name}
+                    secondary={person.online ? t("chats.online") : undefined}
+                    primaryTypographyProps={{ variant: "body2", noWrap: true }}
+                    secondaryTypographyProps={{ variant: "caption", color: "success.main" }}
+                  />
+                )}
               </ListItemButton>
             ))}
           </List>

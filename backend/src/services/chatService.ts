@@ -1,11 +1,29 @@
-import { Prisma, type Chat, type ChatAttachment, type ChatMember, type ChatMessage } from "@prisma/client";
+import {
+  Prisma,
+  type Chat,
+  type ChatAttachment,
+  type ChatMember,
+  type ChatMessage,
+  type Peer,
+  type RemoteModel,
+  type RemotePerson,
+} from "@prisma/client";
 import { prisma } from "../db";
 import type { UserCardOut } from "../dto";
+import type { Arrival, PersonCard } from "../federation/chats";
+import { mediaAddress } from "../federation/media";
 import { createKeyedLock } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { createNotification } from "./notificationService";
-import { getSocialSettings } from "./settingsService";
-import { readablePrintOuts, userCards } from "./socialService";
+import { getPublicUrl, getSocialSettings } from "./settingsService";
+import { readablePrintOuts, sharedModelsWhere, userCards } from "./socialService";
+
+// Partners' people in chats go over ActivityPub (federation/chats.ts), loaded only once there's a chat with one.
+const federation = () => import("../federation/chats");
+const sentOn = (what: string, task: (wire: Awaited<ReturnType<typeof federation>>) => Promise<unknown>) =>
+  void federation()
+    .then(task)
+    .catch((err) => console.error(`[federation] Couldn't send ${what} on:`, err));
 
 // Chats, while an admin has them on under social features: direct messages between two of the instance's users, and
 // rooms an admin makes, public (anyone may read and join) or private (only the users the admin picked). Nothing is
@@ -22,6 +40,8 @@ const POLL_PAGE_SIZE = 200;
 const MAX_DELETED_IDS = 500;
 const MAX_DIRECT_CHATS = 200;
 const MAX_PEOPLE = 50;
+// Partners' people, after this instance's own: a few, so they show however many are here.
+const MAX_PEOPLE_ELSEWHERE = 20;
 const MAX_ROOM_MEMBERS = 500;
 
 /** Seen this recently, someone shows as online: a little over two of the unread poll's rounds. */
@@ -36,7 +56,17 @@ const PREVIEW_LENGTH = 140;
 
 export type Viewer = { id: string; isAdmin: boolean };
 
-export type ChatPersonOut = UserCardOut & { online: boolean };
+/** Someone on a partner instance, as a chat shows them. */
+export type RemoteRef = {
+  /** username@their-instance, when known. */
+  handle: string | null;
+  instance: { name: string; origin: string };
+  /** Their page on Explore, while they share something there. */
+  profile_id: string | null;
+};
+
+export type ChatPersonOut = UserCardOut & { online: boolean; remote: RemoteRef | null };
+export type ChatSenderOut = UserCardOut & { remote: RemoteRef | null };
 
 export type ChatAttachmentOut = {
   id: string;
@@ -44,14 +74,23 @@ export type ChatAttachmentOut = {
   name: string;
   /** The model as the viewer may open it: whose (null for their own), its picture. Null once it's deleted, and in a
    *  chat list's last message, which only names it. */
-  model: { id: string; name: string; thumb_url: string | null; owner: UserCardOut | null } | null;
+  model: {
+    id: string;
+    name: string;
+    thumb_url: string | null;
+    owner: UserCardOut | null;
+    /** A partner's model, sent from there: it opens on Explore (`/explore/elsewhere/models/:id`). */
+    remote: boolean;
+    /** Which partner it's on, for a partner's. */
+    instance: { name: string; origin: string } | null;
+  } | null;
 };
 
 export type ChatMessageOut = {
   id: string;
   chat_id: string;
-  /** Null once their account is gone. */
-  sender: UserCardOut | null;
+  /** Null once their account is gone. From someone elsewhere: who, as the message said if they're no longer known. */
+  sender: ChatSenderOut | null;
   /** Empty once deleted, and when the message is only models. */
   body: string;
   /** Models of the sender's that came with it, in order. None once it's deleted. */
@@ -70,6 +109,10 @@ export type ChatOut = {
   /** Direct messages: who with, null once their account is gone. */
   other: ChatPersonOut | null;
   member_count: number;
+  /** How many instances its members are on: 1 unless partners' people are in it. */
+  instances: number;
+  /** A room hosted on a partner instance: which. Its host keeps it; nothing here manages it. */
+  hosted_by: { name: string; origin: string } | null;
   /** The viewer is a member: they can write, and are notified. */
   joined: boolean;
   /** The viewer may read its messages: a member, or anyone for a public room. */
@@ -114,9 +157,44 @@ async function people(userIds: string[]): Promise<Map<string, ChatPersonOut>> {
   const now = Date.now();
   const seenOf = new Map(seen.map((user) => [user.id, user.lastSeenAt]));
   return new Map(
-    [...cards].map(([id, card]) => [id, { ...card, online: isOnline(seenOf.get(id) ?? null, now) }] as const),
+    [...cards].map(
+      ([id, card]) => [id, { ...card, online: isOnline(seenOf.get(id) ?? null, now), remote: null }] as const,
+    ),
   );
 }
+
+const hostOf = (origin: string) => new URL(origin).host;
+
+function remotePersonOut(person: RemotePerson & { peer: Peer }): ChatPersonOut {
+  const host = hostOf(person.peer.origin);
+  return {
+    id: person.id,
+    display_name: person.displayName,
+    avatar_url: mediaAddress(person.avatarUrl),
+    online: false,
+    remote: {
+      handle: person.username ? `${person.username}@${host}` : null,
+      instance: { name: person.peer.name ?? host, origin: person.peer.origin },
+      profile_id: person.listed && person.peer.status === "ACTIVE" ? person.id : null,
+    },
+  };
+}
+
+/** Someone elsewhere as a message or a room's host named them, for one not (or no longer) known here. */
+function cardPersonOut(card: PersonCard): ChatPersonOut {
+  return {
+    id: card.id,
+    display_name: card.name,
+    avatar_url: null,
+    online: false,
+    remote: { handle: card.handle, instance: { name: card.instance, origin: card.origin }, profile_id: null },
+  };
+}
+
+const readCard = (value: Prisma.JsonValue | null): PersonCard | null =>
+  value && typeof value === "object" && !Array.isArray(value) && typeof (value as PersonCard).id === "string"
+    ? (value as PersonCard)
+    : null;
 
 /** Records that `userId` has Thingport in front of them, at most every SEEN_WRITE_MS. */
 export async function touchSeen(userId: string): Promise<void> {
@@ -131,8 +209,12 @@ export async function touchSeen(userId: string): Promise<void> {
  *  message, polled often, where reading each model whole would cost too much). */
 async function messageOuts(messages: ChatMessage[], viewerId?: string): Promise<ChatMessageOut[]> {
   const ids = messages.filter((message) => !message.deletedAt).map((message) => message.id);
-  const [senders, attachments] = await Promise.all([
+  const remoteIds = [...new Set(messages.flatMap((message) => message.remoteSenderId ?? []))];
+  const [senders, remoteSenders, attachments] = await Promise.all([
     userCards(messages.flatMap((message) => message.senderId ?? [])),
+    remoteIds.length
+      ? prisma.remotePerson.findMany({ where: { id: { in: remoteIds } }, include: { peer: true } })
+      : ([] as (RemotePerson & { peer: Peer })[]),
     ids.length
       ? prisma.chatAttachment.findMany({
           where: { messageId: { in: ids } },
@@ -141,24 +223,60 @@ async function messageOuts(messages: ChatMessage[], viewerId?: string): Promise<
       : ([] as ChatAttachment[]),
   ]);
   const printIds = [...new Set(attachments.flatMap((attachment) => attachment.printId ?? []))];
-  const models = new Map(
-    viewerId && printIds.length ? (await readablePrintOuts(viewerId, printIds)).map((out) => [out.id, out]) : [],
-  );
+  const remoteModelIds = [...new Set(attachments.flatMap((attachment) => attachment.remoteModelApId ?? []))];
+  const [models, remoteModels] = await Promise.all([
+    viewerId && printIds.length
+      ? readablePrintOuts(viewerId, printIds).then((outs) => new Map(outs.map((out) => [out.id, out])))
+      : new Map<string, Awaited<ReturnType<typeof readablePrintOuts>>[number]>(),
+    viewerId && remoteModelIds.length
+      ? prisma.remoteModel
+          .findMany({ where: { apId: { in: remoteModelIds }, peer: { status: "ACTIVE" } }, include: { peer: true } })
+          .then((rows) => new Map(rows.map((row) => [row.apId, row])))
+      : new Map<string, RemoteModel & { peer: Peer }>(),
+  ]);
+  const remoteOf = new Map(remoteSenders.map((person) => [person.id, remotePersonOut(person)]));
+  const senderOf = (message: ChatMessage): ChatSenderOut | null => {
+    if (message.senderId) {
+      const card = senders.get(message.senderId);
+      return card ? { ...card, remote: null } : null;
+    }
+    const known = message.remoteSenderId ? remoteOf.get(message.remoteSenderId) : undefined;
+    if (known) return known;
+    const card = readCard(message.remoteSenderCard);
+    return card ? cardPersonOut(card) : null;
+  };
   return messages.map((message) => ({
     id: message.id,
     chat_id: message.chatId,
-    sender: message.senderId ? (senders.get(message.senderId) ?? null) : null,
+    sender: senderOf(message),
     body: message.deletedAt ? "" : message.body,
     attachments: attachments
       .filter((attachment) => attachment.messageId === message.id)
       .map((attachment) => {
         const model = attachment.printId ? models.get(attachment.printId) : undefined;
+        const remote = attachment.remoteModelApId ? remoteModels.get(attachment.remoteModelApId) : undefined;
         return {
           id: attachment.id,
           name: attachment.name,
           model: model
-            ? { id: model.id, name: model.title || model.name, thumb_url: model.thumb_url, owner: model.owner ?? null }
-            : null,
+            ? {
+                id: model.id,
+                name: model.title || model.name,
+                thumb_url: model.thumb_url,
+                owner: model.owner ?? null,
+                remote: false,
+                instance: null,
+              }
+            : remote
+              ? {
+                  id: remote.id,
+                  name: remote.title,
+                  thumb_url: mediaAddress(remote.images[0]),
+                  owner: null,
+                  remote: true,
+                  instance: { name: remote.peer.name ?? hostOf(remote.peer.origin), origin: remote.peer.origin },
+                }
+              : null,
         };
       }),
     deleted: message.deletedAt !== null,
@@ -198,27 +316,45 @@ async function lastMessages(chatIds: string[]): Promise<Map<string, ChatMessage>
   return new Map(rows.map((row) => [row.chatId, row]));
 }
 
-type ChatRow = Chat & { members: ChatMember[]; _count: { members: number } };
+type ChatRow = Chat & {
+  members: ChatMember[];
+  hostPeer: Pick<Peer, "name" | "origin" | "status"> | null;
+  _count: { members: number; remoteMembers: number };
+};
 
 const CHAT_INCLUDE = (viewerId: string) =>
   ({
     // Only the viewer's own row: a room's members are read when it's opened.
     members: { where: { userId: viewerId } },
-    _count: { select: { members: true } },
+    hostPeer: { select: { name: true, origin: true, status: true } },
+    _count: { select: { members: true, remoteMembers: true } },
   }) satisfies Prisma.ChatInclude;
+
+/** A room hosted elsewhere's members, as its host last said. */
+const hostMembersOf = (chat: Chat): PersonCard[] =>
+  Array.isArray(chat.hostMembers)
+    ? (chat.hostMembers as unknown[]).flatMap((value) => readCard(value as never) ?? [])
+    : [];
 
 /** What `viewer` sees of each chat, in the order given. */
 async function chatOuts(viewer: Viewer, chats: ChatRow[]): Promise<ChatOut[]> {
   if (!chats.length) return [];
   const ids = chats.map((chat) => chat.id);
   const directIds = chats.filter((chat) => chat.kind === "DIRECT").map((chat) => chat.id);
-  const [unread, latest, others] = await Promise.all([
+  const withRemote = chats.filter((chat) => chat._count.remoteMembers > 0).map((chat) => chat.id);
+  const [unread, latest, others, remotes] = await Promise.all([
     unreadCounts(viewer.id, ids),
     lastMessages(ids),
     directIds.length
       ? prisma.chatMember.findMany({
           where: { chatId: { in: directIds }, userId: { not: viewer.id } },
           select: { chatId: true, userId: true },
+        })
+      : [],
+    withRemote.length
+      ? prisma.chatRemoteMember.findMany({
+          where: { chatId: { in: withRemote } },
+          include: { person: { include: { peer: true } } },
         })
       : [],
   ]);
@@ -233,14 +369,26 @@ async function chatOuts(viewer: Viewer, chats: ChatRow[]): Promise<ChatOut[]> {
     const room = chat.kind === "ROOM";
     const otherId = otherOf.get(chat.id);
     const canRead = Boolean(own) || (room && chat.isPublic);
+    const remoteHere = remotes.filter((row) => row.chatId === chat.id);
+    const hosted = chat.hostPeer ? hostMembersOf(chat) : [];
+    const remoteOther = !room && remoteHere[0] ? remotePersonOut(remoteHere[0].person) : null;
+    const instances = chat.hostPeer
+      ? new Set(hosted.map((member) => member.origin)).size || 1
+      : 1 + new Set(remoteHere.map((row) => row.person.peerId)).size;
     return {
       id: chat.id,
       kind: room ? "room" : "direct",
       name: room ? chat.name : null,
       description: chat.description,
       is_public: room && chat.isPublic,
-      other: otherId ? (persons.get(otherId) ?? null) : null,
-      member_count: chat._count.members,
+      other: otherId ? (persons.get(otherId) ?? null) : remoteOther,
+      member_count: chat.hostPeer
+        ? Math.max(hosted.length, chat._count.members)
+        : chat._count.members + remoteHere.length,
+      instances,
+      hosted_by: chat.hostPeer
+        ? { name: chat.hostPeer.name ?? hostOf(chat.hostPeer.origin), origin: chat.hostPeer.origin }
+        : null,
       joined: Boolean(own),
       readable: canRead,
       favorite: own?.favorite ?? false,
@@ -249,7 +397,7 @@ async function chatOuts(viewer: Viewer, chats: ChatRow[]): Promise<ChatOut[]> {
       // An admin managing a private room they're not in sees that it's there, not what's said in it.
       last_message: canRead ? (latestOf.get(chat.id) ?? null) : null,
       last_message_at: chat.lastMessageAt.toISOString(),
-      can_manage: room && viewer.isAdmin,
+      can_manage: room && viewer.isAdmin && !chat.hostPeer,
     };
   });
 }
@@ -308,7 +456,35 @@ export async function getChat(viewer: Viewer, chatId: string): Promise<ChatDetai
   ).map((member) => member.userId);
   const persons = await people(memberIds);
   const members = memberIds.flatMap((id) => persons.get(id) ?? []);
-  return { ...out, members: members.toSorted((a, b) => a.display_name.localeCompare(b.display_name)) };
+  return { ...out, members: [...members, ...(await membersElsewhere(chat))].toSorted(byName) };
+}
+
+const byName = (a: ChatPersonOut, b: ChatPersonOut) => a.display_name.localeCompare(b.display_name);
+
+/** A chat's members on partner instances: its remote members, or for a room hosted elsewhere, everyone its host named
+ *  but this instance's own (who are its members here). */
+async function membersElsewhere(chat: ChatRow): Promise<ChatPersonOut[]> {
+  if (!chat.hostPeer) {
+    if (!chat._count.remoteMembers) return [];
+    const rows = await prisma.chatRemoteMember.findMany({
+      where: { chatId: chat.id },
+      include: { person: { include: { peer: true } } },
+      take: MAX_ROOM_MEMBERS,
+    });
+    return rows.map((row) => remotePersonOut(row.person));
+  }
+  const publicUrl = await getPublicUrl();
+  const own = publicUrl ? new URL(publicUrl).origin : "";
+  const cards = hostMembersOf(chat).filter((card) => card.origin !== own);
+  const known = await prisma.remotePerson.findMany({
+    where: { apId: { in: cards.map((card) => card.id) }, peer: { status: "ACTIVE" } },
+    include: { peer: true },
+  });
+  const knownOf = new Map(known.map((person) => [person.apId, person]));
+  return cards.map((card) => {
+    const person = knownOf.get(card.id);
+    return person ? remotePersonOut(person) : cardPersonOut(card);
+  });
 }
 
 export type MessagePage = {
@@ -442,9 +618,11 @@ export async function postMessage(
     throw new HttpError(400, `A message is at most ${MESSAGE_MAX_LENGTH} characters`);
   if (wanted.length > MAX_ATTACHMENTS) throw new HttpError(400, `A message carries at most ${MAX_ATTACHMENTS} models`);
   const chat = await memberOf(viewer, chatId);
-  if (chat.kind === "DIRECT" && chat._count.members < 2) {
+  const elsewhere = Boolean(chat.hostPeer) || chat._count.remoteMembers > 0;
+  if (chat.kind === "DIRECT" && chat._count.members < 2 && !chat._count.remoteMembers) {
     throw new HttpError(409, "This person's account is gone", "recipient_gone");
   }
+  if (elsewhere) await assertPartnerThere(chat);
   // Only their own: someone else's model, shared with them, could be made private again while still sent on.
   const models = wanted.length
     ? await prisma.print.findMany({
@@ -454,6 +632,15 @@ export async function postMessage(
     : [];
   if (models.length !== wanted.length) {
     throw new HttpError(400, "Only models in your own library can be sent", "not_own_model");
+  }
+  // Elsewhere, only what that instance's people can open: what the sender shares on Explore.
+  if (elsewhere && wanted.length) {
+    const shared = await prisma.print.count({
+      where: { id: { in: wanted }, AND: [await sharedModelsWhere(viewer.id)] },
+    });
+    if (shared !== wanted.length) {
+      throw new HttpError(400, "Only models you share on Explore can be sent elsewhere", "not_shared_model");
+    }
   }
   const nameOf = new Map(models.map((model) => [model.id, model.title || model.name]));
   const message = await prisma.$transaction(async (tx) => {
@@ -475,7 +662,24 @@ export async function postMessage(
     return created;
   });
   void notifyMessage(chat, message).catch((err) => console.error("Failed to notify about a chat message:", err));
+  if (elsewhere) sentOn("a message", (wire) => wire.messageWritten(chatId, message.id));
   return (await messageOuts([message], viewer.id))[0];
+}
+
+/** A chat with partners' people is written in only while their instance is connected: what's sent meanwhile would be
+ *  read here only. */
+async function assertPartnerThere(chat: ChatRow): Promise<void> {
+  const unreachable = () => new HttpError(409, "Their instance isn't connected right now", "partner_unavailable");
+  if (chat.hostPeer) {
+    if (chat.hostPeer.status !== "ACTIVE") throw unreachable();
+    return;
+  }
+  if (chat.kind !== "DIRECT") return;
+  const other = await prisma.chatRemoteMember.findFirst({
+    where: { chatId: chat.id },
+    select: { person: { select: { peer: { select: { status: true } } } } },
+  });
+  if (other?.person.peer.status !== "ACTIVE") throw unreachable();
 }
 
 /** Their own message, or for an admin any message in a room. Its text goes; that there was one stays. */
@@ -484,9 +688,18 @@ export async function deleteMessage(viewer: Viewer, chatId: string, messageId: s
   const message = await prisma.chatMessage.findFirst({ where: { id: messageId, chatId } });
   if (!message) throw new HttpError(404, "Message not found");
   const own = message.senderId === viewer.id && chat.members.length > 0;
-  if (!own && !(chat.kind === "ROOM" && viewer.isAdmin)) throw new HttpError(403, "Only its sender can delete it");
+  // A room hosted elsewhere is its host's to keep tidy: here, only one's own.
+  const moderates = chat.kind === "ROOM" && viewer.isAdmin && !chat.hostPeer;
+  if (!own && !moderates) throw new HttpError(403, "Only its sender can delete it");
   if (message.deletedAt) return;
-  // Its models with it: whoever could open them through it no longer can.
+  await eraseMessage(messageId);
+  if (chat.hostPeer || chat._count.remoteMembers > 0) {
+    sentOn("a deletion", (wire) => wire.messageDeleted(chatId, messageId));
+  }
+}
+
+/** Its text goes, and its models with it: whoever could open them through it no longer can. That there was one stays. */
+async function eraseMessage(messageId: string): Promise<void> {
   await prisma.$transaction([
     prisma.chatMessage.update({ where: { id: messageId }, data: { body: "", deletedAt: new Date() } }),
     prisma.chatAttachment.deleteMany({ where: { messageId } }),
@@ -518,6 +731,7 @@ export async function joinRoom(viewer: Viewer, chatId: string): Promise<ChatOut>
   if (chat.kind !== "ROOM" || !chat.isPublic) throw new HttpError(403, "Only a public room can be joined");
   // What was said before they came isn't news to them.
   await prisma.chatMember.createMany({ data: [{ chatId, userId: viewer.id }], skipDuplicates: true });
+  if (chat._count.remoteMembers) sentOn("a room", (wire) => wire.roomChanged(chatId));
   const [out] = await chatOuts(viewer, [await visibleChat(viewer, chatId)]);
   return out;
 }
@@ -527,6 +741,13 @@ export async function leaveRoom(viewer: Viewer, chatId: string): Promise<void> {
   if (chat.kind !== "ROOM") throw new HttpError(400, "Direct messages can't be left");
   await prisma.chatMember.delete({ where: { chatId_userId: { chatId, userId: viewer.id } } });
   await forget(chatId, [viewer.id]);
+  if (chat.hostPeer) {
+    // Its host takes them out; with none of this instance's people left in it, so does the copy here.
+    sentOn("leaving a room", (wire) => wire.roomLeft(chat, viewer.id));
+    await prisma.chat.deleteMany({ where: { id: chatId, members: { none: {} } } });
+  } else if (chat._count.remoteMembers) {
+    sentOn("a room", (wire) => wire.roomChanged(chatId));
+  }
 }
 
 const directKey = (a: string, b: string) => [a, b].toSorted().join(":");
@@ -559,9 +780,52 @@ export async function openDirect(viewer: Viewer, userId: string): Promise<ChatOu
   return out;
 }
 
+/** The viewer's direct messages with someone on a partner instance, started if they have none. */
+export async function openRemoteDirect(viewer: Viewer, personId: string): Promise<ChatOut> {
+  const person = await prisma.remotePerson.findFirst({ where: { id: personId, peer: { status: "ACTIVE" } } });
+  if (!person) throw new HttpError(404, "User not found");
+  const { directChatWith } = await federation();
+  const chatId = await directChatWith(viewer.id, person);
+  // Started by the viewer, so it's listed before anything's said in it, as one with someone here is.
+  await prisma.chat.updateMany({ where: { id: chatId, createdById: null }, data: { createdById: viewer.id } });
+  const [out] = await chatOuts(viewer, [await visibleChat(viewer, chatId)]);
+  return out;
+}
+
+/** People on partner instances, as Explore lists them, by any part of their name or handle. */
+async function searchPeopleElsewhere(term: string, take: number): Promise<ChatPersonOut[]> {
+  if (take <= 0) return [];
+  const rows = await prisma.remotePerson.findMany({
+    where: {
+      listed: true,
+      peer: { status: "ACTIVE" },
+      ...(term
+        ? {
+            OR: [
+              { displayName: { contains: term, mode: "insensitive" } },
+              { username: { contains: term.replace(/^@/, "").split("@")[0], mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: [{ displayName: "asc" }, { id: "asc" }],
+    take,
+    include: { peer: true },
+  });
+  return rows.map(remotePersonOut);
+}
+
 /** The instance's other users, by any part of their name, or by their whole email -- part of one would let anyone
- *  spell out the others' a letter at a time. Everyone, by name, for no query. Never their emails. */
+ *  spell out the others' a letter at a time; then, while connected instances are on, partners' people. Everyone, by
+ *  name, for no query. Never their emails. */
 export async function searchPeople(viewer: Viewer, query: string): Promise<ChatPersonOut[]> {
+  const local = await searchPeopleHere(viewer, query);
+  const { isFederationLive } = await import("../federation/settings");
+  if (!(await isFederationLive())) return local;
+  return [...local, ...(await searchPeopleElsewhere(query.trim().slice(0, 200), MAX_PEOPLE_ELSEWHERE))];
+}
+
+async function searchPeopleHere(viewer: Viewer, query: string): Promise<ChatPersonOut[]> {
   const term = query.trim().slice(0, 200);
   const users = await prisma.user.findMany({
     where: {
@@ -589,14 +853,37 @@ export type RoomInput = {
   is_public: boolean;
   /** A private room's members besides the admin making it. Left out of a public one, which people join. */
   member_ids?: string[];
+  /** People on partner instances in a private room: the room stays hosted here, and their instances get its messages. */
+  remote_member_ids?: string[];
 };
 
 /** A room's changes: what's given of RoomInput, and for a private room who's added and who's taken out. The
  *  members not named stay, so an editor that only loaded some of them can't take the others out. */
-export type RoomPatch = Partial<Omit<RoomInput, "member_ids">> & {
+export type RoomPatch = Partial<Omit<RoomInput, "member_ids" | "remote_member_ids">> & {
   add_member_ids?: string[];
   remove_member_ids?: string[];
+  add_remote_member_ids?: string[];
+  remove_remote_member_ids?: string[];
 };
+
+/** People on partner instances that are connected now. */
+async function existingRemoteIds(ids: string[]): Promise<string[]> {
+  if (!ids.length) return [];
+  const found = await prisma.remotePerson.findMany({
+    where: { id: { in: [...new Set(ids)] }, peer: { status: "ACTIVE" } },
+    select: { id: true },
+  });
+  return found.map((person) => person.id);
+}
+
+/** The partners with people in a room hosted here. */
+async function partnerIdsOf(chatId: string): Promise<string[]> {
+  const rows = await prisma.chatRemoteMember.findMany({
+    where: { chatId },
+    select: { person: { select: { peerId: true } } },
+  });
+  return [...new Set(rows.map((row) => row.person.peerId))];
+}
 
 async function existingUserIds(ids: string[]): Promise<string[]> {
   if (!ids.length) return [];
@@ -620,6 +907,7 @@ export async function createRoom(admin: Viewer, input: RoomInput): Promise<ChatO
   const members = input.is_public
     ? [admin.id]
     : [admin.id, ...(await existingUserIds(input.member_ids ?? []))].filter((id, i, all) => all.indexOf(id) === i);
+  const remote = input.is_public ? [] : await existingRemoteIds(input.remote_member_ids ?? []);
   const chat = await prisma.chat.create({
     data: {
       kind: "ROOM",
@@ -627,9 +915,11 @@ export async function createRoom(admin: Viewer, input: RoomInput): Promise<ChatO
       isPublic: input.is_public,
       createdById: admin.id,
       members: { create: members.map((userId) => ({ userId })) },
+      remoteMembers: { create: remote.map((personId) => ({ personId })) },
     },
     include: CHAT_INCLUDE(admin.id),
   });
+  if (remote.length) sentOn("a room", (wire) => wire.roomChanged(chat.id));
   const [out] = await chatOuts(admin, [chat]);
   return out;
 }
@@ -637,10 +927,13 @@ export async function createRoom(admin: Viewer, input: RoomInput): Promise<ChatO
 /** Changes what's given. A private room's members change by `add_member_ids` and `remove_member_ids` (a public room's
  *  are whoever joined); a room made private keeps whoever was in it. */
 export async function updateRoom(admin: Viewer, chatId: string, patch: RoomPatch): Promise<ChatOut> {
-  const chat = await prisma.chat.findFirst({ where: { id: chatId, kind: "ROOM" } });
+  const chat = await prisma.chat.findFirst({ where: { id: chatId, kind: "ROOM", hostPeerId: null } });
   if (!chat) throw new HttpError(404, "Room not found");
   const isPublic = patch.is_public ?? chat.isPublic;
   const added = isPublic ? [] : await existingUserIds(patch.add_member_ids ?? []);
+  const formerPartners = await partnerIdsOf(chatId);
+  const addedRemote = isPublic ? [] : await existingRemoteIds(patch.add_remote_member_ids ?? []);
+  const removedRemote = (patch.remove_remote_member_ids ?? []).filter((id) => !addedRemote.includes(id));
   const removed = await prisma.$transaction(async (tx) => {
     await tx.chat.update({
       where: { id: chatId },
@@ -655,18 +948,29 @@ export async function updateRoom(admin: Viewer, chatId: string, patch: RoomPatch
     ).map((member) => member.userId);
     await tx.chatMember.deleteMany({ where: { chatId, userId: { in: leaving } } });
     await tx.chatMember.createMany({ data: added.map((userId) => ({ chatId, userId })), skipDuplicates: true });
+    await tx.chatRemoteMember.deleteMany({ where: { chatId, personId: { in: removedRemote } } });
+    await tx.chatRemoteMember.createMany({
+      data: addedRemote.map((personId) => ({ chatId, personId })),
+      skipDuplicates: true,
+    });
     return leaving;
   });
   await forget(chatId, removed);
+  // Its partners told what it is now, those whose people are gone from it too.
+  if (formerPartners.length || addedRemote.length) {
+    sentOn("a room", (wire) => wire.roomChanged(chatId, formerPartners));
+  }
   return (await chatOuts(admin, [await visibleChat(admin, chatId)]))[0];
 }
 
 /** With everything said in it. */
 export async function deleteRoom(chatId: string): Promise<Chat> {
-  const chat = await prisma.chat.findFirst({ where: { id: chatId, kind: "ROOM" } });
+  const chat = await prisma.chat.findFirst({ where: { id: chatId, kind: "ROOM", hostPeerId: null } });
   if (!chat) throw new HttpError(404, "Room not found");
   const members = await prisma.chatMember.findMany({ where: { chatId }, select: { userId: true } });
+  const partners = await partnerIdsOf(chatId);
   await prisma.chat.delete({ where: { id: chatId } });
+  if (partners.length) sentOn("a room's deletion", (wire) => wire.roomDeleted(chatId, partners));
   await forget(
     chatId,
     members.map((member) => member.userId),
@@ -712,7 +1016,7 @@ export async function unreadSummary(userId: string): Promise<ChatUnreadOut> {
   const { title, body } = notificationText(
     newest.kind,
     newest.name,
-    sender?.display_name ?? "Deleted user",
+    sender?.display_name ?? readCard(newest.remoteSenderCard)?.name ?? "Deleted user",
     newest.body,
     1,
     names,
@@ -787,7 +1091,10 @@ async function notifyMessage(chat: Chat, message: ChatMessage): Promise<void> {
     message.senderId ? userCards([message.senderId]) : new Map<string, UserCardOut>(),
     modelNamesOf(message.id),
   ]);
-  const senderName = (message.senderId && senders.get(message.senderId)?.display_name) || "Deleted user";
+  const senderName =
+    (message.senderId && senders.get(message.senderId)?.display_name) ||
+    readCard(message.remoteSenderCard)?.name ||
+    "Deleted user";
   for (const { userId } of recipients) await notifyRecipient(chat, message, userId, senderName, names);
   // Deleted while these were written: deleteMessage's own pass may have come before the last of them.
   const after = await prisma.chatMessage.findUnique({ where: { id: message.id }, select: { deletedAt: true } });
@@ -836,4 +1143,74 @@ export async function notifyRecipient(
     }
     await createNotification(userId, { type: "chat", ...text, internalPath: `/chats/${chat.id}`, group });
   });
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// From partners: what federation/chats.ts placed, kept and told here.
+
+const linkable = (href: string) => /^https?:\/\//i.test(href) && href.length <= 500;
+
+/** A message from a partner: kept once (by its id across instances, so a retried delivery isn't kept twice), with the
+ *  partner models it names, and its chat's members told. From a member of a room hosted here, it's sent on to the
+ *  room's other partners. */
+export async function messageArrived(arrival: Arrival & { peerId: string; hostedHere: boolean }): Promise<void> {
+  const { chatId, note, sender, card } = arrival;
+  const body = note.text.trim().slice(0, MESSAGE_MAX_LENGTH);
+  const attachments = note.attachments.filter((item) => linkable(item.href)).slice(0, MAX_ATTACHMENTS);
+  if (!body && !attachments.length) return;
+  let message: ChatMessage;
+  try {
+    message = await prisma.$transaction(async (tx) => {
+      const created = await tx.chatMessage.create({
+        data: {
+          chatId,
+          body,
+          apId: note.id,
+          remoteSenderId: sender?.id ?? null,
+          remoteSenderCard: card as unknown as Prisma.InputJsonValue,
+          attachments: {
+            create: attachments.map((item, position) => ({
+              name: item.name.trim().slice(0, 300) || "Model",
+              remoteModelApId: item.href,
+              position,
+            })),
+          },
+        },
+      });
+      await tx.chat.updateMany({
+        where: { id: chatId, lastMessageAt: { lt: created.createdAt } },
+        data: { lastMessageAt: created.createdAt },
+      });
+      return created;
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") return;
+    throw err;
+  }
+  const chat = await prisma.chat.findUnique({ where: { id: chatId } });
+  if (chat)
+    void notifyMessage(chat, message).catch((err) => console.error("Failed to notify about a chat message:", err));
+  if (arrival.hostedHere) sentOn("a message", (wire) => wire.relayToRoom(chatId, message.id, arrival.peerId));
+  // A model it names that the index doesn't have yet: read what that partner shares again.
+  if (attachments.length) {
+    const known = await prisma.remoteModel.count({ where: { apId: { in: attachments.map((item) => item.href) } } });
+    if (known < attachments.length) {
+      void import("../federation/remoteIndex").then(({ syncPeer }) => syncPeer(arrival.peerId)).catch(() => {});
+    }
+  }
+}
+
+/** A message deleted by the partner it was its to delete; from a room hosted here, deleted at its other partners too. */
+export async function messageDeletedThere(
+  chatId: string,
+  messageId: string,
+  options: { hostedHere: boolean; peerId: string },
+): Promise<void> {
+  await eraseMessage(messageId);
+  if (options.hostedHere) sentOn("a deletion", (wire) => wire.messageDeleted(chatId, messageId, options.peerId));
+}
+
+/** Drops what told `userIds` about a chat they're no longer in: a partner's room they were taken out of, or that went. */
+export async function chatGoneFor(chatId: string, userIds: string[]): Promise<void> {
+  await forget(chatId, userIds);
 }

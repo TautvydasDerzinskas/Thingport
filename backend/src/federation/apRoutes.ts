@@ -104,8 +104,13 @@ router.get(
 
 // What this instance's people share, for partners only: see publish.ts.
 const partnerOnly = asyncHandler(async (req, res, next) => {
-  if (await signingPartner(req)) next();
-  else res.status(401).json({ error: "Not a connected instance" });
+  const peer = await signingPartner(req);
+  if (!peer) {
+    res.status(401).json({ error: "Not a connected instance" });
+    return;
+  }
+  res.locals.peer = peer;
+  next();
 });
 const activityJson = (res: Response, body: unknown) => res.type("application/activity+json").send(JSON.stringify(body));
 
@@ -146,7 +151,7 @@ router.get(
   "/media/:kind/:id",
   partnerOnly,
   asyncHandler(async (req, res) => {
-    await sendMedia(res, req.params.kind, req.params.id);
+    await sendMedia(res, req.params.kind, req.params.id, res.locals.peer);
   }),
 );
 
