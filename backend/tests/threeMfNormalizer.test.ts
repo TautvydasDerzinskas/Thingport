@@ -11,6 +11,7 @@ import {
   mapSettingsToSlic3r,
   parsePlates,
   recenterOnOrcaBed,
+  moveWipeTower,
   normalize3mf,
   normalizeProjectSettings,
   stateToMaterialIndex,
@@ -475,6 +476,23 @@ describe("normalize3mf for an Orca fork", () => {
     expect(recenterOnOrcaBed(xml, [plate(1, 1)], null)).toBeNull();
     expect(recenterOnOrcaBed(xml, [], bed)).toBeNull();
     expect(recenterOnOrcaBed(xml, [plate(1, 1)], { width: 270, depth: 270, centerX: 135, centerY: 135 })).toBeNull();
+  });
+
+  it("moves the wipe tower of each plate from the designer's bed onto the 270 mm bed", () => {
+    const original = {
+      printable_area: ["0x0", "330x0", "330x320", "0x320"],
+      prime_tower_width: "60",
+      wipe_tower_x: ["40", "165", "-5"],
+      wipe_tower_y: ["267.639", "250", "160"],
+    };
+    const cleaned: Record<string, unknown> = {};
+    moveWipeTower(cleaned, original);
+    // Shifted by (-30, -25), then kept inside the bed (a 60 mm tower fits from 0 to 210).
+    expect(cleaned.wipe_tower_x).toEqual(["10", "135", "0"]);
+    expect(cleaned.wipe_tower_y).toEqual(["210", "210", "135"]);
+    const untouched: Record<string, unknown> = {};
+    moveWipeTower(untouched, { printable_area: original.printable_area });
+    expect(untouched.wipe_tower_x).toBeUndefined();
   });
 
   it("sets the Application tag to a Bambu Studio version Snapmaker Orca accepts", () => {
