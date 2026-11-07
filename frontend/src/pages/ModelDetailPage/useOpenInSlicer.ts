@@ -1,10 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { type Plate, type Print, printsApi } from "../../api/prints";
-import {
-  NORMALIZE_3MF_ORCA_SLICER_IDS,
-  NORMALIZE_3MF_SLICER_IDS,
-  SLICER_OPTIONS,
-} from "../../constants/settingsOptions";
+import { NORMALIZE_3MF_SLICER_IDS, SLICER_OPTIONS, normalizeTargetFor } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 import { isProviderId, manifestOf } from "../../providers/index.generated";
@@ -76,7 +72,7 @@ export function useOpenInSlicer(print: Print) {
     }
     // A non-removable prepared print means the plates themselves are the sliced files.
     if (print.prepared_print && !print.prepared_print.removable) return [];
-    const normalizeTarget = NORMALIZE_3MF_ORCA_SLICER_IDS.has(slicerOption.id) ? "orca" : "flat";
+    const normalizeTarget = normalizeTargetFor(slicerOption.id);
     return files
       .filter((file) => file.plate && isNormalizable3mf(file.filename))
       .map(({ key, url, filename, launchFilename, index, plate }) => ({
