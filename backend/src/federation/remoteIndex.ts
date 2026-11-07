@@ -2,10 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Peer, Prisma } from "@prisma/client";
 import { z } from "zod";
-import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { originOf } from "./addresses";
 import { FederationFetchError } from "./fetch";
+import { MEDIA_DIR, pruneMedia } from "./media";
 import { AP_PREFIX, getRuntime } from "./runtime";
 import { isFederationLive } from "./settings";
 
@@ -17,10 +17,14 @@ import { isFederationLive } from "./settings";
 const SYNC_EVERY_MS = 15 * 60 * 1000;
 const RETRY_AFTER_MS = 2 * 60 * 1000;
 const MAX_PEOPLE = 500;
+const MAX_DIRECTORY_PAGES = 20;
 const MAX_MODEL_PAGES = 40;
-export const MEDIA_DIR = path.join(STORAGE, "federation-media");
+// Writing what was read, in one transaction: however many rows a big partner has.
+const STORE_TIMEOUT_MS = 5 * 60 * 1000;
 
 const running = new Map<string, Promise<void>>();
+// The part of a sync that writes: what forgetting a partner waits for, so it isn't written back after.
+const storing = new Map<string, Promise<unknown>>();
 const lastTried = new Map<string, number>();
 
 /** Reads a partner's directory again now, unless that's already under way. */
@@ -45,8 +49,10 @@ export async function syncStale(maxAgeMs = SYNC_EVERY_MS): Promise<void> {
   }
 }
 
-/** Everything of a partner's kept here: on disconnecting or blocking it. */
+/** Everything of a partner's kept here: on disconnecting or blocking it. A sync writing meanwhile finishes first; one
+ *  writing later finds the partner gone or no longer ACTIVE, and writes nothing (`store`). */
 export async function forgetPeerContent(peerId: string): Promise<void> {
+  await storing.get(peerId)?.catch(() => {});
   await prisma.remotePerson.deleteMany({ where: { peerId } });
   await fs.rm(path.join(MEDIA_DIR, peerId), { recursive: true, force: true }).catch(() => {});
 }
@@ -130,14 +136,17 @@ const collectionSchema = z.object({
   "thingport:models": z.array(z.string()).optional().catch(undefined),
 });
 
+// A listing without its items is broken, not empty: read as empty, it would take everything of the partner's away.
 const pageSchema = z.object({
-  orderedItems: z.array(z.unknown()).optional().catch(undefined),
+  orderedItems: z.array(z.unknown()),
   next: z.string().optional().catch(undefined),
 });
 
 type Person = z.infer<typeof personSchema>;
 type Model = z.infer<typeof modelSchema>;
 type Collection = z.infer<typeof collectionSchema>;
+
+type Shared = { person: Person; models: Model[]; allModels: boolean; collections: Collection[] };
 
 async function sync(peerId: string): Promise<void> {
   const peer = await prisma.peer.findUnique({ where: { id: peerId } });
@@ -147,22 +156,39 @@ async function sync(peerId: string): Promise<void> {
     const own = (url: string | undefined): url is string => Boolean(url) && originOf(url!) === peer.origin;
     const read = async (url: string) => (await runtime.signedLoader(url)).document;
 
-    const directory = pageSchema.parse(await read(`${peer.origin}${AP_PREFIX}/directory`));
-    const people: { person: Person; models: Model[]; collections: Collection[] }[] = [];
-    for (const raw of (directory.orderedItems ?? []).slice(0, MAX_PEOPLE)) {
-      const parsed = personSchema.safeParse(raw);
-      if (!parsed.success || !own(parsed.data.id)) continue;
-      const person = parsed.data;
+    // The directory comes a page at a time, as a page has to fit what a fetch takes.
+    const listed: Person[] = [];
+    let url: string | undefined = `${peer.origin}${AP_PREFIX}/directory`;
+    for (let page = 0; url && own(url) && page < MAX_DIRECTORY_PAGES && listed.length < MAX_PEOPLE; page++) {
+      const body = pageSchema.parse(await read(url));
+      for (const raw of body.orderedItems) {
+        const parsed = personSchema.safeParse(raw);
+        if (parsed.success && own(parsed.data.id)) listed.push(parsed.data);
+      }
+      url = body.next;
+    }
+    const people: Shared[] = [];
+    for (const person of listed.slice(0, MAX_PEOPLE)) {
+      const models = own(person["thingport:models"])
+        ? await readModels(read, person["thingport:models"], own)
+        : { models: [], all: true };
       people.push({
         person,
-        models: own(person["thingport:models"]) ? await readModels(read, person["thingport:models"], own) : [],
+        models: models.models,
+        allModels: models.all,
         collections: own(person["thingport:collections"])
           ? await readCollections(read, person["thingport:collections"], own)
           : [],
       });
     }
-    await store(peer, people, own);
-    await prisma.peer.update({ where: { id: peer.id }, data: { syncedAt: new Date(), syncError: null } });
+    const written = store(peer, people, own);
+    storing.set(peer.id, written);
+    try {
+      await written;
+    } finally {
+      if (storing.get(peer.id) === written) storing.delete(peer.id);
+    }
+    await pruneMedia(peer.id).catch(() => {});
   } catch (err) {
     const message = (err as Error).message || "Couldn't read what it shares";
     console.warn(`[federation] Couldn't read what ${peer.origin} shares:`, message);
@@ -170,14 +196,16 @@ async function sync(peerId: string): Promise<void> {
   }
 }
 
+/** A person's shared models, page by page; `all` is false when there were more pages than are read. */
 async function readModels(
   read: (url: string) => Promise<unknown>,
   first: string,
   own: (url: string | undefined) => url is string,
-): Promise<Model[]> {
+): Promise<{ models: Model[]; all: boolean }> {
   const models: Model[] = [];
   let url: string | undefined = first;
-  for (let page = 0; url && own(url) && page < MAX_MODEL_PAGES; page++) {
+  for (let page = 0; url && own(url); page++) {
+    if (page === MAX_MODEL_PAGES) return { models, all: false };
     let body: z.infer<typeof pageSchema>;
     try {
       body = pageSchema.parse(await read(url));
@@ -186,13 +214,13 @@ async function readModels(
       if (err instanceof FederationFetchError && err.status === 404) break;
       throw err;
     }
-    for (const raw of body.orderedItems ?? []) {
+    for (const raw of body.orderedItems) {
       const parsed = modelSchema.safeParse(raw);
       if (parsed.success && own(parsed.data.id)) models.push(parsed.data);
     }
     url = body.next;
   }
-  return models;
+  return { models, all: true };
 }
 
 async function readCollections(
@@ -201,7 +229,7 @@ async function readCollections(
   own: (url: string | undefined) => url is string,
 ): Promise<Collection[]> {
   const body = pageSchema.parse(await read(url));
-  return (body.orderedItems ?? []).flatMap((raw) => {
+  return body.orderedItems.flatMap((raw) => {
     const parsed = collectionSchema.safeParse(raw);
     return parsed.success && own(parsed.data.id) ? [parsed.data] : [];
   });
@@ -212,15 +240,23 @@ const markdownOf = (value: { content?: string } | undefined, max: number) =>
   value?.content?.trim() ? value.content.trim().slice(0, max) : null;
 
 /** The index for one partner, made to match what it just said: kept rows keep their ids, so links to them stay. */
-async function store(
+async function store(peer: Peer, people: Shared[], own: (url: string | undefined) => url is string): Promise<void> {
+  // All of it or none: a write that fails leaves the last complete read as it was.
+  await prisma.$transaction((tx) => storeIn(tx, peer, people, own), { timeout: STORE_TIMEOUT_MS, maxWait: 10_000 });
+}
+
+async function storeIn(
+  tx: Prisma.TransactionClient,
   peer: Peer,
-  people: { person: Person; models: Model[]; collections: Collection[] }[],
+  people: Shared[],
   own: (url: string | undefined) => url is string,
 ): Promise<void> {
   const seenPeople: string[] = [];
   const seenModels: string[] = [];
   const seenCollections: string[] = [];
-  for (const { person, models, collections } of people) {
+  // Read only in part: what wasn't read of theirs stays rather than going.
+  const partly: string[] = [];
+  for (const { person, models, allModels, collections } of people) {
     const personData = {
       peerId: peer.id,
       username: person.preferredUsername?.toLowerCase() ?? null,
@@ -240,7 +276,7 @@ async function store(
       joinedAt: person.published,
       syncedAt: new Date(),
     };
-    const saved = await prisma.remotePerson.upsert({
+    const saved = await tx.remotePerson.upsert({
       where: { apId: person.id },
       create: { apId: person.id, ...personData },
       update: personData,
@@ -249,6 +285,7 @@ async function store(
     // An id claimed by another partner is never taken over.
     if (saved.peerId !== peer.id) continue;
     seenPeople.push(person.id);
+    if (!allModels) partly.push(saved.id);
     for (const model of models) {
       if (model.attributedTo !== person.id) continue;
       const modelData = {
@@ -266,7 +303,7 @@ async function store(
         updatedAt: model.updated,
         syncedAt: new Date(),
       };
-      const row = await prisma.remoteModel.upsert({
+      const row = await tx.remoteModel.upsert({
         where: { apId: model.id },
         create: { apId: model.id, ...modelData },
         update: modelData,
@@ -285,7 +322,7 @@ async function store(
         updatedAt: collection.updated,
         syncedAt: new Date(),
       };
-      const row = await prisma.remoteCollection.upsert({
+      const row = await tx.remoteCollection.upsert({
         where: { apId: collection.id },
         create: { apId: collection.id, ...collectionData },
         update: collectionData,
@@ -295,9 +332,16 @@ async function store(
     }
   }
   // Whatever it no longer shares goes.
-  await prisma.$transaction([
-    prisma.remoteCollection.deleteMany({ where: { peerId: peer.id, apId: { notIn: seenCollections } } }),
-    prisma.remoteModel.deleteMany({ where: { peerId: peer.id, apId: { notIn: seenModels } } }),
-    prisma.remotePerson.deleteMany({ where: { peerId: peer.id, apId: { notIn: seenPeople } } }),
-  ]);
+  await tx.remoteCollection.deleteMany({ where: { peerId: peer.id, apId: { notIn: seenCollections } } });
+  await tx.remoteModel.deleteMany({
+    where: { peerId: peer.id, apId: { notIn: seenModels }, personId: { notIn: partly } },
+  });
+  await tx.remotePerson.deleteMany({ where: { peerId: peer.id, apId: { notIn: seenPeople } } });
+  // Still a partner: one blocked or disconnected meanwhile keeps nothing of this. The row stays locked until this is
+  // written, so a block waits for it, and what it then forgets is everything.
+  const { count: still } = await tx.peer.updateMany({
+    where: { id: peer.id, status: "ACTIVE" },
+    data: { syncedAt: new Date(), syncError: null },
+  });
+  if (!still) throw new Error("No longer connected");
 }

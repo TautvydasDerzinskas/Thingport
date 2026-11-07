@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -7,8 +8,8 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { invalidateAllowlist } from "../src/federation/allowlist";
-import { mediaAddress } from "../src/federation/media";
-import { collectionsOf, directory, modelsPage } from "../src/federation/publish";
+import { MEDIA_DIR, mediaAddress, pruneMedia } from "../src/federation/media";
+import { collectionsOf, DIRECTORY_PAGE, directory, modelsPage, person as personDoc } from "../src/federation/publish";
 import { resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
 import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
@@ -45,6 +46,7 @@ let peerId: string;
 let personId: string;
 let modelId: string;
 let remoteCollectionId: string;
+let emptyCollectionId: string;
 
 beforeAll(async () => {
   savedSocial = await getSocialSettings();
@@ -130,6 +132,18 @@ beforeAll(async () => {
     },
   });
   remoteCollectionId = collection.id;
+  emptyCollectionId = (
+    await prisma.remoteCollection.create({
+      data: {
+        peerId,
+        personId,
+        apId: `${PARTNER}/api/ap/collections/c2`,
+        name: "Not started",
+        modelApIds: [],
+        updatedAt: new Date(Date.now() - 60_000),
+      },
+    })
+  ).id;
 });
 
 afterAll(async () => {
@@ -146,8 +160,12 @@ afterAll(async () => {
 
 describe("what partners are shown", () => {
   it("lists people who share, with what they share counted", async () => {
-    const body = (await directory()) as { type: string; orderedItems: Record<string, unknown>[] };
-    expect(body.type).toBe("OrderedCollection");
+    const body = (await directory()) as { type: string; next?: string; orderedItems: Record<string, unknown>[] };
+    expect(body.type).toBe("OrderedCollectionPage");
+    // A page at a time, each small enough for a partner's fetch; the newest sharer is on the first.
+    expect(body.orderedItems.length).toBeLessThanOrEqual(DIRECTORY_PAGE);
+    expect([undefined, `${ORIGIN}/api/ap/directory?page=1`]).toContain(body.next);
+    expect(((await directory(100_000)) as { orderedItems: unknown[] }).orderedItems).toEqual([]);
     const person = body.orderedItems.find((item) => item.id === `${ORIGIN}/api/ap/actors/${owner.id}`);
     expect(person).toMatchObject({
       type: "Person",
@@ -159,6 +177,23 @@ describe("what partners are shown", () => {
     });
     // Someone who shares nothing isn't listed.
     expect(body.orderedItems.some((item) => item.id === `${ORIGIN}/api/ap/actors/${viewer.id}`)).toBe(false);
+  });
+
+  it("gives a person who shares at their id, and no one else", async () => {
+    expect(await personDoc(owner.id)).toMatchObject({
+      id: `${ORIGIN}/api/ap/actors/${owner.id}`,
+      type: "Person",
+      name: "Sharer",
+    });
+    expect(await personDoc(viewer.id)).toBeNull();
+    expect((await request(app).get(`/api/ap/actors/${owner.id}`)).status).toBe(401);
+    // The instance actor is anyone's to read, as checking a signature needs its key.
+    expect((await request(app).get("/api/ap/actors/instance").set("Accept", "application/activity+json")).status).toBe(
+      200,
+    );
+    // A drawn avatar is versioned by what's drawn.
+    const icon = ((await personDoc(owner.id)) as { icon?: { url: string } }).icon?.url;
+    expect(icon ?? "").not.toMatch(/\?v=svg$/);
   });
 
   it("gives only the shared models, shaped like Manyfold's", async () => {
@@ -223,6 +258,8 @@ describe("Explore with partners", () => {
     expect(recent_models[0]).toMatchObject({ id: modelId, title: "Gridfinity bin 2x3", file_count: 1 });
     // What the index doesn't have of a collection isn't counted.
     expect(recent_collections[0]).toMatchObject({ id: remoteCollectionId, item_count: 1 });
+    // An empty one too, as this instance's own are.
+    expect(recent_collections.map((item: { id: string }) => item.id)).toContain(emptyCollectionId);
   });
 
   it("narrows to this instance, or to one partner", async () => {
@@ -242,7 +279,7 @@ describe("Explore with partners", () => {
       links: ["https://example.org/ruta"],
       cover_preset: "pixel",
     });
-    expect(person.body.collections).toHaveLength(1);
+    expect(person.body.collections).toHaveLength(2);
     const models = await request(app).get(`/api/explore/elsewhere/person/${personId}/models`).set(auth(viewer));
     expect(models.headers["x-total-count"]).toBe("1");
     expect(models.body[0].id).toBe(modelId);
@@ -257,6 +294,11 @@ describe("Explore with partners", () => {
       .get(`/api/explore/elsewhere/collection/${remoteCollectionId}`)
       .set(auth(viewer));
     expect(collection.body.models.map((item: { id: string }) => item.id)).toEqual([modelId]);
+    expect(collection.body.total).toBe(1);
+    const beyond = await request(app)
+      .get(`/api/explore/elsewhere/collection/${remoteCollectionId}?limit=1&offset=1`)
+      .set(auth(viewer));
+    expect(beyond.body).toMatchObject({ models: [], total: 1 });
   });
 
   it("fetches no picture it didn't hand out the address of", async () => {
@@ -291,5 +333,36 @@ describe("Explore with partners", () => {
     } finally {
       await updateFederationSettings({ enabled: true });
     }
+  });
+});
+
+describe("keeping it current", () => {
+  it("leaves only the pictures a partner still names", async () => {
+    const dir = path.join(MEDIA_DIR, peerId);
+    fs.mkdirSync(dir, { recursive: true });
+    const name = (url: string) => crypto.createHash("sha256").update(url).digest("hex");
+    const named = name(`${PARTNER}/api/ap/media/avatar/ruta?v=1`);
+    const old = name(`${PARTNER}/api/ap/media/avatar/ruta?v=0`);
+    const fresh = name(`${PARTNER}/api/ap/media/image/new?v=1`);
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    for (const file of [named, `${named}.type`, old, `${old}.type`, fresh]) {
+      fs.writeFileSync(path.join(dir, file), "x");
+      if (file !== fresh) fs.utimesSync(path.join(dir, file), hourAgo, hourAgo);
+    }
+    await pruneMedia(peerId);
+    // The one still named stays, an older version goes, and one just written is left a while.
+    expect(fs.readdirSync(dir).toSorted()).toEqual([named, `${named}.type`, fresh].toSorted());
+  });
+
+  it("publishes the collections changed last, filing something counting as a change", async () => {
+    const make = async (name: string) =>
+      (await request(app).post("/api/collections").set(auth(owner)).send({ name, is_public: true })).body.id as string;
+    const older = await make(`Older ${Date.now()}`);
+    const newer = await make(`Newer ${Date.now()}`);
+    await prisma.collection.update({ where: { id: older }, data: { updatedAt: new Date(Date.now() - 3_600_000) } });
+    await request(app).post(`/api/collection/${older}/items/${sharedPrint}`).set(auth(owner));
+    const body = (await collectionsOf(owner.id)) as { orderedItems: { id: string }[] };
+    const ids = body.orderedItems.map((item) => item.id.split("/").pop());
+    expect(ids.indexOf(older)).toBeLessThan(ids.indexOf(newer));
   });
 });

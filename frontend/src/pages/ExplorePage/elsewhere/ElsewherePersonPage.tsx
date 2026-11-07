@@ -69,6 +69,8 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
       setModels(null);
       setGone(false);
       setFailed(false);
+      setHasMore(false);
+      setLoadingMore(false);
       Promise.all([socialApi.elsewhere.person(id), socialApi.elsewhere.personModels(id, { limit: PAGE, offset: 0 })])
         .then(([person, first]) => {
           if (asked !== latest.current) return;
@@ -98,16 +100,20 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
 
   const loadMore = async () => {
     if (!personId || !models || loadingMore) return;
+    // Someone else opened meanwhile: this page of the one before is dropped.
+    const asked = latest.current;
     setLoadingMore(true);
     try {
       const next = await socialApi.elsewhere.personModels(personId, { limit: PAGE, offset: models.length });
+      if (asked !== latest.current) return;
       setModels([...models, ...(next?.items ?? [])]);
       setHasMore(next?.hasMore ?? false);
     } catch (err) {
+      if (asked !== latest.current) return;
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else showToast({ message: t("models:explore.modelsLoadFailed"), severity: "error" });
     } finally {
-      setLoadingMore(false);
+      if (asked === latest.current) setLoadingMore(false);
     }
   };
 

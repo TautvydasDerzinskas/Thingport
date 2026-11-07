@@ -224,8 +224,9 @@ describe("connected instances, on", () => {
     };
     expect(publishedKeys(renamed)).toEqual([]);
     expect(onlyComparedKeys(await runtime.keysIn(renamed), compared)).toBe(false);
+    // Anyone else at an actor's address is a person here, for partners only; whether they exist isn't told.
     expect((await request(app).get("/api/ap/actors/someone").set("Accept", "application/activity+json")).status).toBe(
-      404,
+      401,
     );
   });
 

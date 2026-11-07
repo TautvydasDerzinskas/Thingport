@@ -13,17 +13,22 @@ import { usePageHeader } from "../../../components/Layout/PageHeaderContext";
 import MarkdownDescription from "../../../components/MarkdownDescription";
 import { CardSkeletons } from "../../../components/media/CardSkeleton";
 import { cardGridSx } from "../../../components/media/cardGrid";
+import { useToast } from "../../../components/ToastProvider";
 import UserAvatar from "../../../components/UserAvatar";
 import { RemoteModelCardView } from "../RemoteCards";
 import ElsewhereGone from "./ElsewhereGone";
 
-/** A partner's person's public collection: whose it is, where, and the models in it. */
+const PAGE = 30;
+
+/** A partner's person's public collection: whose it is, where, and the models in it, a page at a time. */
 export default function ElsewhereCollectionPage({ onUnauthorized }: { onUnauthorized?: () => void }) {
   const { collectionId } = useParams<{ collectionId: string }>();
   const { t } = useTranslation(["models", "common"]);
   const [page, setPage] = useState<RemoteCollectionPage | null>(null);
   const [gone, setGone] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const showToast = useToast();
   const latest = useRef(0);
 
   const read = useCallback(
@@ -32,7 +37,8 @@ export default function ElsewhereCollectionPage({ onUnauthorized }: { onUnauthor
       setPage(null);
       setGone(false);
       setFailed(false);
-      socialApi.elsewhere.collection(id).then(
+      setLoadingMore(false);
+      socialApi.elsewhere.collection(id, { limit: PAGE, offset: 0 }).then(
         (value) => {
           if (asked !== latest.current) return;
           if (value) setPage(value);
@@ -54,6 +60,23 @@ export default function ElsewhereCollectionPage({ onUnauthorized }: { onUnauthor
       latest.current += 1;
     };
   }, [collectionId, read]);
+
+  const loadMore = async () => {
+    if (!collectionId || !page || loadingMore) return;
+    const asked = latest.current;
+    setLoadingMore(true);
+    try {
+      const next = await socialApi.elsewhere.collection(collectionId, { limit: PAGE, offset: page.models.length });
+      if (asked !== latest.current) return;
+      if (next) setPage({ ...page, models: [...page.models, ...next.models], total: next.total });
+    } catch (err) {
+      if (asked !== latest.current) return;
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else showToast({ message: t("models:explore.modelsLoadFailed"), severity: "error" });
+    } finally {
+      if (asked === latest.current) setLoadingMore(false);
+    }
+  };
 
   const collection = page?.collection;
   usePageHeader({
@@ -108,6 +131,13 @@ export default function ElsewhereCollectionPage({ onUnauthorized }: { onUnauthor
           <CardSkeletons count={6} />
         )}
       </Box>
+      {page && page.models.length < page.total && (
+        <Box>
+          <Button variant="outlined" onClick={() => void loadMore()} disabled={loadingMore}>
+            {t("models:explore.elsewhere.more")}
+          </Button>
+        </Box>
+      )}
       {page && !page.models.length && (
         <Typography variant="body2" color="text.secondary">
           {t("models:explore.noModels")}
