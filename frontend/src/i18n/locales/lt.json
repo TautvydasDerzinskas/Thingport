@@ -6120,8 +6120,36 @@
           "not_available": "Šis serveris su jų serveriu nesijungia.",
           "exists": "Jūs jau paprašėte jį pasiekti.",
           "request_limit": "Pirma palaukite, kol administratorius atsakys į jūsų prašymus.",
-          "daily_limit": "Šiandien jau daug kartų prašėte pasiekti žmones kitur. Pabandykite rytoj."
-        }
+          "daily_limit": "Šiandien jau daug kartų prašėte pasiekti žmones kitur. Pabandykite rytoj.",
+          "copy_limit": "Pirma palaukite, kol baigsis vykstantys kopijavimai.",
+          "no_files": "Jame nėra failų, kuriuos būtų galima nukopijuoti.",
+          "files_missing": "Ne visus jo failus galima gauti iš jo serverio, todėl jo negalima nukopijuoti viso.",
+          "zip_busy": "Jau kuriamas kitas ZIP. Pabandykite po akimirkos.",
+          "zip_too_big": "Per didelis suarchyvuoti čia: atsisiųskite failus po vieną."
+        },
+        "on": "Serveryje {{name}}",
+        "fileCount_one": "{{count}} failas",
+        "fileCount_few": "{{count}} failai",
+        "fileCount_many": "{{count}} failo",
+        "fileCount_other": "{{count}} failų",
+        "copyHandle": "Kopijuoti jo adresą",
+        "more": "Rodyti daugiau",
+        "gone": "Tai nebebendrinama, arba serveris, kuriame tai yra, nebesujungtas.",
+        "noPictures": "Nuotraukų nėra",
+        "picture": "Nuotrauka {{number}}",
+        "inCollections": "Kolekcijose",
+        "copying": "Kopijuojama į jūsų biblioteką…",
+        "copyFailed": "Nepavyko nukopijuoti",
+        "carriesOn": "Galite palikti šį puslapį: kopijavimas tęsis.",
+        "ofSize": "{{received}} iš {{size}}",
+        "filesUnavailable": "Jo serveris kol kas failų nesiūlo.",
+        "copiedFrom": "Nukopijuota iš",
+        "seeOriginal": "Žiūrėti originalą"
+      },
+      "scope": {
+        "label": "Rodyti",
+        "all": "Visur",
+        "here": "Šiame serveryje"
       }
     }
   },

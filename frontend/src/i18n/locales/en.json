@@ -5834,8 +5834,34 @@
           "not_available": "This instance doesn't connect with theirs.",
           "exists": "You've already asked to reach them.",
           "request_limit": "Wait for your admin to answer the requests you've made first.",
-          "daily_limit": "You've asked to reach people elsewhere a lot today. Try again tomorrow."
-        }
+          "daily_limit": "You've asked to reach people elsewhere a lot today. Try again tomorrow.",
+          "copy_limit": "Wait for the copies under way to finish first.",
+          "no_files": "It has no files to copy.",
+          "files_missing": "Not every file of it can be fetched from its instance, so it can't be copied whole.",
+          "zip_busy": "Another ZIP is being made. Try again in a moment.",
+          "zip_too_big": "Too big to zip here: download its files one at a time."
+        },
+        "on": "On {{name}}",
+        "fileCount_one": "{{count}} file",
+        "fileCount_other": "{{count}} files",
+        "copyHandle": "Copy their handle",
+        "more": "Show more",
+        "gone": "This isn't shared any more, or the instance it's on is no longer connected.",
+        "noPictures": "No pictures",
+        "picture": "Picture {{number}}",
+        "inCollections": "In collections",
+        "copying": "Copying to your library…",
+        "copyFailed": "Couldn't copy it",
+        "carriesOn": "You can leave this page: it carries on.",
+        "ofSize": "{{received}} of {{size}}",
+        "filesUnavailable": "Its instance doesn't offer the files yet.",
+        "copiedFrom": "Copied from",
+        "seeOriginal": "See the original"
+      },
+      "scope": {
+        "label": "Show",
+        "all": "Everywhere",
+        "here": "This instance"
       }
     }
   },

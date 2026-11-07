@@ -6,7 +6,8 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { originOf } from "./addresses";
 import { canonicalHeaders, edgeFilter, keyIdOf } from "./edge";
 import { instanceFingerprint } from "./keys";
-import { getRuntime } from "./runtime";
+import { collectionsOf, directory, modelsPage, person, sendMedia, sendSharedFile, signingPartner } from "./publish";
+import { getRuntime, INSTANCE } from "./runtime";
 import { isFederationLive } from "./settings";
 
 // Mounted at /api/ap ahead of express.json: signatures cover the body exactly as it came.
@@ -26,9 +27,10 @@ router.use(
     }
     const known = { status: { in: KNOWN } };
     let waiting = false;
-    if (req.method === "POST") {
-      const origin = originOf(keyIdOf(req.headers) ?? "");
-      if (origin) waiting = Boolean(await prisma.peer.findFirst({ where: { origin, ...known }, select: { id: true } }));
+    const signedBy = originOf(keyIdOf(req.headers) ?? "");
+    if (signedBy) {
+      // A partner sending, or reading what this instance shares.
+      waiting = Boolean(await prisma.peer.findFirst({ where: { origin: signedBy, ...known }, select: { id: true } }));
     } else if (req.method === "GET" && FOLLOW_PATH.test(req.path)) {
       // An instance we asked, checking we still want what we asked for before its admin approves.
       const id = FOLLOW_PATH.exec(req.path)![1];
@@ -62,7 +64,20 @@ router.post(
   asyncHandler(edgeFilter),
   asyncHandler(viaFedify),
 );
-router.get("/actors/:identifier", asyncHandler(viaFedify));
+router.get(
+  "/actors/:identifier",
+  asyncHandler(async (req, res) => {
+    if (req.params.identifier === INSTANCE) return viaFedify(req, res);
+    // A person here who shares something, at the id the directory gave them: for partners only, as the directory is.
+    if (!(await signingPartner(req))) {
+      res.status(401).json({ error: "Not a connected instance" });
+      return;
+    }
+    const body = await person(req.params.identifier);
+    if (body) activityJson(res, body);
+    else res.status(404).json({ error: "Not found" });
+  }),
+);
 
 /** Our request to connect, while it stands: the instance we asked reads it before its admin approves, so a request we
  *  withdrew, or one from before a disconnect played back to it, isn't approved. Says no more than its own ids. */
@@ -84,6 +99,54 @@ router.get(
       actor: runtime.actorUrl.href,
       object: peer.actorUrl,
     });
+  }),
+);
+
+// What this instance's people share, for partners only: see publish.ts.
+const partnerOnly = asyncHandler(async (req, res, next) => {
+  if (await signingPartner(req)) next();
+  else res.status(401).json({ error: "Not a connected instance" });
+});
+const activityJson = (res: Response, body: unknown) => res.type("application/activity+json").send(JSON.stringify(body));
+
+router.get(
+  "/directory",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    const page = Number(req.query.page ?? 0);
+    if (Number.isInteger(page) && page >= 0 && page < 1000) activityJson(res, await directory(page));
+    else res.status(404).json({ error: "Not found" });
+  }),
+);
+router.get(
+  "/actors/:id/models",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    const page = Number(req.query.page ?? 0);
+    const body = Number.isInteger(page) && page >= 0 && page < 1000 ? await modelsPage(req.params.id, page) : null;
+    if (body) activityJson(res, body);
+    else res.status(404).json({ error: "Not found" });
+  }),
+);
+router.get(
+  "/actors/:id/collections",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    activityJson(res, await collectionsOf(req.params.id));
+  }),
+);
+router.get(
+  ["/files/:kind/:id", "/files/:kind/:id/:name"],
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    await sendSharedFile(res, req.params.kind, req.params.id);
+  }),
+);
+router.get(
+  "/media/:kind/:id",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    await sendMedia(res, req.params.kind, req.params.id);
   }),
 );
 

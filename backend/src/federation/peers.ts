@@ -12,6 +12,7 @@ import { invalidateAllowlist, isAllowedOrigin, withAllowedOrigin } from "./allow
 import { enqueueActivity, kickDelivery, pendingDeliveryCounts } from "./delivery";
 import { FederationFetchError, federationFetch, readJson } from "./fetch";
 import { keyFingerprint } from "./keys";
+import { forgetPeerContent, syncPeer } from "./remoteIndex";
 import { notifyRequesters } from "./userRequests";
 import { AP_PREFIX, getRuntime, INSTANCE, type Runtime } from "./runtime";
 
@@ -661,6 +662,8 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
   });
   invalidateAllowlist();
   kickDelivery();
+  // What it shares, once it has us as a partner too (its Accept on the way): tried again until it answers.
+  void syncPeer(peer.id).catch(() => {});
   void createLog({
     userId: adminId,
     action: "federation_approved",
@@ -878,6 +881,7 @@ export async function disconnectPeer(adminId: string, id: string): Promise<void>
   if (peer.status === "BLOCKED") throw new HttpError(409, "That instance is blocked", "blocked");
   await dropQueued(peer.id);
   await sayGoodbye(peer);
+  await forgetPeerContent(peer.id);
   await prisma.peer.delete({ where: { id } });
   invalidateAllowlist();
   void createLog({
@@ -893,6 +897,7 @@ export async function blockPeer(adminId: string, id: string): Promise<PeerOut> {
   await dropQueued(peer.id);
   if (peer.status !== "BLOCKED") await sayGoodbye(peer);
   const updated = await prisma.peer.update({ where: { id }, data: { status: "BLOCKED", lastError: null } });
+  await forgetPeerContent(peer.id);
   invalidateAllowlist();
   void createLog({ userId: adminId, action: "federation_blocked", targetId: id, details: { origin: peer.origin } });
   return peerOut(updated, 0);
@@ -906,7 +911,8 @@ export async function unblockPeer(adminId: string, id: string): Promise<void> {
   void createLog({ userId: adminId, action: "federation_unblocked", targetId: id, details: { origin: peer.origin } });
 }
 
-/** Looks a partner up again: whether it answers, and whether its key is still the one compared. */
+/** Looks a partner up again: whether it answers, and whether its key is still the one compared; then reads what it
+ *  shares again. */
 export async function checkPeer(id: string): Promise<PeerOut> {
   const peer = await findPeer(id);
   try {
@@ -921,6 +927,8 @@ export async function checkPeer(id: string): Promise<PeerOut> {
         lastError: changed ? `Its key changed: now ${info.fingerprint}` : null,
       },
     });
+    // And what it shares, read again.
+    if (!changed && updated.status === "ACTIVE") await syncPeer(id).catch(() => {});
     return peerOut(updated, 0);
   } catch (err) {
     const updated = await prisma.peer.update({ where: { id }, data: { lastError: (err as Error).message } });
@@ -1014,6 +1022,7 @@ async function endedByThem(peer: Peer, how: "declined" | "withdrew" | "disconnec
   // Only as it was read: an admin's block meanwhile stays.
   const { count } = await prisma.peer.deleteMany({ where: { id: peer.id, status: peer.status } });
   if (!count) return;
+  await forgetPeerContent(peer.id);
   invalidateAllowlist();
   const who = peer.name ?? new URL(peer.origin).host;
   // Those here who asked to reach someone there are told too.
@@ -1039,6 +1048,7 @@ async function becomeConnected(peer: Peer): Promise<boolean> {
   });
   if (!count) return false;
   invalidateAllowlist();
+  void syncPeer(peer.id).catch(() => {});
   const who = peer.name ?? new URL(peer.origin).host;
   await notifyAdmins({ title: `Connected with ${who}`, body: `${who} accepted.`, internalPath: "/admin-social" });
   await notifyRequesters(peer.origin, {

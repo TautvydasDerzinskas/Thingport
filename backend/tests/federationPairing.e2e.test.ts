@@ -229,4 +229,105 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
       JSON.stringify((await call(sam, "GET", "/notifications")).body).includes("Connected with"),
     );
   }, 120_000);
+
+  it("shows what a partner's people share on Explore, and forgets it on disconnecting", async () => {
+    // Rūta on B shares a collection with a model in it; A and B are partners from the test before.
+    const ruta: Instance = { ...b, token: undefined };
+    ruta.token = (
+      await call(ruta, "POST", "/register", { displayName: "Rūta", email: "ruta@example.com", password: "password123" })
+    ).body.token;
+    const form = new FormData();
+    form.append("files", new Blob(["solid bin endsolid"]), "gridfinity-bin.stl");
+    const uploaded = await fetch(`${b.base}/api/upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${ruta.token}` },
+      body: form,
+    });
+    const printId = (await uploaded.json()).prints[0].id;
+    const collection = await call(ruta, "POST", "/collections", { name: "Tool wall", is_public: true });
+    await call(ruta, "POST", `/collection/${collection.body.id}/items/${printId}`);
+
+    // A's admin checks the connection, which reads what B shares again.
+    const partner = (await call(a, "GET", "/federation/instances")).body.partners[0];
+    expect((await call(a, "POST", `/federation/peers/${partner.id}/check`)).status).toBe(200);
+    const explore = await until("A's Explore shows Rūta", async () => {
+      const res = await call(a, "GET", "/explore");
+      return (
+        res.body.elsewhere.people.some((person: { display_name: string }) => person.display_name === "Rūta") && res.body
+      );
+    });
+    const person = explore.elsewhere.people.find((item: { display_name: string }) => item.display_name === "Rūta");
+    expect(person).toMatchObject({ model_count: 1, collection_count: 1, instance: { id: partner.id } });
+    expect(explore.elsewhere.recent_models[0]).toMatchObject({ title: "gridfinity-bin", file_count: 1 });
+    expect(explore.elsewhere.recent_collections[0]).toMatchObject({ name: "Tool wall", item_count: 1 });
+
+    // Her avatar comes through A, which fetched it signed from B.
+    const avatar = await fetch(`${a.base}/api${person.avatar_url}`, {
+      headers: { Authorization: `Bearer ${a.token}` },
+    });
+    expect(avatar.status).toBe(200);
+    expect(avatar.headers.get("content-type")).toMatch(/^image\//);
+    // B answers no one else.
+    expect((await fetch(`${b.base}/api/ap/directory`)).status).toBe(401);
+
+    // Her model's file comes through A as well: downloaded, handed to a slicer with the token in the path, zipped.
+    const modelId = explore.elsewhere.recent_models[0].id;
+    const model = await call(a, "GET", `/explore/elsewhere/model/${modelId}`);
+    const [file] = model.body.files;
+    expect(file).toMatchObject({
+      name: "gridfinity-bin.stl",
+      url: expect.stringMatching(
+        new RegExp(`^/explore/elsewhere/model/${modelId}/files/[0-9a-f]{16}/gridfinity-bin\\.stl$`),
+      ),
+    });
+    const signedIn = { Authorization: `Bearer ${a.token}` };
+    const downloaded = await fetch(`${a.base}/api${file.url}`, { headers: signedIn });
+    expect(downloaded.status).toBe(200);
+    expect(downloaded.headers.get("content-disposition")).toBe('attachment; filename="gridfinity-bin.stl"');
+    expect(await downloaded.text()).toBe("solid bin endsolid");
+    const forSlicer = await fetch(`${a.base}/api/t/${encodeURIComponent(a.token!)}${file.url}`);
+    expect(await forSlicer.text()).toBe("solid bin endsolid");
+    const zip = await fetch(`${a.base}/api/explore/elsewhere/model/${modelId}/files.zip`, { headers: signedIn });
+    expect(zip.status).toBe(200);
+    expect(
+      Buffer.from(await zip.arrayBuffer())
+        .subarray(0, 2)
+        .toString(),
+    ).toBe("PK");
+    // B's own address for it answers only partners.
+    const plate = (await call(ruta, "GET", `/print/${printId}`)).body.plates[0];
+    expect((await fetch(`${b.base}/api/ap/files/plate/${plate.id}/gridfinity-bin.stl`)).status).toBe(401);
+
+    // Copied into Alex's library, where it says whose it was and links back.
+    expect((await call(a, "POST", `/explore/elsewhere/model/${modelId}/copy`)).status).toBe(200);
+    const copied = await until("A's copy is made", async () => {
+      const status = await call(a, "GET", `/explore/elsewhere/model/${modelId}/copy`);
+      if (status.body.state === "failed") throw new Error(status.body.error);
+      return status.body.state === "done" && status.body;
+    });
+    expect(copied.files).toEqual([{ name: "gridfinity-bin.stl", size: 18, received: 18, done: true }]);
+    const copy = await call(a, "GET", `/print/${copied.copy_id}`);
+    expect(copy.body).toMatchObject({
+      title: "gridfinity-bin",
+      plates: [expect.objectContaining({ filename: "gridfinity-bin.stl" })],
+      copied_from_remote: {
+        instance: { origin: b.base },
+        owner_name: "Rūta",
+        original_id: modelId,
+      },
+    });
+    expect((await call(a, "GET", `/explore/elsewhere/model/${modelId}`)).body.library_copy_id).toBe(copied.copy_id);
+    expect((await call(a, "POST", `/explore/elsewhere/model/${modelId}/copy`)).body).toMatchObject({
+      state: "done",
+      copy_id: copied.copy_id,
+    });
+
+    expect((await call(a, "POST", `/federation/peers/${partner.id}/disconnect`)).status).toBe(204);
+    const after = await call(a, "GET", "/explore");
+    expect(after.body.elsewhere.people).toEqual([]);
+    expect((await call(a, "GET", `/explore/elsewhere/person/${person.id}`)).status).toBe(404);
+    // The copy is Alex's to keep, still saying where it came from.
+    const kept = await call(a, "GET", `/print/${copied.copy_id}`);
+    expect(kept.body.copied_from_remote).toMatchObject({ owner_name: "Rūta", original_id: null, owner_id: null });
+  }, 120_000);
 });

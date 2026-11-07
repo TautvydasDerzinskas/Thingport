@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { federationFetch } from "./fetch";
 import { purgeExpiredKv } from "./kvStore";
+import { syncStale } from "./remoteIndex";
 import { getRuntime } from "./runtime";
 import { isFederationLive } from "./settings";
 
@@ -10,6 +11,8 @@ const BACKOFF_MS = [30, 120, 600, 1800, 3600, 3 * 3600, 6 * 3600, 12 * 3600, 24 
 const BATCH = 20;
 const TICK_MS = 5_000;
 const PURGE_EVERY_MS = 60 * 60 * 1000;
+// How often partners' indexes are looked at; each is read again every 15 minutes (remoteIndex.ts).
+const SYNC_CHECK_MS = 60 * 1000;
 
 /** Queues an activity for one instance. `origin` is the only place it may go, which also lets a goodbye reach an
  *  instance that's no longer a partner. Inside a caller's transaction (`tx`), the caller kicks the worker once it's
@@ -39,6 +42,7 @@ let timer: NodeJS.Timeout | null = null;
 let running = false;
 let again = false;
 let lastPurge = 0;
+let lastSyncCheck = 0;
 
 export function startDeliveryWorker(): void {
   if (timer) return;
@@ -82,6 +86,10 @@ export async function tick(now = () => new Date()): Promise<void> {
         // Turned off meanwhile: the rest wait for it to be on again.
         if (!(await isFederationLive())) return;
         await deliver(row, now());
+      }
+      if (Date.now() - lastSyncCheck > SYNC_CHECK_MS) {
+        lastSyncCheck = Date.now();
+        void syncStale().catch(() => {});
       }
       if (Date.now() - lastPurge > PURGE_EVERY_MS) {
         lastPurge = Date.now();

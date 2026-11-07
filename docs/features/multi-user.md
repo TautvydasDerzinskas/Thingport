@@ -35,7 +35,9 @@ With it on:
   the people who share, with how many collections and models each one shares, the newest models shared, recently updated
   public collections, and the models that get copied most. A person's card opens their profile, as their **My models**
   page looks to you: their models, when they made them public, and a **Collections** tab with their public collections.
-  Your own shares aren't listed there, since they're not news to you.
+  Your own shares aren't listed there, since they're not news to you. With [connected
+  instances](../guides/connected-instances.md#what-partners-see), partners' people, collections and models show there
+  too, marked with where they're from, and **Everywhere**, **This instance** or a partner narrows it down.
 - **Someone else's model** opens with whose it is. You can download it, open it in your slicer or in
   [Studio](../guides/studio.md), and customize it, but not change it.
 - **Adding it to a collection of yours**, or **Copy to my library**, makes a copy of your own: its files, pictures and
