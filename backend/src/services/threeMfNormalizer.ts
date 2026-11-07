@@ -1273,6 +1273,8 @@ export function moveWipeTower(cleaned: Settings, original: Settings): void {
   if (!bed || !Array.isArray(xs) || !Array.isArray(ys)) return;
   const { before, after } = wipeTowerExtent(original);
   const lo = before;
+  // A tower wider than the bed (hi would fall below lo) is put at the near edge and sticks out on the far side, on purpose:
+  // clamping is only about the corner point, and Orca reports a tower outside the bed itself when slicing.
   const hi = Math.max(ORCA_FORK_BED_MM - after, lo);
   const place = (value: unknown, shift: number): string => {
     const n = Number(value);
