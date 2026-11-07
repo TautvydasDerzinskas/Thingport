@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { asksIn } from "../src/federation/peers";
-import { parseHandle } from "../src/federation/userRequests";
+import { originsFor, parseHandle } from "../src/federation/userRequests";
 import { checkUsername, usernameFrom } from "../src/services/usernames";
 
 describe("usernames", () => {
@@ -40,6 +40,19 @@ describe("handles", () => {
     });
     expect(parseHandle("bob@[FD00::5]:8080").origin).toBe("http://[fd00::5]:8080");
     expect(parseHandle("bob@printer.local").origin).toBe("http://printer.local");
+  });
+
+  it("finds an instance by any address a handle could have guessed for it, ports by its own scheme", () => {
+    // Guessed as HTTPS on port 80: still the plain HTTP instance on its default port.
+    expect(originsFor("http://things.example")).toContain(parseHandle("bob@things.example:80").origin);
+    expect(originsFor("http://things.example")).toContain(parseHandle("bob@things.example").origin);
+    expect(originsFor("https://things.example")).toContain(parseHandle("bob@things.example:443").origin);
+    // :443 on a plain HTTP instance is a port of its own: an address on port 80 isn't it.
+    expect(originsFor("http://things.example:443")).toContain(parseHandle("bob@things.example:443").origin);
+    expect(originsFor("http://printer.local:443")).not.toContain(parseHandle("bob@printer.local").origin);
+    expect(originsFor("http://192.168.1.30:8000")).toEqual(["http://192.168.1.30:8000", "https://192.168.1.30:8000"]);
+    expect(originsFor("http://192.168.1.30:8000")).not.toContain(parseHandle("bob@192.168.1.30").origin);
+    expect(originsFor("http://[fd00::5]:8080")).toContain(parseHandle("bob@[fd00::5]:8080").origin);
     expect(parseHandle("bob@nas:8000").origin).toBe("http://nas:8000");
     expect(parseHandle("Bob@Prints.Example").host).toBe("prints.example");
     // As a URL has it: the default port is no port.

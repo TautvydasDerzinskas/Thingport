@@ -51,6 +51,18 @@ export function parseHandle(input: string): Handle {
 
 const hostOf = (origin: string) => new URL(origin).host;
 
+/** The addresses a handle could have been guessed as for the instance at `origin`: either scheme with its port, and
+ *  without one where its port is its own scheme's default. So `bob@things.example:80`, guessed as HTTPS on port 80, is
+ *  still the instance at `http://things.example`, and `:443` on a plain HTTP instance stays a port of its own. */
+export function originsFor(origin: string): string[] {
+  const url = new URL(origin);
+  const port = url.port || (url.protocol === "https:" ? "443" : "80");
+  const at = (scheme: string, withPort: boolean) =>
+    new URL(`${scheme}://${url.hostname}${withPort ? `:${port}` : ""}`).origin;
+  const all = [at("http", true), at("https", true), ...(url.port ? [] : [at("http", false), at("https", false)])];
+  return [...new Set(all)];
+}
+
 export type MyRequestStatus = "waiting_admin" | "waiting_them" | "connected" | "declined";
 
 export type MyRequest = {
@@ -107,14 +119,14 @@ export async function createUserRequest(userId: string, input: string, note: str
   if (!(await isFederationLive())) throw new HttpError(409, "Connected instances are off", "federation_off");
   const handle = parseHandle(input);
   const publicUrl = await getPublicUrl();
-  if (publicUrl && hostOf(publicUrl) === handle.host) {
+  if (publicUrl && originsFor(publicUrl).includes(handle.origin)) {
     throw new HttpError(400, "That's someone on this instance", "same_instance");
   }
   // Whichever scheme the instance is on: the guess above may not be the address an admin connected with.
-  const known = await prisma.peer.findFirst({
-    where: { origin: { in: [`http://${handle.host}`, `https://${handle.host}`] } },
-    select: { status: true },
-  });
+  const hostname = new URL(handle.origin).hostname;
+  const known = (
+    await prisma.peer.findMany({ where: { origin: { contains: hostname } }, select: { origin: true, status: true } })
+  ).find((peer) => originsFor(peer.origin).includes(handle.origin));
   if (known?.status === "ACTIVE" || known?.status === "PAUSED") {
     throw new HttpError(409, "This instance is already connected with that one", "already_connected");
   }

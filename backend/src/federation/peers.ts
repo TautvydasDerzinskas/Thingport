@@ -13,7 +13,7 @@ import { enqueueActivity, kickDelivery, pendingDeliveryCounts } from "./delivery
 import { FederationFetchError, federationFetch, readJson } from "./fetch";
 import { keyFingerprint } from "./keys";
 import { forgetPeerContent, syncPeer } from "./remoteIndex";
-import { notifyRequesters } from "./userRequests";
+import { notifyRequesters, originsFor } from "./userRequests";
 import { AP_PREFIX, getRuntime, INSTANCE, type Runtime } from "./runtime";
 
 type CryptoKey = webcrypto.CryptoKey;
@@ -194,7 +194,7 @@ export async function connect(
     where: {
       kind: "LOCAL",
       status: "PENDING",
-      OR: [...(requestId ? [{ id: requestId }] : []), { origin: { in: [`http://${host}`, `https://${host}`] } }],
+      OR: [...(requestId ? [{ id: requestId }] : []), { origin: { in: originsFor(info.origin) } }],
     },
     orderBy: { createdAt: "asc" },
   });
@@ -204,8 +204,8 @@ export async function connect(
     await Promise.all(
       waiting.map(async (request) => {
         if (!request.userId) return null;
-        const username = await ensureUsername(request.userId).catch(() => null);
-        if (!username) return null;
+        // One that can't be named fails the Connect, for the admin to try again: never a Follow without some of them.
+        const username = await ensureUsername(request.userId);
         const targetName = request.targetHandle?.split("@")[0] ?? null;
         return {
           id: request.id,
