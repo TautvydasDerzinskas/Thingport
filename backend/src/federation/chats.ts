@@ -2,6 +2,7 @@ import type { Chat, ChatAttachment, ChatMessage, Peer, Prisma, RemotePerson } fr
 import crypto from "node:crypto";
 import { prisma } from "../db";
 import { getPublicUrl, getSocialSettings } from "../services/settingsService";
+import { HttpError } from "../utils/fileUtils";
 import { paragraphOf } from "../utils/htmlEntities";
 import { originOf } from "./addresses";
 import { enqueueActivity, kickDelivery } from "./delivery";
@@ -88,7 +89,17 @@ async function live(): Promise<Runtime | null> {
  *  deleted, someone joining or leaving, a room changed or deleted) is queued for partners all the same, and sent once
  *  they're on again. */
 async function here(): Promise<Here> {
-  const origin = new URL(await getPublicUrl()).origin;
+  const publicUrl = await getPublicUrl();
+  // What partners know this instance by: without it nothing can be addressed to them, so the change isn't made (its
+  // transaction undone) and can be made again once it's set.
+  if (!publicUrl) {
+    throw new HttpError(
+      409,
+      "Set this instance's Public URL first: partners can't be told without it",
+      "no_public_url",
+    );
+  }
+  const origin = new URL(publicUrl).origin;
   return { origin, actorUrl: new URL(`${origin}${AP_PREFIX}/actors/${INSTANCE}`) };
 }
 

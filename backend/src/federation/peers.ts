@@ -10,7 +10,7 @@ import { HttpError } from "../utils/fileUtils";
 import { classifyHost, originOf } from "./addresses";
 import { invalidateAllowlist, isAllowedOrigin, throughRequestLink, withAllowedOrigin } from "./allowlist";
 import { enqueueActivity, kickDelivery, pendingDeliveryCounts } from "./delivery";
-import { FederationFetchError, federationFetch, readJson } from "./fetch";
+import { FederationFetchError, fetchDirectly, federationFetch, readJson } from "./fetch";
 import { keyFingerprint } from "./keys";
 import { onlyComparedKeys, publishedKeys } from "./pinning";
 import {
@@ -585,40 +585,40 @@ async function localPerson(
 
 /** An incoming request, checked: its signature against the key the instance publishes now, and that the instance
  *  still stands by it. Fetches from that instance, which is fine since an admin opened it. */
-export async function requestDetails(id: string): Promise<RequestDetails> {
+export async function requestDetails(id: string, options: AnswersAtOptions = {}): Promise<RequestDetails> {
   const asked = await pendingIncoming(id);
   if (!asked.linkToken) return { ...(await detailsOf(asked)), elsewhere: null };
   // A link's address is only what its request says: where that's an address on the internet, whatever answers there
   // directly is asked too, side by side, so another instance there is shown.
-  const [details, there] = await Promise.all([viaItsLink(asked, () => detailsOf(asked)), answersAt(asked.origin)]);
+  const [details, there] = await Promise.all([
+    viaItsLink(asked, () => detailsOf(asked)),
+    answersAt(asked.origin, options),
+  ]);
   return { ...details, elsewhere: there && there.fingerprint !== details.fingerprint ? there : null };
 }
 
 const ANSWERS_AT_MS = 8_000;
 
+/** For tests: how an address is told to be on the internet, and how long to wait for one. */
+export type AnswersAtOptions = { classify?: typeof classifyHost; timeoutMs?: number };
+
 /** The instance answering at `origin` directly, if it's on the internet and does within ANSWERS_AT_MS: null for
- *  anything else, a home network's address among them (it may lead to another machine from here). */
+ *  anything else, a home network's address among them (it may lead to another machine from here). Straight there,
+ *  never down a link this instance knows for it, connecting only to an address on the internet whatever the name
+ *  resolves to by then, and given up, fetches and all, once its time is up. */
 export async function answersAt(
   origin: string,
-  classify: typeof classifyHost = classifyHost,
+  { classify = classifyHost, timeoutMs = ANSWERS_AT_MS }: AnswersAtOptions = {},
 ): Promise<{ name: string; fingerprint: string } | null> {
-  const kind = await classify(new URL(origin).hostname).then(
-    (found) => found.kind,
-    () => null,
-  );
-  if (kind !== "public") return null;
-  let timer: NodeJS.Timeout | undefined;
-  const gaveUp = new Promise<null>((resolve) => {
-    timer = setTimeout(() => resolve(null), ANSWERS_AT_MS);
-  });
-  const looked = lookupWithActor(origin).then(
-    ({ info }) => ({ name: info.name, fingerprint: info.fingerprint }),
-    () => null,
-  );
+  const isPublic = async (host: string) => (await classify(host).catch(() => null))?.kind === "public";
+  if (!(await isPublic(new URL(origin).hostname))) return null;
   try {
-    return await Promise.race([looked, gaveUp]);
-  } finally {
-    clearTimeout(timer);
+    const { info } = await fetchDirectly(origin, { signal: AbortSignal.timeout(timeoutMs), isPublic }, () =>
+      lookupWithActor(origin),
+    );
+    return { name: info.name, fingerprint: info.fingerprint };
+  } catch {
+    return null;
   }
 }
 

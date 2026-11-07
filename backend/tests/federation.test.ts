@@ -566,15 +566,26 @@ describe("connected instances, on", () => {
         peerId: peer.id,
         activity: { type: "Create" },
       });
-      // Off over there, which answers 404: tried again later rather than lost.
-      await tick();
-      const kept = await prisma.federationDelivery.findFirstOrThrow({ where: { peerId: peer.id } });
-      expect(kept).toMatchObject({ attempts: 1, lastError: "HTTP 404" });
+      // The clock each run reads: just after it was queued, so only what would be due now anyway is sent with it.
+      const at = Date.now() + 1000;
+      const runAt = async () => {
+        await tick(() => new Date(at));
+        return prisma.federationDelivery.findFirst({ where: { peerId: peer.id } });
+      };
+      // Off over there, which answers 404: kept, and tried again 30 seconds on.
+      expect(await runAt()).toMatchObject({ attempts: 1, lastError: "HTTP 404", nextAttemptAt: new Date(at + 30_000) });
+      // Its key didn't load there this time (401): kept, and tried again two minutes on.
+      answer = 401;
+      await prisma.federationDelivery.updateMany({ where: { peerId: peer.id }, data: { nextAttemptAt: new Date(at) } });
+      expect(await runAt()).toMatchObject({
+        attempts: 2,
+        lastError: "HTTP 401",
+        nextAttemptAt: new Date(at + 120_000),
+      });
       // Refused as it is: not worth sending again.
       answer = 400;
-      await prisma.federationDelivery.update({ where: { id: kept.id }, data: { nextAttemptAt: new Date() } });
-      await tick();
-      expect(await prisma.federationDelivery.count({ where: { peerId: peer.id } })).toBe(0);
+      await prisma.federationDelivery.updateMany({ where: { peerId: peer.id }, data: { nextAttemptAt: new Date(at) } });
+      expect(await runAt()).toBeNull();
     } finally {
       delete process.env.FEDERATION_ALLOW_LOOPBACK;
       await prisma.federationDelivery.deleteMany({ where: { peerId: peer.id } });

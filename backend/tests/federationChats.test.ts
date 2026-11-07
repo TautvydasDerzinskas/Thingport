@@ -254,6 +254,19 @@ describe("direct messages with partners' people", () => {
       const off = await request(app).post(`/api/chats/${opened.body.id}/messages`).set(auth(local)).send({ body: "?" });
       expect(off.status).toBe(409);
       expect(off.body.code).toBe("federation_off");
+      // Without a Public URL nothing can be addressed to them: refused, the message left as it was for later.
+      await prisma.setting.update({ where: { key: "public_url" }, data: { value: "" } });
+      try {
+        const unaddressed = await request(app)
+          .delete(`/api/chats/${opened.body.id}/messages/${sent.body.id}`)
+          .set(auth(local));
+        expect(unaddressed.status).toBe(409);
+        expect(unaddressed.body.code).toBe("no_public_url");
+        const kept = await prisma.chatMessage.findUniqueOrThrow({ where: { id: sent.body.id } });
+        expect(kept).toMatchObject({ deletedAt: null, body: "Hello Rūta" });
+      } finally {
+        await prisma.setting.update({ where: { key: "public_url" }, data: { value: ORIGIN } });
+      }
       // One's own message can still be deleted: queued for them, and sent once they're on again.
       const deleted = await request(app)
         .delete(`/api/chats/${opened.body.id}/messages/${sent.body.id}`)
@@ -361,7 +374,10 @@ describe("rooms with partners' people", () => {
         .set(auth(admin))
         .send({ add_remote_member_ids: [tomasId] });
       expect(adding.body.code).toBe("federation_off");
-      // What they can hear about later is made, and queued for them in order.
+      // What they can hear about later is made, and queued for them in order: exactly that, and nothing else.
+      const before = (
+        await prisma.federationDelivery.findMany({ where: { origin: PARTNER }, select: { id: true } })
+      ).map((row) => row.id);
       expect((await request(app).post(`/api/chats/${roomId}/leave`).set(auth(local))).status).toBe(200);
       const renamed = await request(app)
         .patch(`/api/chats/rooms/${roomId}`)
@@ -369,15 +385,24 @@ describe("rooms with partners' people", () => {
         .send({ name: "Day shift" });
       expect(renamed.status).toBe(200);
       expect((await request(app).delete(`/api/chats/rooms/${roomId}`).set(auth(admin))).status).toBe(200);
-      const theirs = (await deliveries(PARTNER)).filter(
-        (item) => (item.object as unknown) === room || item.object?.id === room,
-      );
-      expect(theirs.slice(-3).map((item) => [item.type, item.object?.name])).toEqual([
-        ["Update", "Night shift"],
-        ["Update", "Day shift"],
-        ["Delete", undefined],
+      const queued = (
+        await prisma.federationDelivery.findMany({
+          where: { origin: PARTNER, id: { notIn: before } },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        })
+      ).map((row) => row.activity as Record<string, unknown> & { object: Record<string, unknown> | string });
+      expect(
+        queued.map((item) => [
+          item.type,
+          typeof item.object === "string" ? item.object : item.object.id,
+          typeof item.object === "string" ? undefined : item.object.name,
+        ]),
+      ).toEqual([
+        ["Update", room, "Night shift"],
+        ["Update", room, "Day shift"],
+        ["Delete", room, undefined],
       ]);
-      const left = theirs.at(-3)!.object.attachment as { id: string }[];
+      const left = (queued[0].object as Record<string, unknown>).attachment as { id: string }[];
       expect(left.map((member) => member.id)).not.toContain(localActor());
     } finally {
       await updateFederationSettings({ enabled: true });
