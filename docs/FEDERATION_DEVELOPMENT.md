@@ -267,5 +267,8 @@ instead (`links.ts`), and the partner reaches it through that:
   the Public URL instead.
 - **Routers mounted at `/api` with a bare `router.use(requireAuth)`** answer 401 for any path that reaches them, so the
   unauthenticated probe (`federationProbeRoutes`) is mounted beside the health check, ahead of them.
+- **nginx redirects a location's prefix without its trailing slash**: with `location /api/ap/link/ { proxy_pass … }`,
+  a request for `/api/ap/link` gets a 301, and a link's asks don't follow redirects. The bundled config's location
+  is `/api/ap/link/replies/`, so the asks go through `/api/` as they are.
 - **A new Prisma migration** may come with `DROP INDEX ..._searchVector_idx` and `DROP DEFAULT` on `searchVector`:
   those columns are kept up in raw SQL, so take those lines out.

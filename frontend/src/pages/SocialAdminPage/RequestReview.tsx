@@ -51,37 +51,42 @@ function useRequestReview(
 
   // Only the latest read counts: an older one answering late would show a key other than the one ticked as compared.
   const latest = React.useRef(0);
-  const load = React.useCallback(() => {
-    const asked = ++latest.current;
-    setLoadError(null);
-    setDetails(null);
-    setMatches(false);
-    federationApi.request(request.id).then(
-      (value) => {
-        if (asked !== latest.current) return;
-        setLinkClosed(false);
-        setDetails(value);
-      },
-      (err) => {
-        if (asked !== latest.current) return;
-        if (err instanceof UnauthorizedError) onUnauthorized?.();
-        else if (err instanceof FederationError && err.code === "link_closed") setLinkClosed(true);
-        else setLoadError(federationErrorText(err, t));
-      },
-    );
-  }, [request.id, onUnauthorized, t]);
+  // Its link closed: tried again once the last try has answered, so a slow one isn't overtaken by the next.
+  const retry = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const load = React.useCallback(
+    function loadDetails() {
+      if (retry.current) clearTimeout(retry.current);
+      retry.current = null;
+      const asked = ++latest.current;
+      setLoadError(null);
+      setDetails(null);
+      setMatches(false);
+      federationApi.request(request.id).then(
+        (value) => {
+          if (asked !== latest.current) return;
+          setLinkClosed(false);
+          setDetails(value);
+        },
+        (err) => {
+          if (asked !== latest.current) return;
+          if (err instanceof UnauthorizedError) onUnauthorized?.();
+          else if (err instanceof FederationError && err.code === "link_closed") {
+            setLinkClosed(true);
+            // Once its instance is running again, the review opens by itself.
+            retry.current = setTimeout(loadDetails, 15_000);
+          } else setLoadError(federationErrorText(err, t));
+        },
+      );
+    },
+    [request.id, onUnauthorized, t],
+  );
   React.useEffect(() => {
     load();
     return () => {
       latest.current += 1;
+      if (retry.current) clearTimeout(retry.current);
     };
   }, [load]);
-  // Once its instance is running again, the review opens by itself.
-  React.useEffect(() => {
-    if (!linkClosed) return;
-    const timer = setInterval(load, 15_000);
-    return () => clearInterval(timer);
-  }, [linkClosed, load]);
 
   const act = async (outcome: ReviewOutcome) => {
     const name = details?.name ?? request.name;

@@ -540,8 +540,8 @@ function PartnerRow({ peer, ago, onChanged, onShowKey, onUnauthorized }: RowProp
   const act = useAct(onChanged, onUnauthorized);
   const [anchor, setAnchor] = React.useState<{ el?: HTMLElement; x?: number; y?: number } | null>(null);
   const close = () => setAnchor(null);
-  // A closed link says so itself: not "can't reach it" as well.
-  const unreachable = Boolean(peer.lastError && peer.pending > 0) && !peer.link;
+  // A closed link says so itself: not "can't reach it" as well. An open one whose deliveries fail still does.
+  const unreachable = Boolean(peer.lastError && peer.pending > 0 && (!peer.link || peer.linkOpen));
   const state =
     peer.status === "PAUSED" ? (
       <ToneChip tone="neutral" icon={<PauseIcon />} label={t(k("paused"))} />

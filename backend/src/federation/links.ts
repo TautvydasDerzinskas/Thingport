@@ -68,7 +68,15 @@ const pick = (headers: Record<string, string>, names: string[]) =>
 // ---------------------------------------------------------------------------------------------------------------------
 // The side that can be reached: partners' links end here.
 
-type Sent = { id: string; method: string; url: string; headers: Record<string, string>; body?: string };
+// `startBy`: when it's too late to start it, its caller long gone.
+type Sent = {
+  id: string;
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+  body?: string;
+  startBy?: number;
+};
 type Waiting = {
   resolve: (response: Response, cancel: () => void) => void;
   fail: (message: string) => void;
@@ -90,6 +98,31 @@ const lineOf = (key: string): Line => {
   return line;
 };
 const isOpen = (line: Line | undefined) => Boolean(line && (line.waiter || Date.now() - line.lastAsked < OPEN_MS));
+
+// Lines and their bookkeeping for links closed a while, ended or not, go: pairing and disconnecting often leaves nothing
+// behind.
+const IDLE_MS = 60 * 60 * 1000;
+let lastSweep = 0;
+function sweep(): void {
+  if (Date.now() - lastSweep < 60_000) return;
+  lastSweep = Date.now();
+  for (const [key, line] of lines) {
+    if (!line.waiter && !line.waiting.size && !line.queue.length && Date.now() - line.lastAsked > IDLE_MS) {
+      lines.delete(key);
+    }
+  }
+  for (const [peerId, at] of seen) if (Date.now() - at > IDLE_MS) seen.delete(peerId);
+}
+
+/** Lets go of every partner's link: connected instances turned off. */
+export function closeAllLines(): void {
+  for (const line of lines.values()) {
+    line.waiter?.([]);
+    for (const waiting of line.waiting.values()) waiting.fail(NOT_LINKED);
+  }
+  lines.clear();
+  seen.clear();
+}
 
 /** Whether a partner that reaches this instance through its link has it open now. */
 export function linkOpen(peerId: string): boolean {
@@ -140,13 +173,18 @@ async function bodyOf(body: RequestInit["body"]): Promise<string | undefined> {
 async function throughLink(key: string, url: string, init: RequestInit): Promise<Response> {
   const line = lines.get(key);
   if (!isOpen(line)) throw new FederationFetchError(NOT_LINKED, "network");
+  const cancelled = () => new FederationFetchError("The request took too long", "network");
+  if (init.signal?.aborted) throw cancelled();
   const sent: Sent = {
     id: crypto.randomUUID(),
     method: (init.method ?? "GET").toUpperCase(),
     url,
     headers: Object.fromEntries(new Headers(init.headers).entries()),
     body: await bodyOf(init.body),
+    startBy: Date.now() + PICKUP_MS * 2,
   };
+  // Given up on while its body was read.
+  if (init.signal?.aborted) throw cancelled();
   return new Promise<Response>((resolve, reject) => {
     let settled = false;
     // Its body, cut off once the caller's time is up, as a body fetched directly would be.
@@ -235,6 +273,7 @@ async function reopened(peerId: string): Promise<void> {
 
 /** GET /api/ap/link: a partner asking what's for it, answered as soon as there's something or after POLL_MS. */
 export async function answerAsk(req: Request, res: ExpressResponse): Promise<void> {
+  sweep();
   const token = tokenOf(req);
   const found = await findLine(token);
   if (!found) {
@@ -363,25 +402,35 @@ export function cameThroughLink(headers: Request["headers"]): boolean {
 /** Set while a request that came down a link is handled. */
 export const throughOwnLink = new AsyncLocalStorage<true>();
 
-type Kept = { origin: string; token: string; stop: AbortController; lastAnswered: number };
+type Kept = { origin: string; token: string; stop: AbortController; lastAnswered: number; lastSaved: number };
 const kept = new Map<string, Kept>();
 let refresher: NodeJS.Timeout | null = null;
 const CONCURRENT = 8;
 
-/** Runs at most `max` at once, the rest in turn: the link keeps asking meanwhile. */
+/** Runs at most `max` at once, the rest in turn. `room()` waits while as many again are waiting, so the link stops
+ *  asking for more than it can start soon: what's left waits at the partner, whose callers give up in time. */
 function limiter(max: number) {
   let active = 0;
   const queued: (() => void)[] = [];
-  return async (task: () => Promise<void>): Promise<void> => {
+  const roomWaiters: (() => void)[] = [];
+  const freed = () => {
+    while (queued.length < max && roomWaiters.length) roomWaiters.shift()?.();
+  };
+  const run = async (task: () => Promise<void>): Promise<void> => {
     if (active >= max) await new Promise<void>((resolve) => queued.push(resolve));
     active += 1;
+    freed();
     try {
       await task();
     } finally {
       active -= 1;
       queued.shift()?.();
+      freed();
     }
   };
+  const room = (): Promise<void> =>
+    queued.length < max ? Promise.resolve() : new Promise<void>((resolve) => roomWaiters.push(resolve));
+  return { run, room };
 }
 
 /** Whether this instance's link to a partner got through lately. */
@@ -403,6 +452,7 @@ export function stopLinks(): void {
   refresher = null;
   for (const link of kept.values()) link.stop.abort();
   kept.clear();
+  closeAllLines();
 }
 
 onPartnersChanged(() => {
@@ -425,7 +475,13 @@ export async function refreshLinks(): Promise<void> {
   }
   for (const peer of peers) {
     if (kept.has(peer.id)) continue;
-    const link: Kept = { origin: peer.origin, token: peer.linkToken!, stop: new AbortController(), lastAnswered: 0 };
+    const link: Kept = {
+      origin: peer.origin,
+      token: peer.linkToken!,
+      stop: new AbortController(),
+      lastAnswered: 0,
+      lastSaved: 0,
+    };
     kept.set(peer.id, link);
     void keepOpen(peer.id, link);
   }
@@ -433,8 +489,16 @@ export async function refreshLinks(): Promise<void> {
 
 const sleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
+    const onAbort = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    // Its listener goes with it, so a partner down for days leaves none behind.
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal.addEventListener("abort", onAbort, { once: true });
   });
 
 async function keepOpen(peerId: string, link: Kept): Promise<void> {
@@ -442,7 +506,11 @@ async function keepOpen(peerId: string, link: Kept): Promise<void> {
   const allowed = (origin: string) => origin === link.origin;
   let failures = 0;
   const limit = limiter(CONCURRENT);
+  const abandoned = new Promise<void>((resolve) => signal.addEventListener("abort", () => resolve(), { once: true }));
   while (!signal.aborted) {
+    // Busy with as much as it can take: asks for more once some of it has started.
+    await Promise.race([limit.room(), abandoned]);
+    if (signal.aborted) return;
     try {
       const response = await federationFetch(
         `${link.origin}${AP_PREFIX}/link`,
@@ -464,12 +532,18 @@ async function keepOpen(peerId: string, link: Kept): Promise<void> {
       }
       const { requests } = ((await readJson(response, 32 * 1024 * 1024)) ?? {}) as { requests?: Sent[] };
       failures = 0;
-      if (Date.now() - link.lastAnswered > 60_000) {
+      link.lastAnswered = Date.now();
+      if (Date.now() - link.lastSaved > 60_000) {
+        link.lastSaved = Date.now();
         await prisma.peer.update({ where: { id: peerId }, data: { linkSeenAt: new Date() } }).catch(() => {});
       }
-      link.lastAnswered = Date.now();
-      // Several at once, so a big download doesn't hold up the rest.
-      for (const sent of Array.isArray(requests) ? requests : []) void limit(() => serve(link, sent));
+      // Several at once, so a big download doesn't hold up the rest; one that waited past its time isn't started.
+      for (const sent of Array.isArray(requests) ? requests : []) {
+        void limit.run(async () => {
+          if (typeof sent.startBy === "number" && Date.now() > sent.startBy) return;
+          await serve(link, sent);
+        });
+      }
     } catch {
       if (signal.aborted) return;
       failures += 1;

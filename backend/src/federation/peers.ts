@@ -12,6 +12,7 @@ import { invalidateAllowlist, isAllowedOrigin, throughRequestLink, withAllowedOr
 import { enqueueActivity, kickDelivery, pendingDeliveryCounts } from "./delivery";
 import { FederationFetchError, federationFetch, readJson } from "./fetch";
 import { keyFingerprint } from "./keys";
+import { onlyComparedKeys, publishedKeys } from "./pinning";
 import {
   linkApproved,
   linkEnded,
@@ -469,9 +470,9 @@ export async function storeIncomingRequest(params: {
     const created = await tx.peerRequest.create({ data });
     return { kind: fromOrigin ? ("another" as const) : ("stored" as const), id: created.id };
   });
+  // Its address is reached through its link from now on, never directly: whichever request this is from there.
+  if (linkToken && "id" in outcome) invalidateAllowlist();
   if (outcome.kind !== "stored") return outcome.kind;
-  // Its address is reached through its link from now on, never directly.
-  if (linkToken) invalidateAllowlist();
   const who = name ?? new URL(params.origin).host;
   await notifyAdmins({
     title: `${who} wants to connect`,
@@ -614,6 +615,8 @@ async function currentRequest(
         where: { id: request.id },
         data: { status: code === "withdrawn" ? "CANCELLED" : "DECLINED", decidedAt: new Date() },
       });
+      // Its address still never fetched directly, its link told it's over.
+      if (request.linkToken) await linkEnded(request.linkToken, origin, "declined");
     }
   }
   throw failure;
@@ -707,6 +710,13 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
   // Another instance there already, one this reaches directly: two on different networks with the same address.
   if (existing && request.linkToken && existing.link !== "theirs") {
     throw new HttpError(409, "Another instance at that address is connected already", "address_taken");
+  }
+  // Its document is kept to check its signatures against, unasked: it may publish only the keys compared.
+  if (request.linkToken) {
+    const published = [...publishedKeys(actor.document), ...(await runtime.keysIn(actor.document))];
+    if (!onlyComparedKeys(published, info.publicKeys as never)) {
+      throw new HttpError(422, "That instance publishes a key other than the one compared", "bad_signature");
+    }
   }
   const data = {
     name: info.name,
@@ -938,9 +948,15 @@ export async function listInstances() {
     pendingDeliveryCounts(),
   ]);
   const out = (peer: Peer) => peerOut(peer, pending.get(peer.id) ?? 0);
-  // One row per instance: the newest of its requests, which opening it checks along with the rest.
+  // One row per instance: the newest of its requests, which opening it checks along with the rest. Each one with a link
+  // has a row of its own: another under its address, forged or another network's, can't hide it.
   const seen = new Set<string>();
-  const newest = incoming.filter((request) => !seen.has(request.origin) && seen.add(request.origin));
+  const newest = incoming.filter((request) => {
+    if (request.linkToken) return true;
+    if (seen.has(request.origin)) return false;
+    seen.add(request.origin);
+    return true;
+  });
   return {
     incoming: newest.map((request) => ({
       id: request.id,

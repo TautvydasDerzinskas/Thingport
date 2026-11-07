@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -6,8 +7,8 @@ import { prisma } from "../src/db";
 import { invalidateAllowlist, lineFor } from "../src/federation/allowlist";
 import { NOT_LINKED, federationFetch } from "../src/federation/fetch";
 import { cameThroughLink, linkEnded, linkOpen, newLinkToken, requestLinkOpen, sha256 } from "../src/federation/links";
-import { storeIncomingRequest } from "../src/federation/peers";
-import { resetRuntime } from "../src/federation/runtime";
+import { listInstances, storeIncomingRequest } from "../src/federation/peers";
+import { getRuntime, resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
 import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
 
@@ -171,6 +172,89 @@ describe("links", () => {
       );
     expect(res.status).toBe(409);
     expect(res.body.code).toBe("address_taken");
+  });
+
+  it("doesn't send down a link what was given up on before it went", async () => {
+    const token = newLinkToken();
+    const origin = "http://192.0.2.93:8000";
+    const peer = await prisma.peer.create({
+      data: { origin, status: "ACTIVE", link: "theirs", linkToken: sha256(token) },
+    });
+    invalidateAllowlist();
+    const ask = request(app).get("/api/ap/link").set("Authorization", `Link ${token}`);
+    const pending = ask.then((res) => res);
+    await until(() => linkOpen(peer.id));
+    await expect(
+      federationFetch(`${origin}/api/ap/directory`, { signal: AbortSignal.abort() }, () => true),
+    ).rejects.toThrow("took too long");
+    ask.abort();
+    await pending.catch(() => null);
+  });
+
+  it("checks a linked partner's signatures only against the keys compared, its kept document included", async () => {
+    const runtime = await getRuntime();
+    const pem = () =>
+      crypto
+        .generateKeyPairSync("rsa", { modulusLength: 2048 })
+        .publicKey.export({ type: "spki", format: "pem" }) as string;
+    const compared = pem();
+    const jwk = crypto.createPublicKey(compared).export({ format: "jwk" });
+    const origin = "http://192.0.2.94:8000";
+    const actorUrl = `${origin}/api/ap/actors/instance`;
+    const doc = (keys: string[]) => ({
+      "@context": ["https://www.w3.org/ns/activitystreams", "https://w3id.org/security/v1"],
+      id: actorUrl,
+      type: "Application",
+      inbox: `${origin}/api/ap/inbox`,
+      publicKey: keys.map((key, n) => ({ id: `${actorUrl}#key-${n}`, owner: actorUrl, publicKeyPem: key })),
+    });
+    const peer = await prisma.peer.create({
+      data: {
+        origin,
+        status: "ACTIVE",
+        link: "theirs",
+        actorUrl,
+        publicKeys: [{ kty: jwk.kty, n: jwk.n, e: jwk.e }] as Prisma.InputJsonValue,
+        actorDocument: doc([compared]) as Prisma.InputJsonValue,
+      },
+    });
+    invalidateAllowlist();
+    expect(((await runtime.pinnedLoader(`${actorUrl}#key-0`)) as { document: { id: string } }).document.id).toBe(
+      actorUrl,
+    );
+    // One more key in it, however it got there: refused.
+    await prisma.peer.update({
+      where: { id: peer.id },
+      data: { actorDocument: doc([compared, pem()]) as Prisma.InputJsonValue },
+    });
+    await expect(runtime.pinnedLoader(`${actorUrl}#key-0`)).rejects.toThrow("other than the one compared");
+  });
+
+  it("lists every request that keeps a link on its own, whatever else came from its address", async () => {
+    const origin = "http://192.0.2.95:8000";
+    const follow = (n: number, token?: string) => ({
+      type: "Follow",
+      id: `${origin}/api/ap/follows/f${n}`,
+      actor: `${origin}/api/ap/actors/instance`,
+      ...(token ? { "thingport:link": token } : {}),
+    });
+    for (const [n, token] of [
+      [1, newLinkToken()],
+      [2, newLinkToken()],
+      [3, undefined],
+      [4, undefined],
+    ] as const) {
+      await storeIncomingRequest({
+        origin,
+        url: `${ORIGIN}/api/ap/inbox`,
+        headers: {},
+        raw: "{}",
+        follow: follow(n, token) as never,
+      });
+    }
+    const listed = (await listInstances()).incoming.filter((item) => item.origin === origin);
+    expect(listed.filter((item) => item.link)).toHaveLength(2);
+    expect(listed.filter((item) => !item.link)).toHaveLength(1);
   });
 
   it("tells what came down this instance's own link from what came from outside", () => {

@@ -110,7 +110,11 @@ async function build(origin: string): Promise<Runtime> {
       // One reached through its link signs with the key compared when connecting: checked against that, unasked.
       if (pinned) {
         const kept = await keptActorDocument(url);
-        if (kept) return { contextUrl: null, document: kept, documentUrl: url.split("#")[0] };
+        if (kept) {
+          // Held to the keys compared, as a document fetched would be.
+          await assertComparedKeys(url, [...publishedKeys(kept), ...(await keysIn(kept))]);
+          return { contextUrl: null, document: kept, documentUrl: url.split("#")[0] };
+        }
       }
       let request = new Request(url, { headers: { Accept: ACCEPT } });
       if (identity) request = await fedify.signRequest(request, identity.privateKey as never, identity.keyId);

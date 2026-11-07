@@ -43,7 +43,7 @@ async function boot(): Promise<void> {
       return false;
     },
   );
-  app.listen(API_PORT, () => {
+  const server = app.listen(API_PORT, () => {
     console.log(`Thingport API listening on port ${API_PORT}`);
     startConsumeWatcher();
     startCollectionSyncScheduler();
@@ -64,6 +64,9 @@ async function boot(): Promise<void> {
       .then(() => resumeFileReuseBackfill())
       .catch((err) => console.error("Failed to resume checking identical files:", err));
   });
+  // A whole request may take up to an hour: a partner's file coming up its link, or a big upload, on a slow
+  // connection. Headers still have to arrive within a minute (headersTimeout), and nginx in front has its own limits.
+  server.requestTimeout = 60 * 60 * 1000;
   if (recovered) startImportWorker();
   else startImportWorkerAfterRecovery(bootedAt);
 }
