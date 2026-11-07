@@ -19,12 +19,12 @@ A self-hosted library that imports, organises, designs, and never loses your fav
 </p>
 
 <p>
-  <a href="https://thingport.net/"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fweb-pages.json" alt="Website: latest build"></a>
-  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/frontend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Ffrontend-image.json" alt="Frontend: latest build"></a>
-  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fbackend-image.json" alt="Backend: latest build"></a>
-  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fbridge-release.json" alt="Bridge: latest build"></a>
-  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/extension-release.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fextension-release.json" alt="Extension: latest build"></a>
-  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fregression.json" alt="Regression: latest build"></a>
+  <a href="https://thingport.net/"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fweb-pages.json" alt="Website: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/frontend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Ffrontend-image.json" alt="Frontend: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fbackend-image.json" alt="Backend: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fbridge-release.json" alt="Bridge: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/extension-release.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fextension-release.json" alt="Extension: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fregression.json" alt="Regression: latest build"></a>
 </p>
 
 </div>
