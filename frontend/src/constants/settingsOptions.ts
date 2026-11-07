@@ -33,6 +33,12 @@ export const NORMALIZE_3MF_SLICER_IDS: ReadonlySet<string> = new Set([
 // the flat copy for now.
 export const NORMALIZE_3MF_ORCA_SLICER_IDS: ReadonlySet<string> = new Set(["snapmaker-orca"]);
 
+/** Which kind of normalized copy the server prepares for a slicer: "orca" for the forks above (?normalize=orca),
+ *  "flat" for every other slicer (?normalize=1). */
+export function normalizeTargetFor(slicerId: string | null | undefined): "flat" | "orca" {
+  return slicerId && NORMALIZE_3MF_ORCA_SLICER_IDS.has(slicerId) ? "orca" : "flat";
+}
+
 /** "system" follows prefers-color-scheme; resolve with useResolvedTheme before rendering. */
 export type ThemeSelection = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
