@@ -1,6 +1,7 @@
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { toPrintOut, type PrintOut } from "../dto";
+import { remoteOriginOut } from "../federation/remoteExplore";
 import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCategorizationService";
 import { aiDescriptionOut } from "./aiDescriptionService";
 import type { Author, Category, Plate, PreviewImage, Prisma, Print, PrintFile } from "@prisma/client";
@@ -45,7 +46,7 @@ export async function printOutById(
     aiCategoryPaths(userId),
     aiSuggestionsShown(),
   ]);
-  return toPrintOut(
+  const out = toPrintOut(
     full.print,
     full.plates,
     full.files,
@@ -56,6 +57,7 @@ export async function printOutById(
     await aiSuggestionOut(userId, full.print.aiSuggestion, categoryPaths, suggestionsShown),
     await aiDescriptionOut(full.print),
   );
+  return { ...out, copied_from_remote: await remoteOriginOut(full.print.remoteSource) };
 }
 
 function groupByPrintId<T extends { printId: string }>(rows: T[]): Map<string, T[]> {

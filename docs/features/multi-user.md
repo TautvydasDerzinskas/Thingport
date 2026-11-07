@@ -31,11 +31,13 @@ With it on:
 - **A collection can be public.** Its form offers **Private** or **Public**, and new collections start private.
 - **So can your own models**: the ones under **My models**, from the lock beside **Edit profile** there. Only a public
   collection and the models in it, and public models, can be seen by anyone else.
-- **Explore** appears in the sidebar once the instance has more than one user. It lists the people who share, with how
-  many collections and models each one shares, the newest models shared, recently updated public collections, and the
-  models that get copied most. A person's card opens their profile, as their **My models** page looks to you: their
-  models, when they made them public, and a **Collections** tab with their public collections. Your own shares aren't
-  listed there, since they're not news to you.
+- **Explore** appears in the sidebar once the instance has more than one user, or connected instances are on. It lists
+  the people who share, with how many collections and models each one shares, the newest models shared, recently updated
+  public collections, and the models that get copied most. A person's card opens their profile, as their **My models**
+  page looks to you: their models, when they made them public, and a **Collections** tab with their public collections.
+  Your own shares aren't listed there, since they're not news to you. With [connected
+  instances](../guides/connected-instances.md#what-partners-see), partners' people, collections and models show there
+  too, marked with where they're from, and **Everywhere**, **This instance** or a partner narrows it down.
 - **Someone else's model** opens with whose it is. You can download it, open it in your slicer or in
   [Studio](../guides/studio.md), and customize it, but not change it.
 - **Adding it to a collection of yours**, or **Copy to my library**, makes a copy of your own: its files, pictures and
@@ -45,6 +47,10 @@ With it on:
 
 Turning social features off hides everything shared again. Each collection keeps its Public or Private setting for when
 it's back on, and copies people made stay theirs.
+
+Admins can also connect this instance with other Thingport instances, on the same network, a VPN or the internet, so
+their people show up here too, and anyone can ask them to connect with someone elsewhere from **Explore → Someone
+elsewhere**. See [connected instances](../guides/connected-instances.md).
 
 ## Chats
 

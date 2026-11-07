@@ -6,6 +6,7 @@ import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { seedDefaultCategories } from "./categoryService";
 import { getPublicUrl } from "./settingsService";
+import { ensureUsername } from "./usernames";
 
 // Sign-in through OpenID Connect providers (Authentik, PocketID, ...): the authorization code flow with PKCE,
 // state and nonce. It ends in the same Thingport session a password sign-in gets.
@@ -380,6 +381,8 @@ export async function signInWithClaims(
       },
       { timeout: 15000 },
     );
+    // After the transaction, as at sign-up: a clash over a name picks again.
+    user.username = await ensureUsername(user.id).catch(() => null);
     return { user, created: true, linked: false };
   } catch (err) {
     // Two callbacks for the same person at once: the other one got there first.

@@ -46,6 +46,9 @@ import ConnectionsPage from "./pages/ConnectionsPage";
 import CaptchaPage from "./pages/CaptchaPage";
 import ExplorePage from "./pages/ExplorePage";
 import ExploreUserPage from "./pages/ExplorePage/ExploreUserPage";
+import ElsewhereCollectionPage from "./pages/ExplorePage/elsewhere/ElsewhereCollectionPage";
+import ElsewhereModelPage from "./pages/ExplorePage/elsewhere/ElsewhereModelPage";
+import ElsewherePersonPage from "./pages/ExplorePage/elsewhere/ElsewherePersonPage";
 import ChatsPage from "./pages/ChatsPage";
 import RenderingPage from "./pages/RenderingPage";
 import AiPage from "./pages/AiPage";
@@ -301,6 +304,19 @@ function AppShell({
               viewer={user}
             />
           }
+        />
+        {/* What partner instances' people share, read-only: from what this instance keeps of it. */}
+        <Route
+          path="/explore/elsewhere/people/:personId"
+          element={<ElsewherePersonPage onUnauthorized={onUnauthorized} />}
+        />
+        <Route
+          path="/explore/elsewhere/models/:modelId"
+          element={<ElsewhereModelPage onUnauthorized={onUnauthorized} />}
+        />
+        <Route
+          path="/explore/elsewhere/collections/:collectionId"
+          element={<ElsewhereCollectionPage onUnauthorized={onUnauthorized} />}
         />
         <Route
           path="/explore/collections/:collectionId"
