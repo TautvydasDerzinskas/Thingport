@@ -10,14 +10,18 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { invalidateAllowlist } from "../src/federation/allowlist";
 import { MEDIA_DIR, mediaAddress, pruneMedia } from "../src/federation/media";
+import { FederationFetchError } from "../src/federation/fetch";
 import {
   collectionsOf,
   DIRECTORY_PAGE,
   directory,
+  fitPerson,
   modelsPage,
+  PERSON_MAX_BYTES,
   person as personDoc,
   sendSharedFile,
 } from "../src/federation/publish";
+import { readModels } from "../src/federation/remoteIndex";
 import { resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
 import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
@@ -482,6 +486,69 @@ describe("keeping it current", () => {
     await pruneMedia(peerId);
     // The one still named stays, an older version goes, and one just written is left a while.
     expect(fs.readdirSync(dir).toSorted()).toEqual([named, `${named}.type`, fresh].toSorted());
+    // Past the most kept of a partner's, the oldest fetched goes first, named or not.
+    await pruneMedia(peerId, 1);
+    expect(fs.readdirSync(dir)).toEqual([fresh]);
+  });
+
+  it("reads a person's models page by page, and knows when it hasn't read them all", async () => {
+    const own = (url: string | undefined): url is string => Boolean(url?.startsWith(`${PARTNER}/`));
+    const at = (page: number) => `${PARTNER}/api/ap/actors/ruta/models?page=${page}`;
+    const gone = () => new FederationFetchError("Not found", "status", 404);
+    // `count` pages of one model each; past them, what `after` says.
+    const partner =
+      (count: number, after: (page: number) => unknown = () => Promise.reject(gone())) =>
+      async (url: string) => {
+        const page = Number(new URL(url).searchParams.get("page"));
+        if (page >= count) return after(page);
+        return {
+          orderedItems: [{ id: `${PARTNER}/api/ap/models/p${page}`, name: `P${page}`, attributedTo: "x" }],
+          next: page + 1 < count ? at(page + 1) : undefined,
+        };
+      };
+    const read = async (pages: (url: string) => Promise<unknown>) => {
+      const { models, all } = await readModels(pages, at(0), own);
+      return { count: models.length, all };
+    };
+    expect(await read(partner(3))).toEqual({ count: 3, all: true });
+    // None of their own: only collections.
+    expect(await read(partner(0))).toEqual({ count: 0, all: true });
+    // More than are read, a page gone after the first, or the next one somewhere else: the rest isn't known.
+    expect(await read(partner(45, () => ({ orderedItems: [], next: at(999) })))).toEqual({ count: 40, all: false });
+    const vanishing = async (url: string) => {
+      const page = Number(new URL(url).searchParams.get("page"));
+      if (page === 1) throw gone();
+      return { orderedItems: [], next: at(page + 1) };
+    };
+    expect(await read(vanishing)).toEqual({ count: 0, all: false });
+    const elsewhere = async () => ({ orderedItems: [], next: "http://198.51.100.9/models?page=1" });
+    expect(await read(elsewhere)).toEqual({ count: 0, all: false });
+    // A page without its items is broken, not empty.
+    await expect(read(async () => ({ next: at(1) }))).rejects.toThrow(/orderedItems/);
+  });
+
+  it("keeps a published person within what a partner's fetch takes, however their text escapes", async () => {
+    expect(DIRECTORY_PAGE * PERSON_MAX_BYTES + 16 * 1024).toBeLessThan(1024 * 1024);
+    const big = await register("Big");
+    // Control characters are six bytes each in JSON.
+    const escaping = (length: number) => "\u0001".repeat(length);
+    await prisma.user.update({
+      where: { id: big.id },
+      data: {
+        displayName: escaping(5000),
+        bio: escaping(1000),
+        profileLinks: Array.from({ length: 5 }, (_, n) => `https://example.org/${n}/${'"'.repeat(480)}`),
+      },
+    });
+    const shelf = await request(app).post("/api/collections").set(auth(big)).send({ name: "Big", is_public: true });
+    expect(shelf.status).toBe(200);
+    const doc = (await personDoc(big.id)) as Record<string, unknown>;
+    const { "@context": _context, ...person } = doc;
+    expect(Buffer.byteLength(JSON.stringify(person))).toBeLessThanOrEqual(PERSON_MAX_BYTES);
+    expect(String(person.name)).toHaveLength(120);
+    // Cut, not dropped: what fits of the bio stays.
+    expect((person.source as { content: string }).content.length).toBeGreaterThan(0);
+    expect(fitPerson({ name: "Small" })).toEqual({ name: "Small" });
   });
 
   it("publishes the collections changed last, filing something counting as a change", async () => {

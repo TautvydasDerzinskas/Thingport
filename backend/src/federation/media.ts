@@ -13,8 +13,17 @@ import { signedGet } from "./signedFetch";
 
 export const MEDIA_DIR = path.join(STORAGE, "federation-media");
 const MAX_BYTES = 10 * 1024 * 1024;
-// A picture no longer named is left this long, in case it's being sent right now.
+// A picture no longer named is left this long, in case it's about to be sent. One being sent is safe anyway: removing
+// a file leaves it readable to whoever has it open.
 const PRUNE_AFTER_MS = 10 * 60 * 1000;
+// Kept of one partner's pictures at most, the oldest fetched dropped first: they're fetched again if they're shown.
+export const MEDIA_MAX_BYTES_PER_PEER = 1024 * 1024 * 1024;
+// How long a forgotten partner's pictures stay turned away: by then its row is gone or no longer ACTIVE.
+const FORGOTTEN_MS = 60 * 1000;
+
+// Pictures being fetched, by partner: forgetting one waits for them, and keeps any that come after from being kept.
+const fetching = new Map<string, Set<Promise<unknown>>>();
+const forgotten = new Set<string>();
 const TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"]);
 // Relative to the API, as the other file addresses are: the web app adds the session, as an <img> sends no header.
 export const MEDIA_ROUTE = "/explore/elsewhere/media";
@@ -46,7 +55,16 @@ export async function sendRemoteMedia(token: string, res: Response): Promise<voi
   const file = path.join(MEDIA_DIR, peer.id, mediaName(url));
   let type = await fs.readFile(`${file}.type`, "utf8").catch(() => null);
   if (!type) {
-    type = await fetchInto(url, origin!, file).catch(() => null);
+    if (forgotten.has(peer.id)) return notFound();
+    const fetched = fetchInto(url, origin!, file, peer.id).catch(() => null);
+    const running = fetching.get(peer.id) ?? new Set<Promise<unknown>>();
+    fetching.set(peer.id, running.add(fetched));
+    try {
+      type = await fetched;
+    } finally {
+      running.delete(fetched);
+      if (!running.size && fetching.get(peer.id) === running) fetching.delete(peer.id);
+    }
     if (!type) return notFound();
   }
   res.setHeader("Content-Type", type);
@@ -61,7 +79,7 @@ export async function sendRemoteMedia(token: string, res: Response): Promise<voi
 }
 
 /** Fetches a picture, signed as this instance, from that partner only; its type, once it's kept. */
-async function fetchInto(url: string, origin: string, file: string): Promise<string | null> {
+async function fetchInto(url: string, origin: string, file: string, peerId: string): Promise<string | null> {
   const response = await signedGet(url, origin, { accept: "image/*" });
   const type = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
   if (!response.ok || !TYPES.has(type) || Number(response.headers.get("content-length") ?? 0) > MAX_BYTES) {
@@ -82,6 +100,8 @@ async function fetchInto(url: string, origin: string, file: string): Promise<str
     }
     chunks.push(value);
   }
+  // Its partner forgotten meanwhile: nothing of it is kept.
+  if (forgotten.has(peerId)) return null;
   await fs.mkdir(path.dirname(file), { recursive: true });
   // Written aside and moved into place: a reader never sees half of it.
   const temp = `${file}.${crypto.randomUUID()}`;
@@ -91,9 +111,18 @@ async function fetchInto(url: string, origin: string, file: string): Promise<str
   return type;
 }
 
-/** A partner's pictures kept here that nothing of it names any more: an older version of one, or one of something no
- *  longer shared. Without this, every change a partner made to a picture would stay on disk until it disconnected. */
-export async function pruneMedia(peerId: string): Promise<void> {
+/** Everything of a partner's pictures, on disconnecting or blocking it: once the ones being fetched are done, and
+ *  turning away any asked for meanwhile, so none is written back after. */
+export async function forgetMedia(peerId: string): Promise<void> {
+  forgotten.add(peerId);
+  setTimeout(() => forgotten.delete(peerId), FORGOTTEN_MS).unref();
+  await Promise.allSettled(fetching.get(peerId) ?? []);
+  await fs.rm(path.join(MEDIA_DIR, peerId), { recursive: true, force: true }).catch(() => {});
+}
+
+/** A partner's pictures kept here that nothing of it names any more -- an older version of one, or one of something no
+ *  longer shared -- and beyond `maxBytes` of them, the oldest fetched. After every read of the partner. */
+export async function pruneMedia(peerId: string, maxBytes = MEDIA_MAX_BYTES_PER_PEER): Promise<void> {
   const dir = path.join(MEDIA_DIR, peerId);
   const names = await fs.readdir(dir).catch(() => null);
   if (!names?.length) return;
@@ -107,11 +136,24 @@ export async function pruneMedia(peerId: string): Promise<void> {
       .map(mediaName),
   );
   const before = Date.now() - PRUNE_AFTER_MS;
+  const kept: { name: string; size: number; at: number }[] = [];
   for (const name of names) {
     // The picture, its type, and one being written: each named after the picture first.
-    if (named.has(name.split(".")[0])) continue;
-    const file = path.join(dir, name);
-    const stat = await fs.stat(file).catch(() => null);
-    if (stat && stat.mtimeMs < before) await fs.rm(file, { force: true }).catch(() => {});
+    const [picture, suffix] = name.split(".");
+    const stat = await fs.stat(path.join(dir, name)).catch(() => null);
+    if (!stat) continue;
+    if (!named.has(picture) && stat.mtimeMs < before) {
+      await fs.rm(path.join(dir, name), { force: true }).catch(() => {});
+    } else if (!suffix) {
+      kept.push({ name, size: stat.size, at: stat.mtimeMs });
+    }
+  }
+  let total = kept.reduce((sum, file) => sum + file.size, 0);
+  for (const file of kept.toSorted((a, b) => a.at - b.at)) {
+    if (total <= maxBytes) break;
+    // Its type first: without one, it's fetched again rather than sent.
+    await fs.rm(path.join(dir, `${file.name}.type`), { force: true }).catch(() => {});
+    await fs.rm(path.join(dir, file.name), { force: true }).catch(() => {});
+    total -= file.size;
   }
 }

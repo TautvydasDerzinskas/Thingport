@@ -25,8 +25,11 @@ export const CONTEXT = [
   { f3di: "http://purl.org/f3di/ns#", thingport: "https://github.com/TautvydasDerzinskas/Thingport#" },
 ];
 export const MODELS_PAGE = 50;
-// People a page: one has to fit the 1 MB a partner's fetch takes, whatever their bios and links.
+// People a page, each no bigger than PERSON_MAX_BYTES: a page has to fit the 1 MB a partner's fetch takes.
 export const DIRECTORY_PAGE = 50;
+export const PERSON_MAX_BYTES = 18 * 1024;
+// What a partner keeps of a name (remoteIndex.ts); a name here has no limit of its own.
+const NAME_MAX = 120;
 const DIRECTORY_LIMIT = 500;
 const COLLECTIONS_LIMIT = 200;
 
@@ -157,7 +160,7 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
         type: "Person",
         "f3di:concreteType": "User",
         preferredUsername: user.username ?? undefined,
-        name: user.displayName,
+        name: user.displayName.slice(0, NAME_MAX),
         source: markdown(user.bio),
         attachment: user.profileLinks.map((href) => ({ type: "Link", href })),
         icon:
@@ -179,7 +182,22 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
       };
     }),
   );
-  return items.filter((item): item is NonNullable<typeof item> => item !== null);
+  return items.filter((item): item is NonNullable<typeof item> => item !== null).map(fitPerson);
+}
+
+const bytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value));
+
+/** A person as published, cut to PERSON_MAX_BYTES should their text grow too much as JSON (escaped characters take
+ *  up to six bytes each): their links go first, then their bio is shortened until it fits. */
+export function fitPerson<T extends Record<string, unknown>>(doc: T): T {
+  if (bytes(doc) <= PERSON_MAX_BYTES) return doc;
+  const fitted: Record<string, unknown> = { ...doc, attachment: [] };
+  let bio = (doc.source as { content?: string } | undefined)?.content ?? "";
+  while (bytes(fitted) > PERSON_MAX_BYTES && bio) {
+    bio = bio.slice(0, Math.floor(bio.length / 2));
+    fitted.source = markdown(bio);
+  }
+  return fitted as T;
 }
 
 /** A page of what one person shares of their models, the latest shared first; null for someone who shares none. */
