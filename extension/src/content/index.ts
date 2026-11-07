@@ -15,6 +15,7 @@ import {
 } from "../providers/makerworld/downloadResolver";
 import { offerNormalizedDownload, unmountNormalizedDownload } from "../providers/makerworld/normalizedDownload";
 import { mountJobOverlay, mountPausedJobOverlay } from "./overlays";
+import { hasMissingProfiles } from "./missingProfiles";
 import { loadPanel } from "./panels";
 import { captureProviderAccount } from "./providerAccount";
 import { providerEnabled } from "./providerSettings";
@@ -30,7 +31,7 @@ import {
   WITHHELD_SCRIPT_NOTE_HTML,
 } from "./scriptNote";
 import { mountFab, mountFabNote, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
-import { manifestOf, providerOfHost } from "../providers/index.generated";
+import { manifestOf, providerOfHost, type ProviderId } from "../providers/index.generated";
 
 declare global {
   interface Window {
@@ -40,6 +41,21 @@ declare global {
 
 // Bumped on every re-init so stale in-flight checks don't mount an icon for the wrong URL.
 let initToken = 0;
+
+/** Whether the page has print profiles the library's model lacks. False where the page can't say. */
+async function profilesMissing(provider: ProviderId, url: string): Promise<boolean> {
+  const module = CONTENT_MODULES[provider];
+  try {
+    // Every profile of the page is asked about, in parallel; the panel then offers the ones the model lacks.
+    const ids = (await module.loadProfiles?.(url))?.("all") ?? [];
+    return await hasMissingProfiles(ids, (id) => {
+      const profileLink = module.profileUrl ? module.profileUrl(url, id) : `${url.split("#")[0]}#profileId-${id}`;
+      return api<ImportStatus>("GET", `/import/status?url=${encodeURIComponent(profileLink)}`);
+    });
+  } catch {
+    return false;
+  }
+}
 
 function reportTabIconState(active: boolean): void {
   void send("SET_TAB_ICON_STATE", { active });
@@ -167,7 +183,13 @@ async function init(): Promise<void> {
       const status = await api<ImportStatus>("GET", `/import/status?url=${encodeURIComponent(url)}`);
       if (isStale()) return;
       const gaps = status.gaps ?? [];
-      if (status.already_imported) {
+      // A partial import leaves the model "imported" with profiles still missing: offer those again.
+      const missing =
+        status.already_imported && !!status.print_id && (await profilesMissing(classification.provider, url));
+      if (isStale()) return;
+      if (missing && status.print_id) {
+        library = { state: "profile_missing", printId: status.print_id, gaps };
+      } else if (status.already_imported) {
         // Nothing to import, so the bubble only shows while there are details to fill in.
         if (!gaps.length || !status.print_id) {
           reportTabIconState(false);
