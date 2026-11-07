@@ -359,27 +359,33 @@ export async function answerReply(req: Request, res: ExpressResponse): Promise<v
 }
 
 /** Leaves a note that the link opened with `tokenHash` ended, and why, so the instance keeping it hears so the next
- *  time it asks; and that `origin` is still only ever reached through a link meanwhile. */
-export async function linkEnded(tokenHash: string, origin: string, reason: "declined" | "disconnected"): Promise<void> {
+ *  time it asks; and, given `origin`, that it's still only ever reached through a link meanwhile. */
+export async function linkEnded(
+  tokenHash: string,
+  origin: string | null,
+  reason: "declined" | "disconnected",
+): Promise<void> {
   const expiresAt = new Date(Date.now() + ENDED_MS);
-  await prisma.$transaction([
-    prisma.federationKv.upsert({
+  await prisma.$transaction(async (tx) => {
+    await tx.federationKv.upsert({
       where: { key: `${LINK_ENDED_PREFIX}${tokenHash}` },
       create: { key: `${LINK_ENDED_PREFIX}${tokenHash}`, value: { reason }, expiresAt },
       update: { value: { reason }, expiresAt },
-    }),
-    prisma.federationKv.upsert({
+    });
+    if (!origin) return;
+    await tx.federationKv.upsert({
       where: { key: `${LINK_ONLY_PREFIX}${origin}` },
       create: { key: `${LINK_ONLY_PREFIX}${origin}`, value: {}, expiresAt },
       update: { expiresAt },
-    }),
-  ]);
+    });
+  });
   invalidateAllowlist();
 }
 
 /** An address connected with directly again: no longer one reached only through a link. */
 export async function reachedDirectly(origin: string): Promise<void> {
-  await prisma.federationKv.deleteMany({ where: { key: `${LINK_ONLY_PREFIX}${origin}` } });
+  const { count } = await prisma.federationKv.deleteMany({ where: { key: `${LINK_ONLY_PREFIX}${origin}` } });
+  if (count) invalidateAllowlist();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

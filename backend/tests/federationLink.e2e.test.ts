@@ -4,6 +4,7 @@
 //   FEDERATION_E2E_DB_C=postgresql://.../fed_c FEDERATION_E2E_DB_D=postgresql://.../fed_d \
 //     npx vitest run tests/federationLink.e2e.test.ts
 import { spawn, type ChildProcess } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -116,6 +117,24 @@ describe.skipIf(!DB_HOME || !DB_PUBLIC)("pairing through a link", () => {
       return found?.linkOpen && found;
     });
     expect(incoming).toMatchObject({ origin: home.base, link: true, note: "From the workshop at home" });
+    // Another request from that address with a link of its own, as from an instance with the same address on another
+    // network: it's declined with the approval below.
+    const elsewhere = crypto.randomBytes(32).toString("base64url");
+    const another = await fetch(`${reachable.base}/api/ap/inbox`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/activity+json",
+        Signature: `keyId="${home.base}/api/ap/actors/instance#main-key",signature="x"`,
+      },
+      body: JSON.stringify({
+        type: "Follow",
+        id: `${home.base}/api/ap/follows/elsewhere`,
+        actor: `${home.base}/api/ap/actors/instance`,
+        object: `${reachable.base}/api/ap/actors/instance`,
+        "thingport:link": elsewhere,
+      }),
+    });
+    expect(another.status).toBe(202);
     const details = await call(reachable, "GET", `/federation/requests/${incoming.id}`);
     const homeSettings = await call(home, "GET", "/federation/settings");
     expect(details.body).toMatchObject({ verified: true, link: true, fingerprint: homeSettings.body.fingerprint });
@@ -124,6 +143,10 @@ describe.skipIf(!DB_HOME || !DB_PUBLIC)("pairing through a link", () => {
       fingerprint: details.body.fingerprint,
     });
     expect(approved.body.peer).toMatchObject({ status: "ACTIVE", link: "theirs" });
+    // The other one's link hears it was declined the next time it asks, so it stops asking.
+    const told = await fetch(`${reachable.base}/api/ap/link`, { headers: { Authorization: `Link ${elsewhere}` } });
+    expect(told.status).toBe(410);
+    expect(await told.json()).toEqual({ reason: "declined" });
     // Its yes went down the link.
     const partner = await until("the home instance connected", async () => {
       const found = (await call(home, "GET", "/federation/instances")).body.partners[0];

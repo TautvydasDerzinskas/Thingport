@@ -743,7 +743,7 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
   });
   const activity = await runtime.toJson(accept);
   // Connected, answered and the rest of its requests settled, together.
-  const peer = await prisma.$transaction(async (tx) => {
+  const { peer, declinedLinks } = await prisma.$transaction(async (tx) => {
     const saved = existing
       ? await tx.peer.update({ where: { id: existing.id }, data })
       : await tx.peer.create({ data: { origin: request.origin, ...data } });
@@ -751,16 +751,23 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
       where: { id: request.id },
       data: { status: "APPROVED", decidedById: adminId, decidedAt: new Date() },
     });
+    const others = await tx.peerRequest.findMany({
+      where: { kind: "INCOMING", status: "PENDING", origin: request.origin, linkToken: { not: null } },
+      select: { linkToken: true },
+    });
     await tx.peerRequest.updateMany({
       where: { kind: "INCOMING", status: "PENDING", origin: request.origin },
       data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
     });
     await enqueueActivity({ origin: saved.origin, inboxUrl: info.inboxUrl, peerId: saved.id, activity }, tx);
-    return saved;
+    return { peer: saved, declinedLinks: others.map((other) => other.linkToken!) };
   });
   invalidateAllowlist();
   if (request.linkToken) linkApproved(request.id, peer.id);
   else await reachedDirectly(peer.origin);
+  // Those declined with it that keep a link hear so the next time they ask, and stop. The address stays reached as
+  // the partner is, so no link-only mark.
+  for (const token of declinedLinks) await linkEnded(token, null, "declined");
   kickDelivery();
   // What it shares, once it has us as a partner too (its Accept on the way): tried again until it answers.
   void syncPeer(peer.id).catch(() => {});
