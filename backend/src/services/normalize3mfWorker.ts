@@ -4,7 +4,9 @@ import { type NormalizeTarget, writeNormalized3mf } from "./threeMfNormalizer";
 
 // Worker entry point for one normalize. Posts exactly one message, then exits.
 
+/** What the worker reads: the source 3MF, where to write the copy, and which copy to make. */
 export type Normalize3mfWorkerInput = { srcPath: string; destPath: string; target: NormalizeTarget };
+/** The worker's single reply: "ok" once the copy is written, or the error text. */
 export type Normalize3mfWorkerResult = { status: "ok" } | { status: "error"; error: string };
 
 async function run(): Promise<void> {

@@ -1205,6 +1205,7 @@ export function markAsBambuProject(modelXml: string): string | null {
   );
 }
 
+/** True for a path that holds the designer's slice result or G-code (".gcode", "slice_info", "custom_gcode"), which the Orca copy leaves out. */
 function isSlicedOutput(relativePath: string): boolean {
   const p = pathKey(relativePath);
   return p.includes(".gcode") || p.includes("slice_info") || p.includes("custom_gcode");
@@ -1345,6 +1346,10 @@ const ORCA_FORK_BED_MM = 270;
 
 type Bed = { width: number; depth: number; centerX: number; centerY: number };
 
+/**
+ * The designer's bed from `printable_area` ("XxY" corner points): size and middle. Null when it isn't a list, has
+ * fewer than two valid points, or has no extent in x or y.
+ */
 function bedFromPrintableArea(area: unknown): Bed | null {
   if (!Array.isArray(area)) return null;
   const xs: number[] = [];
@@ -1362,7 +1367,7 @@ function bedFromPrintableArea(area: unknown): Bed | null {
   return { width: maxX - minX, depth: maxY - minY, centerX: (minX + maxX) / 2, centerY: (minY + maxY) / 2 };
 }
 
-// Orca's own column count for a grid of plates: the square root, rounded up when the rounding went down.
+/** Orca's own column count for a grid of plates: the square root, rounded up when the rounding went down. */
 function plateColumns(count: number): number {
   const root = Math.sqrt(count);
   return root > Math.round(root) ? Math.round(root) + 1 : Math.round(root);
@@ -1407,6 +1412,12 @@ export function recenterOnOrcaBed(modelXml: string, plates: PlateSettings[], des
   return moved ? out : null;
 }
 
+/**
+ * Builds the Orca copy: the 3MF with its parts, plates and painting as they are, but the project settings reduced to what
+ * Snapmaker Orca needs (U1 printer, process and filament presets, bed, nozzle, wipe tower), the model marked as a Bambu
+ * project and re-centred on the U1 bed, the per-object shell settings mapped, and slice output and G-code left out.
+ * Counts in the returned report are zero, as nothing is flattened. A project_settings.config that can't be read is copied unchanged.
+ */
 async function buildOrcaZip(input: Buffer | Uint8Array): Promise<{ out: JSZip; report: () => NormalizeReport }> {
   const zip = await JSZip.loadAsync(input);
   const filesByKey = indexZipFiles(zip);
@@ -1482,6 +1493,9 @@ async function buildOrcaZip(input: Buffer | Uint8Array): Promise<{ out: JSZip; r
 
 const ZIP_OPTIONS = { compression: "DEFLATE", compressionOptions: { level: 6 } } as const;
 
+/**
+ * Normalizes a 3MF into a zip: the flat copy for `"flat"`, the Snapmaker Orca copy for `"orca"`. The input is not changed.
+ */
 export async function normalize3mf(
   input: Buffer | Uint8Array,
   target: NormalizeTarget = "flat",

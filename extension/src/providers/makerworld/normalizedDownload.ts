@@ -44,6 +44,7 @@ let slicerLabel: string | null = null;
 // Which copy to make: the Orca-fork one for Snapmaker Orca, the flat one otherwise (also before the answer).
 let slicerId: string | null = null;
 
+/** The button's explanation text for the target copy, naming the instance's slicer in the flat one when known. */
 function explanation(slicer: string | null, target: "flat" | "orca"): string {
   if (target === "orca")
     return "Builds a copy for Snapmaker Orca (U1): printer, nozzle, process preset and wipe tower are adapted to the U1. Your filament names and values stay.";

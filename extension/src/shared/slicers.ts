@@ -13,6 +13,7 @@ export const NORMALIZE_3MF_SLICERS: Readonly<Record<string, string>> = {
 // Orca forks that read Bambu's own layout: they get the 3MF with parts, plates and painting kept, not the flat one.
 const ORCA_FORK_SLICER_IDS: ReadonlySet<string> = new Set(["snapmaker-orca"]);
 
+/** Which copy to make for a slicer: "orca" for the Orca forks above, "flat" for every other slicer or none. */
 export function normalizeTargetFor(slicerId: string | null | undefined): "flat" | "orca" {
   return slicerId && ORCA_FORK_SLICER_IDS.has(slicerId) ? "orca" : "flat";
 }
