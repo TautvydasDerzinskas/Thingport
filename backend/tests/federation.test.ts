@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
 import nodeCrypto from "node:crypto";
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 import path from "node:path";
 import type { Prisma } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -544,6 +546,53 @@ describe("connected instances, on", () => {
     });
     await tick();
     expect(await prisma.federationDelivery.count({ where: { peerId: peer.id } })).toBe(0);
+  });
+
+  it("keeps what a partner turned away while its connected instances are off, and drops what it refused", async () => {
+    let answer = 404;
+    const partner = http.createServer((req, res) => {
+      req.resume();
+      req.on("end", () => res.writeHead(answer).end());
+    });
+    await new Promise<void>((resolve) => partner.listen(0, "127.0.0.1", resolve));
+    const origin = `http://127.0.0.1:${(partner.address() as AddressInfo).port}`;
+    process.env.FEDERATION_ALLOW_LOOPBACK = "1";
+    const peer = await prisma.peer.create({ data: { origin, status: "ACTIVE" } });
+    invalidateAllowlist();
+    try {
+      await enqueueActivity({
+        origin,
+        inboxUrl: `${origin}/api/ap/inbox`,
+        peerId: peer.id,
+        activity: { type: "Create" },
+      });
+      // The clock each run reads: just after it was queued, so only what would be due now anyway is sent with it.
+      const at = Date.now() + 1000;
+      const runAt = async () => {
+        await tick(() => new Date(at));
+        return prisma.federationDelivery.findFirst({ where: { peerId: peer.id } });
+      };
+      // Off over there, which answers 404: kept, and tried again 30 seconds on.
+      expect(await runAt()).toMatchObject({ attempts: 1, lastError: "HTTP 404", nextAttemptAt: new Date(at + 30_000) });
+      // Its key didn't load there this time (401): kept, and tried again two minutes on.
+      answer = 401;
+      await prisma.federationDelivery.updateMany({ where: { peerId: peer.id }, data: { nextAttemptAt: new Date(at) } });
+      expect(await runAt()).toMatchObject({
+        attempts: 2,
+        lastError: "HTTP 401",
+        nextAttemptAt: new Date(at + 120_000),
+      });
+      // Refused as it is: not worth sending again.
+      answer = 400;
+      await prisma.federationDelivery.updateMany({ where: { peerId: peer.id }, data: { nextAttemptAt: new Date(at) } });
+      expect(await runAt()).toBeNull();
+    } finally {
+      delete process.env.FEDERATION_ALLOW_LOOPBACK;
+      await prisma.federationDelivery.deleteMany({ where: { peerId: peer.id } });
+      await prisma.peer.delete({ where: { id: peer.id } });
+      invalidateAllowlist();
+      await new Promise((resolve) => partner.close(resolve));
+    }
   });
 
   it("sends a chat's activities to a partner in the order they were queued", async () => {

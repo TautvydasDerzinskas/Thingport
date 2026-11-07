@@ -153,9 +153,20 @@ function useRequestReview(
       {t(k("linkText"), { name })}
     </Alert>
   ) : null;
+  // Its address is only what its request says: what answers there directly, with another key, is shown beside it.
+  const elsewhereNote = details?.elsewhere ? (
+    <Alert severity="warning">
+      <AlertTitle sx={{ fontSize: "0.875rem", mb: 0.25 }}>{t(k("elsewhereTitle"))}</AlertTitle>
+      {t(k("elsewhereText"), { other: details.elsewhere.name, address: request.origin })}
+      <Box sx={{ mt: 0.75 }}>
+        <KeyBlocks fingerprint={details.elsewhere.fingerprint} />
+      </Box>
+    </Alert>
+  ) : null;
   const content = (
     <Stack spacing={2}>
       {!header && linkNote}
+      {!header && elsewhereNote}
       <Stack spacing={1.25}>
         {header && (
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -171,6 +182,7 @@ function useRequestReview(
           </Stack>
         )}
         {header && linkNote}
+        {header && elsewhereNote}
         {/* Nothing to compare until its link opens: no key row meanwhile. */}
         {!linkClosed && (
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>

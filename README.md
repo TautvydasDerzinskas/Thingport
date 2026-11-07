@@ -96,6 +96,16 @@ Have in mind that these screenshots follow your GitHub theme (matches it). Thing
     <td width="33%"><a href="frontend/src/assets/screenshots/light/35_model_customize.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/35_model_customize.png"><img src="frontend/src/assets/screenshots/light/35_model_customize.png" width="100%" alt="Customizer with a model's OpenSCAD parameters and the model it generated"></picture></a><br><sub><b>Customize a Model</b></sub></td>
   </tr>
   <tr>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/43_explore_everywhere.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/43_explore_everywhere.png"><img src="frontend/src/assets/screenshots/light/43_explore_everywhere.png" width="100%" alt="Explore with people, models and collections from this instance and a connected one"></picture></a><br><sub><b>Explore — Everywhere</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/44_partner_model.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/44_partner_model.png"><img src="frontend/src/assets/screenshots/light/44_partner_model.png" width="100%" alt="A partner's model with its description and collections, Copy to my library and Download file"></picture></a><br><sub><b>A Partner's Model</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/46_chat_partner.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/46_chat_partner.png"><img src="frontend/src/assets/screenshots/light/46_chat_partner.png" width="100%" alt="A chat room with people from this instance and a connected one"></picture></a><br><sub><b>Chats Across Instances</b></sub></td>
+  </tr>
+  <tr>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/48_connect_link.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/48_connect_link.png"><img src="frontend/src/assets/screenshots/light/48_connect_link.png" width="100%" alt="Connect to an instance from home, with Keep a link open on"></picture></a><br><sub><b>Connect From Home</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/49_request_link.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/49_request_link.png"><img src="frontend/src/assets/screenshots/light/49_request_link.png" width="100%" alt="A request to connect arriving through a link, with the key to compare"></picture></a><br><sub><b>Answer a Request</b></sub></td>
+    <td width="33%"><a href="frontend/src/assets/screenshots/light/47_admin_partners.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/47_admin_partners.png"><img src="frontend/src/assets/screenshots/light/47_admin_partners.png" width="100%" alt="Partners in Administration, Social, with a home instance connected through its link"></picture></a><br><sub><b>Administration — Partners</b></sub></td>
+  </tr>
+  <tr>
     <td width="33%"><a href="extension/docs/screenshots/collection-printables.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/collection-printables-dark.jpg"><img src="extension/docs/screenshots/collection-printables.jpg" width="100%" alt="Thingport Grab importing a Printables collection"></picture></a><br><sub><b>Thingport Grab — Collections</b></sub></td>
     <td width="33%"><a href="extension/docs/screenshots/panel-printables.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/panel-printables-dark.jpg"><img src="extension/docs/screenshots/panel-printables.jpg" width="100%" alt="Thingport Grab on Printables"></picture></a><br><sub><b>Thingport Grab — Printables</b></sub></td>
     <td width="33%"><a href="extension/docs/screenshots/panel-thingiverse.jpg" target="_blank"><img src="extension/docs/screenshots/panel-thingiverse.jpg" width="100%" alt="Thingport Grab on Thingiverse"></a><br><sub><b>Thingport Grab — Thingiverse</b></sub></td>
@@ -326,7 +336,8 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 - **[Plain files on your disk](docs/features/storage.md)**
 - **[Repair models whose files are gone](docs/features/storage.md#when-the-files-are-gone)**
 - **[Multi-user](docs/features/multi-user.md)**
-- **[Share collections and chat with your household](docs/features/multi-user.md#sharing-with-each-other)**
+- **[Social: public collections and models, Explore, profiles and chats](docs/features/social.md)**
+- **[Connected instances: pair with other Thingports, even from a home network](docs/features/connected-instances.md)**
 - **[Single sign-on](docs/guides/single-sign-on.md)**
 - **[Administration](docs/features/administration.md)**
 - **[System Health](docs/guides/system-health.md)**
@@ -348,6 +359,33 @@ Thingport ships two small companion apps, each downloadable from the in-app **Do
 ## Provider Setup
 
 MakerWorld needs each user's session cookie, Printables works with no setup, and Thingiverse needs an App Token an admin sets once for the whole instance. Most of the others need a sign-in or key of their own, usually handed over by [Thingport Grab](extension/README.md); OwlCAD needs none at all, and eufyMake, MakerOnline and Makerables only for your likes or saved projects. MakerOnline's files come only through Grab, and so do OwlCAD's CAD projects. Printables, Thingiverse and MyMiniFactory work best with FlareSolverr, and CGTrader needs Grab or FlareSolverr to get its downloads past AWS's bot check. Connect them under **Configuration → Providers** (from the user menu): right-click a provider to connect it, or choose **About** for what it needs. All 18 are on by default; admins can turn any of them off for the whole instance under **Administration → Providers**. See **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for a comparison of them all, and a setup page for each.
+
+## Connect with other Thingports
+
+Your library stays yours, but you don't have to keep it to yourself. Thingport instances can connect with each other:
+pair yours with a friend's, your makerspace's or the one at work, and the models their people share show up on your
+**Explore**, ready to download, open in your slicer or copy to your library. You can write to each other too, directly
+or in rooms. Admins approve every connection after comparing keys, and nothing private ever leaves an instance.
+
+**Your instance doesn't need to be on the internet.** A Thingport at home, behind its router, with no port forwarding,
+domain or certificate, can connect with one that is: it keeps a link open to it, and everything the other instance
+needs from yours comes down that link. It works both ways, as well as between two instances that reach each other.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/connected-instances-link-dark.svg">
+    <img src="docs/assets/connected-instances-link-light.svg" alt="A home instance behind its router keeps a link open to an instance on the internet; requests travel down the link and answers come back up it" width="720">
+  </picture>
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><a href="frontend/src/assets/screenshots/light/43_explore_everywhere.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/43_explore_everywhere.png"><img src="frontend/src/assets/screenshots/light/43_explore_everywhere.png" width="100%" alt="Explore with people, models and collections from this instance and a connected one"></picture></a><br><sub><b>One Explore</b> for your instance and its partners</sub></td>
+    <td width="50%"><a href="frontend/src/assets/screenshots/light/47_admin_partners.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/47_admin_partners.png"><img src="frontend/src/assets/screenshots/light/47_admin_partners.png" width="100%" alt="Partners in Administration, Social, with a home instance connected through its link"></picture></a><br><sub><b>Partners</b>, a home instance among them</sub></td>
+  </tr>
+</table>
+
+Read more in **[connected instances](docs/features/connected-instances.md)** and **[social features](docs/features/social.md)**.
 
 ## Contributing
 

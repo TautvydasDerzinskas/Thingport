@@ -24,15 +24,19 @@ const federation = () => import("../federation/chats");
 type Wire = Awaited<ReturnType<typeof federation>>;
 
 /** A chat change, and when it touches partners' people (`involved`), what goes to them: queued in the same transaction,
- *  so neither is kept without the other, and sent once it's committed. One touching them only while connected
- *  instances are on: made while they're off, it would never reach them. */
+ *  so neither is kept without the other, and sent once it's committed. While connected instances are off, a change
+ *  partners can hear about later (`whileOff: "queue"`: a message deleted, someone joining or leaving, a room changed or
+ *  deleted) is made and queued, sent once they're on again; a message or a partner's person added waits until then. */
 async function withPartners<T>(
   involved: boolean,
   change: (tx: Prisma.TransactionClient, wire: Wire | null) => Promise<T>,
+  whileOff: "refuse" | "queue" = "refuse",
 ): Promise<T> {
   if (!involved) return prisma.$transaction((tx) => change(tx, null));
   const { isFederationLive } = await import("../federation/settings");
-  if (!(await isFederationLive())) throw new HttpError(409, "Connected instances are off", "federation_off");
+  if (whileOff === "refuse" && !(await isFederationLive())) {
+    throw new HttpError(409, "Connected instances are off", "federation_off");
+  }
   const wire = await federation();
   const result = await prisma.$transaction((tx) => change(tx, wire), { timeout: 30_000 });
   wire.kick();
@@ -717,10 +721,14 @@ export async function deleteMessage(viewer: Viewer, chatId: string, messageId: s
   const moderates = chat.kind === "ROOM" && viewer.isAdmin && !chat.hostPeer;
   if (!own && !moderates) throw new HttpError(403, "Only its sender can delete it");
   if (message.deletedAt) return;
-  await withPartners(Boolean(chat.hostPeer) || chat._count.remoteMembers > 0, async (tx, wire) => {
-    await erase(tx, messageId);
-    if (wire) await wire.messageDeleted(chatId, messageId, undefined, tx);
-  });
+  await withPartners(
+    Boolean(chat.hostPeer) || chat._count.remoteMembers > 0,
+    async (tx, wire) => {
+      await erase(tx, messageId);
+      if (wire) await wire.messageDeleted(chatId, messageId, undefined, tx);
+    },
+    "queue",
+  );
   await unquote(messageId);
 }
 
@@ -753,13 +761,17 @@ export async function joinRoom(viewer: Viewer, chatId: string): Promise<ChatOut>
   const chat = await visibleChat(viewer, chatId);
   if (chat.kind !== "ROOM" || !chat.isPublic) throw new HttpError(403, "Only a public room can be joined");
   // What was said before they came isn't news to them.
-  await withPartners(chat._count.remoteMembers > 0, async (tx, wire) => {
-    await tx.chatMember.createMany({ data: [{ chatId, userId: viewer.id }], skipDuplicates: true });
-    if (wire) {
-      await assertRoomSize(tx, chatId);
-      await wire.roomChanged(chatId, [], tx);
-    }
-  });
+  await withPartners(
+    chat._count.remoteMembers > 0,
+    async (tx, wire) => {
+      await tx.chatMember.createMany({ data: [{ chatId, userId: viewer.id }], skipDuplicates: true });
+      if (wire) {
+        await assertRoomSize(tx, chatId);
+        await wire.roomChanged(chatId, [], tx);
+      }
+    },
+    "queue",
+  );
   const [out] = await chatOuts(viewer, [await visibleChat(viewer, chatId)]);
   return out;
 }
@@ -767,16 +779,20 @@ export async function joinRoom(viewer: Viewer, chatId: string): Promise<ChatOut>
 export async function leaveRoom(viewer: Viewer, chatId: string): Promise<void> {
   const chat = await memberOf(viewer, chatId);
   if (chat.kind !== "ROOM") throw new HttpError(400, "Direct messages can't be left");
-  await withPartners(Boolean(chat.hostPeer) || chat._count.remoteMembers > 0, async (tx, wire) => {
-    await tx.chatMember.delete({ where: { chatId_userId: { chatId, userId: viewer.id } } });
-    if (chat.hostPeer) {
-      // Its host takes them out; with none of this instance's people left in it, so does the copy here.
-      if (wire) await wire.roomLeft(chat, viewer.id, tx);
-      await tx.chat.deleteMany({ where: { id: chatId, members: { none: {} } } });
-    } else if (wire) {
-      await wire.roomChanged(chatId, [], tx);
-    }
-  });
+  await withPartners(
+    Boolean(chat.hostPeer) || chat._count.remoteMembers > 0,
+    async (tx, wire) => {
+      await tx.chatMember.delete({ where: { chatId_userId: { chatId, userId: viewer.id } } });
+      if (chat.hostPeer) {
+        // Its host takes them out; with none of this instance's people left in it, so does the copy here.
+        if (wire) await wire.roomLeft(chat, viewer.id, tx);
+        await tx.chat.deleteMany({ where: { id: chatId, members: { none: {} } } });
+      } else if (wire) {
+        await wire.roomChanged(chatId, [], tx);
+      }
+    },
+    "queue",
+  );
   await forget(chatId, [viewer.id]);
 }
 
@@ -970,35 +986,40 @@ export async function updateRoom(admin: Viewer, chatId: string, patch: RoomPatch
   const formerPartners = await partnerIdsOf(chatId);
   const addedRemote = isPublic ? [] : await existingRemoteIds(patch.add_remote_member_ids ?? []);
   const removedRemote = (patch.remove_remote_member_ids ?? []).filter((id) => !addedRemote.includes(id));
-  // Its partners told what it is now, those whose people are gone from it too.
-  const removed = await withPartners(formerPartners.length > 0 || addedRemote.length > 0, async (tx, wire) => {
-    await tx.chat.update({
-      where: { id: chatId },
-      data: { ...roomText(patch), ...(patch.is_public !== undefined ? { isPublic: patch.is_public } : {}) },
-    });
-    if (isPublic) {
-      if (wire) await wire.roomChanged(chatId, formerPartners, tx);
-      return [];
-    }
-    const leaving = (
-      await tx.chatMember.findMany({
-        where: { chatId, userId: { in: patch.remove_member_ids ?? [], notIn: added } },
-        select: { userId: true },
-      })
-    ).map((member) => member.userId);
-    await tx.chatMember.deleteMany({ where: { chatId, userId: { in: leaving } } });
-    await tx.chatMember.createMany({ data: added.map((userId) => ({ chatId, userId })), skipDuplicates: true });
-    await tx.chatRemoteMember.deleteMany({ where: { chatId, personId: { in: removedRemote } } });
-    await tx.chatRemoteMember.createMany({
-      data: addedRemote.map((personId) => ({ chatId, personId })),
-      skipDuplicates: true,
-    });
-    if (wire) {
-      await assertRoomSize(tx, chatId);
-      await wire.roomChanged(chatId, formerPartners, tx);
-    }
-    return leaving;
-  });
+  // Its partners told what it is now, those whose people are gone from it too. Partners' people are only added while
+  // connected instances are on.
+  const removed = await withPartners(
+    formerPartners.length > 0 || addedRemote.length > 0,
+    async (tx, wire) => {
+      await tx.chat.update({
+        where: { id: chatId },
+        data: { ...roomText(patch), ...(patch.is_public !== undefined ? { isPublic: patch.is_public } : {}) },
+      });
+      if (isPublic) {
+        if (wire) await wire.roomChanged(chatId, formerPartners, tx);
+        return [];
+      }
+      const leaving = (
+        await tx.chatMember.findMany({
+          where: { chatId, userId: { in: patch.remove_member_ids ?? [], notIn: added } },
+          select: { userId: true },
+        })
+      ).map((member) => member.userId);
+      await tx.chatMember.deleteMany({ where: { chatId, userId: { in: leaving } } });
+      await tx.chatMember.createMany({ data: added.map((userId) => ({ chatId, userId })), skipDuplicates: true });
+      await tx.chatRemoteMember.deleteMany({ where: { chatId, personId: { in: removedRemote } } });
+      await tx.chatRemoteMember.createMany({
+        data: addedRemote.map((personId) => ({ chatId, personId })),
+        skipDuplicates: true,
+      });
+      if (wire) {
+        await assertRoomSize(tx, chatId);
+        await wire.roomChanged(chatId, formerPartners, tx);
+      }
+      return leaving;
+    },
+    addedRemote.length ? "refuse" : "queue",
+  );
   await forget(chatId, removed);
   return (await chatOuts(admin, [await visibleChat(admin, chatId)]))[0];
 }
@@ -1009,10 +1030,14 @@ export async function deleteRoom(chatId: string): Promise<Chat> {
   if (!chat) throw new HttpError(404, "Room not found");
   const members = await prisma.chatMember.findMany({ where: { chatId }, select: { userId: true } });
   const partners = await partnerIdsOf(chatId);
-  await withPartners(partners.length > 0, async (tx, wire) => {
-    if (wire) await wire.roomDeleted(chatId, partners, tx);
-    await tx.chat.delete({ where: { id: chatId } });
-  });
+  await withPartners(
+    partners.length > 0,
+    async (tx, wire) => {
+      if (wire) await wire.roomDeleted(chatId, partners, tx);
+      await tx.chat.delete({ where: { id: chatId } });
+    },
+    "queue",
+  );
   await forget(
     chatId,
     members.map((member) => member.userId),

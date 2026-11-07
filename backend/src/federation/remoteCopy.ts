@@ -2,6 +2,7 @@ import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { Prisma } from "@prisma/client";
+import { IMPORT_MAX_BYTES } from "../config";
 import { prisma } from "../db";
 import { createLog } from "../services/auditLog";
 import { addPreviewImage } from "../services/previewImageService";
@@ -85,6 +86,10 @@ async function admit(userId: string, modelId: string, key: string): Promise<Copy
   if (listed.some((file) => !file.url)) {
     throw new HttpError(409, "Not every file of that model can be fetched from its instance", "files_missing");
   }
+  // All of it no bigger than one import, as a ZIP of it: each file is held on disk until the copy is made.
+  if (listed.reduce((sum, file) => sum + (file.size ?? 0), 0) > IMPORT_MAX_BYTES) {
+    throw new HttpError(413, "Too big to copy here: it's more than this instance takes in one import", "copy_too_big");
+  }
   const files = listed.map((file, index) => ({ file, index }));
   const mine = [...jobs.entries()].filter(([k, job]) => k.startsWith(`${userId}:`) && job.state === "copying");
   if (mine.length >= MAX_RUNNING_PER_USER) {
@@ -121,13 +126,17 @@ async function run(
   try {
     dir = await fsp.mkdtemp(path.join(os.tmpdir(), "thingport-remote-copy-"));
     const uploaded: UploadedFile[] = [];
+    // What the partner says of their sizes isn't taken on trust: what came so far counts against the rest.
+    let total = 0;
     for (const [position, { index, file }] of files.entries()) {
       const dest = path.join(dir, `${position}-${sanitizeFilename(file.name) || "file"}`);
       await fetchRemoteFile(model, index, dest, {
+        maxBytes: IMPORT_MAX_BYTES - total,
         onProgress: (received) => {
           job.files[position].received = received;
         },
       });
+      total += (await fsp.stat(dest)).size;
       job.files[position].done = true;
       uploaded.push({ path: dest, originalname: file.name, mimetype: file.mediaType });
     }

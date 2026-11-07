@@ -14,7 +14,7 @@ dashboards and [AI assistants](../guides/mcp.md) to your library.
 ## Your profile
 
 **My models** in the user menu is your profile as the other people on the instance see it, on
-[Explore](multi-user.md#sharing-with-each-other) too. Choose **Edit profile** to write a bio (Markdown works), add up to
+[Explore](social.md#explore) too. Choose **Edit profile** to write a bio (Markdown works), add up to
 five links shown under it, and pick a cover: one of five covers Thingport draws, the cover of an account you linked, or
 a picture of your own of up to 10 MB, dragged up or down to choose the part that shows. Until you choose, you have one
 of the drawn covers.

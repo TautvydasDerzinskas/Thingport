@@ -167,8 +167,9 @@ async function deliver(row: DeliveryRow, now: Date): Promise<void> {
       return;
     }
     failure = `HTTP ${response.status}${typeof code === "string" ? ` ${code.slice(0, 40)}` : ""}`;
-    // Refused for good; a busy or failing partner is tried again.
-    permanent = response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429;
+    // Refused for good; a busy or failing partner is tried again, and so is one that has connected instances off for
+    // now (404: off means absent) or couldn't check the signature this time (401: our key didn't load there).
+    permanent = response.status >= 400 && response.status < 500 && ![401, 404, 408, 429].includes(response.status);
   } catch (err) {
     failure = (err as Error).message || "Network error";
   }

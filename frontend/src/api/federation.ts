@@ -116,6 +116,8 @@ export type RequestDetails = InstanceInfo & {
   };
   /** It keeps a link open to this instance, which everything about it goes through. */
   link: boolean;
+  /** For one with a link: another instance answering at its address directly, with its own key. */
+  elsewhere: { name: string; fingerprint: string } | null;
 };
 
 export type MyRequestStatus = "waiting_admin" | "waiting_them" | "connected" | "declined";

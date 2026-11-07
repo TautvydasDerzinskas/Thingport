@@ -38,7 +38,7 @@ body exactly as it came), plus the admin API in `routes/federation.ts`.
 | `pinning.ts`                               | The keys compared when connecting are the only ones a partner has: a document from it publishing another is refused by the loaders Fedify verifies with.                                                                                            |
 | `edge.ts`                                  | In front of the inbox: a partner's request goes on to Fedify; a blocked instance's is dropped; a paused one gets 503 and retries; from anyone else only a `Follow` of the instance actor, by the origin that signed it, is kept as a `PeerRequest`. |
 | `peers.ts`                                 | Every change to who we're connected with: looking an instance up, asking, approving, declining, pausing, disconnecting, blocking, and what partners send.                                                                                           |
-| `delivery.ts`                              | Our own outbox: signed POSTs with retries over about three days. Fedify's own delivery refuses private addresses, which home instances live on.                                                                                                     |
+| `delivery.ts`                              | Our own outbox: signed POSTs with retries over about three days, a partner's `404` (off there) and `401` among what's retried. Fedify's own delivery refuses private addresses, which home instances live on.                                       |
 | `kvStore.ts`                               | Fedify's key-value store in the `FederationKv` table (its Postgres package would make tables outside Prisma's migrations).                                                                                                                          |
 | `reachability.ts`                          | The check before turning on: the Public URL fetches a nonce back with this instance's secret, and its address is classified.                                                                                                                        |
 | `inbox.ts`                                 | Fedify's inbox handlers, passing each activity to `peers.ts`.                                                                                                                                                                                       |
@@ -137,8 +137,9 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   given up when the viewer goes.
 - **Copies** (`remoteCopy.ts`): `POST /explore/elsewhere/model/<id>/copy` starts one in the background (asked twice at
   once, the second hears the first) and `GET` says how it's going, file by file. A model with a file that can't be had
-  isn't copied without it (`files_missing`). The files are fetched into a temporary folder, each no bigger than an
-  import, and only once all of them are there is a model made (`createUploadedModel`), with `Print.remoteSource`
+  isn't copied without it (`files_missing`). The files are fetched into a temporary folder, all of them together no
+  bigger than an import (`copy_too_big`, as a ZIP), and only once all of them are there is a model made
+  (`createUploadedModel`), with `Print.remoteSource`
   saying where it came from in the same write, its description's images made links (so the copy's page fetches
   nothing from elsewhere), then its pictures. `remoteSource` is what makes the original show **Open my copy** rather
   than copy it again, and the copy's `copied_from_remote` (on `GET /print/:id`), which links back to the original
@@ -171,8 +172,11 @@ Chats reach partners' people through `chats.ts`; storing what arrives and notify
   (`withPartners` in chatService), and to a paused partner too: delivery keeps it until it's resumed, then sends it at
   once. What's queued for one chat (its room, or the person it's with: `orderKey`) goes in the order it was queued, each
   waiting for any before it still to be tried again, so a message never overtakes the update that took someone out of
-  the room. A change touching partners is refused while connected instances are off; a message to the other instance's
-  person, or in a room it hosts, while it's paused (`partner_unavailable`). A room's update carries the host's `updated`
+  the room. While connected instances are off, a change partners can hear about later (a message deleted, someone
+  joining or leaving, a room changed or deleted) is made and queued all the same, addressed without loading Fedify
+  (`here()` in `federation/chats.ts`), and sent once they're on again; a message, or a partner's person added to a
+  room, is refused (`federation_off`). A message to the other instance's person, or in a room it hosts, is refused
+  while it's paused (`partner_unavailable`). A room's update carries the host's `updated`
   time, and a copy applies only a newer one, so a late retry can't put back someone taken out. What can't be handled yet
   is answered with an error (`RetryLater`), which Fedify turns into a 500 and the sender retries: anything while chats
   are off here, a room's message before the room. A `Delete` for a message not here yet leaves a tombstone (in
@@ -209,7 +213,9 @@ instead (`links.ts`), and the partner reaches it through that:
   checked, so a request's link carries only its own review, and declining it leaves only the note: an instance really
   at that address can still be looked up and connected with. The key tells the two apart. A lookup that can't reach
   an address a request with a link came from says to answer that request (`asked_with_link`), and **Connect** only
-  approves a waiting request without a link, checked against the lookup.
+  approves a waiting request without a link, checked against the lookup. Where the address it names is on the
+  internet, the review also asks what answers there directly (`answersAt`, a few seconds at most), and shows another
+  instance with another key there beside the request.
 - **Its signatures** are checked against its actor document as kept when its admin compared the key
   (`Peer.actorDocument`), so checking one asks it nothing.
 - **Coming down a link proves nothing** about reaching the home instance: such requests carry a mark only this process

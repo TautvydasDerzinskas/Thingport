@@ -2661,6 +2661,8 @@
             "linkClosedTitle": "Su enlace no está abierto ahora",
             "linkClosedText": "{{name}} llega a ti por un enlace, y está cerrado: puede que su instancia esté apagada. Se vuelve a intentar solo; apruébala cuando esté en marcha.",
             "linkKey": "Su dirección no se puede comprobar desde aquí, así que la clave es lo que te dice que son ellos. Pide a su administrador que la lea desde su página Social.",
+            "elsewhereTitle": "Otra instancia responde en esa dirección",
+            "elsewhereText": "{{other}} responde directamente en {{address}}, con otra clave:",
             "compare": "El administrador de {{name}} leyó la misma clave en su página Social",
             "askedBy": "Lo pidió",
             "personForPerson": "{{who}}, para llegar a {{whom}}",
@@ -5929,6 +5931,7 @@
           "copy_limit": "Espera primero a que terminen las copias en curso.",
           "no_files": "No tiene archivos que copiar.",
           "files_missing": "No todos sus archivos se pueden obtener de su instancia, así que no se puede copiar entero.",
+          "copy_too_big": "Demasiado grande para copiarlo aquí: sus archivos juntos superan lo que esta instancia acepta en una importación.",
           "zip_busy": "Ya se está creando otro ZIP. Inténtalo de nuevo en un momento.",
           "zip_too_big": "Demasiado grande para comprimirlo aquí: descarga sus archivos uno a uno."
         },

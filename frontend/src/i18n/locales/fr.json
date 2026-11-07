@@ -2661,6 +2661,8 @@
             "linkClosedTitle": "Son lien n'est pas ouvert",
             "linkClosedText": "{{name}} vous joint par un lien, et il est fermé : son instance est peut-être éteinte. Un nouvel essai se fait tout seul ; approuvez quand elle tourne.",
             "linkKey": "Son adresse ne peut pas être vérifiée d'ici : c'est la clé qui vous prouve que c'est elle. Demandez à son administrateur de la lire depuis sa page Social.",
+            "elsewhereTitle": "Une autre instance répond à cette adresse",
+            "elsewhereText": "{{other}} répond directement à {{address}}, avec une autre clé :",
             "compare": "L'administrateur de {{name}} a lu la même clé sur sa page Social",
             "askedBy": "Demandé par",
             "personForPerson": "{{who}}, pour joindre {{whom}}",
@@ -5942,6 +5944,7 @@
           "copy_limit": "Attendez d'abord la fin des copies en cours.",
           "no_files": "Il n'a aucun fichier à copier.",
           "files_missing": "Tous ses fichiers ne peuvent pas être obtenus de son instance : il ne peut pas être copié en entier.",
+          "copy_too_big": "Trop volumineux pour être copié ici : ses fichiers dépassent ensemble ce que cette instance accepte en une importation.",
           "zip_busy": "Un autre ZIP est en cours de création. Réessayez dans un instant.",
           "zip_too_big": "Trop volumineux pour être compressé ici : téléchargez ses fichiers un par un."
         },

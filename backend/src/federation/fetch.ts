@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import dns from "node:dns";
 import net from "node:net";
 import type { LookupFunction } from "node:net";
@@ -16,25 +17,60 @@ export class FederationFetchError extends Error {
 }
 
 // Resolved once per connection, and the same addresses handed to the socket, so a name can't be checked as one
-// address and connect to another (DNS rebinding).
-const lookup: LookupFunction = (hostname, options, callback) => {
-  dns.lookup(hostname, { all: true, verbatim: true }, (error, records) => {
-    if (error) return callback(error, [], 0);
-    if (!records.length || records.some(({ address }) => classifyIp(address) === "never")) {
-      return callback(new Error("That address points at this machine or a reserved range"), [], 0);
-    }
-    const selected = options.family ? records.filter(({ family }) => family === options.family) : records;
-    if (!selected.length) return callback(new Error("Unable to resolve host"), [], 0);
-    if (options.all) callback(null, selected, 0);
-    else callback(null, selected[0].address, selected[0].family);
-  });
-};
+// address and connect to another (DNS rebinding). `refused` turns away every address it says no to.
+const guardedLookup =
+  (refused: (address: string) => boolean | Promise<boolean>, why: string): LookupFunction =>
+  (hostname, options, callback) => {
+    dns.lookup(hostname, { all: true, verbatim: true }, (error, records) => {
+      if (error) return callback(error, [], 0);
+      void Promise.all(records.map(({ address }) => refused(address))).then(
+        (refusals) => {
+          if (!records.length || refusals.some(Boolean)) return callback(new Error(why), [], 0);
+          const selected = options.family ? records.filter(({ family }) => family === options.family) : records;
+          if (!selected.length) return callback(new Error("Unable to resolve host"), [], 0);
+          if (options.all) callback(null, selected, 0);
+          else callback(null, selected[0].address, selected[0].family);
+        },
+        (err: Error) => callback(err, [], 0),
+      );
+    });
+  };
 
-const dispatcher = new Agent({
-  connect: { lookup, timeout: 10_000 },
-  headersTimeout: 15_000,
-  bodyTimeout: 15_000,
-});
+const agentWith = (lookup: LookupFunction) =>
+  new Agent({ connect: { lookup, timeout: 10_000 }, headersTimeout: 15_000, bodyTimeout: 15_000 });
+
+const dispatcher = agentWith(
+  guardedLookup(
+    (address) => classifyIp(address) === "never",
+    "That address points at this machine or a reserved range",
+  ),
+);
+
+/** A lookup of an address as it is on the internet, whatever this instance knows of it: never down a link (a
+ *  partner's there, or a request's), connecting only to addresses `isPublic` takes, and given up with `signal`. */
+type Direct = {
+  origin: string;
+  signal: AbortSignal;
+  isPublic: (address: string) => Promise<boolean>;
+  dispatcher: Agent;
+};
+const direct = new AsyncLocalStorage<Direct>();
+
+/** Runs `fn` with what it fetches from `origin` going straight to it, as `Direct` says. */
+export async function fetchDirectly<T>(
+  origin: string,
+  options: { signal: AbortSignal; isPublic: (address: string) => Promise<boolean> },
+  fn: () => Promise<T>,
+): Promise<T> {
+  const agent = agentWith(
+    guardedLookup(async (address) => !(await options.isPublic(address)), "That isn't an address on the internet"),
+  );
+  try {
+    return await direct.run({ origin, ...options, dispatcher: agent }, fn);
+  } finally {
+    await agent.destroy().catch(() => {});
+  }
+}
 
 const MAX_BODY = 1024 * 1024;
 // For the whole exchange, body included: an instance dripping its answer out doesn't hold the request open.
@@ -69,7 +105,8 @@ export async function federationFetch(
   const origin = originOf(url);
   if (!origin) throw new FederationFetchError("Not an http(s) address", "invalid");
   if (!(await allowed(origin))) throw new FederationFetchError(`Not a connected instance: ${origin}`, "not_allowed");
-  const line = await lineFor(origin);
+  const straight = direct.getStore()?.origin === origin ? direct.getStore()! : null;
+  const line = straight ? null : await lineFor(origin);
   if (line) {
     if (line === "ended" || !linkRoute) throw new FederationFetchError(NOT_LINKED, "network");
     return linkRoute(line, url, { ...init, signal: init.signal ?? AbortSignal.timeout(DEADLINE_MS) });
@@ -80,12 +117,16 @@ export async function federationFetch(
   if (net.isIP(host) && classifyIp(host) === "never") {
     throw new FederationFetchError("That address points at this machine or a reserved range", "address");
   }
+  if (straight && net.isIP(host) && !(await straight.isPublic(host))) {
+    throw new FederationFetchError("That isn't an address on the internet", "address");
+  }
+  const signal = init.signal ?? AbortSignal.timeout(DEADLINE_MS);
   try {
     return await fetch(url, {
       ...init,
-      signal: init.signal ?? AbortSignal.timeout(DEADLINE_MS),
+      signal: straight ? AbortSignal.any([signal, straight.signal]) : signal,
       redirect: "manual",
-      dispatcher,
+      dispatcher: straight?.dispatcher ?? dispatcher,
     } as RequestInit & { dispatcher: Agent });
   } catch (err) {
     const cause = (err as { cause?: Error }).cause;
