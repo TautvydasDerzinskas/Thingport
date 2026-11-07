@@ -38,7 +38,6 @@ import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
 import { useOpenInStudio } from "./useOpenInStudio";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
-import NormalizedOpenButton from "./NormalizedOpenButton";
 import CopiedFromRemote from "./CopiedFromRemote";
 import ModelFileSelect from "./ModelFileSelect";
 import PrintProfilesSection from "./PrintProfiles";
@@ -148,7 +147,7 @@ export default function ModelSidePanel({
   const viewerAvatarUrl = viewer?.avatar_url;
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
-  const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor, normalizedTargetsOf } =
+  const { slicerOption, slicerOptions, files, canOpen, normalizedTargetsOf } =
     useOpenInSlicer(print);
   // Every action below applies to this file; until one is picked, the first profile (the designer's, where there is
   // one), else the first file.
@@ -162,7 +161,6 @@ export default function ModelSidePanel({
   const firstProfileFile = profilesShown ? files.find((file) => file.key === entries[0].key) : undefined;
   const selectedFile = files.find((file) => file.key === selectedKey) ?? firstProfileFile ?? files[0] ?? null;
   const otherFiles = profilesShown ? files.filter((file) => !entries.some((entry) => entry.key === file.key)) : [];
-  const normalizedTarget = normalizedTargetFor(selectedFile);
 
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
   const studio = useOpenInStudio(print, onUnauthorized);
@@ -551,15 +549,6 @@ export default function ModelSidePanel({
             onCustomize={customize.available ? customize.start : undefined}
             onOpenInStudio={studioPlate ? () => void studio.open(studioPlate) : undefined}
             openingInStudio={studio.opening}
-          />
-        )}
-        {slicerOption && normalizedTarget && (
-          <NormalizedOpenButton
-            targets={[normalizedTarget]}
-            slicerLabel={slicerOption.label}
-            stateOf={normalized.stateOf}
-            open={normalized.open}
-            onPick={() => {}}
           />
         )}
 
