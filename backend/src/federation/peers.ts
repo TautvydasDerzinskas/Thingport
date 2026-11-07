@@ -19,6 +19,7 @@ import {
   linkOpen,
   linkTokenIn,
   newLinkToken,
+  noteLinkEnded,
   ownLinkOpen,
   reachedDirectly,
   requestLinkOpen,
@@ -70,8 +71,30 @@ export function normalizeInstanceAddress(input: string): string {
 /** What an instance says about itself, and its key: only fetched because an admin asked, and only from that
  *  instance. Checks it's a Thingport instance that takes connections, and that its actor is its own. */
 export async function lookupInstance(input: string): Promise<InstanceInfo> {
-  const { info } = await lookupWithActor(input);
-  return { ...info, suggestLink: await needsLink(info.origin) };
+  try {
+    const { info } = await lookupWithActor(input);
+    return { ...info, suggestLink: await needsLink(info.origin) };
+  } catch (err) {
+    // Out of reach from here, but asked through a link: that request is the way to connect it.
+    if (err instanceof HttpError && err.code === "unreachable") {
+      const waiting = await prisma.peerRequest.count({
+        where: {
+          kind: "INCOMING",
+          status: "PENDING",
+          origin: normalizeInstanceAddress(input),
+          linkToken: { not: null },
+        },
+      });
+      if (waiting) {
+        throw new HttpError(
+          409,
+          "That instance asked to connect through a link: answer its request",
+          "asked_with_link",
+        );
+      }
+    }
+    throw err;
+  }
 }
 
 /** Whether an instance at `origin` likely can't reach this one: it's on the internet, and this one is on a local
@@ -218,12 +241,20 @@ export async function connect(
     }
     throw new HttpError(409, "You're already connected with that instance, or asked it", "exists");
   }
-  // They may have asked us meanwhile: approving theirs is the same as asking them.
+  // They may have asked us meanwhile: approving theirs is the same as asking them. Only one checked against what was
+  // just looked up: one with a link is answered under Requests, and none from that instance is asked as usual.
   const theirs = await prisma.peerRequest.findFirst({
-    where: { kind: "INCOMING", status: "PENDING", origin: info.origin },
+    where: { kind: "INCOMING", status: "PENDING", origin: info.origin, linkToken: null },
   });
-  if (theirs) {
-    const approved = await approveRequest(adminId, theirs.id, info.fingerprint);
+  const approved = theirs
+    ? await approveRequest(adminId, theirs.id, info.fingerprint).catch((err) => {
+        if (err instanceof HttpError && ["bad_signature", "withdrawn", "not_found"].includes(err.code ?? "")) {
+          return null;
+        }
+        throw err;
+      })
+    : null;
+  if (approved) {
     if (asked) {
       const settled = await prisma.$transaction((tx) => settleUserRequests(tx, adminId, info, [asked.id]));
       await tellRequesters(settled, info, "connected");
@@ -470,8 +501,6 @@ export async function storeIncomingRequest(params: {
     const created = await tx.peerRequest.create({ data });
     return { kind: fromOrigin ? ("another" as const) : ("stored" as const), id: created.id };
   });
-  // Its address is reached through its link from now on, never directly: whichever request this is from there.
-  if (linkToken && "id" in outcome) invalidateAllowlist();
   if (outcome.kind !== "stored") return outcome.kind;
   const who = name ?? new URL(params.origin).host;
   await notifyAdmins({
@@ -615,8 +644,8 @@ async function currentRequest(
         where: { id: request.id },
         data: { status: code === "withdrawn" ? "CANCELLED" : "DECLINED", decidedAt: new Date() },
       });
-      // Its address still never fetched directly, its link told it's over.
-      if (request.linkToken) await linkEnded(request.linkToken, origin, "declined");
+      // Its link is told it's over.
+      if (request.linkToken) await linkEnded(request.linkToken, null, "declined");
     }
   }
   throw failure;
@@ -743,7 +772,7 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
   });
   const activity = await runtime.toJson(accept);
   // Connected, answered and the rest of its requests settled, together.
-  const { peer, declinedLinks } = await prisma.$transaction(async (tx) => {
+  const peer = await prisma.$transaction(async (tx) => {
     const saved = existing
       ? await tx.peer.update({ where: { id: existing.id }, data })
       : await tx.peer.create({ data: { origin: request.origin, ...data } });
@@ -751,23 +780,22 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
       where: { id: request.id },
       data: { status: "APPROVED", decidedById: adminId, decidedAt: new Date() },
     });
+    // Those declined with it that keep a link hear so the next time they ask, and stop.
     const others = await tx.peerRequest.findMany({
       where: { kind: "INCOMING", status: "PENDING", origin: request.origin, linkToken: { not: null } },
       select: { linkToken: true },
     });
+    for (const other of others) await noteLinkEnded(tx, other.linkToken!, "declined");
     await tx.peerRequest.updateMany({
       where: { kind: "INCOMING", status: "PENDING", origin: request.origin },
       data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
     });
     await enqueueActivity({ origin: saved.origin, inboxUrl: info.inboxUrl, peerId: saved.id, activity }, tx);
-    return { peer: saved, declinedLinks: others.map((other) => other.linkToken!) };
+    return saved;
   });
   invalidateAllowlist();
   if (request.linkToken) linkApproved(request.id, peer.id);
   else await reachedDirectly(peer.origin);
-  // Those declined with it that keep a link hear so the next time they ask, and stop. The address stays reached as
-  // the partner is, so no link-only mark.
-  for (const token of declinedLinks) await linkEnded(token, null, "declined");
   kickDelivery();
   // What it shares, once it has us as a partner too (its Accept on the way): tried again until it answers.
   void syncPeer(peer.id).catch(() => {});
@@ -828,7 +856,7 @@ export async function declineRequest(adminId: string, id: string): Promise<void>
       data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
     });
     if (!count) throw new HttpError(404, "No such request", "not_found");
-    await linkEnded(asked.linkToken, asked.origin, "declined");
+    await linkEnded(asked.linkToken, null, "declined");
     void createLog({
       userId: adminId,
       action: "federation_declined",

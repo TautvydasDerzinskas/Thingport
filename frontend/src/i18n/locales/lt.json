@@ -2706,6 +2706,7 @@
             "not_partner": "Tas serveris nėra partneris.",
             "not_blocked": "Tas serveris neužblokuotas.",
             "link_closed": "Jo ryšys dabar uždarytas: galbūt jo serveris išjungtas.",
+            "asked_with_link": "Tas serveris paprašė prisijungti per ryšį, kurį laiko atvirą, nes šis serveris jo nepasiekia. Atsakykite į jo prašymą skiltyje „Prašymai“.",
             "address_taken": "Su kitu serveriu tuo adresu jau susijungta."
           },
           "review": {

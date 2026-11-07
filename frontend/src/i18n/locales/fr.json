@@ -2649,6 +2649,7 @@
             "not_partner": "Cette instance n'est pas partenaire.",
             "not_blocked": "Cette instance n'est pas bloquée.",
             "link_closed": "Son lien n'est pas ouvert : son instance est peut-être éteinte.",
+            "asked_with_link": "Cette instance a demandé à se connecter par un lien qu'elle garde ouvert, car celle-ci ne peut pas la joindre. Répondez à sa demande sous « Demandes ».",
             "address_taken": "Une autre instance à cette adresse est déjà connectée."
           },
           "review": {

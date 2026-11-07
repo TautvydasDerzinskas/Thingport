@@ -61,9 +61,9 @@ with an instance on the internet: it keeps a **link** open to it, and whatever t
 fetch from it comes down that link. Explore, pictures, downloads, copies and chats work both ways, as between two
 instances that reach each other.
 
-- **The one that can't be reached connects.** The other can't look it up. **Connect to an instance** turns on **Keep a
-  link open** by itself when this instance is on your network only and the other is on the internet; switch it on
-  yourself if theirs can't reach yours for another reason.
+- **The one that can't be reached connects.** The other can't look it up: looking it up there says to answer your
+  request instead. **Connect to an instance** turns on **Keep a link open** by itself when this instance is on your
+  network only and the other is on the internet; switch it on yourself if theirs can't reach yours for another reason.
 - **The key is how they know it's you.** Their admin can't check your address from there, so compare the key as usual.
   Your request shows there as reaching them through a link.
 - **While your instance is off**, what's said to your people waits on their side and arrives once it's back, and their

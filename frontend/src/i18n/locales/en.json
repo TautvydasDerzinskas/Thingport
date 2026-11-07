@@ -2608,6 +2608,7 @@
             "not_partner": "That instance isn't a partner.",
             "not_blocked": "That instance isn't blocked.",
             "link_closed": "Its link isn't open right now: its instance may be off.",
+            "asked_with_link": "That instance asked to connect through a link it keeps open, as this one can't reach it. Answer its request under Requests.",
             "address_taken": "Another instance at that address is connected already."
           },
           "review": {

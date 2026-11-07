@@ -6,8 +6,14 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { invalidateAllowlist, lineFor } from "../src/federation/allowlist";
 import { NOT_LINKED, federationFetch } from "../src/federation/fetch";
-import { cameThroughLink, linkEnded, linkOpen, newLinkToken, requestLinkOpen, sha256 } from "../src/federation/links";
-import { listInstances, storeIncomingRequest } from "../src/federation/peers";
+import { cameThroughLink, linkOpen, newLinkToken, requestLinkOpen, sha256 } from "../src/federation/links";
+import {
+  declineRequest,
+  disconnectPeer,
+  listInstances,
+  lookupInstance,
+  storeIncomingRequest,
+} from "../src/federation/peers";
 import { getRuntime, resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
 import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
@@ -134,8 +140,9 @@ describe("links", () => {
     expect(stored).toBe("stored");
     const asking = await prisma.peerRequest.findFirstOrThrow({ where: { origin } });
     expect(asking.linkToken).toBe(sha256(token));
-    // Its address is reached through its link only, from now on.
-    expect(await lineFor(origin)).toBe(`request:${asking.id}`);
+    // Anyone can send one, naming any address: only its own review goes through its link, and how that address is
+    // reached doesn't change.
+    expect(await lineFor(origin)).toBeNull();
 
     const ask = request(app).get("/api/ap/link").set("Authorization", `Link ${token}`);
     const pending = ask.then((res) => res);
@@ -143,14 +150,58 @@ describe("links", () => {
     ask.abort();
     await pending.catch(() => null);
 
-    await prisma.peerRequest.update({ where: { id: asking.id }, data: { status: "DECLINED" } });
-    await linkEnded(asking.linkToken!, origin, "declined");
+    await declineRequest("test-admin", asking.id);
     const told = await request(app).get("/api/ap/link").set("Authorization", `Link ${token}`);
     expect(told.status).toBe(410);
     expect(told.body).toEqual({ reason: "declined" });
-    // Still never reached at its address.
+    // Nor once it's declined: an instance really at that address can still be connected with.
+    expect(await lineFor(origin)).toBeNull();
+  });
+
+  it("never fetches a partner's address once its link ended", async () => {
+    const origin = "http://192.0.2.96:8000";
+    const token = newLinkToken();
+    const peer = await prisma.peer.create({
+      data: {
+        origin,
+        status: "ACTIVE",
+        link: "theirs",
+        linkToken: sha256(token),
+        actorUrl: `${origin}/api/ap/actors/instance`,
+      },
+    });
+    invalidateAllowlist();
+    await disconnectPeer("test-admin", peer.id);
+    const told = await request(app).get("/api/ap/link").set("Authorization", `Link ${token}`);
+    expect(told.status).toBe(410);
+    expect(told.body).toEqual({ reason: "disconnected" });
+    // What was on its way to it meanwhile doesn't go to its address, which may be another machine from here.
     expect(await lineFor(origin)).toBe("ended");
-    await expect(federationFetch(`${origin}/api/ap/instance`, {}, () => true)).rejects.toThrow(NOT_LINKED);
+    await expect(federationFetch(`${origin}/api/ap/inbox`, {}, () => true)).rejects.toThrow(NOT_LINKED);
+  });
+
+  it("points a lookup of an address it can't reach at the request that asked from it through a link", async () => {
+    const origin = "http://192.0.2.97:8000";
+    await storeIncomingRequest({
+      origin,
+      url: `${ORIGIN}/api/ap/inbox`,
+      headers: {},
+      raw: "{}",
+      follow: {
+        type: "Follow",
+        id: `${origin}/api/ap/follows/f1`,
+        actor: `${origin}/api/ap/actors/instance`,
+        "thingport:link": newLinkToken(),
+      } as never,
+    });
+    const saved = process.env.FEDERATION_UNREACHABLE;
+    process.env.FEDERATION_UNREACHABLE = origin;
+    try {
+      await expect(lookupInstance(origin)).rejects.toMatchObject({ code: "asked_with_link" });
+    } finally {
+      if (saved === undefined) delete process.env.FEDERATION_UNREACHABLE;
+      else process.env.FEDERATION_UNREACHABLE = saved;
+    }
   });
 
   it("turns away an instance at a partner's address that isn't that partner", async () => {

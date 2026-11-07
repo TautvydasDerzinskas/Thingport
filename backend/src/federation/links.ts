@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { Readable } from "node:stream";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
+import type { Prisma } from "@prisma/client";
 import type { Request, Response as ExpressResponse } from "express";
 import { API_PORT } from "../config";
 import { prisma } from "../db";
@@ -359,27 +360,39 @@ export async function answerReply(req: Request, res: ExpressResponse): Promise<v
 }
 
 /** Leaves a note that the link opened with `tokenHash` ended, and why, so the instance keeping it hears so the next
- *  time it asks; and, given `origin`, that it's still only ever reached through a link meanwhile. */
+ *  time it asks; and, given `origin`, that it's still only ever reached through a link meanwhile. Only a partner's
+ *  link gives its `origin`: a waiting request's address is only what a stranger said, and marking it would keep this
+ *  instance from whatever really is there. */
 export async function linkEnded(
   tokenHash: string,
   origin: string | null,
   reason: "declined" | "disconnected",
 ): Promise<void> {
-  const expiresAt = new Date(Date.now() + ENDED_MS);
   await prisma.$transaction(async (tx) => {
-    await tx.federationKv.upsert({
-      where: { key: `${LINK_ENDED_PREFIX}${tokenHash}` },
-      create: { key: `${LINK_ENDED_PREFIX}${tokenHash}`, value: { reason }, expiresAt },
-      update: { value: { reason }, expiresAt },
-    });
+    await noteLinkEnded(tx, tokenHash, reason);
     if (!origin) return;
     await tx.federationKv.upsert({
       where: { key: `${LINK_ONLY_PREFIX}${origin}` },
-      create: { key: `${LINK_ONLY_PREFIX}${origin}`, value: {}, expiresAt },
-      update: { expiresAt },
+      create: { key: `${LINK_ONLY_PREFIX}${origin}`, value: {}, expiresAt: new Date(Date.now() + ENDED_MS) },
+      update: { expiresAt: new Date(Date.now() + ENDED_MS) },
     });
   });
-  invalidateAllowlist();
+  // Only the mark changes how an address is reached.
+  if (origin) invalidateAllowlist();
+}
+
+/** Only the note of `linkEnded`, written in `tx`, so it's kept exactly when what declined the request is. */
+export async function noteLinkEnded(
+  tx: Prisma.TransactionClient,
+  tokenHash: string,
+  reason: "declined" | "disconnected",
+): Promise<void> {
+  const expiresAt = new Date(Date.now() + ENDED_MS);
+  await tx.federationKv.upsert({
+    where: { key: `${LINK_ENDED_PREFIX}${tokenHash}` },
+    create: { key: `${LINK_ENDED_PREFIX}${tokenHash}`, value: { reason }, expiresAt },
+    update: { value: { reason }, expiresAt },
+  });
 }
 
 /** An address connected with directly again: no longer one reached only through a link. */

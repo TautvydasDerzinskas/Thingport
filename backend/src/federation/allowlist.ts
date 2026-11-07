@@ -1,14 +1,15 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { prisma } from "../db";
 
-/** What a link that ended leaves behind for a while (links.ts): why, for the instance that kept it, and that its address
- *  is still never fetched directly. */
+/** What a link that ended leaves behind for a while (links.ts): why, for the instance that kept it, and, for a
+ *  partner's, that its address is still never fetched directly. */
 export const LINK_ENDED_PREFIX = "thingport:link-ended:";
 export const LINK_ONLY_PREFIX = "thingport:link-only:";
 
 // Partners we're connected with or have asked: the only instances this one talks to. `linked`: the origins reached
-// only through a link, each with the link ("peer:<id>" or "request:<id>"): never fetched directly, as such an address
-// (a LAN one, usually) may lead to another machine from here.
+// only through a link, each with its partner's ("peer:<id>"): never fetched directly, as such an address (a LAN one,
+// usually) may lead to another machine from here. A waiting request's link isn't among them: what a stranger sends
+// never changes how an address is reached, so its link carries only its own review (throughRequestLink).
 let cached: { origins: Set<string>; linked: Map<string, string>; at: number } | null = null;
 const CACHE_MS = 10_000;
 // Bumped by every change: a read that started before one is read again, so a partner just paused or blocked isn't
@@ -22,14 +23,9 @@ async function load(): Promise<NonNullable<typeof cached>> {
   for (;;) {
     if (cached && Date.now() - cached.at < CACHE_MS) return cached;
     const asked = generation;
-    const [peers, linkedPeers, asking, ended] = await Promise.all([
+    const [peers, linkedPeers, ended] = await Promise.all([
       prisma.peer.findMany({ where: { status: { in: ["ACTIVE", "OUTGOING"] } }, select: { origin: true } }),
       prisma.peer.findMany({ where: { link: "theirs" }, select: { id: true, origin: true } }),
-      prisma.peerRequest.findMany({
-        where: { kind: "INCOMING", status: "PENDING", linkToken: { not: null } },
-        orderBy: { createdAt: "asc" },
-        select: { id: true, origin: true },
-      }),
       prisma.federationKv.findMany({
         where: { key: { startsWith: LINK_ONLY_PREFIX }, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
         select: { key: true },
@@ -38,8 +34,6 @@ async function load(): Promise<NonNullable<typeof cached>> {
     if (asked !== generation) continue;
     const linked = new Map<string, string>();
     for (const row of ended) linked.set(row.key.slice(LINK_ONLY_PREFIX.length), "ended");
-    // The newest request from an address, and a partner's link over any request.
-    for (const request of asking) linked.set(request.origin, `request:${request.id}`);
     for (const peer of linkedPeers) linked.set(peer.origin, `peer:${peer.id}`);
     cached = { origins: new Set(peers.map((peer) => peer.origin)), linked, at: Date.now() };
     return cached;
@@ -51,11 +45,11 @@ async function peerOrigins(): Promise<Set<string>> {
 }
 
 // A request an admin is looking at, from an instance that can't be reached from here: what's fetched from its
-// address while they do goes through its own link, whichever other request from that address is newer.
+// address while they do goes through its own link.
 const reviewing = new AsyncLocalStorage<{ origin: string; line: string }>();
 
-/** The link `origin` is reached through, or null for one reached directly. "ended" for one whose link ended lately:
- *  reached no way at all. */
+/** The link `origin` is reached through, or null for one reached directly. "ended" for one whose partner's link ended
+ *  lately: reached no way at all. */
 export async function lineFor(origin: string): Promise<string | null> {
   const review = reviewing.getStore();
   if (review?.origin === origin) return review.line;

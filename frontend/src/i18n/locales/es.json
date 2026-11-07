@@ -2649,6 +2649,7 @@
             "not_partner": "Esa instancia no es asociada.",
             "not_blocked": "Esa instancia no está bloqueada.",
             "link_closed": "Su enlace no está abierto ahora: puede que su instancia esté apagada.",
+            "asked_with_link": "Esa instancia pidió conectarse a través de un enlace que mantiene abierto, porque esta no puede llegar a ella. Responde a su solicitud en «Solicitudes».",
             "address_taken": "Ya hay otra instancia conectada en esa dirección."
           },
           "review": {

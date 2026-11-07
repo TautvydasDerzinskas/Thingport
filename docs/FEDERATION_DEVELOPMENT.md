@@ -12,9 +12,10 @@ instance. This page is for working on it; the admin's side is in
   `@fedify/*` outside `import type`.
 - **Admins decide who this instance talks to.** It fetches from, and accepts signed requests from, only approved
   partners and the instance an admin is looking at right then (`allowlist.ts`). Nothing a stranger or a user sends may
-  make the server fetch anything: a stranger's request to connect is kept as it came and checked only when an admin
-  opens it. An instance reached through a link (`links.ts`) is never fetched at its address: `federationFetch` sends
-  every request for it down its link, so keep every outgoing request in `federationFetch`.
+  make the server fetch anything, or keep it from reaching an address: a stranger's request to connect is kept as it
+  came and checked only when an admin opens it. A partner reached through a link (`links.ts`) is never fetched at its
+  address: `federationFetch` sends every request for it down its link, so keep every outgoing request in
+  `federationFetch`.
 - **Everything social federates.** A partner's people get every social feature this instance's own people get. Every
   route in `routes/social.ts` and `routes/chats.ts` is listed in `src/federation/socialSurfaces.ts` with how it crosses
   (or why it stays local), and `tests/federationSurfaces.test.ts` fails for one that isn't. A new social feature
@@ -199,11 +200,16 @@ instead (`links.ts`), and the partner reaches it through that:
   `Peer.linkToken`), so the link opens while the request waits: the partner's admin reviews and approves it through
   that link (`throughRequestLink`). Only those checks go through the request's link; approving hands its open link to
   the new partner (`linkApproved`), so the answer goes at once.
-- **Its address is never fetched.** A linked origin, a waiting request's, or one whose link ended in the last 30 days
-  (`thingport:link-only:` in `FederationKv`) never goes to the network: that address, usually a LAN one, may lead to
-  another machine from the partner's side. So a partner never sends a linked instance a goodbye: declining,
-  disconnecting or blocking leaves a note (`thingport:link-ended:`) its link reads as `410` with `declined` or
-  `disconnected`, and the home instance lets go.
+- **Its address is never fetched.** A linked partner's origin, or one whose partner's link ended in the last 30 days
+  (`thingport:link-only:` in `FederationKv`), never goes to the network: that address, usually a LAN one, may lead to
+  another machine from the partner's side, and something may still be on its way to it. So a partner never sends a
+  linked instance a goodbye: declining, disconnecting or blocking leaves a note (`thingport:link-ended:`) its link
+  reads as `410` with `declined` or `disconnected`, and the home instance lets go.
+- **A waiting request changes nothing.** Anyone can send one naming any address, and a link's address can't be
+  checked, so a request's link carries only its own review, and declining it leaves only the note: an instance really
+  at that address can still be looked up and connected with. The key tells the two apart. A lookup that can't reach
+  an address a request with a link came from says to answer that request (`asked_with_link`), and **Connect** only
+  approves a waiting request without a link, checked against the lookup.
 - **Its signatures** are checked against its actor document as kept when its admin compared the key
   (`Peer.actorDocument`), so checking one asks it nothing.
 - **Coming down a link proves nothing** about reaching the home instance: such requests carry a mark only this process
