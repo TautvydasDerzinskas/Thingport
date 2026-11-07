@@ -516,8 +516,15 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
   if (failed) parts.push(`${failed} failed`);
   // Onto a model already in the library, as adding the page's own profile there says.
   const addedTitle = library && added ? `Profile${added === 1 ? "" : "s"} added` : undefined;
+  // The last failure's reason (a CAPTCHA, the daily limit, the instance's refusal) says what to do about the rest.
+  const reason =
+    failed && lastError ? ` Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}` : "";
   renderPanel(
-    successHtml(`${instanceUrl}/models/${printId}`, `${parts.join(", ")}.`, failed ? "Partly imported" : addedTitle),
+    successHtml(
+      `${instanceUrl}/models/${printId}`,
+      `${parts.join(", ")}.${reason}`,
+      failed ? "Partly imported" : addedTitle,
+    ),
   );
 }
 
