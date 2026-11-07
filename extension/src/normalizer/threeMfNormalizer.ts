@@ -1274,8 +1274,9 @@ function isSlicedOutput(relativePath: string): boolean {
 }
 
 /**
- * Snapmaker Orca crashes on a project settings file without these four keys, so the printer-profile strip keeps
- * them for the Orca target: the preset names blank (no preset of the designer's printer is named). The U1's bed and height replace the designer's.
+ * Snapmaker Orca crashes on a project settings file without printer and preset names, so for the Orca target the
+ * printer-profile strip sets the U1 printer and process presets, a filament preset name per designer filament, the
+ * U1's bed, height, extrusion mode and G-code flavor, the designer's first nozzle, and the moved wipe tower.
  */
 function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   // Orca needs a printer: without a named preset it shows the file's name as the printer and nothing fits. Names
@@ -1300,11 +1301,6 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   return cleaned;
 }
 
-/**
- * The wipe tower ("Reinigungsturm") has a position per plate on the designer's bed, so on the smaller U1 bed it would
- * stand beside the plate. It moves by the same shift as the objects (the designer's bed middle to the U1's), then
- * stays inside the bed, off its edge.
- */
 // wipe_tower_x/y is the tower's lower-left corner; it extends prime_tower_width (and, going by the rib wall, its extra rib
 // length) to the right and up, and the brim (U1 presets: 5 mm) is drawn around all of that. The U1 presets set a width of 30
 // (the Orca GUI shows that), a designer's file may carry more (MakerWorld: 60), so the file's width is used when it is larger.
@@ -1327,6 +1323,11 @@ function wipeTowerExtent(original: Settings): { before: number; after: number } 
   return { before, after: width + ribs + before };
 }
 
+/**
+ * The wipe tower ("Reinigungsturm") has a position per plate on the designer's bed, so on the smaller U1 bed it would
+ * stand beside the plate. It moves by the same shift as the objects (the designer's bed middle to the U1's), then
+ * stays inside the bed, off its edge.
+ */
 export function moveWipeTower(cleaned: Settings, original: Settings): void {
   const bed = bedFromPrintableArea(original.printable_area);
   const xs = original.wipe_tower_x;
