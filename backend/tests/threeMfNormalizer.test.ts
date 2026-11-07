@@ -107,6 +107,7 @@ async function makeBambuZip(overrides: { rootXml?: string } = {}): Promise<Uint8
 </config>`,
   );
   zip.file("Metadata/slice_info.config", "<config/>");
+  zip.file("Metadata/custom_gcode_per_layer.xml", "<custom_gcodes_per_layer/>");
   zip.file("Metadata/plate_1.gcode", "; gcode");
   zip.file("3D/_rels/3dmodel.model.rels", "<Relationships/>");
   return zip.generateAsync({ type: "uint8array" });
@@ -264,6 +265,7 @@ describe("normalize3mf", () => {
     const out = await JSZip.loadAsync(result.bytes);
     expect(out.file("Metadata/plate_1.gcode")).toBeNull();
     expect(out.file("Metadata/slice_info.config")).toBeNull();
+    expect(out.file("Metadata/custom_gcode_per_layer.xml")).toBeNull();
     expect(out.file("3D/_rels/3dmodel.model.rels")).toBeNull();
     const project = JSON.parse(await readOut(result.bytes, "Metadata/project_settings.config"));
     expect(project.wall_loops).toBe("3");
@@ -444,6 +446,7 @@ describe("normalize3mf for an Orca fork", () => {
     expect(out.file("3D/_rels/3dmodel.model.rels")).not.toBeNull();
     expect(out.file("Metadata/plate_1.gcode")).toBeNull();
     expect(out.file("Metadata/slice_info.config")).toBeNull();
+    expect(out.file("Metadata/custom_gcode_per_layer.xml")).toBeNull();
     expect(out.file("Metadata/Slic3r_PE.config")).toBeNull();
     expect(out.file("Metadata/Slic3r_PE_model.config")).toBeNull();
     const project = JSON.parse(await readOut(result.bytes, "Metadata/project_settings.config"));

@@ -1207,7 +1207,7 @@ export function markAsBambuProject(modelXml: string): string | null {
 
 function isSlicedOutput(relativePath: string): boolean {
   const p = pathKey(relativePath);
-  return p.includes(".gcode") || p.includes("slice_info");
+  return p.includes(".gcode") || p.includes("slice_info") || p.includes("custom_gcode");
 }
 
 /**

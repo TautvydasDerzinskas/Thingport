@@ -68,6 +68,7 @@ async function bambuZip(): Promise<Uint8Array> {
   zip.file("Metadata/project_settings.config", JSON.stringify(SETTINGS));
   zip.file("Metadata/plate_1.gcode", "G1 X0");
   zip.file("Metadata/slice_info.config", "<config/>");
+  zip.file("Metadata/custom_gcode_per_layer.xml", "<custom_gcodes_per_layer/>");
   return zip.generateAsync({ type: "uint8array" });
 }
 
@@ -107,6 +108,7 @@ describe("normalize3mf for an Orca fork", () => {
     expect(await read(bytes, "3D/3dmodel.model")).toContain('p:path="/3D/Objects/object_1.model"');
     expect(out.file("Metadata/plate_1.gcode")).toBeNull();
     expect(out.file("Metadata/slice_info.config")).toBeNull();
+    expect(out.file("Metadata/custom_gcode_per_layer.xml")).toBeNull();
     const project = JSON.parse(await read(bytes, "Metadata/project_settings.config"));
     expect(project.wall_loops).toBe("3");
     expect(project.printer_model).toBeUndefined();

@@ -25,7 +25,7 @@ is also marked as a Bambu project, as Snapmaker Orca would otherwise split its p
 the designer's bed to the middle of the same plate on a 270 mm bed (the Snapmaker U1), since they would otherwise
 sit beside it, and the printer is set to the Snapmaker U1 with the designer's nozzle, its bed, height and absolute extrusion, and the process
 preset is the U1's counterpart of the one the designer started from. Only the first of the designer's nozzles is kept, so Orca doesn't show a dual-nozzle printer. The wipe tower moves with the
-objects and stays entirely on the bed, brim and ribs included. Each filament keeps the preset name the designer gave it, with its values unchanged in the file; no U1 preset replaces it, and an empty name becomes "Generic". The other slicers above get the flat copy.
+objects and stays entirely on the bed, brim and ribs included. Layer-based pauses and colour changes the designer set (`custom_gcode_per_layer.xml`) are dropped, as their G-code is Bambu-specific. Each filament keeps the preset name the designer gave it, with its values unchanged in the file; no U1 preset replaces it, and an empty name becomes "Generic". The other slicers above get the flat copy.
 
 The [MakerWorld 3MF normalizer](../../tools/makerworld-3mf-normalizer) tool makes such a copy too, of a model's 3MF or
 one on your disk, to download, save as a new model or add to the model it came from. An admin installs it from
