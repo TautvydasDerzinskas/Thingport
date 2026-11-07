@@ -110,6 +110,21 @@ describe("normalize3mf for an Orca fork", () => {
     expect(project.print_settings_id).toBe("0.28mm Standard @Snapmaker U1 (0.4 nozzle)");
   });
 
+  it("takes the designer's nozzle and a process preset the U1 has for it", async () => {
+    const zip = await JSZip.loadAsync(await bambuZip());
+    const settings = {
+      ...SETTINGS,
+      nozzle_diameter: ["0.6"],
+      print_settings_id: "0.30mm Standard @BBL H2C 0.6 nozzle",
+    };
+    zip.file("Metadata/project_settings.config", JSON.stringify(settings));
+    const { bytes } = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+    const project = JSON.parse(await read(bytes, "Metadata/project_settings.config"));
+    expect(project.printer_settings_id).toBe("Snapmaker U1 (0.6 nozzle)");
+    expect(project.print_settings_id).toBe("0.30mm Standard @Snapmaker U1 (0.6 nozzle)");
+    expect(project.nozzle_diameter).toEqual(["0.6"]);
+  });
+
   it("moves each plate's items from the designer's bed to the middle of a 270 mm bed", () => {
     const bed = { width: 330, depth: 320, centerX: 165, centerY: 160 };
     const xml = `<model><build>${item(1, 165, 160)}${item(2, 561, 160)}${item(3, 165, -224)}${item(9, 7, 7)}</build></model>`;
