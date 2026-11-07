@@ -148,7 +148,8 @@ export default function ModelSidePanel({
   const viewerAvatarUrl = viewer?.avatar_url;
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
-  const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor } = useOpenInSlicer(print);
+  const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor, normalizedTargetsOf } =
+    useOpenInSlicer(print);
   // Every action below applies to this file; until one is picked, the first profile (the designer's, where there is
   // one), else the first file.
   const [ownSelectedKey, setOwnSelectedKey] = useState<string | null>(null);
@@ -537,6 +538,11 @@ export default function ModelSidePanel({
               recordUse();
               void switchSlicer(slicerId);
             }}
+            normalizedFor={(slicerId) =>
+              normalizedTargetsOf(slicerId).find((target) => target.url === selectedFile.url)
+            }
+            normalizedStateOf={normalized.stateOf}
+            onOpenNormalized={normalized.open}
             downloading={downloading}
             onDownload={() => void downloadFile(selectedFile)}
             // The zip holds the plates and supporting files, not the prepared print.
