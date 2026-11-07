@@ -42,8 +42,9 @@ const COLLECTION_NAME_MAX = 200;
 const COLLECTION_DESCRIPTION_MAX = 5000;
 const DIRECTORY_LIMIT = 500;
 const COLLECTIONS_LIMIT = 200;
-// Collections a page, each at most about 30 KB (its text as cut above, and its first model ids): 12 fit a page.
+// Collections a page, each fitted to COLLECTION_MAX_BYTES (fitCollection), so 12 always fit a page.
 export const COLLECTIONS_PAGE = 12;
+export const COLLECTION_MAX_BYTES = Math.floor((PAGE_BYTES - 16 * 1024) / COLLECTIONS_PAGE);
 // A collection's models by id: the first ones come with it, the rest a page at a time.
 export const COLLECTION_FIRST_IDS = 200;
 export const COLLECTION_IDS_PAGE = 1000;
@@ -383,30 +384,51 @@ export async function collectionsPage(userId: string, page = 0): Promise<unknown
     partOf: base,
     totalItems: total,
     next: offset + take < total ? `${base}?page=${page + 1}` : undefined,
-    orderedItems: collections.map((collection) => ({
-      id: collectionUrl(runtime, collection.id),
-      type: "thingport:Collection",
-      name: collection.name.slice(0, COLLECTION_NAME_MAX),
-      attributedTo: actorUrl(runtime, userId),
-      source: markdown(collection.description?.slice(0, COLLECTION_DESCRIPTION_MAX) ?? null),
-      // Changed when it's renamed or something is filed in it.
-      updated: new Date(
-        Math.max(collection.updatedAt.getTime(), collection.items[0]?.createdAt.getTime() ?? 0),
-      ).toISOString(),
-      "thingport:models": {
-        id: `${collectionUrl(runtime, collection.id)}/models`,
-        type: "OrderedCollection",
-        totalItems: collection._count.items,
-        first: idsPage(
-          runtime,
-          collection.id,
-          0,
-          collection.items.map((item) => item.printId),
-          collection._count.items,
-        ),
-      },
-    })),
+    orderedItems: collections.map((collection) =>
+      fitCollection(
+        (description, printIds) => ({
+          id: collectionUrl(runtime, collection.id),
+          type: "thingport:Collection",
+          name: collection.name.slice(0, COLLECTION_NAME_MAX),
+          attributedTo: actorUrl(runtime, userId),
+          source: markdown(description),
+          // Changed when it's renamed or something is filed in it.
+          updated: new Date(
+            Math.max(collection.updatedAt.getTime(), collection.items[0]?.createdAt.getTime() ?? 0),
+          ).toISOString(),
+          "thingport:models": {
+            id: `${collectionUrl(runtime, collection.id)}/models`,
+            type: "OrderedCollection",
+            totalItems: collection._count.items,
+            first: idsPage(runtime, collection.id, 0, printIds, collection._count.items),
+          },
+        }),
+        collection.description?.slice(0, COLLECTION_DESCRIPTION_MAX) ?? null,
+        collection.items.map((item) => item.printId),
+      ),
+    ),
   };
+}
+
+/** A collection as published, made with `make`, within COLLECTION_MAX_BYTES however long its ids and however its text
+ *  escapes: its description shortened first, then fewer of its models given with it, the rest on its own pages. */
+export function fitCollection<T>(
+  make: (description: string | null, printIds: string[]) => T,
+  description: string | null,
+  printIds: string[],
+): T {
+  let text = description;
+  let ids = printIds;
+  let item = make(text, ids);
+  while (bytes(item) > COLLECTION_MAX_BYTES && text) {
+    text = text.slice(0, Math.floor(text.length / 2)) || null;
+    item = make(text, ids);
+  }
+  while (bytes(item) > COLLECTION_MAX_BYTES && ids.length) {
+    ids = ids.slice(0, Math.floor(ids.length / 2));
+    item = make(text, ids);
+  }
+  return item;
 }
 
 /** A page of a public collection's models by their ids, from `offset`; null for a collection that isn't public. */

@@ -13,11 +13,13 @@ import { MEDIA_DIR, mediaAddress, pruneMedia } from "../src/federation/media";
 import { FederationFetchError } from "../src/federation/fetch";
 import {
   COLLECTION_FIRST_IDS,
+  COLLECTION_MAX_BYTES,
   COLLECTIONS_PAGE,
   collectionModelsPage,
   collectionsPage,
   DIRECTORY_PAGE,
   directory,
+  fitCollection,
   fitPerson,
   modelsPage,
   PAGE_BYTES,
@@ -606,6 +608,8 @@ describe("keeping it current", () => {
     // At most 2,000 of them, however they're paged.
     expect(await read(partner(45, undefined, 50))).toEqual({ count: 2000, all: false });
     expect(await read(partner(40, undefined, 50))).toEqual({ count: 2000, all: true });
+    // A last page that crosses the cap: cut there, and the rest not known.
+    expect(await read(partner(67, undefined, 30))).toEqual({ count: 2000, all: false });
     const vanishing = async (url: string) => {
       const page = Number(new URL(url).searchParams.get("page"));
       if (page === 1) throw gone();
@@ -748,6 +752,21 @@ describe("keeping it current", () => {
     expect(await collectionModelsPage(shelves[0].id, 0)).toBeNull();
   });
 
+  it("keeps every published collection within its share of a page, however long its ids and text", () => {
+    const make = (description: string | null, ids: string[]) => ({
+      name: "Shelf",
+      source: description ? { content: description } : undefined,
+      models: ids.map((id) => `https://${"a".repeat(240)}.example/api/ap/models/${id}`),
+    });
+    const ids = Array.from({ length: COLLECTION_FIRST_IDS }, (_, n) => `m${n}`);
+    const fitted = fitCollection(make, "\u0001".repeat(5000), ids);
+    expect(Buffer.byteLength(JSON.stringify(fitted))).toBeLessThanOrEqual(COLLECTION_MAX_BYTES);
+    expect(fitted.models.length).toBeGreaterThan(0);
+    expect(COLLECTIONS_PAGE * COLLECTION_MAX_BYTES + 16 * 1024).toBeLessThanOrEqual(PAGE_BYTES);
+    // One that fits is left as it is.
+    expect(fitCollection(make, "Bins", ["m1"])).toEqual(make("Bins", ["m1"]));
+  });
+
   it("reads a person's collections page by page, each with all its models", async () => {
     const own = (url: string | undefined): url is string => Boolean(url?.startsWith(`${PARTNER}/`));
     const gone = () => new FederationFetchError("Not found", "status", 404);
@@ -790,6 +809,29 @@ describe("keeping it current", () => {
     // One of a collection's pages gone: its models as they were stay.
     const ids = await readCollections(partner([`${PARTNER}/api/ap/collections/s0/models?offset=3`]), listing, own);
     expect(ids.collections[0]).toMatchObject({ allIds: false });
+    // More on a page than are read: the rest kept from before stay.
+    const crowded = await readCollections(
+      async () => ({ orderedItems: Array.from({ length: 201 }, (_, n) => shelf(100 + n)) }),
+      listing,
+      own,
+    );
+    expect(crowded).toMatchObject({ all: false });
+    expect(crowded.collections).toHaveLength(200);
+    // From an instance from before pages, all its models in a list; with none said, they aren't known.
+    const older = await readCollections(
+      async () => ({
+        orderedItems: [
+          { ...shelf(7), "thingport:models": [`${PARTNER}/api/ap/models/x`, `${PARTNER}/api/ap/models/y`] },
+          { id: `${PARTNER}/api/ap/collections/bare`, name: "Bare", attributedTo: `${PARTNER}/api/ap/actors/ruta` },
+        ],
+      }),
+      listing,
+      own,
+    );
+    expect(older.collections.map((c) => [c.modelIds.length, c.allIds])).toEqual([
+      [2, true],
+      [0, false],
+    ]);
     // The first page gone fails the read, as with the rest of what they share.
     await expect(readCollections(partner([listing]), listing, own)).rejects.toThrow("Not found");
   });

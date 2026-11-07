@@ -64,6 +64,9 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingCollections, setLoadingCollections] = useState(false);
+  // How many collections have come from the server, apart from how many show, and whether it has more.
+  const [collectionsFrom, setCollectionsFrom] = useState(0);
+  const [collectionsMore, setCollectionsMore] = useState(false);
   const latest = useRef(0);
   const navigate = useNavigate();
   const chatsOn = useSocialStatus()?.chats === true;
@@ -88,6 +91,8 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
             return;
           }
           setPage(person);
+          setCollectionsFrom(person.collections.length);
+          setCollectionsMore(person.collections.length < person.collections_total);
           setModels(first?.items ?? []);
           setHasMore(first?.hasMore ?? false);
         })
@@ -115,8 +120,10 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
     try {
       const next = await socialApi.elsewhere.personModels(personId, { limit: PAGE, offset: models.length });
       if (asked !== latest.current) return;
-      setModels([...models, ...(next?.items ?? [])]);
-      setHasMore(next?.hasMore ?? false);
+      // Not there any more (no longer shared, paused, or connected instances off): read again, to say so.
+      if (!next) return read(personId);
+      setModels([...models, ...next.items]);
+      setHasMore(next.hasMore);
     } catch (err) {
       if (asked !== latest.current) return;
       if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -134,15 +141,17 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
     try {
       const next = await socialApi.elsewhere.personCollections(personId, {
         limit: PAGE,
-        offset: page.collections.length,
+        offset: collectionsFrom,
       });
       if (asked !== latest.current) return;
+      if (!next) return read(personId);
+      setCollectionsFrom(collectionsFrom + next.items.length);
+      setCollectionsMore(next.hasMore && next.items.length > 0);
       setPage((prev) => {
         if (!prev) return prev;
         // One already shown, moved along by a change meanwhile, isn't shown twice.
         const shown = new Set(prev.collections.map((collection) => collection.id));
-        const collections = [...prev.collections, ...(next?.items ?? []).filter((item) => !shown.has(item.id))];
-        return { ...prev, collections, collections_total: next?.hasMore ? next.total : collections.length };
+        return { ...prev, collections: [...prev.collections, ...next.items.filter((item) => !shown.has(item.id))] };
       });
     } catch (err) {
       if (asked !== latest.current) return;
@@ -319,7 +328,7 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
                 <RemoteCollectionCardView key={collection.id} collection={collection} />
               ))}
             </Box>
-            {page.collections.length < page.collections_total && (
+            {collectionsMore && (
               <Box>
                 <Button variant="outlined" onClick={() => void loadMoreCollections()} disabled={loadingCollections}>
                   {t("models:explore.elsewhere.more")}
