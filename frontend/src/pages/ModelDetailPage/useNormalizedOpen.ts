@@ -8,6 +8,11 @@ export type NormalizeState = "idle" | "preparing" | "ready";
 
 const POLL_MS = 2000;
 
+/** Readiness is per file AND per kind of copy: a "flat" copy being ready or preparing says nothing about the "orca" one. */
+export function normalizeStateKey(target: SlicerTarget): string {
+  return `${target.key}|${target.normalizeTarget ?? "flat"}|${target.plate?.id ?? ""}`;
+}
+
 /** "Open normalized in <slicer>": asks the server for a normalized copy and polls until it's built, so no
  *  request has to outlast a proxy timeout. A cached copy opens straight away. A slow one ends in
  *  "ready" and needs a second click: browsers only launch a slicer's protocol right after a click. */
@@ -27,22 +32,26 @@ export function useNormalizedOpen(printId: string, onOpened: () => void, onUnaut
     if (mounted.current) setStates((prev) => ({ ...prev, [key]: state }));
   }, []);
 
-  const stateOf = useCallback((target: SlicerTarget): NormalizeState => states[target.key] ?? "idle", [states]);
+  const stateOf = useCallback(
+    (target: SlicerTarget): NormalizeState => states[normalizeStateKey(target)] ?? "idle",
+    [states],
+  );
 
   /** Resolves true when the slicer was launched, so a menu can close. */
   const open = useCallback(
     async (target: SlicerTarget): Promise<boolean> => {
+      const stateKey = normalizeStateKey(target);
       const launch = () => {
         window.location.href = target.href;
-        setState(target.key, "idle");
+        setState(stateKey, "idle");
         onOpened();
         return true;
       };
-      const current = states[target.key] ?? "idle";
+      const current = states[stateKey] ?? "idle";
       if (current === "ready") return launch();
       if (current === "preparing" || !target.plate) return false;
 
-      setState(target.key, "preparing");
+      setState(stateKey, "preparing");
       try {
         let { status } = await printsApi.normalizePlate(printId, target.plate.id, target.normalizeTarget);
         if (status === "ready") return launch();
@@ -52,10 +61,10 @@ export function useNormalizedOpen(printId: string, onOpened: () => void, onUnaut
           ({ status } = await printsApi.normalizePlate(printId, target.plate.id, target.normalizeTarget));
         }
         if (status === "failed") throw new Error("Normalizing failed");
-        setState(target.key, "ready");
+        setState(stateKey, "ready");
         return false;
       } catch (err) {
-        setState(target.key, "idle");
+        setState(stateKey, "idle");
         if (err instanceof UnauthorizedError) onUnauthorized?.();
         else if (mounted.current) alert(t("models:detail.normalizeFailed"));
         return false;
