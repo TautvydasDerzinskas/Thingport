@@ -115,6 +115,9 @@ function saveFile(bytes: Uint8Array, filename: string): void {
 }
 
 async function downloadNormalized(pageUrl: string, onProgress: (text: string) => void): Promise<void> {
+  // Resolved once, before the download starts: the slicer setting can change while the file downloads, and the
+  // conversion and the file name must agree on the same target.
+  const target = normalizeTargetFor(slicerId);
   let stopRotation = rotatePhrases(gettingFilePhrases, onProgress);
   // The normalizer reads the 3MF project, never the raw-files zip.
   const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stopRotation);
@@ -132,7 +135,6 @@ async function downloadNormalized(pageUrl: string, onProgress: (text: string) =>
   }
   const input = await readBody(res, declared, onProgress);
   stopRotation = rotatePhrases(normalizingPhrases, onProgress);
-  const target = normalizeTargetFor(slicerId);
   let output: Uint8Array;
   try {
     output = await normalizeBambu3mf(input, target).finally(stopRotation);
