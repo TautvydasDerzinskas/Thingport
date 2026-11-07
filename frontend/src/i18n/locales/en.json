@@ -5836,7 +5836,10 @@
           "request_limit": "Wait for your admin to answer the requests you've made first.",
           "daily_limit": "You've asked to reach people elsewhere a lot today. Try again tomorrow.",
           "copy_limit": "Wait for the copies under way to finish first.",
-          "no_files": "It has no files to copy."
+          "no_files": "It has no files to copy.",
+          "files_missing": "Not every file of it can be fetched from its instance, so it can't be copied whole.",
+          "zip_busy": "Another ZIP is being made. Try again in a moment.",
+          "zip_too_big": "Too big to zip here: download its files one at a time."
         },
         "on": "On {{name}}",
         "fileCount_one": "{{count}} file",

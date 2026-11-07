@@ -31,7 +31,8 @@ const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", f
 
 type Props = {
   model: RemoteModel;
-  onCopied: (copyId: string) => void;
+  /** Hears which model it was, so a copy of one never lands on another opened since. */
+  onCopied: (modelId: string, copyId: string) => void;
   onUnauthorized?: () => void;
 };
 
@@ -45,6 +46,14 @@ export default function RemoteCopyPanel({ model, onCopied, onUnauthorized }: Pro
   const [starting, setStarting] = useState(false);
   // Only a copy watched from here says so when it's done; one found done already just shows its button.
   const watched = useRef(false);
+  // Shown for this model still: an answer for one left meanwhile changes nothing.
+  const live = useRef(true);
+  useEffect(() => {
+    live.current = true;
+    return () => {
+      live.current = false;
+    };
+  }, []);
   const { id, title } = model;
   const copyId = model.library_copy_id ?? (status?.state === "done" ? status.copy_id : null);
 
@@ -57,7 +66,7 @@ export default function RemoteCopyPanel({ model, onCopied, onUnauthorized }: Pro
     (next: RemoteCopyStatus) => {
       setStatus(next);
       if (next.state === "done" && next.copy_id) {
-        onCopied(next.copy_id);
+        onCopied(id, next.copy_id);
         if (watched.current) {
           watched.current = false;
           const copy = next.copy_id;
@@ -70,25 +79,33 @@ export default function RemoteCopyPanel({ model, onCopied, onUnauthorized }: Pro
         }
       }
     },
-    [navigate, onCopied, showToast, t, title],
+    [id, navigate, onCopied, showToast, t, title],
   );
 
-  // One under way already, from an earlier visit: picked up where it is.
+  // One under way already, from an earlier visit: picked up where it is. Asked again a little later until it's known,
+  // as the copy button waits for it.
   useEffect(() => {
     if (model.library_copy_id) return;
-    let live = true;
-    socialApi.elsewhere.copyStatus(id).then(
-      (value) => {
-        if (!live) return;
-        if (value.state === "copying") watched.current = true;
-        heard(value);
-      },
-      (err) => {
-        if (live && err instanceof UnauthorizedError) onUnauthorized?.();
-      },
-    );
+    let current = true;
+    let timer: number | undefined;
+    const ask = () => {
+      socialApi.elsewhere.copyStatus(id).then(
+        (value) => {
+          if (!current) return;
+          if (value.state === "copying") watched.current = true;
+          heard(value);
+        },
+        (err) => {
+          if (!current) return;
+          if (err instanceof UnauthorizedError) onUnauthorized?.();
+          else timer = window.setTimeout(ask, RETRY_MS);
+        },
+      );
+    };
+    ask();
     return () => {
-      live = false;
+      current = false;
+      window.clearTimeout(timer);
     };
     // Asked once per model: a copy made since comes in through `heard`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -97,18 +114,18 @@ export default function RemoteCopyPanel({ model, onCopied, onUnauthorized }: Pro
   const copying = status?.state === "copying";
   useEffect(() => {
     if (!copying) return;
-    let live = true;
+    let current = true;
     let timer: number | undefined;
     const ask = (after: number) => {
       timer = window.setTimeout(() => {
         socialApi.elsewhere.copyStatus(id).then(
           (value) => {
-            if (!live) return;
+            if (!current) return;
             heard(value);
             if (value.state === "copying") ask(POLL_MS);
           },
           (err) => {
-            if (!live) return;
+            if (!current) return;
             if (err instanceof UnauthorizedError) onUnauthorized?.();
             else ask(RETRY_MS);
           },
@@ -117,7 +134,7 @@ export default function RemoteCopyPanel({ model, onCopied, onUnauthorized }: Pro
     };
     ask(POLL_MS);
     return () => {
-      live = false;
+      current = false;
       window.clearTimeout(timer);
     };
   }, [copying, id, heard, onUnauthorized]);
@@ -126,6 +143,7 @@ export default function RemoteCopyPanel({ model, onCopied, onUnauthorized }: Pro
     setStarting(true);
     try {
       const next = await socialApi.elsewhere.copy(id);
+      if (!live.current) return;
       if (next.state === "done" && next.copy_id) {
         showToast({
           message: t("models:shared.alreadyInLibrary", { name: title }),
@@ -138,10 +156,11 @@ export default function RemoteCopyPanel({ model, onCopied, onUnauthorized }: Pro
       }
       heard(next);
     } catch (err) {
+      if (!live.current) return;
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else showToast({ message: failMessage(err), severity: "error" });
     } finally {
-      setStarting(false);
+      if (live.current) setStarting(false);
     }
   };
 

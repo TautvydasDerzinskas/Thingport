@@ -276,7 +276,9 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     const [file] = model.body.files;
     expect(file).toMatchObject({
       name: "gridfinity-bin.stl",
-      url: `/explore/elsewhere/model/${modelId}/files/0/gridfinity-bin.stl`,
+      url: expect.stringMatching(
+        new RegExp(`^/explore/elsewhere/model/${modelId}/files/[0-9a-f]{16}/gridfinity-bin\\.stl$`),
+      ),
     });
     const signedIn = { Authorization: `Bearer ${a.token}` };
     const downloaded = await fetch(`${a.base}/api${file.url}`, { headers: signedIn });

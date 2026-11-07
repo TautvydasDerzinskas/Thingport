@@ -117,16 +117,21 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   and `instances`, plus `shared_at` for this instance's own, so the web app can put both in one order;
   `/explore/elsewhere/person|model|collection/:id` for the pages. Paused partners are left out.
 - **Files** (`remoteFiles.ts`): a model's page lists each file with an address here,
-  `/explore/elsewhere/model/<id>/files/<index>/<name>` (the name last, for slicers), or `null` where the partner gave
-  none on its own origin; `files.zip` has them all. Each is fetched signed from the partner as it's asked for, only
-  while it's `ACTIVE`, from the address its model document gave and nowhere else, and streamed on, never kept.
-- **Copies** (`remoteCopy.ts`): `POST /explore/elsewhere/model/<id>/copy` starts one in the background and `GET` says
-  how it's going, file by file. The files are fetched into a temporary folder, each no bigger than an import, and
-  only once all of them are there is a model made (`createUploadedModel`), with its pictures and description and
-  `Print.remoteSource` saying where it came from. That's what makes the original show **Open my copy** rather than
-  copy it again, and the copy's `copied_from_remote` (on `GET /print/:id`), which links back to the original while
-  the partner still shares it. A job's progress is in memory: a restart loses one under way, and leaves nothing half
-  made.
+  `/explore/elsewhere/model/<id>/files/<key>/<name>` (the key from the file's own address at the partner, so a read
+  that reorders them never serves another file; the name last, for slicers), or `null` where the partner gave none on
+  its own origin. Each is fetched signed from the partner as it's asked for, only while it's `ACTIVE`, from the address
+  its model document gave and nowhere else, streamed on and never kept, and the fetch stops when the viewer goes.
+  `files.zip` has them all: two ZIPs at once on the instance and one a person, no bigger than an import together, and
+  given up when the viewer goes.
+- **Copies** (`remoteCopy.ts`): `POST /explore/elsewhere/model/<id>/copy` starts one in the background (asked twice at
+  once, the second hears the first) and `GET` says how it's going, file by file. A model with a file that can't be had
+  isn't copied without it (`files_missing`). The files are fetched into a temporary folder, each no bigger than an
+  import, and only once all of them are there is a model made (`createUploadedModel`), with `Print.remoteSource`
+  saying where it came from in the same write, its description's images made links (so the copy's page fetches
+  nothing from elsewhere), then its pictures. `remoteSource` is what makes the original show **Open my copy** rather
+  than copy it again, and the copy's `copied_from_remote` (on `GET /print/:id`), which links back to the original
+  while the partner still shares it and connected instances are on. Copying someone's copy here carries it over. A
+  job's progress is in memory: a restart loses one under way, and leaves nothing half made.
 
 ### Making a social feature federate
 

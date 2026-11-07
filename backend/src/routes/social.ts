@@ -136,21 +136,21 @@ router.get(
   }),
 );
 
-// A partner's model's files, through this instance: one as it comes (its name last, for slicers), or all zipped.
-const sendRemoteFile = asyncHandler(async (req, res) => {
-  await assertElsewhere();
-  const index = Number(req.params.index);
-  if (!Number.isInteger(index) || index < 0) throw new HttpError(404, "Not found");
-  await streamRemoteFile(req, res, req.params.id, index);
-});
-router.get("/explore/elsewhere/model/:id/files/:index", sendRemoteFile);
-router.get("/explore/elsewhere/model/:id/files/:index/:filename", sendRemoteFile);
+// A partner's model's files, through this instance: one as it comes, by its key and with its name last (for slicers),
+// or all of them zipped.
+router.get(
+  "/explore/elsewhere/model/:id/files/:file/:filename",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    await streamRemoteFile(req, res, req.params.id, req.params.file);
+  }),
+);
 
 router.get(
   "/explore/elsewhere/model/:id/files.zip",
   asyncHandler(async (req, res) => {
     await assertElsewhere();
-    await sendRemoteZip(res, req.params.id);
+    await sendRemoteZip(req, res, req.params.id, req.userId!);
   }),
 );
 

@@ -38,13 +38,9 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
     kind: "federates",
     how: "A partner's model as its Service said: pictures, description, files (Document attachments)",
   },
-  "GET /explore/elsewhere/model/:id/files/:index": {
+  "GET /explore/elsewhere/model/:id/files/:file/:filename": {
     kind: "federates",
-    how: "A partner's model's file, streamed through this instance from its attachment's url, signed",
-  },
-  "GET /explore/elsewhere/model/:id/files/:index/:filename": {
-    kind: "federates",
-    how: "The same, named last for slicers, which call what they download after the address's last part",
+    how: "A partner's model's file, by a key from its attachment's url, streamed through this instance signed",
   },
   "GET /explore/elsewhere/model/:id/files.zip": {
     kind: "federates",

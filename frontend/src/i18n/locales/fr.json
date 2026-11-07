@@ -5910,7 +5910,10 @@
           "request_limit": "Attendez d'abord que votre administrateur réponde à vos demandes.",
           "daily_limit": "Vous avez déjà demandé à joindre beaucoup de personnes ailleurs aujourd'hui. Réessayez demain.",
           "copy_limit": "Attendez d'abord la fin des copies en cours.",
-          "no_files": "Il n'a aucun fichier à copier."
+          "no_files": "Il n'a aucun fichier à copier.",
+          "files_missing": "Tous ses fichiers ne peuvent pas être obtenus de son instance : il ne peut pas être copié en entier.",
+          "zip_busy": "Un autre ZIP est en cours de création. Réessayez dans un instant.",
+          "zip_too_big": "Trop volumineux pour être compressé ici : téléchargez ses fichiers un par un."
         },
         "on": "Sur {{name}}",
         "fileCount_one": "{{count}} fichier",

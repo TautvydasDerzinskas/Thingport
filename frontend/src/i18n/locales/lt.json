@@ -6122,7 +6122,10 @@
           "request_limit": "Pirma palaukite, kol administratorius atsakys į jūsų prašymus.",
           "daily_limit": "Šiandien jau daug kartų prašėte pasiekti žmones kitur. Pabandykite rytoj.",
           "copy_limit": "Pirma palaukite, kol baigsis vykstantys kopijavimai.",
-          "no_files": "Jame nėra failų, kuriuos būtų galima nukopijuoti."
+          "no_files": "Jame nėra failų, kuriuos būtų galima nukopijuoti.",
+          "files_missing": "Ne visus jo failus galima gauti iš jo serverio, todėl jo negalima nukopijuoti viso.",
+          "zip_busy": "Jau kuriamas kitas ZIP. Pabandykite po akimirkos.",
+          "zip_too_big": "Per didelis suarchyvuoti čia: atsisiųskite failus po vieną."
         },
         "on": "Serveryje {{name}}",
         "fileCount_one": "{{count}} failas",

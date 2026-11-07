@@ -289,7 +289,14 @@ export const socialApi = {
         headers: authHeaders(),
       });
       if (res.status === 401) throw new UnauthorizedError();
-      await assertOkWithMessage(res, "Failed to download the files");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { detail?: unknown; code?: unknown } | null;
+        throw new FederationError(
+          typeof data?.detail === "string" ? data.detail : "Failed to download the files",
+          typeof data?.code === "string" ? data.code : null,
+          res.status,
+        );
+      }
       return res;
     },
   },

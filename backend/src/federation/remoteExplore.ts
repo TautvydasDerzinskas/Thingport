@@ -3,7 +3,8 @@ import type { RemoteOriginOut } from "../dto";
 import { prisma } from "../db";
 import { mediaAddress } from "./media";
 import { libraryCopyOfRemote, type RemoteSource } from "./remoteCopy";
-import { filesOf } from "./remoteFiles";
+import { fileKey, filesOf } from "./remoteFiles";
+import { isFederationLive } from "./settings";
 
 /** What Explore shows of partners, from the index (remoteIndex.ts): only ACTIVE partners', pictures through this
  *  instance (media.ts), files through it too (remoteFiles.ts). */
@@ -240,9 +241,10 @@ export type RemoteModelOut = RemoteModelCardOut & {
   library_copy_id: string | null;
 };
 
-/** Where a partner's model's file is downloaded through this instance; its name last, as slicers want. */
-export const remoteFileRoute = (modelId: string, index: number, name: string) =>
-  `/explore/elsewhere/model/${modelId}/files/${index}/${encodeURIComponent(name)}`;
+/** Where a partner's model's file is downloaded through this instance, by a key from its address there; its name
+ *  last, as slicers want. */
+export const remoteFileRoute = (modelId: string, url: string, name: string) =>
+  `/explore/elsewhere/model/${modelId}/files/${fileKey(url)}/${encodeURIComponent(name)}`;
 
 export async function remoteModel(id: string, viewerId: string): Promise<RemoteModelOut | null> {
   const row = await prisma.remoteModel.findFirst({
@@ -259,11 +261,11 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
     ...modelCardOut(row),
     description: row.description,
     images: row.images.flatMap((url) => mediaAddress(url) ?? []),
-    files: filesOf(row, row.peer.origin).map((file, index) => ({
+    files: filesOf(row, row.peer.origin).map((file) => ({
       name: file.name,
       size: file.size,
       media_type: file.mediaType,
-      url: file.url ? remoteFileRoute(row.id, index, file.name) : null,
+      url: file.url ? remoteFileRoute(row.id, file.url, file.name) : null,
     })),
     updated_at: row.updatedAt?.toISOString() ?? null,
     owner_handle: row.person.username ? `${row.person.username}@${new URL(row.peer.origin).host}` : null,
@@ -312,10 +314,13 @@ export async function remoteCollection(
 export async function remoteOriginOut(value: unknown): Promise<RemoteOriginOut | null> {
   const source = value as Partial<RemoteSource> | null;
   if (!source || typeof source.apId !== "string" || typeof source.origin !== "string") return null;
-  const original = await prisma.remoteModel.findFirst({
-    where: { apId: source.apId, peer: { ...ACTIVE, origin: source.origin } },
-    include: { peer: true, person: true },
-  });
+  // With connected instances off, there's no original to go to: what the copy kept is all it says.
+  const original = (await isFederationLive())
+    ? await prisma.remoteModel.findFirst({
+        where: { apId: source.apId, peer: { ...ACTIVE, origin: source.origin } },
+        include: { peer: true, person: true },
+      })
+    : null;
   const host = new URL(source.origin).host;
   return {
     instance: {

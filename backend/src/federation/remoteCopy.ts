@@ -40,6 +40,7 @@ const MAX_RUNNING_PER_USER = 3;
 const KEEP_FINISHED_MS = 10 * 60 * 1000;
 
 const jobs = new Map<string, CopyStatus>();
+const admitting = new Map<string, Promise<CopyStatus>>();
 const keyOf = (userId: string, modelId: string) => `${userId}:${modelId}`;
 
 /** The viewer's own copy of a partner's model, if they made one. */
@@ -61,18 +62,30 @@ export async function remoteCopyStatus(userId: string, modelId: string): Promise
   return { state: "idle", files: [], copy_id: null, error: null };
 }
 
-/** Starts copying the model into `userId`'s library, unless it's under way or they have a copy already. */
-export async function startRemoteCopy(userId: string, modelId: string): Promise<CopyStatus> {
+/** Starts copying the model into `userId`'s library, unless it's under way or they have a copy already. Asked twice at
+ *  once, the second hears the first's answer rather than starting another. */
+export function startRemoteCopy(userId: string, modelId: string): Promise<CopyStatus> {
   const key = keyOf(userId, modelId);
+  const pending = admitting.get(key);
+  if (pending) return pending;
+  const admission = admit(userId, modelId, key).finally(() => admitting.delete(key));
+  admitting.set(key, admission);
+  return admission;
+}
+
+async function admit(userId: string, modelId: string, key: string): Promise<CopyStatus> {
   const running = jobs.get(key);
   if (running?.state === "copying") return running;
   const model = await activeRemoteModel(modelId);
   const copyId = await libraryCopyOfRemote(userId, model.apId);
   if (copyId) return { state: "done", files: [], copy_id: copyId, error: null };
-  const files = filesOf(model, model.peer.origin)
-    .map((file, index) => ({ file, index }))
-    .filter(({ file }) => file.url);
-  if (!files.length) throw new HttpError(409, "That model has no files to copy", "no_files");
+  const listed = filesOf(model, model.peer.origin);
+  if (!listed.some((file) => file.url)) throw new HttpError(409, "That model has no files to copy", "no_files");
+  // A copy is the whole model or nothing: one of its files that can't be had isn't left out.
+  if (listed.some((file) => !file.url)) {
+    throw new HttpError(409, "Not every file of that model can be fetched from its instance", "files_missing");
+  }
+  const files = listed.map((file, index) => ({ file, index }));
   const mine = [...jobs.entries()].filter(([k, job]) => k.startsWith(`${userId}:`) && job.state === "copying");
   if (mine.length >= MAX_RUNNING_PER_USER) {
     throw new HttpError(429, "Wait for the copies under way to finish", "copy_limit");
@@ -92,19 +105,28 @@ export async function startRemoteCopy(userId: string, modelId: string): Promise<
   return job;
 }
 
+/** Its images made links to them: shown in the copy, they'd have a viewer's browser fetch them from wherever they are,
+ *  which a partner's things never do (MarkdownDescription `remote`). */
+export function imagesAsLinks(markdown: string | null): string | null {
+  return markdown ? markdown.replace(/(?<!\\)!\[/g, "[") : markdown;
+}
+
 async function run(
   userId: string,
   model: RemoteModelRow,
   files: { index: number; file: { name: string; mediaType: string | null } }[],
   job: CopyStatus,
 ): Promise<void> {
-  const dir = await fsp.mkdtemp(path.join(os.tmpdir(), "thingport-remote-copy-"));
+  let dir: string | null = null;
   try {
+    dir = await fsp.mkdtemp(path.join(os.tmpdir(), "thingport-remote-copy-"));
     const uploaded: UploadedFile[] = [];
     for (const [position, { index, file }] of files.entries()) {
       const dest = path.join(dir, `${position}-${sanitizeFilename(file.name) || "file"}`);
-      await fetchRemoteFile(model, index, dest, (received) => {
-        job.files[position].received = received;
+      await fetchRemoteFile(model, index, dest, {
+        onProgress: (received) => {
+          job.files[position].received = received;
+        },
       });
       job.files[position].done = true;
       uploaded.push({ path: dest, originalname: file.name, mimetype: file.mediaType });
@@ -116,15 +138,18 @@ async function run(
       ownerName: model.person.displayName,
       ownerHandle: model.person.username ? `${model.person.username}@${new URL(model.peer.origin).host}` : null,
     };
+    // Made with where it came from, in one go: never a copy that doesn't say so, which another try would copy again.
     const print = await createUploadedModel(
       userId,
-      { title: model.title, notes: model.description, tags: [], creator: model.person.displayName },
+      {
+        title: model.title,
+        notes: imagesAsLinks(model.description),
+        tags: [],
+        creator: model.person.displayName,
+        remoteSource: source as unknown as Prisma.InputJsonValue,
+      },
       uploaded,
     );
-    await prisma.print.update({
-      where: { id: print.id },
-      data: { remoteSource: source as unknown as Prisma.InputJsonValue },
-    });
     // Its pictures, as the partner shows them; one that doesn't come is left out, not the copy.
     for (const url of model.images) {
       const picture = await fetchPicture(model, url).catch(() => null);
@@ -143,19 +168,32 @@ async function run(
     job.error = (err as Error).message || "Couldn't copy it";
     console.warn(`[federation] Couldn't copy ${model.apId}:`, job.error);
   } finally {
-    await fsp.rm(dir, { recursive: true, force: true }).catch(() => {});
+    if (dir) await fsp.rm(dir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
+/** A picture of the model, read no further than PICTURE_MAX_BYTES whatever the partner says its size is. */
 async function fetchPicture(model: RemoteModelRow, url: string): Promise<Buffer | null> {
   const response = await signedGet(url, model.peer.origin, {
     accept: "image/*",
     signal: AbortSignal.timeout(PICTURE_MS),
   });
-  if (!response.ok || Number(response.headers.get("content-length") ?? 0) > PICTURE_MAX_BYTES) {
+  const reader = response.body?.getReader();
+  if (!response.ok || !reader || Number(response.headers.get("content-length") ?? 0) > PICTURE_MAX_BYTES) {
     await response.body?.cancel().catch(() => {});
     return null;
   }
-  const buffer = Buffer.from(await response.arrayBuffer());
-  return buffer.length <= PICTURE_MAX_BYTES ? buffer : null;
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > PICTURE_MAX_BYTES) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
 }

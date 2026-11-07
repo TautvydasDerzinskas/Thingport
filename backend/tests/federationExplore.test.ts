@@ -21,6 +21,8 @@ import {
   person as personDoc,
   sendSharedFile,
 } from "../src/federation/publish";
+import { imagesAsLinks } from "../src/federation/remoteCopy";
+import { fileKey } from "../src/federation/remoteFiles";
 import { readModels } from "../src/federation/remoteIndex";
 import { resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
@@ -359,18 +361,24 @@ describe("Explore with partners", () => {
         name: "bin.3mf",
         size: 1800,
         media_type: "model/3mf",
-        url: `/explore/elsewhere/model/${filesModelId}/files/0/bin.3mf`,
+        // By a key from its address at the partner, so a reordered list never serves another file.
+        url: `/explore/elsewhere/model/${filesModelId}/files/${fileKey(`${PARTNER}/api/ap/files/plate/p1/bin.3mf`)}/bin.3mf`,
       },
       { name: "notes.pdf", size: 20, media_type: "application/pdf", url: null },
       // Somewhere other than the partner's own origin: never fetched.
       { name: "elsewhere.stl", size: 30, media_type: null, url: null },
     ]);
-    for (const index of ["1", "2", "9", "x"]) {
+    // A key for no file it shares, or for one that isn't on its origin, is never fetched.
+    for (const key of ["0", "x", fileKey("http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl")]) {
       const res = await request(app)
-        .get(`/api/explore/elsewhere/model/${filesModelId}/files/${index}/f`)
+        .get(`/api/explore/elsewhere/model/${filesModelId}/files/${key}/f`)
         .set(auth(viewer));
       expect(res.status).toBe(404);
     }
+    // A copy is all of it or nothing: one with files that can't be had isn't copied without them.
+    const partly = await request(app).post(`/api/explore/elsewhere/model/${filesModelId}/copy`).set(auth(viewer));
+    expect(partly.status).toBe(409);
+    expect(partly.body.code).toBe("files_missing");
     // Nothing to copy where no file can be had.
     const copy = await request(app).post(`/api/explore/elsewhere/model/${modelId}/copy`).set(auth(viewer));
     expect(copy.status).toBe(409);
@@ -412,9 +420,18 @@ describe("Explore with partners", () => {
     expect(original.body.library_copy_id).toBe(mine);
     const again = await request(app).post(`/api/explore/elsewhere/model/${modelId}/copy`).set(auth(viewer));
     expect(again.body).toMatchObject({ state: "done", copy_id: mine });
-    // Someone else has no copy of it.
+    // Someone else has no copy of it, until they copy this one: theirs says where it came from too, and stands for it.
     const theirs = await request(app).get(`/api/explore/elsewhere/model/${modelId}`).set(auth(owner));
     expect(theirs.body.library_copy_id).toBeNull();
+    const shelf = await request(app).post("/api/collections").set(auth(viewer)).send({ name: "Mine", is_public: true });
+    await request(app).post(`/api/collection/${shelf.body.id}/items/${mine}`).set(auth(viewer));
+    const copied = await request(app).post(`/api/print/${mine}/copy`).set(auth(owner));
+    expect(copied.status).toBe(200);
+    const ownersCopy = await request(app).get(`/api/print/${copied.body.print.id}`).set(auth(owner));
+    expect(ownersCopy.body.copied_from_remote).toMatchObject({ original_id: modelId, owner_name: "Rūta" });
+    expect(
+      (await request(app).get(`/api/explore/elsewhere/model/${modelId}`).set(auth(owner))).body.library_copy_id,
+    ).toBe(copied.body.print.id);
 
     // The partner paused: what was kept, and no original to go to.
     await prisma.peer.update({ where: { id: peerId }, data: { status: "PAUSED" } });
@@ -430,6 +447,14 @@ describe("Explore with partners", () => {
       });
     } finally {
       await prisma.peer.update({ where: { id: peerId }, data: { status: "ACTIVE" } });
+    }
+    // Connected instances off: the same, with no links to pages that aren't there.
+    await updateFederationSettings({ enabled: false });
+    try {
+      const off = await request(app).get(`/api/print/${mine}`).set(auth(viewer));
+      expect(off.body.copied_from_remote).toMatchObject({ owner_id: null, original_id: null, owner_name: "Rūta then" });
+    } finally {
+      await updateFederationSettings({ enabled: true });
     }
     // An ordinary model says nothing of the kind.
     expect((await request(app).get(`/api/print/${sharedPrint}`).set(auth(owner))).body.copied_from_remote).toBeNull();
@@ -561,5 +586,12 @@ describe("keeping it current", () => {
     const body = (await collectionsOf(owner.id)) as { orderedItems: { id: string }[] };
     const ids = body.orderedItems.map((item) => item.id.split("/").pop());
     expect(ids.indexOf(older)).toBeLessThan(ids.indexOf(newer));
+  });
+
+  it("copies a partner's description with its images made links, so a viewer's browser fetches none", () => {
+    expect(imagesAsLinks("Look: ![a bin](https://cdn.example.org/bin.png) and ![][ref] but not \\![this](x)")).toBe(
+      "Look: [a bin](https://cdn.example.org/bin.png) and [][ref] but not \\![this](x)",
+    );
+    expect(imagesAsLinks(null)).toBeNull();
   });
 });

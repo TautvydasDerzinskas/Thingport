@@ -12,6 +12,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import { UnauthorizedError } from "../../../api/client";
+import { FederationError } from "../../../api/federation";
 import { printsApi } from "../../../api/prints";
 import { socialApi, type RemoteModel } from "../../../api/social";
 import InstanceChip from "../../../components/InstanceChip";
@@ -38,7 +39,7 @@ const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" } 
  *  downloaded, every file coming through this instance. */
 export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?: () => void }) {
   const { modelId } = useParams<{ modelId: string }>();
-  const { t } = useTranslation(["models", "common"]);
+  const { t, i18n } = useTranslation(["models", "common"]);
   const showToast = useToast();
   const [model, setModel] = useState<RemoteModel | null>(null);
   const [gone, setGone] = useState(false);
@@ -112,13 +113,19 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
     null;
 
   const copied = useCallback(
-    (copyId: string) => setModel((current) => current && { ...current, library_copy_id: copyId }),
+    (copiedId: string, copyId: string) =>
+      setModel((current) => (current?.id === copiedId ? { ...current, library_copy_id: copyId } : current)),
     [],
   );
 
   const failedDownload = (err: unknown) => {
-    if (err instanceof UnauthorizedError) onUnauthorized?.();
-    else showToast({ message: t("models:detail.downloadFailed"), severity: "error" });
+    if (err instanceof UnauthorizedError) return onUnauthorized?.();
+    // The server's reason where there's a word for it: a ZIP too big, or another being made.
+    const key = err instanceof FederationError && err.code ? `models:explore.elsewhere.errors.${err.code}` : null;
+    showToast({
+      message: key && i18n.exists(key) ? t(key) : t("models:detail.downloadFailed"),
+      severity: "error",
+    });
   };
   const download = async (file: ModelFile) => {
     setDownloading(true);
@@ -267,9 +274,12 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
             </Stack>
           </Box>
 
+          {/* A copy made already stays reachable, even with the files no longer offered. */}
+          {(files.length > 0 || model.library_copy_id) && (
+            <RemoteCopyPanel key={model.id} model={model} onCopied={copied} onUnauthorized={onUnauthorized} />
+          )}
           {files.length > 0 ? (
             <>
-              <RemoteCopyPanel model={model} onCopied={copied} onUnauthorized={onUnauthorized} />
               {selected && files.length > 1 && (
                 <ModelFileSelect files={files} selected={selected} onSelect={(file) => setSelectedKey(file.key)} />
               )}
