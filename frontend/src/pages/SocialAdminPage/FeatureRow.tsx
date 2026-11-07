@@ -20,6 +20,10 @@ type Props = {
   /** Why it can't be switched, shown on the switch while it's disabled for that reason. */
   blockedReason?: string;
   onChange: (checked: boolean) => void;
+  /** Under the summary, e.g. a status line. */
+  extra?: React.ReactNode;
+  /** Before the switch, e.g. a ⋮ menu. */
+  actions?: React.ReactNode;
 };
 
 /** One feature on the Social page: its tile, what it does, and its switch at the end. */
@@ -33,6 +37,8 @@ export default function FeatureRow({
   busy,
   blockedReason,
   onChange,
+  extra,
+  actions,
 }: Props) {
   const id = React.useId();
   const toggle = (
@@ -55,8 +61,10 @@ export default function FeatureRow({
         <Typography id={`${id}-summary`} variant="body2" color="text.secondary">
           {summary}
         </Typography>
+        {extra}
       </Stack>
       {busy && <CircularProgress size={16} />}
+      {actions}
       {blockedReason ? (
         <Tooltip title={blockedReason}>
           <span>{toggle}</span>

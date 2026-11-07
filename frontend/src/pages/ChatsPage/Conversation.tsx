@@ -29,6 +29,7 @@ import ChatMenuHost from "../../components/chats/ChatMenuHost";
 import { useChats } from "../../components/chats/ChatsContext";
 import { useChatActions } from "../../components/chats/useChatActions";
 import { useConfirm } from "../../components/ConfirmProvider";
+import InstanceChip from "../../components/InstanceChip";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import StarToggle from "../../components/StarToggle";
 import { useToast } from "../../components/ToastProvider";
@@ -351,15 +352,51 @@ export default function Conversation({ chatId, mobile, onUnauthorized }: Props) 
   };
 
   const title = chat ? chatTitle(chat, t) : state === "loading" ? "" : t("sidebar.chats");
-  const subtitle = !chat
-    ? undefined
-    : chat.kind === "direct"
-      ? chat.other?.online
+  // Someone elsewhere: their handle and instance, as Explore shows them; a room spanning instances says how many.
+  const remote = chat?.kind === "direct" ? (chat.other?.remote ?? null) : null;
+  const roomText =
+    !chat || chat.kind === "direct"
+      ? undefined
+      : [
+          t(chat.is_public ? "chats.publicRoomMembers" : "chats.privateRoomMembers", { count: chat.member_count }),
+          ...((chat.instances ?? 1) > 1 ? [t("chats.instances", { count: chat.instances })] : []),
+          ...(chat.hosted_by ? [t("chats.hostedOn", { name: chat.hosted_by.name })] : []),
+        ].join(" · ");
+  const personText =
+    !chat || chat.kind !== "direct" || remote
+      ? undefined
+      : chat.other?.online
         ? t("chats.online")
         : chat.other
           ? t("chats.offline")
-          : undefined
-      : t(chat.is_public ? "chats.publicRoomMembers" : "chats.privateRoomMembers", { count: chat.member_count });
+          : undefined;
+  const remoteHandle = remote?.handle ?? null;
+  const remoteOrigin = remote?.instance.origin ?? null;
+  const remoteName = remote?.instance.name ?? null;
+  const subtitle = React.useMemo<React.ReactNode>(
+    () =>
+      remoteOrigin && remoteName ? (
+        <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1, maxWidth: "100%" }}>
+          {remoteHandle && (
+            <Box
+              component="span"
+              sx={{
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                minWidth: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {remoteHandle}
+            </Box>
+          )}
+          <InstanceChip instance={{ origin: remoteOrigin, name: remoteName }} label={remoteName} />
+        </Box>
+      ) : (
+        (roomText ?? personText)
+      ),
+    [remoteHandle, remoteOrigin, remoteName, roomText, personText],
+  );
   const favorite = chat?.favorite ?? false;
   const joined = chat?.joined ?? false;
   const headerActions = React.useMemo(

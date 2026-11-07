@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { afterAccountGone, roomsWithPartnersOf } from "./chatService";
 import path from "node:path";
 import type { Role } from "@prisma/client";
 import { STORAGE, STUDIO_ASSETS } from "../config";
@@ -106,7 +107,10 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
   await fs.rm(path.join(STORAGE, `u-${target.id}`), { recursive: true, force: true });
   // And the meshes their Studio designs imported, which the designs' rows took with them.
   await fs.rm(path.join(STUDIO_ASSETS, `u-${target.id}`), { recursive: true, force: true });
+  // Rooms they shared with partners' people: told once they're out of them.
+  const rooms = await roomsWithPartnersOf(target.id);
   await prisma.user.delete({ where: { id: target.id } });
+  await afterAccountGone(target.id, rooms).catch((err) => console.error("[federation] Couldn't tell partners:", err));
   // Their models went with the account, so an author only they had is now an author of nothing.
   for (const authorId of authorIds) await deleteAuthorIfOrphaned(authorId);
   // Logged as the admin's: the user's own log entries went with them.

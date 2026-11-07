@@ -10,16 +10,25 @@ import { ModelThumb } from "../../components/ModelPickerDialog";
 /** A model sent in a message: its picture and whose it is, opening its page. Another user's opens under Explore, with
  *  everything but changing it; one that's gone says so. */
 export default function AttachmentCard({ attachment }: { attachment: ChatAttachment }) {
-  const { t } = useTranslation("app");
+  const { t } = useTranslation(["app", "models"]);
   const navigate = useNavigate();
   const model = attachment.model;
-  const path = model ? (model.owner ? `/explore/models/${model.id}` : `/models/${model.id}`) : null;
+  // A partner's opens on Explore, with its slicer, download and copy; another user's there too; one's own in the library.
+  const path = model
+    ? model.remote
+      ? `/explore/elsewhere/models/${model.id}`
+      : model.owner
+        ? `/explore/models/${model.id}`
+        : `/models/${model.id}`
+    : null;
   const name = model?.name ?? attachment.name;
   const whose = !model
     ? t("chats.modelUnavailable")
-    : model.owner
-      ? t("chats.modelFrom", { name: model.owner.display_name })
-      : t("chats.yourModel");
+    : model.remote
+      ? t("models:explore.elsewhere.on", { name: model.instance?.name ?? "" })
+      : model.owner
+        ? t("chats.modelFrom", { name: model.owner.display_name })
+        : t("chats.yourModel");
   return (
     <ButtonBase
       disabled={!path}

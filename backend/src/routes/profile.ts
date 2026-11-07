@@ -19,6 +19,7 @@ import {
 } from "../services/publicProfileService";
 import { AVATAR_MAX_BYTES, avatarPath, resolveAvatar, saveAvatarUpload } from "../services/avatarService";
 import { avatarSvg, isAvatarStyle, type AvatarStyle } from "../services/avatarArt";
+import { checkUsername, ensureUsername, isUsernameFree, setUsername } from "../services/usernames";
 
 // The user's profile as the other users see it: avatar, bio, cover, links, and whether their models are on Explore.
 // Avatars and uploaded covers are public, by an id no one can guess, like icons: an <img> or a CSS background shows
@@ -109,8 +110,11 @@ router.get(
   "/me",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const user = await prisma.user.findUnique({ where: { id: req.userId! } });
-    if (!user) throw new HttpError(401, "Invalid or expired token");
+    const found = await prisma.user.findUnique({ where: { id: req.userId! }, select: { username: true } });
+    if (!found) throw new HttpError(401, "Invalid or expired token");
+    // Accounts from before usernames get theirs the first time they're read.
+    if (!found.username) await ensureUsername(req.userId!);
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: req.userId! } });
     res.json({ user: toUserOut(user) });
   }),
 );
@@ -162,6 +166,33 @@ router.patch(
   asyncHandler(async (req, res) => {
     const patch = parseBody(publicProfileSchema, req.body);
     res.json({ user: toUserOut(await updatePublicProfile(req.userId!, patch)) });
+  }),
+);
+
+/** Whether a username is free, as it's typed. */
+router.get(
+  "/me/username-available",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const raw = typeof req.query.username === "string" ? req.query.username : "";
+    let username: string;
+    try {
+      username = checkUsername(raw);
+    } catch (err) {
+      res.json({ available: false, reason: "invalid", message: (err as Error).message });
+      return;
+    }
+    const available = await isUsernameFree(username, req.userId!);
+    res.json({ available, reason: available ? null : "taken", username });
+  }),
+);
+
+router.patch(
+  "/me/username",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { username } = parseBody(z.object({ username: z.string().max(60) }), req.body);
+    res.json({ user: toUserOut(await setUsername(req.userId!, username)) });
   }),
 );
 

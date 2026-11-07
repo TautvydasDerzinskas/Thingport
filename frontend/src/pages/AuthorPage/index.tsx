@@ -43,6 +43,7 @@ import ProfileLayout, { ProfileLayoutSkeleton } from "../../components/profile/P
 import { useSocialStatus } from "../../hooks/useSocialStatus";
 import SortTabs from "../ModelsPage/SortTabs";
 import EditProfileDialog from "./EditProfileDialog";
+import HandleChip from "../../components/profile/HandleChip";
 import ModelsVisibilityToggle from "./ModelsVisibilityToggle";
 import AvatarDialog from "../../components/profile/AvatarDialog";
 import EditableAvatar from "../../components/profile/EditableAvatar";
@@ -89,7 +90,10 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
   const [changingAvatar, setChangingAvatar] = useState(false);
   const [changingVisibility, setChangingVisibility] = useState(false);
   // Whether their models can be public at all: there's no Explore to show them on while social features are off.
-  const socialOn = useSocialStatus()?.enabled === true;
+  const social = useSocialStatus();
+  const socialOn = social?.enabled === true;
+  // Handles mean something once this instance connects with others.
+  const handleHost = social?.federation ? social.instance_host : null;
   const [searchParams, setSearchParams] = useSearchParams();
   const sortModeParam = searchParams.get("orderBy");
   const sortMode: PrintSortMode =
@@ -388,7 +392,18 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
           )
         }
         name={displayName}
-        subtitle={!isSelf && author?.handle ? `@${author.handle}` : undefined}
+        subtitle={
+          isSelf && viewer && handleHost ? (
+            <HandleChip
+              user={viewer}
+              host={handleHost}
+              onSaved={(user) => onUserUpdated?.(user)}
+              onUnauthorized={onUnauthorized}
+            />
+          ) : !isSelf && author?.handle ? (
+            `@${author.handle}`
+          ) : undefined
+        }
         actions={
           <>
             {chips}

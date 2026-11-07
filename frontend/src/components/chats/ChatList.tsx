@@ -210,7 +210,7 @@ export default function ChatList({ onUnauthorized, onNavigate }: Props) {
   };
   const openPerson = async (person: ChatPerson) => {
     try {
-      const chat = await chatsApi.openDirect(person.id);
+      const chat = await chatsApi.openDirect(person);
       putChat(chat);
       setQuery("");
       open(chat.id);

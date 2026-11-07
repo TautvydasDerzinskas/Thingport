@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 import { z } from "zod";
 import { requireAdmin, requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
@@ -8,10 +8,48 @@ import { createLog } from "../services/auditLog";
 import { copyPrintToLibrary } from "../services/modelCopyService";
 import { printOutById } from "../services/printLoader";
 import { getSocialSettings, setSocialSettings } from "../services/settingsService";
-import { exploreOverview, exploreUser, exploreUserModels, socialStatus } from "../services/socialService";
+import {
+  EMPTY_EXPLORE,
+  exploreOverview,
+  exploreUser,
+  exploreUserCollections,
+  exploreUserModels,
+  PERSON_COLLECTIONS_PAGE,
+  socialStatus,
+} from "../services/socialService";
+import { sendRemoteMedia } from "../federation/media";
+import {
+  instancesOut,
+  remoteCollection,
+  remoteModel,
+  remoteOverview,
+  remotePerson,
+  remotePersonCollections,
+  remotePersonModels,
+} from "../federation/remoteExplore";
+import { remoteCopyStatus, startRemoteCopy } from "../federation/remoteCopy";
+import { sendRemoteZip, streamRemoteFile } from "../federation/remoteFiles";
+import { syncStale } from "../federation/remoteIndex";
+import { isFederationLive } from "../federation/settings";
 import { parseSortMode, splitList } from "../services/printQuery";
 
 const router = Router();
+
+/** `limit` and `offset` from a list's query, checked. */
+function pageQuery(query: Record<string, unknown>, defaultLimit: number): { limit: number; offset: number } {
+  const limit = Number(query.limit ?? defaultLimit);
+  const offset = Number(query.offset ?? 0);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new HttpError(400, "Invalid limit");
+  if (!Number.isInteger(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
+  return { limit, offset };
+}
+
+/** A page of a list, its count in the headers as GET /prints gives it. */
+function sendPage(res: Response, items: unknown[], offset: number, total: number): void {
+  res.setHeader("X-Total-Count", String(total));
+  res.setHeader("X-Has-More", offset + items.length < total ? "true" : "false");
+  res.json(items);
+}
 router.use(requireAuth);
 
 // For everyone: whether the sidebar offers Explore and Chats, and whether a collection's form offers making it public.
@@ -47,11 +85,133 @@ async function assertSocialOn(): Promise<void> {
   if (!(await getSocialSettings()).enabled) throw new HttpError(404, "Social features are off", "social_off");
 }
 
+// Index older than this when someone opens Explore: read again in the background, for the next look.
+const EXPLORE_FRESH_MS = 2 * 60 * 1000;
+
+/** Explore, with partners' people, models and collections beside this instance's own while connected instances are
+ *  on: ?scope=all (the default), here, or a partner's id for only theirs. `elsewhere` is read-only for now. */
 router.get(
   "/explore",
   asyncHandler(async (req, res) => {
     await assertSocialOn();
-    res.json(await exploreOverview(req.userId!));
+    const scope = typeof req.query.scope === "string" ? req.query.scope : "all";
+    const live = await isFederationLive();
+    const local = !live || scope === "all" || scope === "here" ? await exploreOverview(req.userId!) : EMPTY_EXPLORE;
+    if (!live) {
+      res.json({ ...local, elsewhere: { people: [], recent_models: [], recent_collections: [] }, instances: [] });
+      return;
+    }
+    void syncStale(EXPLORE_FRESH_MS).catch(() => {});
+    const [elsewhere, instances] = await Promise.all([
+      scope === "here"
+        ? Promise.resolve({ people: [], recent_models: [], recent_collections: [] })
+        : remoteOverview(scope === "all" ? null : scope),
+      instancesOut(),
+    ]);
+    res.json({ ...local, elsewhere, instances });
+  }),
+);
+
+/** Someone on a partner instance, a model or a collection of theirs, and their pictures: from what this instance keeps
+ *  of what partners share (federation/remoteExplore.ts), while connected instances are on. */
+async function assertElsewhere(): Promise<void> {
+  await assertSocialOn();
+  if (!(await isFederationLive())) throw new HttpError(404, "Connected instances are off", "federation_off");
+}
+
+router.get(
+  "/explore/elsewhere/person/:id",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    const page = await remotePerson(req.params.id);
+    if (!page) throw new HttpError(404, "Not found");
+    res.json(page);
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/person/:id/models",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    const { limit, offset } = pageQuery(req.query, 24);
+    const page = await remotePersonModels(req.params.id, limit, offset);
+    if (!page) throw new HttpError(404, "Not found");
+    sendPage(res, page.models, offset, page.total);
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/person/:id/collections",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    const { limit, offset } = pageQuery(req.query, PERSON_COLLECTIONS_PAGE);
+    const page = await remotePersonCollections(req.params.id, limit, offset);
+    if (!page) throw new HttpError(404, "Not found");
+    sendPage(res, page.collections, offset, page.total);
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/model/:id",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    const model = await remoteModel(req.params.id, req.userId!);
+    if (!model) throw new HttpError(404, "Not found");
+    res.json(model);
+  }),
+);
+
+// A partner's model's files, through this instance: one as it comes, by its key and with its name last (for slicers),
+// or all of them zipped.
+router.get(
+  "/explore/elsewhere/model/:id/files/:file/:filename",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    await streamRemoteFile(req, res, req.params.id, req.params.file);
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/model/:id/files.zip",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    await sendRemoteZip(req, res, req.params.id, req.userId!);
+  }),
+);
+
+// Copying a partner's model into the user's library runs in the background; GET says how it's going.
+router.post(
+  "/explore/elsewhere/model/:id/copy",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    res.json(await startRemoteCopy(req.userId!, req.params.id));
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/model/:id/copy",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    res.json(await remoteCopyStatus(req.userId!, req.params.id));
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/collection/:id",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    const { limit, offset } = pageQuery(req.query, 30);
+    const page = await remoteCollection(req.params.id, limit, offset);
+    if (!page) throw new HttpError(404, "Not found");
+    res.json(page);
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/media/:token",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    await sendRemoteMedia(req.params.token, res);
   }),
 );
 
@@ -65,15 +225,24 @@ router.get(
   }),
 );
 
+// A user's public collections past the first page their page came with.
+router.get(
+  "/explore/user/:id/collections",
+  asyncHandler(async (req, res) => {
+    await assertSocialOn();
+    const { limit, offset } = pageQuery(req.query, PERSON_COLLECTIONS_PAGE);
+    const page = await exploreUserCollections(req.userId!, req.params.id, limit, offset);
+    if (!page) throw new HttpError(404, "User not found");
+    sendPage(res, page.collections, offset, page.total);
+  }),
+);
+
 // A user's own models, once they made them public: answered like GET /prints, a page with its count in the headers.
 router.get(
   "/explore/user/:id/models",
   asyncHandler(async (req, res) => {
     await assertSocialOn();
-    const limit = Number(req.query.limit ?? 24);
-    const offset = Number(req.query.offset ?? 0);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new HttpError(400, "Invalid limit");
-    if (!Number.isInteger(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
+    const { limit, offset } = pageQuery(req.query, 24);
     const page = await exploreUserModels(
       req.userId!,
       req.params.id,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutlined";
 import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -16,14 +17,18 @@ import type { AuthUser } from "../../api/auth";
 import { UnauthorizedError } from "../../api/client";
 import type { Print } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
-import { socialApi, type ExploreOverview } from "../../api/social";
+import { socialApi, type ExploreOverview, type ExploreScope, type InstanceRef } from "../../api/social";
+import Segmented from "../../components/controls/Segmented";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
+import { useSocialStatus } from "../../hooks/useSocialStatus";
 import ModelCard from "../ModelsPage/ModelCard";
 import CollectionCard from "../CollectionsPage/CollectionCard";
 import ExploreSection from "./ExploreSection";
 import PersonCard from "./PersonCard";
+import { RemoteCollectionCardView, RemoteModelCardView } from "./RemoteCards";
+import SomeoneElsewhereDialog from "./SomeoneElsewhereDialog";
 
 type Props = {
   theme: ResolvedTheme;
@@ -38,29 +43,59 @@ const peopleGridSx = {
   gap: "12px",
 } as const;
 
+const PEOPLE = 48;
+const RECENT_MODELS = 12;
+const RECENT_COLLECTIONS = 8;
+
+type Entry = { at: string | null | undefined; node: ReactNode };
+
+/** This instance's and partners' together, the latest shared first. Ties, and entries without a time, keep the order
+ *  they came in, each list's as the server ranked it. */
+function newestFirst(entries: Entry[], limit: number): ReactNode[] {
+  const time = (at: string | null | undefined) => (at ? Date.parse(at) || 0 : 0);
+  return entries
+    .toSorted((a, b) => time(b.at) - time(a.at))
+    .slice(0, limit)
+    .map((entry) => entry.node);
+}
+
 /** What the instance's other users share: who they are, what they added lately, and what everyone copies most. */
 export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer }: Props) {
   const { t } = useTranslation(["models", "app"]);
   const navigate = useNavigate();
   const [overview, setOverview] = useState<ExploreOverview | null>(null);
   const [failed, setFailed] = useState(false);
+  // Everything, this instance's own, or one partner's; the partners stay listed while one is picked.
+  const [scope, setScope] = useState<ExploreScope>("all");
+  const [instances, setInstances] = useState<InstanceRef[]>([]);
+  const latest = useRef(0);
+  const [elsewhereOpen, setElsewhereOpen] = useState(false);
+  // With connected instances on, someone on another instance can be asked for, here.
+  const federation = useSocialStatus()?.federation === true;
 
   useEffect(() => {
-    let active = true;
-    socialApi.explore().then(
+    const asked = ++latest.current;
+    socialApi.explore(scope).then(
       (value) => {
-        if (active) setOverview(value);
+        if (asked !== latest.current) return;
+        setFailed(false);
+        setOverview(value);
+        setInstances(value.instances ?? []);
+        // A partner no longer there: back to everything.
+        if (scope !== "all" && scope !== "here" && !(value.instances ?? []).some((item) => item.id === scope)) {
+          setScope("all");
+        }
       },
       (err) => {
-        if (!active) return;
+        if (asked !== latest.current) return;
         if (err instanceof UnauthorizedError) onUnauthorized?.();
         else setFailed(true);
       },
     );
     return () => {
-      active = false;
+      latest.current += 1;
     };
-  }, [onUnauthorized]);
+  }, [onUnauthorized, scope]);
 
   // A copy made from a card's menu: the card says so from then on, wherever the model shows on the page.
   const replaceModel = (updated: Print) =>
@@ -72,6 +107,15 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
           most_collected: prev.most_collected.map((e) => (e.model.id === updated.id ? { ...e, model: updated } : e)),
         },
     );
+
+  const elsewhereButton = federation && (
+    <Button size="small" startIcon={<HubOutlinedIcon />} onClick={() => setElsewhereOpen(true)}>
+      {t("models:explore.elsewhere.open")}
+    </Button>
+  );
+  const elsewhereDialog = elsewhereOpen && (
+    <SomeoneElsewhereDialog onClose={() => setElsewhereOpen(false)} onUnauthorized={onUnauthorized} />
+  );
 
   const modelCard = (model: Print) => (
     <ModelCard
@@ -85,11 +129,31 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     />
   );
 
+  const filter = instances.length > 0 && (
+    // Many partners: it scrolls sideways rather than squeezing.
+    <Box sx={{ display: "flex", justifyContent: "flex-end", overflowX: "auto", pb: 0.5 }}>
+      <Segmented
+        label={t("models:explore.scope.label")}
+        value={scope}
+        onChange={setScope}
+        options={[
+          { value: "all", label: t("models:explore.scope.all") },
+          { value: "here", label: t("models:explore.scope.here") },
+          ...instances.map((instance) => ({ value: instance.id, label: instance.name })),
+        ]}
+      />
+    </Box>
+  );
+
   if (failed) {
+    // The filter stays, to pick another instance or this one again.
     return (
-      <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
-        <ExploreOutlinedIcon sx={{ fontSize: 40, color: "text.disabled" }} />
-        <Typography variant="body2">{t("models:explore.unavailable")}</Typography>
+      <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
+        {filter}
+        <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
+          <ExploreOutlinedIcon sx={{ fontSize: 40, color: "text.disabled" }} />
+          <Typography variant="body2">{t("models:explore.unavailable")}</Typography>
+        </Stack>
       </Stack>
     );
   }
@@ -112,17 +176,77 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     );
   }
 
-  if (!overview.people.length) {
+  const sharedAt = overview.shared_at;
+  const elsewhere = overview.elsewhere;
+  const people = newestFirst(
+    [
+      ...overview.people.map((person) => ({
+        at: sharedAt?.people[person.id],
+        node: <PersonCard key={person.id} person={person} />,
+      })),
+      ...(elsewhere?.people ?? []).map((person) => ({
+        at: person.shared_at,
+        node: <PersonCard key={person.id} person={person} />,
+      })),
+    ],
+    PEOPLE,
+  );
+  const recentModels = newestFirst(
+    [
+      ...overview.recent_models.map((model) => ({
+        at: sharedAt?.models[model.id],
+        node: modelCard(model),
+      })),
+      ...(elsewhere?.recent_models ?? []).map((model) => ({
+        at: model.shared_at,
+        node: <RemoteModelCardView key={model.id} model={model} />,
+      })),
+    ],
+    RECENT_MODELS,
+  );
+  const recentCollections = newestFirst(
+    [
+      ...overview.recent_collections.map((collection) => ({
+        at: sharedAt?.collections[collection.id],
+        node: (
+          <CollectionCard
+            key={collection.id}
+            collection={collection}
+            theme={theme}
+            previewMode={previewMode}
+            // Another user's: nothing on the card changes it.
+            onUpdated={() => undefined}
+            onDeleted={() => undefined}
+            onUnauthorized={onUnauthorized}
+          />
+        ),
+      })),
+      ...(elsewhere?.recent_collections ?? []).map((collection) => ({
+        at: collection.updated_at,
+        node: <RemoteCollectionCardView key={collection.id} collection={collection} />,
+      })),
+    ],
+    RECENT_COLLECTIONS,
+  );
+
+  if (!people.length) {
     return (
-      <Stack alignItems="center" spacing={1.5} sx={{ py: 8, color: "text.secondary", textAlign: "center" }}>
-        <ExploreOutlinedIcon sx={{ fontSize: 44, color: "text.disabled" }} />
-        <Typography variant="subtitle1" fontWeight={700} sx={{ color: (muiTheme) => muiTheme.thingport.headingText }}>
-          {t("models:explore.emptyTitle")}
-        </Typography>
-        <Typography variant="body2">{t("models:explore.emptyHint")}</Typography>
-        <Button variant="outlined" size="small" onClick={() => navigate("/models/collections")}>
-          {t("models:explore.emptyAction")}
-        </Button>
+      <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
+        {filter}
+        <Stack alignItems="center" spacing={1.5} sx={{ py: 8, color: "text.secondary", textAlign: "center" }}>
+          <ExploreOutlinedIcon sx={{ fontSize: 44, color: "text.disabled" }} />
+          <Typography variant="subtitle1" fontWeight={700} sx={{ color: (muiTheme) => muiTheme.thingport.headingText }}>
+            {t("models:explore.emptyTitle")}
+          </Typography>
+          <Typography variant="body2">{t("models:explore.emptyHint")}</Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center" useFlexGap>
+            <Button variant="outlined" size="small" onClick={() => navigate("/models/collections")}>
+              {t("models:explore.emptyAction")}
+            </Button>
+            {elsewhereButton}
+          </Stack>
+          {elsewhereDialog}
+        </Stack>
       </Stack>
     );
   }
@@ -130,51 +254,36 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   let order = 0;
   return (
     <Stack spacing={4} sx={{ maxWidth: "1920px", mx: "auto" }}>
+      {filter}
       <ExploreSection
         title={t("models:explore.people")}
         help={t("models:explore.peopleHelp")}
         icon={<GroupOutlinedIcon fontSize="small" />}
         order={order++}
+        action={elsewhereButton}
       >
-        <Box sx={peopleGridSx}>
-          {overview.people.map((person) => (
-            <PersonCard key={person.id} person={person} />
-          ))}
-        </Box>
+        <Box sx={peopleGridSx}>{people}</Box>
       </ExploreSection>
 
-      {overview.recent_models.length > 0 && (
+      {recentModels.length > 0 && (
         <ExploreSection
           title={t("models:explore.recentModels")}
           help={t("models:explore.recentModelsHelp")}
           icon={<NewReleasesOutlinedIcon fontSize="small" />}
           order={order++}
         >
-          <Box sx={cardGridSx(6)}>{overview.recent_models.map(modelCard)}</Box>
+          <Box sx={cardGridSx(6)}>{recentModels}</Box>
         </ExploreSection>
       )}
 
-      {overview.recent_collections.length > 0 && (
+      {recentCollections.length > 0 && (
         <ExploreSection
           title={t("models:explore.recentCollections")}
           help={t("models:explore.recentCollectionsHelp")}
           icon={<CollectionsIcon fontSize="small" />}
           order={order++}
         >
-          <Box sx={cardGridSx(6)}>
-            {overview.recent_collections.map((collection) => (
-              <CollectionCard
-                key={collection.id}
-                collection={collection}
-                theme={theme}
-                previewMode={previewMode}
-                // Another user's: nothing on the card changes it.
-                onUpdated={() => undefined}
-                onDeleted={() => undefined}
-                onUnauthorized={onUnauthorized}
-              />
-            ))}
-          </Box>
+          <Box sx={cardGridSx(6)}>{recentCollections}</Box>
         </ExploreSection>
       )}
 
@@ -198,6 +307,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
           </Box>
         </ExploreSection>
       )}
+      {elsewhereDialog}
     </Stack>
   );
 }

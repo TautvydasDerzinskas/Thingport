@@ -14,7 +14,7 @@ dashboards and [AI assistants](../guides/mcp.md) to your library.
 ## Your profile
 
 **My models** in the user menu is your profile as the other people on the instance see it, on
-[Explore](multi-user.md#sharing-with-each-other) too. Choose **Edit profile** to write a bio (Markdown works), add up to
+[Explore](social.md#explore) too. Choose **Edit profile** to write a bio (Markdown works), add up to
 five links shown under it, and pick a cover: one of five covers Thingport draws, the cover of an account you linked, or
 a picture of your own of up to 10 MB, dragged up or down to choose the part that shows. Until you choose, you have one
 of the drawn covers.
@@ -25,6 +25,10 @@ random one -- or upload a picture of up to 10 MB, cut to a square around what's 
 if you have one, and otherwise a Thingport avatar picked for you. To show the others your Gravatar without giving them
 anything that comes from your email, Thingport fetches it from Gravatar itself, once a day; an instance that can't reach
 the internet shows the picked avatar instead.
+
+While [connected instances](../guides/connected-instances.md#handles) are on, your handle shows under your name:
+`username@this-instance`, which people on other instances use to reach you. Copy it with the button beside it, or
+change the username with the pencil.
 
 While social features are on, the lock beside **Edit profile** makes the models on the page public: a globe then, and
 your profile on Explore opens on them. Everyone on the instance can see, download and copy them, and only you can change
