@@ -41,8 +41,8 @@ const design = (id) => ({
   summary: "<p>From the regression pack's fake provider.</p>",
   tags: ["regression"],
   designCreator: DESIGNER,
-  defaultInstanceId: 1,
-  instances: [{ id: 1, profileId: Number(id), title: "Default", instanceCreator: DESIGNER }],
+  defaultInstanceId: Number(id),
+  instances: [{ id: Number(id), profileId: Number(id), title: "Default", instanceCreator: DESIGNER }],
 });
 
 function file(id) {
@@ -67,13 +67,10 @@ function file(id) {
 function answer({ hostname, pathname }) {
   const model = pathname.match(/^\/v1\/design-service\/design\/(\d+)/);
   if (hostname === "api.bambulab.com" && model) return json(design(model[1]));
-  const profile = pathname.match(/^\/v1\/iot-service\/api\/user\/profile\/(\d+)/);
+  // A profile's download, as the page's "Download 3MF" asks for it.
+  const profile = pathname.match(/^\/v1\/design-service\/instance\/(\d+)\/f3mf$/);
   if (hostname === "api.bambulab.com" && profile) {
-    return json({
-      message: "success",
-      url: `https://files.regression.test/${profile[1]}/cube.stl`,
-      filename: `cube-${profile[1]}.stl`,
-    });
+    return json({ name: `cube-${profile[1]}.stl`, url: `https://files.regression.test/${profile[1]}/cube.stl` });
   }
   const content = pathname.match(/^\/(\d+)\/cube\.stl$/);
   if (hostname === "files.regression.test" && content) return file(content[1]);
