@@ -276,6 +276,24 @@ export const DOCS = [
       "Separate libraries for everyone, collections and chats to share once an admin allows it, and open or invite-only registration, email verification, captcha and single sign-on.",
   },
   {
+    slug: "features/social",
+    source: "docs/features/social.md",
+    group: "Features",
+    title: "Social features",
+    nav: "Social features",
+    description:
+      "Public collections and models, found by everyone on Explore, profiles to show them on, and chats with models in them, across connected instances too.",
+  },
+  {
+    slug: "features/connected-instances",
+    source: "docs/features/connected-instances.md",
+    group: "Features",
+    title: "Connected instances",
+    nav: "Connected instances",
+    description:
+      "Thingport instances connected as partners: one Explore, their models to download and copy, chats across instances, even from a home network the internet can't reach.",
+  },
+  {
     slug: "features/administration",
     source: "docs/features/administration.md",
     group: "Features",
@@ -324,10 +342,10 @@ export const DOCS = [
     slug: "guides/connected-instances",
     source: "docs/guides/connected-instances.md",
     group: "Administration",
-    title: "Connected instances",
-    nav: "Connected instances",
+    title: "Set up connected instances",
+    nav: "Set up connected instances",
     description:
-      "Connect Thingport instances on your network, a VPN or the internet, so their people and public models show up on each other's Explore.",
+      "Turn connected instances on, connect to another instance, answer requests and look after partners, step by step, a home instance behind its router included.",
   },
   {
     slug: "guides/api-token",

@@ -1,4 +1,4 @@
-# Connected instances
+# Set up connected instances
 
 Thingport instances can connect with each other. Two connected instances are partners: their people, public
 collections and models show up on each other's Explore, and their people can write to each other, as if everyone were
@@ -8,6 +8,9 @@ they are.
 
 It's off by default, and most instances never need it. While it's off nothing about it answers on the network, so
 nothing tells a visitor this instance could connect at all.
+
+This guide is the admin's step by step. For what connecting gives the people on your instance, and how it works, see
+[connected instances](../features/connected-instances.md).
 
 ## Before you start
 
@@ -51,6 +54,11 @@ The result is one of:
 4. Add a note if you like, and **Send request**. It waits under **Requests → Waiting for them** until their admin
    answers, and you get a notification when they do.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/48_connect_link.png">
+  <img src="../../frontend/src/assets/screenshots/light/48_connect_link.png" alt="Connect to an instance: the other instance's name and key, The keys match, a note, and Keep a link open" width="100%">
+</picture>
+
 The key is how the two instances know each other. Comparing it matters most over plain HTTP, where someone in between
 could otherwise swap it.
 
@@ -85,6 +93,11 @@ key, who asked and their note. You can also open it in place under **Requests �
 - **Approve** connects the two instances. Compare the key with their admin first, as above.
 - **Decline** tells them no; they can ask again.
 - **Block** declines it without telling them, and drops whatever that instance sends later.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/49_request_link.png">
+  <img src="../../frontend/src/assets/screenshots/light/49_request_link.png" alt="A request to connect, reaching this instance through its link: its key, who asked and their note, and Block, Decline and Approve" width="100%">
+</picture>
 
 A request is only checked once you open it: until then Thingport doesn't contact the instance that sent it. Opening
 it checks that it's signed with the key you see, and that the instance still stands by it: one it withdrew meanwhile
@@ -149,6 +162,11 @@ copied to your library.
   host with what was said in them included; direct messages with their people and rooms hosted here stay.
 
 ## Partners
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/47_admin_partners.png">
+  <img src="../../frontend/src/assets/screenshots/light/47_admin_partners.png" alt="Administration, Social: Connected instances with Partners, one reaching this instance through its link" width="100%">
+</picture>
 
 Connected instances are under **Partners**, with when they connected and when they were last heard from. Each one's ⋮
 menu (or a right-click) has:
