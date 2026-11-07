@@ -22,6 +22,7 @@ import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLo
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerHref, type ModelFile, type SlicerTarget } from "./useOpenInSlicer";
 import type { NormalizeState } from "./useNormalizedOpen";
+import NormalizeInfoIcon from "./NormalizeInfoIcon";
 
 type Props = {
   /** The file every action but the zip applies to. */
@@ -217,6 +218,11 @@ export default function OpenInSlicerButton({
                   ? t("models:detail.normalizePreparing")
                   : t("models:detail.openNormalizedInSlicer", { slicer: option.label })}
               </ListItemText>
+              {!preparing && (
+                <Box component="span" sx={{ display: "inline-flex", ml: 1.5, color: "warning.main" }}>
+                  <NormalizeInfoIcon slicerLabel={option.label} orca={target.normalizeTarget === "orca"} />
+                </Box>
+              )}
             </MenuItem>
           );
         })}
