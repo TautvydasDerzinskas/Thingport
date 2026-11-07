@@ -6,8 +6,8 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { originOf } from "./addresses";
 import { canonicalHeaders, edgeFilter, keyIdOf } from "./edge";
 import { instanceFingerprint } from "./keys";
-import { collectionsOf, directory, modelsPage, sendMedia, sendSharedFile, signingPartner } from "./publish";
-import { getRuntime } from "./runtime";
+import { collectionsOf, directory, modelsPage, person, sendMedia, sendSharedFile, signingPartner } from "./publish";
+import { getRuntime, INSTANCE } from "./runtime";
 import { isFederationLive } from "./settings";
 
 // Mounted at /api/ap ahead of express.json: signatures cover the body exactly as it came.
@@ -64,7 +64,20 @@ router.post(
   asyncHandler(edgeFilter),
   asyncHandler(viaFedify),
 );
-router.get("/actors/:identifier", asyncHandler(viaFedify));
+router.get(
+  "/actors/:identifier",
+  asyncHandler(async (req, res) => {
+    if (req.params.identifier === INSTANCE) return viaFedify(req, res);
+    // A person here who shares something, at the id the directory gave them: for partners only, as the directory is.
+    if (!(await signingPartner(req))) {
+      res.status(401).json({ error: "Not a connected instance" });
+      return;
+    }
+    const body = await person(req.params.identifier);
+    if (body) activityJson(res, body);
+    else res.status(404).json({ error: "Not found" });
+  }),
+);
 
 /** Our request to connect, while it stands: the instance we asked reads it before its admin approves, so a request we
  *  withdrew, or one from before a disconnect played back to it, isn't approved. Says no more than its own ids. */
@@ -99,8 +112,10 @@ const activityJson = (res: Response, body: unknown) => res.type("application/act
 router.get(
   "/directory",
   partnerOnly,
-  asyncHandler(async (_req, res) => {
-    activityJson(res, await directory());
+  asyncHandler(async (req, res) => {
+    const page = Number(req.query.page ?? 0);
+    if (Number.isInteger(page) && page >= 0 && page < 1000) activityJson(res, await directory(page));
+    else res.status(404).json({ error: "Not found" });
   }),
 );
 router.get(

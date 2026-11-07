@@ -93,27 +93,38 @@ function modelCardOut(row: ModelRow): RemoteModelCardOut {
   };
 }
 
-/** Collections with what's in them, as far as the index has it, and a few of their pictures. */
+/** Collections with what's in them, as far as the index has it, and a few of their pictures: only their covers'
+ *  pictures are read, however many models they hold. */
 async function collectionCardsOut(rows: CollectionRow[]): Promise<RemoteCollectionCardOut[]> {
-  const ids = [...new Set(rows.flatMap((row) => row.modelApIds))];
-  const models = ids.length
+  // What's in a collection is its owner's own models.
+  const owners = [...new Set(rows.map((row) => row.personId))];
+  const indexed = owners.length
+    ? await prisma.remoteModel.findMany({ where: { personId: { in: owners } }, select: { apId: true, personId: true } })
+    : [];
+  const have = new Set(indexed.map((model) => `${model.personId} ${model.apId}`));
+  const inIt = new Map(
+    rows.map((row) => [row.id, row.modelApIds.filter((apId) => have.has(`${row.personId} ${apId}`))]),
+  );
+  // A few more than the four shown, as some have no picture.
+  const candidates = [...new Set(rows.flatMap((row) => inIt.get(row.id)!.slice(0, 8)))];
+  const pictures = candidates.length
     ? await prisma.remoteModel.findMany({
-        where: { apId: { in: ids } },
-        select: { apId: true, peerId: true, images: true },
+        where: { apId: { in: candidates }, personId: { in: owners } },
+        select: { apId: true, images: true },
       })
     : [];
-  const byApId = new Map(models.map((model) => [model.apId, model]));
+  const firstPicture = new Map(pictures.map((model) => [model.apId, model.images[0]]));
   return rows.map((row) => {
-    const inIt = row.modelApIds.flatMap((apId) => {
-      const model = byApId.get(apId);
-      return model && model.peerId === row.peerId ? [model] : [];
-    });
+    const apIds = inIt.get(row.id)!;
     return {
       id: row.id,
       name: row.name,
       description: row.description,
-      item_count: inIt.length,
-      cover_urls: inIt.flatMap((model) => mediaAddress(model.images[0]) ?? []).slice(0, 4),
+      item_count: apIds.length,
+      cover_urls: apIds
+        .slice(0, 8)
+        .flatMap((apId) => mediaAddress(firstPicture.get(apId)) ?? [])
+        .slice(0, 4),
       updated_at: row.updatedAt?.toISOString() ?? null,
       owner: ownerOut(row.person),
       instance: instanceOut(row.peer),
@@ -147,7 +158,7 @@ export async function remoteOverview(peerId: string | null): Promise<RemoteOverv
       include: { peer: true, person: true },
     }),
     prisma.remoteCollection.findMany({
-      where: { peer, modelApIds: { isEmpty: false } },
+      where: { peer },
       orderBy: [{ updatedAt: { sort: "desc", nulls: "last" } }, { id: "asc" }],
       take: RECENT_COLLECTIONS,
       include: { peer: true, person: true },
@@ -261,23 +272,39 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
   };
 }
 
-export type RemoteCollectionPageOut = { collection: RemoteCollectionCardOut; models: RemoteModelCardOut[] };
+export type RemoteCollectionPageOut = {
+  collection: RemoteCollectionCardOut;
+  /** A page of them, in the collection's own order; `total` counts all the index has. */
+  models: RemoteModelCardOut[];
+  total: number;
+};
 
-export async function remoteCollection(id: string): Promise<RemoteCollectionPageOut | null> {
+export async function remoteCollection(
+  id: string,
+  limit: number,
+  offset: number,
+): Promise<RemoteCollectionPageOut | null> {
   const row = await prisma.remoteCollection.findFirst({
     where: { id, peer: ACTIVE },
     include: { peer: true, person: true },
   });
   if (!row) return null;
+  const [collection] = await collectionCardsOut([row]);
+  const indexed = await prisma.remoteModel.findMany({
+    where: { personId: row.personId, apId: { in: row.modelApIds } },
+    select: { apId: true },
+  });
+  const have = new Set(indexed.map((model) => model.apId));
+  const pageIds = row.modelApIds.filter((apId) => have.has(apId)).slice(offset, offset + limit);
   const models = await prisma.remoteModel.findMany({
-    where: { peerId: row.peerId, apId: { in: row.modelApIds } },
+    where: { personId: row.personId, apId: { in: pageIds } },
     include: { peer: true, person: true },
   });
-  const order = new Map(row.modelApIds.map((apId, index) => [apId, index]));
-  const [collection] = await collectionCardsOut([row]);
+  const order = new Map(pageIds.map((apId, index) => [apId, index]));
   return {
     collection,
     models: models.toSorted((a, b) => (order.get(a.apId) ?? 0) - (order.get(b.apId) ?? 0)).map(modelCardOut),
+    total: collection.item_count,
   };
 }
 

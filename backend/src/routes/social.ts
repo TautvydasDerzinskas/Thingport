@@ -175,7 +175,11 @@ router.get(
   "/explore/elsewhere/collection/:id",
   asyncHandler(async (req, res) => {
     await assertElsewhere();
-    const page = await remoteCollection(req.params.id);
+    const limit = Number(req.query.limit ?? 30);
+    const offset = Number(req.query.offset ?? 0);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new HttpError(400, "Invalid limit");
+    if (!Number.isInteger(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
+    const page = await remoteCollection(req.params.id, limit, offset);
     if (!page) throw new HttpError(404, "Not found");
     res.json(page);
   }),

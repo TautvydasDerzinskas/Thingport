@@ -94,25 +94,44 @@ export async function sharedModelsWhere(userId: string): Promise<Prisma.PrintWhe
   return { userId, AND: [await sharedPrintWhere()] };
 }
 
-/** When each model was shared: filed in a public collection, or for a public designer's own, added or made public,
- *  whichever was later. */
+/** How many models each of `userIds` shares, as `sharedModelsWhere` decides: counted together, not one by one. */
+export async function sharedModelCounts(userIds: string[]): Promise<Map<string, number>> {
+  if (!userIds.length) return new Map();
+  const rows = await prisma.print.groupBy({
+    by: ["userId"],
+    where: { userId: { in: userIds }, AND: [await sharedPrintWhere()] },
+    _count: true,
+  });
+  return new Map(rows.map((row) => [row.userId, row._count]));
+}
+
+/** When each model was shared: filed in a public collection, or for a public designer's own design, added or made
+ *  public, whichever was later. Someone else's design they filed keeps when it was filed. */
 export async function sharedAtOf(
   prints: { id: string; userId: string; createdAt: Date }[],
 ): Promise<Map<string, Date>> {
   if (!prints.length) return new Map();
+  const ids = prints.map((print) => print.id);
   const [filed, designers] = await Promise.all([
     prisma.collectionItem.groupBy({
       by: ["printId"],
-      where: { printId: { in: prints.map((print) => print.id) }, collection: { isPublic: true } },
+      where: { printId: { in: ids }, collection: { isPublic: true } },
       _max: { createdAt: true },
     }),
     publicDesigners(),
   ]);
+  const ownDesigns = designers.length
+    ? await prisma.print.findMany({
+        where: { id: { in: ids }, OR: designers.map((designer) => designer.where) },
+        select: { id: true },
+      })
+    : [];
+  const designs = new Set(ownDesigns.map((print) => print.id));
   const since = new Map(designers.map((designer) => [designer.userId, designer.since]));
   const at = new Map(filed.map((row) => [row.printId, row._max.createdAt?.getTime() ?? 0]));
   return new Map(
     prints.map((print) => {
-      const own = since.has(print.userId) ? Math.max(print.createdAt.getTime(), since.get(print.userId) ?? 0) : 0;
+      const own = designs.has(print.id) ? Math.max(print.createdAt.getTime(), since.get(print.userId) ?? 0) : 0;
       return [print.id, new Date(Math.max(at.get(print.id) ?? 0, own) || print.createdAt.getTime())];
     }),
   );

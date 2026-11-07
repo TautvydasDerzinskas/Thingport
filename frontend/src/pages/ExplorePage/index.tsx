@@ -47,13 +47,14 @@ const PEOPLE = 48;
 const RECENT_MODELS = 12;
 const RECENT_COLLECTIONS = 8;
 
-type Entry = { key: string; at: string | null | undefined; node: ReactNode };
+type Entry = { at: string | null | undefined; node: ReactNode };
 
-/** This instance's and partners' together, the latest shared first. */
+/** This instance's and partners' together, the latest shared first. Ties, and entries without a time, keep the order
+ *  they came in, each list's as the server ranked it. */
 function newestFirst(entries: Entry[], limit: number): ReactNode[] {
   const time = (at: string | null | undefined) => (at ? Date.parse(at) || 0 : 0);
   return entries
-    .toSorted((a, b) => time(b.at) - time(a.at) || a.key.localeCompare(b.key))
+    .toSorted((a, b) => time(b.at) - time(a.at))
     .slice(0, limit)
     .map((entry) => entry.node);
 }
@@ -77,6 +78,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     socialApi.explore(scope).then(
       (value) => {
         if (asked !== latest.current) return;
+        setFailed(false);
         setOverview(value);
         setInstances(value.instances ?? []);
         // A partner no longer there: back to everything.
@@ -144,10 +146,14 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   );
 
   if (failed) {
+    // The filter stays, to pick another instance or this one again.
     return (
-      <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
-        <ExploreOutlinedIcon sx={{ fontSize: 40, color: "text.disabled" }} />
-        <Typography variant="body2">{t("models:explore.unavailable")}</Typography>
+      <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
+        {filter}
+        <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
+          <ExploreOutlinedIcon sx={{ fontSize: 40, color: "text.disabled" }} />
+          <Typography variant="body2">{t("models:explore.unavailable")}</Typography>
+        </Stack>
       </Stack>
     );
   }
@@ -175,12 +181,10 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   const people = newestFirst(
     [
       ...overview.people.map((person) => ({
-        key: person.id,
         at: sharedAt?.people[person.id],
         node: <PersonCard key={person.id} person={person} />,
       })),
       ...(elsewhere?.people ?? []).map((person) => ({
-        key: person.id,
         at: person.shared_at,
         node: <PersonCard key={person.id} person={person} />,
       })),
@@ -190,12 +194,10 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   const recentModels = newestFirst(
     [
       ...overview.recent_models.map((model) => ({
-        key: model.id,
         at: sharedAt?.models[model.id],
         node: modelCard(model),
       })),
       ...(elsewhere?.recent_models ?? []).map((model) => ({
-        key: model.id,
         at: model.shared_at,
         node: <RemoteModelCardView key={model.id} model={model} />,
       })),
@@ -205,7 +207,6 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   const recentCollections = newestFirst(
     [
       ...overview.recent_collections.map((collection) => ({
-        key: collection.id,
         at: sharedAt?.collections[collection.id],
         node: (
           <CollectionCard
@@ -221,7 +222,6 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
         ),
       })),
       ...(elsewhere?.recent_collections ?? []).map((collection) => ({
-        key: collection.id,
         at: collection.updated_at,
         node: <RemoteCollectionCardView key={collection.id} collection={collection} />,
       })),

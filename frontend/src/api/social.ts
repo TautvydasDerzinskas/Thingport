@@ -130,7 +130,8 @@ export type RemoteOrigin = {
   original_id: string | null;
 };
 
-export type RemoteCollectionPage = { collection: RemoteCollectionCard; models: RemoteModelCard[] };
+/** `models` is a page of them, in the collection's order; `total` counts all of them. */
+export type RemoteCollectionPage = { collection: RemoteCollectionCard; models: RemoteModelCard[]; total: number };
 
 export type ExploreUserPage = {
   user: ExplorePerson & {
@@ -248,9 +249,18 @@ export const socialApi = {
       const model = await getOrNull<RemoteModel>(`/explore/elsewhere/model/${encodeURIComponent(id)}`);
       return model && { ...modelPictures(model), images: model.images.flatMap((url) => picture(url) ?? []) };
     },
-    collection: async (id: string): Promise<RemoteCollectionPage | null> => {
-      const page = await getOrNull<RemoteCollectionPage>(`/explore/elsewhere/collection/${encodeURIComponent(id)}`);
-      return page && { collection: collectionPictures(page.collection), models: page.models.map(modelPictures) };
+    collection: async (id: string, params: { limit: number; offset: number }): Promise<RemoteCollectionPage | null> => {
+      const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
+      const page = await getOrNull<RemoteCollectionPage>(
+        `/explore/elsewhere/collection/${encodeURIComponent(id)}?${qs}`,
+      );
+      return (
+        page && {
+          collection: collectionPictures(page.collection),
+          models: page.models.map(modelPictures),
+          total: page.total,
+        }
+      );
     },
     personModels: async (
       id: string,

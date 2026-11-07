@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import type { Peer } from "@prisma/client";
@@ -9,7 +10,7 @@ import { resolvePlateFilePath } from "../services/printCreation";
 import { managedPrintFilePath } from "../services/printFileService";
 import { plateThumbPath } from "../services/printService";
 import { coverOut, coverPath } from "../services/publicProfileService";
-import { sharedAtOf, sharedModelsWhere, sharers } from "../services/socialService";
+import { sharedAtOf, sharedModelCounts, sharedModelsWhere, sharers } from "../services/socialService";
 import { originOf } from "./addresses";
 import { canonicalHeaders, keyIdOf } from "./edge";
 import { AP_PREFIX, getRuntime, type Runtime } from "./runtime";
@@ -24,21 +25,29 @@ export const CONTEXT = [
   { f3di: "http://purl.org/f3di/ns#", thingport: "https://github.com/TautvydasDerzinskas/Thingport#" },
 ];
 export const MODELS_PAGE = 50;
+// People a page: one has to fit the 1 MB a partner's fetch takes, whatever their bios and links.
+export const DIRECTORY_PAGE = 50;
 const DIRECTORY_LIMIT = 500;
 const COLLECTIONS_LIMIT = 200;
 
-// A partner's key, kept for a while: every page a partner reads would otherwise fetch its actor again.
+// A partner's key, kept for a while: every page a partner reads would otherwise fetch its actor again. Kept under the
+// partner as it's connected now, keys compared and all, so one that reconnects with new keys under the same ids never
+// gets its old one back.
 const keys = new Map<string, { key: unknown; at: number }>();
 const KEY_TTL_MS = 10 * 60 * 1000;
-const keyCache = {
-  async get(keyId: URL) {
-    const hit = keys.get(keyId.href);
-    return hit && Date.now() - hit.at < KEY_TTL_MS ? (hit.key as never) : undefined;
-  },
-  async set(keyId: URL, key: unknown) {
-    if (key) keys.set(keyId.href, { key, at: Date.now() });
-    else keys.delete(keyId.href);
-  },
+const keyCacheFor = (peer: Peer) => {
+  const slot = (keyId: URL) => `${peer.id} ${peer.fingerprint ?? ""} ${peer.connectedAt?.getTime() ?? 0} ${keyId.href}`;
+  return {
+    async get(keyId: URL) {
+      const hit = keys.get(slot(keyId));
+      return hit && Date.now() - hit.at < KEY_TTL_MS ? (hit.key as never) : undefined;
+    },
+    async set(keyId: URL, key: unknown) {
+      for (const [name, entry] of keys) if (Date.now() - entry.at >= KEY_TTL_MS) keys.delete(name);
+      if (key) keys.set(slot(keyId), { key, at: Date.now() });
+      else keys.delete(slot(keyId));
+    },
+  };
 };
 
 /** The ACTIVE partner a GET is signed by, its signature checked against the key compared when connecting; null for
@@ -57,7 +66,7 @@ export async function signingPartner(req: ExpressRequest): Promise<Peer | null> 
     .verifyRequest(request, {
       documentLoader: runtime.pinnedLoader as never,
       contextLoader: runtime.contextLoader as never,
-      keyCache: keyCache as never,
+      keyCache: keyCacheFor(peer) as never,
     })
     .catch(() => null);
   if (!key?.id || key.id.href.split("#")[0] !== peer.actorUrl) return null;
@@ -77,12 +86,34 @@ function mtime(file: string): number | null {
   }
 }
 
-/** Everyone here who shares something, newest sharer first, each a Person with what they share counted. */
-export async function directory(): Promise<unknown> {
+/** Everyone here who shares something, newest sharer first, a page at a time: each a Person with what they share
+ *  counted. */
+export async function directory(page = 0): Promise<unknown> {
   const runtime = await getRuntime();
   const shared = (await sharers()).slice(0, DIRECTORY_LIMIT);
+  const base = `${runtime.origin}${AP_PREFIX}/directory`;
+  return {
+    "@context": CONTEXT,
+    id: `${base}?page=${page}`,
+    type: "OrderedCollectionPage",
+    partOf: base,
+    totalItems: shared.length,
+    next: (page + 1) * DIRECTORY_PAGE < shared.length ? `${base}?page=${page + 1}` : undefined,
+    orderedItems: await people(runtime, shared.slice(page * DIRECTORY_PAGE, (page + 1) * DIRECTORY_PAGE)),
+  };
+}
+
+/** One person here who shares something, at the id the directory gives them; null for anyone else. */
+export async function person(userId: string): Promise<unknown | null> {
+  const runtime = await getRuntime();
+  const shared = (await sharers()).find((row) => row.userId === userId);
+  const [found] = shared ? await people(runtime, [shared]) : [];
+  return found ? { "@context": CONTEXT, ...found } : null;
+}
+
+async function people(runtime: Runtime, shared: { userId: string; at: Date }[]): Promise<Record<string, unknown>[]> {
   const userIds = shared.map((row) => row.userId);
-  const [users, collections, models] = await Promise.all([
+  const [users, collections, modelCount] = await Promise.all([
     prisma.user.findMany({
       where: { id: { in: userIds } },
       select: {
@@ -101,13 +132,10 @@ export async function directory(): Promise<unknown> {
       },
     }),
     prisma.collection.groupBy({ by: ["userId"], where: { userId: { in: userIds }, isPublic: true }, _count: true }),
-    Promise.all(
-      userIds.map(async (userId) => [userId, await prisma.print.count({ where: await sharedModelsWhere(userId) })]),
-    ),
+    sharedModelCounts(userIds),
   ]);
   const byId = new Map(users.map((user) => [user.id, user]));
   const collectionCount = new Map(collections.map((row) => [row.userId, row._count]));
-  const modelCount = new Map(models as [string, number][]);
   const items = await Promise.all(
     shared.map(async ({ userId, at }) => {
       const user = byId.get(userId);
@@ -117,7 +145,13 @@ export async function directory(): Promise<unknown> {
       const ownCover = /^\/api\/covers\/([a-f0-9]{32}\.webp)$/.exec(cover.background_url ?? "")?.[1];
       const coverFile = ownCover ? coverPath(ownCover) : null;
       const avatar = await resolveAvatar(userId).catch(() => null);
-      const avatarVersion = avatar?.kind === "file" ? mtime(avatar.path) : avatar?.kind === "svg" ? "svg" : null;
+      // A drawn avatar is versioned by what's drawn, so a new one gets a new address and isn't shown from a cache.
+      const avatarVersion =
+        avatar?.kind === "file"
+          ? mtime(avatar.path)
+          : avatar?.kind === "svg"
+            ? crypto.createHash("sha256").update(avatar.svg).digest("hex").slice(0, 16)
+            : null;
       return {
         id,
         type: "Person",
@@ -145,14 +179,7 @@ export async function directory(): Promise<unknown> {
       };
     }),
   );
-  const orderedItems = items.filter(Boolean);
-  return {
-    "@context": CONTEXT,
-    id: `${runtime.origin}${AP_PREFIX}/directory`,
-    type: "OrderedCollection",
-    totalItems: orderedItems.length,
-    orderedItems,
-  };
+  return items.filter((item): item is NonNullable<typeof item> => item !== null);
 }
 
 /** A page of what one person shares of their models, the latest shared first; null for someone who shares none. */
@@ -231,10 +258,17 @@ export async function modelsPage(userId: string, page: number): Promise<unknown 
 /** One person's public collections, each with the models in it by their ids. */
 export async function collectionsOf(userId: string): Promise<unknown> {
   const runtime = await getRuntime();
-  const collections = await prisma.collection.findMany({
-    where: { userId, isPublic: true },
-    orderBy: { updatedAt: "desc" },
-    take: COLLECTIONS_LIMIT,
+  // The latest changed first, by the same measure as `updated` below: renamed, made public, or something filed in it.
+  const ranked = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT c.id FROM "Collection" c
+    LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
+    WHERE c."isPublic" AND c."userId" = ${userId}
+    GROUP BY c.id
+    ORDER BY GREATEST(c."updatedAt", COALESCE(MAX(i."createdAt"), c."updatedAt")) DESC, c.id
+    LIMIT ${COLLECTIONS_LIMIT}`;
+  const order = new Map(ranked.map((row, index) => [row.id, index]));
+  const found = await prisma.collection.findMany({
+    where: { id: { in: ranked.map((row) => row.id) } },
     select: {
       id: true,
       name: true,
@@ -243,6 +277,7 @@ export async function collectionsOf(userId: string): Promise<unknown> {
       items: { orderBy: { createdAt: "desc" }, select: { printId: true, createdAt: true } },
     },
   });
+  const collections = found.toSorted((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
   return {
     "@context": CONTEXT,
     id: `${actorUrl(runtime, userId)}/collections`,
