@@ -34,7 +34,7 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   },
   "GET /explore/elsewhere/person/:id/collections": {
     kind: "federates",
-    how: "A partner's person's public collections past their page's first, paged in from their collections (Group)",
+    how: "A partner's person's public collections past their page's first, paged in from their collections (thingport:Collection)",
   },
   "GET /explore/elsewhere/person/:id/models": {
     kind: "federates",
@@ -42,7 +42,7 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   },
   "GET /explore/elsewhere/model/:id": {
     kind: "federates",
-    how: "A partner's model as its Service said: pictures, description, files (Document attachments)",
+    how: "A partner's model as its thingport:Model said: pictures, description, files (Document attachments)",
   },
   "GET /explore/elsewhere/model/:id/files/:file/:filename": {
     kind: "federates",
@@ -62,7 +62,7 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   },
   "GET /explore/elsewhere/collection/:id": {
     kind: "federates",
-    how: "A partner's public collection as its Group said, with the models in it",
+    how: "A partner's public collection as its thingport:Collection said, with the models in it",
   },
   "GET /explore/elsewhere/media/:token": {
     kind: "federates",

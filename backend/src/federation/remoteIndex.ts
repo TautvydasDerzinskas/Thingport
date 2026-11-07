@@ -160,14 +160,22 @@ const collectionSchema = z.object({
   attributedTo: z.string(),
   source,
   updated: date,
-  // Its models by their ids: the first ones here, the rest at `next`.
+  // Its models by their ids: the first ones here, the rest at `next`; from an instance from before pages, all of them
+  // in a list. Missing or broken, they aren't known, and the ones kept from before stay.
   "thingport:models": z
-    .object({
-      first: z.object({
-        orderedItems: z.array(z.unknown()).transform((ids) => ids.filter((id): id is string => typeof id === "string")),
-        next: z.string().optional().catch(undefined),
+    .union([
+      z.object({
+        first: z.object({
+          orderedItems: z
+            .array(z.unknown())
+            .transform((ids) => ids.filter((id): id is string => typeof id === "string")),
+          next: z.string().optional().catch(undefined),
+        }),
       }),
-    })
+      z
+        .array(z.unknown())
+        .transform((ids) => ({ first: { orderedItems: ids.filter((id): id is string => typeof id === "string") } })),
+    ])
     .optional()
     .catch(undefined),
 });
@@ -265,7 +273,10 @@ export async function readModels(
     }
     for (const raw of body.orderedItems) {
       const parsed = modelSchema.safeParse(raw);
-      if (parsed.success && own(parsed.data.id)) models.push(parsed.data);
+      if (!parsed.success || !own(parsed.data.id)) continue;
+      // One past the cap: the rest aren't read, so those kept from before stay.
+      if (models.length >= MAX_MODELS) return { models, all: false };
+      models.push(parsed.data);
     }
     url = body.next;
   }
@@ -294,7 +305,9 @@ export async function readCollections(
     }
     for (const raw of body.orderedItems) {
       const parsed = collectionSchema.safeParse(raw);
-      if (!parsed.success || !own(parsed.data.id) || collections.length >= MAX_COLLECTIONS) continue;
+      if (!parsed.success || !own(parsed.data.id)) continue;
+      // One past the cap: not read, so the rest kept from before stay.
+      if (collections.length >= MAX_COLLECTIONS) return { collections, all: false };
       collections.push({ ...parsed.data, ...(await readModelIds(read, parsed.data["thingport:models"]?.first, own)) });
     }
     url = body.next;
@@ -308,8 +321,9 @@ async function readModelIds(
   first: { orderedItems: string[]; next?: string } | undefined,
   own: (url: string | undefined) => url is string,
 ): Promise<{ modelIds: string[]; allIds: boolean }> {
-  const ids = (first?.orderedItems ?? []).filter((id) => own(id));
-  let url = first?.next;
+  if (!first) return { modelIds: [], allIds: false };
+  const ids = first.orderedItems.filter((id) => own(id));
+  let url = first.next;
   for (let page = 0; url && ids.length < MAX_COLLECTION_MODELS; page++) {
     if (!own(url) || page === MAX_ID_PAGES) return { modelIds: ids, allIds: false };
     let body: z.infer<typeof pageSchema>;

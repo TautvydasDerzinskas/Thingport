@@ -74,6 +74,11 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
   // Their collections past the first page, read as the list is scrolled; a page read again starts from its first.
   const [loadingCollections, setLoadingCollections] = useState(false);
   const [collectionsFailed, setCollectionsFailed] = useState(false);
+  // How many have come from the server, apart from how many show (one shown already isn't twice), and whether it has
+  // more; paging waits while the page is read again, which starts it over.
+  const [collectionsFrom, setCollectionsFrom] = useState(0);
+  const [collectionsMore, setCollectionsMore] = useState(false);
+  const [rereading, setRereading] = useState(false);
 
   const read = useCallback(
     function readPage(asked: string, fresh: boolean) {
@@ -81,12 +86,14 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
       if (fresh) setPage(null);
       setLoadingCollections(false);
       setCollectionsFailed(false);
+      setRereading(true);
       setNotFound(false);
       setFailed(false);
       setOff(false);
       socialApi.user(asked).then(
         (value) => {
           if (reading !== latest.current) return;
+          setRereading(false);
           if (!value) {
             // Not under the header of whoever was shown before.
             setPage(null);
@@ -95,9 +102,12 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
           }
           shownFor.current = asked;
           setPage(value);
+          setCollectionsFrom(value.collections.length);
+          setCollectionsMore(value.collections.length < value.collections_total);
         },
         (err) => {
           if (reading !== latest.current) return;
+          setRereading(false);
           if (err instanceof UnauthorizedError) onUnauthorized?.();
           else if (err instanceof SocialOffError) {
             setPage(null);
@@ -137,7 +147,7 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
     if (userId) read(userId, false);
   };
 
-  const moreCollections = page !== null && page.collections.length < page.collections_total;
+  const moreCollections = page !== null && collectionsMore && !rereading;
   const loadMoreCollections = async () => {
     if (!page || loadingCollections || !moreCollections || collectionsFailed) return;
     const reading = latest.current;
@@ -145,17 +155,19 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
     try {
       const next = await socialApi.userCollections(page.user.id, {
         limit: COLLECTIONS_PAGE,
-        offset: page.collections.length,
+        offset: collectionsFrom,
       });
       if (reading !== latest.current) return;
       // None any more: the page is read again, to say what's there now.
       if (!next) return refresh();
+      setCollectionsFrom(collectionsFrom + next.items.length);
+      setCollectionsMore(next.hasMore && next.items.length > 0);
       setPage((prev) => {
         if (!prev) return prev;
         // One already shown, moved along by a change meanwhile, isn't shown twice.
         const shown = new Set(prev.collections.map((collection) => collection.id));
         const collections = [...prev.collections, ...next.items.filter((collection) => !shown.has(collection.id))];
-        return { ...prev, collections, collections_total: next.hasMore ? next.total : collections.length };
+        return { ...prev, collections };
       });
     } catch (err) {
       if (reading !== latest.current) return;
