@@ -2600,7 +2600,7 @@
         },
         "federation": {
           "label": "Sujungti serveriai",
-          "summary": "Susiekite su kitais Thingport serveriais, kad jų žmonės matytųsi skiltyse Naršyti ir Pokalbiai.",
+          "summary": "Susiekite su kitais Thingport serveriais, kad jų žmonės ir tai, kuo jie dalijasi, matytųsi skiltyje Naršyti.",
           "infoTitle": "Ką daro serverių sujungimas",
           "infoPair": "Kiti Thingport serveriai, su kuriais susijungiate, tampa partneriais: jų žmonės, viešos kolekcijos ir modeliai matomi čia lyg būtų šiame serveryje, o jūsų – ten.",
           "infoApprove": "Kiekvieną serverį patvirtinate prieš jam prisijungiant. Jūsų naudotojai gali paprašyti prisijungti prie kurio nors.",

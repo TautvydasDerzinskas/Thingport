@@ -9,7 +9,7 @@ import { prisma } from "../src/db";
 import { enqueueActivity, tick } from "../src/federation/delivery";
 import { canonicalHeaders, keyIdOf } from "../src/federation/edge";
 import { getInstanceKeys } from "../src/federation/keys";
-import { onAcceptReceived, onDisconnectReceived } from "../src/federation/peers";
+import { MAX_NEW_INCOMING_PER_HOUR, onAcceptReceived, onDisconnectReceived } from "../src/federation/peers";
 import { onlyComparedKeys, publishedKeys } from "../src/federation/pinning";
 import { invalidateAllowlist } from "../src/federation/allowlist";
 import { probeProof } from "../src/federation/reachability";
@@ -457,6 +457,32 @@ describe("connected instances, on", () => {
     // A few per address; past that it's told to try again later, which its delivery does.
     expect((await inbox(from, follow(from))).status).toBe(202);
     expect((await inbox(from, follow(from))).status).toBe(429);
+  });
+
+  it("takes no more than a few new instances' requests an hour", async () => {
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recent = await prisma.peerRequest.count({ where: { kind: "INCOMING", createdAt: { gte: hourAgo } } });
+    // Invented addresses, as one sender could make up: the hour's worth, then one more.
+    const invented = Array.from(
+      { length: Math.max(0, MAX_NEW_INCOMING_PER_HOUR - recent) },
+      (_, n) => `http://198.51.100.${120 + n}`,
+    );
+    await prisma.peerRequest.createMany({
+      data: invented.map((origin) => ({ kind: "INCOMING", origin, url: `${ORIGIN}/api/ap/inbox`, activity: "{}" })),
+    });
+    try {
+      expect((await inbox("http://198.51.100.150", follow("http://198.51.100.150"))).status).toBe(429);
+      // An hour on, there's room again; and an instance already asking can still send another.
+      await prisma.peerRequest.updateMany({
+        where: { kind: "INCOMING", createdAt: { gte: hourAgo } },
+        data: { createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+      });
+      expect((await inbox("http://198.51.100.150", follow("http://198.51.100.150"))).status).toBe(202);
+    } finally {
+      await prisma.peerRequest.deleteMany({
+        where: { origin: { in: [...invented, "http://198.51.100.150"] } },
+      });
+    }
   });
 
   it("shows our own request to connect while it stands, and nothing else", async () => {

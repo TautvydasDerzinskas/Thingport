@@ -57,7 +57,9 @@ Two instance actors, one `Follow` and one `Accept`:
 1. Admin A looks B up (`GET /api/ap/instance` and B's actor), compares B's fingerprint with B's admin, and connects:
    a `Peer` (`OUTGOING`) and a `Follow` from A's instance actor, with the note as `content`.
 2. B's edge filter keeps it as a `PeerRequest` without fetching anything, and notifies B's admins. Another one under
-   A's address is kept beside it, a few at most: anyone can send one claiming to be A.
+   A's address is kept beside it, a few at most: anyone can send one claiming to be A. Nothing in one can be checked
+   before an admin opens it (that would fetch from wherever a stranger says), so no more than 10 new instances'
+   requests are taken an hour, and 50 waiting in all.
 3. B's admin opens it: only now does B look A up, and check A's requests newest first against the key in that lookup
    (any age: the handshake after it proves both sides are live) and against `GET /api/ap/follows/<id>` on A, which
    answers only while A's request stands. The first that passes is the request; forged and withdrawn ones are dropped.

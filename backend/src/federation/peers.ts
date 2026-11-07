@@ -21,6 +21,9 @@ type CryptoKey = webcrypto.CryptoKey;
 const MAX_PENDING_INCOMING = 50;
 // A few per instance: a forged one under its address can't push out the one it really sent.
 const MAX_PENDING_PER_ORIGIN = 3;
+// New instances asking, an hour: a request can't be checked before an admin opens it (that would fetch from wherever a
+// stranger says), so one sender inventing addresses fills the list, and admins' notifications, no faster than this.
+export const MAX_NEW_INCOMING_PER_HOUR = 10;
 const REQUESTS_LOCK = 74_210_305;
 const MAX_NOTE = 1000;
 
@@ -402,8 +405,14 @@ export async function storeIncomingRequest(params: {
     const fromOrigin = await tx.peerRequest.count({ where: { ...waiting, origin: params.origin } });
     // Full: the sender is told to try again later, and its delivery does, for days.
     if (fromOrigin >= MAX_PENDING_PER_ORIGIN) return { kind: "full" as const };
-    if (fromOrigin === 0 && (await tx.peerRequest.count({ where: waiting })) >= MAX_PENDING_INCOMING) {
-      return { kind: "full" as const };
+    if (fromOrigin === 0) {
+      const [all, lastHour] = await Promise.all([
+        tx.peerRequest.count({ where: waiting }),
+        tx.peerRequest.count({
+          where: { kind: "INCOMING", createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) } },
+        }),
+      ]);
+      if (all >= MAX_PENDING_INCOMING || lastHour >= MAX_NEW_INCOMING_PER_HOUR) return { kind: "full" as const };
     }
     const created = await tx.peerRequest.create({ data });
     return { kind: fromOrigin ? ("another" as const) : ("stored" as const), id: created.id };

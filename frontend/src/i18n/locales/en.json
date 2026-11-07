@@ -2504,7 +2504,7 @@
         },
         "federation": {
           "label": "Connected instances",
-          "summary": "Pair with other Thingport instances, so their people show up in Explore and Chats.",
+          "summary": "Pair with other Thingport instances, so their people and what they share show up in Explore.",
           "infoTitle": "What connecting instances does",
           "infoPair": "Other Thingport instances you connect with become partners: their people, public collections and models show up here as if they were on this instance, and yours there.",
           "infoApprove": "You approve every instance before it connects. Your users can ask you to connect with one.",

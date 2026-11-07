@@ -2544,7 +2544,7 @@
         },
         "federation": {
           "label": "Instancias conectadas",
-          "summary": "Conéctate con otras instancias de Thingport, para que sus usuarios aparezcan en Explorar y en Chats.",
+          "summary": "Conéctate con otras instancias de Thingport, para que sus usuarios y lo que comparten aparezcan en Explorar.",
           "infoTitle": "Qué hace conectar instancias",
           "infoPair": "Las instancias de Thingport con las que te conectas pasan a ser asociadas: sus usuarios, colecciones públicas y modelos aparecen aquí como si estuvieran en esta instancia, y los tuyos allí.",
           "infoApprove": "Apruebas cada instancia antes de que se conecte. Tus usuarios pueden pedirte que te conectes con una.",

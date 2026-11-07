@@ -2544,7 +2544,7 @@
         },
         "federation": {
           "label": "Instances connectées",
-          "summary": "Connectez-vous à d'autres instances Thingport, pour que leurs utilisateurs apparaissent dans Explorer et Discussions.",
+          "summary": "Connectez-vous à d'autres instances Thingport, pour que leurs utilisateurs et ce qu'ils partagent apparaissent dans Explorer.",
           "infoTitle": "Ce que fait la connexion d'instances",
           "infoPair": "Les instances Thingport avec lesquelles vous vous connectez deviennent partenaires : leurs utilisateurs, collections publiques et modèles apparaissent ici comme s'ils étaient sur cette instance, et les vôtres là-bas.",
           "infoApprove": "Vous approuvez chaque instance avant qu'elle se connecte. Vos utilisateurs peuvent vous demander de vous connecter à l'une d'elles.",
