@@ -5,11 +5,10 @@
   <img src=".github/assets/thingport-ascii-light.gif" alt="Thingport" width="320">
 </picture>
 
-<h3>Your personal 3D model library.</h3>
+<h3>Keep every model that matters.</h3>
 
 <p>
-Collect, organize, preview, and manage your 3D printing models<br>
-from the places where you discover them.
+A self-hosted library that imports, organises, designs, and never loses your favourites 3d print models.
 </p>
 
 <p>
@@ -20,12 +19,12 @@ from the places where you discover them.
 </p>
 
 <p>
-  <a href="https://thingport.net/"><img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/web-pages.yml/badge.svg" alt="Website build"></a>
-  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/frontend-image.yml/badge.svg" alt="Frontend">
-  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml/badge.svg" alt="Backend">
-  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml/badge.svg" alt="Slicer Bridge">
-  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/extension-release.yml/badge.svg" alt="Thingport Grab">
-  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml"><img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml/badge.svg" alt="Regression pack"></a>
+  <a href="https://thingport.net/"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fweb-pages.json" alt="Website: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/frontend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Ffrontend-image.json" alt="Frontend: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fbackend-image.json" alt="Backend: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fbridge-release.json" alt="Bridge: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/extension-release.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fextension-release.json" alt="Extension: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Fbadges%2Fregression.json" alt="Regression: latest build"></a>
 </p>
 
 </div>
@@ -51,22 +50,17 @@ Your collection stays yours — offline, organised, and ready whenever you need 
 
 ## Installation
 
-> Step-by-step guides for Docker Compose, Unraid, TrueNAS SCALE and CasaOS are also on the
-> **[Thingport website](https://thingport.net/docs/)**.
+<p align="center">
+  <a href="docs/install/unraid/README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/install-unraid-dark.webp"><img src="docs/assets/readme/install-unraid-light.webp" width="263" alt="Install on Unraid"></picture></a>
+  <a href="docs/install/truenas/README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/install-truenas-dark.webp"><img src="docs/assets/readme/install-truenas-light.webp" width="263" alt="Install on TrueNAS SCALE"></picture></a>
+  <a href="docs/install/casaos/README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/install-casaos-dark.webp"><img src="docs/assets/readme/install-casaos-light.webp" width="263" alt="Install on CasaOS"></picture></a>
+</p>
+
+These guides, and the one for Docker Compose below, are also on the **[Thingport website](https://thingport.net/docs/)**.
 
 ### Docker Compose
 
 Runs entirely from the pre-built images on GHCR -- no local build, no git clone needed. Works on any Docker host, including a NAS (Synology, QNAP, Unraid, etc).
-
-> **Unraid users:** see [docs/install/unraid/README.md](docs/install/unraid/README.md) for an Unraid-flavored compose
-> file (appdata paths, Docker tab icons/WebUI) and Compose plugin setup steps.
->
-> **TrueNAS SCALE users:** see [docs/install/truenas/README.md](docs/install/truenas/README.md) for a TrueNAS-flavored
-> compose file (dataset-backed appdata paths) and both the Custom App (YAML) and SSH setup
-> steps.
->
-> **CasaOS users:** see [docs/install/casaos/README.md](docs/install/casaos/README.md) for a CasaOS-flavored compose
-> file (`/DATA/AppData` appdata paths) and both the customized-app and SSH setup steps.
 
 Create a folder for Thingport and add these two files to it:
 

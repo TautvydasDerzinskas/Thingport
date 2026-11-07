@@ -422,6 +422,8 @@
           '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 5V4c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v1h-1v4c0 .55.45 1 1 1h1v7c0 1.1-.9 2-2 2s-2-.9-2-2V7c0-2.21-1.79-4-4-4S5 4.79 5 7v7H4c-.55 0-1 .45-1 1v4h1v1c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-1h1v-4c0-.55-.45-1-1-1H7V7c0-1.1.9-2 2-2s2 .9 2 2v10c0 2.21 1.79 4 4 4s4-1.79 4-4v-7h1c.55 0 1-.45 1-1V5h-1z"/></svg>',
       };
       const BROWSERS = { chrome: "Chrome", firefox: "Firefox", edge: "Edge" };
+      // The platforms with a guide of their own (docs/install/), their logos in docs/assets/platforms.
+      const PLATFORMS = { unraid: "Unraid", truenas: "TrueNAS SCALE", casaos: "CasaOS" };
       // The slicers whose own links Bridge stands in for (bridge/README.md).
       const SLICERS = `<div class="slicers">${["Bambu Studio", "PrusaSlicer", "Cura", "Anycubic Slicer Next"]
         .map((name) => `<span>${name}</span>`)
@@ -436,6 +438,9 @@
         logo(`frontend/src/assets/logos/thingport-icon-${theme === "dark" ? "on-dark" : "color"}.svg`);
       const copy = ({ eyebrow, title, text, button }) =>
         `<div class="copy"><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${text}</p><span class="button">${button}</span></div>`;
+      // A small button: a logo, a line saying what it does and the name under it (the store buttons, the install ones).
+      const button = (logoFile, what, name) =>
+        `<div class="art badge">${logo(logoFile)}<span class="label"><small>${what}</small><b>${name}</b></span><span class="go">→</span></div>`;
 
       const ART = {
         "demo-video": (theme) =>
@@ -483,8 +488,13 @@
         ...Object.fromEntries(
           Object.entries(BROWSERS).map(([id, name]) => [
             `grab-${id}`,
-            () =>
-              `<div class="art badge">${logo(`frontend/src/assets/logos/browsers/${id}.svg`)}<span class="label"><small>Thingport Grab for</small><b>${name}</b></span><span class="go">→</span></div>`,
+            () => button(`frontend/src/assets/logos/browsers/${id}.svg`, "Thingport Grab for", name),
+          ]),
+        ),
+        ...Object.fromEntries(
+          Object.entries(PLATFORMS).map(([id, name]) => [
+            `install-${id}`,
+            () => button(`docs/assets/platforms/${id}.svg`, "Install on", name),
           ]),
         ),
       };
