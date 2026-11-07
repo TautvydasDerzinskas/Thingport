@@ -106,7 +106,7 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
         onUnauthorized?.();
         return;
       }
-      // Checked again on turning on, and its Public URL is gone or points at this machine now: the new result says so.
+      // Checked again on turning on, and its Public URL is gone or reserved now: the new result says so.
       if (err instanceof FederationError && (err.code === "no_public_url" || err.code === "reserved_address")) {
         await check();
         return;
@@ -158,12 +158,17 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
             : t(key("leadsElsewhereDetail")),
         });
       } else if (kind === "public_unverified") {
-        rows.push({
-          tone: "warning",
-          icon: <ReportProblemOutlinedIcon />,
-          label: t(key("noLoopback")),
-          detail: t(key("noLoopbackDetail")),
-        });
+        // A redirect or a certificate is something to fix, whoever answered; silence may just be the router.
+        rows.push(
+          result.reason === "redirect" || result.reason === "certificate"
+            ? { ...failureRow(result, result.url), tone: "warning", icon: <ReportProblemOutlinedIcon /> }
+            : {
+                tone: "warning",
+                icon: <ReportProblemOutlinedIcon />,
+                label: t(key("noLoopback")),
+                detail: t(key("noLoopbackDetail")),
+              },
+        );
       } else {
         rows.push(failureRow(result, result.url));
       }

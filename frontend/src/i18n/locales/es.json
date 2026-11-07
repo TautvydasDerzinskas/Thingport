@@ -2589,7 +2589,7 @@
             "noLoopback": "No respondió desde aquí",
             "noLoopbackDetail": "Algunos routers no alcanzan su propia dirección pública",
             "failure": {
-              "reserved": "Apunta a esta máquina",
+              "reserved": "Es esta máquina o un rango reservado",
               "notFound": "Su nombre no se resuelve aquí",
               "notFoundDetail": "Esta instancia no encuentra {{host}}",
               "timeout": "No responde",
@@ -2612,7 +2612,7 @@
             "linksOnlyText": "Otras instancias no pueden llegar a esta en su URL pública. Aun así puede conectarse a las que alcanza, manteniendo un enlace abierto con cada una.",
             "unreachableTitle": "Inalcanzable",
             "notSetText": "Define primero la URL pública de esta instancia: allí la alcanzan las demás.",
-            "reservedText": "Su URL pública apunta a esta máquina, y para cualquier otra instancia esa dirección es ella misma. Define la dirección que tiene en tu red.",
+            "reservedText": "Su URL pública es esta máquina o un rango reservado, al que otras instancias nunca se conectan: para cada una, localhost es ella misma. Define la dirección que tiene en tu red.",
             "publicUrlButton": "URL pública",
             "youApprove": "Apruebas cada instancia antes de que se conecte, y puedes pausarla o bloquearla cuando quieras.",
             "helpApprove": "Las solicitudes de otras instancias esperan aquí a un administrador, igual que las de tus usuarios para llegar a alguien de fuera.",
@@ -2652,7 +2652,7 @@
           "errors": {
             "invalid_address": "Esa no es la dirección de una instancia.",
             "no_public_url": "Define primero la URL pública de esta instancia: las demás la conocen por ella.",
-            "reserved_address": "La URL pública de esta instancia apunta a esta máquina. Define la dirección que tiene en tu red.",
+            "reserved_address": "La URL pública de esta instancia es esta máquina o un rango reservado. Define la dirección que tiene en tu red.",
             "same_instance": "Esa es esta instancia.",
             "unreachable": "Esa instancia no respondió. ¿Es correcta la dirección y puede esta instancia llegar a ella? Si está en la red doméstica de alguien, pide a su administrador que se conecte a la tuya.",
             "not_thingport": "Esa no es una instancia de Thingport.",

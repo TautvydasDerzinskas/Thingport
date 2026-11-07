@@ -2589,7 +2589,7 @@
             "noLoopback": "Pas de réponse depuis ici",
             "noLoopbackDetail": "Certains routeurs ne joignent pas leur propre adresse publique",
             "failure": {
-              "reserved": "Elle pointe vers cette machine",
+              "reserved": "C'est cette machine ou une plage réservée",
               "notFound": "Son nom ne se résout pas ici",
               "notFoundDetail": "Cette instance ne trouve pas {{host}}",
               "timeout": "Pas de réponse",
@@ -2612,7 +2612,7 @@
             "linksOnlyText": "Les autres instances ne peuvent pas joindre celle-ci à son URL publique. Elle peut quand même se connecter à celles qu'elle joint, en gardant un lien ouvert vers chacune.",
             "unreachableTitle": "Injoignable",
             "notSetText": "Définissez d'abord l'URL publique de cette instance : c'est là que les autres la joignent.",
-            "reservedText": "Son URL publique pointe vers cette machine, et pour toute autre instance cette adresse la désigne elle-même. Indiquez l'adresse qu'elle a sur votre réseau.",
+            "reservedText": "Son URL publique est cette machine ou une plage réservée, à laquelle les autres instances ne se connectent jamais : pour chacune, localhost la désigne elle-même. Indiquez l'adresse qu'elle a sur votre réseau.",
             "publicUrlButton": "URL publique",
             "youApprove": "Vous approuvez chaque instance avant qu'elle se connecte, et pouvez en mettre une en pause ou la bloquer à tout moment.",
             "helpApprove": "Les demandes des autres instances attendent ici un administrateur, comme celles de vos utilisateurs pour joindre quelqu'un ailleurs.",
@@ -2652,7 +2652,7 @@
           "errors": {
             "invalid_address": "Ce n'est pas l'adresse d'une instance.",
             "no_public_url": "Définissez d'abord l'URL publique de cette instance : c'est par elle que les autres la connaissent.",
-            "reserved_address": "L'URL publique de cette instance pointe vers cette machine. Indiquez l'adresse qu'elle a sur votre réseau.",
+            "reserved_address": "L'URL publique de cette instance est cette machine ou une plage réservée. Indiquez l'adresse qu'elle a sur votre réseau.",
             "same_instance": "C'est cette instance.",
             "unreachable": "Cette instance n'a pas répondu. L'adresse est-elle juste, et cette instance peut-elle la joindre ? Si elle est sur le réseau domestique de quelqu'un, demandez à son administrateur de se connecter à la vôtre.",
             "not_thingport": "Ce n'est pas une instance Thingport.",

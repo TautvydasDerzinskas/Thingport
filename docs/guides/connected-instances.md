@@ -36,13 +36,13 @@ could reach it, without asking anyone outside:
 
 The result is one of:
 
-| Result                                  | Meaning                                                                                                                                                                                      |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Local network only**                  | Instances on your network or VPN can connect. Instances on the internet can't reach it, but it can still connect to them through a link.                                                     |
-| **Reachable, not confirmed yet**        | A public address that answered. Instances on the internet should reach it, if your router or proxy lets them in. The first partner that reaches it confirms it, and the status then says so. |
-| **Public, but it didn't answer itself** | A public address that didn't answer from inside. Some routers can't reach their own public address; outside instances may still reach it. The first connection will tell.                    |
-| **Links only**                          | Nothing answered at the Public URL, or something else did. Other instances can't connect to this one, but it can still connect to the ones it reaches, keeping a link open to each.          |
-| **Not reachable**                       | There's no Public URL, or it points at this machine (`localhost`, `127.0.0.1`). It can't be turned on until that's fixed.                                                                    |
+| Result                                  | Meaning                                                                                                                                                                                                        |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Local network only**                  | Instances on your network or VPN can connect. Instances on the internet can't reach it, but it can still connect to them through a link.                                                                       |
+| **Reachable, not confirmed yet**        | A public address that answered. Instances on the internet should reach it, if your router or proxy lets them in. The first partner that reaches it confirms it, and the status then says so.                   |
+| **Public, but it didn't answer itself** | A public address that didn't answer from inside. Some routers can't reach their own public address; outside instances may still reach it. The first connection will tell.                                      |
+| **Links only**                          | Nothing answered at the Public URL, or something else did. Other instances can't connect to this one, but it can still connect to the ones it reaches, keeping a link open to each.                            |
+| **Not reachable**                       | There's no Public URL, or it's this machine (`localhost`, `127.0.0.1`) or a reserved range such as link-local `169.254.x.x`, which other instances never connect to. It can't be turned on until that's fixed. |
 
 When the Public URL didn't lead back here, the check says what it found: nothing answering within 8 seconds, a name
 this instance can't look up, a refused connection, a certificate it doesn't trust, a redirect (instances don't follow

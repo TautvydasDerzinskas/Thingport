@@ -139,16 +139,19 @@ describe("connected instances, off", () => {
     }
   });
 
-  it("won't turn on without a Public URL, or with one on this machine", async () => {
+  it("won't turn on without a Public URL, or with one on this machine or in a reserved range", async () => {
     await setSocialSettings({ enabled: true });
     await setPublicUrl(null);
     const unset = await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: true });
     expect(unset.status).toBe(409);
     expect(unset.body.code).toBe("no_public_url");
-    await setPublicUrl("http://127.0.0.1:8000");
-    const here = await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: true });
-    expect(here.status).toBe(422);
-    expect(here.body.code).toBe("reserved_address");
+    // Link-local isn't this machine, but no instance connects there either.
+    for (const url of ["http://127.0.0.1:8000", "http://169.254.1.2:8000"]) {
+      await setPublicUrl(url);
+      const here = await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: true });
+      expect(here.status).toBe(422);
+      expect(here.body.code).toBe("reserved_address");
+    }
     expect((await getFederationSettings()).enabled).toBe(false);
     await updateFederationSettings({ reachability: null });
   });

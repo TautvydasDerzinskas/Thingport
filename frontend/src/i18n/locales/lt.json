@@ -2646,7 +2646,7 @@
             "noLoopback": "Iš čia neatsakė",
             "noLoopbackDetail": "Kai kurie maršrutizatoriai nepasiekia savo viešo adreso",
             "failure": {
-              "reserved": "Jis nurodo į šį kompiuterį",
+              "reserved": "Tai šis kompiuteris arba rezervuotas diapazonas",
               "notFound": "Jo vardas čia nerandamas",
               "notFoundDetail": "Šis serveris neranda {{host}}",
               "timeout": "Neatsako",
@@ -2669,7 +2669,7 @@
             "linksOnlyText": "Kiti serveriai šio nepasiekia viešu adresu. Jis vis tiek gali jungtis prie tų, kuriuos pasiekia, laikydamas atvirą ryšį su kiekvienu.",
             "unreachableTitle": "Nepasiekiamas",
             "notSetText": "Pirmiausia nustatykite šio serverio viešą adresą: juo jį pasiekia kiti serveriai.",
-            "reservedText": "Jo viešas adresas nurodo į šį kompiuterį, o bet kuriam kitam serveriui tas adresas reiškia jį patį. Nustatykite adresą, kurį jis turi jūsų tinkle.",
+            "reservedText": "Jo viešas adresas yra šis kompiuteris arba rezervuotas diapazonas, prie kurio kiti serveriai niekada nesijungia: kiekvienam iš jų localhost reiškia jį patį. Nustatykite adresą, kurį jis turi jūsų tinkle.",
             "publicUrlButton": "Viešas adresas",
             "youApprove": "Kiekvieną serverį patvirtinate prieš jam prisijungiant ir bet kada galite jį pristabdyti ar užblokuoti.",
             "helpApprove": "Kitų serverių prašymai laukia administratoriaus čia, kaip ir jūsų naudotojų prašymai pasiekti ką nors kitur.",
@@ -2709,7 +2709,7 @@
           "errors": {
             "invalid_address": "Tai ne serverio adresas.",
             "no_public_url": "Pirmiausia nustatykite šio serverio viešą adresą: juo jį pažįsta kiti serveriai.",
-            "reserved_address": "Šio serverio viešas adresas nurodo į šį kompiuterį. Nustatykite adresą, kurį jis turi jūsų tinkle.",
+            "reserved_address": "Šio serverio viešas adresas yra šis kompiuteris arba rezervuotas diapazonas. Nustatykite adresą, kurį jis turi jūsų tinkle.",
             "same_instance": "Tai šis serveris.",
             "unreachable": "Tas serveris neatsakė. Ar adresas teisingas ir ar šis serveris jį pasiekia? Jei jis kieno nors namų tinkle, paprašykite jo administratoriaus prisijungti prie jūsų.",
             "not_thingport": "Tai ne Thingport serveris.",

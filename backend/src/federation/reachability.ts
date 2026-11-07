@@ -129,8 +129,8 @@ export async function checkReachability(deps: Deps = {}): Promise<Reachability> 
 }
 
 /** Whether a result lets federation be turned on. One that nothing reaches at its Public URL still connects to the
- *  instances it reaches, keeping a link open to each, but it needs an address to be known by that isn't this machine:
- *  that one means every instance itself. */
+ *  instances it reaches, keeping a link open to each, but it needs an address to be known by that isn't this machine
+ *  or a reserved range: no other instance connects to those. */
 export function canTurnOn(reachability: Pick<Reachability, "kind" | "reason">): boolean {
   return reachability.kind !== "not_set" && reachability.reason !== "reserved";
 }

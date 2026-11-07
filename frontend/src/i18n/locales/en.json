@@ -2548,7 +2548,7 @@
             "noLoopback": "It didn't answer from here",
             "noLoopbackDetail": "Some routers can't reach their own public address",
             "failure": {
-              "reserved": "It points at this machine",
+              "reserved": "It's this machine or a reserved range",
               "notFound": "Its name doesn't resolve here",
               "notFoundDetail": "This instance can't look up {{host}}",
               "timeout": "It doesn't answer",
@@ -2571,7 +2571,7 @@
             "linksOnlyText": "Other instances can't reach this one at its Public URL. It can still connect to the ones it reaches, keeping a link open to each.",
             "unreachableTitle": "Not reachable",
             "notSetText": "Set this instance's Public URL first: other instances reach it there.",
-            "reservedText": "Its Public URL points at this machine, and to any other instance that address means itself. Set the address it has on your network.",
+            "reservedText": "Its Public URL is this machine or a reserved range, which other instances never connect to: to each of them, localhost is itself. Set the address it has on your network.",
             "publicUrlButton": "Public URL",
             "youApprove": "You approve every instance before it connects, and can pause or block one any time.",
             "helpApprove": "Other instances' requests wait here for an admin, and so do your users' requests to reach someone elsewhere.",
@@ -2611,7 +2611,7 @@
           "errors": {
             "invalid_address": "That isn't an instance's address.",
             "no_public_url": "Set this instance's Public URL first: other instances know it by that.",
-            "reserved_address": "This instance's Public URL points at this machine. Set the address it has on your network.",
+            "reserved_address": "This instance's Public URL is this machine or a reserved range. Set the address it has on your network.",
             "same_instance": "That's this instance.",
             "unreachable": "That instance didn't answer. Is the address right, and can this instance reach it? If it's on someone's home network, ask its admin to connect to yours instead.",
             "not_thingport": "That isn't a Thingport instance.",

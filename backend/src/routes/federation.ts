@@ -90,7 +90,11 @@ router.patch(
       if (!canTurnOn(reachability)) {
         throw reachability.kind === "not_set"
           ? new HttpError(409, "Set this instance's Public URL first: partners know it by that", "no_public_url")
-          : new HttpError(422, "This instance's Public URL points at this machine", "reserved_address");
+          : new HttpError(
+              422,
+              "This instance's Public URL is this machine or a reserved range, which other instances never connect to",
+              "reserved_address",
+            );
       }
       await getInstanceKeys();
       await updateFederationSettings({ enabled: true });
