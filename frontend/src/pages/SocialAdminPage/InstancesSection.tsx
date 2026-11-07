@@ -20,6 +20,7 @@ import BlockIcon from "@mui/icons-material/Block";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import KeyOutlinedIcon from "@mui/icons-material/KeyOutlined";
+import LinkIcon from "@mui/icons-material/Link";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PauseIcon from "@mui/icons-material/Pause";
@@ -187,6 +188,11 @@ export default function InstancesSection({ onUnauthorized }: Props) {
                     : t(k("askedByAdmin")),
                   ago(request.createdAt),
                 ]}
+                status={
+                  request.link ? (
+                    <LinkChip side="theirs" open={request.linkOpen} name={request.name} ago={ago} />
+                  ) : undefined
+                }
                 trailing={
                   <Tooltip title={open === request.id ? t(k("hide")) : t(k("review"))}>
                     <IconButton
@@ -361,10 +367,44 @@ function Row({
             “{note}”
           </Typography>
         )}
+        {/* On a phone the chips go under the text, which keeps the width to itself. */}
+        {status && <Box sx={{ display: { xs: "flex", sm: "none" }, pt: 0.5 }}>{status}</Box>}
       </Stack>
-      {status}
+      {status && <Box sx={{ display: { xs: "none", sm: "flex" } }}>{status}</Box>}
       {trailing}
     </Stack>
+  );
+}
+
+/** 2A: how a partner reached through a link stands, the link this instance keeps or the one it keeps here. */
+function LinkChip({
+  side,
+  open,
+  seenAt,
+  name,
+  ago,
+}: {
+  side: "ours" | "theirs";
+  open: boolean | null;
+  seenAt?: string | null;
+  name: string;
+  ago: (iso: string | null) => string | null;
+}) {
+  const { t } = useTranslation(["app", "common"]);
+  const label =
+    side === "ours"
+      ? t(k(open ? "linkOursOpen" : "linkOursClosed"))
+      : open
+        ? t(k("linkTheirsOpen"))
+        : seenAt
+          ? t(k("linkTheirsClosedSince"), { when: ago(seenAt) })
+          : t(k("linkTheirsClosed"));
+  return (
+    <Tooltip title={t(k(side === "ours" ? "linkOursHelp" : "linkTheirsHelp"), { name })}>
+      <span style={{ display: "inline-flex" }}>
+        <ToneChip tone={open ? "success" : "warning"} icon={<LinkIcon />} label={label} />
+      </span>
+    </Tooltip>
   );
 }
 
@@ -469,6 +509,22 @@ function OutgoingRow({ peer, ago, onChanged, onUnauthorized }: RowProps) {
       name={peer.name}
       http={peer.http}
       line={[t(k("waitingForThem")), ago(peer.createdAt), peer.lastError && peer.pending ? t(k("notDelivered")) : null]}
+      status={
+        peer.addressTaken || peer.link ? (
+          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
+            {peer.addressTaken && (
+              <Tooltip title={t(k("addressTakenHelp"), { name: peer.name })}>
+                <span style={{ display: "inline-flex" }}>
+                  <ToneChip tone="warning" label={t(k("addressTaken"))} />
+                </span>
+              </Tooltip>
+            )}
+            {peer.link && !peer.addressTaken && (
+              <LinkChip side={peer.link} open={peer.linkOpen} seenAt={peer.linkSeenAt} name={peer.name} ago={ago} />
+            )}
+          </Stack>
+        ) : undefined
+      }
       trailing={
         <Button size="small" color="inherit" variant="outlined" onClick={() => void cancel()}>
           {t(k("cancel"))}
@@ -484,8 +540,9 @@ function PartnerRow({ peer, ago, onChanged, onShowKey, onUnauthorized }: RowProp
   const act = useAct(onChanged, onUnauthorized);
   const [anchor, setAnchor] = React.useState<{ el?: HTMLElement; x?: number; y?: number } | null>(null);
   const close = () => setAnchor(null);
-  const unreachable = Boolean(peer.lastError && peer.pending > 0);
-  const status =
+  // A closed link says so itself: not "can't reach it" as well.
+  const unreachable = Boolean(peer.lastError && peer.pending > 0) && !peer.link;
+  const state =
     peer.status === "PAUSED" ? (
       <ToneChip tone="neutral" icon={<PauseIcon />} label={t(k("paused"))} />
     ) : unreachable ? (
@@ -497,6 +554,14 @@ function PartnerRow({ peer, ago, onChanged, onShowKey, onUnauthorized }: RowProp
     ) : (
       <ToneChip tone="success" label={t(k("active"))} />
     );
+  const status = peer.link ? (
+    <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" justifyContent="flex-end">
+      <LinkChip side={peer.link} open={peer.linkOpen} seenAt={peer.linkSeenAt} name={peer.name} ago={ago} />
+      {state}
+    </Stack>
+  ) : (
+    state
+  );
 
   const destroy = async (kind: "disconnect" | "block") => {
     close();

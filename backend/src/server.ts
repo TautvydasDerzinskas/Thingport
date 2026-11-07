@@ -18,6 +18,7 @@ import { resumeFileReuseBackfill } from "./services/fileReuseBackfill";
 import { seedProviderCategoryIds } from "./services/categorySiteIds";
 import { linkUnattributedPrints } from "./services/authorService";
 import { startDeliveryWorker } from "./federation/delivery";
+import { startLinks } from "./federation/links";
 import { getFederationSettings } from "./federation/settings";
 
 const app = createApp();
@@ -51,7 +52,9 @@ async function boot(): Promise<void> {
     // Only where an admin turned connected instances on; elsewhere Fedify is never even loaded.
     getFederationSettings()
       .then((settings) => {
-        if (settings.enabled) startDeliveryWorker();
+        if (!settings.enabled) return;
+        startDeliveryWorker();
+        startLinks();
       })
       .catch((err) => console.error("Failed to start connected instances:", err));
     announceVersionUpdate().catch((err) => console.error("Failed to announce the version update:", err));

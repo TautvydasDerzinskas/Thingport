@@ -13,7 +13,8 @@ nothing tells a visitor this instance could connect at all.
 
 - **Social features on.** Connected instances build on them: **Administration → Social → Social features**.
 - **A Public URL other instances can reach.** It's set under **Administration → Auth → Public URL**, for example
-  `http://192.168.1.20:8080` or `https://things.example.org`. Both instances must be able to reach each other there:
+  `http://192.168.1.20:8080` or `https://things.example.org`. The instances must be able to reach each other there, or
+  at least one the other (see [When one instance can't be reached](#when-one-instance-cant-be-reached)):
   - **On one network or VPN** (a home LAN, Tailscale, WireGuard), that just works, over plain HTTP too.
   - **Over the internet**, the instance needs a public address: a port forwarded on your router, a reverse proxy or a
     tunnel. Everything goes to paths under `/api/`, which every Thingport setup already sends to the backend, so a
@@ -33,7 +34,7 @@ The result is one of:
 
 | Result                                  | Meaning                                                                                                                                                                                      |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Local network only**                  | Instances on your network or VPN can connect. Instances on the internet can't reach it.                                                                                                      |
+| **Local network only**                  | Instances on your network or VPN can connect. Instances on the internet can't reach it, but it can still connect to them through a link.                                                     |
 | **Reachable, not confirmed yet**        | A public address that answered. Instances on the internet should reach it, if your router or proxy lets them in. The first partner that reaches it confirms it, and the status then says so. |
 | **Public, but it didn't answer itself** | A public address that didn't answer from inside. Some routers can't reach their own public address; outside instances may still reach it. The first connection will tell.                    |
 | **Not reachable**                       | There's no Public URL, something else answers there, or nothing does. It can't be turned on until that's fixed.                                                                              |
@@ -52,6 +53,29 @@ The result is one of:
 
 The key is how the two instances know each other. Comparing it matters most over plain HTTP, where someone in between
 could otherwise swap it.
+
+## When one instance can't be reached
+
+An instance on a home network usually can't be reached from the internet, but it can reach out. It can still connect
+with an instance on the internet: it keeps a **link** open to it, and whatever the other instance would send it or
+fetch from it comes down that link. Explore, pictures, downloads, copies and chats work both ways, as between two
+instances that reach each other.
+
+- **The one that can't be reached connects.** The other can't look it up. **Connect to an instance** turns on **Keep a
+  link open** by itself when this instance is on your network only and the other is on the internet; switch it on
+  yourself if theirs can't reach yours for another reason.
+- **The key is how they know it's you.** Their admin can't check your address from there, so compare the key as usual.
+  Your request shows there as reaching them through a link.
+- **While your instance is off**, what's said to your people waits on their side and arrives once it's back, and their
+  Explore keeps showing what you last shared. Downloading your files there says your instance isn't connected.
+- **Partners** shows **Your link** or **Their link** beside the instance, open or not.
+- **Two instances that both can't be reached** can't connect this way: put them on one VPN (Tailscale, WireGuard)
+  instead.
+- **Two instances with the same address** (both at `http://192.168.1.20:8080`, on different networks) can't both
+  connect to the same instance: give yours an address of its own.
+- **A reverse proxy** in front of the instance on the internet should pass uploads to `/api/ap/link/replies/` on as
+  they come, whatever their size (in nginx, `proxy_request_buffering off` and `client_max_body_size 0`). Thingport's own
+  nginx does.
 
 ## Answer a request
 

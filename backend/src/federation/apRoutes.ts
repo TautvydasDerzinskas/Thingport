@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { originOf } from "./addresses";
 import { canonicalHeaders, edgeFilter, keyIdOf } from "./edge";
 import { instanceFingerprint } from "./keys";
+import { answerAsk, answerReply, cameThroughLink, throughOwnLink } from "./links";
 import {
   collectionModelsPage,
   collectionsPage,
@@ -67,6 +68,10 @@ router.get(
     });
   }),
 );
+
+// A partner that can't be reached, keeping its link open (links.ts): opened with its secret, not a signature.
+router.get("/link", asyncHandler(answerAsk));
+router.post("/link/replies/:id", asyncHandler(answerReply));
 
 router.post(
   ["/inbox", "/actors/:identifier/inbox"],
@@ -194,16 +199,19 @@ async function viaFedify(req: Request, res: Response): Promise<void> {
     headers: canonicalHeaders(req.headers, runtime.origin),
     body,
   });
-  const response = await runtime.federation.fetch(request, {
-    contextData: undefined,
-    onNotFound: () => new Response(JSON.stringify({ error: "Not found" }), { status: 404 }),
-    onNotAcceptable: () => new Response(JSON.stringify({ error: "Not acceptable" }), { status: 406 }),
-  });
+  const viaLink = cameThroughLink(req.headers);
+  const handle = () =>
+    runtime.federation.fetch(request, {
+      contextData: undefined,
+      onNotFound: () => new Response(JSON.stringify({ error: "Not found" }), { status: 404 }),
+      onNotAcceptable: () => new Response(JSON.stringify({ error: "Not acceptable" }), { status: 406 }),
+    });
+  const response = await (viaLink ? throughOwnLink.run(true, handle) : handle());
   res.status(response.status);
   response.headers.forEach((value, name) => res.setHeader(name, value));
   res.end(Buffer.from(await response.arrayBuffer()));
-  // A partner's delivery that went through: proof it can reach this instance.
-  if (req.method === "POST" && response.ok) {
+  // A partner's delivery that went through: proof it can reach this instance, unless it came down this one's link.
+  if (req.method === "POST" && response.ok && !viaLink) {
     const origin = originOf(keyIdOf(req.headers) ?? "");
     if (origin) {
       await prisma.peer

@@ -15,12 +15,16 @@ import Stack from "@mui/material/Stack";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import Stepper from "@mui/material/Stepper";
+import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
+import LinkIcon from "@mui/icons-material/Link";
 import { UnauthorizedError } from "../../api/client";
 import { FederationError, federationApi, type InstanceInfo, type LocalRequest, type Peer } from "../../api/federation";
+import HelpTip from "../../components/HelpTip";
 import { HttpChip, InstanceAvatar, KeyBlocks, Mono, ToneChip } from "./parts";
 import { federationErrorText } from "./federationErrors";
 
@@ -39,6 +43,8 @@ export default function ConnectDialog({ request = null, onClose, onSent, onUnaut
   const [address, setAddress] = React.useState(request?.origin ?? "");
   const [info, setInfo] = React.useState<InstanceInfo | null>(null);
   const [matches, setMatches] = React.useState(false);
+  // Kept open by this instance when theirs can't reach it: on when the lookup says it likely can't.
+  const [link, setLink] = React.useState(false);
   const [note, setNote] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -61,8 +67,10 @@ export default function ConnectDialog({ request = null, onClose, onSent, onUnaut
     setBusy(true);
     setError(null);
     try {
-      setInfo(await federationApi.lookup(address.trim()));
+      const found = await federationApi.lookup(address.trim());
+      setInfo(found);
       setMatches(false);
+      setLink(Boolean(found.suggestLink));
       return true;
     } catch (err) {
       fail(err);
@@ -77,7 +85,13 @@ export default function ConnectDialog({ request = null, onClose, onSent, onUnaut
     setBusy(true);
     setError(null);
     try {
-      const { peer } = await federationApi.connect(info.origin, info.fingerprint, note.trim() || null, request?.id);
+      const { peer } = await federationApi.connect(
+        info.origin,
+        info.fingerprint,
+        note.trim() || null,
+        request?.id,
+        link,
+      );
       onSent(peer);
     } catch (err) {
       // Its key changed meanwhile: look it up again, busy all the while, to compare the new one, and say why.
@@ -157,6 +171,39 @@ export default function ConnectDialog({ request = null, onClose, onSent, onUnaut
                 control={<Checkbox checked={matches} onChange={(event) => setMatches(event.target.checked)} />}
                 label={t(k("matches"))}
               />
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1.5,
+                  alignItems: "flex-start",
+                  p: 1.5,
+                  borderRadius: 2,
+                  bgcolor: (theme) => alpha(theme.palette.info.main, theme.palette.mode === "dark" ? 0.14 : 0.08),
+                }}
+              >
+                <LinkIcon fontSize="small" color="info" sx={{ mt: 0.25 }} aria-hidden />
+                <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {t(k(!link ? "linkOffTitle" : info.suggestLink ? "linkSuggestedTitle" : "linkOnTitle"), {
+                      name: info.name,
+                    })}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t(k(!link ? "linkOffText" : info.suggestLink ? "linkSuggestedText" : "linkOnText"), {
+                      name: info.name,
+                    })}
+                  </Typography>
+                </Stack>
+                <Stack direction="row" alignItems="center" sx={{ flex: "none" }}>
+                  <Switch
+                    checked={link}
+                    onChange={(event) => setLink(event.target.checked)}
+                    disabled={busy}
+                    inputProps={{ role: "switch", "aria-label": t(k("linkSwitch")) }}
+                  />
+                  <HelpTip text={t(k("linkHelp"))} />
+                </Stack>
+              </Box>
               <TextField
                 label={t(k("note"))}
                 value={note}
