@@ -460,7 +460,10 @@ export default function ModelActionsMenu({
               {normalizedTargets.length === 1 && normalized.stateOf(normalizedTargets[0]) === "preparing" ? (
                 <CircularProgress size={18} color="inherit" />
               ) : (
-                <NormalizeInfoIcon slicerLabel={slicerOption.label} />
+                <NormalizeInfoIcon
+                  slicerLabel={slicerOption.label}
+                  orca={normalizedTargets[0]?.normalizeTarget === "orca"}
+                />
               )}
             </ListItemIcon>
             <ListItemText>{normalizedMenuLabel(slicerOption.label)}</ListItemText>

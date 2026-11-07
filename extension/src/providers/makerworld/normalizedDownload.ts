@@ -5,7 +5,7 @@
 // never goes anywhere else.
 
 import { createIcon } from "../../shared/icon";
-import { NORMALIZE_3MF_SLICERS, normalizeTargetFor } from "../../shared/slicers";
+import { NORMALIZE_3MF_SLICERS, normalizeTargetFor, normalizedFilename } from "../../shared/slicers";
 import { api } from "../../content/runtime";
 import css from "../../content/styles/normalized.scss?inline";
 import { gettingFilePhrases, normalizingPhrases, rotatePhrases } from "../../content/panels/funStatus";
@@ -44,7 +44,9 @@ let slicerLabel: string | null = null;
 // Which copy to make: the Orca-fork one for Snapmaker Orca, the flat one otherwise (also before the answer).
 let slicerId: string | null = null;
 
-function explanation(slicer: string | null): string {
+function explanation(slicer: string | null, target: "flat" | "orca"): string {
+  if (target === "orca")
+    return "Builds a copy for Snapmaker Orca (U1): printer, nozzle, process preset and wipe tower are adapted to the U1. Your filament names and values stay.";
   const slicers = slicer ? `${slicer} often opens` : "PrusaSlicer, Cura and other slicers often open";
   return (
     `MakerWorld files are Bambu Studio projects, which ${slicers} without their colors or print ` +
@@ -100,10 +102,6 @@ function sourceFilename(res: Response, url: string): string {
   return name.replace(/[\\/:*?"<>|]+/g, "_").trim() || "model.3mf";
 }
 
-function normalizedFilename(source: string): string {
-  return `${source.replace(/\.3mf$/i, "")}-normalized.3mf`;
-}
-
 function saveFile(bytes: Uint8Array, filename: string): void {
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "model/3mf" }));
   const link = document.createElement("a");
@@ -134,15 +132,16 @@ async function downloadNormalized(pageUrl: string, onProgress: (text: string) =>
   }
   const input = await readBody(res, declared, onProgress);
   stopRotation = rotatePhrases(normalizingPhrases, onProgress);
+  const target = normalizeTargetFor(slicerId);
   let output: Uint8Array;
   try {
-    output = await normalizeBambu3mf(input, normalizeTargetFor(slicerId)).finally(stopRotation);
+    output = await normalizeBambu3mf(input, target).finally(stopRotation);
   } catch (err) {
     throw new Error("Couldn't normalize this file: it doesn't look like a 3MF project MakerWorld's Download gives.", {
       cause: err,
     });
   }
-  saveFile(output, normalizedFilename(sourceFilename(res, resolved.downloadUrl)));
+  saveFile(output, normalizedFilename(sourceFilename(res, resolved.downloadUrl), target));
 }
 
 function buildHost(pageUrl: string): HTMLElement {
@@ -186,7 +185,7 @@ function buildHost(pageUrl: string): HTMLElement {
     bubble.hidden = true;
   };
   const showInfo = () => {
-    if (bubble.hidden) showBubble(explanation(slicerLabel));
+    if (bubble.hidden) showBubble(explanation(slicerLabel, normalizeTargetFor(slicerId)));
   };
   icon.addEventListener("mouseenter", showInfo);
   icon.addEventListener("mouseleave", () => !bubble.classList.contains("tg-nd-bubble--error") && hideBubble());

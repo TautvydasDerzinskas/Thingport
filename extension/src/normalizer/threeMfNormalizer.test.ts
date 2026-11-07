@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
-import { normalizeTargetFor } from "../shared/slicers";
+import { normalizeTargetFor, normalizedFilename } from "../shared/slicers";
 import {
   mapObjectShellSettings,
   markAsBambuProject,
@@ -273,5 +273,13 @@ describe("normalizeTargetFor", () => {
     expect(normalizeTargetFor("snapmaker-orca")).toBe("orca");
     for (const id of ["elegooslicer", "crealityprintlink", "prusaslicer", "cura", "", null, undefined])
       expect(normalizeTargetFor(id)).toBe("flat");
+  });
+});
+
+describe("normalizedFilename", () => {
+  it("names the Orca-fork copy -orca and the others -normalized", () => {
+    expect(normalizedFilename("Benchy.3mf", "orca")).toBe("Benchy-orca.3mf");
+    expect(normalizedFilename("Benchy.3MF", "flat")).toBe("Benchy-normalized.3mf");
+    expect(normalizedFilename("Benchy.3mf")).toBe("Benchy-normalized.3mf");
   });
 });
