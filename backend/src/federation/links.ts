@@ -360,38 +360,27 @@ export async function answerReply(req: Request, res: ExpressResponse): Promise<v
 }
 
 /** Leaves a note that the link opened with `tokenHash` ended, and why, so the instance keeping it hears so the next
- *  time it asks; and, given `origin`, that it's still only ever reached through a link meanwhile. Only a partner's
- *  link gives its `origin`: a waiting request's address is only what a stranger said, and marking it would keep this
- *  instance from whatever really is there. */
+ *  time it asks; and, given `origin`, that it's still only ever reached through a link meanwhile. Written in `tx`, with
+ *  what ended the link, so neither is kept without the other; after a mark, the caller refreshes the allowlist once
+ *  it's committed. Only a partner's link gives its `origin`: a waiting request's address is only what a stranger said,
+ *  and marking it would keep this instance from whatever really is there. */
 export async function linkEnded(
-  tokenHash: string,
-  origin: string | null,
-  reason: "declined" | "disconnected",
-): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    await noteLinkEnded(tx, tokenHash, reason);
-    if (!origin) return;
-    await tx.federationKv.upsert({
-      where: { key: `${LINK_ONLY_PREFIX}${origin}` },
-      create: { key: `${LINK_ONLY_PREFIX}${origin}`, value: {}, expiresAt: new Date(Date.now() + ENDED_MS) },
-      update: { expiresAt: new Date(Date.now() + ENDED_MS) },
-    });
-  });
-  // Only the mark changes how an address is reached.
-  if (origin) invalidateAllowlist();
-}
-
-/** Only the note of `linkEnded`, written in `tx`, so it's kept exactly when what declined the request is. */
-export async function noteLinkEnded(
   tx: Prisma.TransactionClient,
   tokenHash: string,
   reason: "declined" | "disconnected",
+  origin?: string,
 ): Promise<void> {
   const expiresAt = new Date(Date.now() + ENDED_MS);
   await tx.federationKv.upsert({
     where: { key: `${LINK_ENDED_PREFIX}${tokenHash}` },
     create: { key: `${LINK_ENDED_PREFIX}${tokenHash}`, value: { reason }, expiresAt },
     update: { value: { reason }, expiresAt },
+  });
+  if (!origin) return;
+  await tx.federationKv.upsert({
+    where: { key: `${LINK_ONLY_PREFIX}${origin}` },
+    create: { key: `${LINK_ONLY_PREFIX}${origin}`, value: {}, expiresAt },
+    update: { expiresAt },
   });
 }
 

@@ -19,7 +19,6 @@ import {
   linkOpen,
   linkTokenIn,
   newLinkToken,
-  noteLinkEnded,
   ownLinkOpen,
   reachedDirectly,
   requestLinkOpen,
@@ -640,12 +639,14 @@ async function currentRequest(
       const code = err instanceof HttpError ? err.code : null;
       if (code !== "bad_signature" && code !== "withdrawn") throw err;
       failure = err;
-      await prisma.peerRequest.update({
-        where: { id: request.id },
-        data: { status: code === "withdrawn" ? "CANCELLED" : "DECLINED", decidedAt: new Date() },
+      await prisma.$transaction(async (tx) => {
+        await tx.peerRequest.update({
+          where: { id: request.id },
+          data: { status: code === "withdrawn" ? "CANCELLED" : "DECLINED", decidedAt: new Date() },
+        });
+        // Its link is told it's over.
+        if (request.linkToken) await linkEnded(tx, request.linkToken, "declined");
       });
-      // Its link is told it's over.
-      if (request.linkToken) await linkEnded(request.linkToken, null, "declined");
     }
   }
   throw failure;
@@ -785,7 +786,7 @@ export async function approveRequest(adminId: string, id: string, fingerprint: s
       where: { kind: "INCOMING", status: "PENDING", origin: request.origin, linkToken: { not: null } },
       select: { linkToken: true },
     });
-    for (const other of others) await noteLinkEnded(tx, other.linkToken!, "declined");
+    for (const other of others) await linkEnded(tx, other.linkToken!, "declined");
     await tx.peerRequest.updateMany({
       where: { kind: "INCOMING", status: "PENDING", origin: request.origin },
       data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
@@ -851,12 +852,16 @@ export async function declineRequest(adminId: string, id: string): Promise<void>
   const asked = await pendingIncoming(id);
   // One kept through a link hears it the next time it asks: nothing is sent to an address that isn't reached.
   if (asked.linkToken) {
-    const { count } = await prisma.peerRequest.updateMany({
-      where: { id, status: "PENDING" },
-      data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
+    const token = asked.linkToken;
+    const declined = await prisma.$transaction(async (tx) => {
+      const { count } = await tx.peerRequest.updateMany({
+        where: { id, status: "PENDING" },
+        data: { status: "DECLINED", decidedById: adminId, decidedAt: new Date() },
+      });
+      if (count) await linkEnded(tx, token, "declined");
+      return count > 0;
     });
-    if (!count) throw new HttpError(404, "No such request", "not_found");
-    await linkEnded(asked.linkToken, null, "declined");
+    if (!declined) throw new HttpError(404, "No such request", "not_found");
     void createLog({
       userId: adminId,
       action: "federation_declined",
@@ -1057,8 +1062,12 @@ export async function disconnectPeer(adminId: string, id: string): Promise<void>
   await dropQueued(peer.id);
   await sayGoodbye(peer);
   await forgetPeerContent(peer.id);
-  await prisma.peer.delete({ where: { id } });
-  if (peer.link === "theirs" && peer.linkToken) await linkEnded(peer.linkToken, peer.origin, "disconnected");
+  await prisma.$transaction(async (tx) => {
+    await tx.peer.delete({ where: { id } });
+    if (peer.link === "theirs" && peer.linkToken) {
+      await linkEnded(tx, peer.linkToken, "disconnected", peer.origin);
+    }
+  });
   invalidateAllowlist();
   void createLog({
     userId: adminId,
@@ -1072,10 +1081,15 @@ export async function blockPeer(adminId: string, id: string): Promise<PeerOut> {
   const peer = await findPeer(id);
   await dropQueued(peer.id);
   if (peer.status !== "BLOCKED") await sayGoodbye(peer);
-  const updated = await prisma.peer.update({ where: { id }, data: { status: "BLOCKED", lastError: null } });
+  const updated = await prisma.$transaction(async (tx) => {
+    const saved = await tx.peer.update({ where: { id }, data: { status: "BLOCKED", lastError: null } });
+    // Told it was disconnected, as any other: not that it's blocked.
+    if (peer.link === "theirs" && peer.linkToken) {
+      await linkEnded(tx, peer.linkToken, "disconnected", peer.origin);
+    }
+    return saved;
+  });
   await forgetPeerContent(peer.id);
-  // Told it was disconnected, as any other: not that it's blocked.
-  if (peer.link === "theirs" && peer.linkToken) await linkEnded(peer.linkToken, peer.origin, "disconnected");
   invalidateAllowlist();
   void createLog({ userId: adminId, action: "federation_blocked", targetId: id, details: { origin: peer.origin } });
   return peerOut(updated, 0);
