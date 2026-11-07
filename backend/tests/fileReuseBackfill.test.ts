@@ -1099,11 +1099,15 @@ describe("the admin routes", () => {
     vi.spyOn(prisma.setting, "upsert").mockImplementation(((args: any) =>
       args.where?.key === "storage_move_pending" ? moveGate.then(() => realUpsert(args)) : realUpsert(args)) as any);
     const move = startStorageMove(null, template.body.template);
-    res = await request(app).post("/api/settings/file-reuse/backfill").set(admin());
-    expect(res.status).toBe(409);
-    expect(res.body.code).toBe("storage_moving");
-    releaseMove();
-    await until(() => !move?.running);
+    try {
+      res = await request(app).post("/api/settings/file-reuse/backfill").set(admin());
+      expect(res.status).toBe(409);
+      expect(res.body.code).toBe("storage_moving");
+    } finally {
+      // Even when a check fails: a move left running would hold up every backfill after it.
+      releaseMove();
+      await until(() => !move?.running);
+    }
 
     // The other way: saving a storage structure while the backfill runs.
     let release!: () => void;
