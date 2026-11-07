@@ -18,6 +18,11 @@ export type ModelFile = {
 /** `normalizeTarget` is set on "Open normalized" targets: which kind of copy the server prepares. */
 export type SlicerTarget = ModelFile & { href: string; normalizeTarget?: "flat" | "orca" };
 
+/** Key of a normalized target: includes the kind of copy, so "flat" and "orca" never share state. */
+export function normalizedKey(normalizeTarget: "flat" | "orca" | undefined, fileKey: string): string {
+  return `normalized-${normalizeTarget ?? "flat"}-${fileKey}`;
+}
+
 /** Sliced .gcode.3mf plates are never normalized: dropping their G-code would leave nothing to print. */
 function isNormalizable3mf(filename: string): boolean {
   const lower = filename.toLowerCase();
@@ -76,7 +81,7 @@ export function useOpenInSlicer(print: Print) {
     return files
       .filter((file) => file.plate && isNormalizable3mf(file.filename))
       .map(({ key, url, filename, launchFilename, index, plate }) => ({
-        key: `normalized-${key}`,
+        key: normalizedKey(normalizeTarget, key),
         url,
         filename,
         launchFilename,
@@ -94,7 +99,9 @@ export function useOpenInSlicer(print: Print) {
   /** The normalized counterpart of `file`, if the current slicer offers one. */
   const normalizedTargetFor = useCallback(
     (file: ModelFile | null) =>
-      file ? normalizedTargets.find((target) => target.key === `normalized-${file.key}`) : undefined,
+      file
+        ? normalizedTargets.find((target) => target.key === normalizedKey(target.normalizeTarget, file.key))
+        : undefined,
     [normalizedTargets],
   );
 
