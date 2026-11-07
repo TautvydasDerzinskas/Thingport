@@ -12,14 +12,12 @@ A self-hosted library that imports, organises, designs, and never loses your fav
 </p>
 
 <p>
-  <a href="https://thingport.net/"><b>Website</b></a> ·
-  <a href="https://thingport.net/docs/">Docs</a> ·
-  <a href="https://thingport.net/features/">Features</a> ·
-  <a href="https://thingport.net/blog/">Blog</a>
-</p>
-
-<p>
-  <a href="https://thingport.net/"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fweb-pages.json" alt="Website: latest build"></a>
+  <a href="https://thingport.net/"><img src="https://img.shields.io/badge/Thingport.net-008a00?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSI%2BPHBhdGggZD0iTTM1LjM4MiAxMS4zMDFRNDAgOC42MzUgNDQuNjE4IDExLjMwMUw2Mi41NDUgMjEuNjUxUTY3LjE2MyAyNC4zMTcgNjcuMTYzIDI5LjY1TDY3LjE2MyA1MC4zNVE2Ny4xNjMgNTUuNjgyIDYyLjU0NSA1OC4zNDlMNDQuNjE4IDY4LjY5OVE0MCA3MS4zNjUgMzUuMzgyIDY4LjY5OUwxNy40NTUgNTguMzQ5UTEyLjgzNyA1NS42ODMgMTIuODM3IDUwLjM1TDEyLjgzNyAyOS42NVExMi44MzcgMjQuMzE4IDE3LjQ1NSAyMS42NTFaIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iNS4yNyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8%2BPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTQyLjI2NCAzNy4yODVRNDAgMzguNTkyIDM3LjczNiAzNy4yODVMMjcuMjg2IDMxLjI1MlEyNS4wMjIgMjkuOTQ1IDI3LjI4NiAyOC42MzdMMzcuNzM2IDIyLjYwNFE0MCAyMS4yOTcgNDIuMjY0IDIyLjYwNEw1Mi43MTQgMjguNjM3UTU0Ljk3OCAyOS45NDQgNTIuNzE0IDMxLjI1MloiLz48cGF0aCBmaWxsPSIjRkZGRkZGIiBkPSJNMzYuNTE3IDM5LjM5N1EzOC43ODEgNDAuNzA0IDM4Ljc4MSA0My4zMThMMzguNzgxIDU1LjM4NVEzOC43ODEgNTcuOTk5IDM2LjUxNyA1Ni42OTJMMjYuMDY3IDUwLjY1OVEyMy44MDMgNDkuMzUyIDIzLjgwMyA0Ni43MzdMMjMuODAzIDM0LjY3MVEyMy44MDMgMzIuMDU2IDI2LjA2NyAzMy4zNjNaIi8%2BPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTQxLjIxOSA0My4zMThRNDEuMjE5IDQwLjcwNCA0My40ODMgMzkuMzk3TDUzLjkzMyAzMy4zNjNRNTYuMTk3IDMyLjA1NiA1Ni4xOTcgMzQuNjcxTDU2LjE5NyA0Ni43MzdRNTYuMTk3IDQ5LjM1MiA1My45MzMgNTAuNjU5TDQzLjQ4MyA1Ni42OTJRNDEuMjE5IDU3Ljk5OSA0MS4yMTkgNTUuMzg1WiIvPjwvc3ZnPg%3D%3D" alt="Thingport.net"></a>
+  <a href="https://thingport.net/docs/"><img src="https://img.shields.io/badge/Docs-1e2746" alt="Docs"></a>
+  <a href="https://thingport.net/features/"><img src="https://img.shields.io/badge/Features-1e2746" alt="Features"></a>
+  <a href="https://thingport.net/blog/"><img src="https://img.shields.io/badge/Blog-1e2746" alt="Blog"></a>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/chip-divider-dark.svg"><img src="docs/assets/readme/chip-divider-light.svg" width="13" height="20" alt=""></picture>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/web-pages.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fweb-pages.json" alt="Website: latest build"></a>
   <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/frontend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Ffrontend-image.json" alt="Frontend: latest build"></a>
   <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fbackend-image.json" alt="Backend: latest build"></a>
   <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fbridge-release.json" alt="Bridge: latest build"></a>

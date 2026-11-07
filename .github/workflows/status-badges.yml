@@ -34,15 +34,16 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/badges"
           cd "$RUNNER_TEMP/badges"
+          # Thingport's colours (frontend/src/theme.ts, web/src/styles): navy labels, the button green, a deep red.
           chip() {
             conclusion=$(gh api "repos/$REPO/actions/workflows/$1.yml/runs?branch=$BRANCH&status=completed&per_page=1" \
               --jq '.workflow_runs[0].conclusion // ""')
             case "$conclusion" in
-              success) message="✓" color="brightgreen" ;;
-              failure | timed_out | startup_failure) message="✗" color="red" ;;
-              *) message="–" color="lightgrey" ;;
+              success) message="✓" color="#008a00" ;;
+              failure | timed_out | startup_failure) message="✗" color="#c62828" ;;
+              *) message="–" color="#858585" ;;
             esac
-            printf '{"schemaVersion":1,"label":"%s","message":"%s","color":"%s","cacheSeconds":300}\n' \
+            printf '{"schemaVersion":1,"label":"%s","message":"%s","labelColor":"#1e2746","color":"%s","cacheSeconds":300}\n' \
               "$2" "$message" "$color" > "$1.json"
             echo "$2: ${conclusion:-none}"
           }
