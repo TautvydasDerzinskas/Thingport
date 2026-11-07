@@ -30,12 +30,12 @@ export function KeyBlocks({ fingerprint, large = false }: { fingerprint: string;
   const groups = fingerprint.split(" ").map((group, position) => ({ group, id: `${position}:${group}` }));
   return (
     <Box
-      sx={{
-        display: "grid",
-        gridTemplateColumns: large ? "repeat(3, minmax(0, 1fr))" : `repeat(${groups.length}, auto)`,
-        justifyContent: large ? "stretch" : "start",
-        gap: large ? 1 : 0.75,
-      }}
+      sx={
+        large
+          ? { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 1 }
+          : // In a line, wrapping on a phone rather than running past the edge.
+            { display: "flex", flexWrap: "wrap", gap: 0.75 }
+      }
     >
       <Box component="span" sx={visuallyHiddenSx}>
         {t("adminSettings.social.federation.keyAria", { key: fingerprint })}
