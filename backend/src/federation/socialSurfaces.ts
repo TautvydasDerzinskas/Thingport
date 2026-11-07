@@ -20,6 +20,10 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
     kind: "federates",
     how: "This instance's people; a partner's open at /explore/elsewhere/person/:id, read from their Person",
   },
+  "GET /explore/user/:id/collections": {
+    kind: "federates",
+    how: "This instance's people's public collections past their page's first; a partner's person's at /explore/elsewhere",
+  },
   "GET /explore/user/:id/models": {
     kind: "federates",
     how: "This instance's people's models; a partner's person's from their models collection, at /explore/elsewhere",
@@ -28,13 +32,17 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
     kind: "federates",
     how: "A partner's person as their Person actor said: name, avatar (icon), cover (image), bio (source), links",
   },
+  "GET /explore/elsewhere/person/:id/collections": {
+    kind: "federates",
+    how: "A partner's person's public collections past their page's first, paged in from their collections (thingport:Collection)",
+  },
   "GET /explore/elsewhere/person/:id/models": {
     kind: "federates",
-    how: "A partner's person's shared models, paged in from their models collection (Service, f3di:3DModel)",
+    how: "A partner's person's shared models, paged in from their models collection (thingport:Model)",
   },
   "GET /explore/elsewhere/model/:id": {
     kind: "federates",
-    how: "A partner's model as its Service said: pictures, description, files (Document attachments)",
+    how: "A partner's model as its thingport:Model said: pictures, description, files (Document attachments)",
   },
   "GET /explore/elsewhere/model/:id/files/:file/:filename": {
     kind: "federates",
@@ -54,7 +62,7 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   },
   "GET /explore/elsewhere/collection/:id": {
     kind: "federates",
-    how: "A partner's public collection as its Group said, with the models in it",
+    how: "A partner's public collection as its thingport:Collection said, with the models in it",
   },
   "GET /explore/elsewhere/media/:token": {
     kind: "federates",

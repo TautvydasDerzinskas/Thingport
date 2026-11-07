@@ -63,6 +63,10 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
   const [models, setModels] = useState<RemoteModelCard[] | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingCollections, setLoadingCollections] = useState(false);
+  // How many collections have come from the server, apart from how many show, and whether it has more.
+  const [collectionsFrom, setCollectionsFrom] = useState(0);
+  const [collectionsMore, setCollectionsMore] = useState(false);
   const latest = useRef(0);
   const navigate = useNavigate();
   const chatsOn = useSocialStatus()?.chats === true;
@@ -77,6 +81,7 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
       setFailed(false);
       setHasMore(false);
       setLoadingMore(false);
+      setLoadingCollections(false);
       setOpening(false);
       Promise.all([socialApi.elsewhere.person(id), socialApi.elsewhere.personModels(id, { limit: PAGE, offset: 0 })])
         .then(([person, first]) => {
@@ -86,6 +91,8 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
             return;
           }
           setPage(person);
+          setCollectionsFrom(person.collections.length);
+          setCollectionsMore(person.collections.length < person.collections_total);
           setModels(first?.items ?? []);
           setHasMore(first?.hasMore ?? false);
         })
@@ -113,14 +120,45 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
     try {
       const next = await socialApi.elsewhere.personModels(personId, { limit: PAGE, offset: models.length });
       if (asked !== latest.current) return;
-      setModels([...models, ...(next?.items ?? [])]);
-      setHasMore(next?.hasMore ?? false);
+      // Not there any more (no longer shared, paused, or connected instances off): read again, to say so.
+      if (!next) return read(personId);
+      setModels([...models, ...next.items]);
+      setHasMore(next.hasMore);
     } catch (err) {
       if (asked !== latest.current) return;
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else showToast({ message: t("models:explore.modelsLoadFailed"), severity: "error" });
     } finally {
       if (asked === latest.current) setLoadingMore(false);
+    }
+  };
+
+  // Their collections past the first page, which came with their page.
+  const loadMoreCollections = async () => {
+    if (!personId || !page || loadingCollections) return;
+    const asked = latest.current;
+    setLoadingCollections(true);
+    try {
+      const next = await socialApi.elsewhere.personCollections(personId, {
+        limit: PAGE,
+        offset: collectionsFrom,
+      });
+      if (asked !== latest.current) return;
+      if (!next) return read(personId);
+      setCollectionsFrom(collectionsFrom + next.items.length);
+      setCollectionsMore(next.hasMore && next.items.length > 0);
+      setPage((prev) => {
+        if (!prev) return prev;
+        // One already shown, moved along by a change meanwhile, isn't shown twice.
+        const shown = new Set(prev.collections.map((collection) => collection.id));
+        return { ...prev, collections: [...prev.collections, ...next.items.filter((item) => !shown.has(item.id))] };
+      });
+    } catch (err) {
+      if (asked !== latest.current) return;
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else showToast({ message: t("models:explore.collectionsLoadFailed"), severity: "error" });
+    } finally {
+      if (asked === latest.current) setLoadingCollections(false);
     }
   };
 
@@ -284,11 +322,20 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
             </Stack>
           )
         ) : page.collections.length ? (
-          <Box sx={cardGridSx(5)}>
-            {page.collections.map((collection) => (
-              <RemoteCollectionCardView key={collection.id} collection={collection} />
-            ))}
-          </Box>
+          <Stack spacing={2}>
+            <Box sx={cardGridSx(5)}>
+              {page.collections.map((collection) => (
+                <RemoteCollectionCardView key={collection.id} collection={collection} />
+              ))}
+            </Box>
+            {collectionsMore && (
+              <Box>
+                <Button variant="outlined" onClick={() => void loadMoreCollections()} disabled={loadingCollections}>
+                  {t("models:explore.elsewhere.more")}
+                </Button>
+              </Box>
+            )}
+          </Stack>
         ) : (
           <Typography variant="body2" color="text.secondary">
             {t("models:explore.noCollections", { name: person.display_name })}

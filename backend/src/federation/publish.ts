@@ -17,21 +17,37 @@ import { AP_PREFIX, getRuntime, type Runtime } from "./runtime";
 
 /** What this instance's people share, as partners read it: the people (a directory), each one's models and public
  *  collections, and their pictures. Only an ACTIVE partner's signed request is answered, and it gets what a signed-in
- *  person here sees of the others, nothing more. Shaped like Manyfold's (models as `Service`, collections as `Group`,
- *  each with `f3di:concreteType`), so a bridge to it later reads the same; what Thingport adds is under `thingport:`. */
+ *  person here sees of the others, nothing more. People are `Person`s; models and collections are Thingport's own
+ *  `thingport:Model` and `thingport:Collection`, and whatever else Thingport says is under `thingport:` too. */
 
 export const CONTEXT = [
   "https://www.w3.org/ns/activitystreams",
-  { f3di: "http://purl.org/f3di/ns#", thingport: "https://github.com/TautvydasDerzinskas/Thingport#" },
+  { thingport: "https://github.com/TautvydasDerzinskas/Thingport#" },
 ];
+// A page a partner reads has to fit the 1 MB its fetch takes, whatever is in it.
+export const PAGE_BYTES = 900 * 1024;
+// Models a page at most, fewer when they're big: a page ends before it would pass PAGE_BYTES.
 export const MODELS_PAGE = 50;
-// People a page, each no bigger than PERSON_MAX_BYTES: a page has to fit the 1 MB a partner's fetch takes.
+// People a page, each no bigger than PERSON_MAX_BYTES.
 export const DIRECTORY_PAGE = 50;
 export const PERSON_MAX_BYTES = 18 * 1024;
-// What a partner keeps of a name (remoteIndex.ts); a name here has no limit of its own.
+// What a partner keeps (remoteIndex.ts), so nothing more goes: of a name (no limit of its own here), and of a model's
+// and a collection's text, files and pictures.
 const NAME_MAX = 120;
+const MODEL_NAME_MAX = 300;
+const MODEL_DESCRIPTION_MAX = 20_000;
+const MODEL_FILES_MAX = 100;
+const MODEL_IMAGES_MAX = 20;
+const COLLECTION_NAME_MAX = 200;
+const COLLECTION_DESCRIPTION_MAX = 5000;
 const DIRECTORY_LIMIT = 500;
 const COLLECTIONS_LIMIT = 200;
+// Collections a page, each fitted to COLLECTION_MAX_BYTES (fitCollection), so 12 always fit a page.
+export const COLLECTIONS_PAGE = 12;
+export const COLLECTION_MAX_BYTES = Math.floor((PAGE_BYTES - 16 * 1024) / COLLECTIONS_PAGE);
+// A collection's models by id: the first ones come with it, the rest a page at a time.
+export const COLLECTION_FIRST_IDS = 200;
+export const COLLECTION_IDS_PAGE = 1000;
 
 // A partner's key, kept for a while: every page a partner reads would otherwise fetch its actor again. Kept under the
 // partner as it's connected now, keys compared and all, so one that reconnects with new keys under the same ids never
@@ -151,7 +167,6 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
       return {
         id,
         type: "Person",
-        "f3di:concreteType": "User",
         preferredUsername: user.username ?? undefined,
         name: user.displayName.slice(0, NAME_MAX),
         source: markdown(user.bio),
@@ -215,17 +230,30 @@ export function fitPerson<T extends Record<string, unknown>>(doc: T): T {
   return fitted as T;
 }
 
-/** A page of what one person shares of their models, the latest shared first; null for someone who shares none. */
-export async function modelsPage(userId: string, page: number): Promise<unknown | null> {
+/** Where a page of someone's models goes on from: after the model added at `at` with id `id`, in their order. */
+export type ModelsCursor = { at: Date; id: string };
+const cursorOf = (print: { createdAt: Date; id: string }) => `${print.createdAt.getTime()}.${print.id}`;
+
+/** A page's `after`, or null for one this didn't make. */
+export function parseModelsCursor(value: string): ModelsCursor | null {
+  const match = /^(\d{1,15})\.([A-Za-z0-9_-]{1,64})$/.exec(value);
+  return match ? { at: new Date(Number(match[1])), id: match[2] } : null;
+}
+
+/** A page of what one person shares of their models, the latest added first, from the start or `after` a model; null
+ *  for someone who shares none. Pages go on by the last model in them, so each can be as long as fits. */
+export async function modelsPage(userId: string, after: ModelsCursor | null = null): Promise<unknown | null> {
   const runtime = await getRuntime();
   const where = await sharedModelsWhere(userId);
   const total = await prisma.print.count({ where });
   if (!total) return null;
   const prints = await prisma.print.findMany({
-    where,
+    where: after
+      ? { AND: [where, { OR: [{ createdAt: { lt: after.at } }, { createdAt: after.at, id: { gt: after.id } }] }] }
+      : where,
     orderBy: [{ createdAt: "desc" }, { id: "asc" }],
-    skip: page * MODELS_PAGE,
-    take: MODELS_PAGE,
+    // One more than a page: whether there's a next one.
+    take: MODELS_PAGE + 1,
     select: {
       id: true,
       userId: true,
@@ -242,7 +270,7 @@ export async function modelsPage(userId: string, page: number): Promise<unknown 
   });
   const sharedAt = await sharedAtOf(prints);
   const base = `${actorUrl(runtime, userId)}/models`;
-  const orderedItems = prints.map((print) => {
+  const items = prints.slice(0, MODELS_PAGE).map((print) => {
     const images = print.previewImages.flatMap((image) => {
       const version = mtime(previewImagePath(image.id, print.assetsPath));
       return version === null ? [] : [{ type: "Image", url: mediaUrl(runtime, "image", image.id, version) }];
@@ -256,49 +284,81 @@ export async function modelsPage(userId: string, page: number): Promise<unknown 
         });
     return {
       id: `${runtime.origin}${AP_PREFIX}/models/${print.id}`,
-      type: "Service",
-      "f3di:concreteType": "3DModel",
-      name: print.title?.trim() || print.name,
+      type: "thingport:Model",
+      name: (print.title?.trim() || print.name).slice(0, MODEL_NAME_MAX),
       attributedTo: actorUrl(runtime, userId),
-      source: markdown(print.notes),
-      image: pictures,
+      source: markdown(print.notes?.slice(0, MODEL_DESCRIPTION_MAX) ?? null),
+      image: pictures.slice(0, MODEL_IMAGES_MAX),
       // Each file where a partner fetches it, signed: to download, open in a slicer or copy.
       attachment: [
         ...print.plates.map((file) => ({ kind: "plate", file })),
         ...print.files.map((file) => ({ kind: "file", file })),
-      ].map(({ kind, file }) => ({
-        type: "Document",
-        name: file.filename,
-        mediaType: file.mime,
-        url: `${runtime.origin}${AP_PREFIX}/files/${kind}/${file.id}/${encodeURIComponent(file.filename)}`,
-        "thingport:size": file.size,
-      })),
+      ]
+        .slice(0, MODEL_FILES_MAX)
+        .map(({ kind, file }) => ({
+          type: "Document",
+          name: file.filename,
+          mediaType: file.mime,
+          url: `${runtime.origin}${AP_PREFIX}/files/${kind}/${file.id}/${encodeURIComponent(file.filename)}`,
+          "thingport:size": file.size,
+        })),
       published: (sharedAt.get(print.id) ?? print.createdAt).toISOString(),
       updated: print.updatedAt.toISOString(),
     };
   });
+  // As many as fit, one at least (none is near the size alone, cut as it is).
+  const orderedItems: unknown[] = [];
+  let size = 4096;
+  for (const item of items) {
+    size += bytes(item) + 1;
+    if (orderedItems.length && size > PAGE_BYTES) break;
+    orderedItems.push(item);
+  }
+  const last = prints[orderedItems.length - 1];
   return {
     "@context": CONTEXT,
-    id: `${base}?page=${page}`,
+    id: after ? `${base}?after=${cursorOf({ createdAt: after.at, id: after.id })}` : base,
     type: "OrderedCollectionPage",
     partOf: base,
     totalItems: total,
-    next: (page + 1) * MODELS_PAGE < total ? `${base}?page=${page + 1}` : undefined,
+    next: prints.length > orderedItems.length ? `${base}?after=${cursorOf(last)}` : undefined,
     orderedItems,
   };
 }
 
-/** One person's public collections, each with the models in it by their ids. */
-export async function collectionsOf(userId: string): Promise<unknown> {
+const collectionUrl = (runtime: Runtime, id: string) => `${runtime.origin}${AP_PREFIX}/collections/${id}`;
+
+/** A page of a collection's models by their ids, from `offset`, the latest filed first. */
+function idsPage(runtime: Runtime, collectionId: string, offset: number, printIds: string[], total: number) {
+  const base = `${collectionUrl(runtime, collectionId)}/models`;
+  const end = offset + printIds.length;
+  return {
+    id: `${base}?offset=${offset}`,
+    type: "OrderedCollectionPage",
+    partOf: base,
+    totalItems: total,
+    next: end < total ? `${base}?offset=${end}` : undefined,
+    orderedItems: printIds.map((id) => `${runtime.origin}${AP_PREFIX}/models/${id}`),
+  };
+}
+
+/** A page of one person's public collections, the latest changed first, each with its first models by their ids
+ *  (`thingport:models`, a collection whose `next` pages through the rest). */
+export async function collectionsPage(userId: string, page = 0): Promise<unknown> {
   const runtime = await getRuntime();
+  const total = Math.min(await prisma.collection.count({ where: { userId, isPublic: true } }), COLLECTIONS_LIMIT);
+  const offset = page * COLLECTIONS_PAGE;
+  const take = Math.max(0, Math.min(COLLECTIONS_PAGE, total - offset));
   // The latest changed first, by the same measure as `updated` below: renamed, made public, or something filed in it.
-  const ranked = await prisma.$queryRaw<{ id: string }[]>`
-    SELECT c.id FROM "Collection" c
-    LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
-    WHERE c."isPublic" AND c."userId" = ${userId}
-    GROUP BY c.id
-    ORDER BY GREATEST(c."updatedAt", COALESCE(MAX(i."createdAt"), c."updatedAt")) DESC, c.id
-    LIMIT ${COLLECTIONS_LIMIT}`;
+  const ranked = take
+    ? await prisma.$queryRaw<{ id: string }[]>`
+        SELECT c.id FROM "Collection" c
+        LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
+        WHERE c."isPublic" AND c."userId" = ${userId}
+        GROUP BY c.id
+        ORDER BY GREATEST(c."updatedAt", COALESCE(MAX(i."createdAt"), c."updatedAt")) DESC, c.id
+        LIMIT ${take} OFFSET ${offset}`
+    : [];
   const order = new Map(ranked.map((row, index) => [row.id, index]));
   const found = await prisma.collection.findMany({
     where: { id: { in: ranked.map((row) => row.id) } },
@@ -307,29 +367,93 @@ export async function collectionsOf(userId: string): Promise<unknown> {
       name: true,
       description: true,
       updatedAt: true,
-      items: { orderBy: { createdAt: "desc" }, select: { printId: true, createdAt: true } },
+      _count: { select: { items: true } },
+      items: {
+        orderBy: [{ createdAt: "desc" }, { printId: "asc" }],
+        take: COLLECTION_FIRST_IDS,
+        select: { printId: true, createdAt: true },
+      },
     },
   });
   const collections = found.toSorted((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  const base = `${actorUrl(runtime, userId)}/collections`;
   return {
     "@context": CONTEXT,
-    id: `${actorUrl(runtime, userId)}/collections`,
-    type: "OrderedCollection",
-    totalItems: collections.length,
-    orderedItems: collections.map((collection) => ({
-      id: `${runtime.origin}${AP_PREFIX}/collections/${collection.id}`,
-      type: "Group",
-      "f3di:concreteType": "Collection",
-      name: collection.name,
-      attributedTo: actorUrl(runtime, userId),
-      source: markdown(collection.description),
-      // Changed when it's renamed or something is filed in it.
-      updated: new Date(
-        Math.max(collection.updatedAt.getTime(), collection.items[0]?.createdAt.getTime() ?? 0),
-      ).toISOString(),
-      "thingport:models": collection.items.map((item) => `${runtime.origin}${AP_PREFIX}/models/${item.printId}`),
-    })),
+    id: page ? `${base}?page=${page}` : base,
+    type: "OrderedCollectionPage",
+    partOf: base,
+    totalItems: total,
+    next: offset + take < total ? `${base}?page=${page + 1}` : undefined,
+    orderedItems: collections.map((collection) =>
+      fitCollection(
+        (description, printIds) => ({
+          id: collectionUrl(runtime, collection.id),
+          type: "thingport:Collection",
+          name: collection.name.slice(0, COLLECTION_NAME_MAX),
+          attributedTo: actorUrl(runtime, userId),
+          source: markdown(description),
+          // Changed when it's renamed or something is filed in it.
+          updated: new Date(
+            Math.max(collection.updatedAt.getTime(), collection.items[0]?.createdAt.getTime() ?? 0),
+          ).toISOString(),
+          "thingport:models": {
+            id: `${collectionUrl(runtime, collection.id)}/models`,
+            type: "OrderedCollection",
+            totalItems: collection._count.items,
+            first: idsPage(runtime, collection.id, 0, printIds, collection._count.items),
+          },
+        }),
+        collection.description?.slice(0, COLLECTION_DESCRIPTION_MAX) ?? null,
+        collection.items.map((item) => item.printId),
+      ),
+    ),
   };
+}
+
+/** A collection as published, made with `make`, within COLLECTION_MAX_BYTES however long its ids and however its text
+ *  escapes: its description shortened first, then fewer of its models given with it, the rest on its own pages. */
+export function fitCollection<T>(
+  make: (description: string | null, printIds: string[]) => T,
+  description: string | null,
+  printIds: string[],
+): T {
+  let text = description;
+  let ids = printIds;
+  let item = make(text, ids);
+  while (bytes(item) > COLLECTION_MAX_BYTES && text) {
+    text = text.slice(0, Math.floor(text.length / 2)) || null;
+    item = make(text, ids);
+  }
+  while (bytes(item) > COLLECTION_MAX_BYTES && ids.length) {
+    ids = ids.slice(0, Math.floor(ids.length / 2));
+    item = make(text, ids);
+  }
+  return item;
+}
+
+/** A page of a public collection's models by their ids, from `offset`; null for a collection that isn't public. */
+export async function collectionModelsPage(collectionId: string, offset: number): Promise<unknown | null> {
+  const runtime = await getRuntime();
+  const collection = await prisma.collection.findFirst({
+    where: { id: collectionId, isPublic: true },
+    select: { id: true, _count: { select: { items: true } } },
+  });
+  if (!collection) return null;
+  const items = await prisma.collectionItem.findMany({
+    where: { collectionId },
+    orderBy: [{ createdAt: "desc" }, { printId: "asc" }],
+    skip: offset,
+    take: COLLECTION_IDS_PAGE,
+    select: { printId: true },
+  });
+  const page = idsPage(
+    runtime,
+    collection.id,
+    offset,
+    items.map((item) => item.printId),
+    collection._count.items,
+  );
+  return { "@context": CONTEXT, ...page };
 }
 
 /** A picture of something shared, for a partner to show its people: a sharer's avatar or uploaded cover, or a shared

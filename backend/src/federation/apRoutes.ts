@@ -6,7 +6,18 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { originOf } from "./addresses";
 import { canonicalHeaders, edgeFilter, keyIdOf } from "./edge";
 import { instanceFingerprint } from "./keys";
-import { collectionsOf, directory, modelsPage, person, sendMedia, sendSharedFile, signingPartner } from "./publish";
+import { answerAsk, answerReply, cameThroughLink, throughOwnLink } from "./links";
+import {
+  collectionModelsPage,
+  collectionsPage,
+  directory,
+  modelsPage,
+  parseModelsCursor,
+  person,
+  sendMedia,
+  sendSharedFile,
+  signingPartner,
+} from "./publish";
 import { getRuntime, INSTANCE } from "./runtime";
 import { isFederationLive } from "./settings";
 
@@ -57,6 +68,10 @@ router.get(
     });
   }),
 );
+
+// A partner that can't be reached, keeping its link open (links.ts): opened with its secret, not a signature.
+router.get("/link", asyncHandler(answerAsk));
+router.post("/link/replies/:id", asyncHandler(answerReply));
 
 router.post(
   ["/inbox", "/actors/:identifier/inbox"],
@@ -127,8 +142,8 @@ router.get(
   "/actors/:id/models",
   partnerOnly,
   asyncHandler(async (req, res) => {
-    const page = Number(req.query.page ?? 0);
-    const body = Number.isInteger(page) && page >= 0 && page < 1000 ? await modelsPage(req.params.id, page) : null;
+    const after = typeof req.query.after === "string" ? parseModelsCursor(req.query.after) : null;
+    const body = req.query.after === undefined || after ? await modelsPage(req.params.id, after) : null;
     if (body) activityJson(res, body);
     else res.status(404).json({ error: "Not found" });
   }),
@@ -137,7 +152,23 @@ router.get(
   "/actors/:id/collections",
   partnerOnly,
   asyncHandler(async (req, res) => {
-    activityJson(res, await collectionsOf(req.params.id));
+    const page = Number(req.query.page ?? 0);
+    if (Number.isInteger(page) && page >= 0 && page < 100)
+      activityJson(res, await collectionsPage(req.params.id, page));
+    else res.status(404).json({ error: "Not found" });
+  }),
+);
+router.get(
+  "/collections/:id/models",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    const offset = Number(req.query.offset ?? 0);
+    const body =
+      Number.isInteger(offset) && offset >= 0 && offset < 1_000_000
+        ? await collectionModelsPage(req.params.id, offset)
+        : null;
+    if (body) activityJson(res, body);
+    else res.status(404).json({ error: "Not found" });
   }),
 );
 router.get(
@@ -168,16 +199,19 @@ async function viaFedify(req: Request, res: Response): Promise<void> {
     headers: canonicalHeaders(req.headers, runtime.origin),
     body,
   });
-  const response = await runtime.federation.fetch(request, {
-    contextData: undefined,
-    onNotFound: () => new Response(JSON.stringify({ error: "Not found" }), { status: 404 }),
-    onNotAcceptable: () => new Response(JSON.stringify({ error: "Not acceptable" }), { status: 406 }),
-  });
+  const viaLink = cameThroughLink(req.headers);
+  const handle = () =>
+    runtime.federation.fetch(request, {
+      contextData: undefined,
+      onNotFound: () => new Response(JSON.stringify({ error: "Not found" }), { status: 404 }),
+      onNotAcceptable: () => new Response(JSON.stringify({ error: "Not acceptable" }), { status: 406 }),
+    });
+  const response = await (viaLink ? throughOwnLink.run(true, handle) : handle());
   res.status(response.status);
   response.headers.forEach((value, name) => res.setHeader(name, value));
   res.end(Buffer.from(await response.arrayBuffer()));
-  // A partner's delivery that went through: proof it can reach this instance.
-  if (req.method === "POST" && response.ok) {
+  // A partner's delivery that went through: proof it can reach this instance, unless it came down this one's link.
+  if (req.method === "POST" && response.ok && !viaLink) {
     const origin = originOf(keyIdOf(req.headers) ?? "");
     if (origin) {
       await prisma.peer

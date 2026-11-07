@@ -3,6 +3,7 @@ import net from "node:net";
 import type { LookupFunction } from "node:net";
 import { Agent } from "undici";
 import { classifyIp, originOf } from "./addresses";
+import { lineFor } from "./allowlist";
 
 export class FederationFetchError extends Error {
   constructor(
@@ -39,8 +40,27 @@ const MAX_BODY = 1024 * 1024;
 // For the whole exchange, body included: an instance dripping its answer out doesn't hold the request open.
 const DEADLINE_MS = 30_000;
 
+/** Sends a request down an instance's link (links.ts), set once that's loaded. */
+type LinkRoute = (line: string, url: string, init: RequestInit) => Promise<Response>;
+let linkRoute: LinkRoute | null = null;
+export function routeLinksThrough(route: LinkRoute): void {
+  linkRoute = route;
+}
+
+export const NOT_LINKED = "Their instance isn't connected right now";
+
+// For tests: origins this instance acts as if it can't reach, as one behind NAT can't be.
+const unreachable = () =>
+  new Set(
+    (process.env.FEDERATION_UNREACHABLE ?? "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
+
 /** A request to another instance. Only to an origin `allowed` accepts, never to this machine, link-local (cloud
- *  metadata) or reserved addresses, and no redirects: an instance's documents live where it says they do. */
+ *  metadata) or reserved addresses, and no redirects: an instance's documents live where it says they do. One that
+ *  can't be reached from here goes through the link it keeps open, never to its address. */
 export async function federationFetch(
   url: string,
   init: RequestInit,
@@ -49,6 +69,12 @@ export async function federationFetch(
   const origin = originOf(url);
   if (!origin) throw new FederationFetchError("Not an http(s) address", "invalid");
   if (!(await allowed(origin))) throw new FederationFetchError(`Not a connected instance: ${origin}`, "not_allowed");
+  const line = await lineFor(origin);
+  if (line) {
+    if (line === "ended" || !linkRoute) throw new FederationFetchError(NOT_LINKED, "network");
+    return linkRoute(line, url, { ...init, signal: init.signal ?? AbortSignal.timeout(DEADLINE_MS) });
+  }
+  if (unreachable().has(origin)) throw new FederationFetchError(`Couldn't connect to ${origin}`, "network");
   const host = new URL(url).hostname.replace(/^\[|\]$/g, "");
   // The lookup above isn't asked about addresses written out as numbers.
   if (net.isIP(host) && classifyIp(host) === "never") {

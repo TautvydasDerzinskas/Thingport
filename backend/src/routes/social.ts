@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
 import { z } from "zod";
 import { requireAdmin, requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
@@ -12,7 +12,9 @@ import {
   EMPTY_EXPLORE,
   exploreOverview,
   exploreUser,
+  exploreUserCollections,
   exploreUserModels,
+  PERSON_COLLECTIONS_PAGE,
   socialStatus,
 } from "../services/socialService";
 import { sendRemoteMedia } from "../federation/media";
@@ -22,6 +24,7 @@ import {
   remoteModel,
   remoteOverview,
   remotePerson,
+  remotePersonCollections,
   remotePersonModels,
 } from "../federation/remoteExplore";
 import { remoteCopyStatus, startRemoteCopy } from "../federation/remoteCopy";
@@ -31,6 +34,22 @@ import { isFederationLive } from "../federation/settings";
 import { parseSortMode, splitList } from "../services/printQuery";
 
 const router = Router();
+
+/** `limit` and `offset` from a list's query, checked. */
+function pageQuery(query: Record<string, unknown>, defaultLimit: number): { limit: number; offset: number } {
+  const limit = Number(query.limit ?? defaultLimit);
+  const offset = Number(query.offset ?? 0);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new HttpError(400, "Invalid limit");
+  if (!Number.isInteger(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
+  return { limit, offset };
+}
+
+/** A page of a list, its count in the headers as GET /prints gives it. */
+function sendPage(res: Response, items: unknown[], offset: number, total: number): void {
+  res.setHeader("X-Total-Count", String(total));
+  res.setHeader("X-Has-More", offset + items.length < total ? "true" : "false");
+  res.json(items);
+}
 router.use(requireAuth);
 
 // For everyone: whether the sidebar offers Explore and Chats, and whether a collection's form offers making it public.
@@ -114,15 +133,21 @@ router.get(
   "/explore/elsewhere/person/:id/models",
   asyncHandler(async (req, res) => {
     await assertElsewhere();
-    const limit = Number(req.query.limit ?? 24);
-    const offset = Number(req.query.offset ?? 0);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new HttpError(400, "Invalid limit");
-    if (!Number.isInteger(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
+    const { limit, offset } = pageQuery(req.query, 24);
     const page = await remotePersonModels(req.params.id, limit, offset);
     if (!page) throw new HttpError(404, "Not found");
-    res.setHeader("X-Total-Count", String(page.total));
-    res.setHeader("X-Has-More", offset + page.models.length < page.total ? "true" : "false");
-    res.json(page.models);
+    sendPage(res, page.models, offset, page.total);
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/person/:id/collections",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    const { limit, offset } = pageQuery(req.query, PERSON_COLLECTIONS_PAGE);
+    const page = await remotePersonCollections(req.params.id, limit, offset);
+    if (!page) throw new HttpError(404, "Not found");
+    sendPage(res, page.collections, offset, page.total);
   }),
 );
 
@@ -175,10 +200,7 @@ router.get(
   "/explore/elsewhere/collection/:id",
   asyncHandler(async (req, res) => {
     await assertElsewhere();
-    const limit = Number(req.query.limit ?? 30);
-    const offset = Number(req.query.offset ?? 0);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new HttpError(400, "Invalid limit");
-    if (!Number.isInteger(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
+    const { limit, offset } = pageQuery(req.query, 30);
     const page = await remoteCollection(req.params.id, limit, offset);
     if (!page) throw new HttpError(404, "Not found");
     res.json(page);
@@ -203,15 +225,24 @@ router.get(
   }),
 );
 
+// A user's public collections past the first page their page came with.
+router.get(
+  "/explore/user/:id/collections",
+  asyncHandler(async (req, res) => {
+    await assertSocialOn();
+    const { limit, offset } = pageQuery(req.query, PERSON_COLLECTIONS_PAGE);
+    const page = await exploreUserCollections(req.userId!, req.params.id, limit, offset);
+    if (!page) throw new HttpError(404, "User not found");
+    sendPage(res, page.collections, offset, page.total);
+  }),
+);
+
 // A user's own models, once they made them public: answered like GET /prints, a page with its count in the headers.
 router.get(
   "/explore/user/:id/models",
   asyncHandler(async (req, res) => {
     await assertSocialOn();
-    const limit = Number(req.query.limit ?? 24);
-    const offset = Number(req.query.offset ?? 0);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new HttpError(400, "Invalid limit");
-    if (!Number.isInteger(offset) || offset < 0) throw new HttpError(400, "Invalid offset");
+    const { limit, offset } = pageQuery(req.query, 24);
     const page = await exploreUserModels(
       req.userId!,
       req.params.id,

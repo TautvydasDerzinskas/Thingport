@@ -3,6 +3,7 @@
 //   FEDERATION_E2E_DB_A=postgresql://.../fed_a FEDERATION_E2E_DB_B=postgresql://.../fed_b \
 //     npx vitest run tests/federationPairing.e2e.test.ts
 import { spawn, type ChildProcess } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -129,6 +130,62 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
 
     expect((await call(a, "POST", `/federation/peers/${partner.id}/disconnect`)).status).toBe(204);
     // Gone altogether: a peer left blocked or waiting would stand in the way of connecting again.
+    await until("B sees it gone", async () => {
+      const { partners, outgoing, blocked } = (await call(b, "GET", "/federation/instances")).body;
+      return partners.length === 0 && outgoing.length === 0 && blocked.length === 0;
+    });
+  }, 120_000);
+
+  it("isn't kept from an instance by requests someone else sent in its name", async () => {
+    // Anyone can send a request naming B's address, one keeping a link among them: none is checked until it's answered.
+    for (const [n, extra] of [
+      [1, {}],
+      [2, { "thingport:link": crypto.randomBytes(32).toString("base64url") }],
+    ] as const) {
+      const forged = await fetch(`${a.base}/api/ap/inbox`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/activity+json",
+          Signature: `keyId="${b.base}/api/ap/actors/instance#main-key",signature="x"`,
+        },
+        body: JSON.stringify({
+          type: "Follow",
+          id: `${b.base}/api/ap/follows/forged-${n}`,
+          actor: `${b.base}/api/ap/actors/instance`,
+          object: `${a.base}/api/ap/actors/instance`,
+          ...extra,
+        }),
+      });
+      expect(forged.status).toBe(202);
+    }
+    // A still reaches B itself, and asks it rather than approving one of those.
+    const lookup = await call(a, "GET", `/federation/lookup?address=${encodeURIComponent(b.base)}`);
+    const bSettings = await call(b, "GET", "/federation/settings");
+    expect(lookup.body.fingerprint).toBe(bSettings.body.fingerprint);
+    const asked = await call(a, "POST", "/federation/connect", {
+      address: b.base,
+      fingerprint: lookup.body.fingerprint,
+    });
+    expect(asked.body.peer?.status).toBe("OUTGOING");
+    const incoming = await until(
+      "B gets the request",
+      async () => (await call(b, "GET", "/federation/instances")).body.incoming[0],
+    );
+    const details = await call(b, "GET", `/federation/requests/${incoming.id}`);
+    await call(b, "POST", `/federation/requests/${incoming.id}/approve`, { fingerprint: details.body.fingerprint });
+    const partner = await until("A connected with B", async () => {
+      const found = (await call(a, "GET", "/federation/instances")).body.partners[0];
+      return found?.status === "ACTIVE" && found;
+    });
+
+    // The one with a link is still waiting; declining it leaves B reachable.
+    const waiting = (await call(a, "GET", "/federation/instances")).body.incoming;
+    expect(waiting).toMatchObject([{ origin: b.base, link: true }]);
+    expect((await call(a, "POST", `/federation/requests/${waiting[0].id}/decline`)).status).toBe(204);
+    const again = await call(a, "GET", `/federation/lookup?address=${encodeURIComponent(b.base)}`);
+    expect(again.body.fingerprint).toBe(bSettings.body.fingerprint);
+
+    expect((await call(a, "POST", `/federation/peers/${partner.id}/disconnect`)).status).toBe(204);
     await until("B sees it gone", async () => {
       const { partners, outgoing, blocked } = (await call(b, "GET", "/federation/instances")).body;
       return partners.length === 0 && outgoing.length === 0 && blocked.length === 0;

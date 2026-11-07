@@ -28,6 +28,9 @@ export type InstanceInfo = {
   version: string | null;
   fingerprint: string;
   http: boolean;
+  /** Whether this instance should keep a link open to it: this one isn't known to be reachable from the internet,
+   *  and it's on the internet. */
+  suggestLink?: boolean;
 };
 
 export type PeerStatus = "OUTGOING" | "ACTIVE" | "PAUSED" | "BLOCKED";
@@ -49,6 +52,13 @@ export type Peer = {
   lastError: string | null;
   /** Activities still waiting to reach it. */
   pending: number;
+  /** "ours": this instance keeps a link open to it, as it can't reach this one; "theirs": it keeps one open to this
+   *  instance. */
+  link: "ours" | "theirs" | null;
+  linkOpen: boolean | null;
+  linkSeenAt: string | null;
+  /** Another instance at this one's address connected with them already. */
+  addressTaken: boolean;
 };
 
 export type IncomingRequest = {
@@ -63,6 +73,9 @@ export type IncomingRequest = {
   asks?: { requesterHandle: string | null; targetHandle: string | null }[];
   note: string | null;
   createdAt: string;
+  /** It can't be reached from here, and keeps a link open to this instance instead. */
+  link: boolean;
+  linkOpen: boolean | null;
 };
 
 /** One of this instance's people asking to reach someone elsewhere, waiting for an admin's Connect. */
@@ -101,6 +114,8 @@ export type RequestDetails = InstanceInfo & {
       target: { username: string; displayName: string } | null;
     }[];
   };
+  /** It keeps a link open to this instance, which everything about it goes through. */
+  link: boolean;
 };
 
 export type MyRequestStatus = "waiting_admin" | "waiting_them" | "connected" | "declined";
@@ -149,8 +164,8 @@ export const federationApi = {
   setEnabled: (enabled: boolean) => call<FederationSettings>("PATCH", "/settings", { enabled }),
   lookup: (address: string) => call<InstanceInfo>("GET", `/lookup?address=${encodeURIComponent(address)}`),
   /** With `requestId`, for one of this instance's people who asked: it answers their request. */
-  connect: (address: string, fingerprint: string, note: string | null, requestId?: string | null) =>
-    call<{ peer: Peer }>("POST", "/connect", { address, fingerprint, note, requestId: requestId ?? null }),
+  connect: (address: string, fingerprint: string, note: string | null, requestId?: string | null, link = false) =>
+    call<{ peer: Peer }>("POST", "/connect", { address, fingerprint, note, requestId: requestId ?? null, link }),
   instances: () => call<Instances>("GET", "/instances"),
   request: (id: string) => call<RequestDetails>("GET", `/requests/${encodeURIComponent(id)}`),
   approve: (id: string, fingerprint: string) =>

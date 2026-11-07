@@ -492,9 +492,15 @@ export async function exploreOverview(viewerId: string): Promise<ExploreOut> {
   };
 }
 
+/** A person's public collections on their page, a page at a time: the first comes with the page. */
+export const PERSON_COLLECTIONS_PAGE = 24;
+const personCollectionsOrder: Prisma.CollectionOrderByWithRelationInput[] = [{ createdAt: "desc" }, { id: "asc" }];
+
 export type ExploreUserOut = {
   user: ExplorePersonOut & { joined_at: string } & PublicProfileOut;
+  /** The first page of them; the rest from GET /explore/user/:id/collections. */
   collections: CollectionOut[];
+  collections_total: number;
 };
 
 /** One user's page: who they are, their public collections, and whether their own models are public. Null for no such
@@ -517,13 +523,35 @@ export async function exploreUser(viewerId: string, userId: string): Promise<Exp
   if (!user) return null;
   const [[person], collections] = await Promise.all([
     people([user.id]),
-    prisma.collection.findMany({ where: { userId, isPublic: true }, orderBy: { createdAt: "desc" } }),
+    prisma.collection.findMany({
+      where: { userId, isPublic: true },
+      orderBy: personCollectionsOrder,
+      take: PERSON_COLLECTIONS_PAGE,
+    }),
   ]);
   if (!person || (!collections.length && !person.model_count && userId !== viewerId)) return null;
   return {
     user: { ...person, joined_at: user.createdAt.toISOString(), ...profileOut(user) },
     collections: await collectionOutsFor(viewerId, collections),
+    collections_total: person.collection_count,
   };
+}
+
+/** A page of a user's public collections, in their page's order, for `viewerId`; null for no such user, and for one
+ *  with none, unless it's the viewer. */
+export async function exploreUserCollections(
+  viewerId: string,
+  userId: string,
+  limit: number,
+  offset: number,
+): Promise<{ collections: CollectionOut[]; total: number } | null> {
+  const where = { userId, isPublic: true };
+  const [rows, total] = await Promise.all([
+    prisma.collection.findMany({ where, orderBy: personCollectionsOrder, skip: offset, take: limit }),
+    prisma.collection.count({ where }),
+  ]);
+  if (!total && userId !== viewerId) return null;
+  return { collections: await collectionOutsFor(viewerId, rows), total };
 }
 
 /** A page of a user's own models, as their My models lists them, for `viewerId`; null unless they made them public. */

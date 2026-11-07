@@ -1171,6 +1171,15 @@ model Peer {
   /// When what it shares was last read into the index below, and why the last try failed.
   syncedAt      DateTime?
   syncError     String?
+  /// One that can't reach the other keeps a link open to it instead: "ours" when this instance keeps it, "theirs"
+  /// when the partner does. Everything for the side that can't be reached then goes through it (links.ts).
+  link          String?
+  /// The secret the link is opened with: as it is for "ours", its SHA-256 for "theirs".
+  linkToken     String?              @unique
+  /// When the link was last open.
+  linkSeenAt    DateTime?
+  /// "theirs": its actor document from when an admin compared its key, so its signatures are checked without asking it.
+  actorDocument Json?
   people        RemotePerson[]
   models        RemoteModel[]
   collections   RemoteCollection[]
@@ -1287,6 +1296,8 @@ model PeerRequest {
   activity        Json?
   headers         Json?
   url             String?
+  /// INCOMING, from an instance that can't be reached from here: the SHA-256 of the secret its link is opened with.
+  linkToken       String?           @unique
   /// LOCAL: our user who asked.
   userId          String?
   user            User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
