@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" width="760" height="340" role="img" aria-labelledby="t d" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<title id="t">A home instance's link to an instance on the internet</title>
+<desc id="d">The home instance, behind its router, keeps a link open to the instance on the internet. That instance can't reach the home one directly, so its requests travel down the link, and the answers come back up it.</desc>
+<style>
+.req{animation:down 3.6s linear infinite}.ans{animation:up 3.6s linear infinite}
+.b{animation-delay:-1.2s}.c{animation-delay:-2.4s}
+@keyframes down{0%{transform:translateX(0);opacity:0}8%{opacity:1}92%{opacity:1}100%{transform:translateX(-234px);opacity:0}}
+@keyframes up{0%{transform:translateX(0);opacity:0}8%{opacity:1}92%{opacity:1}100%{transform:translateX(234px);opacity:0}}
+.pulse{animation:pulse 3.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion: reduce){.req,.ans,.pulse{animation:none;opacity:1}.req.b{transform:translateX(-78px)}.req.c{transform:translateX(-156px)}.ans.b{transform:translateX(78px)}.ans.c{transform:translateX(156px)}}
+</style>
+<rect x="12" y="30" width="350" height="250" rx="0" fill="#1a2240" stroke="#3c4566" stroke-width="1.5" stroke-dasharray="6 6"/>
+<g transform="translate(28,44)" fill="none" stroke="#9aa0ad" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M2 9 L9 3 L16 9"/><path d="M4 8 V15 H14 V8"/><path d="M8 15 V11 H10 V15"/></g>
+<text x="52" y="58" font-size="14" fill="#9aa0ad" font-weight="600">Your home network</text>
+<rect x="420" y="30" width="328" height="250" rx="0" fill="#1a2240" stroke="#3c4566" stroke-width="1.5" stroke-dasharray="6 6"/>
+<g transform="translate(436,44)" fill="none" stroke="#9aa0ad" stroke-width="1.6"><circle cx="9" cy="9" r="7"/><ellipse cx="9" cy="9" rx="3" ry="7"/><path d="M2 9 H16 M3.5 5 H14.5 M3.5 13 H14.5"/></g>
+<text x="460" y="58" font-size="14" fill="#9aa0ad" font-weight="600">On the internet</text>
+<rect x="244" y="155" width="262" height="36" rx="0" fill="#232d50" stroke="#38426a" stroke-width="1.5"/>
+<text x="378" y="112" font-size="13" text-anchor="middle" fill="#e3e6ee" font-weight="600">Link, kept open from home</text>
+<path d="M314 124 H442" stroke="#e3e6ee" stroke-width="1.6" fill="none" class="pulse"/><path d="M436 119 L444 124 L436 129" stroke="#e3e6ee" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" class="pulse"/>
+<circle class="req" cx="492" cy="165" r="5" fill="#1fd11f"/>
+<circle class="ans" cx="258" cy="181" r="5" fill="#5aa2ff"/>
+<circle class="req b" cx="492" cy="165" r="5" fill="#1fd11f"/>
+<circle class="ans b" cx="258" cy="181" r="5" fill="#5aa2ff"/>
+<circle class="req c" cx="492" cy="165" r="5" fill="#1fd11f"/>
+<circle class="ans c" cx="258" cy="181" r="5" fill="#5aa2ff"/>
+<rect x="34" y="131" width="210" height="84" rx="0" fill="#1e2746" stroke="#333a54" stroke-width="1.5"/>
+<g transform="translate(50,157)" fill="none" stroke="#1fd11f" stroke-width="2" stroke-linejoin="round"><path d="M16 2 L29 9 L29 23 L16 30 L3 23 L3 9 Z"/><path d="M3 9 L16 16 L29 9 M16 16 L16 30"/></g>
+<text x="94" y="168" font-size="16" font-weight="700" fill="#e3e6ee">Home workshop</text>
+<text x="94" y="190" font-size="12" fill="#9aa0ad" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">http://workshop.lan</text>
+<rect x="341" y="149" width="42" height="48" rx="0" fill="#1e2746" stroke="#9aa0ad" stroke-width="1.8"/>
+<path d="M352 149 V137 M372 149 V137" stroke="#9aa0ad" stroke-width="1.8" stroke-linecap="round"/>
+<circle cx="353" cy="185" r="2.5" fill="#1fd11f"/><circle cx="362" cy="185" r="2.5" fill="#9aa0ad"/><circle cx="371" cy="185" r="2.5" fill="#9aa0ad"/>
+<text x="362" y="214" font-size="12" text-anchor="middle" fill="#9aa0ad">Router</text>
+<rect x="506" y="131" width="234" height="84" rx="0" fill="#1e2746" stroke="#333a54" stroke-width="1.5"/>
+<g transform="translate(520,157)" fill="none" stroke="#1fd11f" stroke-width="2" stroke-linejoin="round"><path d="M16 2 L29 9 L29 23 L16 30 L3 23 L3 9 Z"/><path d="M3 9 L16 16 L29 9 M16 16 L16 30"/></g>
+<text x="562" y="168" font-size="16" font-weight="700" fill="#e3e6ee">Makerspace</text>
+<text x="562" y="190" font-size="11" fill="#9aa0ad" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">https://makerspace.example</text>
+<path d="M600 215 C600 268 430 270 376 238" stroke="#ff5c63" stroke-width="1.8" fill="none" stroke-dasharray="5 5"/>
+<path d="M355 229 L369 243 M369 229 L355 243" stroke="#ff5c63" stroke-width="2.6" stroke-linecap="round"/>
+<text x="540" y="272" font-size="12.5" text-anchor="middle" fill="#ff5c63">Can't reach home directly</text>
+<circle cx="40" cy="312" r="5" fill="#1fd11f"/>
+<text x="52" y="316.5" font-size="13" fill="#e3e6ee">Requests from the makerspace, down the link</text>
+<circle cx="420" cy="312" r="5" fill="#5aa2ff"/>
+<text x="432" y="316.5" font-size="13" fill="#e3e6ee">Answers from home, back up the link</text>
+</svg>

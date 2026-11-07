@@ -15,6 +15,8 @@ import studio from "../../../../frontend/src/assets/screenshots/light/41_studio.
 import studioDark from "../../../../frontend/src/assets/screenshots/dark/41_studio.png";
 import explore from "../../../../frontend/src/assets/screenshots/light/42_explore.png";
 import exploreDark from "../../../../frontend/src/assets/screenshots/dark/42_explore.png";
+import exploreEverywhere from "../../../../frontend/src/assets/screenshots/light/43_explore_everywhere.png";
+import exploreEverywhereDark from "../../../../frontend/src/assets/screenshots/dark/43_explore_everywhere.png";
 import tags from "../../../../frontend/src/assets/screenshots/light/11_tags.png";
 import tagsDark from "../../../../frontend/src/assets/screenshots/dark/11_tags.png";
 import downloads from "../../../../frontend/src/assets/screenshots/light/13_downloads.png";
@@ -314,6 +316,26 @@ const SECTIONS: FeatureSection[] = [
     image: explore,
     dark: exploreDark,
     alt: "Explore, with the people who share and the newest models they've shared",
+  },
+  {
+    id: "connected",
+    short: "Connected instances",
+    icon: "globe",
+    title: "Connect with other Thingports",
+    intro:
+      "Pair your Thingport with a friend's, your makerspace's or the one at work, and their people's shared models show up on your Explore, as if you were all on one instance.",
+    points: [
+      "One Explore: partners' people, public collections and newest models beside your own, each marked with the instance it's on.",
+      "Open a partner's model as if it were yours: download its files or a ZIP, open it in your slicer, or copy it to your library.",
+      "Chats across instances: write to a partner's person directly, or add them to a private room.",
+      "Your home instance can connect too: from behind its router, with no port forwarding, domain or certificate, it keeps a link open to an instance on the internet, and everything comes down that link.",
+      "Admins approve every partner after comparing keys, nothing private leaves an instance, and it's off until an admin turns it on.",
+      "Built on ActivityPub, between Thingport instances an admin approved.",
+    ],
+    link: { label: "Connected instances", href: url("docs/features/connected-instances/") },
+    image: exploreEverywhere,
+    dark: exploreEverywhereDark,
+    alt: "Explore with people, models and collections from this instance and a connected one, each marked with its instance",
   },
   {
     id: "admin",
