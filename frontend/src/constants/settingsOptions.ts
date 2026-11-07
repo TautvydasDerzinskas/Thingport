@@ -28,6 +28,19 @@ export const NORMALIZE_3MF_SLICER_IDS: ReadonlySet<string> = new Set([
   "eufystudio3d",
 ]);
 
+/**
+ * Of those, the Orca forks that read Bambu's own 3MF layout (parts, plates, painting) and only need the designer's
+ * printer profile taken out. Elegoo Slicer and Creality Print are Orca forks too, but unchecked, so they keep
+ * the flat copy for now.
+ */
+export const NORMALIZE_3MF_ORCA_SLICER_IDS: ReadonlySet<string> = new Set(["snapmaker-orca"]);
+
+/** Which kind of normalized copy the server prepares for a slicer: "orca" for the forks above (?normalize=orca),
+ *  "flat" for every other slicer (?normalize=1). */
+export function normalizeTargetFor(slicerId: string | null | undefined): "flat" | "orca" {
+  return slicerId && NORMALIZE_3MF_ORCA_SLICER_IDS.has(slicerId) ? "orca" : "flat";
+}
+
 /** "system" follows prefers-color-scheme; resolve with useResolvedTheme before rendering. */
 export type ThemeSelection = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";

@@ -5,7 +5,7 @@
 // never goes anywhere else.
 
 import { createIcon } from "../../shared/icon";
-import { NORMALIZE_3MF_SLICERS } from "../../shared/slicers";
+import { NORMALIZE_3MF_SLICERS, normalizeTargetFor, normalizedFilename } from "../../shared/slicers";
 import { api } from "../../content/runtime";
 import css from "../../content/styles/normalized.scss?inline";
 import { gettingFilePhrases, normalizingPhrases, rotatePhrases } from "../../content/panels/funStatus";
@@ -41,8 +41,13 @@ let themeObserver: MutationObserver | null = null;
 let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
 // The instance's slicer for the explanation, once it has answered; the button doesn't wait for it.
 let slicerLabel: string | null = null;
+// Which copy to make: the Orca-fork one for Snapmaker Orca, the flat one otherwise (also before the answer).
+let slicerId: string | null = null;
 
-function explanation(slicer: string | null): string {
+/** The button's explanation text for the target copy, naming the instance's slicer in the flat one when known. */
+function explanation(slicer: string | null, target: "flat" | "orca"): string {
+  if (target === "orca")
+    return "Builds a copy for Snapmaker Orca (U1): printer, nozzle, process preset and wipe tower are adapted to the U1. Your filament names and values stay.";
   const slicers = slicer ? `${slicer} often opens` : "PrusaSlicer, Cura and other slicers often open";
   return (
     `MakerWorld files are Bambu Studio projects, which ${slicers} without their colors or print ` +
@@ -98,10 +103,6 @@ function sourceFilename(res: Response, url: string): string {
   return name.replace(/[\\/:*?"<>|]+/g, "_").trim() || "model.3mf";
 }
 
-function normalizedFilename(source: string): string {
-  return `${source.replace(/\.3mf$/i, "")}-normalized.3mf`;
-}
-
 function saveFile(bytes: Uint8Array, filename: string): void {
   const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "model/3mf" }));
   const link = document.createElement("a");
@@ -115,6 +116,9 @@ function saveFile(bytes: Uint8Array, filename: string): void {
 }
 
 async function downloadNormalized(pageUrl: string, onProgress: (text: string) => void): Promise<void> {
+  // Resolved once, before the download starts: the slicer setting can change while the file downloads, and the
+  // conversion and the file name must agree on the same target.
+  const target = normalizeTargetFor(slicerId);
   let stopRotation = rotatePhrases(gettingFilePhrases, onProgress);
   // The normalizer reads the 3MF project, never the raw-files zip.
   const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stopRotation);
@@ -134,13 +138,13 @@ async function downloadNormalized(pageUrl: string, onProgress: (text: string) =>
   stopRotation = rotatePhrases(normalizingPhrases, onProgress);
   let output: Uint8Array;
   try {
-    output = await normalizeBambu3mf(input).finally(stopRotation);
+    output = await normalizeBambu3mf(input, target).finally(stopRotation);
   } catch (err) {
     throw new Error("Couldn't normalize this file: it doesn't look like a 3MF project MakerWorld's Download gives.", {
       cause: err,
     });
   }
-  saveFile(output, normalizedFilename(sourceFilename(res, resolved.downloadUrl)));
+  saveFile(output, normalizedFilename(sourceFilename(res, resolved.downloadUrl), target));
 }
 
 function buildHost(pageUrl: string): HTMLElement {
@@ -184,7 +188,7 @@ function buildHost(pageUrl: string): HTMLElement {
     bubble.hidden = true;
   };
   const showInfo = () => {
-    if (bubble.hidden) showBubble(explanation(slicerLabel));
+    if (bubble.hidden) showBubble(explanation(slicerLabel, normalizeTargetFor(slicerId)));
   };
   icon.addEventListener("mouseenter", showInfo);
   icon.addEventListener("mouseleave", () => !bubble.classList.contains("tg-nd-bubble--error") && hideBubble());
@@ -309,6 +313,7 @@ export function unmountNormalizedDownload(): void {
   host = null;
   anchor = null;
   slicerLabel = null;
+  slicerId = null;
   clearTimeout(bubbleTimer);
 }
 
@@ -326,5 +331,8 @@ export async function offerNormalizedDownload(
   const slicer = await api<{ slicer: string | null }>("GET", "/settings/slicer")
     .then((res) => res.slicer)
     .catch(() => null);
-  if (host === mounted) slicerLabel = slicer ? (NORMALIZE_3MF_SLICERS[slicer] ?? null) : null;
+  if (host === mounted) {
+    slicerLabel = slicer ? (NORMALIZE_3MF_SLICERS[slicer] ?? null) : null;
+    slicerId = slicer;
+  }
 }

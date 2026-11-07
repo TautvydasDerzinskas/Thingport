@@ -17,8 +17,11 @@ import DownloadIcon from "@mui/icons-material/Download";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
 import TuneIcon from "@mui/icons-material/Tune";
 import type { SlicerOption } from "../../constants/settingsOptions";
+import { switchSlicer } from "../../hooks/useSlicerPreference";
 import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLogos";
-import { slicerHref, type ModelFile } from "./useOpenInSlicer";
+import { slicerHref, type ModelFile, type SlicerTarget } from "./useOpenInSlicer";
+import type { NormalizeState } from "./useNormalizedOpen";
+import NormalizeInfoIcon from "./NormalizeInfoIcon";
 
 type Props = {
   /** The file every action but the zip applies to. */
@@ -28,6 +31,12 @@ type Props = {
   slicerOption: SlicerOption | null;
   slicerOptions: SlicerOption[];
   onOpened: (slicerId: string) => void;
+  /** The normalized copy `slicerId` would open for `file`, if any. Listed for every installed slicer, so it is
+   *  reachable without first switching to that slicer. */
+  normalizedFor?: (slicerId: string) => SlicerTarget | undefined;
+  normalizedStateOf?: (target: SlicerTarget) => NormalizeState;
+  /** Prepares and launches a normalized copy; resolves true once the slicer was launched. */
+  onOpenNormalized?: (target: SlicerTarget, slicerId: string) => Promise<boolean>;
   downloading: boolean;
   onDownload: () => void;
   /** Offered with more than one file. */
@@ -74,6 +83,9 @@ export default function OpenInSlicerButton({
   slicerOption,
   slicerOptions,
   onOpened,
+  normalizedFor,
+  normalizedStateOf,
+  onOpenNormalized,
   downloading,
   onDownload,
   zipCount,
@@ -93,7 +105,15 @@ export default function OpenInSlicerButton({
   const offersSlicers = canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
   // Likewise the download: in the menu unless it is the main button.
   const offersDownload = customizes || opensSlicer;
-  const hasMenu = offersSlicers || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
+  const normalizedOptions =
+    canOpen && normalizedFor && onOpenNormalized
+      ? slicerOptions.flatMap((option) => {
+          const target = normalizedFor(option.id);
+          return target ? [{ option, target }] : [];
+        })
+      : [];
+  const hasMenu =
+    offersSlicers || normalizedOptions.length > 0 || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
   const close = () => setAnchor(null);
   const downloadIcon = downloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon fontSize="small" />;
 
@@ -171,6 +191,38 @@ export default function OpenInSlicerButton({
               <ListItemText primaryTypographyProps={{ variant: "body2" }}>{option.label}</ListItemText>
             </MenuItem>
           ))}
+        {normalizedOptions.map(({ option, target }) => {
+          const preparing = normalizedStateOf?.(target) === "preparing";
+          return (
+            <MenuItem
+              key={`normalized-${option.id}`}
+              disabled={preparing}
+              onClick={() => {
+                // Opening it makes this slicer the main one, like opening the file plain does.
+                void onOpenNormalized?.(target, option.id).then((launched) => {
+                  if (launched) {
+                    void switchSlicer(option.id);
+                    close();
+                  }
+                });
+              }}
+            >
+              <ListItemIcon>
+                {preparing ? <CircularProgress size={16} color="inherit" /> : <LogoTile id={option.id} size={16} />}
+              </ListItemIcon>
+              <ListItemText primaryTypographyProps={{ variant: "body2" }}>
+                {preparing
+                  ? t("models:detail.normalizePreparing")
+                  : t("models:detail.openNormalizedInSlicer", { slicer: option.label })}
+              </ListItemText>
+              {!preparing && (
+                <Box component="span" sx={{ display: "inline-flex", ml: 1.5, color: "warning.main" }}>
+                  <NormalizeInfoIcon slicerLabel={option.label} orca={target.normalizeTarget === "orca"} />
+                </Box>
+              )}
+            </MenuItem>
+          );
+        })}
         {onOpenInStudio && (
           <MenuItem
             disabled={openingInStudio}
@@ -189,7 +241,9 @@ export default function OpenInSlicerButton({
             <ListItemText primaryTypographyProps={{ variant: "body2" }}>{t("models:detail.openInStudio")}</ListItemText>
           </MenuItem>
         )}
-        {(offersSlicers || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
+        {(offersSlicers || normalizedOptions.length > 0 || onOpenInStudio) && (offersDownload || zipCount > 1) && (
+          <Divider />
+        )}
         {offersDownload && (
           <MenuItem
             disabled={downloading}

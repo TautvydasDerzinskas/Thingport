@@ -9,3 +9,16 @@ export const NORMALIZE_3MF_SLICERS: Readonly<Record<string, string>> = {
   "snapmaker-orca": "Snapmaker Orca",
   eufystudio3d: "eufyMake Studio",
 };
+
+// Orca forks that read Bambu's own layout: they get the 3MF with parts, plates and painting kept, not the flat one.
+const ORCA_FORK_SLICER_IDS: ReadonlySet<string> = new Set(["snapmaker-orca"]);
+
+/** Which copy to make for a slicer: "orca" for the Orca forks above, "flat" for every other slicer or none. */
+export function normalizeTargetFor(slicerId: string | null | undefined): "flat" | "orca" {
+  return slicerId && ORCA_FORK_SLICER_IDS.has(slicerId) ? "orca" : "flat";
+}
+
+/** `<name>-orca.3mf` for the Orca-fork copy, `<name>-normalized.3mf` for the flat one. */
+export function normalizedFilename(source: string, target: "flat" | "orca" = "flat"): string {
+  return `${source.replace(/\.3mf$/i, "")}-${target === "orca" ? "orca" : "normalized"}.3mf`;
+}

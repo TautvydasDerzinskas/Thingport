@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { type Plate, type Print, printsApi } from "../../api/prints";
-import { NORMALIZE_3MF_SLICER_IDS, SLICER_OPTIONS } from "../../constants/settingsOptions";
+import { NORMALIZE_3MF_SLICER_IDS, SLICER_OPTIONS, normalizeTargetFor } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 import { isProviderId, manifestOf } from "../../providers/index.generated";
@@ -15,7 +15,13 @@ export type ModelFile = {
   index: number;
   plate: Plate | null;
 };
-export type SlicerTarget = ModelFile & { href: string };
+/** `normalizeTarget` is set on "Open normalized" targets: which kind of copy the server prepares. */
+export type SlicerTarget = ModelFile & { href: string; normalizeTarget?: "flat" | "orca" };
+
+/** Key of a normalized target: includes the kind of copy, so "flat" and "orca" never share state. */
+export function normalizedKey(normalizeTarget: "flat" | "orca" | undefined, fileKey: string): string {
+  return `normalized-${normalizeTarget ?? "flat"}-${fileKey}`;
+}
 
 /** Sliced .gcode.3mf plates are never normalized: dropping their G-code would leave nothing to print. */
 function isNormalizable3mf(filename: string): boolean {
@@ -63,33 +69,48 @@ export function useOpenInSlicer(print: Print) {
     [files, canOpen, slicerOption],
   );
 
-  const normalizedTargets = useMemo<SlicerTarget[]>(() => {
-    const source = print.source_provider;
-    const bambuProjects = !!source && isProviderId(source) && manifestOf(source).capabilities.bambuProjects;
-    if (!slicerOption || !NORMALIZE_3MF_SLICER_IDS.has(slicerOption.id) || !bambuProjects) {
-      return [];
-    }
-    // A non-removable prepared print means the plates themselves are the sliced files.
-    if (print.prepared_print && !print.prepared_print.removable) return [];
-    return files
-      .filter((file) => file.plate && isNormalizable3mf(file.filename))
-      .map(({ key, url, filename, launchFilename, index, plate }) => ({
-        key: `normalized-${key}`,
-        url,
-        filename,
-        launchFilename,
-        index,
-        plate,
-        href: slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(`${url}?normalize=1`), filename),
-      }));
-  }, [files, print.source_provider, print.prepared_print, slicerOption]);
-
-  /** The normalized counterpart of `file`, if the current slicer offers one. */
-  const normalizedTargetFor = useCallback(
-    (file: ModelFile | null) =>
-      file ? normalizedTargets.find((target) => target.key === `normalized-${file.key}`) : undefined,
-    [normalizedTargets],
+  /** The normalized copies `slicerId` would open: empty unless it needs MakerWorld 3MFs converted. Built for any
+   *  slicer, not only the selected one, so the menu can offer "normalized" before the slicer was ever used. */
+  const normalizedTargetsOf = useCallback(
+    (slicerId: string): SlicerTarget[] => {
+      const source = print.source_provider;
+      const bambuProjects = !!source && isProviderId(source) && manifestOf(source).capabilities.bambuProjects;
+      if (!NORMALIZE_3MF_SLICER_IDS.has(slicerId) || !bambuProjects) return [];
+      // A non-removable prepared print means the plates themselves are the sliced files.
+      if (print.prepared_print && !print.prepared_print.removable) return [];
+      const normalizeTarget = normalizeTargetFor(slicerId);
+      return files
+        .filter((file) => file.plate && isNormalizable3mf(file.filename))
+        .map(({ key, url, filename, launchFilename, index, plate }) => ({
+          key: normalizedKey(normalizeTarget, key),
+          url,
+          filename,
+          launchFilename,
+          index,
+          plate,
+          normalizeTarget,
+          href: slicerLaunchUrl(
+            slicerId,
+            printsApi.slicerFileUrl(`${url}?normalize=${normalizeTarget === "orca" ? "orca" : "1"}`),
+            filename,
+          ),
+        }));
+    },
+    [files, print.source_provider, print.prepared_print],
   );
 
-  return { slicerOption, slicerOptions, files, canOpen, targets, normalizedTargets, normalizedTargetFor };
+  const normalizedTargets = useMemo<SlicerTarget[]>(
+    () => (slicerOption ? normalizedTargetsOf(slicerOption.id) : []),
+    [slicerOption, normalizedTargetsOf],
+  );
+
+  return {
+    slicerOption,
+    slicerOptions,
+    files,
+    canOpen,
+    targets,
+    normalizedTargets,
+    normalizedTargetsOf,
+  };
 }

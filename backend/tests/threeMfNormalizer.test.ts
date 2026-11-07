@@ -7,8 +7,11 @@ import {
   decodePaintState,
   encodePaintState,
   extractBambuSettings,
+  markAsBambuProject,
   mapSettingsToSlic3r,
   parsePlates,
+  recenterOnOrcaBed,
+  moveWipeTower,
   normalize3mf,
   normalizeProjectSettings,
   stateToMaterialIndex,
@@ -87,6 +90,10 @@ async function makeBambuZip(overrides: { rootXml?: string } = {}): Promise<Uint8
       printer_model: "Bambu Lab A1 mini",
       machine_start_gcode: "M104 S200",
       printable_area: ["0x0", "180x180"],
+      printable_height: "180",
+      nozzle_diameter: ["0.4", "0.4"],
+      print_settings_id: "0.20mm Standard @BBL A1M",
+      printer_settings_id: "Bambu Lab A1 mini 0.4 nozzle",
     }),
   );
   zip.file(
@@ -100,6 +107,7 @@ async function makeBambuZip(overrides: { rootXml?: string } = {}): Promise<Uint8
 </config>`,
   );
   zip.file("Metadata/slice_info.config", "<config/>");
+  zip.file("Metadata/custom_gcode_per_layer.xml", "<custom_gcodes_per_layer/>");
   zip.file("Metadata/plate_1.gcode", "; gcode");
   zip.file("3D/_rels/3dmodel.model.rels", "<Relationships/>");
   return zip.generateAsync({ type: "uint8array" });
@@ -257,6 +265,7 @@ describe("normalize3mf", () => {
     const out = await JSZip.loadAsync(result.bytes);
     expect(out.file("Metadata/plate_1.gcode")).toBeNull();
     expect(out.file("Metadata/slice_info.config")).toBeNull();
+    expect(out.file("Metadata/custom_gcode_per_layer.xml")).toBeNull();
     expect(out.file("3D/_rels/3dmodel.model.rels")).toBeNull();
     const project = JSON.parse(await readOut(result.bytes, "Metadata/project_settings.config"));
     expect(project.wall_loops).toBe("3");
@@ -419,6 +428,243 @@ describe("normalize3mf", () => {
   });
 });
 
+async function orcaProject(settings: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const zip = await JSZip.loadAsync(await makeBambuZip());
+  zip.file("Metadata/project_settings.config", JSON.stringify(settings));
+  const { bytes } = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+  return JSON.parse(await readOut(bytes, "Metadata/project_settings.config"));
+}
+
+const buildItem = (id: number, x: number, y: number) =>
+  `<item objectid="${id}" transform="1 0 0 0 1 0 0 0 1 ${x} ${y} 5" printable="1"/>`;
+const instance = (objectId: number) =>
+  `<model_instance><metadata key="object_id" value="${objectId}"/><metadata key="instance_id" value="0"/></model_instance>`;
+const plateXml = (id: number, objectId: number) =>
+  `<plate><metadata key="plater_id" value="${id}"/>${instance(objectId)}</plate>`;
+
+// The "x y z" translation of the build item with this objectid.
+function itemOffset(xml: string, objectId: number): string | undefined {
+  const tag = xml.match(new RegExp(`<item\\b[^>]*\\bobjectid="${objectId}"[^>]*>`))?.[0];
+  return tag?.match(/transform="(?:\S+ ){9}([^"]+)"/)?.[1];
+}
+
+describe("normalize3mf for an Orca fork", () => {
+  it("centres each object on its own plate of a two-plate archive, by the plate assignment", async () => {
+    const zip = await JSZip.loadAsync(await makeBambuZip());
+    // The designer's bed is 330 x 320 mm; its second plate starts 1.2 beds along x. Object 1 stands on plate 2
+    // and object 2 on plate 1, so the build order and the plate order disagree.
+    zip.file(
+      "3D/3dmodel.model",
+      `<model unit="millimeter"><build>${buildItem(1, 561, 160)}${buildItem(2, 165, 160)}</build></model>`,
+    );
+    zip.file("Metadata/model_settings.config", `<config>${plateXml(1, 2)}${plateXml(2, 1)}</config>`);
+    zip.file(
+      "Metadata/project_settings.config",
+      JSON.stringify({ printable_area: ["0x0", "330x0", "330x320", "0x320"], filament_colour: ["#FFFFFF"] }),
+    );
+    const { bytes } = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+    const model = await readOut(bytes, "3D/3dmodel.model");
+    // Plate 1 is centred at (135, 135) on the 270 mm bed, plate 2 one bed and 0.2 gap further along x.
+    expect(itemOffset(model, 2)).toBe("135 135 5");
+    expect(itemOffset(model, 1)).toBe("459 135 5");
+  });
+
+  it("keeps the production layout, parts and painting, and drops only G-code and the printer profile", async () => {
+    const result = await normalize3mf(await makeBambuZip(), "orca");
+    const out = await JSZip.loadAsync(result.bytes);
+    expect(out.file("3D/Objects/object_1.model")).not.toBeNull();
+    expect(await readOut(result.bytes, "3D/Objects/object_1.model")).toContain('paint_color="4"');
+    expect(await readOut(result.bytes, "3D/3dmodel.model")).toContain('p:path="/3D/Objects/object_1.model"');
+    expect(await readOut(result.bytes, "Metadata/model_settings.config")).toContain("DesignerPart");
+    expect(out.file("3D/_rels/3dmodel.model.rels")).not.toBeNull();
+    expect(out.file("Metadata/plate_1.gcode")).toBeNull();
+    expect(out.file("Metadata/slice_info.config")).toBeNull();
+    expect(out.file("Metadata/custom_gcode_per_layer.xml")).toBeNull();
+    expect(out.file("Metadata/Slic3r_PE.config")).toBeNull();
+    expect(out.file("Metadata/Slic3r_PE_model.config")).toBeNull();
+    const project = JSON.parse(await readOut(result.bytes, "Metadata/project_settings.config"));
+    expect(project.wall_loops).toBe("3");
+    expect(project.filament_colour).toEqual(["#FFFFFF", "#C52C18"]);
+    expect(project.printer_model).toBeUndefined();
+    expect(project.machine_start_gcode).toBeUndefined();
+    // Snapmaker Orca crashes without these keys: kept, but naming no preset of the designer's printer.
+    expect(project.print_settings_id).toBe("0.20mm Standard @Snapmaker U1 (0.4 nozzle)");
+    expect(project.printer_settings_id).toBe("Snapmaker U1 (0.4 nozzle)");
+    expect(project.filament_settings_id).toEqual(["Generic PLA @BBL A1M", "Generic PLA @BBL A1M"]);
+    expect(project.printable_height).toBe("270");
+    expect(project.use_relative_e_distances).toBe("0");
+    expect(project.printable_area).toEqual(["0.5x1", "270.5x1", "270.5x271", "0.5x271"]);
+    // One nozzle, not one per designer extruder (that would show a dual-nozzle printer).
+    expect(project.nozzle_diameter).toEqual(["0.4"]);
+  });
+
+  async function filamentPresets(extra: Record<string, unknown>): Promise<unknown> {
+    const zip = await JSZip.loadAsync(await makeBambuZip());
+    const settings = { nozzle_diameter: ["0.4"], filament_type: ["PLA"], filament_settings_id: ["x"], ...extra };
+    zip.file("Metadata/project_settings.config", JSON.stringify(settings));
+    const { bytes } = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+    return JSON.parse(await readOut(bytes, "Metadata/project_settings.config")).filament_settings_id;
+  }
+
+  it("keeps the designer's filament preset name per slot, whatever the material or nozzle", async () => {
+    expect(
+      await filamentPresets({
+        filament_type: ["PLA", "PETG", "TPU-AMS", "PA"],
+        filament_settings_id: ["Generic PLA @BBL H2C", "My PETG", "My TPU", "My PA"],
+        nozzle_diameter: ["0.6"],
+      }),
+    ).toEqual(["Generic PLA @BBL H2C", "My PETG", "My TPU", "My PA"]);
+    // A name that is also a U1 preset stays as it is.
+    expect(await filamentPresets({ filament_settings_id: ["Snapmaker PLA Basic @U1"] })).toEqual([
+      "Snapmaker PLA Basic @U1",
+    ]);
+  });
+
+  it('names "Generic" for an empty name, and handles scalar values', async () => {
+    // A blank name becomes "Generic" because Orca crashes without one.
+    expect(await filamentPresets({ filament_type: [""], filament_settings_id: [" "] })).toEqual(["Generic"]);
+    expect(await filamentPresets({ filament_type: ["PLA"], filament_settings_id: [] })).toEqual([]);
+    expect(await filamentPresets({ filament_type: "ASA", filament_settings_id: "Mine" })).toBe("Mine");
+    expect(await filamentPresets({ filament_settings_id: "" })).toBe("Generic");
+  });
+
+  it("keeps one filament name per designer slot", async () => {
+    expect(
+      await filamentPresets({ filament_type: ["PLA", "PLA", "PLA"], filament_settings_id: ["a", "b", "c"] }),
+    ).toHaveLength(3);
+  });
+
+  it("takes nozzle, process preset and filament name from a legacy project's nested settings", async () => {
+    const project = await orcaProject({
+      filament_colour: ["#FFFFFF"],
+      process_settings: {
+        "1": {
+          nozzle_diameter: ["0.6"],
+          print_settings_id: "0.24mm Standard @BBL X1C",
+          filament_settings_id: ["My PETG"],
+        },
+      },
+    });
+    expect(project.nozzle_diameter).toEqual(["0.6"]);
+    expect(project.printer_settings_id).toBe("Snapmaker U1 (0.6 nozzle)");
+    expect(project.print_settings_id).toBe("0.24mm Standard @Snapmaker U1 (0.6 nozzle)");
+    expect(project.filament_settings_id).toEqual(["My PETG"]);
+  });
+
+  it("gives a flat project the same result as before, and falls back without nozzle or names", async () => {
+    const flat = await orcaProject({
+      nozzle_diameter: ["0.6"],
+      print_settings_id: "0.24mm Standard @BBL X1C",
+      filament_settings_id: ["My PETG"],
+    });
+    expect(flat.printer_settings_id).toBe("Snapmaker U1 (0.6 nozzle)");
+    expect(flat.print_settings_id).toBe("0.24mm Standard @Snapmaker U1 (0.6 nozzle)");
+    expect(flat.filament_settings_id).toEqual(["My PETG"]);
+    // A process_settings object without "1" is not nested: nothing to resolve, defaults apply.
+    const empty = await orcaProject({ process_settings: {}, filament_colour: ["#FFFFFF"] });
+    expect(empty.printer_settings_id).toBe("Snapmaker U1 (0.4 nozzle)");
+    expect(empty.print_settings_id).toBe("0.20mm Standard @Snapmaker U1 (0.4 nozzle)");
+    expect(empty.filament_settings_id).toBe("Generic");
+  });
+
+  it("moves each plate's items from the designer's bed to the middle of a 270 mm bed", () => {
+    const bed = { width: 330, depth: 320, centerX: 165, centerY: 160 };
+    const item = (id: number, x: number, y: number) =>
+      `<item objectid="${id}" transform="1 0 0 0 1 0 0 0 1 ${x} ${y} 5" printable="1"/>`;
+    const xml = `<model><build>${item(1, 165, 160)}${item(2, 561, 160)}${item(3, 165, -224)}${item(9, 7, 7)}</build></model>`;
+    const plate = (id: number, objectId: number) => ({
+      id: String(id),
+      name: "",
+      instances: [{ objectId: String(objectId), instanceId: 0, identifyId: "" }],
+    });
+    const moved = recenterOnOrcaBed(xml, [plate(1, 1), plate(2, 2), plate(3, 3)], bed)!;
+    // Plate 1 is the first column of the first row, plate 2 the second column, plate 3 the second row.
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 135 135 5"');
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 459 135 5"');
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 135 -189 5"');
+    // An item on no plate keeps its place.
+    expect(moved).toContain('transform="1 0 0 0 1 0 0 0 1 7 7 5"');
+    // Nothing to do without a known bed, without plates, or when the bed is already 270 mm.
+    expect(recenterOnOrcaBed(xml, [plate(1, 1)], null)).toBeNull();
+    expect(recenterOnOrcaBed(xml, [], bed)).toBeNull();
+    expect(recenterOnOrcaBed(xml, [plate(1, 1)], { width: 270, depth: 270, centerX: 135, centerY: 135 })).toBeNull();
+  });
+
+  it("moves the wipe tower of each plate from the designer's bed onto the 270 mm bed", () => {
+    const original = {
+      printable_area: ["0x0", "330x0", "330x320", "0x320"],
+      prime_tower_width: "60",
+      wipe_tower_x: ["40", "165", "-5"],
+      wipe_tower_y: ["267.639", "250", "160"],
+    };
+    const cleaned: Record<string, unknown> = {};
+    moveWipeTower(cleaned, original);
+    // Shifted by (-30, -25), then kept inside the bed: a 60 mm tower with the default 5 mm brim and 2 mm slack
+    // fits from 7 to 203.
+    expect(cleaned.wipe_tower_x).toEqual(["10", "135", "7"]);
+    expect(cleaned.wipe_tower_y).toEqual(["203", "203", "135"]);
+    const untouched: Record<string, unknown> = {};
+    moveWipeTower(untouched, { printable_area: original.printable_area });
+    expect(untouched.wipe_tower_x).toBeUndefined();
+  });
+
+  it("keeps the wipe tower, brim and ribs on the bed whatever the tower settings say", () => {
+    const base = {
+      printable_area: ["0x0", "270x0", "270x270", "0x270"],
+      wipe_tower_x: ["-20", "100", "400"],
+      wipe_tower_y: ["0", "100", "400"],
+    };
+    const run = (extra: Record<string, unknown>): Record<string, unknown> => {
+      const cleaned: Record<string, unknown> = {};
+      moveWipeTower(cleaned, { ...base, ...extra });
+      return cleaned;
+    };
+    // No width or brim: the U1 preset's 30 mm tower and 5 mm brim, so 7 mm to the near edge and 270 - 37 to the far one.
+    expect(run({}).wipe_tower_x).toEqual(["7", "100", "233"]);
+    expect(run({}).wipe_tower_y).toEqual(["7", "100", "233"]);
+    // A width below the preset's 30 does not shrink it; a larger brim and rib extension widen the margins.
+    expect(run({ prime_tower_width: "10" }).wipe_tower_x).toEqual(["7", "100", "233"]);
+    expect(
+      run({
+        prime_tower_width: "40",
+        prime_tower_brim_width: "8",
+        wipe_tower_wall_type: "rib",
+        wipe_tower_extra_rib_length: "8",
+      }).wipe_tower_x,
+    ).toEqual(["10", "100", "212"]);
+    // Ribs only count for the rib wall type; list values (one per extruder) and junk widths are tolerated.
+    expect(
+      run({ prime_tower_width: ["40"], wipe_tower_wall_type: "rectangle", wipe_tower_extra_rib_length: "8" })
+        .wipe_tower_x,
+    ).toEqual(["7", "100", "223"]);
+    expect(run({ prime_tower_width: "abc", prime_tower_brim_width: "-1" }).wipe_tower_x).toEqual(["7", "100", "233"]);
+    // A tower larger than the bed has no room: it sits at the near margin instead of leaving the bed on the other side.
+    expect(run({ prime_tower_width: "300" }).wipe_tower_x).toEqual(["7", "7", "7"]);
+    // A position that is not a number is passed through.
+    expect(run({ wipe_tower_x: ["x"] }).wipe_tower_x).toEqual(["x"]);
+  });
+
+  it("sets the Application tag to a Bambu Studio version Snapmaker Orca accepts", () => {
+    const tag = '<metadata name="Application">BambuStudio-01.10.01.50</metadata>';
+    const own = modelXml(SINGLE_COMPONENT_ROOT);
+    // MakerWorld files carry a newer Bambu Studio than Snapmaker Orca, which refuses those.
+    expect(markAsBambuProject(own)).toContain(tag);
+    expect(markAsBambuProject(own.replace("BambuStudio-02.07.01.57", "Snapmaker_Orca-2.4.1"))).toContain(tag);
+    expect(markAsBambuProject(own.replace("BambuStudio-02.07.01.57", "OrcaSlicer-2.3.0"))).toContain(tag);
+    expect(markAsBambuProject(own.replace("BambuStudio-02.07.01.57", "BambuStudio-01.10.01.50"))).toBeNull();
+    const withoutTag = own.replace(/ <metadata name="Application">[^<]*<\/metadata>\r?\n/, "");
+    expect(withoutTag).not.toContain("Application");
+    expect(markAsBambuProject(withoutTag)).toContain(tag);
+  });
+
+  it("falls back to the original settings file when it isn't JSON", async () => {
+    const zip = await JSZip.loadAsync(await makeBambuZip());
+    zip.file("Metadata/project_settings.config", "not json");
+    const result = await normalize3mf(await zip.generateAsync({ type: "uint8array" }), "orca");
+    expect(await readOut(result.bytes, "Metadata/project_settings.config")).toBe("not json");
+  });
+});
+
 describe("normalized3mfFor", () => {
   it("normalizes in a worker, caches the copy and falls back to null for a broken file", async () => {
     const storage = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-normalize-"));
@@ -437,6 +683,13 @@ describe("normalized3mfFor", () => {
     const broken = path.join(storage, "broken.3mf");
     fs.writeFileSync(broken, "not a zip");
     expect(await normalized3mfFor("plate-b", broken)).toBeNull();
+
+    // The Orca copy is kept apart from the flat one for the same plate.
+    const orca = await normalized3mfFor("plate-a", src, "orca");
+    expect(orca).not.toBeNull();
+    expect(orca).not.toBe(first);
+    expect((await JSZip.loadAsync(fs.readFileSync(orca!))).file("3D/Objects/object_1.model")).not.toBeNull();
+    expect(await readOut(fs.readFileSync(first!), "3D/3dmodel.model")).toMatch(/Thingport/);
     fs.rmSync(storage, { recursive: true, force: true });
   });
 });

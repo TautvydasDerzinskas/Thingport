@@ -1238,10 +1238,334 @@ async function buildNormalizedZip(input: Uint8Array): Promise<{ out: JSZip; repo
   };
 }
 
+/**
+ * What the copy is made for. "flat" is the core 3MF that PrusaSlicer, Cura and the like need. "orca" is for
+ * Orca forks that read Bambu's own layout (production extension, parts, plates, painting) such as Snapmaker
+ * Orca: that is kept as it is, and only what belongs to the designer's printer is taken out.
+ */
+export type NormalizeTarget = "flat" | "orca";
+
+// Orca forks treat a 3MF as Bambu's own only by this prefix; anything else gets its instances split and
+// its transforms baked into the geometry. They also refuse a file whose version is newer than their own, and
+// MakerWorld files carry the designer's Bambu Studio (02.x), so the tag is set to the oldest Snapmaker Orca
+// that reads this layout (older tags are accepted by newer builds).
+const APPLICATION_RE = /(<metadata\b[^>]*\bname\s*=\s*"Application"[^>]*>)([^<]*)(<\/metadata>)/i;
+const ORCA_FORK_APPLICATION = "BambuStudio-01.10.01.50";
+
+/** The model's XML with its generator set to a Bambu Studio version Orca forks accept, or null when it already is. */
+export function markAsBambuProject(modelXml: string): string | null {
+  const found = APPLICATION_RE.exec(modelXml);
+  if (found && found[2].trim() === ORCA_FORK_APPLICATION) return null;
+  if (found)
+    return modelXml.replace(
+      APPLICATION_RE,
+      (_all, open: string, _old: string, close: string) => open + ORCA_FORK_APPLICATION + close,
+    );
+  return modelXml.replace(
+    /<model\b[^>]*>/i,
+    (open) => `${open}
+ <metadata name="Application">${ORCA_FORK_APPLICATION}</metadata>`,
+  );
+}
+
+/** True for a path that holds the designer's slice result or G-code (".gcode", "slice_info", "custom_gcode"), which the Orca copy leaves out. */
+function isSlicedOutput(relativePath: string): boolean {
+  const p = pathKey(relativePath);
+  return p.includes(".gcode") || p.includes("slice_info") || p.includes("custom_gcode");
+}
+
+/**
+ * Snapmaker Orca crashes on a project settings file without printer and preset names, so for the Orca target the
+ * printer-profile strip sets the U1 printer and process presets, a filament preset name per designer filament, the
+ * U1's bed, height, extrusion mode and G-code flavor, the designer's first nozzle, and the moved wipe tower.
+ */
+function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
+  // Orca needs a printer: without a named preset it shows the file's name as the printer and nothing fits. Names
+  // are the U1 presets Snapmaker Orca ships (0.4 nozzle); a filament slot per designer filament.
+  const nozzle = orcaNozzle(original.nozzle_diameter);
+  cleaned.printer_settings_id = `Snapmaker U1 (${nozzle} nozzle)`;
+  cleaned.print_settings_id = orcaPrintPreset(nozzle, original.print_settings_id, original.layer_height);
+  const filaments = original.filament_settings_id;
+  if (Array.isArray(filaments)) {
+    cleaned.filament_settings_id = filaments.map((name) => orcaFilamentPreset(name));
+  } else cleaned.filament_settings_id = orcaFilamentPreset(filaments);
+  // The copy is for the Snapmaker U1, so its bed replaces the designer's (Orca would otherwise use a small default).
+  cleaned.printable_area = ["0.5x1", "270.5x1", "270.5x271", "0.5x271"];
+  cleaned.printable_height = "270";
+  // The U1 prints with absolute extrusion on Klipper; Orca otherwise refuses relative extrusion without a G92 E0 per layer.
+  cleaned.use_relative_e_distances = "0";
+  cleaned.gcode_flavor = "klipper";
+  // One nozzle, the designer's first (as the U1 has it): one value per designer extruder (the H2C has two) shows a dual-nozzle printer,
+  // and none leaves the nozzle diameter empty.
+  cleaned.nozzle_diameter = [nozzle];
+  moveWipeTower(cleaned, original);
+  return cleaned;
+}
+
+// wipe_tower_x/y is the tower's lower-left corner; it extends prime_tower_width (and, going by the rib wall, its extra rib
+// length) to the right and up, and the brim (U1 presets: 5 mm) is drawn around all of that. The U1 presets set a width of 30
+// (the Orca GUI shows that), a designer's file may carry more (MakerWorld: 60), so the file's width is used when it is larger.
+const WIPE_TOWER_DEFAULT_SIZE = 30;
+const WIPE_TOWER_DEFAULT_BRIM = 5;
+// Slack for line width and rounding on top of brim and ribs.
+const WIPE_TOWER_SLACK = 2;
+
+/** The space the tower needs beyond its corner point: [brim + slack on the near sides, size + the same on the far sides]. */
+function wipeTowerExtent(original: Settings): { before: number; after: number } {
+  const positive = (v: unknown, fallback: number): number => {
+    const n = Number(firstValue(v));
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+  };
+  const width = Math.max(positive(original.prime_tower_width, 0), WIPE_TOWER_DEFAULT_SIZE);
+  const brim = positive(original.prime_tower_brim_width, WIPE_TOWER_DEFAULT_BRIM);
+  const ribs =
+    firstValue(original.wipe_tower_wall_type) === "rib" ? positive(original.wipe_tower_extra_rib_length, 0) : 0;
+  const before = brim + WIPE_TOWER_SLACK;
+  return { before, after: width + ribs + before };
+}
+
+/**
+ * The wipe tower ("Reinigungsturm") has a position per plate on the designer's bed, so on the smaller U1 bed it would
+ * stand beside the plate. It moves by the same shift as the objects (the designer's bed middle to the U1's), then
+ * stays inside the bed, off its edge.
+ */
+export function moveWipeTower(cleaned: Settings, original: Settings): void {
+  const bed = bedFromPrintableArea(original.printable_area);
+  const xs = original.wipe_tower_x;
+  const ys = original.wipe_tower_y;
+  if (!bed || !Array.isArray(xs) || !Array.isArray(ys)) return;
+  const { before, after } = wipeTowerExtent(original);
+  const lo = before;
+  // A tower wider than the bed (hi would fall below lo) is put at the near edge and sticks out on the far side, on purpose:
+  // clamping is only about the corner point, and Orca reports a tower outside the bed itself when slicing.
+  const hi = Math.max(ORCA_FORK_BED_MM - after, lo);
+  const place = (value: unknown, shift: number): string => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return String(value);
+    return String(Math.round(Math.min(Math.max(n + shift, lo), hi) * 1000) / 1000);
+  };
+  cleaned.wipe_tower_x = xs.map((x) => place(x, ORCA_FORK_BED_MM / 2 - bed.centerX));
+  cleaned.wipe_tower_y = ys.map((y) => place(y, ORCA_FORK_BED_MM / 2 - bed.centerY));
+}
+
+// The U1 ships printer presets for these nozzles, each with its own "Standard" process presets (by layer height).
+const ORCA_NOZZLE_LAYER_HEIGHTS: Record<string, string[]> = {
+  "0.2": ["0.12"],
+  "0.4": ["0.08", "0.12", "0.16", "0.20", "0.24", "0.28"],
+  "0.6": ["0.18", "0.24", "0.30"],
+  "0.8": ["0.24", "0.32", "0.40"],
+};
+
+/** The U1 nozzle closest to the designer's first extruder (0.4 mm without one). */
+function orcaNozzle(nozzleDiameter: unknown): string {
+  const wanted = Number(firstValue(nozzleDiameter));
+  let best = "0.4";
+  if (Number.isFinite(wanted) && wanted > 0) {
+    for (const n of Object.keys(ORCA_NOZZLE_LAYER_HEIGHTS))
+      if (Math.abs(Number(n) - wanted) < Math.abs(Number(best) - wanted)) best = n;
+  }
+  return best;
+}
+
+/**
+ * The U1 "Standard" process preset for the designer's project, for the given nozzle. The base is the one the designer
+ * started from, read from the leading height of their preset name ("0.20mm Standard @BBL H2S" -> 0.20): their changes
+ * (a 0.275 layer height, line widths) were made on top of that base, so another base would change every value they
+ * left alone. Without such a name, the preset closest to their layer height; the nozzle's first without either.
+ */
+function orcaPrintPreset(nozzle: string, printSettingsId: unknown, layerHeight: unknown): string {
+  const heights = ORCA_NOZZLE_LAYER_HEIGHTS[nozzle];
+  const name = String(firstValue(printSettingsId) ?? "");
+  const mm = name.indexOf("mm");
+  const fromName = mm > 0 && mm <= 6 ? Number(name.slice(0, mm)) : NaN;
+  const wanted = fromName > 0 ? fromName : Number(firstValue(layerHeight));
+  let best = heights.includes("0.20") ? "0.20" : heights[0];
+  if (Number.isFinite(wanted) && wanted > 0) {
+    for (const h of heights) if (Math.abs(Number(h) - wanted) < Math.abs(Number(best) - wanted)) best = h;
+  }
+  return `${best}mm Standard @Snapmaker U1 (${nozzle} nozzle)`;
+}
+/**
+ * The filament preset name for a slot: the designer's own. Their filament values stay in the file, and no U1 preset
+ * replaces them (a preset of the same name can be another product). A name that is also a U1 preset stays as it is.
+ * Orca crashes on an empty name, so that becomes "Generic".
+ */
+function orcaFilamentPreset(designerName: unknown): string {
+  return String(designerName ?? "").trim() || "Generic";
+}
+
+/** Per-object values of the Bambu enums in model_settings.config, mapped like the project settings. */
+export function mapObjectShellSettings(xml: string): string | null {
+  const out = xml.replace(
+    /(<metadata key="ensure_vertical_shell_thickness" value=")([^"]*)(")/g,
+    (_m, a: string, v: string, c: string) => a + String(mapVerticalShellThickness(v)) + c,
+  );
+  return out === xml ? null : out;
+}
+
+// The designer's objects sit at coordinates for the designer's bed (a MakerWorld printer such as the H2C, 330 x 320 mm),
+// so on a smaller bed they land beside the plate. Orca lays plates out in a grid, each one a bed wide plus this gap.
+const ORCA_PLATE_GAP = 0.2;
+// Snapmaker's U1, the printer these copies are for; its other models are close enough to need the same re-centring.
+const ORCA_FORK_BED_MM = 270;
+
+type Bed = { width: number; depth: number; centerX: number; centerY: number };
+
+/**
+ * The designer's bed from `printable_area` ("XxY" corner points): size and middle. Null when it isn't a list, has
+ * fewer than two valid points, or has no extent in x or y.
+ */
+function bedFromPrintableArea(area: unknown): Bed | null {
+  if (!Array.isArray(area)) return null;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const point of area) {
+    const [x, y] = String(point).split("x").map(Number);
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      xs.push(x);
+      ys.push(y);
+    }
+  }
+  if (xs.length < 2) return null;
+  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  if (maxX <= minX || maxY <= minY) return null;
+  return { width: maxX - minX, depth: maxY - minY, centerX: (minX + maxX) / 2, centerY: (minY + maxY) / 2 };
+}
+
+/** Orca's own column count for a grid of plates: the square root, rounded up when the rounding went down. */
+function plateColumns(count: number): number {
+  const root = Math.sqrt(count);
+  return root > Math.round(root) ? Math.round(root) + 1 : Math.round(root);
+}
+
+/**
+ * The model's XML with every item that stands on a plate moved from the designer's bed to the middle of the same
+ * plate on a square bed of `ORCA_FORK_BED_MM`, or null when nothing needs to move. Items on no plate stay put.
+ */
+export function recenterOnOrcaBed(modelXml: string, plates: PlateSettings[], designerBed: Bed | null): string | null {
+  if (!designerBed || plates.length === 0) return null;
+  const target = ORCA_FORK_BED_MM;
+  const columns = plateColumns(plates.length);
+  const plateOf = new Map<string, number>();
+  plates.forEach((plate, index) => {
+    for (const inst of plate.instances) plateOf.set(`${inst.objectId}:${inst.instanceId}`, index);
+  });
+  const seen: Record<string, number> = {};
+  let moved = false;
+  const out = modelXml.replace(/<item\b([^>]*?)(\/?)>/gi, (whole, attrStr: string, close: string) => {
+    const attrs = parseAttrs(attrStr);
+    if (!attrs.objectid) return whole;
+    const instance = seen[attrs.objectid] ?? 0;
+    seen[attrs.objectid] = instance + 1;
+    const plate = plateOf.get(`${attrs.objectid}:${instance}`);
+    if (plate === undefined) return whole;
+    const column = plate % columns;
+    const row = Math.floor(plate / columns);
+    const dx = column * (1 + ORCA_PLATE_GAP) * (target - designerBed.width) + (target / 2 - designerBed.centerX);
+    const dy = -row * (1 + ORCA_PLATE_GAP) * (target - designerBed.depth) + (target / 2 - designerBed.centerY);
+    if (dx === 0 && dy === 0) return whole;
+    moved = true;
+    const m = parseTransform(attrs.transform);
+    m[9] += dx;
+    m[10] += dy;
+    const transform = `transform="${formatTransform(m)}"`;
+    const rest = /\btransform\s*=\s*"[^"]*"/i.test(attrStr)
+      ? attrStr.replace(/\btransform\s*=\s*"[^"]*"/i, transform)
+      : `${attrStr} ${transform}`;
+    return `<item${rest}${close}>`;
+  });
+  return moved ? out : null;
+}
+
+/**
+ * Builds the Orca copy: the 3MF with its parts, plates and painting as they are, but the project settings reduced to what
+ * Snapmaker Orca needs (U1 printer, process and filament presets, bed, nozzle, wipe tower), the model marked as a Bambu
+ * project and re-centred on the U1 bed, the per-object shell settings mapped, and slice output and G-code left out.
+ * Counts in the returned report are zero, as nothing is flattened. A project_settings.config that can't be read is copied unchanged.
+ */
+async function buildOrcaZip(input: Uint8Array): Promise<{ out: JSZip; report: () => NormalizeReport }> {
+  const zip = await JSZip.loadAsync(input);
+  const filesByKey = indexZipFiles(zip);
+  const rootRec = filesByKey["3d/3dmodel.model"];
+  if (!rootRec) throw new Error(NO_MODEL);
+
+  let originalSettings: Settings | null = null;
+  try {
+    const settingsRec = filesByKey["metadata/project_settings.config"];
+    if (settingsRec) originalSettings = JSON.parse(await settingsRec.entry.async("string"));
+  } catch {}
+  const modelSettingsRec = filesByKey["metadata/model_settings.config"];
+  const plates = modelSettingsRec ? parsePlates(await modelSettingsRec.entry.async("string")) : [];
+
+  const out = new JSZip();
+  let cleanedKeys: string[] = [];
+  for (const rec of Object.values(filesByKey)) {
+    const key = pathKey(rec.relativePath);
+    if (isSlicedOutput(rec.relativePath)) continue;
+    if (key === "metadata/project_settings.config") {
+      let cleaned: Settings | null = null;
+      try {
+        // Legacy projects nest the real values (process_settings["1"]); restore from the resolved ones, as the strip does.
+        if (originalSettings)
+          cleaned = restoreKeysOrcaNeeds(
+            normalizeProjectSettings(originalSettings),
+            extractBambuSettings(originalSettings),
+          );
+      } catch {}
+      if (!cleaned) {
+        out.file(rec.relativePath, await rec.entry.async("uint8array"));
+        continue;
+      }
+      cleanedKeys = Object.keys(cleaned).toSorted();
+      out.file(rec.relativePath, JSON.stringify(cleaned, null, 2));
+      continue;
+    }
+    if (key === "3d/3dmodel.model") {
+      let xml = await rec.entry.async("string");
+      xml = markAsBambuProject(xml) ?? xml;
+      xml =
+        recenterOnOrcaBed(
+          xml,
+          plates,
+          bedFromPrintableArea(originalSettings ? extractBambuSettings(originalSettings).printable_area : undefined),
+        ) ?? xml;
+      out.file(rec.relativePath, xml);
+      continue;
+    }
+    if (key === "metadata/model_settings.config") {
+      const xml = await rec.entry.async("string");
+      out.file(rec.relativePath, mapObjectShellSettings(xml) ?? xml);
+      continue;
+    }
+    out.file(rec.relativePath, await rec.entry.async("uint8array"));
+  }
+  return {
+    out,
+    report: () => ({
+      settings: {},
+      projectKeys: cleanedKeys,
+      objects: 0,
+      buildItems: 0,
+      plates: 0,
+      vertices: 0,
+      triangles: 0,
+      paintColors: 0,
+      materials: 0,
+      flattened: false,
+    }),
+  };
+}
+
 const ZIP_OPTIONS = { compression: "DEFLATE", compressionOptions: { level: 6 } } as const;
 
-export async function normalize3mf(input: Uint8Array): Promise<{ bytes: Uint8Array; report: NormalizeReport }> {
-  const { out, report } = await buildNormalizedZip(input);
+/**
+ * Normalizes a 3MF into a zip: the flat copy for `"flat"`, the Snapmaker Orca copy for `"orca"`. The input is not changed.
+ */
+export async function normalize3mf(
+  input: Uint8Array,
+  target: NormalizeTarget = "flat",
+): Promise<{ bytes: Uint8Array; report: NormalizeReport }> {
+  const { out, report } = await (target === "orca" ? buildOrcaZip(input) : buildNormalizedZip(input));
   const bytes = await out.generateAsync({ type: "uint8array", ...ZIP_OPTIONS });
   return { bytes, report: report() };
 }
