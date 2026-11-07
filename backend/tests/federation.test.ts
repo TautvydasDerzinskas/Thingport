@@ -151,6 +151,19 @@ describe("connected instances, off", () => {
     expect((await request(app).get("/api/ap/follows/someone-else")).status).toBe(404);
     expect((await inbox("http://203.0.113.29", "{}")).status).toBe(404);
   });
+
+  it("takes no request to reach someone elsewhere", async () => {
+    const res = await request(app)
+      .post("/api/me/connection-requests")
+      .set(auth(member))
+      .send({ handle: "bob@198.51.100.20" });
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe("federation_off");
+    expect((await request(app).get("/api/social").set(auth(member))).body).toMatchObject({
+      federation: false,
+      instance_host: null,
+    });
+  });
 });
 
 describe("connected instances, on", () => {
@@ -211,8 +224,9 @@ describe("connected instances, on", () => {
     };
     expect(publishedKeys(renamed)).toEqual([]);
     expect(onlyComparedKeys(await runtime.keysIn(renamed), compared)).toBe(false);
+    // Anyone else at an actor's address is a person here, for partners only; whether they exist isn't told.
     expect((await request(app).get("/api/ap/actors/someone").set("Accept", "application/activity+json")).status).toBe(
-      404,
+      401,
     );
   });
 
@@ -277,6 +291,145 @@ describe("connected instances, on", () => {
         .set("Signature", signed(from))
         .send(follow(from));
       expect(res.status).toBe(401);
+    }
+  });
+
+  it("gives everyone a username, which they can change", async () => {
+    const me = await request(app).get("/api/me").set(auth(member));
+    expect(me.body.user.username).toMatch(/^fedmember(-\d+)?$/);
+    const adminName = (await request(app).get("/api/me").set(auth(admin))).body.user.username as string;
+    const available = (username: string) =>
+      request(app).get("/api/me/username-available").query({ username }).set(auth(member));
+    expect((await available(adminName)).body).toMatchObject({ available: false, reason: "taken" });
+    expect((await available(me.body.user.username)).body).toMatchObject({ available: true });
+    expect((await available("Not one")).body).toMatchObject({ available: false, reason: "invalid" });
+
+    const taken = await request(app).patch("/api/me/username").set(auth(member)).send({ username: adminName });
+    expect(taken.status).toBe(409);
+    expect(taken.body.code).toBe("username_taken");
+    const invalid = await request(app).patch("/api/me/username").set(auth(member)).send({ username: "-no" });
+    expect(invalid.body.code).toBe("invalid_username");
+    const wanted = `m.${Date.now()}`;
+    const changed = await request(app)
+      .patch("/api/me/username")
+      .set(auth(member))
+      .send({ username: `@${wanted}` });
+    expect(changed.status).toBe(200);
+    expect(changed.body.user.username).toBe(wanted);
+    expect((await request(app).get("/api/social").set(auth(member))).body).toMatchObject({
+      federation: true,
+      instance_host: "192.0.2.50:8000",
+    });
+  });
+
+  it("keeps someone's request to reach a person elsewhere for the admins, and lets them withdraw it", async () => {
+    const ask = (handle: string, note?: string) =>
+      request(app).post("/api/me/connection-requests").set(auth(member)).send({ handle, note });
+    const res = await ask("Bob@198.51.100.20", "  For the   bins ");
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ handle: "bob@198.51.100.20", note: "For the bins", status: "waiting_admin" });
+    const id = res.body.id as string;
+
+    const notified = await prisma.notification.findFirst({
+      where: { userId: admin.id, type: "federation", internalPath: `/admin-social?request=${id}` },
+    });
+    expect(notified?.title).toBe("FedMember asks to reach bob@198.51.100.20");
+    const listed = await request(app).get("/api/federation/instances").set(auth(admin));
+    expect(listed.body.local).toContainEqual(
+      expect.objectContaining({
+        id,
+        origin: "http://198.51.100.20",
+        http: true,
+        userName: "FedMember",
+        targetHandle: "bob@198.51.100.20",
+      }),
+    );
+    // Not another instance's, so nothing in it to check against a key.
+    expect(listed.body.incoming.some((item: { id: string }) => item.id === id)).toBe(false);
+
+    expect((await ask("bob@198.51.100.20")).body.code).toBe("exists");
+    expect((await ask("carl@192.0.2.50:8000")).body.code).toBe("same_instance");
+    expect((await ask("nobody")).body.code).toBe("invalid_handle");
+
+    const mine = await request(app).get("/api/me/connection-requests").set(auth(member));
+    expect(mine.body.map((item: { id: string }) => item.id)).toContain(id);
+    // Someone else's can't be withdrawn by anyone but them.
+    expect((await request(app).delete(`/api/me/connection-requests/${id}`).set(auth(admin))).status).toBe(404);
+    expect((await request(app).delete(`/api/me/connection-requests/${id}`).set(auth(member))).status).toBe(204);
+    const after = await request(app).get("/api/me/connection-requests").set(auth(member));
+    expect(after.body.map((item: { id: string }) => item.id)).not.toContain(id);
+  });
+
+  it("lets someone have ten requests waiting, and only so many a day", async () => {
+    const ask = (handle: string) => request(app).post("/api/me/connection-requests").set(auth(admin)).send({ handle });
+    const made: string[] = [];
+    for (let n = 0; n < 10; n++) {
+      const res = await ask(`p${n}@198.51.100.4${n}`);
+      expect(res.status).toBe(201);
+      made.push(res.body.id);
+    }
+    const eleventh = await ask("p10@198.51.100.50");
+    expect(eleventh.status).toBe(429);
+    expect(eleventh.body.code).toBe("request_limit");
+    // Withdrawing makes room, but not endlessly: each one still told every admin.
+    for (const id of made) await request(app).delete(`/api/me/connection-requests/${id}`).set(auth(admin));
+    const more: string[] = [];
+    for (let n = 0; n < 10; n++) {
+      const res = await ask(`q${n}@198.51.100.6${n}`);
+      expect(res.status).toBe(201);
+      more.push(res.body.id);
+    }
+    await request(app).delete(`/api/me/connection-requests/${more[0]}`).set(auth(admin));
+    const daily = await ask("q@198.51.100.70");
+    expect(daily.status).toBe(429);
+    expect(daily.body.code).toBe("daily_limit");
+    // Every one still waiting is listed, however many were answered or withdrawn after.
+    const mine = await request(app).get("/api/me/connection-requests").set(auth(admin));
+    expect(mine.body.filter((item: { status: string }) => item.status === "waiting_admin")).toHaveLength(9);
+  });
+
+  it("won't decline a request withdrawn meanwhile", async () => {
+    const res = await request(app)
+      .post("/api/me/connection-requests")
+      .set(auth(member))
+      .send({ handle: "gone@198.51.100.22" });
+    await request(app).delete(`/api/me/connection-requests/${res.body.id}`).set(auth(member));
+    expect((await request(app).post(`/api/federation/requests/${res.body.id}/decline`).set(auth(admin))).status).toBe(
+      404,
+    );
+  });
+
+  it("tells someone their admin declined, without a word to the other instance", async () => {
+    const res = await request(app)
+      .post("/api/me/connection-requests")
+      .set(auth(member))
+      .send({ handle: "dana@198.51.100.21" });
+    const id = res.body.id as string;
+    expect((await request(app).post(`/api/federation/requests/${id}/decline`).set(auth(admin))).status).toBe(204);
+    const told = await prisma.notification.findFirst({
+      where: { userId: member.id, type: "federation", title: "Your admin won't connect with 198.51.100.21" },
+    });
+    expect(told?.body).toBe("You asked to reach dana@198.51.100.21.");
+    const mine = await request(app).get("/api/me/connection-requests").set(auth(member));
+    expect(mine.body.find((item: { id: string }) => item.id === id)?.status).toBe("declined");
+    expect(await prisma.federationDelivery.count({ where: { peer: { origin: "http://198.51.100.21" } } })).toBe(0);
+  });
+
+  it("says when an instance is already connected, asked or blocked", async () => {
+    const ask = (handle: string) => request(app).post("/api/me/connection-requests").set(auth(member)).send({ handle });
+    const peers = await Promise.all(
+      (["ACTIVE", "OUTGOING", "BLOCKED"] as const).map((status, n) =>
+        prisma.peer.create({ data: { origin: `https://203.0.113.${30 + n}`, status } }),
+      ),
+    );
+    try {
+      // Whichever scheme the admin connected with.
+      expect((await ask("a@203.0.113.30")).body.code).toBe("already_connected");
+      expect((await ask("a@203.0.113.31")).body.code).toBe("already_asked");
+      expect((await ask("a@203.0.113.32")).body.code).toBe("not_available");
+    } finally {
+      await prisma.peer.deleteMany({ where: { id: { in: peers.map((peer) => peer.id) } } });
+      invalidateAllowlist();
     }
   });
 

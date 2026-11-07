@@ -26,7 +26,13 @@ import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { UnauthorizedError } from "../../api/client";
-import { federationApi, type IncomingRequest, type Instances, type Peer } from "../../api/federation";
+import {
+  federationApi,
+  type IncomingRequest,
+  type Instances,
+  type LocalRequest,
+  type Peer,
+} from "../../api/federation";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { ListRowSkeletons } from "../../components/ListSkeleton";
 import Segmented from "../../components/controls/Segmented";
@@ -55,6 +61,8 @@ export default function InstancesSection({ onUnauthorized }: Props) {
   const [loadFailed, setLoadFailed] = React.useState(false);
   const [tab, setTab] = React.useState<Tab>("requests");
   const [connecting, setConnecting] = React.useState(false);
+  // Connecting for one of this instance's people, from their request.
+  const [connectingFor, setConnectingFor] = React.useState<LocalRequest | null>(null);
   const [open, setOpen] = React.useState<string | null>(null);
   const [key, setKey] = React.useState<Peer | null>(null);
   const ago = (iso: string | null) => (iso ? relativeTime(iso, i18n.language) : null);
@@ -91,7 +99,8 @@ export default function InstancesSection({ onUnauthorized }: Props) {
     };
   }, [load]);
 
-  // Opened from a notification: that request, in its own dialog.
+  // Opened from a notification: that request, in its own dialog -- another instance's to review, or one of this
+  // instance's people's to connect for.
   const asked = searchParams.get("request");
   const reviewing = asked ? (data?.incoming.find((request) => request.id === asked) ?? null) : null;
   // Not in the list: it may have come in since the last read, so read again once before saying it's been answered.
@@ -99,6 +108,12 @@ export default function InstancesSection({ onUnauthorized }: Props) {
   React.useEffect(() => {
     if (!asked || !data) return;
     if (data.incoming.some((request) => request.id === asked)) return;
+    const local = data.local.find((request) => request.id === asked);
+    if (local) {
+      setConnectingFor(local);
+      setSearchParams({}, { replace: true });
+      return;
+    }
     if (readAgainFor.current !== asked) {
       readAgainFor.current = asked;
       load();
@@ -117,7 +132,7 @@ export default function InstancesSection({ onUnauthorized }: Props) {
   };
 
   const counts = {
-    requests: (data?.incoming.length ?? 0) + (data?.outgoing.length ?? 0),
+    requests: (data?.incoming.length ?? 0) + (data?.local.length ?? 0) + (data?.outgoing.length ?? 0),
     partners: data?.partners.length ?? 0,
     blocked: data?.blocked.length ?? 0,
   };
@@ -195,6 +210,17 @@ export default function InstancesSection({ onUnauthorized }: Props) {
               </Collapse>
             </Box>
           ))}
+          {data.local.length > 0 && <GroupLabel>{t(k("fromUsers"))}</GroupLabel>}
+          {data.local.map((request) => (
+            <LocalRow
+              key={request.id}
+              request={request}
+              ago={ago}
+              onConnect={() => setConnectingFor(request)}
+              onChanged={load}
+              onUnauthorized={onUnauthorized}
+            />
+          ))}
           {data.outgoing.length > 0 && <GroupLabel>{t(k("waiting"))}</GroupLabel>}
           {data.outgoing.map((peer) => (
             <OutgoingRow key={peer.id} peer={peer} onChanged={load} onUnauthorized={onUnauthorized} ago={ago} />
@@ -235,11 +261,16 @@ export default function InstancesSection({ onUnauthorized }: Props) {
         </Box>
       )}
 
-      {connecting && (
+      {(connecting || connectingFor) && (
         <ConnectDialog
-          onClose={() => setConnecting(false)}
+          request={connectingFor}
+          onClose={() => {
+            setConnecting(false);
+            setConnectingFor(null);
+          }}
           onSent={(peer) => {
             setConnecting(false);
+            setConnectingFor(null);
             setTab("requests");
             showToast({ message: t(k("sent"), { name: peer.name }) });
             load();
@@ -296,6 +327,7 @@ function Row({
   name,
   http,
   line,
+  note,
   status,
   trailing,
   onContextMenu,
@@ -304,6 +336,8 @@ function Row({
   name: string;
   http: boolean;
   line: (string | null)[];
+  /** What someone wrote with a request. */
+  note?: string | null;
   status?: React.ReactNode;
   trailing?: React.ReactNode;
   onContextMenu?: (event: React.MouseEvent) => void;
@@ -322,6 +356,11 @@ function Row({
         <Typography variant="caption" color="text.secondary">
           {line.filter(Boolean).join(" · ")}
         </Typography>
+        {note && (
+          <Typography variant="caption" sx={{ fontStyle: "italic", overflowWrap: "anywhere" }}>
+            “{note}”
+          </Typography>
+        )}
       </Stack>
       {status}
       {trailing}
@@ -349,6 +388,66 @@ function useAct(onChanged: () => void, onUnauthorized?: () => void) {
     }
     onChanged();
   };
+}
+
+/** One of this instance's people asking to reach someone on an instance it isn't connected with. */
+function LocalRow({
+  request,
+  ago,
+  onConnect,
+  onChanged,
+  onUnauthorized,
+}: {
+  request: LocalRequest;
+  ago: (iso: string | null) => string | null;
+  onConnect: () => void;
+  onChanged: () => void;
+  onUnauthorized?: () => void;
+}) {
+  const { t } = useTranslation(["app", "common"]);
+  const confirm = useConfirm();
+  const act = useAct(onChanged, onUnauthorized);
+  // A handle stored before addresses were checked can't be read as one: shown as it is.
+  let host = request.origin;
+  try {
+    host = new URL(request.origin).host;
+  } catch {
+    // Kept as the stored text.
+  }
+  const who = request.userName ?? request.requesterHandle ?? t(k("someone"));
+  const decline = async () => {
+    const ok = await confirm({
+      title: t(k("declineUserTitle"), { who }),
+      message: t(k("declineUserText"), { who, host }),
+      confirmLabel: t(k("decline")),
+      destructive: true,
+    });
+    if (ok) await act(() => federationApi.decline(request.id), t(k("declinedUser"), { who }));
+  };
+  return (
+    <Row
+      origin={request.origin}
+      name={host}
+      http={request.http}
+      line={[
+        request.targetHandle
+          ? t(k("wantsToReach"), { who, whom: request.targetHandle })
+          : t(k("wantsToConnect"), { who }),
+        ago(request.createdAt),
+      ]}
+      note={request.note}
+      trailing={
+        <Stack direction="row" spacing={1}>
+          <Button size="small" color="inherit" onClick={() => void decline()}>
+            {t(k("decline"))}
+          </Button>
+          <Button size="small" variant="outlined" onClick={onConnect}>
+            {t(k("connectFor"))}
+          </Button>
+        </Stack>
+      }
+    />
+  );
 }
 
 function OutgoingRow({ peer, ago, onChanged, onUnauthorized }: RowProps) {

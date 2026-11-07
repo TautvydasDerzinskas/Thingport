@@ -59,18 +59,59 @@ export type IncomingRequest = {
   http: boolean;
   requesterHandle: string | null;
   targetHandle: string | null;
+  /** Every person asking and whom, when their admin sent on several at once. */
+  asks?: { requesterHandle: string | null; targetHandle: string | null }[];
+  note: string | null;
+  createdAt: string;
+};
+
+/** One of this instance's people asking to reach someone elsewhere, waiting for an admin's Connect. */
+export type LocalRequest = {
+  id: string;
+  /** The instance's likely address, from the handle; the admin can change it when connecting. */
+  origin: string;
+  http: boolean;
+  userName: string | null;
+  requesterHandle: string | null;
+  targetHandle: string | null;
   note: string | null;
   createdAt: string;
 };
 
 export type Instances = {
   incoming: IncomingRequest[];
+  local: LocalRequest[];
   outgoing: Peer[];
   partners: Peer[];
   blocked: Peer[];
 };
 
-export type RequestDetails = InstanceInfo & { id: string; verified: true };
+export type RequestDetails = InstanceInfo & {
+  id: string;
+  verified: true;
+  /** The person here they asked to reach, when the request names one. */
+  target: { username: string; displayName: string } | null;
+  /** What the request that checked out says: a newer one under the same address, forged, may have said otherwise. */
+  request?: {
+    requesterName: string | null;
+    note: string | null;
+    asks: {
+      requesterHandle: string | null;
+      targetHandle: string | null;
+      target: { username: string; displayName: string } | null;
+    }[];
+  };
+};
+
+export type MyRequestStatus = "waiting_admin" | "waiting_them" | "connected" | "declined";
+
+export type MyRequest = {
+  id: string;
+  handle: string;
+  note: string | null;
+  status: MyRequestStatus;
+  createdAt: string;
+};
 
 /** A failure with the server's reason, and its code where the UI acts on it (`key_changed`, `unreachable`, ...). */
 export class FederationError extends Error {
@@ -83,8 +124,8 @@ export class FederationError extends Error {
   }
 }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${apiBase()}/federation${path}`, {
+async function call<T>(method: string, path: string, body?: unknown, base = "/federation"): Promise<T> {
+  const res = await fetch(`${apiBase()}${base}${path}`, {
     method,
     headers: authHeaders(body === undefined ? {} : { "Content-Type": "application/json" }),
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -107,8 +148,9 @@ export const federationApi = {
   check: () => call<{ reachability: Reachability; canTurnOn: boolean }>("POST", "/check"),
   setEnabled: (enabled: boolean) => call<FederationSettings>("PATCH", "/settings", { enabled }),
   lookup: (address: string) => call<InstanceInfo>("GET", `/lookup?address=${encodeURIComponent(address)}`),
-  connect: (address: string, fingerprint: string, note: string | null) =>
-    call<{ peer: Peer }>("POST", "/connect", { address, fingerprint, note }),
+  /** With `requestId`, for one of this instance's people who asked: it answers their request. */
+  connect: (address: string, fingerprint: string, note: string | null, requestId?: string | null) =>
+    call<{ peer: Peer }>("POST", "/connect", { address, fingerprint, note, requestId: requestId ?? null }),
   instances: () => call<Instances>("GET", "/instances"),
   request: (id: string) => call<RequestDetails>("GET", `/requests/${encodeURIComponent(id)}`),
   approve: (id: string, fingerprint: string) =>
@@ -120,6 +162,14 @@ export const federationApi = {
   disconnect: (id: string) => call<void>("POST", `/peers/${encodeURIComponent(id)}/disconnect`),
   block: (id: string) => call<Peer>("POST", `/peers/${encodeURIComponent(id)}/block`),
   unblock: (id: string) => call<void>("POST", `/peers/${encodeURIComponent(id)}/unblock`),
+};
+
+/** A person's own requests to reach someone on another instance. */
+export const connectionRequestsApi = {
+  mine: () => call<MyRequest[]>("GET", "", undefined, "/me/connection-requests"),
+  create: (handle: string, note: string | null) =>
+    call<MyRequest>("POST", "", { handle, note }, "/me/connection-requests"),
+  cancel: (id: string) => call<void>("DELETE", `/${encodeURIComponent(id)}`, undefined, "/me/connection-requests"),
 };
 
 /** Whether a check result lets federation be turned on. */

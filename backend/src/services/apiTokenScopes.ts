@@ -69,6 +69,11 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/explore",
       "/explore/user/:id",
       "/explore/user/:id/models",
+      "/explore/elsewhere/person/:id",
+      "/explore/elsewhere/person/:id/models",
+      "/explore/elsewhere/model/:id",
+      "/explore/elsewhere/collection/:id",
+      "/explore/elsewhere/media/:token",
     ],
   },
   {
@@ -123,6 +128,8 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/print/:id/files/:fileId",
       "/print/:id/prepared-print",
       "/category/:id/download",
+      "/explore/elsewhere/model/:id/files/:file/:filename",
+      "/explore/elsewhere/model/:id/files.zip",
     ],
   },
   {

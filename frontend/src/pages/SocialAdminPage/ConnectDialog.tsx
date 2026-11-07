@@ -20,26 +20,34 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import CloseIcon from "@mui/icons-material/Close";
 import { UnauthorizedError } from "../../api/client";
-import { FederationError, federationApi, type InstanceInfo, type Peer } from "../../api/federation";
+import { FederationError, federationApi, type InstanceInfo, type LocalRequest, type Peer } from "../../api/federation";
 import { HttpChip, InstanceAvatar, KeyBlocks, Mono, ToneChip } from "./parts";
 import { federationErrorText } from "./federationErrors";
 
 type Props = {
+  /** One of this instance's people's request to reach someone there: its address to start from, and it's settled
+   *  by sending. */
+  request?: LocalRequest | null;
   onClose: () => void;
   onSent: (peer: Peer) => void;
   onUnauthorized?: () => void;
 };
 
 /** Asking another instance to connect: its address, then its key compared with its admin before anything is sent. */
-export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props) {
+export default function ConnectDialog({ request = null, onClose, onSent, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
-  const [address, setAddress] = React.useState("");
+  const [address, setAddress] = React.useState(request?.origin ?? "");
   const [info, setInfo] = React.useState<InstanceInfo | null>(null);
   const [matches, setMatches] = React.useState(false);
   const [note, setNote] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const k = (name: string) => `adminSettings.social.federation.connect.${name}`;
+  // Whom the request will name: at the address checked, which the admin may have changed from the one guessed.
+  const targetAtInstance =
+    request?.targetHandle && info
+      ? `${request.targetHandle.split("@")[0]}@${new URL(info.origin).host}`
+      : request?.targetHandle;
 
   const fail = (err: unknown) => {
     if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -69,7 +77,7 @@ export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props
     setBusy(true);
     setError(null);
     try {
-      const { peer } = await federationApi.connect(info.origin, info.fingerprint, note.trim() || null);
+      const { peer } = await federationApi.connect(info.origin, info.fingerprint, note.trim() || null, request?.id);
       onSent(peer);
     } catch (err) {
       // Its key changed meanwhile: look it up again, busy all the while, to compare the new one, and say why.
@@ -103,6 +111,18 @@ export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props
               <StepLabel>{t(k("stepKey"))}</StepLabel>
             </Step>
           </Stepper>
+          {request && (
+            <Alert severity="info" icon={false}>
+              {request.targetHandle
+                ? t(k("forPerson"), { who: request.userName ?? request.requesterHandle, whom: targetAtInstance })
+                : t(k("forPersonInstance"), { who: request.userName ?? request.requesterHandle })}
+              {request.note && (
+                <Typography variant="body2" sx={{ mt: 0.5, fontStyle: "italic", overflowWrap: "anywhere" }}>
+                  “{request.note}”
+                </Typography>
+              )}
+            </Alert>
+          )}
           {!info ? (
             <Box component="form" onSubmit={(event) => void lookUp(event)}>
               <TextField
@@ -114,7 +134,7 @@ export default function ConnectDialog({ onClose, onSent, onUnauthorized }: Props
                 value={address}
                 onChange={(event) => setAddress(event.target.value)}
                 disabled={busy}
-                helperText={t(k("addressHelp"))}
+                helperText={t(k(request ? "addressGuessed" : "addressHelp"))}
                 inputProps={{ spellCheck: false, autoCapitalize: "off" }}
               />
             </Box>

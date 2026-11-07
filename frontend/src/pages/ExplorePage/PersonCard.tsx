@@ -3,16 +3,20 @@ import { useNavigate } from "react-router-dom";
 import ButtonBase from "@mui/material/ButtonBase";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import type { ExplorePerson } from "../../api/social";
+import Box from "@mui/material/Box";
+import type { ExplorePerson, RemotePerson } from "../../api/social";
+import InstanceAvatar from "../../components/InstanceAvatar";
 import UserAvatar from "../../components/UserAvatar";
 
-/** Someone who shares collections, leading to them. */
-export default function PersonCard({ person }: { person: ExplorePerson }) {
+/** Someone who shares collections, leading to them: on this instance, or on a partner, with its badge on their avatar
+ *  and their handle under their name. */
+export default function PersonCard({ person }: { person: ExplorePerson | RemotePerson }) {
   const { t } = useTranslation("models");
   const navigate = useNavigate();
+  const remote = "instance" in person ? person : null;
   return (
     <ButtonBase
-      onClick={() => navigate(`/explore/users/${person.id}`)}
+      onClick={() => navigate(remote ? `/explore/elsewhere/people/${person.id}` : `/explore/users/${person.id}`)}
       aria-label={person.display_name}
       sx={{
         display: "block",
@@ -30,7 +34,25 @@ export default function PersonCard({ person }: { person: ExplorePerson }) {
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
-        <UserAvatar user={person} size={44} />
+        <Box sx={{ position: "relative", flexShrink: 0 }}>
+          <UserAvatar user={person} size={44} />
+          {remote && (
+            <Box
+              title={remote.instance.name}
+              sx={{
+                position: "absolute",
+                right: -4,
+                bottom: -4,
+                borderRadius: "6px",
+                border: 2,
+                borderColor: "background.paper",
+                display: "flex",
+              }}
+            >
+              <InstanceAvatar origin={remote.instance.origin} name={remote.instance.name} size={18} />
+            </Box>
+          )}
+        </Box>
         <Stack sx={{ minWidth: 0 }}>
           <Typography
             variant="body2"
@@ -42,10 +64,11 @@ export default function PersonCard({ person }: { person: ExplorePerson }) {
             {person.display_name}
           </Typography>
           <Typography variant="caption" color="text.secondary" noWrap>
-            {t("explore.personCounts", {
-              collections: t("explore.collectionCount", { count: person.collection_count }),
-              models: t("explore.modelCount", { count: person.model_count }),
-            })}
+            {remote?.handle ??
+              t("explore.personCounts", {
+                collections: t("explore.collectionCount", { count: person.collection_count }),
+                models: t("explore.modelCount", { count: person.model_count }),
+              })}
           </Typography>
         </Stack>
       </Stack>

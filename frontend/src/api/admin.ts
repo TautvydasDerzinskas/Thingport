@@ -108,7 +108,8 @@ export type LogAction =
   | "federation_resumed"
   | "federation_disconnected"
   | "federation_blocked"
-  | "federation_unblocked";
+  | "federation_unblocked"
+  | "federation_user_requested";
 
 export type LogEntry = {
   id: string;

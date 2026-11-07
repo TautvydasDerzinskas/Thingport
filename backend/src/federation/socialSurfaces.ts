@@ -15,24 +15,56 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   "GET /social/settings": { kind: "local", why: "An admin's settings" },
   "PATCH /social/settings": { kind: "local", why: "An admin's settings" },
   "GET /explore": {
-    kind: "planned",
-    phase: 3,
-    how: "Partners' people, public collections and models, from the index of their directory collections",
+    kind: "federates",
+    how: "Partners' people, public collections and models beside these, from the index of their directories (remoteIndex.ts)",
   },
   "GET /explore/user/:id": {
-    kind: "planned",
-    phase: 3,
-    how: "A partner's person: their Person actor (icon, image, summary, attachment links)",
+    kind: "federates",
+    how: "This instance's people; a partner's open at /explore/elsewhere/person/:id, read from their Person",
   },
   "GET /explore/user/:id/models": {
-    kind: "planned",
-    phase: 3,
-    how: "A partner's person's public models, paged from their collection",
+    kind: "federates",
+    how: "This instance's people's models; a partner's person's from their models collection, at /explore/elsewhere",
+  },
+  "GET /explore/elsewhere/person/:id": {
+    kind: "federates",
+    how: "A partner's person as their Person actor said: name, avatar (icon), cover (image), bio (source), links",
+  },
+  "GET /explore/elsewhere/person/:id/models": {
+    kind: "federates",
+    how: "A partner's person's shared models, paged in from their models collection (Service, f3di:3DModel)",
+  },
+  "GET /explore/elsewhere/model/:id": {
+    kind: "federates",
+    how: "A partner's model as its Service said: pictures, description, files (Document attachments)",
+  },
+  "GET /explore/elsewhere/model/:id/files/:file/:filename": {
+    kind: "federates",
+    how: "A partner's model's file, by a key from its attachment's url, streamed through this instance signed",
+  },
+  "GET /explore/elsewhere/model/:id/files.zip": {
+    kind: "federates",
+    how: "Every file of a partner's model, fetched signed through this instance and zipped here",
+  },
+  "POST /explore/elsewhere/model/:id/copy": {
+    kind: "federates",
+    how: "A partner's model copied here in the background: files and pictures fetched signed, its origin kept",
+  },
+  "GET /explore/elsewhere/model/:id/copy": {
+    kind: "local",
+    why: "How a person's own copy is going, kept on this instance only",
+  },
+  "GET /explore/elsewhere/collection/:id": {
+    kind: "federates",
+    how: "A partner's public collection as its Group said, with the models in it",
+  },
+  "GET /explore/elsewhere/media/:token": {
+    kind: "federates",
+    how: "A partner's picture, fetched signed through this instance and kept; a viewer's browser never reaches it",
   },
   "POST /print/:id/copy": {
-    kind: "planned",
-    phase: 4,
-    how: "A partner's model copied here: files fetched signed through this instance, its origin kept",
+    kind: "federates",
+    how: "This instance's models; a partner's are copied with POST /explore/elsewhere/model/:id/copy",
   },
 
   // routes/chats.ts

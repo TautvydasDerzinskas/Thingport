@@ -22,8 +22,16 @@ const components: Components = {
   img: ({ src, alt }) => <img src={src} alt={alt ?? ""} loading="lazy" referrerPolicy="no-referrer" />,
 };
 
-/** Renders a model description. Raw HTML in it is not rendered, so it needs no sanitizing. */
-export default function MarkdownDescription({ markdown }: { markdown: string }) {
+// From a partner instance: images it names would be fetched by the viewer's browser, from wherever they are. Their
+// words show instead, and links stay links.
+const remoteComponents: Components = {
+  ...components,
+  img: ({ alt }) => (alt ? <em>{alt}</em> : null),
+};
+
+/** Renders a model description. Raw HTML in it is not rendered, so it needs no sanitizing. `remote` for one from a
+ *  partner instance: no images, so a viewer's browser never reaches anywhere else. */
+export default function MarkdownDescription({ markdown, remote = false }: { markdown: string; remote?: boolean }) {
   return (
     <Box
       sx={{
@@ -68,7 +76,11 @@ export default function MarkdownDescription({ markdown }: { markdown: string }) 
         "& th, & td": { border: "1px solid", borderColor: dividerBorderColor, px: 1, py: 0.5, textAlign: "left" },
       }}
     >
-      <Markdown remarkPlugins={[remarkGfm, remarkBreaks]} components={components} urlTransform={urlTransform}>
+      <Markdown
+        remarkPlugins={[remarkGfm, remarkBreaks]}
+        components={remote ? remoteComponents : components}
+        urlTransform={remote ? defaultUrlTransform : urlTransform}
+      >
         {markdown}
       </Markdown>
     </Box>

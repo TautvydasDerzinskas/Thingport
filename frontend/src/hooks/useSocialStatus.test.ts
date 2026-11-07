@@ -4,8 +4,8 @@ import type { SocialStatus } from "../api/social";
 const status = vi.fn<() => Promise<SocialStatus>>();
 vi.mock("../api/social", () => ({ socialApi: { status: () => status() } }));
 
-const ON: SocialStatus = { enabled: true, explore: true, chats: false };
-const OFF: SocialStatus = { enabled: false, explore: false, chats: false };
+const ON: SocialStatus = { enabled: true, explore: true, chats: false, federation: false, instance_host: null };
+const OFF: SocialStatus = { enabled: false, explore: false, chats: false, federation: false, instance_host: null };
 
 // The status is kept for the whole page, so each test gets the module afresh.
 async function freshModule() {

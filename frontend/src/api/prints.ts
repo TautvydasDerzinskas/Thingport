@@ -1,6 +1,6 @@
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
-import type { UserCard } from "./social";
+import type { RemoteOrigin, UserCard } from "./social";
 
 export type PreparedPrint = {
   printer?: string | null;
@@ -120,6 +120,8 @@ export type Print = {
   owner?: UserCard | null;
   /** On another user's model: the viewer's own copy of it, once they have one. */
   library_copy_id?: string | null;
+  /** On a copy of a partner instance's model, from the detail fetch: where it came from. */
+  copied_from_remote?: RemoteOrigin | null;
 };
 
 export type ListPrintsResult = {

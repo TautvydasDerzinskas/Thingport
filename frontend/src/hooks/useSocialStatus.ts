@@ -5,7 +5,7 @@ import { socialApi, type SocialStatus } from "../api/social";
 // answer reaches everything showing it -- the sidebar's Explore included. Asked again when an admin switches them here
 // (refreshSocialStatus), when the tab comes back after a while (an admin may have switched them elsewhere), and a little
 // after a failed answer, which counts as off meanwhile.
-const OFF: SocialStatus = { enabled: false, explore: false, chats: false };
+const OFF: SocialStatus = { enabled: false, explore: false, chats: false, federation: false, instance_host: null };
 const STALE_MS = 60_000;
 const RETRY_MS = 30_000;
 let cached: { status: SocialStatus; at: number } | undefined;

@@ -30,6 +30,8 @@ export type Runtime = {
   documentLoader: DocumentLoader;
   /** The same, signed as this instance, for documents only partners may read. */
   signedLoader: DocumentLoader;
+  /** Unsigned, and only taking a partner's keys as compared when connecting: for checking a partner's signature. */
+  pinnedLoader: DocumentLoader;
   /** JSON-LD contexts, from Fedify's own copies only: an instance on a LAN may have no internet at all. */
   contextLoader: DocumentLoader;
   toJson(object: Vocab.Object): Promise<unknown>;
@@ -170,6 +172,7 @@ async function build(origin: string): Promise<Runtime> {
     keyId: pairs[0].keyId,
     documentLoader: makeLoader(),
     signedLoader: makeLoader({ keyId: pairs[0].keyId, privateKey: keys.rsa.privateKey }),
+    pinnedLoader: makeLoader(undefined, true),
     contextLoader,
     toJson: (object) => object.toJsonLd({ format: "compact", contextLoader: contextLoader as never }),
     keysIn,

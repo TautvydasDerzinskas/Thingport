@@ -54,6 +54,7 @@ export type LogAction =
   | "chat_room_deleted"
   | "federation_settings_changed"
   | "federation_requested"
+  | "federation_user_requested"
   | "federation_approved"
   | "federation_declined"
   | "federation_paused"

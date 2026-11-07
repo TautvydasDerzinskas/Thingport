@@ -2138,7 +2138,8 @@
           "federation_resumed": "Instancia reanudada",
           "federation_disconnected": "Instancia desconectada",
           "federation_blocked": "Instancia bloqueada",
-          "federation_unblocked": "Instancia desbloqueada"
+          "federation_unblocked": "Instancia desbloqueada",
+          "federation_user_requested": "Pidió llegar a alguien de otra instancia"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -2613,12 +2614,15 @@
             "stepKey": "Comparar la clave",
             "address": "Su dirección",
             "addressHelp": "La URL pública de la otra instancia, como http://192.168.1.30:8000",
+            "addressGuessed": "Deducida de su dirección. Cámbiala si su instancia está en otro sitio.",
             "compare": "Pide al administrador de {{name}} que lea la clave de su página Social. Si es distinta, hay algo en medio: no la envíes.",
             "matches": "Las claves coinciden",
             "note": "Nota para su administrador (opcional)",
             "noteHelp": "Quién eres y por qué.",
             "send": "Enviar solicitud",
-            "lookUp": "Buscar"
+            "lookUp": "Buscar",
+            "forPerson": "Para {{who}}, para llegar a {{whom}}",
+            "forPersonInstance": "Para {{who}}"
           },
           "errors": {
             "invalid_address": "Esa no es la dirección de una instancia.",
@@ -2655,7 +2659,9 @@
             "blockTitle": "¿Bloquear {{name}}?",
             "blockText": "Su solicitud se rechaza, y lo que envíe después se descarta sin avisarle.",
             "declineTitle": "¿Rechazar {{name}}?",
-            "declineText": "Se le avisa, y puede volver a pedirlo."
+            "declineText": "Se le avisa, y puede volver a pedirlo.",
+            "targetHere": "{{name}} ({{handle}}) está en esta instancia",
+            "targetMissing": "Aquí no hay nadie llamado {{handle}}"
           },
           "keyDialog": {
             "ours": "Clave de esta instancia",
@@ -2676,6 +2682,7 @@
             "noRequestsHint": "Conéctate con una instancia o espera a que alguna lo pida.",
             "asking": "Piden conectarse",
             "waiting": "Esperando su respuesta",
+            "fromUsers": "De tus usuarios",
             "askedByPerson": "Lo pidió {{who}}",
             "askedByAdmin": "Lo pidió su administrador",
             "hide": "Ocultar",
@@ -2726,7 +2733,15 @@
             "blocked": "{{name}} bloqueada",
             "blockedHint": "Lo que envía se descarta",
             "unblock": "Desbloquear",
-            "unblocked": "{{name}} desbloqueada"
+            "unblocked": "{{name}} desbloqueada",
+            "wantsToReach": "{{who}} quiere llegar a {{whom}}",
+            "wantsToConnect": "{{who}} quiere conectarse",
+            "someone": "Alguien",
+            "decline": "Rechazar",
+            "connectFor": "Conectar…",
+            "declineUserTitle": "¿Rechazar la solicitud de {{who}}?",
+            "declineUserText": "Se le avisa a {{who}}. No se envía nada a {{host}}.",
+            "declinedUser": "Solicitud de {{who}} rechazada"
           }
         }
       }
@@ -5253,6 +5268,21 @@
         "selfModelCount_one": "{{count}} modelo subido",
         "selfModelCount_other": "{{count}} modelos subidos",
         "loadFailed": "No se pudo cargar este autor."
+      },
+      "username": {
+        "label": "Nombre de usuario",
+        "why": "Tu dirección, usuario@esta-instancia, es cómo te encuentran y te contactan las personas de instancias conectadas.",
+        "help": "Minúsculas, dígitos, puntos, guiones y guiones bajos.",
+        "invalid": "Hasta 30 minúsculas, dígitos, puntos, guiones o guiones bajos, empezando y terminando con una letra o un dígito.",
+        "taken": "Alguien ya lo tiene.",
+        "free": "Está libre.",
+        "checking": "Comprobando",
+        "copy": "Copiar tu dirección",
+        "copied": "Dirección copiada",
+        "copyFailed": "No se pudo copiar",
+        "change": "Cambiar tu nombre de usuario",
+        "saved": "Nombre de usuario cambiado",
+        "saveFailed": "No se pudo cambiar el nombre de usuario"
       }
     },
     "avatar": {
@@ -5835,7 +5865,66 @@
       "sections": "Lo que comparte",
       "noModels": "Aún no hay modelos.",
       "modelsLoadFailed": "No se pudieron cargar los modelos.",
-      "noCollections": "{{name}} aún no ha hecho pública ninguna colección."
+      "noCollections": "{{name}} aún no ha hecho pública ninguna colección.",
+      "elsewhere": {
+        "open": "Alguien en otro sitio",
+        "title": "Conectar con alguien de otra instancia",
+        "intro": "Alguien en otra instancia de Thingport. Primero lo aprueba tu administrador, luego el suyo.",
+        "handle": "Su dirección",
+        "handlePlaceholder": "nombre@su.instancia",
+        "note": "Nota (opcional)",
+        "ask": "Pedir conectar",
+        "sent": "Has pedido llegar a {{handle}}. Tu administrador lo verá.",
+        "withdrawn": "Retiraste la solicitud para llegar a {{handle}}",
+        "failed": "No se pudo enviar",
+        "loadFailed": "No se pudieron cargar tus solicitudes.",
+        "yours": "Tus solicitudes",
+        "withdraw": "Retirar",
+        "status": {
+          "waiting_admin": "Esperando a tu administrador",
+          "waiting_them": "Esperando a su administrador",
+          "connected": "Conectado",
+          "declined": "Rechazada"
+        },
+        "errors": {
+          "federation_off": "Las instancias conectadas están desactivadas.",
+          "invalid_handle": "Escribe una dirección como nombre@su.instancia.",
+          "same_instance": "Es alguien de esta instancia: está en Personas.",
+          "already_connected": "Su instancia ya está conectada: está en Personas.",
+          "already_asked": "Tu administrador ya pidió conectar con su instancia.",
+          "not_available": "Esta instancia no se conecta con la suya.",
+          "exists": "Ya pediste llegar a esa persona.",
+          "request_limit": "Espera a que tu administrador responda primero a tus solicitudes.",
+          "daily_limit": "Hoy ya has pedido llegar a personas de otras instancias muchas veces. Inténtalo mañana.",
+          "copy_limit": "Espera primero a que terminen las copias en curso.",
+          "no_files": "No tiene archivos que copiar.",
+          "files_missing": "No todos sus archivos se pueden obtener de su instancia, así que no se puede copiar entero.",
+          "zip_busy": "Ya se está creando otro ZIP. Inténtalo de nuevo en un momento.",
+          "zip_too_big": "Demasiado grande para comprimirlo aquí: descarga sus archivos uno a uno."
+        },
+        "on": "En {{name}}",
+        "fileCount_one": "{{count}} archivo",
+        "fileCount_many": "{{count}} archivos",
+        "fileCount_other": "{{count}} archivos",
+        "copyHandle": "Copiar su dirección",
+        "more": "Mostrar más",
+        "gone": "Esto ya no se comparte, o la instancia donde está ya no está conectada.",
+        "noPictures": "Sin imágenes",
+        "picture": "Imagen {{number}}",
+        "inCollections": "En colecciones",
+        "copying": "Copiando a tu biblioteca…",
+        "copyFailed": "No se pudo copiar",
+        "carriesOn": "Puedes salir de esta página: seguirá copiándose.",
+        "ofSize": "{{received}} de {{size}}",
+        "filesUnavailable": "Su instancia todavía no ofrece los archivos.",
+        "copiedFrom": "Copiado de",
+        "seeOriginal": "Ver el original"
+      },
+      "scope": {
+        "label": "Mostrar",
+        "all": "Todo",
+        "here": "Esta instancia"
+      }
     }
   },
   "providers": {

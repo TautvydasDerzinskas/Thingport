@@ -2106,7 +2106,8 @@
           "federation_resumed": "Resumed an instance",
           "federation_disconnected": "Disconnected an instance",
           "federation_blocked": "Blocked an instance",
-          "federation_unblocked": "Unblocked an instance"
+          "federation_unblocked": "Unblocked an instance",
+          "federation_user_requested": "Asked to reach someone elsewhere"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -2572,12 +2573,15 @@
             "stepKey": "Compare the key",
             "address": "Its address",
             "addressHelp": "The other instance's Public URL, like http://192.168.1.30:8000",
+            "addressGuessed": "Guessed from their handle. Change it if their instance is somewhere else.",
             "compare": "Ask {{name}}'s admin to read out the key on their Social page. If it's different, something is in between: don't send.",
             "matches": "The keys match",
             "note": "Note for their admin (optional)",
             "noteHelp": "Who you are, and why.",
             "send": "Send request",
-            "lookUp": "Look up"
+            "lookUp": "Look up",
+            "forPerson": "For {{who}}, to reach {{whom}}",
+            "forPersonInstance": "For {{who}}"
           },
           "errors": {
             "invalid_address": "That isn't an instance's address.",
@@ -2614,7 +2618,9 @@
             "blockTitle": "Block {{name}}?",
             "blockText": "Its request is declined, and whatever it sends later is dropped without telling it.",
             "declineTitle": "Decline {{name}}?",
-            "declineText": "It's told, and can ask again."
+            "declineText": "It's told, and can ask again.",
+            "targetHere": "{{name}} ({{handle}}) is on this instance",
+            "targetMissing": "No one here is {{handle}}"
           },
           "keyDialog": {
             "ours": "This instance's key",
@@ -2635,6 +2641,7 @@
             "noRequestsHint": "Connect to an instance, or wait for one to ask.",
             "asking": "Asking to connect",
             "waiting": "Waiting for them",
+            "fromUsers": "From your users",
             "askedByPerson": "{{who}} asked",
             "askedByAdmin": "Their admin asked",
             "hide": "Hide",
@@ -2684,7 +2691,15 @@
             "blocked": "Blocked {{name}}",
             "blockedHint": "What it sends is dropped",
             "unblock": "Unblock",
-            "unblocked": "Unblocked {{name}}"
+            "unblocked": "Unblocked {{name}}",
+            "wantsToReach": "{{who}} wants to reach {{whom}}",
+            "wantsToConnect": "{{who}} wants to connect",
+            "someone": "Someone",
+            "decline": "Decline",
+            "connectFor": "Connect…",
+            "declineUserTitle": "Decline {{who}}'s request?",
+            "declineUserText": "{{who}} is told. Nothing is sent to {{host}}.",
+            "declinedUser": "Declined {{who}}'s request"
           }
         }
       }
@@ -5194,6 +5209,21 @@
         "selfModelCount_one": "{{count}} model uploaded",
         "selfModelCount_other": "{{count}} models uploaded",
         "loadFailed": "Couldn't load this author."
+      },
+      "username": {
+        "label": "Username",
+        "why": "Your handle, username@this-instance, is how people on connected instances find and reach you.",
+        "help": "Lowercase letters, digits, dots, dashes and underscores.",
+        "invalid": "Up to 30 lowercase letters, digits, dots, dashes or underscores, starting and ending with a letter or digit.",
+        "taken": "Someone already has that one.",
+        "free": "It's free.",
+        "checking": "Checking",
+        "copy": "Copy your handle",
+        "copied": "Handle copied",
+        "copyFailed": "Couldn't copy it",
+        "change": "Change your username",
+        "saved": "Username changed",
+        "saveFailed": "Couldn't change the username"
       }
     },
     "avatar": {
@@ -5774,7 +5804,65 @@
       "sections": "What they share",
       "noModels": "No models yet.",
       "modelsLoadFailed": "Couldn't load the models.",
-      "noCollections": "{{name}} hasn't made any collection public yet."
+      "noCollections": "{{name}} hasn't made any collection public yet.",
+      "elsewhere": {
+        "open": "Someone elsewhere",
+        "title": "Connect with someone elsewhere",
+        "intro": "Someone on another Thingport instance. Your admin approves it first, then theirs.",
+        "handle": "Their handle",
+        "handlePlaceholder": "name@their.instance",
+        "note": "Note (optional)",
+        "ask": "Ask to connect",
+        "sent": "Asked to reach {{handle}}. Your admin will see it.",
+        "withdrawn": "Withdrew the request to reach {{handle}}",
+        "failed": "Couldn't send it",
+        "loadFailed": "Couldn't load your requests.",
+        "yours": "Your requests",
+        "withdraw": "Withdraw",
+        "status": {
+          "waiting_admin": "Waiting for your admin",
+          "waiting_them": "Waiting for their admin",
+          "connected": "Connected",
+          "declined": "Declined"
+        },
+        "errors": {
+          "federation_off": "Connected instances are off.",
+          "invalid_handle": "Enter a handle like name@their.instance.",
+          "same_instance": "That's someone on this instance: they're under People.",
+          "already_connected": "Their instance is already connected: they're under People.",
+          "already_asked": "Your admin has already asked their instance to connect.",
+          "not_available": "This instance doesn't connect with theirs.",
+          "exists": "You've already asked to reach them.",
+          "request_limit": "Wait for your admin to answer the requests you've made first.",
+          "daily_limit": "You've asked to reach people elsewhere a lot today. Try again tomorrow.",
+          "copy_limit": "Wait for the copies under way to finish first.",
+          "no_files": "It has no files to copy.",
+          "files_missing": "Not every file of it can be fetched from its instance, so it can't be copied whole.",
+          "zip_busy": "Another ZIP is being made. Try again in a moment.",
+          "zip_too_big": "Too big to zip here: download its files one at a time."
+        },
+        "on": "On {{name}}",
+        "fileCount_one": "{{count}} file",
+        "fileCount_other": "{{count}} files",
+        "copyHandle": "Copy their handle",
+        "more": "Show more",
+        "gone": "This isn't shared any more, or the instance it's on is no longer connected.",
+        "noPictures": "No pictures",
+        "picture": "Picture {{number}}",
+        "inCollections": "In collections",
+        "copying": "Copying to your library…",
+        "copyFailed": "Couldn't copy it",
+        "carriesOn": "You can leave this page: it carries on.",
+        "ofSize": "{{received}} of {{size}}",
+        "filesUnavailable": "Its instance doesn't offer the files yet.",
+        "copiedFrom": "Copied from",
+        "seeOriginal": "See the original"
+      },
+      "scope": {
+        "label": "Show",
+        "all": "Everywhere",
+        "here": "This instance"
+      }
     }
   },
   "providers": {

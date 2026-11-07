@@ -72,6 +72,8 @@ describe("social features switched off", () => {
       enabled: false,
       explore: false,
       chats: false,
+      federation: false,
+      instance_host: null,
     });
     expect((await request(app).get("/api/explore").set(auth(viewer))).status).toBe(404);
     expect((await request(app).get(`/api/collection/${collectionId}`).set(auth(viewer))).status).toBe(404);
@@ -88,6 +90,8 @@ describe("social features switched off", () => {
       enabled: true,
       explore: true,
       chats: false,
+      federation: false,
+      instance_host: null,
     });
   });
 });

@@ -153,4 +153,181 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     expect(after.incoming).toEqual([]);
     expect(after.partners).toEqual([]);
   }, 120_000);
+
+  it("connects for someone who asked to reach a person elsewhere", async () => {
+    // Sam on A wants to reach Bob on B; neither is an admin.
+    const sam: Instance = { ...a, token: undefined };
+    sam.token = (
+      await call(sam, "POST", "/register", { displayName: "Sam", email: "sam@example.com", password: "password123" })
+    ).body.token;
+    const bob: Instance = { ...b, token: undefined };
+    bob.token = (
+      await call(bob, "POST", "/register", { displayName: "Bob", email: "bob@example.com", password: "password123" })
+    ).body.token;
+    const bHost = new URL(b.base).host;
+
+    const asked = await call(sam, "POST", "/me/connection-requests", {
+      handle: `bob@${bHost}`,
+      note: "Gridfinity bins",
+    });
+    expect(asked.status).toBe(201);
+    expect(asked.body).toMatchObject({ handle: `bob@${bHost}`, status: "waiting_admin" });
+    // Tom asks for Bea there too, before A's admin gets to it: one request goes, naming both.
+    const tom: Instance = { ...a, token: undefined };
+    tom.token = (
+      await call(tom, "POST", "/register", { displayName: "Tom", email: "tom@example.com", password: "password123" })
+    ).body.token;
+    expect((await call(tom, "POST", "/me/connection-requests", { handle: `bea@${bHost}` })).status).toBe(201);
+
+    // A's admin sees it under their people's requests, and connects for Sam.
+    const local = (await call(a, "GET", "/federation/instances")).body.local.find(
+      (item: { userName: string }) => item.userName === "Sam",
+    );
+    expect(local).toMatchObject({ userName: "Sam", targetHandle: `bob@${bHost}`, note: "Gridfinity bins" });
+    const lookup = await call(a, "GET", `/federation/lookup?address=${encodeURIComponent(local.origin)}`);
+    const sent = await call(a, "POST", "/federation/connect", {
+      address: local.origin,
+      fingerprint: lookup.body.fingerprint,
+      requestId: local.id,
+    });
+    expect(sent.body.peer.status).toBe("OUTGOING");
+    expect((await call(sam, "GET", "/me/connection-requests")).body[0].status).toBe("waiting_them");
+
+    // B's admin sees who asked for whom, and that Bob is one of theirs.
+    const incoming = await until(
+      "B gets the request",
+      async () => (await call(b, "GET", "/federation/instances")).body.incoming[0],
+    );
+    const aHost = new URL(a.base).host;
+    expect(incoming).toMatchObject({ requesterHandle: `sam@${aHost}`, targetHandle: `bob@${bHost}` });
+    expect(incoming.asks).toEqual([
+      { requesterHandle: `sam@${aHost}`, targetHandle: `bob@${bHost}` },
+      { requesterHandle: `tom@${aHost}`, targetHandle: `bea@${bHost}` },
+    ]);
+    const details = await call(b, "GET", `/federation/requests/${incoming.id}`);
+    expect(details.body.target).toEqual({ username: "bob", displayName: "Bob" });
+    expect(details.body.request.asks.map((ask: { target: unknown }) => ask.target)).toEqual([
+      { username: "bob", displayName: "Bob" },
+      { username: "bea", displayName: "Bea" },
+    ]);
+    await call(b, "POST", `/federation/requests/${incoming.id}/approve`, { fingerprint: details.body.fingerprint });
+
+    // Bob hears who asked; Sam hears it's connected.
+    await until("Sam's request connected", async () => {
+      const mine = await call(sam, "GET", "/me/connection-requests");
+      return mine.body[0].status === "connected";
+    });
+    expect(JSON.stringify((await call(bob, "GET", "/notifications")).body)).toContain(
+      `sam@${aHost} asked to reach you`,
+    );
+    expect(JSON.stringify((await call(b, "GET", "/notifications")).body)).toContain(`tom@${aHost} asked to reach you`);
+    await until("Tom's request connected", async () => {
+      const mine = await call(tom, "GET", "/me/connection-requests");
+      return mine.body[0].status === "connected";
+    });
+    await until("Sam hears it's connected", async () =>
+      JSON.stringify((await call(sam, "GET", "/notifications")).body).includes("Connected with"),
+    );
+  }, 120_000);
+
+  it("shows what a partner's people share on Explore, and forgets it on disconnecting", async () => {
+    // Rūta on B shares a collection with a model in it; A and B are partners from the test before.
+    const ruta: Instance = { ...b, token: undefined };
+    ruta.token = (
+      await call(ruta, "POST", "/register", { displayName: "Rūta", email: "ruta@example.com", password: "password123" })
+    ).body.token;
+    const form = new FormData();
+    form.append("files", new Blob(["solid bin endsolid"]), "gridfinity-bin.stl");
+    const uploaded = await fetch(`${b.base}/api/upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${ruta.token}` },
+      body: form,
+    });
+    const printId = (await uploaded.json()).prints[0].id;
+    const collection = await call(ruta, "POST", "/collections", { name: "Tool wall", is_public: true });
+    await call(ruta, "POST", `/collection/${collection.body.id}/items/${printId}`);
+
+    // A's admin checks the connection, which reads what B shares again.
+    const partner = (await call(a, "GET", "/federation/instances")).body.partners[0];
+    expect((await call(a, "POST", `/federation/peers/${partner.id}/check`)).status).toBe(200);
+    const explore = await until("A's Explore shows Rūta", async () => {
+      const res = await call(a, "GET", "/explore");
+      return (
+        res.body.elsewhere.people.some((person: { display_name: string }) => person.display_name === "Rūta") && res.body
+      );
+    });
+    const person = explore.elsewhere.people.find((item: { display_name: string }) => item.display_name === "Rūta");
+    expect(person).toMatchObject({ model_count: 1, collection_count: 1, instance: { id: partner.id } });
+    expect(explore.elsewhere.recent_models[0]).toMatchObject({ title: "gridfinity-bin", file_count: 1 });
+    expect(explore.elsewhere.recent_collections[0]).toMatchObject({ name: "Tool wall", item_count: 1 });
+
+    // Her avatar comes through A, which fetched it signed from B.
+    const avatar = await fetch(`${a.base}/api${person.avatar_url}`, {
+      headers: { Authorization: `Bearer ${a.token}` },
+    });
+    expect(avatar.status).toBe(200);
+    expect(avatar.headers.get("content-type")).toMatch(/^image\//);
+    // B answers no one else.
+    expect((await fetch(`${b.base}/api/ap/directory`)).status).toBe(401);
+
+    // Her model's file comes through A as well: downloaded, handed to a slicer with the token in the path, zipped.
+    const modelId = explore.elsewhere.recent_models[0].id;
+    const model = await call(a, "GET", `/explore/elsewhere/model/${modelId}`);
+    const [file] = model.body.files;
+    expect(file).toMatchObject({
+      name: "gridfinity-bin.stl",
+      url: expect.stringMatching(
+        new RegExp(`^/explore/elsewhere/model/${modelId}/files/[0-9a-f]{16}/gridfinity-bin\\.stl$`),
+      ),
+    });
+    const signedIn = { Authorization: `Bearer ${a.token}` };
+    const downloaded = await fetch(`${a.base}/api${file.url}`, { headers: signedIn });
+    expect(downloaded.status).toBe(200);
+    expect(downloaded.headers.get("content-disposition")).toBe('attachment; filename="gridfinity-bin.stl"');
+    expect(await downloaded.text()).toBe("solid bin endsolid");
+    const forSlicer = await fetch(`${a.base}/api/t/${encodeURIComponent(a.token!)}${file.url}`);
+    expect(await forSlicer.text()).toBe("solid bin endsolid");
+    const zip = await fetch(`${a.base}/api/explore/elsewhere/model/${modelId}/files.zip`, { headers: signedIn });
+    expect(zip.status).toBe(200);
+    expect(
+      Buffer.from(await zip.arrayBuffer())
+        .subarray(0, 2)
+        .toString(),
+    ).toBe("PK");
+    // B's own address for it answers only partners.
+    const plate = (await call(ruta, "GET", `/print/${printId}`)).body.plates[0];
+    expect((await fetch(`${b.base}/api/ap/files/plate/${plate.id}/gridfinity-bin.stl`)).status).toBe(401);
+
+    // Copied into Alex's library, where it says whose it was and links back.
+    expect((await call(a, "POST", `/explore/elsewhere/model/${modelId}/copy`)).status).toBe(200);
+    const copied = await until("A's copy is made", async () => {
+      const status = await call(a, "GET", `/explore/elsewhere/model/${modelId}/copy`);
+      if (status.body.state === "failed") throw new Error(status.body.error);
+      return status.body.state === "done" && status.body;
+    });
+    expect(copied.files).toEqual([{ name: "gridfinity-bin.stl", size: 18, received: 18, done: true }]);
+    const copy = await call(a, "GET", `/print/${copied.copy_id}`);
+    expect(copy.body).toMatchObject({
+      title: "gridfinity-bin",
+      plates: [expect.objectContaining({ filename: "gridfinity-bin.stl" })],
+      copied_from_remote: {
+        instance: { origin: b.base },
+        owner_name: "Rūta",
+        original_id: modelId,
+      },
+    });
+    expect((await call(a, "GET", `/explore/elsewhere/model/${modelId}`)).body.library_copy_id).toBe(copied.copy_id);
+    expect((await call(a, "POST", `/explore/elsewhere/model/${modelId}/copy`)).body).toMatchObject({
+      state: "done",
+      copy_id: copied.copy_id,
+    });
+
+    expect((await call(a, "POST", `/federation/peers/${partner.id}/disconnect`)).status).toBe(204);
+    const after = await call(a, "GET", "/explore");
+    expect(after.body.elsewhere.people).toEqual([]);
+    expect((await call(a, "GET", `/explore/elsewhere/person/${person.id}`)).status).toBe(404);
+    // The copy is Alex's to keep, still saying where it came from.
+    const kept = await call(a, "GET", `/print/${copied.copy_id}`);
+    expect(kept.body.copied_from_remote).toMatchObject({ owner_name: "Rūta", original_id: null, owner_id: null });
+  }, 120_000);
 });

@@ -8,7 +8,7 @@ they are.
 It's off by default, and most instances never need it. While it's off nothing about it answers on the network, so
 nothing tells a visitor this instance could connect at all.
 
-> For now, connecting pairs two instances. Explore, models and chats across them come in the next releases.
+> Chats across instances come in a later release.
 
 ## Before you start
 
@@ -67,12 +67,59 @@ A request is only checked once you open it: until then Thingport doesn't contact
 it checks that it's signed with the key you see, and that the instance still stands by it: one it withdrew meanwhile
 says so and disappears.
 
+## When your users ask
+
+Anyone on the instance can ask to reach someone on another one: **Explore → Someone elsewhere**, with that person's
+handle (`name@their.instance`) and a note. Nothing goes to that instance yet. Every admin here gets a notification,
+and the request waits under **Requests → From your users**:
+
+- **Connect…** opens [Connect to an instance](#connect-to-an-instance) with the address guessed from the handle (plain
+  HTTP for a local address or name like `.lan`, HTTPS otherwise; change it if it's wrong). The note their admin sees
+  says who asked, and whom they want to reach: everyone here waiting to reach someone on that instance goes in the
+  same request. Each person who asked is told once the instances connect, or if the other admin declines.
+- **Decline** tells only the person who asked.
+
+A person can have up to ten requests waiting, and make twenty a day, withdrawn ones included; they can withdraw one
+from the same dialog while it waits for you. Asking for
+someone on an instance that's already a partner, already asked or blocked says so straight away.
+
+## Handles
+
+While connected instances are on, everyone has a handle, `username@this-instance`, shown under their name on their
+profile: that's what people on other instances ask for. Usernames are made from display names (`Rūta K.` becomes
+`ruta-k`), and anyone can change theirs with the pencil beside it, or under **Edit profile**: up to 30 lowercase
+letters, digits, dots, dashes and underscores, unique on the instance. The host part is the
+[Public URL](#before-you-start)'s.
+
+## What partners see
+
+Once two instances are connected, each one's **Explore** shows the other's people who share something, their public
+collections and their models, beside its own, each with the instance they're on. **Everywhere**, **This instance** and
+each partner at the top narrow it down. A partner's person opens their profile; a model shows its pictures, description
+and which of its owner's collections it's in, and can be opened in a slicer, downloaded file by file or as a ZIP, and
+copied to your library.
+
+- **What goes across is what's shared**: what anyone signed in here could see of someone else, and nothing else.
+  Libraries, private collections, settings and emails stay where they are.
+- **Each instance keeps a copy** of what its partners share, read when they connect and every 15 minutes after, and
+  again when someone opens Explore and it's a couple of minutes old. **Check connection** reads it right away. A model
+  made private there is gone here by the next read.
+- **Pictures and files come through this instance**: a viewer's browser never talks to a partner. Pictures are
+  kept; files are fetched each time, and never kept unless someone copies the model. For the same reason, images
+  inside a partner's descriptions aren't shown.
+- **A copy is yours**: **Copy to my library** fetches the files, pictures and description into a model of your own,
+  file by file, and carries on if you leave the page. It says where it came from, with a link to the original while
+  it's still shared; it stays when the partner changes it, stops sharing it or disconnects. A copy is made only once
+  every file has arrived, and no file may be bigger than an upload here.
+- **Paused** partners are hidden from Explore until **Resume**; **Disconnect** and **Block** remove everything of theirs.
+
 ## Partners
 
 Connected instances are under **Partners**, with when they connected and when they were last heard from. Each one's ⋮
 menu (or a right-click) has:
 
-- **Check connection**: looks it up again, and warns if its key changed since you connected.
+- **Check connection**: looks it up again, warns if its key changed since you connected, and reads what it shares
+  again.
 - **Show key**: the key it had when you connected.
 - **Pause**: stops talking to it for now. What this instance has for it waits until **Resume**; what the partner
   sends meanwhile is turned away to be retried, for about three days, so after a longer pause some of it is lost. If
