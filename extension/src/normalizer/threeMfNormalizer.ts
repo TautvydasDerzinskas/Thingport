@@ -1284,8 +1284,9 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   cleaned.printer_settings_id = `Snapmaker U1 (${nozzle} nozzle)`;
   cleaned.print_settings_id = orcaPrintPreset(nozzle, original.print_settings_id, original.layer_height);
   const filaments = original.filament_settings_id;
-  if (Array.isArray(filaments)) cleaned.filament_settings_id = filaments.map(() => ORCA_FILAMENT_PRESET);
-  else cleaned.filament_settings_id = ORCA_FILAMENT_PRESET;
+  if (Array.isArray(filaments)) {
+    cleaned.filament_settings_id = filaments.map((name) => orcaFilamentPreset(name));
+  } else cleaned.filament_settings_id = orcaFilamentPreset(filaments);
   // The copy is for the Snapmaker U1, so its bed replaces the designer's (Orca would otherwise use a small default).
   cleaned.printable_area = ["0.5x1", "270.5x1", "270.5x271", "0.5x271"];
   cleaned.printable_height = "270";
@@ -1302,19 +1303,42 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
 /**
  * The wipe tower ("Reinigungsturm") has a position per plate on the designer's bed, so on the smaller U1 bed it would
  * stand beside the plate. It moves by the same shift as the objects (the designer's bed middle to the U1's), then
- * stays inside the bed.
+ * stays inside the bed, off its edge.
  */
+// wipe_tower_x/y is the tower's lower-left corner; it extends prime_tower_width (and, going by the rib wall, its extra rib
+// length) to the right and up, and the brim (U1 presets: 5 mm) is drawn around all of that. The U1 presets set a width of 30
+// (the Orca GUI shows that), a designer's file may carry more (MakerWorld: 60), so the file's width is used when it is larger.
+const WIPE_TOWER_DEFAULT_SIZE = 30;
+const WIPE_TOWER_DEFAULT_BRIM = 5;
+// Slack for line width and rounding on top of brim and ribs.
+const WIPE_TOWER_SLACK = 2;
+
+/** The space the tower needs beyond its corner point: [brim + slack on the near sides, size + the same on the far sides]. */
+function wipeTowerExtent(original: Settings): { before: number; after: number } {
+  const positive = (v: unknown, fallback: number): number => {
+    const n = Number(firstValue(v));
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+  };
+  const width = Math.max(positive(original.prime_tower_width, 0), WIPE_TOWER_DEFAULT_SIZE);
+  const brim = positive(original.prime_tower_brim_width, WIPE_TOWER_DEFAULT_BRIM);
+  const ribs =
+    firstValue(original.wipe_tower_wall_type) === "rib" ? positive(original.wipe_tower_extra_rib_length, 0) : 0;
+  const before = brim + WIPE_TOWER_SLACK;
+  return { before, after: width + ribs + before };
+}
+
 export function moveWipeTower(cleaned: Settings, original: Settings): void {
   const bed = bedFromPrintableArea(original.printable_area);
   const xs = original.wipe_tower_x;
   const ys = original.wipe_tower_y;
   if (!bed || !Array.isArray(xs) || !Array.isArray(ys)) return;
-  const size = Number(original.prime_tower_width);
-  const room = ORCA_FORK_BED_MM - (Number.isFinite(size) && size > 0 ? size : 60);
+  const { before, after } = wipeTowerExtent(original);
+  const lo = before;
+  const hi = Math.max(ORCA_FORK_BED_MM - after, lo);
   const place = (value: unknown, shift: number): string => {
     const n = Number(value);
     if (!Number.isFinite(n)) return String(value);
-    return String(Math.round(Math.min(Math.max(n + shift, 0), Math.max(room, 0)) * 1000) / 1000);
+    return String(Math.round(Math.min(Math.max(n + shift, lo), hi) * 1000) / 1000);
   };
   cleaned.wipe_tower_x = xs.map((x) => place(x, ORCA_FORK_BED_MM / 2 - bed.centerX));
   cleaned.wipe_tower_y = ys.map((y) => place(y, ORCA_FORK_BED_MM / 2 - bed.centerY));
@@ -1357,7 +1381,14 @@ function orcaPrintPreset(nozzle: string, printSettingsId: unknown, layerHeight: 
   }
   return `${best}mm Standard @Snapmaker U1 (${nozzle} nozzle)`;
 }
-const ORCA_FILAMENT_PRESET = "Snapmaker PLA Basic @U1";
+/**
+ * The filament preset name for a slot: the designer's own. Their filament values stay in the file, and no U1 preset
+ * replaces them (a preset of the same name can be another product). A name that is also a U1 preset stays as it is.
+ * Orca crashes on an empty name, so that becomes "Generic".
+ */
+function orcaFilamentPreset(designerName: unknown): string {
+  return String(designerName ?? "").trim() || "Generic";
+}
 
 /** Per-object values of the Bambu enums in model_settings.config, mapped like the project settings. */
 export function mapObjectShellSettings(xml: string): string | null {
