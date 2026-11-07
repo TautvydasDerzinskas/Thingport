@@ -12,18 +12,23 @@ import { invalidateAllowlist } from "../src/federation/allowlist";
 import { MEDIA_DIR, mediaAddress, pruneMedia } from "../src/federation/media";
 import { FederationFetchError } from "../src/federation/fetch";
 import {
-  collectionsOf,
+  COLLECTION_FIRST_IDS,
+  COLLECTIONS_PAGE,
+  collectionModelsPage,
+  collectionsPage,
   DIRECTORY_PAGE,
   directory,
   fitPerson,
   modelsPage,
+  PAGE_BYTES,
+  parseModelsCursor,
   PERSON_MAX_BYTES,
   person as personDoc,
   sendSharedFile,
 } from "../src/federation/publish";
 import { imagesAsLinks } from "../src/federation/remoteCopy";
 import { fileKey } from "../src/federation/remoteFiles";
-import { readModels } from "../src/federation/remoteIndex";
+import { readCollections, readModels } from "../src/federation/remoteIndex";
 import { resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
 import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
@@ -229,7 +234,7 @@ describe("what partners are shown", () => {
   });
 
   it("gives only the shared models, shaped like Manyfold's", async () => {
-    const page = (await modelsPage(owner.id, 0)) as { orderedItems: Record<string, unknown>[] };
+    const page = (await modelsPage(owner.id)) as { orderedItems: Record<string, unknown>[] };
     expect(page.orderedItems.map((item) => item.id)).toEqual([`${ORIGIN}/api/ap/models/${sharedPrint}`]);
     expect(page.orderedItems[0]).toMatchObject({
       type: "Service",
@@ -240,23 +245,26 @@ describe("what partners are shown", () => {
       attachment: [expect.objectContaining({ type: "Document", name: "shared-bin.stl" })],
     });
     expect(JSON.stringify(page)).not.toContain(privatePrint);
-    expect(await modelsPage(viewer.id, 0)).toBeNull();
+    expect(await modelsPage(viewer.id)).toBeNull();
   });
 
   it("gives public collections with the models in them", async () => {
-    const body = (await collectionsOf(owner.id)) as { orderedItems: Record<string, unknown>[] };
+    const body = (await collectionsPage(owner.id)) as { orderedItems: Record<string, unknown>[] };
     expect(body.orderedItems).toEqual([
       expect.objectContaining({
         id: `${ORIGIN}/api/ap/collections/${collectionId}`,
         type: "Group",
         "f3di:concreteType": "Collection",
-        "thingport:models": [`${ORIGIN}/api/ap/models/${sharedPrint}`],
+        "thingport:models": expect.objectContaining({
+          totalItems: 1,
+          first: expect.objectContaining({ orderedItems: [`${ORIGIN}/api/ap/models/${sharedPrint}`] }),
+        }),
       }),
     ]);
   });
 
   it("gives each file an address only partners get it at", async () => {
-    const page = (await modelsPage(owner.id, 0)) as { orderedItems: { attachment: { url: string }[] }[] };
+    const page = (await modelsPage(owner.id)) as { orderedItems: { attachment: { url: string }[] }[] };
     const [file] = page.orderedItems[0].attachment;
     const plate = await prisma.plate.findFirstOrThrow({ where: { printId: sharedPrint } });
     expect(file.url).toBe(`${ORIGIN}/api/ap/files/plate/${plate.id}/shared-bin.stl`);
@@ -352,6 +360,60 @@ describe("Explore with partners", () => {
       .get(`/api/explore/elsewhere/collection/${remoteCollectionId}?limit=1&offset=1`)
       .set(auth(viewer));
     expect(beyond.body).toMatchObject({ models: [], total: 1 });
+  });
+
+  it("pages a person's collections on their page, here and on a partner", async () => {
+    // Here: the first page comes with their page, the rest from its own route.
+    const shelver = await register("Shelver");
+    await prisma.collection.createMany({
+      data: Array.from({ length: 26 }, (_, n) => ({
+        userId: shelver.id,
+        name: `C${n}`,
+        nameNormalized: `c${n}`,
+        isPublic: true,
+      })),
+    });
+    const page = await request(app).get(`/api/explore/user/${shelver.id}`).set(auth(viewer));
+    expect(page.status).toBe(200);
+    expect(page.body.collections).toHaveLength(24);
+    expect(page.body.collections_total).toBe(26);
+    const rest = await request(app).get(`/api/explore/user/${shelver.id}/collections?offset=24`).set(auth(viewer));
+    expect(rest.status).toBe(200);
+    expect(rest.body).toHaveLength(2);
+    expect(rest.headers["x-total-count"]).toBe("26");
+    expect(rest.headers["x-has-more"]).toBe("false");
+    expect(new Set([...page.body.collections, ...rest.body].map((c: { id: string }) => c.id)).size).toBe(26);
+    // Someone who shares none has none to page.
+    expect((await request(app).get(`/api/explore/user/${viewer.id}/collections`).set(auth(owner))).status).toBe(404);
+
+    // On a partner: as many as this instance has of theirs.
+    const many = `${PARTNER}/api/ap/collections/many-`;
+    await prisma.remoteCollection.createMany({
+      data: Array.from({ length: 25 }, (_, n) => ({
+        peerId,
+        personId,
+        apId: `${many}${n}`,
+        name: `Many ${n}`,
+        modelApIds: [],
+        updatedAt: new Date(Date.now() - 3_600_000 - n * 1000),
+      })),
+    });
+    try {
+      const there = await request(app).get(`/api/explore/elsewhere/person/${personId}`).set(auth(viewer));
+      expect(there.body.collections).toHaveLength(24);
+      expect(there.body.collections_total).toBe(27);
+      const more = await request(app)
+        .get(`/api/explore/elsewhere/person/${personId}/collections?offset=24&limit=30`)
+        .set(auth(viewer));
+      expect(more.status).toBe(200);
+      expect(more.body).toHaveLength(3);
+      expect(more.headers["x-has-more"]).toBe("false");
+      expect(
+        (await request(app).get(`/api/explore/elsewhere/person/nobody/collections`).set(auth(viewer))).status,
+      ).toBe(404);
+    } finally {
+      await prisma.remoteCollection.deleteMany({ where: { apId: { startsWith: many } } });
+    }
   });
 
   it("hands out a partner's files through this instance, and only those the partner gave", async () => {
@@ -520,14 +582,18 @@ describe("keeping it current", () => {
     const own = (url: string | undefined): url is string => Boolean(url?.startsWith(`${PARTNER}/`));
     const at = (page: number) => `${PARTNER}/api/ap/actors/ruta/models?page=${page}`;
     const gone = () => new FederationFetchError("Not found", "status", 404);
-    // `count` pages of one model each; past them, what `after` says.
+    // `count` pages of `size` models each; past them, what `after` says.
     const partner =
-      (count: number, after: (page: number) => unknown = () => Promise.reject(gone())) =>
+      (count: number, after: (page: number) => unknown = () => Promise.reject(gone()), size = 1) =>
       async (url: string) => {
         const page = Number(new URL(url).searchParams.get("page"));
         if (page >= count) return after(page);
         return {
-          orderedItems: [{ id: `${PARTNER}/api/ap/models/p${page}`, name: `P${page}`, attributedTo: "x" }],
+          orderedItems: Array.from({ length: size }, (_, n) => ({
+            id: `${PARTNER}/api/ap/models/p${page}-${n}`,
+            name: `P${page}`,
+            attributedTo: "x",
+          })),
           next: page + 1 < count ? at(page + 1) : undefined,
         };
       };
@@ -539,7 +605,10 @@ describe("keeping it current", () => {
     // None of their own: only collections.
     expect(await read(partner(0))).toEqual({ count: 0, all: true });
     // More than are read, a page gone after the first, or the next one somewhere else: the rest isn't known.
-    expect(await read(partner(45, () => ({ orderedItems: [], next: at(999) })))).toEqual({ count: 40, all: false });
+    expect(await read(partner(250))).toEqual({ count: 200, all: false });
+    // At most 2,000 of them, however they're paged.
+    expect(await read(partner(45, undefined, 50))).toEqual({ count: 2000, all: false });
+    expect(await read(partner(40, undefined, 50))).toEqual({ count: 2000, all: true });
     const vanishing = async (url: string) => {
       const page = Number(new URL(url).searchParams.get("page"));
       if (page === 1) throw gone();
@@ -583,9 +652,149 @@ describe("keeping it current", () => {
     const newer = await make(`Newer ${Date.now()}`);
     await prisma.collection.update({ where: { id: older }, data: { updatedAt: new Date(Date.now() - 3_600_000) } });
     await request(app).post(`/api/collection/${older}/items/${sharedPrint}`).set(auth(owner));
-    const body = (await collectionsOf(owner.id)) as { orderedItems: { id: string }[] };
+    const body = (await collectionsPage(owner.id)) as { orderedItems: { id: string }[] };
     const ids = body.orderedItems.map((item) => item.id.split("/").pop());
     expect(ids.indexOf(older)).toBeLessThan(ids.indexOf(newer));
+  });
+
+  it("keeps every page of models within what a partner's fetch takes, and pages through them all", async () => {
+    const big = await register("Wordy");
+    // Each description as long as a partner keeps, and six bytes a character in JSON: a few fill a page.
+    const notes = "\u0001".repeat(25_000);
+    await prisma.print.createMany({
+      data: Array.from({ length: 12 }, (_, n) => ({
+        userId: big.id,
+        name: `wordy-${n}`,
+        nameNormalized: `wordy-${n}`,
+        notes,
+        createdAt: new Date(Date.now() - n * 1000),
+      })),
+    });
+    const prints = await prisma.print.findMany({ where: { userId: big.id }, select: { id: true } });
+    const shelf = await request(app).post("/api/collections").set(auth(big)).send({ name: "All", is_public: true });
+    await prisma.collectionItem.createMany({
+      data: prints.map((print) => ({ collectionId: shelf.body.id, printId: print.id })),
+    });
+
+    const seen: string[] = [];
+    let page = (await modelsPage(big.id)) as {
+      next?: string;
+      orderedItems: { id: string; source: { content: string } }[];
+    };
+    const sizes: number[] = [];
+    for (;;) {
+      sizes.push(Buffer.byteLength(JSON.stringify(page)));
+      expect(page.orderedItems[0].source.content).toHaveLength(20_000);
+      seen.push(...page.orderedItems.map((item) => item.id));
+      if (!page.next) break;
+      const after = parseModelsCursor(new URL(page.next).searchParams.get("after")!);
+      page = (await modelsPage(big.id, after)) as typeof page;
+    }
+    expect(sizes.length).toBeGreaterThan(1);
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(PAGE_BYTES);
+    expect(seen.toSorted()).toEqual(prints.map((print) => `${ORIGIN}/api/ap/models/${print.id}`).toSorted());
+    expect(parseModelsCursor("1.x/y")).toBeNull();
+  });
+
+  it("pages a person's collections, and the models in a big one", async () => {
+    const collector = await register("Collector");
+    const make = (name: string) =>
+      prisma.collection.create({
+        data: { userId: collector.id, name, nameNormalized: name.toLowerCase(), isPublic: true },
+        select: { id: true },
+      });
+    const shelves = [];
+    for (let n = 0; n <= COLLECTIONS_PAGE; n++) shelves.push(await make(`Shelf ${n}`));
+    await prisma.print.createMany({
+      data: Array.from({ length: COLLECTION_FIRST_IDS + 5 }, (_, n) => ({
+        userId: collector.id,
+        name: `part-${n}`,
+        nameNormalized: `part-${n}`,
+      })),
+    });
+    const parts = await prisma.print.findMany({ where: { userId: collector.id }, select: { id: true } });
+    await prisma.collectionItem.createMany({
+      data: parts.map((part) => ({ collectionId: shelves[0].id, printId: part.id })),
+    });
+
+    type Listed = {
+      id: string;
+      "thingport:models": { totalItems: number; first: { orderedItems: string[]; next?: string } };
+    };
+    const first = (await collectionsPage(collector.id)) as {
+      totalItems: number;
+      next?: string;
+      orderedItems: Listed[];
+    };
+    expect(first.totalItems).toBe(COLLECTIONS_PAGE + 1);
+    expect(first.orderedItems).toHaveLength(COLLECTIONS_PAGE);
+    expect(first.next).toBe(`${ORIGIN}/api/ap/actors/${collector.id}/collections?page=1`);
+    const second = (await collectionsPage(collector.id, 1)) as { next?: string; orderedItems: Listed[] };
+    expect(second.orderedItems).toHaveLength(1);
+    expect(second.next).toBeUndefined();
+
+    // Filled last, so listed first: its first models with it, the rest on a page of their own.
+    const full = first.orderedItems[0];
+    expect(full.id).toBe(`${ORIGIN}/api/ap/collections/${shelves[0].id}`);
+    expect(full["thingport:models"].totalItems).toBe(COLLECTION_FIRST_IDS + 5);
+    expect(full["thingport:models"].first.orderedItems).toHaveLength(COLLECTION_FIRST_IDS);
+    expect(full["thingport:models"].first.next).toBe(`${full.id}/models?offset=${COLLECTION_FIRST_IDS}`);
+    const rest = (await collectionModelsPage(shelves[0].id, COLLECTION_FIRST_IDS)) as {
+      next?: string;
+      orderedItems: string[];
+    };
+    expect(rest.orderedItems).toHaveLength(5);
+    expect(rest.next).toBeUndefined();
+    expect(new Set([...full["thingport:models"].first.orderedItems, ...rest.orderedItems]).size).toBe(parts.length);
+    // A private one's aren't given.
+    await prisma.collection.update({ where: { id: shelves[0].id }, data: { isPublic: false } });
+    expect(await collectionModelsPage(shelves[0].id, 0)).toBeNull();
+  });
+
+  it("reads a person's collections page by page, each with all its models", async () => {
+    const own = (url: string | undefined): url is string => Boolean(url?.startsWith(`${PARTNER}/`));
+    const gone = () => new FederationFetchError("Not found", "status", 404);
+    const listing = `${PARTNER}/api/ap/actors/ruta/collections`;
+    const shelf = (n: number, next?: string) => ({
+      id: `${PARTNER}/api/ap/collections/s${n}`,
+      name: `Shelf ${n}`,
+      attributedTo: `${PARTNER}/api/ap/actors/ruta`,
+      "thingport:models": { totalItems: 3, first: { orderedItems: [`${PARTNER}/api/ap/models/a${n}`], next } },
+    });
+    const pages: Record<string, unknown> = {
+      [listing]: {
+        orderedItems: [shelf(0, `${PARTNER}/api/ap/collections/s0/models?offset=1`)],
+        next: `${listing}?page=1`,
+      },
+      [`${listing}?page=1`]: { orderedItems: [shelf(1)] },
+      [`${PARTNER}/api/ap/collections/s0/models?offset=1`]: {
+        orderedItems: [`${PARTNER}/api/ap/models/b0`, "http://198.51.100.9/api/ap/models/elsewhere"],
+        next: `${PARTNER}/api/ap/collections/s0/models?offset=3`,
+      },
+      [`${PARTNER}/api/ap/collections/s0/models?offset=3`]: { orderedItems: [`${PARTNER}/api/ap/models/c0`] },
+    };
+    const partner =
+      (missing: string[] = []) =>
+      async (url: string) => {
+        if (missing.includes(url) || !(url in pages)) throw gone();
+        return pages[url];
+      };
+    const all = await readCollections(partner(), listing, own);
+    expect(all.all).toBe(true);
+    expect(
+      all.collections.map((c) => [c.id.split("/").pop(), c.modelIds.map((id) => id.split("/").pop()), c.allIds]),
+    ).toEqual([
+      ["s0", ["a0", "b0", "c0"], true],
+      ["s1", ["a1"], true],
+    ]);
+    // A later page gone: what's read is kept, and the rest isn't known.
+    const partly = await readCollections(partner([`${listing}?page=1`]), listing, own);
+    expect(partly).toMatchObject({ all: false, collections: [expect.objectContaining({ allIds: true })] });
+    // One of a collection's pages gone: its models as they were stay.
+    const ids = await readCollections(partner([`${PARTNER}/api/ap/collections/s0/models?offset=3`]), listing, own);
+    expect(ids.collections[0]).toMatchObject({ allIds: false });
+    // The first page gone fails the read, as with the rest of what they share.
+    await expect(readCollections(partner([listing]), listing, own)).rejects.toThrow("Not found");
   });
 
   it("copies a partner's description with its images made links, so a viewer's browser fetches none", () => {

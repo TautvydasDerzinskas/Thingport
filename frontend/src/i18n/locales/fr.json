@@ -5882,6 +5882,7 @@
       "sections": "Ce qu’il partage",
       "noModels": "Aucun modèle pour le moment.",
       "modelsLoadFailed": "Impossible de charger les modèles.",
+      "collectionsLoadFailed": "Impossible de charger les collections.",
       "noCollections": "{{name}} n’a encore rendu aucune collection publique.",
       "elsewhere": {
         "open": "Quelqu'un d'ailleurs",

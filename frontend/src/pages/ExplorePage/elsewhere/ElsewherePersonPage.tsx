@@ -63,6 +63,7 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
   const [models, setModels] = useState<RemoteModelCard[] | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingCollections, setLoadingCollections] = useState(false);
   const latest = useRef(0);
   const navigate = useNavigate();
   const chatsOn = useSocialStatus()?.chats === true;
@@ -77,6 +78,7 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
       setFailed(false);
       setHasMore(false);
       setLoadingMore(false);
+      setLoadingCollections(false);
       setOpening(false);
       Promise.all([socialApi.elsewhere.person(id), socialApi.elsewhere.personModels(id, { limit: PAGE, offset: 0 })])
         .then(([person, first]) => {
@@ -121,6 +123,33 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
       else showToast({ message: t("models:explore.modelsLoadFailed"), severity: "error" });
     } finally {
       if (asked === latest.current) setLoadingMore(false);
+    }
+  };
+
+  // Their collections past the first page, which came with their page.
+  const loadMoreCollections = async () => {
+    if (!personId || !page || loadingCollections) return;
+    const asked = latest.current;
+    setLoadingCollections(true);
+    try {
+      const next = await socialApi.elsewhere.personCollections(personId, {
+        limit: PAGE,
+        offset: page.collections.length,
+      });
+      if (asked !== latest.current) return;
+      setPage((prev) => {
+        if (!prev) return prev;
+        // One already shown, moved along by a change meanwhile, isn't shown twice.
+        const shown = new Set(prev.collections.map((collection) => collection.id));
+        const collections = [...prev.collections, ...(next?.items ?? []).filter((item) => !shown.has(item.id))];
+        return { ...prev, collections, collections_total: next?.hasMore ? next.total : collections.length };
+      });
+    } catch (err) {
+      if (asked !== latest.current) return;
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else showToast({ message: t("models:explore.collectionsLoadFailed"), severity: "error" });
+    } finally {
+      if (asked === latest.current) setLoadingCollections(false);
     }
   };
 
@@ -284,11 +313,20 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
             </Stack>
           )
         ) : page.collections.length ? (
-          <Box sx={cardGridSx(5)}>
-            {page.collections.map((collection) => (
-              <RemoteCollectionCardView key={collection.id} collection={collection} />
-            ))}
-          </Box>
+          <Stack spacing={2}>
+            <Box sx={cardGridSx(5)}>
+              {page.collections.map((collection) => (
+                <RemoteCollectionCardView key={collection.id} collection={collection} />
+              ))}
+            </Box>
+            {page.collections.length < page.collections_total && (
+              <Box>
+                <Button variant="outlined" onClick={() => void loadMoreCollections()} disabled={loadingCollections}>
+                  {t("models:explore.elsewhere.more")}
+                </Button>
+              </Box>
+            )}
+          </Stack>
         ) : (
           <Typography variant="body2" color="text.secondary">
             {t("models:explore.noCollections", { name: person.display_name })}

@@ -17,7 +17,9 @@ import { SocialOffError, socialApi, type ExploreUserPage as UserPage } from "../
 import { refreshSocialStatus, useSocialStatus } from "../../hooks/useSocialStatus";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
+import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
+import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import ProfileLayout, { ProfileLayoutSkeleton } from "../../components/profile/ProfileLayout";
 import UserAvatar from "../../components/UserAvatar";
 import CollectionCard from "../CollectionsPage/CollectionCard";
@@ -25,6 +27,9 @@ import SortTabs from "../ModelsPage/SortTabs";
 import ExploreUserModels from "./ExploreUserModels";
 
 type Section = "models" | "collections";
+
+// Collections a page, after the first that comes with the page.
+const COLLECTIONS_PAGE = 24;
 
 // The tabs read as the page's section titles, as "Models" does on My models.
 const tabsSx = {
@@ -66,11 +71,16 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
   const shownFor = useRef<string | null>(null);
   // Only the latest read's answer counts: one asked for earlier, or for a page left since, is dropped.
   const latest = useRef(0);
+  // Their collections past the first page, read as the list is scrolled; a page read again starts from its first.
+  const [loadingCollections, setLoadingCollections] = useState(false);
+  const [collectionsFailed, setCollectionsFailed] = useState(false);
 
   const read = useCallback(
     function readPage(asked: string, fresh: boolean) {
       const reading = ++latest.current;
       if (fresh) setPage(null);
+      setLoadingCollections(false);
+      setCollectionsFailed(false);
       setNotFound(false);
       setFailed(false);
       setOff(false);
@@ -126,6 +136,41 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
   const refresh = () => {
     if (userId) read(userId, false);
   };
+
+  const moreCollections = page !== null && page.collections.length < page.collections_total;
+  const loadMoreCollections = async () => {
+    if (!page || loadingCollections || !moreCollections || collectionsFailed) return;
+    const reading = latest.current;
+    setLoadingCollections(true);
+    try {
+      const next = await socialApi.userCollections(page.user.id, {
+        limit: COLLECTIONS_PAGE,
+        offset: page.collections.length,
+      });
+      if (reading !== latest.current) return;
+      // None any more: the page is read again, to say what's there now.
+      if (!next) return refresh();
+      setPage((prev) => {
+        if (!prev) return prev;
+        // One already shown, moved along by a change meanwhile, isn't shown twice.
+        const shown = new Set(prev.collections.map((collection) => collection.id));
+        const collections = [...prev.collections, ...next.items.filter((collection) => !shown.has(collection.id))];
+        return { ...prev, collections, collections_total: next.hasMore ? next.total : collections.length };
+      });
+    } catch (err) {
+      if (reading !== latest.current) return;
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else if (err instanceof SocialOffError) refresh();
+      else setCollectionsFailed(true);
+    } finally {
+      if (reading === latest.current) setLoadingCollections(false);
+    }
+  };
+  const collectionsSentinel = useInfiniteScroll(
+    loadMoreCollections,
+    moreCollections && !collectionsFailed,
+    loadingCollections,
+  );
 
   usePageHeader({
     title: page?.user.display_name,
@@ -247,35 +292,54 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
             onGone={refresh}
           />
         ) : page.collections.length ? (
-          <Box sx={cardGridSx(5)}>
-            {page.collections.map((collection) => (
-              <CollectionCard
-                key={collection.id}
-                collection={collection}
-                theme={theme}
-                previewMode={previewMode}
-                // Only the viewer's own has a menu to change it from: a collection made private, or deleted, leaves
-                // the list of what they share.
-                onUpdated={(updated) => {
-                  setPage(
-                    (prev) =>
-                      prev && {
-                        ...prev,
-                        collections: updated.is_public
-                          ? prev.collections.map((c) => (c.id === updated.id ? updated : c))
-                          : prev.collections.filter((c) => c.id !== updated.id),
-                      },
-                  );
-                  refresh();
-                }}
-                onDeleted={(id) => {
-                  setPage((prev) => prev && { ...prev, collections: prev.collections.filter((c) => c.id !== id) });
-                  refresh();
-                }}
-                onUnauthorized={onUnauthorized}
-              />
-            ))}
-          </Box>
+          <Stack spacing={2}>
+            <Box sx={cardGridSx(5)}>
+              {page.collections.map((collection) => (
+                <CollectionCard
+                  key={collection.id}
+                  collection={collection}
+                  theme={theme}
+                  previewMode={previewMode}
+                  // Only the viewer's own has a menu to change it from: a collection made private, or deleted, leaves
+                  // the list of what they share.
+                  onUpdated={(updated) => {
+                    setPage(
+                      (prev) =>
+                        prev && {
+                          ...prev,
+                          collections: updated.is_public
+                            ? prev.collections.map((c) => (c.id === updated.id ? updated : c))
+                            : prev.collections.filter((c) => c.id !== updated.id),
+                        },
+                    );
+                    refresh();
+                  }}
+                  onDeleted={(id) => {
+                    setPage((prev) => prev && { ...prev, collections: prev.collections.filter((c) => c.id !== id) });
+                    refresh();
+                  }}
+                  onUnauthorized={onUnauthorized}
+                />
+              ))}
+              {loadingCollections && <CardSkeletons count={5} />}
+            </Box>
+            {collectionsFailed ? (
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="center"
+                spacing={1}
+                sx={{ color: "text.secondary" }}
+              >
+                <Typography variant="body2">{t("models:explore.collectionsLoadFailed")}</Typography>
+                <Button size="small" onClick={() => setCollectionsFailed(false)}>
+                  {t("common:retry")}
+                </Button>
+              </Stack>
+            ) : (
+              moreCollections && <Box ref={collectionsSentinel} sx={{ height: 1 }} />
+            )}
+          </Stack>
         ) : page.user.id === viewer?.id ? (
           <Stack alignItems="flex-start" spacing={1} sx={{ color: "text.secondary" }}>
             <Typography variant="body2">{t("models:explore.ownEmpty")}</Typography>

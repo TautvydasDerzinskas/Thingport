@@ -1,6 +1,7 @@
 import type { Peer, Prisma, RemoteCollection, RemoteModel, RemotePerson } from "@prisma/client";
 import type { RemoteOriginOut } from "../dto";
 import { prisma } from "../db";
+import { PERSON_COLLECTIONS_PAGE } from "../services/socialService";
 import { mediaAddress } from "./media";
 import { libraryCopyOfRemote, type RemoteSource } from "./remoteCopy";
 import { fileKey, filesOf } from "./remoteFiles";
@@ -182,8 +183,16 @@ export type RemotePersonPageOut = {
     cover_position_y: number;
     joined_at: string | null;
   };
+  /** The first page of them; the rest from GET /explore/elsewhere/person/:id/collections. */
   collections: RemoteCollectionCardOut[];
+  /** How many of them this instance has: what's listed, which can be fewer than they said they share. */
+  collections_total: number;
 };
+
+const collectionsOrder: Prisma.RemoteCollectionOrderByWithRelationInput[] = [
+  { updatedAt: { sort: "desc", nulls: "last" } },
+  { id: "asc" },
+];
 
 export async function remotePerson(id: string): Promise<RemotePersonPageOut | null> {
   const row = await prisma.remotePerson.findFirst({
@@ -191,11 +200,15 @@ export async function remotePerson(id: string): Promise<RemotePersonPageOut | nu
     include: { peer: true },
   });
   if (!row) return null;
-  const collections = await prisma.remoteCollection.findMany({
-    where: { personId: row.id },
-    orderBy: [{ updatedAt: { sort: "desc", nulls: "last" } }, { id: "asc" }],
-    include: { peer: true, person: true },
-  });
+  const [collections, total] = await Promise.all([
+    prisma.remoteCollection.findMany({
+      where: { personId: row.id },
+      orderBy: collectionsOrder,
+      take: PERSON_COLLECTIONS_PAGE,
+      include: { peer: true, person: true },
+    }),
+    prisma.remoteCollection.count({ where: { personId: row.id } }),
+  ]);
   return {
     person: {
       ...personOut(row),
@@ -207,7 +220,33 @@ export async function remotePerson(id: string): Promise<RemotePersonPageOut | nu
       joined_at: row.joinedAt?.toISOString() ?? null,
     },
     collections: await collectionCardsOut(collections),
+    collections_total: total,
   };
+}
+
+/** A page of a partner's person's collections, in their page's order. */
+export async function remotePersonCollections(
+  id: string,
+  limit: number,
+  offset: number,
+): Promise<{ collections: RemoteCollectionCardOut[]; total: number } | null> {
+  const person = await prisma.remotePerson.findFirst({
+    where: { id, listed: true, peer: ACTIVE },
+    select: { id: true },
+  });
+  if (!person) return null;
+  const where = { personId: person.id };
+  const [rows, total] = await Promise.all([
+    prisma.remoteCollection.findMany({
+      where,
+      orderBy: collectionsOrder,
+      skip: offset,
+      take: limit,
+      include: { peer: true, person: true },
+    }),
+    prisma.remoteCollection.count({ where }),
+  ]);
+  return { collections: await collectionCardsOut(rows), total };
 }
 
 /** A page of a partner's person's models, the latest shared first. */

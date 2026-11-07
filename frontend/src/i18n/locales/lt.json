@@ -6095,6 +6095,7 @@
       "sections": "Kuo dalijasi",
       "noModels": "Modelių dar nėra.",
       "modelsLoadFailed": "Nepavyko įkelti modelių.",
+      "collectionsLoadFailed": "Nepavyko įkelti kolekcijų.",
       "noCollections": "{{name}} dar nepadarė jokios kolekcijos viešos.",
       "elsewhere": {
         "open": "Kas nors kitur",

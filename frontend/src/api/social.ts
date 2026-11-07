@@ -95,7 +95,9 @@ export type RemotePersonPage = {
     links: string[];
     joined_at: string | null;
   } & ProfileCoverValue;
+  /** The first page of them; the rest from `elsewhere.personCollections`. */
   collections: RemoteCollectionCard[];
+  collections_total: number;
 };
 
 export type RemoteModel = RemoteModelCard & {
@@ -141,7 +143,9 @@ export type ExploreUserPage = {
     /** Whether their own models are shown: the Models tab. */
     models_public: boolean;
   } & ProfileCoverValue;
+  /** The first page of them; the rest from `userCollections`. */
   collections: Collection[];
+  collections_total: number;
 };
 
 // A partner's pictures come through this instance at addresses relative to the API, like the other files: an <img>
@@ -242,6 +246,7 @@ export const socialApi = {
         page && {
           person: { ...personPictures(page.person), background_url: picture(page.person.background_url ?? null) },
           collections: page.collections.map(collectionPictures),
+          collections_total: page.collections_total,
         }
       );
     },
@@ -275,6 +280,23 @@ export const socialApi = {
       await assertOkWithMessage(res, "Failed to load the models");
       return {
         items: ((await res.json()) as RemoteModelCard[]).map(modelPictures),
+        total: Number(res.headers.get("X-Total-Count") ?? 0),
+        hasMore: res.headers.get("X-Has-More") === "true",
+      };
+    },
+    personCollections: async (
+      id: string,
+      params: { limit: number; offset: number },
+    ): Promise<{ items: RemoteCollectionCard[]; total: number; hasMore: boolean } | null> => {
+      const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
+      const res = await fetch(`${apiBase()}/explore/elsewhere/person/${encodeURIComponent(id)}/collections?${qs}`, {
+        headers: authHeaders(),
+      });
+      if (res.status === 401) throw new UnauthorizedError();
+      if (res.status === 404) return null;
+      await assertOkWithMessage(res, "Failed to load the collections");
+      return {
+        items: ((await res.json()) as RemoteCollectionCard[]).map(collectionPictures),
         total: Number(res.headers.get("X-Total-Count") ?? 0),
         hasMore: res.headers.get("X-Has-More") === "true",
       };
@@ -323,6 +345,29 @@ export const socialApi = {
       items: await res.json(),
       hasMore: res.headers.get("X-Has-More") === "true",
       total: Number(res.headers.get("X-Total-Count") ?? 0),
+    };
+  },
+
+  /** A page of a user's public collections past the first, which came with their page; null for none any more. */
+  userCollections: async (
+    userId: string,
+    params: { limit: number; offset: number },
+  ): Promise<{ items: Collection[]; total: number; hasMore: boolean } | null> => {
+    const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
+    const res = await fetch(`${apiBase()}/explore/user/${encodeURIComponent(userId)}/collections?${qs}`, {
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (res.status === 404) {
+      const body = (await res.json().catch(() => ({}))) as { code?: string };
+      if (body.code === "social_off") throw new SocialOffError();
+      return null;
+    }
+    await assertOkWithMessage(res, "Failed to load the collections");
+    return {
+      items: await res.json(),
+      total: Number(res.headers.get("X-Total-Count") ?? 0),
+      hasMore: res.headers.get("X-Has-More") === "true",
     };
   },
 

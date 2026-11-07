@@ -5869,6 +5869,7 @@
       "sections": "Lo que comparte",
       "noModels": "Aún no hay modelos.",
       "modelsLoadFailed": "No se pudieron cargar los modelos.",
+      "collectionsLoadFailed": "No se pudieron cargar las colecciones.",
       "noCollections": "{{name}} aún no ha hecho pública ninguna colección.",
       "elsewhere": {
         "open": "Alguien en otro sitio",

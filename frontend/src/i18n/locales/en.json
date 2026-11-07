@@ -5807,6 +5807,7 @@
       "sections": "What they share",
       "noModels": "No models yet.",
       "modelsLoadFailed": "Couldn't load the models.",
+      "collectionsLoadFailed": "Couldn't load the collections.",
       "noCollections": "{{name}} hasn't made any collection public yet.",
       "elsewhere": {
         "open": "Someone elsewhere",

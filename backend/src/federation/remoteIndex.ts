@@ -16,10 +16,16 @@ const SYNC_EVERY_MS = 15 * 60 * 1000;
 const RETRY_AFTER_MS = 2 * 60 * 1000;
 const MAX_PEOPLE = 500;
 const MAX_DIRECTORY_PAGES = 20;
-// 2,000 of a person's models, the latest shared first: one with more shows those, and keeps any read before.
-const MAX_MODEL_PAGES = 40;
+// 2,000 of a person's models, the latest shared first: one with more shows those, and keeps any read before. Pages
+// are as long as fit, so there's a cap on them too.
+const MAX_MODELS = 2000;
+const MAX_MODEL_PAGES = 200;
 // As many as Thingport publishes; another partner's are cut there too.
 const MAX_COLLECTIONS = 200;
+const MAX_COLLECTION_PAGES = 40;
+// Of each collection's models, by their ids.
+const MAX_COLLECTION_MODELS = 2000;
+const MAX_ID_PAGES = 10;
 // Writing what was read, in one transaction: however many rows a big partner has.
 const STORE_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -154,7 +160,16 @@ const collectionSchema = z.object({
   attributedTo: z.string(),
   source,
   updated: date,
-  "thingport:models": z.array(z.string()).optional().catch(undefined),
+  // Its models by their ids: the first ones here, the rest at `next`.
+  "thingport:models": z
+    .object({
+      first: z.object({
+        orderedItems: z.array(z.unknown()).transform((ids) => ids.filter((id): id is string => typeof id === "string")),
+        next: z.string().optional().catch(undefined),
+      }),
+    })
+    .optional()
+    .catch(undefined),
 });
 
 // A listing without its items is broken, not empty: read as empty, it would take everything of the partner's away.
@@ -166,8 +181,17 @@ const pageSchema = z.object({
 type Person = z.infer<typeof personSchema>;
 type Model = z.infer<typeof modelSchema>;
 type Collection = z.infer<typeof collectionSchema>;
+/** A collection as read, with its models' ids; `allIds` is false when a page of them couldn't be read, so the ones
+ *  kept from before stay. */
+type ReadCollection = Collection & { modelIds: string[]; allIds: boolean };
 
-type Shared = { person: Person; models: Model[]; allModels: boolean; collections: Collection[] };
+type Shared = {
+  person: Person;
+  models: Model[];
+  allModels: boolean;
+  collections: ReadCollection[];
+  allCollections: boolean;
+};
 
 async function sync(peerId: string): Promise<void> {
   const peer = await prisma.peer.findUnique({ where: { id: peerId } });
@@ -193,13 +217,15 @@ async function sync(peerId: string): Promise<void> {
       const models = own(person["thingport:models"])
         ? await readModels(read, person["thingport:models"], own)
         : { models: [], all: true };
+      const collections = own(person["thingport:collections"])
+        ? await readCollections(read, person["thingport:collections"], own)
+        : { collections: [], all: true };
       people.push({
         person,
         models: models.models,
         allModels: models.all,
-        collections: own(person["thingport:collections"])
-          ? await readCollections(read, person["thingport:collections"], own)
-          : [],
+        collections: collections.collections,
+        allCollections: collections.all,
       });
     }
     const written = store(peer, people, own);
@@ -228,7 +254,7 @@ export async function readModels(
   const models: Model[] = [];
   let url: string | undefined = first;
   for (let page = 0; url; page++) {
-    if (!own(url) || page === MAX_MODEL_PAGES) return { models, all: false };
+    if (!own(url) || page === MAX_MODEL_PAGES || models.length >= MAX_MODELS) return { models, all: false };
     let body: z.infer<typeof pageSchema>;
     try {
       body = pageSchema.parse(await read(url));
@@ -246,16 +272,58 @@ export async function readModels(
   return { models, all: true };
 }
 
-async function readCollections(
+/** A person's public collections, page by page, each with its models' ids. `all` is false unless every page was read,
+ *  as with their models: those not read stay as they were. */
+export async function readCollections(
   read: (url: string) => Promise<unknown>,
-  url: string,
+  first: string,
   own: (url: string | undefined) => url is string,
-): Promise<Collection[]> {
-  const body = pageSchema.parse(await read(url));
-  return body.orderedItems.slice(0, MAX_COLLECTIONS).flatMap((raw) => {
-    const parsed = collectionSchema.safeParse(raw);
-    return parsed.success && own(parsed.data.id) ? [parsed.data] : [];
-  });
+): Promise<{ collections: ReadCollection[]; all: boolean }> {
+  const collections: ReadCollection[] = [];
+  let url: string | undefined = first;
+  for (let page = 0; url; page++) {
+    if (!own(url) || page === MAX_COLLECTION_PAGES || collections.length >= MAX_COLLECTIONS) {
+      return { collections, all: false };
+    }
+    let body: z.infer<typeof pageSchema>;
+    try {
+      body = pageSchema.parse(await read(url));
+    } catch (err) {
+      if (err instanceof FederationFetchError && err.status === 404 && page > 0) return { collections, all: false };
+      throw err;
+    }
+    for (const raw of body.orderedItems) {
+      const parsed = collectionSchema.safeParse(raw);
+      if (!parsed.success || !own(parsed.data.id) || collections.length >= MAX_COLLECTIONS) continue;
+      collections.push({ ...parsed.data, ...(await readModelIds(read, parsed.data["thingport:models"]?.first, own)) });
+    }
+    url = body.next;
+  }
+  return { collections, all: true };
+}
+
+/** A collection's models by their ids, from the page that came with it and those after it. */
+async function readModelIds(
+  read: (url: string) => Promise<unknown>,
+  first: { orderedItems: string[]; next?: string } | undefined,
+  own: (url: string | undefined) => url is string,
+): Promise<{ modelIds: string[]; allIds: boolean }> {
+  const ids = (first?.orderedItems ?? []).filter((id) => own(id));
+  let url = first?.next;
+  for (let page = 0; url && ids.length < MAX_COLLECTION_MODELS; page++) {
+    if (!own(url) || page === MAX_ID_PAGES) return { modelIds: ids, allIds: false };
+    let body: z.infer<typeof pageSchema>;
+    try {
+      body = pageSchema.parse(await read(url));
+    } catch (err) {
+      if (err instanceof FederationFetchError && err.status === 404) return { modelIds: ids, allIds: false };
+      throw err;
+    }
+    ids.push(...body.orderedItems.filter((id): id is string => typeof id === "string" && own(id)));
+    url = body.next;
+  }
+  // The first MAX_COLLECTION_MODELS are what's kept of a bigger one.
+  return { modelIds: ids.slice(0, MAX_COLLECTION_MODELS), allIds: true };
 }
 
 const webLink = (href: string) => /^https?:\/\//i.test(href) && href.length <= 500;
@@ -279,7 +347,8 @@ async function storeIn(
   const readAt = new Date();
   // Read only in part: what wasn't read of theirs stays rather than going.
   const partly: string[] = [];
-  for (const { person, models, allModels, collections } of people) {
+  const partlyCollections: string[] = [];
+  for (const { person, models, allModels, collections, allCollections } of people) {
     const personData = {
       peerId: peer.id,
       username: person.preferredUsername?.toLowerCase() ?? null,
@@ -309,6 +378,7 @@ async function storeIn(
     // An id claimed by another partner is never taken over.
     if (saved.peerId !== peer.id) continue;
     if (!allModels) partly.push(saved.id);
+    if (!allCollections) partlyCollections.push(saved.id);
     for (const model of models) {
       if (model.attributedTo !== person.id) continue;
       const modelData = {
@@ -342,21 +412,22 @@ async function storeIn(
         personId: saved.id,
         name: collection.name || "Untitled",
         description: markdownOf(collection.source, 5000),
-        modelApIds: (collection["thingport:models"] ?? []).filter((id) => own(id)).slice(0, 2000),
         updatedAt: collection.updated,
         syncedAt: readAt,
       };
+      const modelApIds = collection.modelIds;
       await tx.remoteCollection.upsert({
         where: { apId: collection.id },
-        create: { apId: collection.id, ...collectionData },
-        update: collectionData,
+        create: { apId: collection.id, ...collectionData, modelApIds },
+        // Its models read only in part: those it had stay.
+        update: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
         select: { id: true },
       });
     }
   }
   // Whatever it no longer shares goes.
   const stale = { peerId: peer.id, syncedAt: { lt: readAt } };
-  await tx.remoteCollection.deleteMany({ where: stale });
+  await tx.remoteCollection.deleteMany({ where: { ...stale, personId: { notIn: partlyCollections } } });
   await tx.remoteModel.deleteMany({ where: { ...stale, personId: { notIn: partly } } });
   // Someone no longer listed whom a chat still names is kept for it, off Explore.
   const inChats = { OR: [{ chats: { some: {} } }, { messages: { some: {} } }] } satisfies Prisma.RemotePersonWhereInput;
