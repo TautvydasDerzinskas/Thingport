@@ -36,6 +36,7 @@ import { useOpenInSlicer } from "./useOpenInSlicer";
 import { useOpenInStudio } from "./useOpenInStudio";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
+import CopiedFromRemote from "./CopiedFromRemote";
 import ModelFileSelect from "./ModelFileSelect";
 import OpenInSlicerButton from "./OpenInSlicerButton";
 import { useNormalizedOpen } from "./useNormalizedOpen";
@@ -217,6 +218,8 @@ export default function ModelSidePanel({
             {print.title || print.name}
           </Typography>
         </Box>
+
+        {print.copied_from_remote && <CopiedFromRemote origin={print.copied_from_remote} />}
 
         {owner && (
           <Box>

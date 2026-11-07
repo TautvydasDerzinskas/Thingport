@@ -14,8 +14,12 @@ export type ModelFile = {
   launchFilename: string;
   index: number;
   plate: Plate | null;
+  /** Given where the size isn't on the plate: a partner's model's files. */
+  size?: number | null;
 };
 export type SlicerTarget = ModelFile & { href: string };
+
+export const PREPARED_KEY = "prepared";
 
 /** Sliced .gcode.3mf plates are never normalized: dropping their G-code would leave nothing to print. */
 function isNormalizable3mf(filename: string): boolean {
@@ -29,7 +33,7 @@ export function modelFiles(print: Print): ModelFile[] {
   const out: ModelFile[] = [];
   if (print.slicer_url && !sortedPlates.some((p) => p.url === print.slicer_url)) {
     const filename = print.slicer_filename ?? "";
-    out.push({ key: "prepared", url: print.slicer_url, filename, launchFilename: filename, index: -1, plate: null });
+    out.push({ key: PREPARED_KEY, url: print.slicer_url, filename, launchFilename: filename, index: -1, plate: null });
   }
   sortedPlates.forEach((plate, index) => {
     const launchFilename =
@@ -43,17 +47,23 @@ export function slicerHref(slicerId: string, file: ModelFile): string {
   return slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename);
 }
 
-/** `slicerOptions` are the installed slicers that can be launched, `slicerOption` the one the main button opens
- *  (the last one used), null without any. `targets` are empty when the model has nothing a slicer opens; with
- *  several, the caller offers a pick rather than opening the first. `normalizedTargets` is empty unless the
- *  slicer needs MakerWorld 3MFs converted. */
-export function useOpenInSlicer(print: Print) {
+/** The installed slicers that can be launched, and the one to open with: the last one used. */
+export function useSlicerChoice() {
   const { slicer, slicers } = useSlicerSettings();
   const slicerOptions = useMemo(
     () => SLICER_OPTIONS.filter((opt) => opt.id !== "other" && slicers.includes(opt.id)),
     [slicers],
   );
   const slicerOption = slicerOptions.find((opt) => opt.id === slicer) ?? slicerOptions[0] ?? null;
+  return { slicerOption, slicerOptions };
+}
+
+/** `slicerOptions` are the installed slicers that can be launched, `slicerOption` the one the main button opens
+ *  (the last one used), null without any. `targets` are empty when the model has nothing a slicer opens; with
+ *  several, the caller offers a pick rather than opening the first. `normalizedTargets` is empty unless the
+ *  slicer needs MakerWorld 3MFs converted. */
+export function useOpenInSlicer(print: Print) {
+  const { slicerOption, slicerOptions } = useSlicerChoice();
 
   const files = useMemo(() => modelFiles(print), [print]);
   const canOpen = Boolean(print.slicer_url) && files.length > 0;

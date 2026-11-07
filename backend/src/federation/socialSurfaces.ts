@@ -36,7 +36,23 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   },
   "GET /explore/elsewhere/model/:id": {
     kind: "federates",
-    how: "A partner's model as its Service said: pictures, description, files; downloading comes in phase 4",
+    how: "A partner's model as its Service said: pictures, description, files (Document attachments)",
+  },
+  "GET /explore/elsewhere/model/:id/files/:file/:filename": {
+    kind: "federates",
+    how: "A partner's model's file, by a key from its attachment's url, streamed through this instance signed",
+  },
+  "GET /explore/elsewhere/model/:id/files.zip": {
+    kind: "federates",
+    how: "Every file of a partner's model, fetched signed through this instance and zipped here",
+  },
+  "POST /explore/elsewhere/model/:id/copy": {
+    kind: "federates",
+    how: "A partner's model copied here in the background: files and pictures fetched signed, its origin kept",
+  },
+  "GET /explore/elsewhere/model/:id/copy": {
+    kind: "local",
+    why: "How a person's own copy is going, kept on this instance only",
   },
   "GET /explore/elsewhere/collection/:id": {
     kind: "federates",
@@ -47,9 +63,8 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
     how: "A partner's picture, fetched signed through this instance and kept; a viewer's browser never reaches it",
   },
   "POST /print/:id/copy": {
-    kind: "planned",
-    phase: 4,
-    how: "A partner's model copied here: files fetched signed through this instance, its origin kept",
+    kind: "federates",
+    how: "This instance's models; a partner's are copied with POST /explore/elsewhere/model/:id/copy",
   },
 
   // routes/chats.ts

@@ -5,8 +5,7 @@ import type { Response } from "express";
 import { AUTH_SECRET, STORAGE } from "../config";
 import { prisma } from "../db";
 import { originOf } from "./addresses";
-import { federationFetch } from "./fetch";
-import { getRuntime } from "./runtime";
+import { signedGet } from "./signedFetch";
 
 /** A partner's pictures (avatars, covers, models'), fetched through this instance and kept, so a viewer's browser
  *  never talks to a partner. The address handed to the browser names the picture's own URL and is signed with this
@@ -81,13 +80,7 @@ export async function sendRemoteMedia(token: string, res: Response): Promise<voi
 
 /** Fetches a picture, signed as this instance, from that partner only; its type, once it's kept. */
 async function fetchInto(url: string, origin: string, file: string, peerId: string): Promise<string | null> {
-  const runtime = await getRuntime();
-  const signed = await runtime.fedify.signRequest(
-    new Request(url, { headers: { Accept: "image/*" } }),
-    runtime.keys.rsa.privateKey as never,
-    runtime.keyId,
-  );
-  const response = await federationFetch(url, { headers: signed.headers }, (allowed) => allowed === origin);
+  const response = await signedGet(url, origin, { accept: "image/*" });
   const type = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
   if (!response.ok || !TYPES.has(type) || Number(response.headers.get("content-length") ?? 0) > MAX_BYTES) {
     await response.body?.cancel().catch(() => {});

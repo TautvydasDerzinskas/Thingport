@@ -5,6 +5,7 @@ import path from "node:path";
 import type { Prisma } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
+import express from "express";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { invalidateAllowlist } from "../src/federation/allowlist";
@@ -18,7 +19,10 @@ import {
   modelsPage,
   PERSON_MAX_BYTES,
   person as personDoc,
+  sendSharedFile,
 } from "../src/federation/publish";
+import { imagesAsLinks } from "../src/federation/remoteCopy";
+import { fileKey } from "../src/federation/remoteFiles";
 import { readModels } from "../src/federation/remoteIndex";
 import { resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
@@ -55,6 +59,7 @@ let collectionId: string;
 let peerId: string;
 let personId: string;
 let modelId: string;
+let filesModelId: string;
 let remoteCollectionId: string;
 let emptyCollectionId: string;
 
@@ -131,6 +136,23 @@ beforeAll(async () => {
     },
   });
   modelId = model.id;
+  filesModelId = (
+    await prisma.remoteModel.create({
+      data: {
+        peerId,
+        personId,
+        apId: `${PARTNER}/api/ap/models/m2`,
+        title: "Bin with files",
+        images: [],
+        sharedAt: new Date(Date.now() - 60_000),
+        files: [
+          { name: "bin.3mf", size: 1800, mediaType: "model/3mf", url: `${PARTNER}/api/ap/files/plate/p1/bin.3mf` },
+          { name: "notes.pdf", size: 20, mediaType: "application/pdf" },
+          { name: "elsewhere.stl", size: 30, url: "http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl" },
+        ],
+      },
+    })
+  ).id;
   const collection = await prisma.remoteCollection.create({
     data: {
       peerId,
@@ -233,6 +255,27 @@ describe("what partners are shown", () => {
     ]);
   });
 
+  it("gives each file an address only partners get it at", async () => {
+    const page = (await modelsPage(owner.id, 0)) as { orderedItems: { attachment: { url: string }[] }[] };
+    const [file] = page.orderedItems[0].attachment;
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: sharedPrint } });
+    expect(file.url).toBe(`${ORIGIN}/api/ap/files/plate/${plate.id}/shared-bin.stl`);
+    expect((await request(app).get(new URL(file.url).pathname)).status).toBe(401);
+
+    // What a partner's signed request reaches: the file, while its model is shared, and nothing else.
+    const files = express().get(
+      "/files/:kind/:id",
+      (req, res) => void sendSharedFile(res, req.params.kind, req.params.id),
+    );
+    const sent = await request(files).get(`/files/plate/${plate.id}`).responseType("blob");
+    expect(sent.status).toBe(200);
+    expect(sent.headers["content-disposition"]).toBe('attachment; filename="shared-bin.stl"');
+    expect(sent.body.toString()).toBe("solid shared-bin endsolid");
+    const hidden = await prisma.plate.findFirstOrThrow({ where: { printId: privatePrint } });
+    expect((await request(files).get(`/files/plate/${hidden.id}`)).status).toBe(404);
+    expect((await request(files).get(`/files/print/${plate.id}`)).status).toBe(404);
+  });
+
   it("answers only a partner's signed request", async () => {
     for (const route of [
       "/api/ap/directory",
@@ -291,7 +334,7 @@ describe("Explore with partners", () => {
     });
     expect(person.body.collections).toHaveLength(2);
     const models = await request(app).get(`/api/explore/elsewhere/person/${personId}/models`).set(auth(viewer));
-    expect(models.headers["x-total-count"]).toBe("1");
+    expect(models.headers["x-total-count"]).toBe("2");
     expect(models.body[0].id).toBe(modelId);
     const model = await request(app).get(`/api/explore/elsewhere/model/${modelId}`).set(auth(viewer));
     expect(model.body).toMatchObject({
@@ -309,6 +352,112 @@ describe("Explore with partners", () => {
       .get(`/api/explore/elsewhere/collection/${remoteCollectionId}?limit=1&offset=1`)
       .set(auth(viewer));
     expect(beyond.body).toMatchObject({ models: [], total: 1 });
+  });
+
+  it("hands out a partner's files through this instance, and only those the partner gave", async () => {
+    const remoteFiles = await request(app).get(`/api/explore/elsewhere/model/${filesModelId}`).set(auth(viewer));
+    expect(remoteFiles.body.files).toEqual([
+      {
+        name: "bin.3mf",
+        size: 1800,
+        media_type: "model/3mf",
+        // By a key from its address at the partner, so a reordered list never serves another file.
+        url: `/explore/elsewhere/model/${filesModelId}/files/${fileKey(`${PARTNER}/api/ap/files/plate/p1/bin.3mf`)}/bin.3mf`,
+      },
+      { name: "notes.pdf", size: 20, media_type: "application/pdf", url: null },
+      // Somewhere other than the partner's own origin: never fetched.
+      { name: "elsewhere.stl", size: 30, media_type: null, url: null },
+    ]);
+    // A key for no file it shares, or for one that isn't on its origin, is never fetched.
+    for (const key of ["0", "x", fileKey("http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl")]) {
+      const res = await request(app)
+        .get(`/api/explore/elsewhere/model/${filesModelId}/files/${key}/f`)
+        .set(auth(viewer));
+      expect(res.status).toBe(404);
+    }
+    // A copy is all of it or nothing: one with files that can't be had isn't copied without them.
+    const partly = await request(app).post(`/api/explore/elsewhere/model/${filesModelId}/copy`).set(auth(viewer));
+    expect(partly.status).toBe(409);
+    expect(partly.body.code).toBe("files_missing");
+    // Nothing to copy where no file can be had.
+    const copy = await request(app).post(`/api/explore/elsewhere/model/${modelId}/copy`).set(auth(viewer));
+    expect(copy.status).toBe(409);
+    expect(copy.body.code).toBe("no_files");
+    expect((await request(app).get(`/api/explore/elsewhere/model/${modelId}/copy`).set(auth(viewer))).body).toEqual({
+      state: "idle",
+      files: [],
+      copy_id: null,
+      error: null,
+    });
+  });
+
+  it("says where a copy came from, and offers it rather than another", async () => {
+    const mine = (
+      await request(app).post("/api/upload").set(auth(viewer)).attach("files", tmpFile("bin.3mf", "not really a 3mf"))
+    ).body.prints[0].id as string;
+    await prisma.print.update({
+      where: { id: mine },
+      data: {
+        remoteSource: {
+          apId: `${PARTNER}/api/ap/models/m1`,
+          origin: PARTNER,
+          instance: "Makerspace then",
+          ownerName: "Rūta then",
+          ownerHandle: "ruta@203.0.113.70",
+        },
+      },
+    });
+    const copy = await request(app).get(`/api/print/${mine}`).set(auth(viewer));
+    expect(copy.body.copied_from_remote).toEqual({
+      instance: { name: "Makerspace", origin: PARTNER, http: true },
+      owner_id: personId,
+      owner_name: "Rūta",
+      owner_handle: "ruta@203.0.113.70",
+      owner_avatar_url: mediaAddress(`${PARTNER}/api/ap/media/avatar/ruta?v=1`),
+      original_id: modelId,
+    });
+    const original = await request(app).get(`/api/explore/elsewhere/model/${modelId}`).set(auth(viewer));
+    expect(original.body.library_copy_id).toBe(mine);
+    const again = await request(app).post(`/api/explore/elsewhere/model/${modelId}/copy`).set(auth(viewer));
+    expect(again.body).toMatchObject({ state: "done", copy_id: mine });
+    // Someone else has no copy of it, until they copy this one: theirs says where it came from too, and stands for it.
+    const theirs = await request(app).get(`/api/explore/elsewhere/model/${modelId}`).set(auth(owner));
+    expect(theirs.body.library_copy_id).toBeNull();
+    const shelf = await request(app).post("/api/collections").set(auth(viewer)).send({ name: "Mine", is_public: true });
+    await request(app).post(`/api/collection/${shelf.body.id}/items/${mine}`).set(auth(viewer));
+    const copied = await request(app).post(`/api/print/${mine}/copy`).set(auth(owner));
+    expect(copied.status).toBe(200);
+    const ownersCopy = await request(app).get(`/api/print/${copied.body.print.id}`).set(auth(owner));
+    expect(ownersCopy.body.copied_from_remote).toMatchObject({ original_id: modelId, owner_name: "Rūta" });
+    expect(
+      (await request(app).get(`/api/explore/elsewhere/model/${modelId}`).set(auth(owner))).body.library_copy_id,
+    ).toBe(copied.body.print.id);
+
+    // The partner paused: what was kept, and no original to go to.
+    await prisma.peer.update({ where: { id: peerId }, data: { status: "PAUSED" } });
+    try {
+      const kept = await request(app).get(`/api/print/${mine}`).set(auth(viewer));
+      expect(kept.body.copied_from_remote).toEqual({
+        instance: { name: "Makerspace then", origin: PARTNER, http: true },
+        owner_id: null,
+        owner_name: "Rūta then",
+        owner_handle: "ruta@203.0.113.70",
+        owner_avatar_url: null,
+        original_id: null,
+      });
+    } finally {
+      await prisma.peer.update({ where: { id: peerId }, data: { status: "ACTIVE" } });
+    }
+    // Connected instances off: the same, with no links to pages that aren't there.
+    await updateFederationSettings({ enabled: false });
+    try {
+      const off = await request(app).get(`/api/print/${mine}`).set(auth(viewer));
+      expect(off.body.copied_from_remote).toMatchObject({ owner_id: null, original_id: null, owner_name: "Rūta then" });
+    } finally {
+      await updateFederationSettings({ enabled: true });
+    }
+    // An ordinary model says nothing of the kind.
+    expect((await request(app).get(`/api/print/${sharedPrint}`).set(auth(owner))).body.copied_from_remote).toBeNull();
   });
 
   it("fetches no picture it didn't hand out the address of", async () => {
@@ -437,5 +586,12 @@ describe("keeping it current", () => {
     const body = (await collectionsOf(owner.id)) as { orderedItems: { id: string }[] };
     const ids = body.orderedItems.map((item) => item.id.split("/").pop());
     expect(ids.indexOf(older)).toBeLessThan(ids.indexOf(newer));
+  });
+
+  it("copies a partner's description with its images made links, so a viewer's browser fetches none", () => {
+    expect(imagesAsLinks("Look: ![a bin](https://cdn.example.org/bin.png) and ![][ref] but not \\![this](x)")).toBe(
+      "Look: [a bin](https://cdn.example.org/bin.png) and [][ref] but not \\![this](x)",
+    );
+    expect(imagesAsLinks(null)).toBeNull();
   });
 });

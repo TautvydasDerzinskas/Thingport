@@ -6,6 +6,8 @@ import type { Request as ExpressRequest, Response } from "express";
 import { prisma } from "../db";
 import { resolveAvatar } from "../services/avatarService";
 import { previewImagePath } from "../services/previewImageService";
+import { resolvePlateFilePath } from "../services/printCreation";
+import { managedPrintFilePath } from "../services/printFileService";
 import { plateThumbPath } from "../services/printService";
 import { coverOut, coverPath } from "../services/publicProfileService";
 import { sharedAtOf, sharedModelCounts, sharedModelsWhere, sharers } from "../services/socialService";
@@ -220,7 +222,7 @@ export async function modelsPage(userId: string, page: number): Promise<unknown 
       assetsPath: true,
       plates: { orderBy: { position: "asc" }, select: { id: true, filename: true, mime: true, size: true } },
       previewImages: { orderBy: { position: "asc" }, select: { id: true } },
-      files: { select: { filename: true, mime: true, size: true } },
+      files: { select: { id: true, filename: true, mime: true, size: true } },
     },
   });
   const sharedAt = await sharedAtOf(prints);
@@ -245,10 +247,15 @@ export async function modelsPage(userId: string, page: number): Promise<unknown 
       attributedTo: actorUrl(runtime, userId),
       source: markdown(print.notes),
       image: pictures,
-      attachment: [...print.plates, ...print.files].map((file) => ({
+      // Each file where a partner fetches it, signed: to download, open in a slicer or copy.
+      attachment: [
+        ...print.plates.map((file) => ({ kind: "plate", file })),
+        ...print.files.map((file) => ({ kind: "file", file })),
+      ].map(({ kind, file }) => ({
         type: "Document",
         name: file.filename,
         mediaType: file.mime,
+        url: `${runtime.origin}${AP_PREFIX}/files/${kind}/${file.id}/${encodeURIComponent(file.filename)}`,
         "thingport:size": file.size,
       })),
       published: (sharedAt.get(print.id) ?? print.createdAt).toISOString(),
@@ -364,4 +371,43 @@ export async function sendMedia(res: Response, kind: string, id: string): Promis
 
 async function isShared(print: { id: string; userId: string }): Promise<boolean> {
   return (await prisma.print.count({ where: { id: print.id, AND: [await sharedModelsWhere(print.userId)] } })) > 0;
+}
+
+/** A file of a shared model, for a partner's people to download, open or copy: a plate, or one kept beside it. Answers
+ *  404 for anything not shared. */
+export async function sendSharedFile(res: Response, kind: string, id: string): Promise<void> {
+  const notFound = () => void res.status(404).json({ error: "Not found" });
+  const found =
+    kind === "plate"
+      ? await prisma.plate.findUnique({
+          where: { id },
+          select: {
+            filename: true,
+            mime: true,
+            storagePath: true,
+            sourcePath: true,
+            print: { select: { id: true, userId: true } },
+          },
+        })
+      : kind === "file"
+        ? await prisma.printFile.findUnique({
+            where: { id },
+            select: { filename: true, mime: true, storagePath: true, print: { select: { id: true, userId: true } } },
+          })
+        : null;
+  if (!found || !(await isShared(found.print))) return notFound();
+  const file =
+    kind === "plate"
+      ? resolvePlateFilePath({
+          storagePath: found.storagePath,
+          sourcePath: (found as { sourcePath?: string | null }).sourcePath ?? null,
+        })
+      : managedPrintFilePath(found);
+  if (!file || !fs.existsSync(file)) return notFound();
+  res.attachment(found.filename);
+  res.setHeader("Content-Type", found.mime || "application/octet-stream");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.sendFile(path.resolve(file), (err) => {
+    if (err && !res.headersSent) notFound();
+  });
 }

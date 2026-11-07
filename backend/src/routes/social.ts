@@ -24,6 +24,8 @@ import {
   remotePerson,
   remotePersonModels,
 } from "../federation/remoteExplore";
+import { remoteCopyStatus, startRemoteCopy } from "../federation/remoteCopy";
+import { sendRemoteZip, streamRemoteFile } from "../federation/remoteFiles";
 import { syncStale } from "../federation/remoteIndex";
 import { isFederationLive } from "../federation/settings";
 import { parseSortMode, splitList } from "../services/printQuery";
@@ -128,9 +130,44 @@ router.get(
   "/explore/elsewhere/model/:id",
   asyncHandler(async (req, res) => {
     await assertElsewhere();
-    const model = await remoteModel(req.params.id);
+    const model = await remoteModel(req.params.id, req.userId!);
     if (!model) throw new HttpError(404, "Not found");
     res.json(model);
+  }),
+);
+
+// A partner's model's files, through this instance: one as it comes, by its key and with its name last (for slicers),
+// or all of them zipped.
+router.get(
+  "/explore/elsewhere/model/:id/files/:file/:filename",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    await streamRemoteFile(req, res, req.params.id, req.params.file);
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/model/:id/files.zip",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    await sendRemoteZip(req, res, req.params.id, req.userId!);
+  }),
+);
+
+// Copying a partner's model into the user's library runs in the background; GET says how it's going.
+router.post(
+  "/explore/elsewhere/model/:id/copy",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    res.json(await startRemoteCopy(req.userId!, req.params.id));
+  }),
+);
+
+router.get(
+  "/explore/elsewhere/model/:id/copy",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    res.json(await remoteCopyStatus(req.userId!, req.params.id));
   }),
 );
 

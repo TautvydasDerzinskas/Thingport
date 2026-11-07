@@ -5,7 +5,7 @@ import { statusTint } from "../theme";
 import InstanceAvatar from "./InstanceAvatar";
 
 type Props = {
-  instance: InstanceRef;
+  instance: Pick<InstanceRef, "name" | "origin">;
   label: string;
   /** Laid over a picture (a card's), on the paper colour; otherwise tinted, beside a name. */
   overlay?: boolean;

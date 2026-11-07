@@ -209,6 +209,22 @@ export type PrintOut = {
   owner: UserCardOut | null;
   /** On another user's model: the viewer's own copy of it, once they have one. */
   library_copy_id: string | null;
+  /** Set on a copy of a partner instance's model (federation/remoteCopy.ts), on the detail fetch only: where it
+   *  came from. */
+  copied_from_remote: RemoteOriginOut | null;
+};
+
+export type RemoteOriginOut = {
+  /** The partner as it's named now, while still connected; as it was when copied otherwise. */
+  instance: { name: string; origin: string; http: boolean };
+  /** Their page here, while their instance is connected and still lists them. */
+  owner_id: string | null;
+  owner_name: string;
+  /** username@their-instance, when they had a username. */
+  owner_handle: string | null;
+  owner_avatar_url: string | null;
+  /** The original's id, for its page here, while the partner is connected and still shares it. */
+  original_id: string | null;
 };
 
 /** Another of the instance's users, as social features show them: never their email. */
@@ -428,6 +444,7 @@ export function toPrintOut(
     source_gaps: previewImages ? openSourceGaps(print, previewImages) : null,
     owner: null,
     library_copy_id: null,
+    copied_from_remote: null,
   };
 }
 

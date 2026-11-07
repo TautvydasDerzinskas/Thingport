@@ -128,6 +128,8 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/print/:id/files/:fileId",
       "/print/:id/prepared-print",
       "/category/:id/download",
+      "/explore/elsewhere/model/:id/files/:file/:filename",
+      "/explore/elsewhere/model/:id/files.zip",
     ],
   },
   {

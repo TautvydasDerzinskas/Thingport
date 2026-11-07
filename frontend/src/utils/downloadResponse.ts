@@ -1,5 +1,14 @@
 export function filenameFromDisposition(res: Response, fallback: string): string {
   const dispo = res.headers.get("content-disposition") || "";
+  // A name beyond ASCII comes in filename*, the plain filename holding a stand-in for it.
+  const extended = dispo.match(/filename\*=UTF-8''([^;]+)/i);
+  if (extended) {
+    try {
+      return decodeURIComponent(extended[1]);
+    } catch {
+      // Malformed: the plain one below.
+    }
+  }
   const match = dispo.match(/filename="?([^";]+)"?/i);
   return (match && match[1]) || fallback;
 }

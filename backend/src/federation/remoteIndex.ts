@@ -118,6 +118,7 @@ const modelSchema = z.object({
         .object({
           name: text(255),
           mediaType: text(120),
+          url: z.string().optional().catch(undefined),
           "thingport:size": z.number().int().min(0).optional().catch(undefined),
         })
         .passthrough(),
@@ -300,6 +301,8 @@ async function storeIn(
           name: file.name ?? "file",
           size: file["thingport:size"] ?? null,
           mediaType: file.mediaType ?? null,
+          // Where it's fetched from, signed, to download, open or copy it: only ever on the partner's own origin.
+          url: own(file.url) ? file.url : null,
         })) as Prisma.InputJsonValue,
         sharedAt: model.published,
         updatedAt: model.updated,
