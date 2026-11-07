@@ -1,10 +1,20 @@
-import { authHeaders } from "../utils/auth";
+import { appendTokenToUrl, authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
 import type { UserCard } from "./social";
 
+/** Someone on a partner instance, as a chat shows them. */
+export type RemoteRef = {
+  /** username@their-instance, when known. */
+  handle: string | null;
+  instance: { name: string; origin: string };
+  /** Their page on Explore (`/explore/elsewhere/people/:id`), while they share something there. */
+  profile_id: string | null;
+};
+
 /** Someone to chat with: never their email. `online` is having Thingport in front of them in the last couple of
- *  minutes. */
-export type ChatPerson = UserCard & { online: boolean };
+ *  minutes; `remote` is set for someone on a partner instance, whose `id` is theirs here. */
+export type ChatPerson = UserCard & { online: boolean; remote?: RemoteRef | null };
+export type ChatSender = UserCard & { remote?: RemoteRef | null };
 
 export type ChatAttachment = {
   id: string;
@@ -12,14 +22,23 @@ export type ChatAttachment = {
   name: string;
   /** The model as the user may open it: whose (null for their own) and its picture. Null once it's deleted, and in a
    *  chat list's last message, which only names it. */
-  model: { id: string; name: string; thumb_url: string | null; owner: UserCard | null } | null;
+  model: {
+    id: string;
+    name: string;
+    thumb_url: string | null;
+    owner: UserCard | null;
+    /** A partner's model, sent from there: it opens on Explore. */
+    remote?: boolean;
+    /** Which partner it's on, for a partner's. */
+    instance?: { name: string; origin: string } | null;
+  } | null;
 };
 
 export type ChatMessage = {
   id: string;
   chat_id: string;
-  /** Null once their account is gone. */
-  sender: UserCard | null;
+  /** Null once their account is gone. Someone elsewhere has `remote` set. */
+  sender: ChatSender | null;
   /** Empty once deleted, and when the message is only models. */
   body: string;
   /** Models of the sender's that came with it. None once it's deleted. */
@@ -38,6 +57,10 @@ export type Chat = {
   /** Direct messages: who with, null once their account is gone. */
   other: ChatPerson | null;
   member_count: number;
+  /** How many instances its members are on: 1 unless partners' people are in it. */
+  instances?: number;
+  /** A room hosted on a partner instance: which. It's managed there. */
+  hosted_by?: { name: string; origin: string } | null;
   /** A member: can write, and is notified. */
   joined: boolean;
   /** May read its messages: a member, or anyone for a public room. */
@@ -81,13 +104,33 @@ export type RoomInput = {
   is_public: boolean;
   /** A private room's members; the admin making it is always one. */
   member_ids?: string[];
+  /** People on partner instances in a private room. */
+  remote_member_ids?: string[];
 };
 
 /** A room's changes. Members change by who's added and taken out: those not named stay, loaded or not. */
-export type RoomPatch = Partial<Omit<RoomInput, "member_ids">> & {
+export type RoomPatch = Partial<Omit<RoomInput, "member_ids" | "remote_member_ids">> & {
   add_member_ids?: string[];
   remove_member_ids?: string[];
+  add_remote_member_ids?: string[];
+  remove_remote_member_ids?: string[];
 };
+
+// A partner's people's pictures come through this instance at addresses relative to the API: an <img> sends no header,
+// so the session goes in the address, as on Explore.
+const picture = (url: string | null) => (url ? appendTokenToUrl(`${apiBase()}${url}`) : null);
+const personIn = <T extends ChatSender>(person: T): T =>
+  person.remote ? { ...person, avatar_url: picture(person.avatar_url) } : person;
+// Model pictures stay as they are: the card adds the session to those itself (ModelThumb), as to any file's.
+const messageIn = (message: ChatMessage): ChatMessage => ({
+  ...message,
+  sender: message.sender && personIn(message.sender),
+});
+const chatIn = <T extends Chat>(chat: T): T => ({
+  ...chat,
+  other: chat.other && personIn(chat.other),
+  last_message: chat.last_message && messageIn(chat.last_message),
+});
 
 /** Asked for something of Chats while an admin has them, or social features, off. */
 export class ChatsOffError extends Error {
@@ -124,21 +167,37 @@ const send = <T>(method: string, path: string, body: unknown, fallback: string) 
 const chatPath = (chatId: string) => `/chats/${encodeURIComponent(chatId)}`;
 
 export const chatsApi = {
-  list: () => get<{ chats: Chat[] }>("/chats", "Failed to load chats").then((res) => res.chats),
+  list: () => get<{ chats: Chat[] }>("/chats", "Failed to load chats").then((res) => res.chats.map(chatIn)),
 
   /** `seen`: Thingport is in front of the user, which shows them online. */
   unread: (seen: boolean) => get<ChatUnread>(`/chats/unread${seen ? "?seen=1" : ""}`, "Failed to load unread chats"),
 
-  /** Others by any part of their name or their whole email; everyone, by name, for an empty query. */
+  /** Others by any part of their name or their whole email; everyone, by name, for an empty query. Partners' people
+   *  come after this instance's, with `remote` set. */
   people: (query: string) =>
-    get<{ people: ChatPerson[] }>(`/chats/people?q=${encodeURIComponent(query)}`, "Failed to find people").then(
-      (res) => res.people,
+    get<{ people: ChatPerson[] }>(`/chats/people?q=${encodeURIComponent(query)}`, "Failed to find people").then((res) =>
+      res.people.map(personIn),
     ),
 
-  /** The user's direct messages with `userId`, started if there were none. */
-  openDirect: (userId: string) => send<Chat>("POST", "/chats/direct", { user_id: userId }, "Failed to open the chat"),
+  /** The user's direct messages with someone, started if there were none: someone here by id, or someone on a partner
+   *  instance (a person with `remote`, or `{ remoteId }`). */
+  openDirect: (who: string | ChatPerson | { remoteId: string }) => {
+    const body =
+      typeof who === "string"
+        ? { user_id: who }
+        : "remoteId" in who
+          ? { remote_person_id: who.remoteId }
+          : who.remote
+            ? { remote_person_id: who.id }
+            : { user_id: who.id };
+    return send<Chat>("POST", "/chats/direct", body, "Failed to open the chat").then(chatIn);
+  },
 
-  get: (chatId: string) => get<ChatDetail>(chatPath(chatId), "Failed to load the chat"),
+  get: (chatId: string) =>
+    get<ChatDetail>(chatPath(chatId), "Failed to load the chat").then((chat) => ({
+      ...chatIn(chat),
+      members: chat.members.map(personIn),
+    })),
 
   /**
    * The latest page; `before` the page before that message; `after` what came since it (a few seconds' overlap, so
@@ -152,7 +211,9 @@ export const chatsApi = {
     if (options.since) params.set("since", options.since);
     if (options.seen) params.set("seen", "1");
     const query = params.toString();
-    return get<MessagePage>(`${chatPath(chatId)}/messages${query ? `?${query}` : ""}`, "Failed to load messages");
+    return get<MessagePage>(`${chatPath(chatId)}/messages${query ? `?${query}` : ""}`, "Failed to load messages").then(
+      (page) => ({ ...page, messages: page.messages.map(messageIn) }),
+    );
   },
 
   /** Text, models from the user's own library (whoever can read the chat can then open them), or both. */
@@ -162,7 +223,7 @@ export const chatsApi = {
       `${chatPath(chatId)}/messages`,
       { body, ...(printIds.length ? { print_ids: printIds } : {}) },
       "Failed to send the message",
-    ),
+    ).then(messageIn),
 
   deleteMessage: (chatId: string, messageId: string) =>
     send<{ ok: true }>(
@@ -173,17 +234,18 @@ export const chatsApi = {
     ),
 
   updateMembership: (chatId: string, patch: { favorite?: boolean; muted?: boolean }) =>
-    send<Chat>("PATCH", `${chatPath(chatId)}/membership`, patch, "Failed to update the chat"),
+    send<Chat>("PATCH", `${chatPath(chatId)}/membership`, patch, "Failed to update the chat").then(chatIn),
 
-  join: (chatId: string) => send<Chat>("POST", `${chatPath(chatId)}/join`, undefined, "Failed to join the room"),
+  join: (chatId: string) =>
+    send<Chat>("POST", `${chatPath(chatId)}/join`, undefined, "Failed to join the room").then(chatIn),
 
   leave: (chatId: string) =>
     send<{ ok: true }>("POST", `${chatPath(chatId)}/leave`, undefined, "Failed to leave the room"),
 
-  createRoom: (input: RoomInput) => send<Chat>("POST", "/chats/rooms", input, "Failed to create the room"),
+  createRoom: (input: RoomInput) => send<Chat>("POST", "/chats/rooms", input, "Failed to create the room").then(chatIn),
 
   updateRoom: (chatId: string, patch: RoomPatch) =>
-    send<Chat>("PATCH", `/chats/rooms/${encodeURIComponent(chatId)}`, patch, "Failed to save the room"),
+    send<Chat>("PATCH", `/chats/rooms/${encodeURIComponent(chatId)}`, patch, "Failed to save the room").then(chatIn),
 
   deleteRoom: (chatId: string) =>
     send<{ ok: true }>("DELETE", `/chats/rooms/${encodeURIComponent(chatId)}`, undefined, "Failed to delete the room"),

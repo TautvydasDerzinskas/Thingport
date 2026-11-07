@@ -97,6 +97,8 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
         generatorScriptWithheld: source.generatorScriptWithheld,
         copiedFromId: source.id,
         originalId: source.originalId ?? source.id,
+        // A copy of a partner's model says so too, and stands for it as the copier's own.
+        remoteSource: (source.remoteSource as Prisma.InputJsonValue | null) ?? undefined,
       },
       source.name,
       plates.flatMap(({ plate, from }) =>

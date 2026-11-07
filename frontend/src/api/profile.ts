@@ -42,6 +42,28 @@ export const profileApi = {
       "Failed to save your profile",
     ),
 
+  /** Whether a username is free, as it's typed. */
+  usernameAvailable: async (
+    username: string,
+  ): Promise<{ available: boolean; reason: "invalid" | "taken" | null; message?: string }> => {
+    const res = await fetch(`${apiBase()}/me/username-available?username=${encodeURIComponent(username)}`, {
+      headers: authHeaders(),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Couldn't check the username"));
+    return res.json();
+  },
+
+  setUsername: async (username: string): Promise<AuthUser> =>
+    userFrom(
+      await fetch(`${apiBase()}/me/username`, {
+        method: "PATCH",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ username }),
+      }),
+      "Failed to save your username",
+    ),
+
   /** Cut square and kept as the avatar, replacing an earlier upload. */
   uploadAvatar: async (file: File): Promise<AuthUser> => {
     const body = new FormData();

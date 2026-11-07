@@ -35,6 +35,8 @@ type Props = {
   bio: string | null | undefined;
   /** A user's bio is Markdown, as they wrote it; an author's is the plain text their site had. */
   bioMarkdown?: boolean;
+  /** Someone on a partner instance: their bio shows no images (see MarkdownDescription). */
+  remote?: boolean;
   links?: string[];
   /** Beside them: what they made. */
   children: ReactNode;
@@ -51,6 +53,7 @@ export default function ProfileLayout({
   actions,
   bio,
   bioMarkdown,
+  remote,
   links,
   children,
 }: Props) {
@@ -76,11 +79,15 @@ export default function ProfileLayout({
             <Typography variant="h5" fontWeight={700} sx={{ mt: 2, color: (theme) => theme.thingport.headingText }}>
               {name}
             </Typography>
-            {subtitle && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-                {subtitle}
-              </Typography>
-            )}
+            {/* Text in a line of its own; anything else (a handle with its buttons) can't sit in a paragraph. */}
+            {subtitle &&
+              (typeof subtitle === "string" ? (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                  {subtitle}
+                </Typography>
+              ) : (
+                subtitle
+              ))}
             {actions}
 
             <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 3, mb: 1 }}>
@@ -88,7 +95,7 @@ export default function ProfileLayout({
             </Typography>
             {bio && bioMarkdown ? (
               <Box sx={{ typography: "body2", "& p": { my: 0.5 } }}>
-                <MarkdownDescription markdown={bio} />
+                <MarkdownDescription markdown={bio} remote={remote} />
               </Box>
             ) : (
               <Typography

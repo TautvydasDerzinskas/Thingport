@@ -25,7 +25,7 @@ type Props = {
   menuOpen?: boolean;
   title: string;
   /** The entity kind, shown under the title so a long name gets the full line. */
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   onBack?: () => void;
   actions?: React.ReactNode;
   categoryId: string | null;

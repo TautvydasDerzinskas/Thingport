@@ -33,7 +33,7 @@ export default function NewChatDialog({
     setOpening(true);
     setError(null);
     try {
-      const chat = await chatsApi.openDirect(person.id);
+      const chat = await chatsApi.openDirect(person);
       putChat(chat);
       onClose();
       navigate(`/chats/${chat.id}`);

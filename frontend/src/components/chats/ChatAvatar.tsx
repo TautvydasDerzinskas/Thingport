@@ -4,9 +4,11 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import TagIcon from "@mui/icons-material/Tag";
 import type { Chat, ChatPerson } from "../../api/chats";
 import { personAvatar } from "../importQueue/personAvatar";
+import { visuallyHiddenSx } from "../importQueue/queueParts";
+import InstanceAvatar from "../InstanceAvatar";
 import UserAvatar from "../UserAvatar";
 
-/** A green dot on someone's picture while they have Thingport open. */
+/** A green dot on someone's picture while they have Thingport open; their instance's badge for someone elsewhere. */
 export function PersonAvatar({ person, size = 36 }: { person: ChatPerson | null; size?: number }) {
   if (!person) {
     return (
@@ -19,7 +21,32 @@ export function PersonAvatar({ person, size = 36 }: { person: ChatPerson | null;
   return (
     <Box sx={{ position: "relative", flexShrink: 0, width: size, height: size }}>
       <UserAvatar user={person} size={size} />
-      {person.online && (
+      {person.remote && (
+        // Read out with their name, so two people of the same name elsewhere are told apart.
+        <Box component="span" sx={visuallyHiddenSx}>
+          {person.remote.handle ?? person.remote.instance.name}
+        </Box>
+      )}
+      {person.remote && (
+        <Box
+          sx={{
+            position: "absolute",
+            right: -3,
+            bottom: -3,
+            borderRadius: "5px",
+            border: "2px solid",
+            borderColor: "background.paper",
+            lineHeight: 0,
+          }}
+        >
+          <InstanceAvatar
+            origin={person.remote.instance.origin}
+            name={person.remote.instance.name}
+            size={Math.max(12, Math.round(size * 0.42))}
+          />
+        </Box>
+      )}
+      {person.online && !person.remote && (
         <Box
           sx={{
             position: "absolute",

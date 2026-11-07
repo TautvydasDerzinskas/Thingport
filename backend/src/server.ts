@@ -17,6 +17,9 @@ import { resumeStorageMove } from "./services/storageMoveService";
 import { resumeFileReuseBackfill } from "./services/fileReuseBackfill";
 import { seedProviderCategoryIds } from "./services/categorySiteIds";
 import { linkUnattributedPrints } from "./services/authorService";
+import { startDeliveryWorker } from "./federation/delivery";
+import { startLinks } from "./federation/links";
+import { getFederationSettings } from "./federation/settings";
 
 const app = createApp();
 
@@ -40,12 +43,20 @@ async function boot(): Promise<void> {
       return false;
     },
   );
-  app.listen(API_PORT, () => {
+  const server = app.listen(API_PORT, () => {
     console.log(`Thingport API listening on port ${API_PORT}`);
     startConsumeWatcher();
     startCollectionSyncScheduler();
     startNotificationCleanup();
     startSystemNotificationSync();
+    // Only where an admin turned connected instances on; elsewhere Fedify is never even loaded.
+    getFederationSettings()
+      .then((settings) => {
+        if (!settings.enabled) return;
+        startDeliveryWorker();
+        startLinks();
+      })
+      .catch((err) => console.error("Failed to start connected instances:", err));
     announceVersionUpdate().catch((err) => console.error("Failed to announce the version update:", err));
     resumeStorageMove()
       .catch((err) => console.error("Failed to resume moving model files:", err))
@@ -53,6 +64,9 @@ async function boot(): Promise<void> {
       .then(() => resumeFileReuseBackfill())
       .catch((err) => console.error("Failed to resume checking identical files:", err));
   });
+  // A whole request may take up to an hour: a partner's file coming up its link, or a big upload, on a slow
+  // connection. Headers still have to arrive within a minute (headersTimeout), and nginx in front has its own limits.
+  server.requestTimeout = 60 * 60 * 1000;
   if (recovered) startImportWorker();
   else startImportWorkerAfterRecovery(bootedAt);
 }

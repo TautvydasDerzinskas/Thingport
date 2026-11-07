@@ -30,6 +30,8 @@ import { profileApi, type PublicProfilePatch } from "../../api/profile";
 import HelpTip from "../../components/HelpTip";
 import { SectionLabel } from "../../components/Layout/ConfigurationDialog/parts";
 import ProfileCover from "../../components/profile/ProfileCover";
+import UsernameField, { usernameSavable, type UsernameState } from "../../components/profile/UsernameField";
+import { useSocialStatus } from "../../hooks/useSocialStatus";
 import { newLocalId } from "../../utils/localId";
 import { printProviderInfo } from "../../constants/importProviders";
 import {
@@ -107,6 +109,11 @@ export default function EditProfileDialog({ user, linkedAuthors, onClose, onSave
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  // While this instance connects with others, the username others there know them by.
+  const social = useSocialStatus();
+  const handleHost = social?.federation ? social.instance_host : null;
+  const [username, setUsername] = useState(user.username ?? "");
+  const [usernameState, setUsernameState] = useState<UsernameState>("unchanged");
   const fileInput = useRef<HTMLInputElement>(null);
   // The picture already put up by a save whose next step failed: trying again doesn't upload it twice.
   const uploaded = useRef<{ file: File; positionY: number } | null>(null);
@@ -206,7 +213,8 @@ export default function EditProfileDialog({ user, linkedAuthors, onClose, onSave
   const cleanLinks = links.map((link) => withScheme(link.value)).filter(Boolean);
   const linksChanged = cleanLinks.join("\n") !== (user.links ?? []).join("\n");
   const linksValid = cleanLinks.every(isWebAddress);
-  const dirty = coverChanged || positionChanged || bioChanged || linksChanged;
+  const usernameChanged = Boolean(handleHost) && usernameState !== "unchanged";
+  const dirty = coverChanged || positionChanged || bioChanged || linksChanged || usernameChanged;
 
   const setLink = (id: string, value: string) =>
     setLinks((current) => current.map((link) => (link.id === id ? { ...link, value } : link)));
@@ -219,6 +227,11 @@ export default function EditProfileDialog({ user, linkedAuthors, onClose, onSave
     setError(null);
     try {
       let saved = user;
+      // First: a username someone else took meanwhile stops the save before anything else changes.
+      if (usernameChanged) {
+        saved = await profileApi.setUsername(username);
+        onUpdated?.(saved);
+      }
       if (choice.kind === "upload" && uploaded.current?.file !== choice.file) {
         saved = await profileApi.uploadCover(choice.file, positionY);
         uploaded.current = { file: choice.file, positionY };
@@ -290,6 +303,23 @@ export default function EditProfileDialog({ user, linkedAuthors, onClose, onSave
       <DialogTitle>{t("models:author.editProfile.title")}</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ mt: 0.5 }}>
+          {handleHost && (
+            <Box>
+              <SectionLabel>
+                {t("models:author.username.label")}
+                <HelpTip text={t("models:author.username.why")} />
+              </SectionLabel>
+              <UsernameField
+                value={username}
+                onChange={setUsername}
+                current={user.username}
+                host={handleHost}
+                onState={setUsernameState}
+                disabled={saving}
+                onUnauthorized={onUnauthorized}
+              />
+            </Box>
+          )}
           <Box>
             <SectionLabel>
               {t("models:author.editProfile.cover")}
@@ -562,7 +592,8 @@ export default function EditProfileDialog({ user, linkedAuthors, onClose, onSave
         <Button
           variant="contained"
           onClick={save}
-          disabled={saving || !dirty || !linksValid}
+          // The username counts only while its field shows: hidden, it isn't saved either.
+          disabled={saving || !dirty || !linksValid || (Boolean(handleHost) && !usernameSavable(usernameState))}
           startIcon={saving ? <CircularProgress size={14} /> : undefined}
         >
           {t("common:save")}

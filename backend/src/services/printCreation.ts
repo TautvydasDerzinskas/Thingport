@@ -71,6 +71,8 @@ export type PrintMetaInput = {
   /** Another user's model this one is a copy of (services/modelCopyService.ts), and the first original behind it. */
   copiedFromId?: string | null;
   originalId?: string | null;
+  /** A copy of a partner instance's model: where it came from (federation/remoteCopy.ts). */
+  remoteSource?: Prisma.InputJsonValue | null;
 };
 
 /** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
@@ -300,6 +302,7 @@ export async function createPrint(
       generatorScriptWithheld: meta.generatorScriptWithheld ?? false,
       copiedFromId: meta.copiedFromId ?? null,
       originalId: meta.originalId ?? null,
+      remoteSource: meta.remoteSource ?? undefined,
     },
   });
   // Chosen now, though nothing is in it yet, so a null assetsPath only ever means a model from before (see
