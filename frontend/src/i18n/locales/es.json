@@ -5895,10 +5895,11 @@
           "not_available": "Esta instancia no se conecta con la suya.",
           "exists": "Ya pediste llegar a esa persona.",
           "request_limit": "Espera a que tu administrador responda primero a tus solicitudes.",
-          "daily_limit": "Hoy ya has pedido llegar a personas de otras instancias muchas veces. Inténtalo mañana."
+          "daily_limit": "Hoy ya has pedido llegar a personas de otras instancias muchas veces. Inténtalo mañana.",
+          "copy_limit": "Espera primero a que terminen las copias en curso.",
+          "no_files": "No tiene archivos que copiar."
         },
         "on": "En {{name}}",
-        "from": "De {{name}}",
         "fileCount_one": "{{count}} archivo",
         "fileCount_many": "{{count}} archivos",
         "fileCount_other": "{{count}} archivos",
@@ -5907,9 +5908,14 @@
         "gone": "Esto ya no se comparte, o la instancia donde está ya no está conectada.",
         "noPictures": "Sin imágenes",
         "picture": "Imagen {{number}}",
-        "files": "Archivos",
         "inCollections": "En colecciones",
-        "comingNext": "Descargarlo, abrirlo en un laminador y copiarlo a tu biblioteca llegan en la próxima actualización."
+        "copying": "Copiando a tu biblioteca…",
+        "copyFailed": "No se pudo copiar",
+        "carriesOn": "Puedes salir de esta página: seguirá copiándose.",
+        "ofSize": "{{received}} de {{size}}",
+        "filesUnavailable": "Su instancia todavía no ofrece los archivos.",
+        "copiedFrom": "Copiado de",
+        "seeOriginal": "Ver el original"
       },
       "scope": {
         "label": "Mostrar",

@@ -41,10 +41,13 @@ body exactly as it came), plus the admin API in `routes/federation.ts`.
 | `reachability.ts`                          | The check before turning on: the Public URL fetches a nonce back with this instance's secret, and its address is classified.                                                                                                                        |
 | `inbox.ts`                                 | Fedify's inbox handlers, passing each activity to `peers.ts`.                                                                                                                                                                                       |
 | `apRoutes.ts`                              | The Express side: `/api/ap/instance` (what a lookup reads), the actor and the inbox, handed to Fedify at the URL the Public URL gives.                                                                                                              |
-| `publish.ts`                               | What this instance's people share, for partners' signed GETs only: the directory, models, collections, pictures.                                                                                                                                    |
+| `publish.ts`                               | What this instance's people share, for partners' signed GETs only: the directory, models, collections, pictures, files.                                                                                                                             |
+| `signedFetch.ts`                           | A GET of a partner's document or file, signed as this instance, to that partner's own origin only.                                                                                                                                                  |
 | `remoteIndex.ts`                           | The copy kept of what partners share, read on connecting, every 15 minutes, and when Explore finds it stale.                                                                                                                                        |
 | `remoteExplore.ts`                         | Explore's rows and pages of partners' things, from that copy.                                                                                                                                                                                       |
 | `media.ts`                                 | Partners' pictures, fetched signed through this instance and kept, at addresses signed with its secret.                                                                                                                                             |
+| `remoteFiles.ts`                           | Partners' models' files through this instance: streamed to a viewer, or fetched whole to zip or copy. Never kept.                                                                                                                                   |
+| `remoteCopy.ts`                            | A partner's model copied into a viewer's library in the background, file by file, marked with where it came from.                                                                                                                                   |
 | `socialSurfaces.ts`                        | How each social route crosses to partners.                                                                                                                                                                                                          |
 
 ### Pairing
@@ -89,7 +92,8 @@ looks: Explore stays fast, and shows a partner's things while it's away.
 - **Serving** (`publish.ts`, under `/api/ap`, answering only an `ACTIVE` partner's signed GET, checked against the key
   compared): `/directory`, the people who share, as `Person`s with their counts; `/actors/<id>/models?page=N`, their
   shared models; `/actors/<id>/collections`, their public collections with the models in each; `/media/<kind>/<id>`,
-  avatars, uploaded covers and models' pictures. Shaped like Manyfold's (a model is a `Service`, a collection a
+  avatars, uploaded covers and models' pictures; `/files/plate|file/<id>/<name>`, a shared model's files, the `url`
+  of each `Document` in its `attachment`. Shaped like Manyfold's (a model is a `Service`, a collection a
   `Group`, with `f3di:concreteType`), Thingport's additions under `thingport:`. What's shared is decided by the same
   rules as Explore here (`sharers`, `sharedModelsWhere` in `services/socialService.ts`).
 - **Keeping the copy** (`remoteIndex.ts`): `RemotePerson`, `RemoteModel`, `RemoteCollection`, read on connecting, by
@@ -103,6 +107,17 @@ looks: Explore stays fast, and shows a partner's things while it's away.
 - **Showing it** (`remoteExplore.ts`, `routes/social.ts`): `GET /explore?scope=all|here|<peer id>` adds `elsewhere`
   and `instances`, plus `shared_at` for this instance's own, so the web app can put both in one order;
   `/explore/elsewhere/person|model|collection/:id` for the pages. Paused partners are left out.
+- **Files** (`remoteFiles.ts`): a model's page lists each file with an address here,
+  `/explore/elsewhere/model/<id>/files/<index>/<name>` (the name last, for slicers), or `null` where the partner gave
+  none on its own origin; `files.zip` has them all. Each is fetched signed from the partner as it's asked for, only
+  while it's `ACTIVE`, from the address its model document gave and nowhere else, and streamed on, never kept.
+- **Copies** (`remoteCopy.ts`): `POST /explore/elsewhere/model/<id>/copy` starts one in the background and `GET` says
+  how it's going, file by file. The files are fetched into a temporary folder, each no bigger than an import, and
+  only once all of them are there is a model made (`createUploadedModel`), with its pictures and description and
+  `Print.remoteSource` saying where it came from. That's what makes the original show **Open my copy** rather than
+  copy it again, and the copy's `copied_from_remote` (on `GET /print/:id`), which links back to the original while
+  the partner still shares it. A job's progress is in memory: a restart loses one under way, and leaves nothing half
+  made.
 
 ### Making a social feature federate
 
@@ -121,7 +136,8 @@ looks: Explore stays fast, and shows a partner's things while it's away.
 - `tests/federationAddresses.test.ts`, `tests/federationReachability.test.ts`: the address rules and the check, with
   the network faked, including the public cases.
 - `tests/federation.test.ts`: the routes and the inbox filter on a test database.
-- `tests/federationExplore.test.ts`: what partners are shown, and Explore with what a partner shares.
+- `tests/federationExplore.test.ts`: what partners are shown, Explore with what a partner shares, which of its files
+  are handed out, and where a copy came from.
 - `tests/federationSurfaces.test.ts`: the rule above.
 - `tests/federationPairing.e2e.test.ts`: two real instances, each its own server and database, pairing over HTTP. It
   needs two empty, migrated databases and is skipped without them. From `backend/`:

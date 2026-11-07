@@ -5908,10 +5908,11 @@
           "not_available": "Cette instance ne se connecte pas à la sienne.",
           "exists": "Vous avez déjà demandé à joindre cette personne.",
           "request_limit": "Attendez d'abord que votre administrateur réponde à vos demandes.",
-          "daily_limit": "Vous avez déjà demandé à joindre beaucoup de personnes ailleurs aujourd'hui. Réessayez demain."
+          "daily_limit": "Vous avez déjà demandé à joindre beaucoup de personnes ailleurs aujourd'hui. Réessayez demain.",
+          "copy_limit": "Attendez d'abord la fin des copies en cours.",
+          "no_files": "Il n'a aucun fichier à copier."
         },
         "on": "Sur {{name}}",
-        "from": "De {{name}}",
         "fileCount_one": "{{count}} fichier",
         "fileCount_many": "{{count}} fichiers",
         "fileCount_other": "{{count}} fichiers",
@@ -5920,9 +5921,14 @@
         "gone": "Ce n'est plus partagé, ou l'instance où c'est n'est plus connectée.",
         "noPictures": "Aucune image",
         "picture": "Image {{number}}",
-        "files": "Fichiers",
         "inCollections": "Dans les collections",
-        "comingNext": "Le télécharger, l'ouvrir dans un trancheur et le copier dans votre bibliothèque arrivent dans la prochaine mise à jour."
+        "copying": "Copie dans votre bibliothèque…",
+        "copyFailed": "Impossible de le copier",
+        "carriesOn": "Vous pouvez quitter cette page : la copie continue.",
+        "ofSize": "{{received}} sur {{size}}",
+        "filesUnavailable": "Son instance ne propose pas encore les fichiers.",
+        "copiedFrom": "Copié de",
+        "seeOriginal": "Voir l'original"
       },
       "scope": {
         "label": "Afficher",

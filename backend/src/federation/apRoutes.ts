@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { originOf } from "./addresses";
 import { canonicalHeaders, edgeFilter, keyIdOf } from "./edge";
 import { instanceFingerprint } from "./keys";
-import { collectionsOf, directory, modelsPage, sendMedia, signingPartner } from "./publish";
+import { collectionsOf, directory, modelsPage, sendMedia, sendSharedFile, signingPartner } from "./publish";
 import { getRuntime } from "./runtime";
 import { isFederationLive } from "./settings";
 
@@ -118,6 +118,13 @@ router.get(
   partnerOnly,
   asyncHandler(async (req, res) => {
     activityJson(res, await collectionsOf(req.params.id));
+  }),
+);
+router.get(
+  ["/files/:kind/:id", "/files/:kind/:id/:name"],
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    await sendSharedFile(res, req.params.kind, req.params.id);
   }),
 );
 router.get(

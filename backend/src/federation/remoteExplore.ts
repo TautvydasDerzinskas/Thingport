@@ -1,9 +1,12 @@
 import type { Peer, Prisma, RemoteCollection, RemoteModel, RemotePerson } from "@prisma/client";
+import type { RemoteOriginOut } from "../dto";
 import { prisma } from "../db";
 import { mediaAddress } from "./media";
+import { libraryCopyOfRemote, type RemoteSource } from "./remoteCopy";
+import { filesOf } from "./remoteFiles";
 
 /** What Explore shows of partners, from the index (remoteIndex.ts): only ACTIVE partners', pictures through this
- *  instance (media.ts). Read-only: downloading and copying come later. */
+ *  instance (media.ts), files through it too (remoteFiles.ts). */
 
 export type InstanceOut = { id: string; name: string; origin: string; http: boolean };
 
@@ -216,14 +219,21 @@ export async function remotePersonModels(
 export type RemoteModelOut = RemoteModelCardOut & {
   description: string | null;
   images: string[];
-  files: { name: string; size: number | null; media_type: string | null }[];
+  /** `url` is API-relative, through this instance; null when the partner gave no address for it. */
+  files: { name: string; size: number | null; media_type: string | null; url: string | null }[];
   updated_at: string | null;
   owner_handle: string | null;
   /** Its owner's public collections it's in. */
   collections: { id: string; name: string }[];
+  /** The viewer's own copy of it, if they made one. */
+  library_copy_id: string | null;
 };
 
-export async function remoteModel(id: string): Promise<RemoteModelOut | null> {
+/** Where a partner's model's file is downloaded through this instance; its name last, as slicers want. */
+export const remoteFileRoute = (modelId: string, index: number, name: string) =>
+  `/explore/elsewhere/model/${modelId}/files/${index}/${encodeURIComponent(name)}`;
+
+export async function remoteModel(id: string, viewerId: string): Promise<RemoteModelOut | null> {
   const row = await prisma.remoteModel.findFirst({
     where: { id, peer: ACTIVE },
     include: { peer: true, person: true },
@@ -234,23 +244,20 @@ export async function remoteModel(id: string): Promise<RemoteModelOut | null> {
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });
-  const files = (Array.isArray(row.files) ? row.files : []) as {
-    name?: unknown;
-    size?: unknown;
-    mediaType?: unknown;
-  }[];
   return {
     ...modelCardOut(row),
     description: row.description,
     images: row.images.flatMap((url) => mediaAddress(url) ?? []),
-    files: files.map((file) => ({
-      name: typeof file.name === "string" ? file.name : "file",
-      size: typeof file.size === "number" ? file.size : null,
-      media_type: typeof file.mediaType === "string" ? file.mediaType : null,
+    files: filesOf(row, row.peer.origin).map((file, index) => ({
+      name: file.name,
+      size: file.size,
+      media_type: file.mediaType,
+      url: file.url ? remoteFileRoute(row.id, index, file.name) : null,
     })),
     updated_at: row.updatedAt?.toISOString() ?? null,
     owner_handle: row.person.username ? `${row.person.username}@${new URL(row.peer.origin).host}` : null,
     collections,
+    library_copy_id: await libraryCopyOfRemote(viewerId, row.apId),
   };
 }
 
@@ -271,5 +278,33 @@ export async function remoteCollection(id: string): Promise<RemoteCollectionPage
   return {
     collection,
     models: models.toSorted((a, b) => (order.get(a.apId) ?? 0) - (order.get(b.apId) ?? 0)).map(modelCardOut),
+  };
+}
+
+/** Where a copy of a partner's model came from (`Print.remoteSource`), with the original while it's still shared. */
+export async function remoteOriginOut(value: unknown): Promise<RemoteOriginOut | null> {
+  const source = value as Partial<RemoteSource> | null;
+  if (!source || typeof source.apId !== "string" || typeof source.origin !== "string") return null;
+  const original = await prisma.remoteModel.findFirst({
+    where: { apId: source.apId, peer: { ...ACTIVE, origin: source.origin } },
+    include: { peer: true, person: true },
+  });
+  const host = new URL(source.origin).host;
+  return {
+    instance: {
+      name: original?.peer.name ?? (typeof source.instance === "string" ? source.instance : host),
+      origin: source.origin,
+      http: source.origin.startsWith("http:"),
+    },
+    owner_id: original?.person.id ?? null,
+    owner_name: original?.person.displayName ?? (typeof source.ownerName === "string" ? source.ownerName : host),
+    owner_handle:
+      original?.person.username != null
+        ? `${original.person.username}@${host}`
+        : typeof source.ownerHandle === "string"
+          ? source.ownerHandle
+          : null,
+    owner_avatar_url: original ? mediaAddress(original.person.avatarUrl) : null,
+    original_id: original?.id ?? null,
   };
 }

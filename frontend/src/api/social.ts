@@ -1,6 +1,7 @@
 import { appendTokenToUrl, authHeaders } from "../utils/auth";
 import { apiBase, assertOkWithMessage, readErrorMessage, UnauthorizedError } from "./client";
 import type { Collection } from "./collections";
+import { FederationError } from "./federation";
 import type { ListPrintsResult, Print, PrintSortMode } from "./prints";
 import type { ProfileCoverValue } from "../constants/profileCovers";
 
@@ -100,10 +101,33 @@ export type RemotePersonPage = {
 export type RemoteModel = RemoteModelCard & {
   description: string | null;
   images: string[];
-  files: { name: string; size: number | null; media_type: string | null }[];
+  /** `url` is API-relative, through this instance; null when the partner gave no address for the file. */
+  files: { name: string; size: number | null; media_type: string | null; url: string | null }[];
   updated_at: string | null;
   owner_handle: string | null;
   collections: { id: string; name: string }[];
+  /** The viewer's own copy of it, once they made one. */
+  library_copy_id: string | null;
+};
+
+/** Copying a partner's model into the viewer's library, file by file, in the background. */
+export type RemoteCopyStatus = {
+  state: "idle" | "copying" | "done" | "failed";
+  files: { name: string; size: number | null; received: number; done: boolean }[];
+  copy_id: string | null;
+  error: string | null;
+};
+
+/** Where a copy of a partner's model came from. `owner_avatar_url` is API-relative, as the other files are. */
+export type RemoteOrigin = {
+  instance: Pick<InstanceRef, "name" | "origin" | "http">;
+  /** Their page here, while their instance is connected and still lists them. */
+  owner_id: string | null;
+  owner_name: string;
+  owner_handle: string | null;
+  owner_avatar_url: string | null;
+  /** The original's page here, while its instance is connected and still shares it. */
+  original_id: string | null;
 };
 
 export type RemoteCollectionPage = { collection: RemoteCollectionCard; models: RemoteModelCard[] };
@@ -148,6 +172,23 @@ const getOrNull = async <T>(path: string): Promise<T | null> => {
     return null;
   }
   await assertOkWithMessage(res, "Failed to load this");
+  return res.json();
+};
+
+const remoteCopyCall = async (method: "GET" | "POST", id: string): Promise<RemoteCopyStatus> => {
+  const res = await fetch(`${apiBase()}/explore/elsewhere/model/${encodeURIComponent(id)}/copy`, {
+    method,
+    headers: authHeaders(),
+  });
+  if (res.status === 401) throw new UnauthorizedError();
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as { detail?: unknown; code?: unknown } | null;
+    throw new FederationError(
+      typeof data?.detail === "string" ? data.detail : "Couldn't copy it",
+      typeof data?.code === "string" ? data.code : null,
+      res.status,
+    );
+  }
   return res.json();
 };
 
@@ -227,6 +268,19 @@ export const socialApi = {
         total: Number(res.headers.get("X-Total-Count") ?? 0),
         hasMore: res.headers.get("X-Has-More") === "true",
       };
+    },
+    /** Starts copying it into the viewer's library, or says how it's going: `copy_limit` and `no_files` are the
+     *  codes of the reasons it can't. */
+    copy: (id: string) => remoteCopyCall("POST", id),
+    copyStatus: (id: string) => remoteCopyCall("GET", id),
+    /** Every file of the partner's model, zipped through this instance. */
+    zip: async (id: string): Promise<Response> => {
+      const res = await fetch(`${apiBase()}/explore/elsewhere/model/${encodeURIComponent(id)}/files.zip`, {
+        headers: authHeaders(),
+      });
+      if (res.status === 401) throw new UnauthorizedError();
+      await assertOkWithMessage(res, "Failed to download the files");
+      return res;
     },
   },
 

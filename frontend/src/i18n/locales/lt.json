@@ -6120,10 +6120,11 @@
           "not_available": "Šis serveris su jų serveriu nesijungia.",
           "exists": "Jūs jau paprašėte jį pasiekti.",
           "request_limit": "Pirma palaukite, kol administratorius atsakys į jūsų prašymus.",
-          "daily_limit": "Šiandien jau daug kartų prašėte pasiekti žmones kitur. Pabandykite rytoj."
+          "daily_limit": "Šiandien jau daug kartų prašėte pasiekti žmones kitur. Pabandykite rytoj.",
+          "copy_limit": "Pirma palaukite, kol baigsis vykstantys kopijavimai.",
+          "no_files": "Jame nėra failų, kuriuos būtų galima nukopijuoti."
         },
         "on": "Serveryje {{name}}",
-        "from": "Iš {{name}}",
         "fileCount_one": "{{count}} failas",
         "fileCount_few": "{{count}} failai",
         "fileCount_many": "{{count}} failo",
@@ -6133,9 +6134,14 @@
         "gone": "Tai nebebendrinama, arba serveris, kuriame tai yra, nebesujungtas.",
         "noPictures": "Nuotraukų nėra",
         "picture": "Nuotrauka {{number}}",
-        "files": "Failai",
         "inCollections": "Kolekcijose",
-        "comingNext": "Atsisiųsti, atidaryti pjaustyklėje ir nukopijuoti į savo biblioteką bus galima kitame atnaujinime."
+        "copying": "Kopijuojama į jūsų biblioteką…",
+        "copyFailed": "Nepavyko nukopijuoti",
+        "carriesOn": "Galite palikti šį puslapį: kopijavimas tęsis.",
+        "ofSize": "{{received}} iš {{size}}",
+        "filesUnavailable": "Jo serveris kol kas failų nesiūlo.",
+        "copiedFrom": "Nukopijuota iš",
+        "seeOriginal": "Žiūrėti originalą"
       },
       "scope": {
         "label": "Rodyti",

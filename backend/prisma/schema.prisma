@@ -256,6 +256,9 @@ model Print {
   // The model this one was copied from, out of another user's public collection (services/modelCopyService.ts). The
   // copy is the user's own: the original changing, going private or being deleted leaves it as it is.
   copiedFromId             String?
+  /// A copy of a partner instance's model: `{ apId, origin, instance, ownerName, ownerHandle }`, kept so the copy says
+  /// where it came from and the original's page offers it again (federation/remoteCopy.ts).
+  remoteSource             Json?
   copiedFrom               Print?                   @relation("PrintCopies", fields: [copiedFromId], references: [id], onDelete: SetNull)
   copies                   Print[]                  @relation("PrintCopies")
   // The first original of that chain: what a copy of a copy is a copy of. No relation, so it outlasts the original's
