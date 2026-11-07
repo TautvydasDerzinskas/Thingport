@@ -159,7 +159,8 @@ export async function socialStatus(): Promise<SocialStatusOut> {
     enabled,
     // One person alone still gets Explore while connected: it's where they ask to reach someone elsewhere.
     explore: others || federation,
-    chats: chats && others,
+    // Alone here, chats are still for partners' people while connected.
+    chats: chats && (others || federation),
     federation,
     instance_host: publicUrl ? new URL(publicUrl).host : null,
   };

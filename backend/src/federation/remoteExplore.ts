@@ -136,7 +136,8 @@ async function collectionCardsOut(rows: CollectionRow[]): Promise<RemoteCollecti
 /** Partners there's something of to show, for Explore's filter. */
 export async function instancesOut(): Promise<InstanceOut[]> {
   const peers = await prisma.peer.findMany({
-    where: { ...ACTIVE, people: { some: {} } },
+    // Someone it shares: a partner known only from chats has nothing to show here.
+    where: { ...ACTIVE, people: { some: { listed: true } } },
     orderBy: { connectedAt: "asc" },
   });
   return peers.map(instanceOut);
@@ -147,7 +148,7 @@ export async function remoteOverview(peerId: string | null): Promise<RemoteOverv
   const peer: Prisma.PeerWhereInput = peerId ? { ...ACTIVE, id: peerId } : ACTIVE;
   const [people, models, collections] = await Promise.all([
     prisma.remotePerson.findMany({
-      where: { peer },
+      where: { peer, listed: true },
       orderBy: [{ sharedAt: { sort: "desc", nulls: "last" } }, { id: "asc" }],
       take: PEOPLE,
       include: { peer: true },
@@ -185,7 +186,10 @@ export type RemotePersonPageOut = {
 };
 
 export async function remotePerson(id: string): Promise<RemotePersonPageOut | null> {
-  const row = await prisma.remotePerson.findFirst({ where: { id, peer: ACTIVE }, include: { peer: true } });
+  const row = await prisma.remotePerson.findFirst({
+    where: { id, listed: true, peer: ACTIVE },
+    include: { peer: true },
+  });
   if (!row) return null;
   const collections = await prisma.remoteCollection.findMany({
     where: { personId: row.id },
@@ -212,7 +216,10 @@ export async function remotePersonModels(
   limit: number,
   offset: number,
 ): Promise<{ models: RemoteModelCardOut[]; total: number } | null> {
-  const person = await prisma.remotePerson.findFirst({ where: { id, peer: ACTIVE }, select: { id: true } });
+  const person = await prisma.remotePerson.findFirst({
+    where: { id, listed: true, peer: ACTIVE },
+    select: { id: true },
+  });
   if (!person) return null;
   const where = { personId: person.id };
   const [rows, total] = await Promise.all([

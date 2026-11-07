@@ -19,6 +19,7 @@ import {
   listChats,
   listMessages,
   openDirect,
+  openRemoteDirect,
   postMessage,
   searchPeople,
   touchSeen,
@@ -67,12 +68,20 @@ router.get(
   }),
 );
 
-const directSchema = z.object({ user_id: z.string().min(1) });
+// Someone here by `user_id`, or someone on a partner instance by `remote_person_id` (as /chats/people gives them).
+const directSchema = z.union([
+  z.object({ user_id: z.string().min(1) }),
+  z.object({ remote_person_id: z.string().min(1) }),
+]);
 router.post(
   "/chats/direct",
   asyncHandler(async (req, res) => {
-    const { user_id } = parseBody(directSchema, req.body);
-    res.json(await openDirect(viewerOf(req), user_id));
+    const body = parseBody(directSchema, req.body);
+    res.json(
+      "user_id" in body
+        ? await openDirect(viewerOf(req), body.user_id)
+        : await openRemoteDirect(viewerOf(req), body.remote_person_id),
+    );
   }),
 );
 
@@ -81,14 +90,17 @@ const roomSchema = z.object({
   description: z.string().max(ROOM_DESCRIPTION_MAX_LENGTH).nullable().optional(),
   is_public: z.boolean(),
   member_ids: z.array(z.string()).max(500).optional(),
+  remote_member_ids: z.array(z.string()).max(500).optional(),
 });
 // Members by who's added and who's taken out, never a whole list: the editor may have loaded only some of them.
 const roomPatchSchema = roomSchema
-  .omit({ member_ids: true })
+  .omit({ member_ids: true, remote_member_ids: true })
   .partial()
   .extend({
     add_member_ids: z.array(z.string()).max(500).optional(),
     remove_member_ids: z.array(z.string()).max(500).optional(),
+    add_remote_member_ids: z.array(z.string()).max(500).optional(),
+    remove_remote_member_ids: z.array(z.string()).max(500).optional(),
   });
 
 router.post(

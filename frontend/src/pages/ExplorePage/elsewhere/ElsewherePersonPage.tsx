@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -10,7 +10,9 @@ import Tabs from "@mui/material/Tabs";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { Theme } from "@mui/material/styles";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { chatsApi } from "../../../api/chats";
 import { UnauthorizedError } from "../../../api/client";
 import { socialApi, type RemoteModelCard, type RemotePersonPage } from "../../../api/social";
 import { COVER_PRESETS, type CoverPreset } from "../../../constants/profileCovers";
@@ -21,6 +23,7 @@ import { cardGridSx } from "../../../components/media/cardGrid";
 import ProfileLayout, { ProfileLayoutSkeleton } from "../../../components/profile/ProfileLayout";
 import { useToast } from "../../../components/ToastProvider";
 import UserAvatar from "../../../components/UserAvatar";
+import { useSocialStatus } from "../../../hooks/useSocialStatus";
 import { copyText } from "../../../utils/clipboard";
 import { RemoteCollectionCardView, RemoteModelCardView } from "../RemoteCards";
 import ElsewhereGone from "./ElsewhereGone";
@@ -61,6 +64,9 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const latest = useRef(0);
+  const navigate = useNavigate();
+  const chatsOn = useSocialStatus()?.chats === true;
+  const [opening, setOpening] = useState(false);
 
   const read = useCallback(
     (id: string) => {
@@ -71,6 +77,7 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
       setFailed(false);
       setHasMore(false);
       setLoadingMore(false);
+      setOpening(false);
       Promise.all([socialApi.elsewhere.person(id), socialApi.elsewhere.personModels(id, { limit: PAGE, offset: 0 })])
         .then(([person, first]) => {
           if (asked !== latest.current) return;
@@ -142,6 +149,22 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
   if (!page || !person) return <ProfileLayoutSkeleton />;
 
   const tab: Section = person.model_count > 0 && searchParams.get("tab") !== "collections" ? "models" : "collections";
+  const message = async () => {
+    if (!person) return;
+    // Someone else opened meanwhile: what this asked for no longer applies.
+    const asked = latest.current;
+    setOpening(true);
+    try {
+      const chat = await chatsApi.openDirect({ remoteId: person.id });
+      if (asked === latest.current) navigate(`/chats/${chat.id}`);
+    } catch (err) {
+      if (asked !== latest.current) return;
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else showToast({ message: t("models:explore.elsewhere.messageFailed"), severity: "error" });
+      setOpening(false);
+    }
+  };
+
   const copyHandle = async () => {
     if (!person.handle) return;
     try {
@@ -206,6 +229,18 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
                   </IconButton>
                 </Tooltip>
               </Box>
+            )}
+            {chatsOn && (
+              <Button
+                variant="contained"
+                size="small"
+                disableElevation
+                startIcon={<ChatBubbleOutlineIcon fontSize="small" />}
+                onClick={() => void message()}
+                disabled={opening}
+              >
+                {t("models:explore.elsewhere.message")}
+              </Button>
             )}
           </Stack>
         }

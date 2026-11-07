@@ -20,6 +20,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { ChatMessage } from "../../api/chats";
 import { clockTime, dayLabel, sameDay } from "../../components/chats/chatFormat";
+import InstanceChip from "../../components/InstanceChip";
 import UserAvatar from "../../components/UserAvatar";
 import AttachmentCard from "./AttachmentCard";
 import MessageText from "./MessageText";
@@ -243,9 +244,17 @@ export default function MessageList({
                   }}
                 >
                   {showName && (
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", ml: 1, mb: 0.25 }}>
-                      {message.sender?.display_name ?? t("chats.deletedUser")}
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, ml: 1, mb: 0.25, maxWidth: "100%" }}>
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {message.sender?.display_name ?? t("chats.deletedUser")}
+                      </Typography>
+                      {message.sender?.remote && (
+                        <InstanceChip
+                          instance={message.sender.remote.instance}
+                          label={message.sender.remote.instance.name}
+                        />
+                      )}
+                    </Box>
                   )}
                   {(message.deleted || message.body) && (
                     <Tooltip

@@ -1018,24 +1018,49 @@ enum ChatKind {
 /// Chats (services/chatService.ts), while an admin has them on under social features: two users' direct messages, or
 /// a room an admin made.
 model Chat {
-  id            String        @id @default(cuid())
+  id            String             @id @default(cuid())
   kind          ChatKind
   /// A room's. Direct messages are named after the other person.
   name          String?
   description   String?
   /// A room anyone may read and join. A private one's members are the users an admin picked.
-  isPublic      Boolean       @default(false)
+  isPublic      Boolean            @default(false)
   /// Direct messages only: the two users' ids, sorted and joined, so a pair only ever has the one.
-  directKey     String?       @unique
+  directKey     String?            @unique
   createdById   String?
-  createdBy     User?         @relation("ChatCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy     User?              @relation("ChatCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   /// The latest message's time, for ordering the list; when it was made until there's one.
-  lastMessageAt DateTime      @default(now())
-  createdAt     DateTime      @default(now())
+  lastMessageAt DateTime           @default(now())
+  createdAt     DateTime           @default(now())
   members       ChatMember[]
   messages      ChatMessage[]
+  /// People on partner instances in a chat hosted here: the other side of direct messages, or a room's members.
+  remoteMembers ChatRemoteMember[]
+  /// A room hosted on a partner instance (federation/chats.ts): its Group's id there, and the partner. Null for one
+  /// hosted here.
+  remoteApId    String?            @unique
+  hostPeerId    String?
+  hostPeer      Peer?              @relation(fields: [hostPeerId], references: [id], onDelete: Cascade)
+  /// A room hosted elsewhere: all its members, wherever they are, as the host last said
+  /// (`[{ id, name, handle, instance, origin }]`).
+  hostMembers   Json?
+  /// When the host last changed it, as its last update applied here said: an older one, retried late, is ignored.
+  hostUpdatedAt DateTime?
 
   @@index([kind])
+  @@index([hostPeerId])
+}
+
+/// Someone on a partner instance in a chat hosted here.
+model ChatRemoteMember {
+  chatId   String
+  chat     Chat         @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  personId String
+  person   RemotePerson @relation(fields: [personId], references: [id], onDelete: Cascade)
+  joinedAt DateTime     @default(now())
+
+  @@id([chatId, personId])
+  @@index([personId])
 }
 
 model ChatMember {
@@ -1059,17 +1084,24 @@ model ChatMember {
 }
 
 model ChatMessage {
-  id          String           @id @default(cuid())
-  chatId      String
-  chat        Chat             @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  id               String           @id @default(cuid())
+  chatId           String
+  chat             Chat             @relation(fields: [chatId], references: [id], onDelete: Cascade)
   /// Null once the sender's account is gone: what they said stays, from a deleted user.
-  senderId    String?
-  sender      User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  senderId         String?
+  sender           User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
   /// Emptied when it's deleted.
-  body        String
-  deletedAt   DateTime?
-  createdAt   DateTime         @default(now())
-  attachments ChatAttachment[]
+  body             String
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  attachments      ChatAttachment[]
+  /// From someone on another instance: who, while they're known here, and as the message said
+  /// (`{ id, name, handle, instance, origin }`), which stays when they aren't.
+  remoteSenderId   String?
+  remoteSender     RemotePerson?    @relation(fields: [remoteSenderId], references: [id], onDelete: SetNull)
+  remoteSenderCard Json?
+  /// Its id across instances: the sender's for one from elsewhere, ours once one written here is sent on.
+  apId             String?          @unique
 
   @@index([chatId, createdAt])
   // For polls asking what was deleted since they last looked.
@@ -1080,15 +1112,17 @@ model ChatMessage {
 /// A model of the sender's own, sent in a chat message. Whoever can read the chat can open, download and copy it while
 /// the message stays.
 model ChatAttachment {
-  id        String      @id @default(cuid())
-  messageId String
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  id              String      @id @default(cuid())
+  messageId       String
+  message         ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
   /// Null once the model's deleted: the message still says what was sent.
-  printId   String?
-  print     Print?      @relation(fields: [printId], references: [id], onDelete: SetNull)
+  printId         String?
+  print           Print?      @relation(fields: [printId], references: [id], onDelete: SetNull)
   /// The model's name when it was sent.
-  name      String
-  position  Int         @default(0)
+  name            String
+  position        Int         @default(0)
+  /// A partner's model, sent from there, by its id there: opened from the index while it's in it.
+  remoteModelApId String?
 
   @@index([messageId])
   @@index([printId])
@@ -1140,6 +1174,7 @@ model Peer {
   people        RemotePerson[]
   models        RemoteModel[]
   collections   RemoteCollection[]
+  rooms         Chat[]
 
   @@index([status])
 }
@@ -1167,8 +1202,13 @@ model RemotePerson {
   sharedAt        DateTime?
   joinedAt        DateTime?
   syncedAt        DateTime           @default(now())
+  /// In its instance's directory: shown on Explore. Someone known only from a chat (they share nothing there, or no
+  /// longer do) is kept unlisted while a chat still names them.
+  listed          Boolean            @default(true)
   models          RemoteModel[]
   collections     RemoteCollection[]
+  chats           ChatRemoteMember[]
+  messages        ChatMessage[]
 
   @@index([peerId])
   @@index([sharedAt])
@@ -1274,10 +1314,14 @@ model FederationDelivery {
   attempts      Int      @default(0)
   nextAttemptAt DateTime @default(now())
   lastError     String?
+  /// What it's one of (a chat: its room, or the person it's with): one waits for those before it, so a partner reads
+  /// them in the order they happened.
+  orderKey      String?
   createdAt     DateTime @default(now())
 
   @@index([nextAttemptAt])
   @@index([peerId])
+  @@index([peerId, orderKey, createdAt])
 }
 
 /// Fedify's key-value store: public keys it fetched and activities it handled, each with an expiry.

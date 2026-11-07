@@ -2600,7 +2600,7 @@
         },
         "federation": {
           "label": "Sujungti serveriai",
-          "summary": "Susiekite su kitais Thingport serveriais, kad jų žmonės ir tai, kuo jie dalijasi, matytųsi skiltyje Naršyti.",
+          "summary": "Susiekite su kitais Thingport serveriais, kad jų žmonės ir tai, kuo jie dalijasi, matytųsi skiltyse Naršyti ir Pokalbiai.",
           "infoTitle": "Ką daro serverių sujungimas",
           "infoPair": "Kiti Thingport serveriai, su kuriais susijungiate, tampa partneriais: jų žmonės, viešos kolekcijos ir modeliai matomi čia lyg būtų šiame serveryje, o jūsų – ten.",
           "infoApprove": "Kiekvieną serverį patvirtinate prieš jam prisijungiant. Jūsų naudotojai gali paprašyti prisijungti prie kurio nors.",
@@ -4323,7 +4323,12 @@
           "symbols": "Simboliai",
           "flags": "Vėliavos"
         }
-      }
+      },
+      "instances_one": "{{count}} serveris",
+      "instances_few": "{{count}} serveriai",
+      "instances_many": "{{count}} serverio",
+      "instances_other": "{{count}} serverių",
+      "hostedOn": "Laikomas {{name}}"
     },
     "modelPicker": {
       "search": "Ieškoti savo bibliotekoje",
@@ -6144,7 +6149,9 @@
         "ofSize": "{{received}} iš {{size}}",
         "filesUnavailable": "Jo serveris kol kas failų nesiūlo.",
         "copiedFrom": "Nukopijuota iš",
-        "seeOriginal": "Žiūrėti originalą"
+        "seeOriginal": "Žiūrėti originalą",
+        "message": "Rašyti",
+        "messageFailed": "Nepavyko atidaryti pokalbio"
       },
       "scope": {
         "label": "Rodyti",

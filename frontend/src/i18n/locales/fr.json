@@ -2544,7 +2544,7 @@
         },
         "federation": {
           "label": "Instances connectées",
-          "summary": "Connectez-vous à d'autres instances Thingport, pour que leurs utilisateurs et ce qu'ils partagent apparaissent dans Explorer.",
+          "summary": "Connectez-vous à d'autres instances Thingport, pour que leurs utilisateurs et ce qu'ils partagent apparaissent dans Explorer et Discussions.",
           "infoTitle": "Ce que fait la connexion d'instances",
           "infoPair": "Les instances Thingport avec lesquelles vous vous connectez deviennent partenaires : leurs utilisateurs, collections publiques et modèles apparaissent ici comme s'ils étaient sur cette instance, et les vôtres là-bas.",
           "infoApprove": "Vous approuvez chaque instance avant qu'elle se connecte. Vos utilisateurs peuvent vous demander de vous connecter à l'une d'elles.",
@@ -4233,7 +4233,11 @@
           "symbols": "Symboles",
           "flags": "Drapeaux"
         }
-      }
+      },
+      "instances_one": "{{count}} instance",
+      "instances_many": "{{count}} instances",
+      "instances_other": "{{count}} instances",
+      "hostedOn": "Hébergé sur {{name}}"
     },
     "modelPicker": {
       "search": "Rechercher dans votre bibliothèque",
@@ -5931,7 +5935,9 @@
         "ofSize": "{{received}} sur {{size}}",
         "filesUnavailable": "Son instance ne propose pas encore les fichiers.",
         "copiedFrom": "Copié de",
-        "seeOriginal": "Voir l'original"
+        "seeOriginal": "Voir l'original",
+        "message": "Écrire",
+        "messageFailed": "Impossible d'ouvrir la discussion"
       },
       "scope": {
         "label": "Afficher",
