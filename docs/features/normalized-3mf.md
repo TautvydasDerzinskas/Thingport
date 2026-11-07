@@ -20,7 +20,7 @@ a form that slicer understands, then opens it. Your stored file is never changed
 regular **Open** instead.
 
 Snapmaker Orca is a fork of Bambu's own slicer family and reads its 3MF layout, so it gets a different copy: parts,
-plates and painting stay as they are, and only the designer's printer profile and any G-code are taken out. (The file
+plates and painting stay as they are, while the designer's printer profile and any G-code are replaced or taken out (see below). (The file
 is also marked as a Bambu project, as Snapmaker Orca would otherwise split its parts apart.) Objects are moved from
 the designer's bed to the middle of the same plate on a 270 mm bed (the Snapmaker U1), since they would otherwise
 sit beside it, and the printer is set to the Snapmaker U1 with the designer's nozzle, its bed, height and absolute extrusion, and the process

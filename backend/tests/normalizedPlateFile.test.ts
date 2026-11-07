@@ -5,6 +5,7 @@ import JSZip from "jszip";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
+import { deleteNormalized3mf, normalize3mfStatus, normalized3mfFor } from "../src/services/normalized3mfCache";
 
 const app = createApp();
 let token: string;
@@ -143,5 +144,57 @@ describe("POST plate normalize status", () => {
       .send({ displayName: "Other", email: `normalize-other-${Date.now()}@example.com`, password: "password123" });
     const res = await request(app).post(normalizeUrl()).set("Authorization", `Bearer ${other.body.token}`);
     expect(res.status).toBe(404);
+  });
+});
+
+describe("normalized copy cache per target", () => {
+  const plateId = `cache-test-${Date.now()}`;
+  const dir = path.join(os.tmpdir(), plateId);
+  const good = path.join(dir, "good.3mf");
+  const bad = path.join(dir, "bad.3mf");
+  const errorFileOf = (copy: string) => copy.replace(/\.3mf$/, ".error");
+
+  beforeAll(async () => {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(good, await bambuProject());
+    fs.writeFileSync(bad, "not a zip");
+  });
+
+  afterAll(async () => {
+    await deleteNormalized3mf(plateId);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("keeps a failure per target, so an Orca error doesn't block the flat copy", async () => {
+    expect(await normalized3mfFor(plateId, bad, "orca")).toBeNull();
+    expect(await normalize3mfStatus(plateId, bad, "orca")).toBe("failed");
+    const flat = await normalized3mfFor(plateId, good, "flat");
+    expect(flat).not.toBeNull();
+    expect(await normalize3mfStatus(plateId, good, "flat")).toBe("ready");
+    await deleteNormalized3mf(plateId);
+  });
+
+  it("rebuilds the Orca copy when the source changed after it was made", async () => {
+    const orca = (await normalized3mfFor(plateId, good, "orca"))!;
+    expect(orca).toContain(".orca.");
+    expect(await normalize3mfStatus(plateId, good, "orca")).toBe("ready");
+    const now = Date.now();
+    fs.utimesSync(orca, new Date(now - 60_000), new Date(now - 60_000));
+    fs.utimesSync(good, new Date(now - 30_000), new Date(now - 30_000));
+    expect(await normalize3mfStatus(plateId, good, "orca")).toBe("preparing");
+    expect(await normalized3mfFor(plateId, good, "orca")).toBe(orca);
+    expect(fs.statSync(orca).mtimeMs).toBeGreaterThanOrEqual(fs.statSync(good).mtimeMs);
+    expect(await normalize3mfStatus(plateId, good, "orca")).toBe("ready");
+  });
+
+  it("deletes the copies and error markers of both targets", async () => {
+    const flat = (await normalized3mfFor(plateId, good, "flat"))!;
+    const orca = (await normalized3mfFor(plateId, good, "orca"))!;
+    const orcaError = errorFileOf(orca);
+    const flatError = errorFileOf(flat);
+    fs.writeFileSync(orcaError, "x");
+    fs.writeFileSync(flatError, "x");
+    await deleteNormalized3mf(plateId);
+    for (const file of [flat, orca, orcaError, flatError]) expect(fs.existsSync(file)).toBe(false);
   });
 });
