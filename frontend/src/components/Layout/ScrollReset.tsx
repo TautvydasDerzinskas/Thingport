@@ -2,10 +2,11 @@ import { useLayoutEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
 // How long a page reached by back or forward may go without growing before its place is given up on. Counted from
-// the last time it grew, as a page can fill in a step at a time.
-const WAIT_FOR_GROWTH_MS = 3000;
+// the last time it grew, as a page can fill in a step at a time; long enough for a list no longer kept to load again
+// from a slow server. The reader scrolling ends it sooner.
+const WAIT_FOR_GROWTH_MS = 8000;
 // The longest a place is followed at all, for a page whose height never settles (something animating, say).
-const RESTORE_AT_MOST_MS = 10000;
+const RESTORE_AT_MOST_MS = 20000;
 // Any of these means the reader has started scrolling for themselves.
 const READER_INPUT = ["wheel", "touchmove", "keydown", "pointerdown"] as const;
 
@@ -71,7 +72,11 @@ export default function ScrollReset() {
       if (!settling.current) places.set(currentKey.current, window.scrollY);
     };
     const traverse = () => {
-      settling.current = true;
+      // Between two entries the router doesn't tell apart (in-page #anchors the browser added, which carry no state),
+      // its key stays the same, so nothing would end the settling: those aren't a move between entries here either.
+      // The key is the router's own: the entry's state.key, or "default" without one.
+      const to = (window.history.state as { key?: string } | null)?.key ?? "default";
+      if (to !== currentKey.current) settling.current = true;
     };
     window.addEventListener("scroll", keep, { passive: true });
     window.addEventListener("popstate", traverse);

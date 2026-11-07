@@ -86,7 +86,11 @@ export default function ExploreUserModels({
             if (!more) break;
           }
         } catch (err) {
+          // Social features switched off meanwhile: the page reads itself again, as for a first load. Anything else
+          // leaves the list as it was.
+          if (mine !== run.current) return;
           if (err instanceof UnauthorizedError) onUnauthorized?.();
+          else if (err instanceof SocialOffError) gone();
           return;
         }
         if (mine !== run.current) return;
