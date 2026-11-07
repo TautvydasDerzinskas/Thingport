@@ -87,9 +87,9 @@ Explore across instances is read from a copy each instance keeps of what its par
 looks: Explore stays fast, and shows a partner's things while it's away.
 
 - **Serving** (`publish.ts`, under `/api/ap`, answering only an `ACTIVE` partner's signed GET, checked against the key
-  compared): `/directory?page=N`, the people who share, as `Person`s with their counts, 50 a page so a page fits
-  the 1 MB a fetch takes (each also at its own id, `/actors/<id>`); `/actors/<id>/models?page=N`, their
-  shared models; `/actors/<id>/collections`, their public collections with the models in each; `/media/<kind>/<id>`,
+  compared): `/directory?page=N`, the people who share, as `Person`s with their counts, 50 a page and each cut to
+  18 KB (links, then bio) so a page fits the 1 MB a fetch takes (each also at its own id, `/actors/<id>`);
+  `/actors/<id>/models?page=N`, their shared models; `/actors/<id>/collections`, their public collections with the models in each; `/media/<kind>/<id>`,
   avatars, uploaded covers and models' pictures. Shaped like Manyfold's (a model is a `Service`, a collection a
   `Group`, with `f3di:concreteType`), Thingport's additions under `thingport:`. What's shared is decided by the same
   rules as Explore here (`sharers`, `sharedModelsWhere` in `services/socialService.ts`).
@@ -97,14 +97,18 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   **Check connection**, every 15 minutes (the delivery worker's tick), and when Explore is opened and it's two minutes
   old. Everything a partner says is checked: ids and pictures on its own origin, text cut to size, and a listing
   without its items refused rather than read as empty. Rows keep their ids across reads (upserted by `apId`), so links
-  to them stay; what's no longer listed goes, except a person's models beyond the pages read. A read is written in
+  to them stay. Every row a read writes is stamped with its time (`syncedAt`), and what's left with an older one is
+  what's no longer listed, so it goes, except a person's models when not all their pages were read (more than 40, a
+  later page gone, or a next page elsewhere). At most 200 collections a person are read. A read is written in
   one transaction that ends by checking the partner is still `ACTIVE`, and forgetting a partner waits for one being
   written: a failed read leaves the last one whole, and a block or disconnect meanwhile leaves nothing behind.
   Disconnecting or blocking removes it all, pictures included.
 - **Pictures** (`media.ts`): the web app gets `/explore/elsewhere/media/<url>.<signature>`, signed with this instance's
   secret, so a user can't make the server fetch anything else; it's fetched signed from that partner, only while it's
   `ACTIVE`, kept under `federation-media/<peer>/`, and served with the session in the address like other files. After
-  each read, the ones nothing names any more (an older version, something no longer shared) are removed.
+  each read, failed or not, the ones nothing names any more (an older version, something no longer shared) are
+  removed, and past 1 GB of one partner's the oldest fetched go. Forgetting a partner waits for pictures being fetched
+  and keeps none of them.
 - **Showing it** (`remoteExplore.ts`, `routes/social.ts`): `GET /explore?scope=all|here|<peer id>` adds `elsewhere`
   and `instances`, plus `shared_at` for this instance's own, so the web app can put both in one order;
   `/explore/elsewhere/person|model|collection/:id` for the pages. Paused partners are left out.
