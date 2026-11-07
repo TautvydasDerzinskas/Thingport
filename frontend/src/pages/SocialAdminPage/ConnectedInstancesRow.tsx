@@ -19,7 +19,7 @@ import PublicIcon from "@mui/icons-material/Public";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { federationApi, type FederationSettings } from "../../api/federation";
+import { federationApi, linksOnly, type FederationSettings } from "../../api/federation";
 import ConnectedInstancesAnimation from "../../components/adminAnimations/ConnectedInstancesAnimation";
 import { useConfirm } from "../../components/ConfirmProvider";
 import HelpTip from "../../components/HelpTip";
@@ -143,6 +143,8 @@ export default function ConnectedInstancesRow({ settings, onSettings, socialEnab
         label={t(k("status.unconfirmed"))}
       />
     )
+  ) : linksOnly(reach) ? (
+    <ToneChip tone="warning" icon={<LinkIcon />} label={t(k("status.linksOnly"))} />
   ) : (
     <ToneChip tone="error" icon={<ReportProblemOutlinedIcon />} label={t(k("status.unreachable"))} />
   );
@@ -151,7 +153,9 @@ export default function ConnectedInstancesRow({ settings, onSettings, socialEnab
       ? t(k("status.localHelp"))
       : reach?.kind === "public" || reach?.kind === "public_unverified"
         ? t(k("status.publicHelp"))
-        : t(k("status.unreachableHelp"));
+        : linksOnly(reach)
+          ? t(k("status.linksOnlyHelp"))
+          : t(k("status.unreachableHelp"));
 
   const info = [t(k("infoPair")), t(k("infoApprove")), t(k("infoShare")), t(k("infoOff"))];
 

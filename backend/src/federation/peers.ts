@@ -54,10 +54,13 @@ export type InstanceInfo = {
   inboxUrl: string;
   publicKeys: unknown[];
   http: boolean;
-  /** Whether this instance should keep a link open to it: this one isn't known to be reachable from the internet, and
-   *  it's on the internet. */
-  suggestLink?: boolean;
+  /** Why this instance should keep a link open to it, if it should: nothing reaches this one at its Public URL
+   *  (`unreachable`), or it's on the internet and this one is on a local network only (`local`) or on a public address
+   *  nothing has confirmed (`unconfirmed`). */
+  suggestLink?: LinkReason | null;
 };
+
+export type LinkReason = "unreachable" | "local" | "unconfirmed";
 
 /** An address as an admin typed it, as the instance's origin: `makerspace.example` means https. */
 export function normalizeInstanceAddress(input: string): string {
@@ -73,7 +76,7 @@ export function normalizeInstanceAddress(input: string): string {
 export async function lookupInstance(input: string): Promise<InstanceInfo> {
   try {
     const { info } = await lookupWithActor(input);
-    return { ...info, suggestLink: await needsLink(info.origin) };
+    return { ...info, suggestLink: await linkReason(info.origin) };
   } catch (err) {
     // Out of reach from here, but asked through a link: that request is the way to connect it.
     if (err instanceof HttpError && err.code === "unreachable") {
@@ -97,13 +100,15 @@ export async function lookupInstance(input: string): Promise<InstanceInfo> {
   }
 }
 
-/** Whether an instance at `origin` likely can't reach this one: it's on the internet, and this one is on a local
- *  network only, or on a public address nothing has confirmed. */
-async function needsLink(origin: string): Promise<boolean> {
+/** Why an instance at `origin` likely can't reach this one, if it likely can't. */
+async function linkReason(origin: string): Promise<LinkReason | null> {
   const kind = (await getFederationSettings()).reachability?.kind;
-  if (kind !== "local" && kind !== "public_unverified") return false;
+  // Not even this instance answered at its address: on the same network or not, no other one can.
+  if (kind === "unreachable" || kind === "elsewhere") return "unreachable";
+  if (kind !== "local" && kind !== "public_unverified") return null;
   const theirs = await classifyHost(new URL(origin).hostname).catch(() => null);
-  return theirs?.kind === "public";
+  if (theirs?.kind !== "public") return null;
+  return kind === "local" ? "local" : "unconfirmed";
 }
 
 /** Fetches what `request` needs from its instance through the link it keeps open, if it keeps one: telling an admin

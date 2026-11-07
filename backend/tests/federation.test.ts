@@ -21,7 +21,7 @@ import {
   getFederationSettings,
   updateFederationSettings,
 } from "../src/federation/settings";
-import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
+import { getSocialSettings, setPublicUrl, setSocialSettings } from "../src/services/settingsService";
 
 const app = createApp();
 const ORIGIN = "http://192.0.2.50:8000";
@@ -117,6 +117,43 @@ describe("connected instances, off", () => {
     const res = await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: true });
     expect(res.status).toBe(409);
     expect(res.body.code).toBe("social_off");
+  });
+
+  it("turns on with nothing answering at its Public URL, to connect through links", async () => {
+    await setSocialSettings({ enabled: true });
+    // A port on this network nothing listens on, as a home instance's address is to itself behind some routers.
+    const closed = http.createServer();
+    await new Promise<void>((resolve) => closed.listen(0, "127.0.0.1", resolve));
+    const { port } = closed.address() as AddressInfo;
+    await new Promise((resolve) => closed.close(resolve));
+    await setPublicUrl(`http://127.0.0.1:${port}`);
+    process.env.FEDERATION_ALLOW_LOOPBACK = "1";
+    try {
+      const res = await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: true });
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ enabled: true, reachability: { kind: "unreachable", reason: "refused" } });
+    } finally {
+      delete process.env.FEDERATION_ALLOW_LOOPBACK;
+      await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: false });
+      await updateFederationSettings({ reachability: null });
+    }
+  });
+
+  it("won't turn on without a Public URL, or with one on this machine or in a reserved range", async () => {
+    await setSocialSettings({ enabled: true });
+    await setPublicUrl(null);
+    const unset = await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: true });
+    expect(unset.status).toBe(409);
+    expect(unset.body.code).toBe("no_public_url");
+    // Link-local isn't this machine, but no instance connects there either.
+    for (const url of ["http://127.0.0.1:8000", "http://169.254.1.2:8000"]) {
+      await setPublicUrl(url);
+      const here = await request(app).patch("/api/federation/settings").set(auth(admin)).send({ enabled: true });
+      expect(here.status).toBe(422);
+      expect(here.body.code).toBe("reserved_address");
+    }
+    expect((await getFederationSettings()).enabled).toBe(false);
+    await updateFederationSettings({ reachability: null });
   });
 
   it("doesn't even load Fedify", () => {

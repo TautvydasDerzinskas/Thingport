@@ -18,8 +18,8 @@ import { useTheme } from "@mui/material/styles";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import LinkIcon from "@mui/icons-material/Link";
 import PublicIcon from "@mui/icons-material/Public";
-import RemoveIcon from "@mui/icons-material/Remove";
 import ReportProblemOutlinedIcon from "@mui/icons-material/ReportProblemOutlined";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { UnauthorizedError } from "../../api/client";
@@ -27,7 +27,9 @@ import {
   canTurnOn,
   FederationError,
   federationApi,
+  linksOnly,
   type FederationSettings,
+  type ProbeFailure,
   type Reachability,
 } from "../../api/federation";
 import HelpTip from "../../components/HelpTip";
@@ -43,8 +45,17 @@ const appear = keyframes`
 
 const key = (name: string) => `adminSettings.social.federation.check.${name}`;
 
-type Tone = StatusTone | "neutral";
-type CheckRow = { tone: Tone; icon: React.ReactElement; label: string; detail: string | null };
+type CheckRow = { tone: StatusTone; icon: React.ReactElement; label: string; detail: string | null };
+
+const FAILURE_KEYS: Record<ProbeFailure, string> = {
+  reserved: "reserved",
+  not_found: "notFound",
+  timeout: "timeout",
+  refused: "refused",
+  certificate: "certificate",
+  redirect: "redirect",
+  failed: "failed",
+};
 
 type Props = {
   onClose: () => void;
@@ -95,15 +106,30 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
         onUnauthorized?.();
         return;
       }
-      // Checked again on turning on, and no longer reachable: show the new result, and say so about this instance
-      // (the shared message is about another one).
-      if (err instanceof FederationError && err.code === "unreachable") {
+      // Checked again on turning on, and its Public URL is gone or reserved now: the new result says so.
+      if (err instanceof FederationError && (err.code === "no_public_url" || err.code === "reserved_address")) {
         await check();
-        setError(t(key("notReachableNow")));
         return;
       }
       setError(err instanceof FederationError ? federationErrorText(err, t) : t(key("failed")));
     }
+  };
+
+  /** Why the Public URL didn't lead back here, as the check found it. */
+  const failureRow = (found: Reachability, url: string): CheckRow => {
+    const reason = found.reason ?? "failed";
+    const address = new URL(url);
+    const detail =
+      reason === "reserved"
+        ? found.addresses.join(", ") || null
+        : reason === "timeout"
+          ? t(key("failure.timeoutDetail"))
+          : reason === "not_found"
+            ? t(key("failure.notFoundDetail"), { host: address.hostname })
+            : reason === "refused"
+              ? t(key("failure.refusedDetail"), { host: address.host })
+              : (found.detail ?? null);
+    return { tone: "error", icon: <CloseIcon />, label: t(key(`failure.${FAILURE_KEYS[reason]}`)), detail };
   };
 
   const kind = result?.kind;
@@ -127,24 +153,31 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
           tone: "error",
           icon: <CloseIcon />,
           label: t(key("leadsElsewhere")),
-          detail: t(key("leadsElsewhereDetail")),
+          detail: result.detail
+            ? t(key("leadsElsewhereAnswered"), { answer: result.detail })
+            : t(key("leadsElsewhereDetail")),
         });
       } else if (kind === "public_unverified") {
-        rows.push({
-          tone: "warning",
-          icon: <ReportProblemOutlinedIcon />,
-          label: t(key("noLoopback")),
-          detail: t(key("noLoopbackDetail")),
-        });
+        // A redirect or a certificate is something to fix, whoever answered; silence may just be the router.
+        rows.push(
+          result.reason === "redirect" || result.reason === "certificate"
+            ? { ...failureRow(result, result.url), tone: "warning", icon: <ReportProblemOutlinedIcon /> }
+            : {
+                tone: "warning",
+                icon: <ReportProblemOutlinedIcon />,
+                label: t(key("noLoopback")),
+                detail: t(key("noLoopbackDetail")),
+              },
+        );
       } else {
-        rows.push({ tone: "error", icon: <CloseIcon />, label: t(key("noAnswer")), detail: t(key("noAnswerDetail")) });
+        rows.push(failureRow(result, result.url));
       }
+      // Where it is matters once something answers there.
       const addresses = result.addresses.join(", ") || null;
       if (kind === "local")
         rows.push({ tone: "info", icon: <HomeOutlinedIcon />, label: t(key("addressLocal")), detail: addresses });
       else if (kind === "public" || kind === "public_unverified")
         rows.push({ tone: "info", icon: <PublicIcon />, label: t(key("addressPublic")), detail: addresses });
-      else rows.push({ tone: "neutral", icon: <RemoveIcon />, label: t(key("addressSkipped")), detail: null });
     }
   }
 
@@ -156,15 +189,16 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
         ? { tone: "success", icon: <PublicIcon />, title: t(key("publicTitle")), text: t(key("publicText")) }
         : kind === "public_unverified"
           ? { tone: "warning", icon: <PublicIcon />, title: t(key("unverifiedTitle")), text: t(key("unverifiedText")) }
-          : {
-              tone: "error",
-              icon: <ReportProblemOutlinedIcon />,
-              title: t(key("unreachableTitle")),
-              text: t(kind === "not_set" ? key("notSetText") : key("unreachableText")),
-            };
+          : linksOnly(result)
+            ? { tone: "warning", icon: <LinkIcon />, title: t(key("linksOnlyTitle")), text: t(key("linksOnlyText")) }
+            : {
+                tone: "error",
+                icon: <ReportProblemOutlinedIcon />,
+                title: t(key("unreachableTitle")),
+                text: t(kind === "not_set" ? key("notSetText") : key("reservedText")),
+              };
 
   const help = [t(key("helpApprove")), t(key("helpShare")), t(key("helpOff"))];
-  const tint = (tone: Tone) => (tone === "neutral" ? null : statusTint(theme, tone));
   const motion = (delay: number) =>
     still ? {} : { opacity: 0, animation: `${appear} 0.3s ease-out ${delay}s forwards` };
 
@@ -192,7 +226,7 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
           {!checking && result && (
             <Stack key={round} aria-live="polite">
               {rows.map((row, index) => {
-                const colors = tint(row.tone);
+                const colors = statusTint(theme, row.tone);
                 return (
                   <Stack
                     key={row.label}
@@ -216,8 +250,8 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        bgcolor: colors?.background ?? "action.hover",
-                        color: colors?.text ?? "text.secondary",
+                        bgcolor: colors.background,
+                        color: colors.text,
                         "& svg": { fontSize: 16 },
                       }}
                     >
@@ -240,7 +274,12 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
               sx={motion(0.15 + rows.length * 0.35)}
               action={
                 kind === "not_set" || kind === "elsewhere" || kind === "unreachable" ? (
-                  <Button color="inherit" size="small" onClick={() => navigate("/admin-auth")}>
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={() => navigate("/admin-auth")}
+                    sx={{ whiteSpace: "nowrap" }}
+                  >
                     {t(key("publicUrlButton"))}
                   </Button>
                 ) : undefined
@@ -281,7 +320,7 @@ export default function TurnOnDialog({ onClose, onTurnedOn, onUnauthorized }: Pr
         <Button
           variant="contained"
           onClick={() => void turnOn()}
-          disabled={checking || saving || !canTurnOn(kind)}
+          disabled={checking || saving || !canTurnOn(result)}
           startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
           {t(key("turnOn"))}

@@ -11,8 +11,9 @@ export class FederationFetchError extends Error {
     message: string,
     readonly code: "not_allowed" | "address" | "network" | "too_large" | "status" | "invalid",
     readonly status?: number,
+    options?: { cause?: unknown },
   ) {
-    super(message);
+    super(message, options);
   }
 }
 
@@ -130,7 +131,10 @@ export async function federationFetch(
     } as RequestInit & { dispatcher: Agent });
   } catch (err) {
     const cause = (err as { cause?: Error }).cause;
-    throw new FederationFetchError(cause?.message || (err as Error).message || "Network error", "network");
+    // The cause kept, for its code: a certificate nothing trusts reads differently from nothing answering.
+    throw new FederationFetchError(cause?.message || (err as Error).message || "Network error", "network", undefined, {
+      cause: cause ?? err,
+    });
   }
 }
 

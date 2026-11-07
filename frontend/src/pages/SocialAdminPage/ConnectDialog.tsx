@@ -59,6 +59,16 @@ export default function ConnectDialog({ request = null, onClose, onSent, onUnaut
     if (err instanceof UnauthorizedError) onUnauthorized?.();
     else setError(federationErrorText(err, t));
   };
+  // What the note by the link switch says: why a link was suggested, when it was.
+  const linkNote = !link
+    ? "linkOff"
+    : info?.suggestLink === "unreachable"
+      ? "linkUnreachable"
+      : info?.suggestLink === "unconfirmed"
+        ? "linkUnconfirmed"
+        : info?.suggestLink
+          ? "linkSuggested"
+          : "linkOn";
 
   /** Whether the lookup found it. `force` is for a lookup the dialog starts itself while it's already busy. */
   const lookUp = async (event?: React.FormEvent, force = false): Promise<boolean> => {
@@ -184,14 +194,10 @@ export default function ConnectDialog({ request = null, onClose, onSent, onUnaut
                 <LinkIcon fontSize="small" color="info" sx={{ mt: 0.25 }} aria-hidden />
                 <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body2" fontWeight={600}>
-                    {t(k(!link ? "linkOffTitle" : info.suggestLink ? "linkSuggestedTitle" : "linkOnTitle"), {
-                      name: info.name,
-                    })}
+                    {t(k(`${linkNote}Title`), { name: info.name })}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t(k(!link ? "linkOffText" : info.suggestLink ? "linkSuggestedText" : "linkOnText"), {
-                      name: info.name,
-                    })}
+                    {t(k(`${linkNote}Text`), { name: info.name })}
                   </Typography>
                 </Stack>
                 <Stack direction="row" alignItems="center" sx={{ flex: "none" }}>
