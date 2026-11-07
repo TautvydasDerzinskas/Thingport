@@ -159,15 +159,16 @@ Chats reach partners' people through `chats.ts`; storing what arrives and notify
 - **Models** in a message go as `Link`s to their ids; only ones the sender shares on Explore may be sent, so the other
   side can open them from its index (a model it hasn't read yet starts a read of that partner).
 - **Nothing is lost on the way.** What goes to partners is queued in the transaction of the chat change it follows
-  (`withPartners` in chatService), and to a paused partner too: delivery keeps it until it's resumed, then sends it
-  at once. What's queued for one chat (its room, or the person it's with: `orderKey`) goes in the order it was queued,
-  each waiting for any before it still to be tried again, so a message never overtakes the update that took someone
-  out of the room. A change touching partners is refused while connected instances are off; a direct message, while the other instance
-  is paused. A room's update carries the host's `updated` time, and a copy applies only a newer one, so a late retry
-  can't put back someone taken out. What can't be handled yet is answered with an error (`RetryLater`), which Fedify
-  turns into a 500 and the sender retries: anything while chats are off here, a room's message before the room. A
-  `Delete` for a message not here yet leaves a tombstone (in `FederationKv`, a week), and the message is dropped when
-  it comes. A room's update fits a partner's inbox: no pictures, names cut as far as needed, at most 500 members.
+  (`withPartners` in chatService), and to a paused partner too: delivery keeps it until it's resumed, then sends it at
+  once. What's queued for one chat (its room, or the person it's with: `orderKey`) goes in the order it was queued, each
+  waiting for any before it still to be tried again, so a message never overtakes the update that took someone out of
+  the room. A change touching partners is refused while connected instances are off; a message to the other instance's
+  person, or in a room it hosts, while it's paused (`partner_unavailable`). A room's update carries the host's `updated`
+  time, and a copy applies only a newer one, so a late retry can't put back someone taken out. What can't be handled yet
+  is answered with an error (`RetryLater`), which Fedify turns into a 500 and the sender retries: anything while chats
+  are off here, a room's message before the room. A `Delete` for a message not here yet leaves a tombstone (in
+  `FederationKv`, a week), and the message is dropped when it comes. A room's update fits a partner's inbox: no
+  pictures, names cut as far as needed, at most 500 members.
 - Disconnecting or blocking a partner keeps chats with its people (each message keeps the sender as it came,
   `remoteSenderCard`) and drops the copies of its rooms; once it's connected again and its people are read, they're
   back in those direct chats.

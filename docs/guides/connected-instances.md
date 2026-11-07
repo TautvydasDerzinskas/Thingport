@@ -114,9 +114,10 @@ copied to your library.
   and a partner's profile has **Message**. An admin can put partners' people in a private room: the room stays on
   this instance, and their instance keeps a copy that gets its messages and sends theirs back. A room a partner hosts
   shows with **Hosted on** and its admin manages it. Only models you share on Explore can be sent elsewhere. Messages
-  are kept on both instances, and stay when a partner disconnects; while it's paused, nothing more can be sent there.
-- **Paused** partners are hidden from Explore until **Resume**; what's said to them meanwhile in rooms waits and
-  arrives once they're resumed. **Disconnect** and **Block** remove everything of theirs, the copies of rooms they
+  are kept on both instances, and stay when a partner disconnects. While it's paused, you can't write to its people
+  directly or in the rooms it hosts.
+- **Paused** partners are hidden from Explore until **Resume**; what's said meanwhile in rooms hosted here waits for
+  them and arrives once they're resumed. **Disconnect** and **Block** remove everything of theirs, the copies of rooms they
   host with what was said in them included; direct messages with their people and rooms hosted here stay.
 
 ## Partners
