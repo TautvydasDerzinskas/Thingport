@@ -13,16 +13,17 @@ const WORKER_BOOTSTRAP = workerBootstrap(__dirname, "normalize3mfWorker");
 
 const TARGETS: readonly NormalizeTarget[] = ["flat", "orca"];
 
-// The flat copy keeps its original filename; the others carry their target, so one plate can hold both.
+/** Cache file stem: the flat copy keeps the plate id; the others carry their target, so one plate can hold both. */
 function stem(plateId: string, target: NormalizeTarget): string {
   return target === "flat" ? plateId : `${plateId}.${target}`;
 }
 
+/** Path of the cached copy for a plate and target, versioned by NORMALIZE_FORMAT_VERSION. */
 function normalizedPath(plateId: string, target: NormalizeTarget): string {
   return path.join(NORMALIZED_3MFS, `${stem(plateId, target)}.v${NORMALIZE_FORMAT_VERSION}.3mf`);
 }
 
-// Marks a source the normalizer rejected, so each request doesn't redo the work to fail again.
+/** Path of the marker for a source the normalizer rejected, so each request doesn't redo the work to fail again. */
 function errorPath(plateId: string, target: NormalizeTarget): string {
   return path.join(NORMALIZED_3MFS, `${stem(plateId, target)}.v${NORMALIZE_FORMAT_VERSION}.error`);
 }
@@ -68,6 +69,7 @@ function normalizeInWorker(input: Normalize3mfWorkerInput): Promise<Normalize3mf
   });
 }
 
+/** Normalizes the plate's source into the cache in a worker; resolves to the copy's path, or null when it failed (an error marker is written). */
 async function buildNormalized(plateId: string, srcPath: string, target: NormalizeTarget): Promise<string | null> {
   const dest = normalizedPath(plateId, target);
   const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
@@ -94,6 +96,7 @@ let queue: Promise<unknown> = Promise.resolve();
 // A failure is retried after this, so a timeout on a busy server doesn't block the plate for good.
 const ERROR_RETRY_MS = 60 * 60 * 1000;
 
+/** True when the target's error marker is newer than the source and less than ERROR_RETRY_MS old. */
 async function recentlyFailed(plateId: string, target: NormalizeTarget, srcMtimeMs: number): Promise<boolean> {
   try {
     const { mtimeMs } = await fs.stat(errorPath(plateId, target));
@@ -103,6 +106,7 @@ async function recentlyFailed(plateId: string, target: NormalizeTarget, srcMtime
   }
 }
 
+/** Starts the build for a plate and target, or joins the one already running for it (one job per stem), after the jobs queued before it. */
 function startJob(plateId: string, srcPath: string, target: NormalizeTarget): Promise<string | null> {
   const key = stem(plateId, target);
   let pending = inFlight.get(key);

@@ -7,6 +7,7 @@ import workerSource from "../../normalizer/worker?worker";
 
 class WorkerUnavailable extends Error {}
 
+/** Runs the normalizer in a Web Worker; rejects with WorkerUnavailable if the worker never started. */
 function normalizeInWorker(input: ArrayBuffer, target: NormalizeTarget): Promise<Uint8Array> {
   const url = URL.createObjectURL(new Blob([workerSource], { type: "text/javascript" }));
   return new Promise<Uint8Array>((resolve, reject) => {
@@ -37,6 +38,7 @@ function normalizeInWorker(input: ArrayBuffer, target: NormalizeTarget): Promise
   }).finally(() => URL.revokeObjectURL(url));
 }
 
+/** Normalizes a Bambu 3MF for the target copy, in a worker when one is available. */
 export async function normalizeBambu3mf(input: ArrayBuffer, target: NormalizeTarget = "flat"): Promise<Uint8Array> {
   try {
     return await normalizeInWorker(input, target);

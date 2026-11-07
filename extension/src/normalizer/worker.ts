@@ -3,7 +3,9 @@
 
 import { normalize3mf, type NormalizeTarget } from "./threeMfNormalizer";
 
+/** The page's request to the worker: the 3MF bytes and which copy to make. */
 export type WorkerRequest = { bytes: ArrayBuffer; target: NormalizeTarget };
+/** The worker's messages: "ready" once it runs, then "done" with the copy or "error". */
 export type WorkerReply = { type: "ready" } | { type: "done"; bytes: Uint8Array } | { type: "error"; error: string };
 
 const reply = (message: WorkerReply, transfer: Transferable[] = []) => postMessage(message, { transfer });
