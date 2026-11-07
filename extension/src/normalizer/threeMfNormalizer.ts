@@ -1295,7 +1295,29 @@ function restoreKeysOrcaNeeds(cleaned: Settings, original: Settings): Settings {
   // One nozzle, the designer's first (as the U1 has it): one value per designer extruder (the H2C has two) shows a dual-nozzle printer,
   // and none leaves the nozzle diameter empty.
   cleaned.nozzle_diameter = [nozzle];
+  moveWipeTower(cleaned, original);
   return cleaned;
+}
+
+/**
+ * The wipe tower ("Reinigungsturm") has a position per plate on the designer's bed, so on the smaller U1 bed it would
+ * stand beside the plate. It moves by the same shift as the objects (the designer's bed middle to the U1's), then
+ * stays inside the bed.
+ */
+export function moveWipeTower(cleaned: Settings, original: Settings): void {
+  const bed = bedFromPrintableArea(original.printable_area);
+  const xs = original.wipe_tower_x;
+  const ys = original.wipe_tower_y;
+  if (!bed || !Array.isArray(xs) || !Array.isArray(ys)) return;
+  const size = Number(original.prime_tower_width);
+  const room = ORCA_FORK_BED_MM - (Number.isFinite(size) && size > 0 ? size : 60);
+  const place = (value: unknown, shift: number): string => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return String(value);
+    return String(Math.round(Math.min(Math.max(n + shift, 0), Math.max(room, 0)) * 1000) / 1000);
+  };
+  cleaned.wipe_tower_x = xs.map((x) => place(x, ORCA_FORK_BED_MM / 2 - bed.centerX));
+  cleaned.wipe_tower_y = ys.map((y) => place(y, ORCA_FORK_BED_MM / 2 - bed.centerY));
 }
 
 // The U1 ships printer presets for these nozzles, each with its own "Standard" process presets (by layer height).
