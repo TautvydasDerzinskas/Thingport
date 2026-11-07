@@ -16,3 +16,8 @@ const ORCA_FORK_SLICER_IDS: ReadonlySet<string> = new Set(["snapmaker-orca"]);
 export function normalizeTargetFor(slicerId: string | null | undefined): "flat" | "orca" {
   return slicerId && ORCA_FORK_SLICER_IDS.has(slicerId) ? "orca" : "flat";
 }
+
+/** `<name>-orca.3mf` for the Orca-fork copy, `<name>-normalized.3mf` for the flat one. */
+export function normalizedFilename(source: string, target: "flat" | "orca" = "flat"): string {
+  return `${source.replace(/\.3mf$/i, "")}-${target === "orca" ? "orca" : "normalized"}.3mf`;
+}

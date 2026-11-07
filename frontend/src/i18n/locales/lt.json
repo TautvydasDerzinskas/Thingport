@@ -4867,6 +4867,7 @@
       "openInStudio": "Atidaryti „Thingport Studio“",
       "openNormalizedInSlicer": "Atverti normalizuotą su {{slicer}}",
       "normalizedInfo": "MakerWorld failai yra Bambu Studio projektai, kuriuos {{slicer}} dažnai atveria be spalvų ar spausdinimo nustatymų. Ši parinktis atveria konvertuotą kopiją, kurioje išlieka nudažytos spalvos, gijų spalvos, plokštės ir autoriaus nustatymai (sienelės, sluoksnio aukštis, užpildas, atramos). Atkreipkite dėmesį: kelių dalių objektai gali būti sujungti į vieną, atskirų objektų nustatymai ir spalvų keitimai tarp sluoksnių pašalinami, o spausdintuvo profilį pasirenkate patys. Saugomas failas nekeičiamas.",
+      "normalizedInfoOrca": "Sukuria kopiją, skirtą Snapmaker Orca (U1): spausdintuvas, tūtelė, proceso profilis ir valymo bokštas pritaikomi U1. Jūsų filamento pavadinimai ir reikšmės išlieka.",
       "normalizePreparing": "Ruošiamas normalizuotas failas…",
       "normalizePreparingShort": "Ruošiamas normalizuotas failas…",
       "normalizeReady": "Paruošta – spustelėkite, kad atvertumėte su {{slicer}}",

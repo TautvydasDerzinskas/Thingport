@@ -41,7 +41,7 @@ export default function NormalizedOpenButton({ targets, slicerLabel, stateOf, op
         state === "preparing" ? (
           <CircularProgress size={16} color="inherit" />
         ) : (
-          <NormalizeInfoIcon slicerLabel={slicerLabel} />
+          <NormalizeInfoIcon slicerLabel={slicerLabel} orca={targets[0]?.normalizeTarget === "orca"} />
         )
       }
       endIcon={single ? undefined : <ArrowDropDownIcon />}
