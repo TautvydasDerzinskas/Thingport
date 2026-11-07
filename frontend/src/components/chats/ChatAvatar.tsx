@@ -4,6 +4,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import TagIcon from "@mui/icons-material/Tag";
 import type { Chat, ChatPerson } from "../../api/chats";
 import { personAvatar } from "../importQueue/personAvatar";
+import { visuallyHiddenSx } from "../importQueue/queueParts";
 import InstanceAvatar from "../InstanceAvatar";
 import UserAvatar from "../UserAvatar";
 
@@ -20,6 +21,12 @@ export function PersonAvatar({ person, size = 36 }: { person: ChatPerson | null;
   return (
     <Box sx={{ position: "relative", flexShrink: 0, width: size, height: size }}>
       <UserAvatar user={person} size={size} />
+      {person.remote && (
+        // Read out with their name, so two people of the same name elsewhere are told apart.
+        <Box component="span" sx={visuallyHiddenSx}>
+          {person.remote.handle ?? person.remote.instance.name}
+        </Box>
+      )}
       {person.remote && (
         <Box
           sx={{

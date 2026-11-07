@@ -11,6 +11,7 @@ import {
 import { prisma } from "../db";
 import type { UserCardOut } from "../dto";
 import type { Arrival, PersonCard } from "../federation/chats";
+import { originOf } from "../federation/addresses";
 import { mediaAddress } from "../federation/media";
 import { createKeyedLock } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
@@ -20,10 +21,34 @@ import { readablePrintOuts, sharedModelsWhere, userCards } from "./socialService
 
 // Partners' people in chats go over ActivityPub (federation/chats.ts), loaded only once there's a chat with one.
 const federation = () => import("../federation/chats");
-const sentOn = (what: string, task: (wire: Awaited<ReturnType<typeof federation>>) => Promise<unknown>) =>
-  void federation()
-    .then(task)
-    .catch((err) => console.error(`[federation] Couldn't send ${what} on:`, err));
+type Wire = Awaited<ReturnType<typeof federation>>;
+
+/** A chat change, and when it touches partners' people (`involved`), what goes to them: queued in the same transaction,
+ *  so neither is kept without the other, and sent once it's committed. One touching them only while connected
+ *  instances are on: made while they're off, it would never reach them. */
+async function withPartners<T>(
+  involved: boolean,
+  change: (tx: Prisma.TransactionClient, wire: Wire | null) => Promise<T>,
+): Promise<T> {
+  if (!involved) return prisma.$transaction((tx) => change(tx, null));
+  const { isFederationLive } = await import("../federation/settings");
+  if (!(await isFederationLive())) throw new HttpError(409, "Connected instances are off", "federation_off");
+  const wire = await federation();
+  const result = await prisma.$transaction((tx) => change(tx, wire), { timeout: 30_000 });
+  wire.kick();
+  return result;
+}
+
+/** A room with partners' people in it, no bigger than everyone in it can be told in one update. */
+async function assertRoomSize(tx: Prisma.TransactionClient, chatId: string): Promise<void> {
+  const [local, remote] = await Promise.all([
+    tx.chatMember.count({ where: { chatId } }),
+    tx.chatRemoteMember.count({ where: { chatId } }),
+  ]);
+  if (remote && local + remote > MAX_ROOM_MEMBERS) {
+    throw new HttpError(400, `A room with people elsewhere has at most ${MAX_ROOM_MEMBERS} members`, "room_too_big");
+  }
+}
 
 // Chats, while an admin has them on under social features: direct messages between two of the instance's users, and
 // rooms an admin makes, public (anyone may read and join) or private (only the users the admin picked). Nothing is
@@ -643,7 +668,7 @@ export async function postMessage(
     }
   }
   const nameOf = new Map(models.map((model) => [model.id, model.title || model.name]));
-  const message = await prisma.$transaction(async (tx) => {
+  const message = await withPartners(elsewhere, async (tx, wire) => {
     const created = await tx.chatMessage.create({
       data: {
         chatId,
@@ -659,10 +684,10 @@ export async function postMessage(
       where: { id: chatId, lastMessageAt: { lt: created.createdAt } },
       data: { lastMessageAt: created.createdAt },
     });
+    if (wire) await wire.messageWritten(chatId, created.id, tx);
     return created;
   });
   void notifyMessage(chat, message).catch((err) => console.error("Failed to notify about a chat message:", err));
-  if (elsewhere) sentOn("a message", (wire) => wire.messageWritten(chatId, message.id));
   return (await messageOuts([message], viewer.id))[0];
 }
 
@@ -692,19 +717,17 @@ export async function deleteMessage(viewer: Viewer, chatId: string, messageId: s
   const moderates = chat.kind === "ROOM" && viewer.isAdmin && !chat.hostPeer;
   if (!own && !moderates) throw new HttpError(403, "Only its sender can delete it");
   if (message.deletedAt) return;
-  await eraseMessage(messageId);
-  if (chat.hostPeer || chat._count.remoteMembers > 0) {
-    sentOn("a deletion", (wire) => wire.messageDeleted(chatId, messageId));
-  }
+  await withPartners(Boolean(chat.hostPeer) || chat._count.remoteMembers > 0, async (tx, wire) => {
+    await erase(tx, messageId);
+    if (wire) await wire.messageDeleted(chatId, messageId, undefined, tx);
+  });
+  await unquote(messageId);
 }
 
 /** Its text goes, and its models with it: whoever could open them through it no longer can. That there was one stays. */
-async function eraseMessage(messageId: string): Promise<void> {
-  await prisma.$transaction([
-    prisma.chatMessage.update({ where: { id: messageId }, data: { body: "", deletedAt: new Date() } }),
-    prisma.chatAttachment.deleteMany({ where: { messageId } }),
-  ]);
-  await unquote(messageId);
+async function erase(tx: Prisma.TransactionClient, messageId: string): Promise<void> {
+  await tx.chatMessage.update({ where: { id: messageId }, data: { body: "", deletedAt: new Date() } });
+  await tx.chatAttachment.deleteMany({ where: { messageId } });
 }
 
 /** A notification quoting a deleted message stops quoting it. */
@@ -730,8 +753,13 @@ export async function joinRoom(viewer: Viewer, chatId: string): Promise<ChatOut>
   const chat = await visibleChat(viewer, chatId);
   if (chat.kind !== "ROOM" || !chat.isPublic) throw new HttpError(403, "Only a public room can be joined");
   // What was said before they came isn't news to them.
-  await prisma.chatMember.createMany({ data: [{ chatId, userId: viewer.id }], skipDuplicates: true });
-  if (chat._count.remoteMembers) sentOn("a room", (wire) => wire.roomChanged(chatId));
+  await withPartners(chat._count.remoteMembers > 0, async (tx, wire) => {
+    await tx.chatMember.createMany({ data: [{ chatId, userId: viewer.id }], skipDuplicates: true });
+    if (wire) {
+      await assertRoomSize(tx, chatId);
+      await wire.roomChanged(chatId, [], tx);
+    }
+  });
   const [out] = await chatOuts(viewer, [await visibleChat(viewer, chatId)]);
   return out;
 }
@@ -739,15 +767,17 @@ export async function joinRoom(viewer: Viewer, chatId: string): Promise<ChatOut>
 export async function leaveRoom(viewer: Viewer, chatId: string): Promise<void> {
   const chat = await memberOf(viewer, chatId);
   if (chat.kind !== "ROOM") throw new HttpError(400, "Direct messages can't be left");
-  await prisma.chatMember.delete({ where: { chatId_userId: { chatId, userId: viewer.id } } });
+  await withPartners(Boolean(chat.hostPeer) || chat._count.remoteMembers > 0, async (tx, wire) => {
+    await tx.chatMember.delete({ where: { chatId_userId: { chatId, userId: viewer.id } } });
+    if (chat.hostPeer) {
+      // Its host takes them out; with none of this instance's people left in it, so does the copy here.
+      if (wire) await wire.roomLeft(chat, viewer.id, tx);
+      await tx.chat.deleteMany({ where: { id: chatId, members: { none: {} } } });
+    } else if (wire) {
+      await wire.roomChanged(chatId, [], tx);
+    }
+  });
   await forget(chatId, [viewer.id]);
-  if (chat.hostPeer) {
-    // Its host takes them out; with none of this instance's people left in it, so does the copy here.
-    sentOn("leaving a room", (wire) => wire.roomLeft(chat, viewer.id));
-    await prisma.chat.deleteMany({ where: { id: chatId, members: { none: {} } } });
-  } else if (chat._count.remoteMembers) {
-    sentOn("a room", (wire) => wire.roomChanged(chatId));
-  }
 }
 
 const directKey = (a: string, b: string) => [a, b].toSorted().join(":");
@@ -908,18 +938,24 @@ export async function createRoom(admin: Viewer, input: RoomInput): Promise<ChatO
     ? [admin.id]
     : [admin.id, ...(await existingUserIds(input.member_ids ?? []))].filter((id, i, all) => all.indexOf(id) === i);
   const remote = input.is_public ? [] : await existingRemoteIds(input.remote_member_ids ?? []);
-  const chat = await prisma.chat.create({
-    data: {
-      kind: "ROOM",
-      ...roomText(input),
-      isPublic: input.is_public,
-      createdById: admin.id,
-      members: { create: members.map((userId) => ({ userId })) },
-      remoteMembers: { create: remote.map((personId) => ({ personId })) },
-    },
-    include: CHAT_INCLUDE(admin.id),
+  const chat = await withPartners(remote.length > 0, async (tx, wire) => {
+    const created = await tx.chat.create({
+      data: {
+        kind: "ROOM",
+        ...roomText(input),
+        isPublic: input.is_public,
+        createdById: admin.id,
+        members: { create: members.map((userId) => ({ userId })) },
+        remoteMembers: { create: remote.map((personId) => ({ personId })) },
+      },
+      include: CHAT_INCLUDE(admin.id),
+    });
+    if (wire) {
+      await assertRoomSize(tx, created.id);
+      await wire.roomChanged(created.id, [], tx);
+    }
+    return created;
   });
-  if (remote.length) sentOn("a room", (wire) => wire.roomChanged(chat.id));
   const [out] = await chatOuts(admin, [chat]);
   return out;
 }
@@ -934,12 +970,16 @@ export async function updateRoom(admin: Viewer, chatId: string, patch: RoomPatch
   const formerPartners = await partnerIdsOf(chatId);
   const addedRemote = isPublic ? [] : await existingRemoteIds(patch.add_remote_member_ids ?? []);
   const removedRemote = (patch.remove_remote_member_ids ?? []).filter((id) => !addedRemote.includes(id));
-  const removed = await prisma.$transaction(async (tx) => {
+  // Its partners told what it is now, those whose people are gone from it too.
+  const removed = await withPartners(formerPartners.length > 0 || addedRemote.length > 0, async (tx, wire) => {
     await tx.chat.update({
       where: { id: chatId },
       data: { ...roomText(patch), ...(patch.is_public !== undefined ? { isPublic: patch.is_public } : {}) },
     });
-    if (isPublic) return [];
+    if (isPublic) {
+      if (wire) await wire.roomChanged(chatId, formerPartners, tx);
+      return [];
+    }
     const leaving = (
       await tx.chatMember.findMany({
         where: { chatId, userId: { in: patch.remove_member_ids ?? [], notIn: added } },
@@ -953,13 +993,13 @@ export async function updateRoom(admin: Viewer, chatId: string, patch: RoomPatch
       data: addedRemote.map((personId) => ({ chatId, personId })),
       skipDuplicates: true,
     });
+    if (wire) {
+      await assertRoomSize(tx, chatId);
+      await wire.roomChanged(chatId, formerPartners, tx);
+    }
     return leaving;
   });
   await forget(chatId, removed);
-  // Its partners told what it is now, those whose people are gone from it too.
-  if (formerPartners.length || addedRemote.length) {
-    sentOn("a room", (wire) => wire.roomChanged(chatId, formerPartners));
-  }
   return (await chatOuts(admin, [await visibleChat(admin, chatId)]))[0];
 }
 
@@ -969,8 +1009,10 @@ export async function deleteRoom(chatId: string): Promise<Chat> {
   if (!chat) throw new HttpError(404, "Room not found");
   const members = await prisma.chatMember.findMany({ where: { chatId }, select: { userId: true } });
   const partners = await partnerIdsOf(chatId);
-  await prisma.chat.delete({ where: { id: chatId } });
-  if (partners.length) sentOn("a room's deletion", (wire) => wire.roomDeleted(chatId, partners));
+  await withPartners(partners.length > 0, async (tx, wire) => {
+    if (wire) await wire.roomDeleted(chatId, partners, tx);
+    await tx.chat.delete({ where: { id: chatId } });
+  });
   await forget(
     chatId,
     members.map((member) => member.userId),
@@ -1158,6 +1200,8 @@ export async function messageArrived(arrival: Arrival & { peerId: string; hosted
   const body = note.text.trim().slice(0, MESSAGE_MAX_LENGTH);
   const attachments = note.attachments.filter((item) => linkable(item.href)).slice(0, MAX_ATTACHMENTS);
   if (!body && !attachments.length) return;
+  // Passed on with it, from a room hosted here: in the same transaction, so it's never kept and not passed on.
+  const wire = arrival.hostedHere ? await federation() : null;
   let message: ChatMessage;
   try {
     message = await prisma.$transaction(async (tx) => {
@@ -1181,21 +1225,38 @@ export async function messageArrived(arrival: Arrival & { peerId: string; hosted
         where: { id: chatId, lastMessageAt: { lt: created.createdAt } },
         data: { lastMessageAt: created.createdAt },
       });
+      if (wire) await wire.relayToRoom(chatId, created.id, arrival.peerId, tx);
       return created;
     });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") return;
     throw err;
   }
+  wire?.kick();
   const chat = await prisma.chat.findUnique({ where: { id: chatId } });
   if (chat)
     void notifyMessage(chat, message).catch((err) => console.error("Failed to notify about a chat message:", err));
-  if (arrival.hostedHere) sentOn("a message", (wire) => wire.relayToRoom(chatId, message.id, arrival.peerId));
-  // A model it names that the index doesn't have yet: read what that partner shares again.
+  // A model it names that the index doesn't have yet: read again what the partner it's on shares, which may not be the
+  // one that sent it (a room's host passes on what its other partners' people send).
   if (attachments.length) {
-    const known = await prisma.remoteModel.count({ where: { apId: { in: attachments.map((item) => item.href) } } });
-    if (known < attachments.length) {
-      void import("../federation/remoteIndex").then(({ syncPeer }) => syncPeer(arrival.peerId)).catch(() => {});
+    const known = new Set(
+      (
+        await prisma.remoteModel.findMany({
+          where: { apId: { in: attachments.map((item) => item.href) } },
+          select: { apId: true },
+        })
+      ).map((model) => model.apId),
+    );
+    const origins = [
+      ...new Set(attachments.filter((item) => !known.has(item.href)).flatMap((item) => originOf(item.href) ?? [])),
+    ];
+    if (origins.length) {
+      const peers = await prisma.peer.findMany({
+        where: { origin: { in: origins }, status: "ACTIVE" },
+        select: { id: true },
+      });
+      const { syncPeer } = await import("../federation/remoteIndex");
+      for (const peer of peers) void syncPeer(peer.id).catch(() => {});
     }
   }
 }
@@ -1206,8 +1267,40 @@ export async function messageDeletedThere(
   messageId: string,
   options: { hostedHere: boolean; peerId: string },
 ): Promise<void> {
-  await eraseMessage(messageId);
-  if (options.hostedHere) sentOn("a deletion", (wire) => wire.messageDeleted(chatId, messageId, options.peerId));
+  const wire = options.hostedHere ? await federation() : null;
+  await prisma.$transaction(async (tx) => {
+    await erase(tx, messageId);
+    if (wire) await wire.messageDeleted(chatId, messageId, options.peerId, tx);
+  });
+  wire?.kick();
+  await unquote(messageId);
+}
+
+/** The rooms with partners `userId` is in, read before their account goes, to tell those partners after
+ *  (`afterAccountGone`). */
+export async function roomsWithPartnersOf(userId: string): Promise<Chat[]> {
+  return prisma.chat.findMany({
+    where: {
+      kind: "ROOM",
+      members: { some: { userId } },
+      OR: [{ hostPeerId: { not: null } }, { remoteMembers: { some: {} } }],
+    },
+  });
+}
+
+/** Someone's account gone: the partners in their rooms told who's in them now, the hosts of rooms elsewhere that they
+ *  left; a copy with none of this instance's people left goes. */
+export async function afterAccountGone(userId: string, rooms: Chat[]): Promise<void> {
+  if (!rooms.length) return;
+  const { isFederationLive } = await import("../federation/settings");
+  if (!(await isFederationLive())) return;
+  const wire = await federation();
+  for (const room of rooms) {
+    if (room.hostPeerId) await wire.roomLeft(room, userId);
+    else await wire.roomChanged(room.id);
+  }
+  const copies = rooms.filter((room) => room.hostPeerId).map((room) => room.id);
+  if (copies.length) await prisma.chat.deleteMany({ where: { id: { in: copies }, members: { none: {} } } });
 }
 
 /** Drops what told `userIds` about a chat they're no longer in: a partner's room they were taken out of, or that went. */

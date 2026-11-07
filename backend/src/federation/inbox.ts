@@ -65,11 +65,12 @@ export function registerInbox(listeners: InboxListenerSetters<void>, vocab: type
         id: object.id.href,
         name: object.name?.toString() ?? null,
         summary: object.summary?.toString() ?? null,
+        updated: object.updated ? new Date(object.updated.epochMilliseconds) : null,
         members: [],
       };
       for await (const item of object.getAttachments(embedded(ctx))) {
         if (item instanceof vocab.Person && item.id) group.members.push(await personIn(vocab, ctx.contextLoader, item));
-        if (group.members.length >= 500) break;
+        if (group.members.length >= 1000) break;
       }
       const room = await roomFrom(update.actorId, group);
       if (room?.removed.length) await chatGoneFor(room.chatId, room.removed);

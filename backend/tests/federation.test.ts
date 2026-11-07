@@ -546,6 +546,29 @@ describe("connected instances, on", () => {
     expect(await prisma.federationDelivery.count({ where: { peerId: peer.id } })).toBe(0);
   });
 
+  it("sends a chat's activities to a partner in the order they were queued", async () => {
+    const peer = await prisma.peer.create({ data: { origin: "http://203.0.113.24", status: "ACTIVE" } });
+    const row = { origin: peer.origin, inboxUrl: `${peer.origin}/api/ap/inbox`, peerId: peer.id, actor: "instance" };
+    const later = new Date(Date.now() + 60 * 60 * 1000);
+    // Tried, failed, and waiting to be tried again: what came after it in that room waits for it.
+    const update = await prisma.federationDelivery.create({
+      data: { ...row, activity: { type: "Update" }, orderKey: "room", attempts: 1, nextAttemptAt: later },
+    });
+    const message = await prisma.federationDelivery.create({
+      data: {
+        ...row,
+        activity: { type: "Create" },
+        orderKey: "room",
+        createdAt: new Date(update.createdAt.getTime() + 1),
+      },
+    });
+    await tick();
+    const waiting = await prisma.federationDelivery.findUniqueOrThrow({ where: { id: message.id } });
+    expect(waiting).toMatchObject({ attempts: 0, nextAttemptAt: later });
+    await prisma.peer.delete({ where: { id: peer.id } });
+    await prisma.federationDelivery.deleteMany({ where: { id: { in: [update.id, message.id] } } });
+  });
+
   it("asks for an address to look up, with social features on", async () => {
     expect((await request(app).get("/api/federation/lookup").set(auth(admin))).status).toBe(400);
     await setSocialSettings({ enabled: false });

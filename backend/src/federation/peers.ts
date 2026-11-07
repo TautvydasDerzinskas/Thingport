@@ -875,6 +875,11 @@ export async function pausePeer(adminId: string, id: string, paused: boolean): P
   if (peer.status !== "ACTIVE" && peer.status !== "PAUSED") throw new HttpError(409, "Not a partner", "not_partner");
   const updated = await prisma.peer.update({ where: { id }, data: { status: paused ? "PAUSED" : "ACTIVE" } });
   invalidateAllowlist();
+  // Resumed: what waited for it goes now, in the order it was queued.
+  if (!paused) {
+    await prisma.federationDelivery.updateMany({ where: { peerId: id }, data: { nextAttemptAt: new Date() } });
+    kickDelivery();
+  }
   void createLog({
     userId: adminId,
     action: paused ? "federation_paused" : "federation_resumed",

@@ -360,8 +360,18 @@ async function storeIn(
   await tx.remoteModel.deleteMany({ where: { ...stale, personId: { notIn: partly } } });
   // Someone no longer listed whom a chat still names is kept for it, off Explore.
   const inChats = { OR: [{ chats: { some: {} } }, { messages: { some: {} } }] } satisfies Prisma.RemotePersonWhereInput;
-  await tx.remotePerson.updateMany({ where: { ...stale, ...inChats }, data: { listed: false } });
+  // Their cover goes with it, so the picture kept of it is pruned: it's not theirs to show any more.
+  await tx.remotePerson.updateMany({ where: { ...stale, ...inChats }, data: { listed: false, coverUrl: null } });
   await tx.remotePerson.deleteMany({ where: { ...stale, chats: { none: {} }, messages: { none: {} } } });
+  // Someone this instance's people had direct messages with, back after a disconnect: in those chats again.
+  await tx.$executeRaw`
+    INSERT INTO "ChatRemoteMember" ("chatId", "personId")
+    SELECT c.id, p.id
+    FROM "Chat" c
+    JOIN "ChatMember" m ON m."chatId" = c.id
+    JOIN "RemotePerson" p ON c."directKey" = 'r:' || m."userId" || ':' || p."apId"
+    WHERE c.kind = 'DIRECT' AND p."peerId" = ${peer.id}
+    ON CONFLICT DO NOTHING`;
   // Still a partner: one blocked or disconnected meanwhile keeps nothing of this. The row stays locked until this is
   // written, so a block waits for it, and what it then forgets is everything.
   const { count: still } = await tx.peer.updateMany({

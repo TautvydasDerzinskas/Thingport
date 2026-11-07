@@ -11,6 +11,7 @@ import {
   deletionFrom,
   leavingFrom,
   placeNote,
+  RetryLater,
   roomChanged,
   roomFrom,
   type IncomingNote,
@@ -172,6 +173,21 @@ describe("direct messages with partners' people", () => {
     );
   });
 
+  it("has a partner try again what can't be taken yet, rather than lose it", async () => {
+    // Chats off here for now: kept there and sent again.
+    await setSocialSettings({ enabled: true, chats: false });
+    try {
+      await expect(placeNote(actorOf(PARTNER), note({ to: [localActor()] }), false)).rejects.toBeInstanceOf(RetryLater);
+    } finally {
+      await setSocialSettings({ enabled: true, chats: true });
+    }
+    // A message of a room of theirs before the room itself.
+    const room = `${PARTNER}/api/ap/rooms/not-yet-${Date.now()}`;
+    await expect(placeNote(actorOf(PARTNER), note({ to: [room], context: room }), true)).rejects.toBeInstanceOf(
+      RetryLater,
+    );
+  });
+
   it("believes a partner only of its own people", async () => {
     const to = [localActor()];
     // Someone on another partner, sent by this one.
@@ -232,6 +248,15 @@ describe("direct messages with partners' people", () => {
     } finally {
       await prisma.peer.update({ where: { id: partnerId }, data: { status: "ACTIVE" } });
     }
+    // Connected instances off: nothing's written that would never reach them.
+    await updateFederationSettings({ enabled: false });
+    try {
+      const off = await request(app).post(`/api/chats/${opened.body.id}/messages`).set(auth(local)).send({ body: "?" });
+      expect(off.status).toBe(409);
+      expect(off.body.code).toBe("federation_off");
+    } finally {
+      await updateFederationSettings({ enabled: true });
+    }
   });
 
   it("lists partners' people to write to, after this instance's", async () => {
@@ -283,6 +308,21 @@ describe("rooms with partners' people", () => {
       ),
     ).toBeNull();
 
+    // A partner paused meanwhile: what's said waits for it, in order, rather than being skipped.
+    await prisma.peer.update({ where: { id: otherId }, data: { status: "PAUSED" } });
+    try {
+      const posted = await request(app)
+        .post(`/api/chats/${roomId}/messages`)
+        .set(auth(admin))
+        .send({ body: "While away" });
+      expect(posted.status).toBe(200);
+      expect(
+        (await deliveries(OTHER)).some((item) => item.type === "Create" && item.object.content === "<p>While away</p>"),
+      ).toBe(true);
+    } finally {
+      await prisma.peer.update({ where: { id: otherId }, data: { status: "ACTIVE" } });
+    }
+
     // Rūta leaves: the others are told.
     const before = (await deliveries(OTHER)).length;
     expect(await leavingFrom(actorOf(PARTNER), person(PARTNER, "Ruta").id, room)).toBe(roomId);
@@ -299,6 +339,7 @@ describe("rooms with partners' people", () => {
       id: `${PARTNER}/api/ap/rooms/r${Date.now()}`,
       name: "Makerspace crew",
       summary: "Tool wall",
+      updated: new Date(Date.now() - 60_000),
       members: [
         { id: localActor(), name: "Linas", preferredUsername: null, icon: null },
         person(PARTNER, "Ruta"),
@@ -321,6 +362,12 @@ describe("rooms with partners' people", () => {
     expect(
       (await request(app).patch(`/api/chats/rooms/${copy!.chatId}`).set(auth(admin)).send({ name: "x" })).status,
     ).toBe(404);
+
+    // An older update, tried again late, changes nothing.
+    expect(
+      await roomFrom(actorOf(PARTNER), { ...group, name: "Old name", updated: new Date(Date.now() - 120_000) }),
+    ).toBeNull();
+    expect((await prisma.chat.findUniqueOrThrow({ where: { id: copy!.chatId } })).name).toBe("Makerspace crew");
 
     // Its host passes on what anyone in it says.
     const relayed = note({
@@ -345,7 +392,9 @@ describe("rooms with partners' people", () => {
     );
 
     // Taken out of it: the copy goes.
-    expect(await roomFrom(actorOf(PARTNER), { ...group, members: [person(PARTNER, "Ruta")] })).toMatchObject({
+    expect(
+      await roomFrom(actorOf(PARTNER), { ...group, updated: new Date(), members: [person(PARTNER, "Ruta")] }),
+    ).toMatchObject({
       removed: [local.id],
     });
     expect(await prisma.chat.count({ where: { remoteApId: group.id } })).toBe(0);
@@ -362,6 +411,12 @@ describe("rooms with partners' people", () => {
       await messageDeletedThere(gone.chatId, gone.messageId, { hostedHere: gone.hostedHere, peerId: gone.peer.id });
     }
     expect((await prisma.chatMessage.findUniqueOrThrow({ where: { apId: message.id } })).deletedAt).not.toBeNull();
+
+    // Deleted before it came (it was tried again later): when it comes, it's not kept.
+    const late = note({ to: [localActor()] });
+    expect(await deletionFrom(actorOf(PARTNER), late.id)).toBeNull();
+    expect(await placeNote(actorOf(PARTNER), late, false)).toBeNull();
+    expect(await prisma.chatMessage.count({ where: { apId: late.id } })).toBe(0);
   });
 });
 

@@ -136,7 +136,8 @@ async function collectionCardsOut(rows: CollectionRow[]): Promise<RemoteCollecti
 /** Partners there's something of to show, for Explore's filter. */
 export async function instancesOut(): Promise<InstanceOut[]> {
   const peers = await prisma.peer.findMany({
-    where: { ...ACTIVE, people: { some: {} } },
+    // Someone it shares: a partner known only from chats has nothing to show here.
+    where: { ...ACTIVE, people: { some: { listed: true } } },
     orderBy: { connectedAt: "asc" },
   });
   return peers.map(instanceOut);

@@ -15,14 +15,15 @@ const PURGE_EVERY_MS = 60 * 60 * 1000;
 const SYNC_CHECK_MS = 60 * 1000;
 
 /** Queues an activity for one instance. `origin` is the only place it may go, which also lets a goodbye reach an
- *  instance that's no longer a partner. Inside a caller's transaction (`tx`), the caller kicks the worker once it's
- *  committed. */
+ *  instance that's no longer a partner. Those with one `orderKey` go in the order they were queued. Inside a caller's
+ *  transaction (`tx`), the caller kicks the worker once it's committed. */
 export async function enqueueActivity(
   params: {
     origin: string;
     inboxUrl: string;
     peerId?: string | null;
     activity: unknown;
+    orderKey?: string | null;
   },
   tx?: Prisma.TransactionClient,
 ): Promise<void> {
@@ -33,6 +34,7 @@ export async function enqueueActivity(
       peerId: params.peerId ?? null,
       actor: "instance",
       activity: params.activity as Prisma.InputJsonValue,
+      orderKey: params.orderKey ?? null,
     },
   });
   if (!tx) kick();
@@ -111,6 +113,20 @@ async function deliver(row: DeliveryRow, now: Date): Promise<void> {
   if (peer?.status === "BLOCKED") {
     await prisma.federationDelivery.delete({ where: { id: row.id } }).catch(() => {});
     return;
+  }
+  // Waits for what was queued before it, waiting to be tried again: a message in a room never overtakes the update
+  // that took someone out of it.
+  if (row.orderKey) {
+    const before = await prisma.federationDelivery.findFirst({
+      where: { peerId: row.peerId, orderKey: row.orderKey, createdAt: { lt: row.createdAt } },
+      orderBy: { nextAttemptAt: "desc" },
+      select: { nextAttemptAt: true },
+    });
+    if (before) {
+      const after = before.nextAttemptAt > now ? before.nextAttemptAt : new Date(now.getTime() + 1000);
+      await prisma.federationDelivery.update({ where: { id: row.id }, data: { nextAttemptAt: after } }).catch(() => {});
+      return;
+    }
   }
   // Paused: kept, and tried again once it's resumed.
   if (peer?.status === "PAUSED") {

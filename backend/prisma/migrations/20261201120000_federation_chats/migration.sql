@@ -1,6 +1,7 @@
 -- AlterTable
 ALTER TABLE "Chat" ADD COLUMN     "hostMembers" JSONB,
 ADD COLUMN     "hostPeerId" TEXT,
+ADD COLUMN     "hostUpdatedAt" TIMESTAMP(3),
 ADD COLUMN     "remoteApId" TEXT;
 
 -- AlterTable
@@ -47,3 +48,9 @@ ALTER TABLE "ChatRemoteMember" ADD CONSTRAINT "ChatRemoteMember_personId_fkey" F
 -- AddForeignKey
 ALTER TABLE "ChatMessage" ADD CONSTRAINT "ChatMessage_remoteSenderId_fkey" FOREIGN KEY ("remoteSenderId") REFERENCES "RemotePerson"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
+
+-- AlterTable
+ALTER TABLE "FederationDelivery" ADD COLUMN "orderKey" TEXT;
+
+-- CreateIndex
+CREATE INDEX "FederationDelivery_peerId_orderKey_createdAt_idx" ON "FederationDelivery"("peerId", "orderKey", "createdAt");

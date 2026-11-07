@@ -77,6 +77,7 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
       setFailed(false);
       setHasMore(false);
       setLoadingMore(false);
+      setOpening(false);
       Promise.all([socialApi.elsewhere.person(id), socialApi.elsewhere.personModels(id, { limit: PAGE, offset: 0 })])
         .then(([person, first]) => {
           if (asked !== latest.current) return;
@@ -150,11 +151,14 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
   const tab: Section = person.model_count > 0 && searchParams.get("tab") !== "collections" ? "models" : "collections";
   const message = async () => {
     if (!person) return;
+    // Someone else opened meanwhile: what this asked for no longer applies.
+    const asked = latest.current;
     setOpening(true);
     try {
       const chat = await chatsApi.openDirect({ remoteId: person.id });
-      navigate(`/chats/${chat.id}`);
+      if (asked === latest.current) navigate(`/chats/${chat.id}`);
     } catch (err) {
+      if (asked !== latest.current) return;
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else showToast({ message: t("models:explore.elsewhere.messageFailed"), severity: "error" });
       setOpening(false);

@@ -1044,6 +1044,8 @@ model Chat {
   /// A room hosted elsewhere: all its members, wherever they are, as the host last said
   /// (`[{ id, name, handle, instance, origin }]`).
   hostMembers   Json?
+  /// When the host last changed it, as its last update applied here said: an older one, retried late, is ignored.
+  hostUpdatedAt DateTime?
 
   @@index([kind])
   @@index([hostPeerId])
@@ -1312,10 +1314,14 @@ model FederationDelivery {
   attempts      Int      @default(0)
   nextAttemptAt DateTime @default(now())
   lastError     String?
+  /// What it's one of (a chat: its room, or the person it's with): one waits for those before it, so a partner reads
+  /// them in the order they happened.
+  orderKey      String?
   createdAt     DateTime @default(now())
 
   @@index([nextAttemptAt])
   @@index([peerId])
+  @@index([peerId, orderKey, createdAt])
 }
 
 /// Fedify's key-value store: public keys it fetched and activities it handled, each with an expiry.
