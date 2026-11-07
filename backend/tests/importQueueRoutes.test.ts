@@ -1441,7 +1441,10 @@ describe("the import queue's routes", () => {
       expect(finished_by_owner).not.toHaveProperty(admin.id);
       const counts = Object.values(finished_by_owner) as number[];
       expect(finished_total).toBe(counts.reduce((sum, count) => sum + count, 0));
-      expect(jobs.length).toBeLessThan(finished_total);
+      // Far past what's listed of hers, whatever else is on the instance: other tests' jobs, made meanwhile, are listed
+      // and counted too, so the whole list says nothing against the whole count.
+      const listedOfAlice = (jobs as { owner: { id: string } }[]).filter((job) => job.owner.id === alice.id).length;
+      expect(listedOfAlice).toBeLessThan(finished_by_owner[alice.id]);
 
       const old = (await get(admin, "/admin/import-queue")).body;
       expect(old).not.toHaveProperty("finished_total");
