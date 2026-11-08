@@ -129,7 +129,8 @@ export default function Model3DPreviewModal({
   const activeProfile = profileEntries?.find((entry) => entry.key === activePlate?.id)?.profile ?? null;
   const plateRows = useMemo<PreviewPlateRow[]>(() => {
     const facts = activeProfile?.plates ?? [];
-    const indexes = facts.length ? facts.map((plate) => plate.index) : internalPlates.map((plate) => plate.index);
+    // Every plate either knows of: the file the viewer read is the one that counts.
+    const indexes = [...new Set([...facts, ...internalPlates].map((plate) => plate.index))].toSorted((a, b) => a - b);
     return indexes.map((index) => {
       const known = facts.find((plate) => plate.index === index);
       const seen = internalPlates.find((plate) => plate.index === index);

@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import type { Plate, PrintProfile } from "../../../api/prints";
+import type { ProfileFormat } from "./format";
 import { stemOf } from "../../../utils/fileExtensions";
 
 /** One of a model's print profiles: its file (the plate) and what's known of it. */
@@ -52,34 +53,22 @@ export function profileEntries(
     .map(({ entry }) => entry);
 }
 
-export function formatDuration(seconds: number | null | undefined): string | null {
-  if (seconds == null || seconds <= 0) return null;
-  const minutes = Math.max(1, Math.round(seconds / 60));
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest ? `${hours}h ${rest}m` : `${hours}h`;
-}
-
-export function formatGrams(grams: number | null | undefined): string | null {
-  if (grams == null || grams <= 0) return null;
-  if (grams >= 1000) return `${(grams / 1000).toFixed(2)} kg`;
-  return grams < 10 ? `${Math.round(grams * 10) / 10} g` : `${Math.round(grams)} g`;
-}
-
 /** "Bambu Lab A1 mini · 0.4 mm nozzle". */
-export function printerLine(t: TFunction, profile: PrintProfile | null): string | null {
+export function printerLine(t: TFunction, format: ProfileFormat, profile: PrintProfile | null): string | null {
   if (!profile) return null;
-  const nozzle = profile.nozzle_mm != null ? t("models:detail.profiles.nozzle", { mm: profile.nozzle_mm }) : null;
+  const nozzle =
+    profile.nozzle_mm != null ? t("models:detail.profiles.nozzle", { mm: format.number(profile.nozzle_mm, 2) }) : null;
   return [profile.printer, nozzle].filter(Boolean).join(" · ") || null;
 }
 
 /** "0.20 mm layers · 15% infill · 2 walls · supports". */
-export function settingsLine(t: TFunction, profile: PrintProfile | null): string | null {
+export function settingsLine(t: TFunction, format: ProfileFormat, profile: PrintProfile | null): string | null {
   if (!profile) return null;
   return (
     [
-      profile.layer_mm != null ? t("models:detail.profiles.layers", { mm: profile.layer_mm.toFixed(2) }) : null,
+      profile.layer_mm != null
+        ? t("models:detail.profiles.layers", { mm: format.number(profile.layer_mm, 2, true) })
+        : null,
       profile.infill ? t("models:detail.profiles.infill", { value: profile.infill }) : null,
       profile.walls != null ? t("models:detail.profiles.walls", { count: profile.walls }) : null,
       profile.supports ? t("models:detail.profiles.supports") : null,

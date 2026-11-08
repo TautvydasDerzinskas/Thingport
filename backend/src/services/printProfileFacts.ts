@@ -46,6 +46,9 @@ export type ProviderProfileFacts = {
   infill?: string | null;
   walls?: number | null;
   supports?: boolean | null;
+  /** Part of it couldn't be read this time (one of several calls failed): what's here is kept, and it's asked for
+   *  again later. */
+  partial?: boolean;
 };
 
 /** By the id the model's plates are tagged with (Plate.sourceInstanceId). */

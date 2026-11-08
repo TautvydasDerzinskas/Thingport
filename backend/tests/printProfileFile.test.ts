@@ -79,6 +79,25 @@ describe("a print profile's 3MF", () => {
     expect(await readProfileFile(text)).toBeNull();
   });
 
+  it("reads a config full of unclosed tags in one pass", async () => {
+    const zip = new JSZip();
+    // One good plate, then hundreds of thousands of tags that never close, as a file made to stall a parser would be.
+    const junk = "<plate <metadata key=".repeat(300_000);
+    zip.file(
+      "Metadata/model_settings.config",
+      `<config><plate><metadata key="plater_id" value="1"/><metadata key="plater_name" value="Only"/></plate>${junk}</config>`,
+    );
+    zip.file("Metadata/slice_info.config", `<config>${"<plate><filament ".repeat(300_000)}</config>`);
+    const file = path.join(dir, "unclosed.3mf");
+    await fs.writeFile(file, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    const started = Date.now();
+    const facts = await readProfileFile(file);
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(facts!.plates).toEqual([
+      { index: 1, name: "Only", objects: 0, thumb: false, seconds: null, grams: null, filaments: [] },
+    ]);
+  });
+
   it("adds up the same filament across plates", () => {
     expect(
       projectFilaments([

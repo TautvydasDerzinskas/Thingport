@@ -237,7 +237,7 @@ async function readableProfiles(userId: string, printId: string) {
   if (!print) throw new HttpError(404, "Print not found");
   const plates = await prisma.plate.findMany({
     where: { printId, sourceInstanceId: { not: null } },
-    select: { id: true, sourceInstanceId: true, profile: true, updatedAt: true },
+    select: { id: true, sourceInstanceId: true, profile: true, updatedAt: true, storagePath: true, sourcePath: true },
   });
   return { print, plates };
 }

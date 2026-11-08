@@ -9,14 +9,19 @@ export const PLATE_PNG = Buffer.from(
 );
 
 /** A print profile's project as Bambu Studio writes one: two plates, the first named, and when `sliced`, the first's
- *  slice (or both plates' with "all"). */
-export async function profileProject(dir: string, name: string, sliced: "none" | "first" | "all" = "first") {
+ *  slice (or both plates' with "all", or only both plates' times with "times"). */
+export async function profileProject(
+  dir: string,
+  name: string,
+  sliced: "none" | "first" | "all" | "times" = "first",
+  { printer = "Bambu Lab X1 Carbon" }: { printer?: string } = {},
+) {
   const zip = new JSZip();
   zip.file("3D/3dmodel.model", '<?xml version="1.0"?><model unit="millimeter"><resources/><build/></model>');
   zip.file(
     "Metadata/project_settings.config",
     JSON.stringify({
-      printer_model: "Bambu Lab X1 Carbon",
+      printer_model: printer,
       printer_settings_id: "Bambu Lab X1 Carbon 0.4 nozzle",
       nozzle_diameter: ["0.4"],
       layer_height: "0.16",
@@ -51,19 +56,23 @@ export async function profileProject(dir: string, name: string, sliced: "none" |
     <metadata key="weight" value="${grams}"/>
     ${filaments}
   </plate>`;
+  const timesOnly = (index: number, seconds: number) =>
+    `<plate><metadata key="index" value="${index}"/><metadata key="prediction" value="${seconds}"/></plate>`;
   const slices =
     sliced === "none"
       ? ""
-      : plateSlice(
-          1,
-          3600,
-          12.5,
-          '<filament id="1" type="PLA" color="#FFFFFFFF" used_m="4.2" used_g="10.25"/>' +
-            '<filament id="2" type="PETG" color="#000000" used_m="0.7" used_g="2.25"/>',
-        ) +
-        (sliced === "all"
-          ? plateSlice(2, 1800, 5, '<filament id="1" type="PLA" color="#FFFFFF" used_m="1.6" used_g="5"/>')
-          : "");
+      : sliced === "times"
+        ? timesOnly(1, 3600) + timesOnly(2, 1800)
+        : plateSlice(
+            1,
+            3600,
+            12.5,
+            '<filament id="1" type="PLA" color="#FFFFFFFF" used_m="4.2" used_g="10.25"/>' +
+              '<filament id="2" type="PETG" color="#000000" used_m="0.7" used_g="2.25"/>',
+          ) +
+          (sliced === "all"
+            ? plateSlice(2, 1800, 5, '<filament id="1" type="PLA" color="#FFFFFF" used_m="1.6" used_g="5"/>')
+            : "");
   zip.file(
     "Metadata/slice_info.config",
     `<?xml version="1.0" encoding="UTF-8"?><config><header><header_item key="X-BBL-Client-Type" value="slicer"/></header>${slices}</config>`,

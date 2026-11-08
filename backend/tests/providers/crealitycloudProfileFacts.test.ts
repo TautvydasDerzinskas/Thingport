@@ -127,4 +127,34 @@ describe("Creality Cloud profile facts", () => {
     expect(calls.every((call) => !("__cxy_token_" in call.headers))).toBe(true);
     expect(await crealitycloudProfileFacts("user-1", "gone", [])).toBeNull();
   });
+
+  it("keeps every profile's facts when one profile's plates fail to come, and asks for those again", async () => {
+    const { groupItem, profiles } = recorded("rainbow-piggybank");
+    const answer = (code: number, result: unknown) => Response.json({ code, msg: "ok", result });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit) => {
+        const path = new URL(url).pathname.replace(/^\/api\/cxy/, "");
+        const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+        if (path === "/v3/model/modelGroupDetail") return answer(0, { groupItem });
+        if (path === "/v3/model/3mfList") return answer(0, { list: profiles, count: profiles.length });
+        // The first profile's details fail outright, the second's come back empty.
+        if (path === "/v3/model/3mfDetail" && body.id === "68fb65202f05b9e97908ca5d")
+          throw new TypeError("fetch failed");
+        if (path === "/v3/model/3mfDetail") return answer(1, null);
+        throw new Error(`unexpected call ${path}`);
+      }),
+    );
+    const wanted = ["68fb65202f05b9e97908ca5d", "6a453f2e9fd80f401c15d0e2"];
+    const facts = await crealitycloudProfileFacts("user-1", "rainbow-piggybank", wanted);
+    for (const id of wanted) {
+      expect(facts?.[id]).toMatchObject({ partial: true });
+      expect(facts?.[id]).not.toHaveProperty("plates");
+    }
+    // The list's own facts stay.
+    expect(facts?.["68fb65202f05b9e97908ca5d"]).toMatchObject({ seconds: 23371, printer: "Creality K1C" });
+    // A profile whose plates weren't asked for isn't partial: there was nothing to fail.
+    const unasked = Object.keys(facts ?? {}).find((id) => !wanted.includes(id))!;
+    expect(facts?.[unasked]).not.toHaveProperty("partial");
+  });
 });

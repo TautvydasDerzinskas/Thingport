@@ -26,8 +26,9 @@ function filaments(list: unknown): ProfileFilament[] {
   );
 }
 
-/** What its filaments add up to: MakerOnline gives no total of its own. */
+/** What its filaments add up to: MakerOnline gives no total of its own. Unknown while any one's weight is. */
 function totalGrams(list: ProfileFilament[]): number | null {
+  if (!list.length || list.some((filament) => filament.grams == null)) return null;
   return rounded(
     list.reduce((sum, filament) => sum + (filament.grams ?? 0), 0),
     2,

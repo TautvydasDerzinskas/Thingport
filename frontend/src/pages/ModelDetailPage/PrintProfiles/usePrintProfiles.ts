@@ -47,7 +47,10 @@ export function usePrintProfiles(print: Print | null, onUnauthorized?: () => voi
     };
     const fail = (err: unknown) => {
       if (cancelled) return;
-      setState((prev) => (prev?.printId === printId ? { ...prev, filling: false } : null));
+      // Stopped, even when the first request is the one that failed: nothing shows as still loading.
+      setState((prev) =>
+        prev?.printId === printId ? { ...prev, filling: false } : { printId, profiles: {}, filling: false },
+      );
       if (err instanceof UnauthorizedError) unauthorized.current?.();
       // Otherwise the profiles stay as they are: what's missing is read on a later visit.
       else console.error(err);

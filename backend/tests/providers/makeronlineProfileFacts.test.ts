@@ -62,6 +62,24 @@ describe("MakerOnline profile facts", () => {
     expect(facts["48891"]).not.toHaveProperty("printer");
   });
 
+  it("leaves the total unknown while any filament's weight is", () => {
+    const detail = loadFixture<{ data: Record<string, unknown> }>("makeronline", "profile-facts-152165").data;
+    const profiles = detail.print_profiles as Record<string, unknown>[];
+    const materials = [
+      { paint_color: "0,64,128", material_type: "PLA", filament_used_g: 78.92 },
+      { paint_color: "255,255,255", material_type: "PETG" },
+    ];
+    const facts = makeronlineProfileFactsFrom({
+      ...detail,
+      print_profiles: [{ ...profiles[0], materials_label: materials }],
+    });
+    expect(facts["48891"]).not.toHaveProperty("grams");
+    expect(facts["48891"].filaments).toEqual([
+      { type: "PLA", color: "#004080", grams: 78.92 },
+      { type: "PETG", color: "#FFFFFF", grams: null },
+    ]);
+  });
+
   it("tells the designer's profile from the community's", () => {
     const facts = makeronlineProfileFactsFrom(loadFixture("makeronline", "profile-facts-152165").data);
     expect([facts["48891"].origin, facts["190636"].origin, facts["190636"].creator]).toEqual([

@@ -102,7 +102,12 @@ export async function crealitycloudProfileFacts(
     const id = text(profile.id);
     if (!id || !wanted.has(id) || id in details) continue;
     if (Object.keys(details).length) await sleep(DETAIL_PAUSE_MS);
-    details[id] = await fetchCrealitycloudProfileDetail(rows.groupId, id);
+    // One profile's plates failing to come leaves the others', and every profile's own facts, as they are.
+    details[id] = await fetchCrealitycloudProfileDetail(rows.groupId, id).catch(() => null);
   }
-  return crealitycloudProfileFactsFrom(rows.groupItem, rows.profiles, details);
+  const facts = crealitycloudProfileFactsFrom(rows.groupItem, rows.profiles, details);
+  for (const [id, detail] of Object.entries(details)) {
+    if (!detail && facts[id]) facts[id] = { ...facts[id], partial: true };
+  }
+  return facts;
 }

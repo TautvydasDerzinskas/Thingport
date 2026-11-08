@@ -11,7 +11,7 @@ import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 import { printsApi, type Plate, type PrintProfile, type ProfileFilament } from "../../../api/prints";
 import PlateThumbnail from "../../../components/media/PlateThumbnail";
 import { neutralTint } from "../../../theme";
-import { formatGrams } from "./entries";
+import { useProfileFormat, type ProfileFormat } from "./format";
 
 /** The accent's soft tint, for what the designer made. */
 function accentTint(theme: Theme): { background: string; text: string } {
@@ -86,8 +86,8 @@ const dotSx = (size: number) => ({
   borderColor: dotBorder,
 });
 
-function filamentText(filament: ProfileFilament): string {
-  return [filament.type, filament.color, formatGrams(filament.grams)].filter(Boolean).join(" · ");
+function filamentText(format: ProfileFormat, filament: ProfileFilament): string {
+  return [filament.type, filament.color, format.grams(filament.grams)].filter(Boolean).join(" · ");
 }
 
 /** The first few filaments' colours as overlapping dots, each named in its tooltip. */
@@ -100,13 +100,14 @@ export function FilamentDots({
   max?: number;
   size?: number;
 }) {
+  const format = useProfileFormat();
   if (!filaments.length) return null;
   const shown = filaments.slice(0, max);
   const more = filaments.length - shown.length;
   return (
     <Stack direction="row" alignItems="center" sx={{ flexShrink: 0 }}>
       {shown.map((filament, i) => (
-        <Tooltip key={i} title={filamentText(filament)}>
+        <Tooltip key={i} title={filamentText(format, filament)}>
           <Box
             sx={{
               ...dotSx(size),
@@ -128,6 +129,7 @@ export function FilamentDots({
 
 /** Each filament with its type and weight. */
 export function FilamentList({ filaments }: { filaments: ProfileFilament[] }) {
+  const format = useProfileFormat();
   return (
     <Stack direction="row" flexWrap="wrap" useFlexGap sx={{ columnGap: 1.25, rowGap: 0.5 }}>
       {filaments.map((filament, i) => (
@@ -140,7 +142,7 @@ export function FilamentList({ filaments }: { filaments: ProfileFilament[] }) {
           )}
           {filament.grams != null && (
             <Typography variant="caption" color="text.secondary">
-              {formatGrams(filament.grams)}
+              {format.grams(filament.grams)}
             </Typography>
           )}
         </Stack>

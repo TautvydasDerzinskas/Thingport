@@ -3,6 +3,8 @@ import { DEFAULT_PRINT_PROFILES_VIEW, settingsApi, type PrintProfilesView } from
 
 // Saved on the account, so every device shows profiles the same way. One request however many parts ask.
 let cached: PrintProfilesView | undefined;
+// What the server last said it holds: a failed save goes back to this, not to a pick still being saved.
+let confirmed: PrintProfilesView | undefined;
 let inFlight: Promise<PrintProfilesView> | null = null;
 // Bumped on sign-in, so an answer still on its way for the previous account is dropped.
 let account = 0;
@@ -18,7 +20,13 @@ function load(): Promise<PrintProfilesView> {
   // A switch made while this is in flight is newer than the server's answer, so it wins.
   const request = settingsApi
     .getPrintProfilesView()
-    .then((res) => (forAccount === account ? (cached ??= res.view) : res.view))
+    .then((res) => {
+      if (forAccount !== account) return res.view;
+      confirmed = res.view;
+      // Parts already showing a fallback (an earlier load failed) take the saved choice too.
+      if (cached === undefined) publish(res.view);
+      return cached ?? res.view;
+    })
     .catch((): PrintProfilesView => cached ?? DEFAULT_PRINT_PROFILES_VIEW)
     .finally(() => {
       if (inFlight === request) inFlight = null;
@@ -36,6 +44,7 @@ function publish(value: PrintProfilesView) {
 export function resetPrintProfilesView() {
   account++;
   cached = undefined;
+  confirmed = undefined;
   inFlight = null;
   saving = Promise.resolve();
 }
@@ -58,7 +67,6 @@ export function usePrintProfilesView(): [PrintProfilesView | null, (view: PrintP
   }, []);
 
   const update = async (view: PrintProfilesView) => {
-    const previous = cached ?? DEFAULT_PRINT_PROFILES_VIEW;
     const save = ++latestSave;
     const forAccount = account;
     publish(view);
@@ -66,10 +74,11 @@ export function usePrintProfilesView(): [PrintProfilesView | null, (view: PrintP
     saving = request.catch(() => undefined);
     try {
       await request;
+      if (forAccount === account) confirmed = view;
     } catch (err) {
       // A newer pick, or another account, has taken over; this failure is no longer theirs to hear about.
       if (save !== latestSave || forAccount !== account) return;
-      publish(previous);
+      publish(confirmed ?? DEFAULT_PRINT_PROFILES_VIEW);
       throw err;
     }
   };

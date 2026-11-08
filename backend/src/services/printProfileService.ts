@@ -10,7 +10,13 @@ import { createLogger } from "../logger";
 import { isProviderId } from "../providers/index.generated";
 import type { ProviderBackend } from "../providers/registry";
 import { resolvePlateFilePath } from "./printCreation";
-import { isProfileProject, projectFilaments, readProfileFile, type ProfileFileFacts } from "./printProfileFile";
+import {
+  isProfileProject,
+  projectFilaments,
+  readProfileFile,
+  type ProfileFileFacts,
+  type ProfileFilePlate,
+} from "./printProfileFile";
 import { rounded, type ProfileFilament, type ProviderProfileFacts } from "./printProfileFacts";
 
 /** Bumped when the 3MF reader learns something new, so stored profiles are read again. */
@@ -26,6 +32,8 @@ const log = createLogger("profiles");
 export type StoredProfile = {
   file?: ProfileFileFacts | null;
   fileVersion?: number;
+  /** The file it was read from, by size and modification time: one edited since is read again. */
+  fileStamp?: string | null;
   provider?: ProviderProfileFacts | null;
   providerVersion?: number;
   /** When the provider last had no answer for it (failed, or didn't know it). */
@@ -61,7 +69,7 @@ export type PrintProfileOut = {
   supports: boolean | null;
 };
 
-type ProfilePlate = Pick<Plate, "id" | "sourceInstanceId" | "profile" | "updatedAt">;
+type ProfilePlate = Pick<Plate, "id" | "sourceInstanceId" | "profile" | "updatedAt" | "storagePath" | "sourcePath">;
 
 export function storedProfile(value: Prisma.JsonValue | null | undefined): StoredProfile | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as StoredProfile) : null;
@@ -107,11 +115,16 @@ export function profileOut(plate: ProfilePlate): PrintProfileOut | null {
       thumb_url: base.thumb ? thumbUrl(plate, base.index) : null,
     };
   });
-  // Only a project sliced whole speaks for the whole: one with some plates sliced leaves the totals to the provider.
-  const fileSliced = Boolean(file?.plates.length) && file!.plates.every((p) => p.seconds != null);
-  const seconds = fileSliced ? sumOf(file!.plates.map((p) => p.seconds)) : (provider?.seconds ?? null);
-  const grams = fileSliced ? sumOf(file!.plates.map((p) => p.grams)) : (provider?.grams ?? null);
-  const filaments = fileSliced ? projectFilaments(file!.plates) : (provider?.filaments ?? []);
+  // Only a project sliced whole speaks for the whole, and each total only where every plate gave it: otherwise it's the
+  // provider's.
+  const filePlates = file?.plates ?? [];
+  const fileTotal = (pick: (p: ProfileFilePlate) => number | null) =>
+    filePlates.length && filePlates.every((p) => pick(p) != null) ? sumOf(filePlates.map(pick)) : null;
+  const seconds = fileTotal((p) => p.seconds) ?? provider?.seconds ?? null;
+  const grams = fileTotal((p) => p.grams) ?? provider?.grams ?? null;
+  const fileFilaments =
+    filePlates.length && filePlates.every((p) => p.filaments.length) ? projectFilaments(filePlates) : [];
+  const filaments = fileFilaments.length ? fileFilaments : (provider?.filaments ?? []);
   return {
     title: provider?.title ?? null,
     description: provider?.description ?? null,
@@ -130,8 +143,22 @@ export function profileOut(plate: ProfilePlate): PrintProfileOut | null {
   };
 }
 
-function needsFile(stored: StoredProfile | null): boolean {
-  return (stored?.fileVersion ?? 0) < PROFILE_FILE_VERSION;
+/** The file a profile plate has now, by size and modification time; null while it's missing. */
+function fileStampOf(plate: Pick<Plate, "storagePath" | "sourcePath">): string | null {
+  const filePath = resolvePlateFilePath(plate);
+  if (!filePath) return null;
+  try {
+    const stat = fs.statSync(filePath);
+    return `${stat.size}:${Math.trunc(stat.mtimeMs)}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Never read by this reader, or read from a file that has changed since. A missing file is read once it's back. */
+function needsFile(stored: StoredProfile | null, stamp: string | null): boolean {
+  if ((stored?.fileVersion ?? 0) < PROFILE_FILE_VERSION) return true;
+  return stamp !== null && stored?.fileStamp !== stamp;
 }
 
 function needsProvider(stored: StoredProfile | null, now: number): boolean {
@@ -143,14 +170,14 @@ function needsProvider(stored: StoredProfile | null, now: number): boolean {
 /** Whether a fill would read anything for these plates now. `providerReads` says whether the model's provider has
  *  profile facts to read at all. */
 export function profilesPending(
-  plates: Pick<Plate, "sourceInstanceId" | "profile">[],
+  plates: Pick<Plate, "sourceInstanceId" | "profile" | "storagePath" | "sourcePath">[],
   providerReads: boolean,
 ): boolean {
   const now = Date.now();
   return plates.some((plate) => {
     if (!plate.sourceInstanceId) return false;
     const stored = storedProfile(plate.profile);
-    return needsFile(stored) || (providerReads && needsProvider(stored, now));
+    return needsFile(stored, fileStampOf(plate)) || (providerReads && needsProvider(stored, now));
   });
 }
 
@@ -193,12 +220,18 @@ async function fillProfiles(printId: string): Promise<void> {
 
   for (const plate of print.plates) {
     const stored = next.get(plate.id)!;
-    if (!needsFile(stored)) continue;
-    const filePath = resolvePlateFilePath(plate);
+    const stamp = fileStampOf(plate);
     // A missing file is read once it's back, rather than remembered as saying nothing.
-    if (!filePath || !fs.existsSync(filePath)) continue;
-    stored.file = isProfileProject(plate.filename) ? await readProfileFile(filePath) : null;
+    if (!needsFile(stored, stamp) || stamp === null) continue;
+    try {
+      stored.file = isProfileProject(plate.filename) ? await readProfileFile(resolvePlateFilePath(plate)!) : null;
+    } catch (err) {
+      // The disk failed it: tried again on a later fill.
+      log.warn("couldn't read a print profile's file", { print: printId, plate: plate.id, err });
+      continue;
+    }
     stored.fileVersion = PROFILE_FILE_VERSION;
+    stored.fileStamp = stamp;
   }
 
   const read = await providerFactsReader(print.sourceProvider);
@@ -218,9 +251,15 @@ async function fillProfiles(printId: string): Promise<void> {
       const stored = next.get(plate.id)!;
       const found = facts?.[plate.sourceInstanceId!];
       if (found) {
-        stored.provider = found;
-        stored.providerVersion = PROFILE_PROVIDER_VERSION;
-        stored.providerTriedAt = null;
+        const { partial, ...said } = found;
+        stored.provider = said;
+        // What came is kept either way; a profile read only in part is asked for again later.
+        if (partial) {
+          stored.providerTriedAt = new Date(now).toISOString();
+        } else {
+          stored.providerVersion = PROFILE_PROVIDER_VERSION;
+          stored.providerTriedAt = null;
+        }
       } else {
         stored.providerTriedAt = new Date(now).toISOString();
       }
@@ -239,22 +278,37 @@ async function fillProfiles(printId: string): Promise<void> {
 
 // One model at a time, so a page full of older imports doesn't fire every provider request at once.
 let queue: Promise<void> = Promise.resolve();
-const queued = new Set<string>();
+const waiting = new Set<string>();
+const running = new Set<string>();
+// Asked for while running: it read the model before what's new arrived, so another pass follows.
+const again = new Set<string>();
 const settling = new Map<string, NodeJS.Timeout>();
 
-/** Fills a model's profiles in the background, once per request however often it's asked. */
+/** Fills a model's profiles in the background: once however often it's asked while it waits, and once more when asked
+ *  while it runs. */
 export function startProfileFill(printId: string): void {
-  if (queued.has(printId)) return;
-  queued.add(printId);
+  if (waiting.has(printId)) return;
+  if (running.has(printId)) {
+    again.add(printId);
+    return;
+  }
+  waiting.add(printId);
   queue = queue
-    .then(() => fillProfiles(printId))
+    .then(async () => {
+      waiting.delete(printId);
+      running.add(printId);
+      await fillProfiles(printId);
+    })
     .catch((err) => log.warn("reading print profiles failed", { print: printId, err }))
-    .finally(() => queued.delete(printId));
+    .finally(() => {
+      running.delete(printId);
+      if (again.delete(printId)) startProfileFill(printId);
+    });
 }
 
 /** Whether a fill of the model is waiting or running. */
 export function profileFillRunning(printId: string): boolean {
-  return queued.has(printId) || settling.has(printId);
+  return waiting.has(printId) || running.has(printId) || settling.has(printId);
 }
 
 /** For an import that just added a profile: fills the model once its import has settled. */

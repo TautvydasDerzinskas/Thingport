@@ -15,7 +15,8 @@ import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
-import { formatDuration, formatGrams, plateName, printerLine, settingsLine, type ProfileEntry } from "./entries";
+import { plateName, printerLine, settingsLine, type ProfileEntry } from "./entries";
+import { useProfileFormat } from "./format";
 import { Fact, FilamentDots, FilamentList, GroupLabel, LineSkeleton, ProfileCover, ProfilePlateThumb } from "./parts";
 import { OtherFileIcon, useOtherFileText } from "./otherFiles";
 import type { ProfileViewProps } from "./types";
@@ -45,12 +46,13 @@ function Row({
   onPreviewPlate?: (plateIndex: number) => void;
 }) {
   const { t } = useTranslation("models");
+  const format = useProfileFormat();
   const { profile } = entry;
-  const time = formatDuration(profile?.seconds);
-  const grams = formatGrams(profile?.grams);
+  const time = format.duration(profile?.seconds);
+  const grams = format.grams(profile?.grams);
   const plates = profile?.plates ?? [];
-  const printer = printerLine(t, profile);
-  const settings = settingsLine(t, profile);
+  const printer = printerLine(t, format, profile);
+  const settings = settingsLine(t, format, profile);
   return (
     <Box
       sx={{
@@ -143,8 +145,8 @@ function Row({
                   key={plate.index}
                   title={[
                     plateName(t, plate.index, plate.name),
-                    formatDuration(plate.seconds),
-                    formatGrams(plate.grams),
+                    format.duration(plate.seconds),
+                    format.grams(plate.grams),
                   ]
                     .filter(Boolean)
                     .join(" · ")}

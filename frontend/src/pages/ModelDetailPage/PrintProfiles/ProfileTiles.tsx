@@ -2,14 +2,16 @@ import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
 import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import MonitorWeightOutlinedIcon from "@mui/icons-material/MonitorWeightOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
-import { formatDuration, formatGrams, printerLine, settingsLine } from "./entries";
-import { Fact, FilamentDots, LineSkeleton, OriginChip, ProfileCover } from "./parts";
+import { plateName, printerLine, settingsLine } from "./entries";
+import { useProfileFormat } from "./format";
+import { Fact, FilamentDots, LineSkeleton, OriginChip, ProfileCover, ProfilePlateThumb } from "./parts";
 import { OtherFileIcon, useOtherFileText } from "./otherFiles";
 import type { ProfileViewProps } from "./types";
 
@@ -37,14 +39,15 @@ const tileSx = (selected: boolean) =>
 
 /** Profiles as a row of their pictures that scrolls sideways, a Designer or Community badge on each; the picked one's
  *  facts in a strip below. */
-export default function ProfileTiles({ entries, otherFiles, selectedKey, onSelect }: ProfileViewProps) {
+export default function ProfileTiles({ entries, otherFiles, selectedKey, onSelect, onPreviewPlate }: ProfileViewProps) {
   const { t } = useTranslation("models");
+  const format = useProfileFormat();
   const otherText = useOtherFileText();
   const entry = entries.find((e) => e.key === selectedKey) ?? null;
   const otherFile = entry ? null : (otherFiles.find((f) => f.key === selectedKey) ?? null);
   const profile = entry?.profile ?? null;
-  const printer = printerLine(t, profile);
-  const settings = settingsLine(t, profile);
+  const printer = printerLine(t, format, profile);
+  const settings = settingsLine(t, format, profile);
   const plates = profile?.plates.length ?? 0;
 
   return (
@@ -99,7 +102,7 @@ export default function ProfileTiles({ entries, otherFiles, selectedKey, onSelec
                 <LineSkeleton width="80%" />
               ) : (
                 <Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: "0.7rem" }}>
-                  {[formatDuration(e.profile?.seconds), formatGrams(e.profile?.grams)].filter(Boolean).join(" · ") ||
+                  {[format.duration(e.profile?.seconds), format.grams(e.profile?.grams)].filter(Boolean).join(" · ") ||
                     " "}
                 </Typography>
               )}
@@ -171,14 +174,14 @@ export default function ProfileTiles({ entries, otherFiles, selectedKey, onSelec
             ) : (
               <Stack spacing={0.5}>
                 <Stack direction="row" alignItems="center" spacing={1.25} flexWrap="wrap" useFlexGap>
-                  {formatDuration(profile?.seconds) && (
+                  {format.duration(profile?.seconds) && (
                     <Fact icon={<ScheduleOutlinedIcon />} label={t("detail.profiles.time")}>
-                      {formatDuration(profile?.seconds)}
+                      {format.duration(profile?.seconds)}
                     </Fact>
                   )}
-                  {formatGrams(profile?.grams) && (
+                  {format.grams(profile?.grams) && (
                     <Fact icon={<MonitorWeightOutlinedIcon />} label={t("detail.profiles.filament")}>
-                      {formatGrams(profile?.grams)}
+                      {format.grams(profile?.grams)}
                     </Fact>
                   )}
                   {plates > 0 && (
@@ -188,6 +191,30 @@ export default function ProfileTiles({ entries, otherFiles, selectedKey, onSelec
                 </Stack>
                 {printer && <Fact icon={<PrintOutlinedIcon />}>{printer}</Fact>}
                 {settings && <Fact icon={<TuneOutlinedIcon />}>{settings}</Fact>}
+              </Stack>
+            )}
+            {plates > 1 && (
+              <Stack direction="row" spacing={0.75} sx={{ mt: 1, flexWrap: "wrap", rowGap: 0.75 }}>
+                {profile!.plates.map((plate) => (
+                  <Tooltip
+                    key={plate.index}
+                    title={[
+                      plateName(t, plate.index, plate.name),
+                      format.duration(plate.seconds),
+                      format.grams(plate.grams),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  >
+                    <ButtonBase
+                      onClick={() => onPreviewPlate?.(entry.key, plate.index)}
+                      aria-label={t("detail.profiles.previewPlate", { plate: plateName(t, plate.index, plate.name) })}
+                      sx={{ borderRadius: 1.25 }}
+                    >
+                      <ProfilePlateThumb src={plate.thumb_url} size={40} index={plate.index} />
+                    </ButtonBase>
+                  </Tooltip>
+                ))}
               </Stack>
             )}
           </>

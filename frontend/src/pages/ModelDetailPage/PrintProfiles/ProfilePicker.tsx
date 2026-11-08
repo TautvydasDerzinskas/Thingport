@@ -17,17 +17,10 @@ import MonitorWeightOutlinedIcon from "@mui/icons-material/MonitorWeightOutlined
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
-import {
-  formatDuration,
-  formatGrams,
-  plateName,
-  printerLine,
-  settingsLine,
-  shortPrinter,
-  type ProfileEntry,
-} from "./entries";
+import { plateName, printerLine, settingsLine, shortPrinter, type ProfileEntry } from "./entries";
 import { Fact, FilamentList, LineSkeleton, OriginChip, ProfileCover, ProfilePlateThumb } from "./parts";
 import { OtherFileIcon, useOtherFileText } from "./otherFiles";
+import { useProfileFormat, type ProfileFormat } from "./format";
 import type { ProfileViewProps } from "./types";
 
 const tileSx = {
@@ -74,12 +67,13 @@ function StatTile({
 type MenuRowsOptions = Pick<ProfileViewProps, "entries" | "otherFiles" | "selectedKey"> & {
   onPick: (key: string) => void;
   t: TFunction;
+  format: ProfileFormat;
   otherText: ReturnType<typeof useOtherFileText>;
 };
 
 /** The menu's rows, as the menu's own children so its keyboard moves between them: the designer's profiles first,
  *  then the community's, then any plain files. */
-export function profileMenuRows({ entries, otherFiles, selectedKey, onPick, t, otherText }: MenuRowsOptions) {
+export function profileMenuRows({ entries, otherFiles, selectedKey, onPick, t, format, otherText }: MenuRowsOptions) {
   const designer = entries.filter((e) => e.profile?.origin === "designer");
   const community = entries.filter((e) => e.profile?.origin === "community");
   const unknown = entries.filter((e) => !e.profile?.origin);
@@ -101,11 +95,11 @@ export function profileMenuRows({ entries, otherFiles, selectedKey, onPick, t, o
             {entry.title}
           </Typography>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
-            {formatDuration(profile?.seconds) && (
-              <Fact icon={<ScheduleOutlinedIcon />}>{formatDuration(profile?.seconds)}</Fact>
+            {format.duration(profile?.seconds) && (
+              <Fact icon={<ScheduleOutlinedIcon />}>{format.duration(profile?.seconds)}</Fact>
             )}
-            {formatGrams(profile?.grams) && (
-              <Fact icon={<MonitorWeightOutlinedIcon />}>{formatGrams(profile?.grams)}</Fact>
+            {format.grams(profile?.grams) && (
+              <Fact icon={<MonitorWeightOutlinedIcon />}>{format.grams(profile?.grams)}</Fact>
             )}
             {printer && <Fact icon={<PrintOutlinedIcon />}>{printer}</Fact>}
             {profile?.origin === "community" && profile.creator && (
@@ -174,6 +168,7 @@ export default function ProfilePicker({
   onPreviewPlate,
 }: ProfileViewProps) {
   const { t } = useTranslation("models");
+  const format = useProfileFormat();
   const otherText = useOtherFileText();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const entry = entries.find((e) => e.key === selectedKey) ?? null;
@@ -181,8 +176,8 @@ export default function ProfilePicker({
   const shown = entry ?? entries[0];
   const profile = entry?.profile ?? null;
   const plates = profile?.plates ?? [];
-  const printer = printerLine(t, profile);
-  const settings = settingsLine(t, profile);
+  const printer = printerLine(t, format, profile);
+  const settings = settingsLine(t, format, profile);
   const pickerLabel = otherFile ? otherText(otherFile).primary : shown.title;
 
   return (
@@ -250,6 +245,7 @@ export default function ProfilePicker({
           otherFiles,
           selectedKey,
           t,
+          format,
           otherText,
           onPick: (key) => {
             onSelect(key);
@@ -264,13 +260,13 @@ export default function ProfilePicker({
             <StatTile
               icon={<ScheduleOutlinedIcon />}
               label={t("detail.profiles.time")}
-              value={formatDuration(profile?.seconds)}
+              value={format.duration(profile?.seconds)}
               loading={entry.loading}
             />
             <StatTile
               icon={<MonitorWeightOutlinedIcon />}
               label={t("detail.profiles.filament")}
-              value={formatGrams(profile?.grams)}
+              value={format.grams(profile?.grams)}
               loading={entry.loading}
             />
             <StatTile
@@ -315,8 +311,8 @@ export default function ProfilePicker({
                     key={plate.index}
                     title={[
                       plateName(t, plate.index, plate.name),
-                      formatDuration(plate.seconds),
-                      formatGrams(plate.grams),
+                      format.duration(plate.seconds),
+                      format.grams(plate.grams),
                     ]
                       .filter(Boolean)
                       .join(" · ")}

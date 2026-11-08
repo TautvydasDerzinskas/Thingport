@@ -6,7 +6,9 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { PROVIDERS } from "../src/providers/registry";
-import { createPrint } from "../src/services/printCreation";
+import { addPlatesToPrint, createPrint, resolvePlateFilePath } from "../src/services/printCreation";
+import { startProfileFill } from "../src/services/printProfileService";
+import { setSocialSettings } from "../src/services/settingsService";
 import type { ProviderProfileFactsById } from "../src/services/printProfileFacts";
 import { register, tempFile } from "./helpers/fileReuse";
 import { PLATE_PNG, profileProject } from "./helpers/profileProject";
@@ -37,7 +39,7 @@ const SITE_FACTS: ProviderProfileFactsById = {
   },
 };
 
-async function profileModel(label: string, sliced: "none" | "first" | "all") {
+async function profileModel(label: string, sliced: "none" | "first" | "all" | "times") {
   const project = await profileProject(dir, `${label}.3mf`, sliced);
   const stl = tempFile(dir, "solid raw\nendsolid\n");
   const { print, plates } = await createPrint(
@@ -57,16 +59,23 @@ async function profileModel(label: string, sliced: "none" | "first" | "all") {
   };
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Waits for the model's fills to finish, and answers its profiles. */
+async function settled(printId: string) {
+  for (let i = 0; i < 50; i++) {
+    const res = await request(app).get(`/api/print/${printId}/profiles`).set(auth(owner.token));
+    if (!res.body.filling) return res.body;
+    await sleep(100);
+  }
+  throw new Error("the fill never finished");
+}
+
 /** Starts a fill and waits for it to finish. */
 async function fill(printId: string) {
   const started = await request(app).post(`/api/print/${printId}/profiles/fill`).set(auth(owner.token));
   expect(started.status).toBe(200);
-  for (let i = 0; i < 50; i++) {
-    const res = await request(app).get(`/api/print/${printId}/profiles`).set(auth(owner.token));
-    if (!res.body.filling) return res.body;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error("the fill never finished");
+  return settled(printId);
 }
 
 beforeAll(async () => {
@@ -198,6 +207,109 @@ describe("a model imported with print profiles", () => {
     expect(
       (await request(app).get(`/api/plate/${profilePlate.id}/profile-plate/1.png`).set(auth(stranger.token))).status,
     ).toBe(404);
+  });
+
+  it("falls back to the provider for each total the 3MF hasn't got", async () => {
+    vi.spyOn(PROVIDERS.makerworld, "profileFacts").mockResolvedValue(SITE_FACTS);
+    const { print, profilePlate } = await profileModel("times", "times");
+    const profile = (await fill(print.id)).profiles[profilePlate.id];
+    // Every plate has its time in the file, but no weight or filament: those are the site's.
+    expect(profile).toMatchObject({ seconds: 5400, grams: 40 });
+    expect(profile.filaments).toEqual([{ type: "PLA", color: "#FFFFFF", grams: 40 }]);
+  });
+
+  it("reads the file again once it has changed on disk", async () => {
+    vi.spyOn(PROVIDERS.makerworld, "profileFacts").mockResolvedValue(SITE_FACTS);
+    const { print, profilePlate } = await profileModel("edited", "none");
+    expect((await fill(print.id)).profiles[profilePlate.id].printer).toBe("Bambu Lab X1 Carbon");
+    // Edited outside Thingport: another printer, and a newer modification time.
+    const edited = await profileProject(dir, "edited-again.3mf", "none", { printer: "Bambu Lab H2D" });
+    const target = resolvePlateFilePath(profilePlate)!;
+    await fs.copyFile(edited, target);
+    const later = new Date(Date.now() + 60_000);
+    await fs.utimes(target, later, later);
+    expect((await request(app).get(`/api/print/${print.id}`).set(auth(owner.token))).body.profiles_pending).toBe(true);
+    expect((await fill(print.id)).profiles[profilePlate.id].printer).toBe("Bambu Lab H2D");
+  });
+
+  it("tries a file again that the disk failed to read", async () => {
+    vi.spyOn(PROVIDERS.makerworld, "profileFacts").mockResolvedValue(SITE_FACTS);
+    const { print, profilePlate } = await profileModel("unreadable", "none");
+    const target = resolvePlateFilePath(profilePlate)!;
+    await fs.chmod(target, 0o000);
+    try {
+      const body = await fill(print.id);
+      expect(body.profiles[profilePlate.id].printer).toBe("Bambu Lab A1 mini");
+      expect(body.pending).toBe(true);
+    } finally {
+      await fs.chmod(target, 0o644);
+    }
+    expect((await fill(print.id)).profiles[profilePlate.id].printer).toBe("Bambu Lab X1 Carbon");
+  });
+
+  it("keeps what a provider could read in part, and asks it again later", async () => {
+    const read = vi
+      .spyOn(PROVIDERS.makerworld, "profileFacts")
+      .mockResolvedValue({ "111": { title: "Half read", seconds: 600, partial: true } });
+    const { print, profilePlate } = await profileModel("partial", "none");
+    const body = await fill(print.id);
+    expect(body.profiles[profilePlate.id]).toMatchObject({ title: "Half read", seconds: 600 });
+    // Not again straight away: a day later.
+    expect(body.pending).toBe(false);
+    const row = await prisma.plate.findUniqueOrThrow({ where: { id: profilePlate.id } });
+    expect(row.profile).toMatchObject({ provider: { title: "Half read" }, providerTriedAt: expect.any(String) });
+    expect(row.profile).not.toHaveProperty("providerVersion");
+    expect(read).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads a profile added while a fill was running, in another pass", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const read = vi.spyOn(PROVIDERS.makerworld, "profileFacts").mockImplementation(async (_user, _model, ids) => {
+      await gate;
+      return Object.fromEntries(ids.map((id) => [id, { title: `Profile ${id}` }]));
+    });
+    const { print, profilePlate } = await profileModel("during", "none");
+    startProfileFill(print.id);
+    while (!read.mock.calls.length) await sleep(10);
+    // The fill has read the model and waits on the provider; another profile arrives meanwhile.
+    const project = await profileProject(dir, "during-second.3mf", "none");
+    await addPlatesToPrint(owner.id, print.id, [
+      { filename: "second.3mf", tempFilePath: project, sourceInstanceId: "222" },
+    ]);
+    startProfileFill(print.id);
+    release();
+    const body = await settled(print.id);
+    const second = (await prisma.plate.findFirstOrThrow({ where: { printId: print.id, sourceInstanceId: "222" } })).id;
+    expect(body.profiles[profilePlate.id].title).toBe("Profile 111");
+    expect(body.profiles[second].title).toBe("Profile 222");
+    expect(read).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows a shared model's profiles and pictures to its viewers, who can't start reading them", async () => {
+    const { print, profilePlate } = await profileModel("shared", "none");
+    await setSocialSettings({ enabled: true });
+    try {
+      await prisma.collection.create({
+        data: {
+          userId: owner.id,
+          name: `Shared ${stamp}`,
+          nameNormalized: `shared ${stamp}`,
+          isPublic: true,
+          items: { create: { printId: print.id } },
+        },
+      });
+      const viewer = auth(stranger.token);
+      const profiles = await request(app).get(`/api/print/${print.id}/profiles`).set(viewer);
+      expect(profiles.status).toBe(200);
+      expect(profiles.body.profiles[profilePlate.id]).toBeDefined();
+      expect((await request(app).get(`/api/plate/${profilePlate.id}/profile-plate/1.png`).set(viewer)).status).toBe(
+        200,
+      );
+      expect((await request(app).post(`/api/print/${print.id}/profiles/fill`).set(viewer)).status).toBe(404);
+    } finally {
+      await setSocialSettings({ enabled: false });
+    }
   });
 
   it("keeps what was read when a file's row is made again from it", async () => {

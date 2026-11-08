@@ -17,7 +17,8 @@ import LayersIcon from "@mui/icons-material/Layers";
 import MonitorWeightOutlinedIcon from "@mui/icons-material/MonitorWeightOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import type { ProfileFilament } from "../../../api/prints";
-import { formatDuration, formatGrams, plateName, type ProfileEntry } from "./entries";
+import { plateName, type ProfileEntry } from "./entries";
+import { useProfileFormat } from "./format";
 import { Fact, FilamentDots, OriginChip, ProfileCover, ProfilePlateThumb } from "./parts";
 import { OtherFileIcon, useOtherFileText } from "./otherFiles";
 import { profileMenuRows } from "./ProfilePicker";
@@ -77,11 +78,12 @@ function PlateRows({
   onSelect: (index: number) => void;
 }) {
   const { t } = useTranslation("models");
+  const format = useProfileFormat();
   return (
     <List disablePadding>
       {plates.map((plate) => {
-        const time = formatDuration(plate.seconds);
-        const grams = formatGrams(plate.grams);
+        const time = format.duration(plate.seconds);
+        const grams = format.grams(plate.grams);
         return (
           <ListItemButton
             key={plate.index}
@@ -144,6 +146,7 @@ export default function PreviewProfilePanel({
   onSelectPlate,
 }: Props) {
   const { t } = useTranslation("models");
+  const format = useProfileFormat();
   const otherText = useOtherFileText();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const active = entries.find((e) => e.key === activeKey) ?? null;
@@ -186,7 +189,7 @@ export default function PreviewProfilePanel({
               <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minWidth: 0 }}>
                 <OriginChip origin={active.profile?.origin} />
                 <Typography variant="caption" color="text.secondary" noWrap>
-                  {[formatDuration(active.profile?.seconds), formatGrams(active.profile?.grams)]
+                  {[format.duration(active.profile?.seconds), format.grams(active.profile?.grams)]
                     .filter(Boolean)
                     .join(" · ")}
                 </Typography>
@@ -206,6 +209,7 @@ export default function PreviewProfilePanel({
             otherFiles,
             selectedKey: activeKey,
             t,
+            format,
             otherText,
             onPick: (key) => {
               onSelectFile(key);
@@ -269,8 +273,8 @@ export default function PreviewProfilePanel({
                   <OriginChip origin={entry.profile?.origin} compact />
                   <Typography variant="caption" color="text.secondary" noWrap>
                     {[
-                      formatDuration(entry.profile?.seconds),
-                      formatGrams(entry.profile?.grams),
+                      format.duration(entry.profile?.seconds),
+                      format.grams(entry.profile?.grams),
                       (entry.profile?.plates.length ?? 0) > 1
                         ? t("detail.profiles.plates", { count: entry.profile!.plates.length })
                         : null,

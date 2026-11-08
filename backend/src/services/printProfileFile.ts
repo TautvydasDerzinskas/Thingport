@@ -41,24 +41,69 @@ export function plateThumbEntry(index: number): string {
   return `Metadata/plate_${index}.png`;
 }
 
+// A start tag longer than this is no config's, and isn't read: its attributes would cost more to match than it's worth.
+const MAX_TAG = 8192;
+
 function attributes(tag: string): Record<string, string> {
   const out: Record<string, string> = {};
+  if (tag.length > MAX_TAG) return out;
   for (const [, name, value] of tag.matchAll(/([\w:-]+)\s*=\s*"([^"]*)"/g)) out[name] = decodeHtmlEntities(value);
+  return out;
+}
+
+// The configs are scanned with indexOf rather than regular expressions, in one pass each: a file is the provider's, and
+// a run of unclosed tags would make a pattern rescan the rest of it for every one, on the request's thread.
+
+/** Where the next `<tag` that is that tag (not one whose name only starts with it) begins, from `from`; -1 for none. */
+function tagStart(xml: string, tag: string, from: number): number {
+  const open = `<${tag}`;
+  for (let at = xml.indexOf(open, from); at >= 0; at = xml.indexOf(open, at + open.length)) {
+    const next = xml.charAt(at + open.length);
+    if (!next || /[\s/>]/.test(next)) return at;
+  }
+  return -1;
+}
+
+/** Each `<tag ...>` start tag. An unclosed one ends the scan. */
+function startTags(xml: string, tag: string): string[] {
+  const out: string[] = [];
+  for (let at = tagStart(xml, tag, 0); at >= 0;) {
+    const end = xml.indexOf(">", at);
+    if (end < 0) break;
+    out.push(xml.slice(at, end + 1));
+    at = tagStart(xml, tag, end + 1);
+  }
+  return out;
+}
+
+/** What's inside each `<tag>…</tag>`. An unclosed one ends the scan. */
+function blocksOf(xml: string, tag: string): string[] {
+  const out: string[] = [];
+  const close = `</${tag}>`;
+  for (let at = tagStart(xml, tag, 0); at >= 0;) {
+    const openEnd = xml.indexOf(">", at);
+    if (openEnd < 0) break;
+    if (xml.charAt(openEnd - 1) === "/") {
+      out.push("");
+      at = tagStart(xml, tag, openEnd + 1);
+      continue;
+    }
+    const end = xml.indexOf(close, openEnd + 1);
+    if (end < 0) break;
+    out.push(xml.slice(openEnd + 1, end));
+    at = tagStart(xml, tag, end + close.length);
+  }
   return out;
 }
 
 /** The `<metadata key value>` pairs in a piece of a config, first one winning. */
 function metadataOf(xml: string): Map<string, string> {
   const out = new Map<string, string>();
-  for (const [tag] of xml.matchAll(/<metadata\b[^>]*>/g)) {
+  for (const tag of startTags(xml, "metadata")) {
     const { key, value } = attributes(tag);
     if (key && value !== undefined && !out.has(key)) out.set(key, value);
   }
   return out;
-}
-
-function blocksOf(xml: string, tag: string): string[] {
-  return [...xml.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, "g"))].map((match) => match[1]);
 }
 
 function plateIndex(value: string | undefined): number | null {
@@ -110,7 +155,7 @@ function readLayout(xml: string): PlateLayout[] {
     plates.push({
       index,
       name: text(meta.get("plater_name")),
-      objects: [...block.matchAll(/<model_instance\b/g)].length,
+      objects: startTags(block, "model_instance").length,
     });
   }
   return plates;
@@ -124,7 +169,7 @@ function readSlices(xml: string): PlateSlice[] {
     const meta = metadataOf(block);
     const index = plateIndex(meta.get("index"));
     if (index === null) continue;
-    const filaments = [...block.matchAll(/<filament\b[^>]*>/g)].map(([tag]) => {
+    const filaments = startTags(block, "filament").map((tag) => {
       const attrs = attributes(tag);
       return { type: text(attrs.type), color: hexColor(attrs.color), grams: rounded(attrs.used_g, 2) };
     });
@@ -138,18 +183,28 @@ function readSlices(xml: string): PlateSlice[] {
   return plates;
 }
 
+/** A failure of the disk rather than of the file (it has an errno code; a zip that isn't one doesn't): worth trying
+ *  again later, so it's thrown rather than read as a file that says nothing. */
+function isIoError(err: unknown): boolean {
+  return typeof (err as NodeJS.ErrnoException | null)?.code === "string";
+}
+
 async function readText(filePath: string, entry: string, limit: number): Promise<string | null> {
-  const buf = await readZipEntry(filePath, entry, limit).catch(() => null);
+  const buf = await readZipEntry(filePath, entry, limit).catch((err: unknown) => {
+    if (isIoError(err)) throw err;
+    return null;
+  });
   return buf ? buf.toString("utf-8") : null;
 }
 
-/** What a profile's 3MF says, or null for a file that isn't one (or can't be read). Reads only its small config
- *  files, never the meshes, so it's quick however big the model is. */
+/** What a profile's 3MF says, or null for a file that isn't one. Throws when the disk fails it, so the read can be
+ *  tried again. Reads only its small config files, never the meshes, so it's quick however big the model is. */
 export async function readProfileFile(filePath: string): Promise<ProfileFileFacts | null> {
   let entries: string[];
   try {
     entries = (await listZipEntries(filePath)).filter((entry) => !entry.isDirectory).map((entry) => entry.name);
-  } catch {
+  } catch (err) {
+    if (isIoError(err)) throw err;
     return null;
   }
   const has = new Set(entries);
