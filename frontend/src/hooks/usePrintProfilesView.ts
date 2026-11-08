@@ -38,8 +38,9 @@ function load(): Promise<PrintProfilesView> {
   return request;
 }
 
-function publish(value: PrintProfilesView) {
-  cached = value;
+/** `known: false` shows a fallback without keeping it, so the next page asks the server again. */
+function publish(value: PrintProfilesView, { known = true } = {}) {
+  cached = known ? value : undefined;
   listeners.forEach((listener) => listener(value));
 }
 
@@ -84,7 +85,8 @@ export function usePrintProfilesView(): [PrintProfilesView | null, (view: PrintP
     } catch (err) {
       // A newer pick, or another account, has taken over; this failure is no longer theirs to hear about.
       if (save !== latestSave || forAccount !== account) return;
-      publish(confirmed ?? DEFAULT_PRINT_PROFILES_VIEW);
+      // Nothing heard from the server yet, its load having failed too: the default until a load gets through.
+      publish(confirmed ?? DEFAULT_PRINT_PROFILES_VIEW, { known: confirmed !== undefined });
       throw err;
     }
   };

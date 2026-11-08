@@ -171,20 +171,23 @@ type PlateSlice = {
   filamentsComplete: boolean;
 };
 
+const amountOf = (value: string | undefined) => (value?.trim() ? Number(value) : NaN);
+
 function readSlices(xml: string): PlateSlice[] {
   const plates: PlateSlice[] = [];
   for (const block of blocksOf(xml, "plate")) {
     const meta = metadataOf(block);
     const index = plateIndex(meta.get("index"));
     if (index === null) continue;
-    // A filament the slice used none of ("0.00") is left out; one without a weight it could read makes the list
-    // incomplete, so the provider's stands instead.
+    // A filament the slice used none of ("0.00" grams, or no grams but "0.00" metres) is left out; one without a
+    // weight it could read makes the list incomplete, so the provider's stands instead.
     let filamentsComplete = true;
     const filaments = startTags(block, "filament").flatMap((tag) => {
       const attrs = attributes(tag);
-      const used = attrs.used_g?.trim() ? Number(attrs.used_g) : NaN;
+      const used = amountOf(attrs.used_g);
       if (!Number.isFinite(used)) {
-        filamentsComplete = false;
+        const metres = amountOf(attrs.used_m);
+        if (!(Number.isFinite(metres) && metres <= 0)) filamentsComplete = false;
         return [];
       }
       if (used <= 0) return [];

@@ -83,8 +83,9 @@ export default function Model3DPreviewModal({
   const ext = activePlate ? extOf(activePlate.filename) : "";
   const is3d = Boolean(activePlate) && MODEL_EXTS.has(ext);
 
-  // Plates inside the active .3mf, reset when the file changes.
+  // Plates inside the active .3mf, reset when the file changes; `platesRead` once the viewer has said, even of none.
   const [internalPlates, setInternalPlates] = useState<PlateSummary[]>([]);
+  const [platesRead, setPlatesRead] = useState(false);
   const [internalThumbnails, setInternalThumbnails] = useState<Record<number, string | null>>({});
   const [selectedInternalPlateId, setSelectedInternalPlateId] = useState<number | null>(initialPlateIndex ?? null);
 
@@ -130,9 +131,7 @@ export default function Model3DPreviewModal({
   const plateRows = useMemo<PreviewPlateRow[]>(() => {
     const facts = activeProfile?.plates ?? [];
     // The plates the viewer found in the file once it has read it, the profile's until then.
-    const indexes = (internalPlates.length ? internalPlates : facts)
-      .map((plate) => plate.index)
-      .toSorted((a, b) => a - b);
+    const indexes = (platesRead ? internalPlates : facts).map((plate) => plate.index).toSorted((a, b) => a - b);
     return indexes.map((index) => {
       const known = facts.find((plate) => plate.index === index);
       const seen = internalPlates.find((plate) => plate.index === index);
@@ -146,10 +145,11 @@ export default function Model3DPreviewModal({
         thumb: known?.thumb_url ?? internalThumbnails[index] ?? null,
       };
     });
-  }, [activeProfile, internalPlates, internalThumbnails]);
+  }, [activeProfile, internalPlates, platesRead, internalThumbnails]);
 
   const handlePlatesDetected = (plates: PlateSummary[], getThumbnail: (index: number) => Promise<string | null>) => {
     setInternalPlates(plates);
+    setPlatesRead(true);
     // A plate asked for before the file was read stays picked.
     setSelectedInternalPlateId((current) =>
       current != null && plates.some((plate) => plate.index === current) ? current : (plates[0]?.index ?? null),
@@ -168,6 +168,7 @@ export default function Model3DPreviewModal({
     // of the last one.
     setOwnColor(false);
     setInternalPlates([]);
+    setPlatesRead(false);
     setInternalThumbnails({});
     setSelectedInternalPlateId(null);
   };

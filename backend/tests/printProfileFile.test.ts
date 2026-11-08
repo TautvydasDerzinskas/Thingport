@@ -107,6 +107,30 @@ describe("a print profile's 3MF", () => {
     expect(facts!.plates[1]).not.toHaveProperty("filamentsComplete");
   });
 
+  it("knows a filament without a weight is unused by its length, and incomplete only when it was used", async () => {
+    const plate = (index: number, filaments: string) =>
+      `<plate><metadata key="index" value="${index}"/>${filaments}</plate>`;
+    const zip = new JSZip();
+    zip.file(
+      "Metadata/slice_info.config",
+      "<config>" +
+        plate(
+          1,
+          '<filament type="PLA" color="#FFFFFF" used_m="3.4" used_g="10"/>' +
+            '<filament type="PETG" color="#000000" used_m="0.00"/>' +
+            '<filament type="ASA" color="#FF0000" used_m="0.00" used_g="0.00"/>',
+        ) +
+        plate(2, '<filament type="PLA" color="#FFFFFF" used_m="1.2"/>') +
+        "</config>",
+    );
+    const file = path.join(dir, "lengths.3mf");
+    await fs.writeFile(file, await zip.generateAsync({ type: "nodebuffer" }));
+    const facts = await readProfileFile(file);
+    expect(facts!.plates[0]).toMatchObject({ filaments: [{ type: "PLA", grams: 10 }] });
+    expect(facts!.plates[0]).not.toHaveProperty("filamentsComplete");
+    expect(facts!.plates[1]).toMatchObject({ filaments: [], filamentsComplete: false });
+  });
+
   it("reads past an entry whose compressed data is corrupt, without calling it a disk failure", async () => {
     const zip = new JSZip();
     zip.file("Metadata/project_settings.config", JSON.stringify({ printer_model: "x".repeat(4000) }));
