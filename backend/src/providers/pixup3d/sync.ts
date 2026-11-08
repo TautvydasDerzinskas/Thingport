@@ -10,7 +10,7 @@ import {
   type Pixup3dSession,
   pixup3dWishlistName,
 } from "./api";
-import { getPixup3dConnection, markPixup3dSessionRejected, withPixup3dSession } from "./session";
+import { getPixup3dConnection, withPixup3dSession } from "./session";
 
 const DISCONNECTED: SyncProblem = {
   error: "PIXUP isn't connected",
@@ -64,7 +64,9 @@ export const pixup3dSync: ProviderSync = {
   },
   rejected: {
     is: (err) => err instanceof Pixup3dAuthError,
-    mark: (userId) => markPixup3dSessionRejected(userId),
+    // Marked already, by the read it turned down, and only while it was still the sign-in stored: a newer one saved
+    // meanwhile isn't marked for it.
+    mark: async () => undefined,
     problem: EXPIRED,
   },
   problems: [DISCONNECTED, EXPIRED],

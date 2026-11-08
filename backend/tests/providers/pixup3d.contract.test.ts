@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
 import {
+  fetchPixup3dVariantState,
   pixup3dCategoryIds,
   pixup3dCollectionFromPage,
   pixup3dGalleryFrom,
@@ -210,9 +211,11 @@ function handlerFor(scenario: string, state: State = freshState()): FetchHandler
     if (p === "/cart/checkout" && method === "POST") {
       if (!me) return redirect("https://pixup3d.com/users/sign_in");
       if (new URLSearchParams(call.body ?? "").get("authenticity_token") !== TOKEN) return html("Unprocessable", 422);
+      // A payment page takes nothing until it's paid.
+      if (state.checkoutTo) return answer(redirect(state.checkoutTo), call);
       for (const item of state.cart) state.owned.add(item.id);
       state.cart = [];
-      return answer(redirect(state.checkoutTo ?? "https://pixup3d.com/profile/libraries"), call);
+      return answer(redirect("https://pixup3d.com/profile/libraries"), call);
     }
     const download = p.match(/^\/posts\/(\d+)\/download$/);
     if (download) {
@@ -355,6 +358,8 @@ describe("PIXUP specifics", () => {
     await expect(placePixup3dFreeOrder([STL_VARIANT], { session: SESSION })).rejects.toThrow(
       "PIXUP asked for payment instead of taking the free order (sent to checkout.stripe.com)",
     );
+    // What it put in comes out again, so the cart is as it was.
+    expect(state.cart).toEqual([]);
   });
 
   it("doesn't check out a cart holding a paid model, and takes back nothing it didn't put in", async () => {
@@ -415,11 +420,44 @@ describe("PIXUP specifics", () => {
 
   it("refuses a cart it can't read, rather than taking it for an empty one", async () => {
     await connect(ctx.userId);
-    const state = freshState({ owned: new Set(), cartAnswer: () => ({ error: "Something went wrong" }) });
-    const stub = ctx.install(handlerFor("ok", state));
-    expect((await ctx.importUrl()).status).toBeGreaterThanOrEqual(400);
-    expect(callsTo(stub.calls, /\/cart\/variants\//)).toEqual([]);
-    expect(callsTo(stub.calls, "/cart/checkout")).toEqual([]);
+    type Answer = ReturnType<typeof cartAnswer>;
+    const failed = () => ({ error: "Something went wrong" });
+    const unpriced = (answer: Answer) => ({
+      ...answer,
+      cart: { ...answer.cart, variants: answer.cart.variants.map((v: object) => ({ ...v, price: undefined })) },
+    });
+    const broken: ((answer: Answer) => unknown)[] = [
+      failed,
+      (answer) => ({ ...answer, order: { ...answer.order, final_price: "" } }),
+      (answer) => ({ ...answer, cart: { ...answer.cart, variants: [null] } }),
+    ];
+    for (const answerWith of broken) {
+      const state = freshState({ owned: new Set(), cartAnswer: answerWith });
+      const stub = ctx.install(handlerFor("ok", state));
+      expect((await ctx.importUrl()).status).toBeGreaterThanOrEqual(400);
+      expect(callsTo(stub.calls, /\/cart\/variants\//)).toEqual([]);
+      expect(callsTo(stub.calls, "/cart/checkout")).toEqual([]);
+    }
+
+    // Nor one it can't read once it's put the model in, which comes out again: a price left out isn't $0, and a cart
+    // that doesn't list what was put in isn't the one checkout would take.
+    const missing = (answer: Answer) => ({ ...answer, cart: { ...answer.cart, variants: [] } });
+    const brokenAfter: ((answer: Answer) => unknown)[] = [unpriced, failed, missing];
+    for (const after of brokenAfter) {
+      let reads = 0;
+      const state = freshState({
+        owned: new Set(),
+        cartAnswer: (answer) => (++reads > 1 ? after(answer) : answer),
+      });
+      const stub = ctx.install(handlerFor("ok", state));
+      expect((await ctx.importUrl()).status).toBeGreaterThanOrEqual(400);
+      expect(callsTo(stub.calls, `${API}/cart/variants/${STL_VARIANT}`).map((call) => call.method)).toEqual([
+        "POST",
+        "DELETE",
+      ]);
+      expect(callsTo(stub.calls, "/cart/checkout")).toEqual([]);
+      expect(state.cart).toEqual([]);
+    }
   });
 
   it("checks what it put in the cart is free as the cart prices it, and takes it out again if not", async () => {
@@ -456,14 +494,19 @@ describe("PIXUP specifics", () => {
       [XENO, "paid"],
     ]);
 
+    const unblocked = [
+      [GUNDAM, undefined],
+      [POST, undefined],
+      [XENO, undefined],
+    ];
+    const marks = (res: { body: { entries: { design_id: string; blocked?: string }[] } }) =>
+      res.body.entries.map((e) => [e.design_id, e.blocked]);
     ctx.install(handlerFor("ok", freshState({ owned: new Set([XENO]) })));
-    const owned = await ctx.post(spec.list!.endpoint, { url: WISHLIST_URL });
-    expect((owned.body.entries as { blocked?: string }[]).every((e) => !e.blocked)).toBe(true);
+    expect(marks(await ctx.post(spec.list!.endpoint, { url: WISHLIST_URL }))).toEqual(unblocked);
 
     // However far down a long library the purchase is.
     ctx.install(handlerFor("ok", freshState({ owned: new Set([XENO]), libraryPages: 60 })));
-    const deep = await ctx.post(spec.list!.endpoint, { url: WISHLIST_URL });
-    expect((deep.body.entries as { blocked?: string }[]).every((e) => !e.blocked)).toBe(true);
+    expect(marks(await ctx.post(spec.list!.endpoint, { url: WISHLIST_URL }))).toEqual(unblocked);
   });
 
   it("reads a collection in its own order, which its API doesn't keep", async () => {
@@ -537,6 +580,43 @@ describe("PIXUP specifics", () => {
     ctx.install(handlerFor("rejected", freshState({ before: replace })));
     expect(await pixup3dMemberOf(ctx.userId)).toBeNull();
     expect((await getPixup3dConnection(ctx.userId)).state).toBe("connected");
+  });
+
+  it("marks a sign-in PIXUP turns down expired, but not a newer one saved while it was out", async () => {
+    const replaceAt = (path: RegExp) => ({
+      path,
+      run: () => setUserPixup3dSession(ctx.userId, { session: OTHER }),
+    });
+    const sync = { userId: ctx.userId, provider: "pixup3d", externalId: `${DESIGNER}/5`, sourceUrl: COLLECTION_URL };
+    const state = async () => (await getPixup3dConnection(ctx.userId)).state;
+
+    // A list's check of what the user owns.
+    await connect(ctx.userId);
+    ctx.install(handlerFor("rejected", freshState({ before: replaceAt(/purchased_variants$/) })));
+    expectStatus(await ctx.post(spec.list!.endpoint, { url: WISHLIST_URL }), 200);
+    expect(await state()).toBe("connected");
+    await connect(ctx.userId);
+    ctx.install(handlerFor("rejected"));
+    expectStatus(await ctx.post(spec.list!.endpoint, { url: WISHLIST_URL }), 200);
+    expect(await state()).toBe("expired");
+
+    // A sync, which says to try again rather than hold every sync for a sign-in that's fine.
+    await connect(ctx.userId);
+    ctx.install(handlerFor("rejected", freshState({ before: replaceAt(/purchased_variants$/) })));
+    await expect(fetchListing(sync)).rejects.toThrow(/replaced since/);
+    expect(await state()).toBe("connected");
+    await connect(ctx.userId);
+    ctx.install(handlerFor("rejected"));
+    await expect(fetchListing(sync)).rejects.toThrow(/didn't accept your sign-in/);
+    expect(await state()).toBe("expired");
+
+    // An import.
+    await connect(ctx.userId);
+    ctx.install(handlerFor("rejected", freshState({ before: replaceAt(/current_user$/) })));
+    const res = await ctx.importUrl();
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(JSON.stringify(res.body)).toMatch(/replaced since/);
+    expect(await state()).toBe("connected");
   });
 
   it("shows the user's wishlist and own collections in the Browse tab, by whom their sign-in says they are", async () => {
@@ -651,8 +731,16 @@ describe("PIXUP and the import line", () => {
   it("counts each of its answers as a sign of life for the import worker's watchdog", async () => {
     ctx.stub("ok");
     const activity = { lastActivity: 0 };
-    await withImportActivity(activity, () => resolvePixup3dModel(POST));
-    expect(activity.lastActivity).toBeGreaterThan(0);
+    await withImportActivity(activity, async () => {
+      await resolvePixup3dModel(POST);
+      expect(activity.lastActivity).toBeGreaterThan(0);
+      // Each answer after the first too: a long run of variant reads keeps the import alive.
+      for (const variant of [STL_VARIANT, "892"]) {
+        activity.lastActivity = 0;
+        await fetchPixup3dVariantState(variant, { session: SESSION });
+        expect(activity.lastActivity).toBeGreaterThan(0);
+      }
+    });
   });
 });
 

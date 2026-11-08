@@ -1,14 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../../db";
-import {
-  connectionState,
-  readConnection,
-  rejectConnection,
-  usableSecret,
-  writeConnection,
-  type ConnectionState,
-} from "../connections";
-import { checkPixup3dAuth, type Pixup3dMember, type Pixup3dSession } from "./api";
+import { HttpError } from "../../utils/fileUtils";
+import { connectionState, readConnection, usableSecret, writeConnection, type ConnectionState } from "../connections";
+import { checkPixup3dAuth, Pixup3dAuthError, type Pixup3dMember, type Pixup3dSession } from "./api";
 import manifest from "./manifest.generated";
 
 // Per-user: the PIXUP sign-in, which its files need. It's Rails' session, kept whole in its cookie and issued anew with
@@ -70,7 +64,7 @@ export async function keepRenewedPixup3dSession(userId: string, used: string, se
 }
 
 /** `read` run with the user's sign-in, null without one, and whatever newer session PIXUP answered with kept after,
- *  failed or not. */
+ *  failed or not. A sign-in it turns down is remembered as such (`pixup3dRejection`). */
 export async function withPixup3dSession<T>(
   userId: string,
   read: (session: Pixup3dSession | null) => Promise<T>,
@@ -79,13 +73,30 @@ export async function withPixup3dSession<T>(
   const used = session?.session;
   try {
     return await read(session);
+  } catch (err) {
+    throw used ? await pixup3dRejection(userId, used, err) : err;
   } finally {
     if (session && used) await keepRenewedPixup3dSession(userId, used, session).catch(() => undefined);
   }
 }
 
-export async function markPixup3dSessionRejected(userId: string): Promise<void> {
-  await rejectConnection(userId, ID);
+/** Marks the sign-in `used` turned down, only while it's still the one stored; whether it was. */
+export async function markPixup3dSessionRejected(userId: string, used: string): Promise<boolean> {
+  const { count } = await prisma.providerConnection.updateMany({
+    where: { ...ROW(userId), secret: { path: ["session"], equals: used } },
+    data: { rejectedAt: new Date() },
+  });
+  return count > 0;
+}
+
+/** `err`, a turned-down sign-in among them, as what to report. That sign-in is marked rejected, unless another was
+ *  saved meanwhile: that one isn't the one turned down, so it stays connected, and a 409 says to try again instead. */
+export async function pixup3dRejection(userId: string, used: string, err: unknown): Promise<unknown> {
+  if (!(err instanceof Pixup3dAuthError) || (await markPixup3dSessionRejected(userId, used))) return err;
+  return new HttpError(
+    409,
+    "PIXUP turned down the sign-in this started with, which has been replaced since. Try again.",
+  );
 }
 
 export async function getPixup3dConnection(
@@ -107,14 +118,13 @@ export async function pixup3dMemberOf(userId: string): Promise<Pixup3dMember | n
   const used = session.session;
   const check = await checkPixup3dAuth(session);
   // What the check says applies only to the sign-in it checked: a disconnect, or a new sign-in saved meanwhile, wins.
-  const stillStored = { ...ROW(userId), rejectedAt: null, secret: { path: ["session"], equals: used } };
   if (check === "rejected") {
-    await prisma.providerConnection.updateMany({ where: stillStored, data: { rejectedAt: new Date() } });
+    await markPixup3dSessionRejected(userId, used);
     return null;
   }
   if (typeof check !== "object") return null;
   const { count } = await prisma.providerConnection.updateMany({
-    where: stillStored,
+    where: { ...ROW(userId), rejectedAt: null, secret: { path: ["session"], equals: used } },
     data: {
       accountId: check.username,
       accountName: check.name ?? check.username,

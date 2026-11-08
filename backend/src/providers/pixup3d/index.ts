@@ -51,18 +51,18 @@ import {
 import {
   getUserPixup3dSession,
   keepRenewedPixup3dSession,
-  markPixup3dSessionRejected,
   PIXUP3D_CONNECT,
+  pixup3dRejection,
   withPixup3dSession,
 } from "./session";
 
 const SESSION_CODE = MANIFESTS.pixup3d.errorCodes.session;
 const RATE_LIMITED = "PIXUP rate-limited Thingport. Wait a while, then try again.";
 
-/** PIXUP's errors as the HttpErrors an import reports; a rejected sign-in is remembered, so the app can say so. */
-async function pixup3dFailure(userId: string, err: unknown): Promise<unknown> {
+/** PIXUP's errors as the HttpErrors an import reports. A rejected sign-in was remembered where it was turned down
+ *  (`pixup3dRejection`), so the app can say so. */
+async function pixup3dFailure(_userId: string, err: unknown): Promise<unknown> {
   if (err instanceof Pixup3dAuthError) {
-    await markPixup3dSessionRejected(userId);
     // 400, not 401: the frontend treats any 401 as an expired Thingport session.
     return new HttpError(400, err.message, SESSION_CODE);
   }
@@ -132,7 +132,7 @@ export const pixup3dImport: SourcedImport<Pixup3dSession, Pixup3dModelResolution
       return downloaded;
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
-      throw err;
+      throw await pixup3dRejection(userId, used, err);
     } finally {
       await keepRenewedPixup3dSession(userId, used, session).catch(() => undefined);
     }
@@ -143,15 +143,9 @@ export const pixup3dTrending: ProviderTrending = { fetch: (_userId, limit) => fe
 
 /** The models the user owns, where their sign-in can say; null where it can't, which marks nothing. */
 function ownedPosts(userId: string): Promise<Set<string> | null> {
-  return withPixup3dSession(userId, async (session) => {
-    if (!session) return null;
-    try {
-      return await fetchPixup3dOwnedPosts(session);
-    } catch (err) {
-      if (err instanceof Pixup3dAuthError) await markPixup3dSessionRejected(userId);
-      return null;
-    }
-  });
+  return withPixup3dSession(userId, async (session) => (session ? fetchPixup3dOwnedPosts(session) : null)).catch(
+    () => null,
+  );
 }
 
 /** A wishlist or a collection, from a PIXUP link; anyone's to read, a private collection its owner's. Its first

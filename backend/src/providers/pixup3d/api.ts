@@ -433,21 +433,35 @@ export async function fetchPixup3dVariantState(
   return { purchased: variant?.purchased === true, inCart: variant?.in_cart === true };
 }
 
-type Cart = { variants: { id: string; price: number }[]; finalPrice: number };
+type CartItem = { id: string; price: number };
+type Cart = { variants: CartItem[]; finalPrice: number };
+
+/** A price the cart states, `"0.0"` among them; null for one left out, blank or not a price. */
+function statedPrice(value: unknown): number | null {
+  if (typeof value === "string" && !value.trim()) return null;
+  const price = asCount(value);
+  return price !== null && price >= 0 ? price : null;
+}
+
+function cartItemOf(value: unknown): CartItem | null {
+  const item = asRecord(value);
+  const id = asText(item?.id);
+  const price = statedPrice(item?.price);
+  return id && price !== null ? { id, price } : null;
+}
 
 async function fetchCart(session: Pixup3dSession): Promise<Cart> {
   const res = await api("/cart/current_post_cart", { session });
   if (res.status === 401) throw new Pixup3dAuthError();
   if (res.status !== 200) throw failure("your cart", res);
   const data = asRecord(res.data);
-  const variants = asRecord(data?.cart)?.variants;
-  const finalPrice = asCount(asRecord(data?.order)?.final_price);
-  // Only a cart it says the contents and the total of: anything else can't be shown to be free, so isn't checked out.
-  if (!Array.isArray(variants) || finalPrice === null) throw failure("your cart", res);
-  return {
-    variants: recordsOf(variants).map((variant) => ({ id: asText(variant.id) ?? "", price: priceOf(variant.price) })),
-    finalPrice,
-  };
+  const items = asRecord(data?.cart)?.variants;
+  const variants = Array.isArray(items) ? items.flatMap((item) => cartItemOf(item) ?? []) : [];
+  const finalPrice = statedPrice(asRecord(data?.order)?.final_price);
+  // Only a cart it states the contents, each one's price and the total of: anything else can't be shown to be free,
+  // so isn't checked out.
+  if (!Array.isArray(items) || variants.length < items.length || finalPrice === null) throw failure("your cart", res);
+  return { variants, finalPrice };
 }
 
 /** Whether checking the cart out would cost anything: its total, or any one thing in it. */
@@ -466,44 +480,50 @@ async function cartToken(session: Pixup3dSession): Promise<string> {
 
 /** Free variants the user doesn't own yet, put in their library as the site's own Download button does it: into the
  *  cart and through a $0 checkout. The checkout takes the whole cart, so it isn't placed while anything in the cart
- *  costs money (Pixup3dCartError); what was put in for it comes out again then. Throws unless all of them are owned
- *  after it. */
+ *  costs money (Pixup3dCartError), or while the cart can't be read. What was put in for it comes out again whenever
+ *  the checkout isn't made; what was there before is left as it was. Throws unless all of them are owned after it. */
 export async function placePixup3dFreeOrder(variantIds: string[], session: Pixup3dSession): Promise<void> {
   const before = await fetchCart(session);
   if (costsMoney(before)) throw new Pixup3dCartError();
   const token = await cartToken(session);
   const added: string[] = [];
-  for (const id of variantIds) {
-    if (before.variants.some((variant) => variant.id === id)) continue;
-    const res = await api(`/cart/variants/${encodeURIComponent(id)}`, { session, method: "POST", csrf: token });
-    if (res.status === 401) throw new Pixup3dAuthError();
-    if (res.status !== 200 || asText(asRecord(res.data)?.status) !== "ok") throw failure("its cart", res);
-    added.push(id);
-  }
-  // Asked again, as what was put in is priced by the cart, not by the model's page.
-  const cart = await fetchCart(session);
-  if (costsMoney(cart)) {
+  try {
+    for (const id of variantIds) {
+      if (before.variants.some((variant) => variant.id === id)) continue;
+      // Counted before its answer is: one that fails may have gone in all the same.
+      added.push(id);
+      const res = await api(`/cart/variants/${encodeURIComponent(id)}`, { session, method: "POST", csrf: token });
+      if (res.status === 401) throw new Pixup3dAuthError();
+      if (res.status !== 200 || asText(asRecord(res.data)?.status) !== "ok") throw failure("its cart", res);
+    }
+    // Asked again, as what was put in is priced by the cart, not by the model's page.
+    const cart = await fetchCart(session);
+    if (costsMoney(cart)) throw new Pixup3dCartError();
+    if (!variantIds.every((id) => cart.variants.some((variant) => variant.id === id))) {
+      throw new Error("PIXUP's cart didn't list this model once it was put in, so it wasn't checked out. Try again.");
+    }
+    const checkout = await requestPaced(`${SITE_ORIGIN}/cart/checkout`, {
+      accept: HTML,
+      session,
+      method: "POST",
+      form: { authenticity_token: token },
+    });
+    const after = redirectedTo(checkout);
+    if (toSignIn(after)) throw new Pixup3dAuthError();
+    // A $0 cart is checked out at once, landing on the library; one sent anywhere else, its payment page among them,
+    // wasn't, and has nothing for the check below to find.
+    if (after && !isSitePage(after)) {
+      throw new Error(`PIXUP asked for payment instead of taking the free order (sent to ${after.hostname})`);
+    }
+    if (checkout.status >= 400) throw new Error(`PIXUP didn't take the free order (HTTP ${checkout.status})`);
+  } catch (err) {
     for (const id of added) {
       await api(`/cart/variants/${encodeURIComponent(id)}`, { session, method: "DELETE", csrf: token }).catch(
         () => undefined,
       );
     }
-    throw new Pixup3dCartError();
+    throw err;
   }
-  const checkout = await requestPaced(`${SITE_ORIGIN}/cart/checkout`, {
-    accept: HTML,
-    session,
-    method: "POST",
-    form: { authenticity_token: token },
-  });
-  const after = redirectedTo(checkout);
-  if (toSignIn(after)) throw new Pixup3dAuthError();
-  // A $0 cart is checked out at once, landing on the library; one sent anywhere else, its payment page among them,
-  // wasn't, and has nothing for the check below to find.
-  if (after && !isSitePage(after)) {
-    throw new Error(`PIXUP asked for payment instead of taking the free order (sent to ${after.hostname})`);
-  }
-  if (checkout.status >= 400) throw new Error(`PIXUP didn't take the free order (HTTP ${checkout.status})`);
   for (const id of variantIds) {
     if (!(await fetchPixup3dVariantState(id, session)).purchased) {
       throw new Error("PIXUP took the free order, but the model isn't in your library yet. Try again in a minute.");
