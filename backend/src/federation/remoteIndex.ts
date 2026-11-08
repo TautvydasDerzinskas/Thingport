@@ -365,7 +365,8 @@ type Model = z.infer<typeof modelSchema>;
 type Collection = z.infer<typeof collectionSchema>;
 /** A collection as read, with its models' ids; `allIds` is false when a page of them couldn't be read, so the ones
  *  kept from before stay. */
-type ReadCollection = Collection & { modelIds: string[]; allIds: boolean };
+/** `fetchedAt`: when the page it came on was asked for. */
+type ReadCollection = Collection & { modelIds: string[]; allIds: boolean; fetchedAt: Date };
 
 type Shared = {
   person: Person;
@@ -379,8 +380,6 @@ async function sync(peerId: string): Promise<void> {
   const peer = await prisma.peer.findUnique({ where: { id: peerId } });
   if (!peer || peer.status !== "ACTIVE" || !(await isFederationLive())) return;
   try {
-    // What's read is as of now, or later: a collection shared with people here read since is newer (`storeIn`).
-    const startedAt = new Date();
     const runtime = await getRuntime();
     const own = (url: string | undefined): url is string => Boolean(url) && originOf(url!) === peer.origin;
     const read = async (url: string) => (await runtime.signedLoader(url)).document;
@@ -412,7 +411,7 @@ async function sync(peerId: string): Promise<void> {
         allCollections: collections.all,
       });
     }
-    const written = store(peer, people, own, startedAt);
+    const written = store(peer, people, own);
     storing.set(peer.id, written);
     try {
       await written;
@@ -476,6 +475,7 @@ export async function readCollections(
       return { collections, all: false };
     }
     let body: z.infer<typeof pageSchema>;
+    const fetchedAt = new Date();
     try {
       body = pageSchema.parse(await read(url));
     } catch (err) {
@@ -487,7 +487,8 @@ export async function readCollections(
       if (!parsed.success || !own(parsed.data.id)) continue;
       // One past the cap: not read, so the rest kept from before stay.
       if (collections.length >= MAX_COLLECTIONS) return { collections, all: false };
-      collections.push({ ...parsed.data, ...(await readModelIds(read, parsed.data["thingport:models"]?.first, own)) });
+      const ids = await readModelIds(read, parsed.data["thingport:models"]?.first, own);
+      collections.push({ ...parsed.data, ...ids, fetchedAt });
     }
     url = body.next;
   }
@@ -593,26 +594,16 @@ const markdownOf = (value: { content?: string } | undefined, max: number) =>
   value?.content?.trim() ? value.content.trim().slice(0, max) : null;
 
 /** The index for one partner, made to match what it just said: kept rows keep their ids, so links to them stay. */
-async function store(
-  peer: Peer,
-  people: Shared[],
-  own: (url: string | undefined) => url is string,
-  startedAt: Date,
-): Promise<void> {
+async function store(peer: Peer, people: Shared[], own: (url: string | undefined) => url is string): Promise<void> {
   // All of it or none: a write that fails leaves the last complete read as it was.
-  await prisma.$transaction((tx) => storeIn(tx, peer, people, own, startedAt), {
-    timeout: STORE_TIMEOUT_MS,
-    maxWait: 10_000,
-  });
+  await prisma.$transaction((tx) => storeIn(tx, peer, people, own), { timeout: STORE_TIMEOUT_MS, maxWait: 10_000 });
 }
 
-/** `startedAt`: when what's in `people` began to be read. */
 async function storeIn(
   tx: Prisma.TransactionClient,
   peer: Peer,
   people: Shared[],
   own: (url: string | undefined) => url is string,
-  startedAt: Date,
 ): Promise<void> {
   // Every row written now is marked with it: what's left unmarked is what the partner no longer shares, found without
   // listing what it does (a big partner's ids would pass what one query may take).
@@ -675,22 +666,26 @@ async function storeIn(
         description: markdownOf(collection.source, 5000),
         updatedAt: collection.updated,
         syncedAt: readAt,
+        fetchedAt: collection.fetchedAt,
         // Public there now: for everyone here, not only the people it was once shared with.
         limited: false,
       };
       const modelApIds = collection.modelIds;
-      // Unless it was read since as shared with some people here: that's newer than what this says, so it stays
-      // theirs alone. Checked as it's written, so a read of it finishing meanwhile counts too.
-      const { count: written } = await tx.remoteCollection.updateMany({
-        where: { apId: collection.id, NOT: { limited: true, syncedAt: { gte: startedAt } } },
-        // Its models read only in part: those it had stay.
-        data: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
-      });
-      if (!written) {
+      // Unless it was asked for since, as shared with some people here (sharedCollections.ts): that's newer than this,
+      // so it stays theirs alone. Checked as it's written, so a read of it finishing meanwhile counts too.
+      const write = () =>
+        tx.remoteCollection.updateMany({
+          where: { apId: collection.id, OR: [{ fetchedAt: null }, { fetchedAt: { lte: collection.fetchedAt } }] },
+          // Its models read only in part: those it had stay.
+          data: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
+        });
+      if (!(await write()).count) {
         await tx.remoteCollection.createMany({
           data: { apId: collection.id, ...collectionData, modelApIds },
           skipDuplicates: true,
         });
+        // Made meanwhile by a read of it as shared, asked for earlier than this: this is kept instead.
+        await write();
       }
     }
   }

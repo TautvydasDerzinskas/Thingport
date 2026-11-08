@@ -96,6 +96,10 @@ export async function sharingOf(ownerId: string, collectionId: string): Promise<
   };
 }
 
+// Each statement sees what's committed, so the list counted after the lock is the whole of it, whatever the
+// database's default isolation.
+const COUNTED_AFTER_LOCK = { isolationLevel: "ReadCommitted" } as const;
+
 /** Changes who sees `ownerId`'s collection: its visibility, and who's on its list. The people who can see it now and
  *  couldn't before are told. Refused while social features are off, as nobody else sees anything then. */
 export async function updateSharing(ownerId: string, collectionId: string, patch: SharingPatch): Promise<SharingOut> {
@@ -181,7 +185,7 @@ export async function updateSharing(ownerId: string, collectionId: string, patch
     }
     const people = (await peopleOf([collectionId], tx)).get(collectionId) ?? [];
     return { before, after, people, added, removed };
-  });
+  }, COUNTED_AFTER_LOCK);
   kickSharing();
   await tellGained(result.before, result.after, result.added);
   return {

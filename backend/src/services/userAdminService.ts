@@ -85,6 +85,20 @@ export async function deleteUserModels(actorId: string, targetId: string): Promi
   return models;
 }
 
+/** The account's row, and everything that goes with it in the database. Partners with people on its collections' lists
+ *  are told they're gone, by what's queued in the same transaction. */
+export async function deleteAccountRow(userId: string): Promise<void> {
+  await prisma.$transaction(
+    async (tx) => {
+      await queueAccountGone(tx, userId);
+      await tx.user.delete({ where: { id: userId } });
+    },
+    // However much goes with the account.
+    { timeout: 2 * 60 * 1000 },
+  );
+  kickSharing();
+}
+
 /** Everything of the user's: their models and every file of them, their own folders, then the account, whose
  *  collections, bookmarks, categories and the rest go with it. */
 export async function deleteUser(actorId: string, targetId: string): Promise<{ models: number }> {
@@ -110,16 +124,7 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
   await fs.rm(path.join(STUDIO_ASSETS, `u-${target.id}`), { recursive: true, force: true });
   // Rooms they shared with partners' people: told once they're out of them.
   const rooms = await roomsWithPartnersOf(target.id);
-  // Collections they shared with partners' people: those partners told they're gone, by what's queued with it.
-  await prisma.$transaction(
-    async (tx) => {
-      await queueAccountGone(tx, target.id);
-      await tx.user.delete({ where: { id: target.id } });
-      // However much goes with the account.
-    },
-    { timeout: 2 * 60 * 1000 },
-  );
-  kickSharing();
+  await deleteAccountRow(target.id);
   await afterAccountGone(target.id, rooms).catch((err) => console.error("[federation] Couldn't tell partners:", err));
   // Their models went with the account, so an author only they had is now an author of nothing.
   for (const authorId of authorIds) await deleteAuthorIfOrphaned(authorId);

@@ -1307,6 +1307,9 @@ model RemoteCollection {
   /// Explore, and opened only by them. Kept until its owner's instance says it's gone, or no longer answers for it.
   limited     Boolean                  @default(false)
   viewers     RemoteCollectionViewer[]
+  /// When what's kept of it was asked of its partner, by its index or by a read of it as shared: the later of two
+  /// reads is what's kept, whichever finishes last.
+  fetchedAt   DateTime?
 
   @@index([peerId])
   @@index([personId])

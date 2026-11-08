@@ -99,7 +99,7 @@ async function mediaServed(kind: string, id: string, peer: { id: string }): Prom
 // The stand-in for the owner's instance: what it answers for its collections, people and models.
 const docs = new Map<string, unknown>();
 const people = new Map<string, unknown>();
-// Answers held until a test lets them go (`hold`), by a collection's id or "ruta-collections"; what /api/ap/shared
+// Answers held until a test lets them go (`hold`), by a collection's id, "directory" or "ruta-collections"; what /api/ap/shared
 // lists, on its first page and its second, or that it fails; Rūta's public collections; how often a person was asked.
 const gates = new Map<string, { reached: () => void; open: Promise<void> }>();
 const listedShared: string[] = [];
@@ -174,7 +174,7 @@ beforeAll(async () => {
   });
   // It shares nothing openly unless a test lists someone: what it shared with people here is all there is.
   stand.get("/api/ap/directory", (_req, res) => {
-    res.json({ type: "OrderedCollectionPage", orderedItems: directoryPeople });
+    afterGate("directory", () => res.json({ type: "OrderedCollectionPage", orderedItems: directoryPeople }));
   });
   // Rūta's models: one page, and the next one gone, so they're read only in part.
   stand.get("/api/ap/actors/ruta/models", (req, res) => {
@@ -803,10 +803,97 @@ describe("a partner's person sharing a collection with people here", () => {
       expect(kept.limited).toBe(true);
       expect(kept.viewers.map((viewer) => viewer.userId)).toEqual([bea.id]);
       expect(await remoteCollection(kept.id, 30, 0, carl.id)).toBeNull();
+      // Its models, not shared openly there, are still Bea's alone.
+      const models = await prisma.remoteModel.findMany({ where: { apId: { in: kept.modelApIds } } });
+      expect(models).toHaveLength(2);
+      for (const model of models) {
+        expect(model.limited).toBe(true);
+        expect(await remoteModel(model.id, carl.id)).toBeNull();
+      }
     } finally {
       held.open();
       directoryPeople.length = 0;
       openCollections.length = 0;
+    }
+  });
+
+  /** Rūta in the directory, with `apId`'s collection public among hers. */
+  async function listedOpenly(id: string): Promise<void> {
+    const ruta = await prisma.remotePerson.findUniqueOrThrow({ where: { id: rutaId } });
+    directoryPeople.push({
+      id: ruta.apId,
+      type: "Person",
+      name: "Ruta",
+      preferredUsername: "ruta",
+      "thingport:collections": `${PARTNER}/api/ap/actors/ruta/collections`,
+    });
+    openCollections.push({
+      id: apId(id),
+      type: "thingport:Collection",
+      name: "Hooks",
+      attributedTo: ruta.apId,
+      "thingport:models": { first: { orderedItems: [] } },
+    });
+  }
+
+  it("is public again by a read of the index that asked after it was read as shared", async () => {
+    // The index's read is under way when it's read as shared; made public there, it's asked for after.
+    const held = hold("directory");
+    try {
+      await listedOpenly("c14");
+      const syncing = syncPeer(partnerId);
+      await held.reached;
+      docs.set("c14", doc("c14", [actor(bea.id)]));
+      await sharedCollectionFrom(actorOf(PARTNER), apId("c14"));
+      docs.delete("c14");
+      held.open();
+      await syncing;
+      const kept = await prisma.remoteCollection.findUniqueOrThrow({
+        where: { apId: apId("c14") },
+        include: { viewers: true },
+      });
+      expect(kept).toMatchObject({ limited: false, viewers: [] });
+      expect(await remoteCollection(kept.id, 30, 0, carl.id)).not.toBeNull();
+    } finally {
+      held.open();
+      directoryPeople.length = 0;
+      openCollections.length = 0;
+    }
+  });
+
+  it("stays public when a read of it as shared, asked for before the index's, finishes after", async () => {
+    docs.set("c15", doc("c15", [actor(bea.id)]));
+    const held = hold("c15");
+    const reading = sharedCollectionFrom(actorOf(PARTNER), apId("c15"));
+    try {
+      await held.reached;
+      await listedOpenly("c15");
+      await syncPeer(partnerId);
+    } finally {
+      held.open();
+      directoryPeople.length = 0;
+      openCollections.length = 0;
+    }
+    await reading;
+    const kept = await prisma.remoteCollection.findUniqueOrThrow({
+      where: { apId: apId("c15") },
+      include: { viewers: true },
+    });
+    expect(kept).toMatchObject({ limited: false, viewers: [] });
+  });
+
+  it("takes nothing while social features are off here, and tells nobody", async () => {
+    docs.set("c16", doc("c16", [actor(bea.id)]));
+    listedShared.push(apId("c16"));
+    const told = await prisma.notification.count({ where: { userId: bea.id, type: "share" } });
+    await setSocialSettings({ enabled: false });
+    try {
+      await refreshShared(partnerId);
+      expect(await prisma.remoteCollection.count({ where: { apId: apId("c16") } })).toBe(0);
+      expect(await prisma.notification.count({ where: { userId: bea.id, type: "share" } })).toBe(told);
+    } finally {
+      await setSocialSettings({ enabled: true });
+      listedShared.splice(listedShared.indexOf(apId("c16")), 1);
     }
   });
 

@@ -226,6 +226,8 @@ function oneAtATime(apId: string, work: () => Promise<void>): Promise<void> {
 export async function refreshShared(peerId: string): Promise<void> {
   const peer = await prisma.peer.findUnique({ where: { id: peerId } });
   if (!peer || peer.status !== "ACTIVE") return;
+  // Nothing's taken while social features are off, as an Update isn't (`sharedCollectionFrom`): read once they're on.
+  if (!(await getSocialSettings()).enabled) return;
   const rows = await prisma.remoteCollection.findMany({
     where: { peerId, limited: true },
     select: { apId: true },
@@ -276,6 +278,9 @@ async function sharedListOf(peer: Peer): Promise<{ urls: string[]; error: Error 
   return { urls: urls.slice(0, SHARED_LIST_MAX), error: null };
 }
 
+/** A read of a collection that something asked for later wrote first: nothing of it is kept. */
+class Superseded extends Error {}
+
 /** Reads one collection `peer` says is shared with people here and keeps it as it says, with its models; or lets it
  *  go once it's no longer shared with anyone here (or isn't there). One read of a collection at a time. */
 function readShared(peer: Peer, apId: string): Promise<void> {
@@ -311,68 +316,87 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
   const models = own(items) ? await readModels(read, items, own) : { models: [], all: false };
   const theirs = models.models.filter((model) => model.attributedTo === doc.attributedTo.id);
 
-  const added = await prisma.$transaction(
-    async (tx) => {
-      const kept = await tx.remoteCollection.findUnique({
-        where: { apId },
-        select: { id: true, peerId: true, modelApIds: true, viewers: { select: { userId: true } } },
-      });
-      if (kept && kept.peerId !== peer.id) return null;
-      // Its owner too only if all of this is kept (the check below).
-      const owner = await personOn(
-        peer,
-        {
-          id: doc.attributedTo.id,
-          name: doc.attributedTo.name ?? null,
-          preferredUsername: doc.attributedTo.preferredUsername ?? null,
-          icon: doc.attributedTo.icon,
-        },
-        tx,
-      );
-      if (!owner) return null;
-      for (const model of theirs) {
-        const data = { peerId: peer.id, personId: owner.id, ...remoteModelData(model, own), syncedAt: readAt };
-        // One also shared openly there stays as its index has it: not limited.
-        await tx.remoteModel.upsert({
-          where: { apId: model.id },
-          create: { apId: model.id, ...data, limited: true },
-          update: data,
-          select: { id: true },
+  const added = await prisma
+    .$transaction(
+      async (tx) => {
+        const kept = await tx.remoteCollection.findUnique({
+          where: { apId },
+          select: { id: true, peerId: true, modelApIds: true, fetchedAt: true, viewers: { select: { userId: true } } },
         });
-      }
-      const data = {
-        peerId: peer.id,
-        personId: owner.id,
-        name: (doc.name?.trim() || "Untitled").slice(0, NAME_MAX),
-        description: doc.source?.content?.trim().slice(0, DESCRIPTION_MAX) || null,
-        updatedAt: doc.updated,
-        syncedAt: readAt,
-        limited: true,
-        // Its models read only in part: those it had stay, beside those read now.
-        modelApIds: models.all
-          ? theirs.map((model) => model.id)
-          : [...new Set([...theirs.map((model) => model.id), ...(kept?.modelApIds ?? [])])],
-      };
-      const saved = await tx.remoteCollection.upsert({
-        where: { apId },
-        create: { apId, ...data },
-        update: data,
-        select: { id: true },
-      });
-      const viewers = users.map((user) => user.id);
-      const had = new Set(kept?.viewers.map((viewer) => viewer.userId) ?? []);
-      await tx.remoteCollectionViewer.deleteMany({ where: { collectionId: saved.id, userId: { notIn: viewers } } });
-      await tx.remoteCollectionViewer.createMany({
-        data: viewers.map((userId) => ({ collectionId: saved.id, userId })),
-        skipDuplicates: true,
-      });
-      await holdPartner(tx, peer.id);
-      return { id: saved.id, name: data.name, owner, viewers: viewers.filter((userId) => !had.has(userId)) };
-    },
-    { timeout: WRITE_TIMEOUT_MS, maxWait: 10_000 },
-  );
+        if (kept && kept.peerId !== peer.id) return null;
+        // Asked for since by its partner's index, public there by then: that's newer, and stays.
+        if (kept?.fetchedAt && kept.fetchedAt > readAt) return null;
+        // Its owner too only if all of this is kept (the check below).
+        const owner = await personOn(
+          peer,
+          {
+            id: doc.attributedTo.id,
+            name: doc.attributedTo.name ?? null,
+            preferredUsername: doc.attributedTo.preferredUsername ?? null,
+            icon: doc.attributedTo.icon,
+          },
+          tx,
+        );
+        if (!owner) return null;
+        for (const model of theirs) {
+          const data = { peerId: peer.id, personId: owner.id, ...remoteModelData(model, own), syncedAt: readAt };
+          // One also shared openly there stays as its index has it: not limited.
+          await tx.remoteModel.upsert({
+            where: { apId: model.id },
+            create: { apId: model.id, ...data, limited: true },
+            update: data,
+            select: { id: true },
+          });
+        }
+        const data = {
+          peerId: peer.id,
+          personId: owner.id,
+          name: (doc.name?.trim() || "Untitled").slice(0, NAME_MAX),
+          description: doc.source?.content?.trim().slice(0, DESCRIPTION_MAX) || null,
+          updatedAt: doc.updated,
+          syncedAt: readAt,
+          fetchedAt: readAt,
+          limited: true,
+          // Its models read only in part: those it had stay, beside those read now.
+          modelApIds: models.all
+            ? theirs.map((model) => model.id)
+            : [...new Set([...theirs.map((model) => model.id), ...(kept?.modelApIds ?? [])])],
+        };
+        // Checked again as it's written: a read of the index that was asked later may have finished meanwhile. The
+        // collection after its models, as the index writes them, so neither waits on a row the other holds.
+        const write = () =>
+          tx.remoteCollection.updateMany({
+            where: { apId, OR: [{ fetchedAt: null }, { fetchedAt: { lte: readAt } }] },
+            data,
+          });
+        let { count } = await write();
+        if (!count && !kept) {
+          await tx.remoteCollection.createMany({ data: { apId, ...data }, skipDuplicates: true });
+          ({ count } = await write());
+        }
+        if (!count) throw new Superseded();
+        const saved = await tx.remoteCollection.findUniqueOrThrow({ where: { apId }, select: { id: true } });
+        const viewers = users.map((user) => user.id);
+        const had = new Set(kept?.viewers.map((viewer) => viewer.userId) ?? []);
+        await tx.remoteCollectionViewer.deleteMany({ where: { collectionId: saved.id, userId: { notIn: viewers } } });
+        await tx.remoteCollectionViewer.createMany({
+          data: viewers.map((userId) => ({ collectionId: saved.id, userId })),
+          skipDuplicates: true,
+        });
+        await holdPartner(tx, peer.id);
+        return { id: saved.id, name: data.name, owner, viewers: viewers.filter((userId) => !had.has(userId)) };
+      },
+      { timeout: WRITE_TIMEOUT_MS, maxWait: 10_000 },
+    )
+    .catch((err: unknown) => {
+      if (err instanceof Superseded) return null;
+      throw err;
+    });
   await pruneLimitedModels(peer.id);
-  if (added?.viewers.length) await tell(added.viewers, added.owner, added.name, added.id);
+  // Not while social features are off: what it links to isn't there to open.
+  if (added?.viewers.length && (await getSocialSettings()).enabled) {
+    await tell(added.viewers, added.owner, added.name, added.id);
+  }
 }
 
 /** Throws unless `peerId` is still an ACTIVE partner, and keeps it one until `tx` is done: a block waits for it, then

@@ -233,9 +233,10 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   collection the partner's people shared with people here, so one whose `Update` never got here (social features off
   here for longer than delivery keeps trying) still turns up; a list that can't be read is the partner's `syncError`.
   Reads and deletions of one collection run one at a time, from fetching to writing, so an older read can't put back
-  someone a newer one took off. A read of the index begun before a shared read doesn't make that collection public
-  again, and a read writes nothing, its owner included, once the partner is blocked: it holds the partner's row
-  (`FOR SHARE`, last) until it's written, so a block waits for it and then forgets it all.
+  someone a newer one took off. Each kept collection notes when it was asked for (`RemoteCollection.fetchedAt`), by
+  the index or as shared, and the later of two reads is what's kept, whichever finishes last. A read writes nothing,
+  its owner included, once the partner is blocked: it holds the partner's row (`FOR SHARE`, last) until it's written,
+  so a block waits for it and then forgets it all. Nothing is refreshed while social features are off here.
 - **Pictures.** The proxy serves a partner's picture only while something kept here names it: a person's avatar or
   cover, or a model's picture (`RemoteModel.images`, indexed). One only of models kept for shared collections goes
   only to someone who may see one of those models, whoever has its address, and is never cached by the browser; once
