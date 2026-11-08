@@ -28,6 +28,18 @@ describe("a page's print profiles next to the library's model", () => {
     expect(missingOf(() => [], [])).toBeNull();
   });
 
+  it("reads the page's profiles to tell which the model lacks", async () => {
+    const loadProfiles = vi.fn(async () => page);
+    contentModules.makerworld = { loadProfiles };
+    const url = "https://makerworld.com/en/models/1";
+    expect(await loadMissingProfiles("makerworld", url, ["2"])).toEqual({
+      total: 4,
+      all: ["1", "3", "4"],
+      designer: ["1"],
+    });
+    expect(loadProfiles).toHaveBeenCalledWith(url);
+  });
+
   it("can't tell from an instance that doesn't say which the model has", async () => {
     const loadProfiles = vi.fn(async () => page);
     contentModules.makerworld = { loadProfiles };

@@ -311,6 +311,19 @@ describe("the single-model panel", () => {
       expect(last()).toContain(`href="${INSTANCE}/models/print1"`);
     });
 
+    it("names the profile in each link, even the one a link without a profile would bring", async () => {
+      // MakerWorld's page link may name no profile: then the instance takes the model's default, which it has.
+      answers.IMPORT_SINGLE = { id: "print1", import_outcome: "profile_added" };
+      contentModules.makerworld = {
+        loadProfiles: async () => (scope: string) => (scope === "url" ? ["1"] : ["1", "2"]),
+      };
+      atProvider("makerworld", { canQueue: false, importQueue: false }, held("imported", ["2"]));
+      await loadSingleItem();
+      await click("import");
+
+      expect(importedUrls()).toEqual(["https://example.test/makerworld#profileId-1"]);
+    });
+
     it("queues the missing ones as every profile, which the instance adds without those it has", async () => {
       answers.QUEUE_IMPORT = { job_id: "job1", item_id: "item1", duplicate: false, waiting: 1 };
       await openInLibrary(held("imported", ["1"]), { canQueue: true, importQueue: true });

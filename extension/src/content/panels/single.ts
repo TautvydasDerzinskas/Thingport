@@ -486,8 +486,9 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
         ? await resolveMakerworldProfileDownload(url, instanceId).catch(nullUnlessBlocking)
         : null;
       const print = await request("IMPORT_SINGLE", {
-        // MakerWorld's page link carries its profile; the others' is named, so a model already in the library gets it.
-        url: instanceId === ids[0] && makerworld ? url : profileUrl(classification.provider, url, instanceId),
+        // Named even where it's the page's own: a MakerWorld link naming none means the default profile to the
+        // instance, which a model already in the library may have.
+        url: profileUrl(classification.provider, url, instanceId),
         collectionId,
         resolved,
         title,
