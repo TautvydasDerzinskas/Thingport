@@ -105,8 +105,8 @@ export async function signingPartner(req: ExpressRequest): Promise<Peer | null> 
   return peer;
 }
 
-const actorUrl = (runtime: Runtime, userId: string) => `${runtime.origin}${AP_PREFIX}/actors/${userId}`;
-const mediaUrl = (runtime: Runtime, kind: string, id: string, version?: number | string) =>
+const actorUrl = (runtime: Pick<Runtime, "origin">, userId: string) => `${runtime.origin}${AP_PREFIX}/actors/${userId}`;
+const mediaUrl = (runtime: Pick<Runtime, "origin">, kind: string, id: string, version?: number | string) =>
   `${runtime.origin}${AP_PREFIX}/media/${kind}/${id}${version !== undefined ? `?v=${version}` : ""}`;
 const markdown = (content: string | null) => (content ? { content, mediaType: "text/markdown" } : undefined);
 
@@ -209,7 +209,7 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
 
 /** Where a partner gets someone's avatar, versioned so a new one gets a new address: a drawn one by what's drawn. Null
  *  for none. */
-export async function avatarIcon(runtime: Runtime, userId: string): Promise<string | null> {
+export async function avatarIcon(runtime: Pick<Runtime, "origin">, userId: string): Promise<string | null> {
   const avatar = await resolveAvatar(userId).catch(() => null);
   const version =
     avatar?.kind === "file"
@@ -442,7 +442,17 @@ export function parseModelsCursor(value: string): ModelsCursor | null {
  *  for someone who shares none. Pages go on by the last model in them, so each can be as long as fits. */
 export async function modelsPage(userId: string, after: ModelsCursor | null = null): Promise<unknown | null> {
   const runtime = await getRuntime();
-  const where = await sharedModelsWhere(userId);
+  return modelsPageOf(runtime, userId, await sharedModelsWhere(userId), `${actorUrl(runtime, userId)}/models`, after);
+}
+
+/** A page of `userId`'s models matching `where`, at `base`: the latest first, as many as fit a page. Null for none. */
+async function modelsPageOf(
+  runtime: Runtime,
+  userId: string,
+  where: Prisma.PrintWhereInput,
+  base: string,
+  after: ModelsCursor | null,
+): Promise<unknown | null> {
   const total = await prisma.print.count({ where });
   if (!total) return null;
   const prints = await prisma.print.findMany({
@@ -462,7 +472,6 @@ export async function modelsPage(userId: string, after: ModelsCursor | null = nu
       CATEGORY_PATH_MAX,
     ),
   ]);
-  const base = `${actorUrl(runtime, userId)}/models`;
   const items = prints.slice(0, MODELS_PAGE).map((print) => modelDoc(runtime, userId, print, sharedAt, refs));
   // As many as fit, one at least (none is near the size alone, cut as it is).
   const orderedItems: unknown[] = [];
@@ -484,7 +493,8 @@ export async function modelsPage(userId: string, after: ModelsCursor | null = nu
   };
 }
 
-const collectionUrl = (runtime: Runtime, id: string) => `${runtime.origin}${AP_PREFIX}/collections/${id}`;
+const collectionUrl = (runtime: Pick<Runtime, "origin">, id: string) =>
+  `${runtime.origin}${AP_PREFIX}/collections/${id}`;
 
 /** A page of a collection's models by their ids, from `offset`, the latest filed first. */
 function idsPage(runtime: Runtime, collectionId: string, offset: number, printIds: string[], total: number) {
@@ -614,6 +624,112 @@ export async function collectionModelsPage(collectionId: string, offset: number)
   return { "@context": CONTEXT, ...page };
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Collections shared with partners' people (federation/sharedCollections.ts): only the partner they're on reads one,
+// and only while it's shared with someone there.
+
+/** A collection its owner shared with people on `peerId`, as that partner reads it: its name, its owner, who on that
+ *  partner it's shared with (`to`, nobody elsewhere) and where its models are (`thingport:items`). Null unless it's
+ *  shared (SHARED) with someone there. */
+export async function sharedCollectionObject(
+  at: Pick<Runtime, "origin">,
+  collectionId: string,
+  peerId: string,
+  db: Pick<typeof prisma, "collection" | "collectionShare" | "user"> = prisma,
+): Promise<Record<string, unknown> | null> {
+  const collection = await db.collection.findFirst({
+    where: { id: collectionId, visibility: "SHARED" },
+    select: { id: true, name: true, description: true, updatedAt: true, userId: true },
+  });
+  if (!collection) return null;
+  const shares = await db.collectionShare.findMany({
+    where: { collectionId, remotePerson: { peerId } },
+    orderBy: { createdAt: "asc" },
+    select: { remotePerson: { select: { apId: true } } },
+  });
+  if (!shares.length) return null;
+  const owner = await db.user.findUnique({
+    where: { id: collection.userId },
+    select: { displayName: true, username: true },
+  });
+  const icon = await avatarIcon(at, collection.userId);
+  const url = collectionUrl(at, collection.id);
+  return {
+    id: url,
+    type: "thingport:Collection",
+    name: collection.name.slice(0, COLLECTION_NAME_MAX),
+    attributedTo: {
+      id: actorUrl(at, collection.userId),
+      type: "Person",
+      name: owner?.displayName.slice(0, NAME_MAX) ?? "Someone",
+      preferredUsername: owner?.username ?? undefined,
+      icon: icon ? { type: "Image", url: icon } : undefined,
+    },
+    source: markdown(collection.description?.slice(0, COLLECTION_DESCRIPTION_MAX) ?? null),
+    updated: collection.updatedAt.toISOString(),
+    to: shares.flatMap((share) => (share.remotePerson ? [share.remotePerson.apId] : [])),
+    "thingport:items": `${url}/items`,
+  };
+}
+
+/** The document at a shared collection's address, for the partner it's shared with people on; null otherwise. */
+export async function sharedCollectionDoc(collectionId: string, peer: Peer): Promise<unknown | null> {
+  const object = await sharedCollectionObject(await getRuntime(), collectionId, peer.id);
+  return object && { "@context": CONTEXT, ...object };
+}
+
+/** A page of a shared collection's models, whole, as a person's models page has them: for the partner it's shared with
+ *  people on; null otherwise, and for one with none. */
+export async function sharedCollectionItems(
+  collectionId: string,
+  peer: Peer,
+  after: ModelsCursor | null,
+): Promise<unknown | null> {
+  const runtime = await getRuntime();
+  if (!(await sharedCollectionObject(runtime, collectionId, peer.id))) return null;
+  const collection = await prisma.collection.findUnique({ where: { id: collectionId }, select: { userId: true } });
+  if (!collection) return null;
+  return modelsPageOf(
+    runtime,
+    collection.userId,
+    { userId: collection.userId, collectionItems: { some: { collectionId } } },
+    `${collectionUrl(runtime, collectionId)}/items`,
+    after,
+  );
+}
+
+/** Someone here by their username, for a partner whose person types their handle to share a collection with them:
+ *  their name and avatar, nothing more. Null for no one of that name. */
+export async function personNamed(username: string): Promise<unknown | null> {
+  const user = await prisma.user.findUnique({
+    where: { username: username.toLowerCase() },
+    select: { id: true, displayName: true, username: true },
+  });
+  if (!user) return null;
+  const runtime = await getRuntime();
+  const icon = await avatarIcon(runtime, user.id);
+  return {
+    "@context": CONTEXT,
+    id: actorUrl(runtime, user.id),
+    type: "Person",
+    name: user.displayName.slice(0, NAME_MAX),
+    preferredUsername: user.username ?? undefined,
+    icon: icon ? { type: "Image", url: icon } : undefined,
+  };
+}
+
+/** Someone here who shared a collection with people on `peerId`, or whom someone there shared one with: their avatar
+ *  is that partner's to show beside it. */
+async function sharingWith(userId: string, peerId: string): Promise<boolean> {
+  const [shares, viewing] = await Promise.all([
+    prisma.collection.count({
+      where: { userId, visibility: "SHARED", shares: { some: { remotePerson: { peerId } } } },
+    }),
+    prisma.remoteCollectionViewer.count({ where: { userId, collection: { peerId, limited: true } } }),
+  ]);
+  return shares + viewing > 0;
+}
+
 /** A picture of something shared, for a partner to show its people: a sharer's avatar or uploaded cover, or a shared
  *  model's picture or plate thumbnail. Answers 404 for anything else. */
 export async function sendMedia(res: Response, kind: string, id: string, peer?: Peer | null): Promise<void> {
@@ -629,8 +745,9 @@ export async function sendMedia(res: Response, kind: string, id: string, peer?: 
   const sharesSomething = async (userId: string) => (await sharers()).some((row) => row.userId === userId);
 
   if (kind === "avatar" || kind === "cover") {
-    const chatting = kind === "avatar" && peer ? await inChatWith(id, peer.id) : false;
-    if (!chatting && !(await sharesSomething(id))) return notFound();
+    const known =
+      kind === "avatar" && peer ? (await inChatWith(id, peer.id)) || (await sharingWith(id, peer.id)) : false;
+    if (!known && !(await sharesSomething(id))) return notFound();
     if (kind === "avatar") {
       const avatar = await resolveAvatar(id).catch(() => null);
       if (avatar?.kind === "file") return send(avatar.path, "image/webp");
@@ -653,7 +770,7 @@ export async function sendMedia(res: Response, kind: string, id: string, peer?: 
       where: { id },
       select: { print: { select: { id: true, userId: true, assetsPath: true } } },
     });
-    if (!image || !(await isShared(image.print))) return notFound();
+    if (!image || !(await isShared(image.print, peer))) return notFound();
     return send(previewImagePath(id, image.print.assetsPath), "image/jpeg");
   }
   if (kind === "plate") {
@@ -661,7 +778,7 @@ export async function sendMedia(res: Response, kind: string, id: string, peer?: 
       where: { id },
       select: { print: { select: { id: true, userId: true, assetsPath: true } } },
     });
-    if (!plate || !(await isShared(plate.print))) return notFound();
+    if (!plate || !(await isShared(plate.print, peer))) return notFound();
     return send(plateThumbPath(id, plate.print.assetsPath), "image/jpeg");
   }
   if (kind === "description") {
@@ -678,13 +795,25 @@ export async function sendMedia(res: Response, kind: string, id: string, peer?: 
   notFound();
 }
 
-async function isShared(print: { id: string; userId: string }): Promise<boolean> {
-  return (await prisma.print.count({ where: { id: print.id, AND: [await sharedModelsWhere(print.userId)] } })) > 0;
+/** A model of this instance's that `peer`'s people may have: shared on Explore, or in a collection shared with someone
+ *  on that partner. */
+async function isShared(print: { id: string; userId: string }, peer?: Peer | null): Promise<boolean> {
+  const sharedThere: Prisma.PrintWhereInput[] = peer
+    ? [
+        {
+          collectionItems: {
+            some: { collection: { visibility: "SHARED", shares: { some: { remotePerson: { peerId: peer.id } } } } },
+          },
+        },
+      ]
+    : [];
+  const where: Prisma.PrintWhereInput = { id: print.id, OR: [await sharedModelsWhere(print.userId), ...sharedThere] };
+  return (await prisma.print.count({ where })) > 0;
 }
 
 /** A file of a shared model, for a partner's people to download, open or copy: a plate, or one kept beside it. Answers
  *  404 for anything not shared. */
-export async function sendSharedFile(res: Response, kind: string, id: string): Promise<void> {
+export async function sendSharedFile(res: Response, kind: string, id: string, peer?: Peer | null): Promise<void> {
   const notFound = () => void res.status(404).json({ error: "Not found" });
   const found =
     kind === "plate"
@@ -704,7 +833,7 @@ export async function sendSharedFile(res: Response, kind: string, id: string): P
             select: { filename: true, mime: true, storagePath: true, print: { select: { id: true, userId: true } } },
           })
         : null;
-  if (!found || !(await isShared(found.print))) return notFound();
+  if (!found || !(await isShared(found.print, peer))) return notFound();
   const file =
     kind === "plate"
       ? resolvePlateFilePath({

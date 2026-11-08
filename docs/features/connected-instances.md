@@ -116,6 +116,7 @@ Partners see exactly what anyone signed in on your instance could see of someone
 | Public collections, and the models in them                                   | Private collections, and the rest of everyone's library |
 | Models made public under **My models**                                       | Settings, API tokens, provider sign-ins                 |
 | Messages in chats with partners' people                                      | Chats with nobody from that partner in them             |
+| Collections shared with partners' people, to their instance only             | Who else a collection is shared with, elsewhere         |
 | Handles, `name@this-instance`                                                | Your instance's users list, logs and stats              |
 
 ### Each instance keeps a copy

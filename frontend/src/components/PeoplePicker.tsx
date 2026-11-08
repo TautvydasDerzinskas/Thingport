@@ -30,6 +30,8 @@ type Props<P extends PickerPerson> = {
   search: (query: string) => Promise<P[]>;
   /** Nothing can be picked or taken off meanwhile, as while what's picked is being saved. */
   disabled?: boolean;
+  /** Behind the search field's `?`, when what it finds isn't as a chat's search finds it. */
+  help?: string;
   /** Picks one, as starting a chat does; or with `selected`, ticks any number. */
   onPick?: (person: P) => void;
   selected?: P[];
@@ -50,6 +52,7 @@ const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", c
 export default function PeoplePicker<P extends PickerPerson>({
   search,
   disabled = false,
+  help,
   onPick,
   selected,
   onSelectedChange,
@@ -115,7 +118,7 @@ export default function PeoplePicker<P extends PickerPerson>({
           ),
           endAdornment: (
             <InputAdornment position="end">
-              <HelpTip text={t("chats.searchPeopleHelp")} />
+              <HelpTip text={help ?? t("chats.searchPeopleHelp")} />
             </InputAdornment>
           ),
         }}

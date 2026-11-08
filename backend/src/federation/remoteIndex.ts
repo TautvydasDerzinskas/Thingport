@@ -417,6 +417,9 @@ async function sync(peerId: string): Promise<void> {
     } finally {
       if (storing.get(peer.id) === written) storing.delete(peer.id);
     }
+    // Then what its people shared with people here: renamed, added to, or no longer shared.
+    const { refreshShared } = await import("./sharedCollections");
+    await refreshShared(peer.id);
   } catch (err) {
     const message = (err as Error).message || "Couldn't read what it shares";
     console.warn(`[federation] Couldn't read what ${peer.origin} shares:`, message);
@@ -636,7 +639,14 @@ async function storeIn(
     if (!allCollections) partlyCollections.push(saved.id);
     for (const model of models) {
       if (model.attributedTo !== person.id) continue;
-      const modelData = { peerId: peer.id, personId: saved.id, ...remoteModelData(model, own), syncedAt: readAt };
+      // Shared openly there: on Explore, whatever collection shared with people here also holds it.
+      const modelData = {
+        peerId: peer.id,
+        personId: saved.id,
+        ...remoteModelData(model, own),
+        syncedAt: readAt,
+        limited: false,
+      };
       await tx.remoteModel.upsert({
         where: { apId: model.id },
         create: { apId: model.id, ...modelData },
@@ -653,26 +663,56 @@ async function storeIn(
         description: markdownOf(collection.source, 5000),
         updatedAt: collection.updated,
         syncedAt: readAt,
+        // Public there now: for everyone here, not only the people it was once shared with.
+        limited: false,
       };
       const modelApIds = collection.modelIds;
       await tx.remoteCollection.upsert({
         where: { apId: collection.id },
         create: { apId: collection.id, ...collectionData, modelApIds },
         // Its models read only in part: those it had stay.
-        update: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
+        update: {
+          ...(collection.allIds ? { ...collectionData, modelApIds } : collectionData),
+          viewers: { deleteMany: {} },
+        },
         select: { id: true },
       });
     }
   }
-  // Whatever it no longer shares goes.
+  // Whatever it no longer shares goes, except what was sent to people here rather than listed: a collection shared
+  // with them goes when its owner's instance says so (sharedCollections.ts), and a model no longer shared openly but
+  // still in one stays for them.
   const stale = { peerId: peer.id, syncedAt: { lt: readAt } };
-  await tx.remoteCollection.deleteMany({ where: { ...stale, personId: { notIn: partlyCollections } } });
-  await tx.remoteModel.deleteMany({ where: { ...stale, personId: { notIn: partly } } });
-  // Someone no longer listed whom a chat still names is kept for it, off Explore.
-  const inChats = { OR: [{ chats: { some: {} } }, { messages: { some: {} } }] } satisfies Prisma.RemotePersonWhereInput;
+  await tx.remoteCollection.deleteMany({ where: { ...stale, limited: false, personId: { notIn: partlyCollections } } });
+  await tx.$executeRaw`
+    UPDATE "RemoteModel" m SET limited = true
+    WHERE m."peerId" = ${peer.id} AND m."syncedAt" < ${readAt} AND NOT m.limited
+      AND EXISTS (
+        SELECT 1 FROM "RemoteCollection" c
+        WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
+      )`;
+  await tx.remoteModel.deleteMany({ where: { ...stale, limited: false, personId: { notIn: partly } } });
+  // Someone no longer listed whom a chat, a collection shared with people here, or a collection here shared with them
+  // still names is kept for it, off Explore.
+  const named = {
+    OR: [
+      { chats: { some: {} } },
+      { messages: { some: {} } },
+      { collections: { some: { limited: true } } },
+      { collectionShares: { some: {} } },
+    ],
+  } satisfies Prisma.RemotePersonWhereInput;
   // Their cover goes with it, so the picture kept of it is pruned: it's not theirs to show any more.
-  await tx.remotePerson.updateMany({ where: { ...stale, ...inChats }, data: { listed: false, coverUrl: null } });
-  await tx.remotePerson.deleteMany({ where: { ...stale, chats: { none: {} }, messages: { none: {} } } });
+  await tx.remotePerson.updateMany({ where: { ...stale, ...named }, data: { listed: false, coverUrl: null } });
+  await tx.remotePerson.deleteMany({
+    where: {
+      ...stale,
+      chats: { none: {} },
+      messages: { none: {} },
+      collections: { none: { limited: true } },
+      collectionShares: { none: {} },
+    },
+  });
   // Someone this instance's people had direct messages with, back after a disconnect: in those chats again.
   await tx.$executeRaw`
     INSERT INTO "ChatRemoteMember" ("chatId", "personId")

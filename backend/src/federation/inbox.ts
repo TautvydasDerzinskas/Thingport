@@ -13,6 +13,7 @@ import {
   type IncomingPerson,
 } from "./chats";
 import { onAcceptReceived, onDisconnectReceived, onFollowReceived, onRejectReceived } from "./peers";
+import { sharedCollectionFrom, sharedCollectionGoneFrom } from "./sharedCollections";
 
 /** What partners send, already verified by Fedify against the key compared when connecting (a stranger's activity
  *  never gets this far: see edge.ts; a key other than that one isn't loaded: see pinning.ts). Every change to who
@@ -60,6 +61,11 @@ export function registerInbox(listeners: InboxListenerSetters<void>, vocab: type
       if (placed) await messageArrived({ ...placed, peerId: placed.peer.id, hostedHere: false });
     })
     .on(vocab.Update, async (ctx, update) => {
+      // A collection shared with people here: only its address is taken from this; it's read from there.
+      if (update.actorId && update.objectId && /\/collections\/[^/]+$/.test(update.objectId.pathname)) {
+        await sharedCollectionFrom(update.actorId, update.objectId.href);
+        return;
+      }
       const object = await update.getObject(embedded(ctx)).catch(() => null);
       if (!update.actorId || !(object instanceof vocab.Group) || !object.id) return;
       const group: IncomingGroup = {
@@ -78,6 +84,11 @@ export function registerInbox(listeners: InboxListenerSetters<void>, vocab: type
     })
     .on(vocab.Delete, async (_ctx, deletion) => {
       if (!deletion.actorId || !deletion.objectId) return;
+      // A collection shared with people here, no longer: see sharedCollections.ts. Never a chat's, whatever's kept.
+      if (/\/collections\/[^/]+$/.test(deletion.objectId.pathname)) {
+        await sharedCollectionGoneFrom(deletion.actorId, deletion.objectId.href);
+        return;
+      }
       const gone = await deletionFrom(deletion.actorId, deletion.objectId.href);
       if (gone?.kind === "room") await chatGoneFor(gone.chatId, gone.members);
       if (gone?.kind === "message") {

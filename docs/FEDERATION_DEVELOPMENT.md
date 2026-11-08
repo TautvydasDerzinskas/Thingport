@@ -51,6 +51,7 @@ body exactly as it came), plus the admin API in `routes/federation.ts`.
 | `remoteFiles.ts`                           | Partners' models' files through this instance: streamed to a viewer, or fetched whole to zip or copy. Never kept.                                                                                                                                   |
 | `remoteCopy.ts`                            | A partner's model copied into a viewer's library in the background, file by file, marked with where it came from.                                                                                                                                   |
 | `chats.ts`                                 | Chats with partners' people: sending messages, rooms and deletions, and checking what partners send.                                                                                                                                                |
+| `sharedCollections.ts`                     | Collections shared with partners' people: telling their instances, keeping what's shared with people here, and finding someone by their handle.                                                                                                     |
 | `links.ts`                                 | Links: how an instance that can't be reached keeps a partner that can. The serving side's `/api/ap/link` and its replies, and the side behind NAT keeping its links open and running what comes down them.                                          |
 | `socialSurfaces.ts`                        | How each social route crosses to partners.                                                                                                                                                                                                          |
 
@@ -203,6 +204,38 @@ Chats reach partners' people through `chats.ts`; storing what arrives and notify
 - Disconnecting or blocking a partner keeps chats with its people (each message keeps the sender as it came,
   `remoteSenderCard`) and drops the copies of its rooms; once it's connected again and its people are read, they're
   back in those direct chats.
+
+### Shared collections
+
+A collection its owner shared with some people (`Collection.visibility` `SHARED`, a `CollectionShare` per person) can
+name people on partners too (`CollectionShare.remotePersonId`). What partners read of this instance is one index for all
+their people, so such a collection can't go in it: it's sent, through `sharedCollections.ts`.
+
+- **Telling a partner.** Each change to who sees it (people added or taken off, made shared, private or public, renamed,
+  deleted) queues, in the change's own transaction, what each partner with people on its list needs to hear: `Update`
+  of the collection, addressed (`to`) to its people there, or `Delete` once none of them may see it. Ordered per
+  collection (`orderKey`), so a `Delete` never overtakes the `Update` before it. Someone elsewhere is added only while
+  connected instances are on and their partner is connected (`federation_off`, `partner_unavailable`); taking someone
+  off, or any other change, is queued all the same and sent once they're on again.
+- **What it reads.** The partner takes only the address from the activity and reads the collection from there, signed:
+  `/api/ap/collections/<id>` (`sharedCollectionObject` in `publish.ts`), its name, owner, who on that partner it's shared
+  with (`to`, nobody elsewhere) and `thingport:items`, `/api/ap/collections/<id>/items`, its models whole, as a person's
+  models page has them. Both answer only the partner it's shared with someone on, only while it's `SHARED`; so do its
+  models' files and pictures, and its owner's avatar.
+- **Keeping it.** The partner keeps it as a `RemoteCollection` with `limited`, its people here as `viewers`, and its models
+  as `RemoteModel`s with `limited` unless they're shared openly there too. Limited rows are never on Explore's public
+  rows or a person's page, and opening one, its models or their files takes being among its viewers
+  (`canSeeRemoteModel`). A person named newly is notified. The read of the partner's index leaves them alone (a model
+  no longer listed but still in one becomes limited), and their owner is kept while they name them. After each read of
+  the index, every collection kept this way is read again: what's filed in it since, a new name, or a `404` that means
+  it's no longer shared with anyone here.
+- **Trust.** This instance can't check who on the partner opens it: the partner shows it to the people named, as it
+  does a direct message. The form's `?` says so.
+- **Finding someone.** The people picker lists partners' people the index knows, and someone by exact handle
+  (`name@host`, `personByHandle`): asked of that partner at `/api/ap/people/<username>`, only when the host is an
+  `ACTIVE` partner's, and not again for a minute after nobody answered to it. Such a person is kept unlisted.
+- Disconnecting or blocking a partner removes its people, and with them their places on lists here and what was shared
+  with people here.
 
 ### Links: when one side can't be reached
 

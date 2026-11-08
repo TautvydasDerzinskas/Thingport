@@ -265,6 +265,20 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
 
   const sharedWithYou = [...(overview.shared_with_you ?? []), ...moreShared.items];
   const sharedTotal = moreShared.total ?? overview.shared_with_you_total ?? sharedWithYou.length;
+  // This instance's and partners' people's together, the latest shared with the user first.
+  const sharedEntries = newestFirst(
+    [
+      ...sharedWithYou.map((collection) => ({
+        at: sharedAt?.collections[collection.id],
+        node: collectionCard(collection),
+      })),
+      ...(elsewhere?.shared_with_you ?? []).map((collection) => ({
+        at: collection.shared_at,
+        node: <RemoteCollectionCardView key={collection.id} collection={collection} />,
+      })),
+    ],
+    Number.POSITIVE_INFINITY,
+  );
   const showMoreShared = async () => {
     const asked = ++sharedAsk.current;
     setLoadingShared(true);
@@ -300,7 +314,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     }
   };
 
-  if (!people.length && !sharedWithYou.length) {
+  if (!people.length && !sharedEntries.length) {
     return (
       <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
         {filter}
@@ -326,7 +340,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   return (
     <Stack spacing={4} sx={{ maxWidth: "1920px", mx: "auto" }}>
       {filter}
-      {sharedWithYou.length > 0 && (
+      {sharedEntries.length > 0 && (
         <ExploreSection
           title={t("models:explore.sharedWithYou")}
           help={t("models:explore.sharedWithYouHelp")}
@@ -335,7 +349,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
           // With nobody sharing on Explore, asking for someone elsewhere starts here.
           action={!people.length ? elsewhereButton : undefined}
         >
-          <Box sx={cardGridSx(6)}>{sharedWithYou.map(collectionCard)}</Box>
+          <Box sx={cardGridSx(6)}>{sharedEntries}</Box>
           {sharedWithYou.length < sharedTotal && (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
               <Button size="small" variant="outlined" onClick={showMoreShared} disabled={loadingShared}>

@@ -105,15 +105,19 @@ export default function CollectionFormModal({ collection, share = false, onClose
     if (!social?.enabled || !sharingReady) return null;
     const saved = new Set((savedPeople ?? []).map((person) => person.id));
     const picked = new Set(people.map((person) => person.id));
-    const add = people.filter((person) => !saved.has(person.id)).map((person) => person.id);
-    const remove = (savedPeople ?? []).filter((person) => !picked.has(person.id)).map((person) => person.id);
+    const add = people.filter((person) => !saved.has(person.id));
+    const remove = (savedPeople ?? []).filter((person) => !picked.has(person.id));
+    // Someone here by their user id, someone elsewhere by their id on this instance.
+    const ids = (list: SharePerson[], remote: boolean) =>
+      list.filter((person) => Boolean(person.remote) === remote).map((person) => person.id);
     const changed = visibility !== visibilityOf(collection);
     if (!changed && !add.length && !remove.length) return null;
-    return {
-      ...(changed ? { visibility } : {}),
-      ...(add.length ? { add_user_ids: add } : {}),
-      ...(remove.length ? { remove_user_ids: remove } : {}),
-    };
+    const patch: CollectionSharingPatch = changed ? { visibility } : {};
+    if (ids(add, false).length) patch.add_user_ids = ids(add, false);
+    if (ids(remove, false).length) patch.remove_user_ids = ids(remove, false);
+    if (ids(add, true).length) patch.add_remote_person_ids = ids(add, true);
+    if (ids(remove, true).length) patch.remove_remote_person_ids = ids(remove, true);
+    return patch;
   };
 
   const handleSubmit = async () => {
@@ -240,6 +244,7 @@ export default function CollectionFormModal({ collection, share = false, onClose
                       search={socialApi.people}
                       // What's picked is sent as Save is pressed: a change made while it saves would be lost.
                       disabled={saving}
+                      help={social.federation ? t("models:collections.form.findPeopleHelp") : undefined}
                       selected={people}
                       onSelectedChange={setPeople}
                       // Opened from Share…: finding someone is the first thing to do.

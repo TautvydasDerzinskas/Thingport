@@ -2,9 +2,8 @@
 
 Thingport starts as a private library for each person on it. Social features let them share some of it: public
 collections and models, found by everyone on **Explore**, collections shared with only the people picked, profiles to
-show them on, and chats to talk about them. With [connected instances](connected-instances.md), public collections and
-models, profiles and chats reach the people on partner instances too; a collection is shared with people on this
-instance only.
+show them on, and chats to talk about them. With [connected instances](connected-instances.md), all of it reaches the
+people on partner instances too: a shared collection only the people picked there, through their own instance.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/42_explore.png">
@@ -21,6 +20,9 @@ chats with the switch under them. Until then, every library is private and nothi
   only to the people you pick there, by any part of their name or their whole email: they see it as they would a
   public one, and nobody else sees it, on Explore or anywhere. **Share…** in a collection's ⋮ menu opens the form on
   who sees it.
+- **People on [connected instances](connected-instances.md) too.** Find them by name, or type someone's whole handle,
+  `name@their-instance`, if they share nothing yet. Their instance is told and shows the collection to them alone, so
+  its admins could see it too.
 - **Who it's shared with is yours to change.** Add or take people off at any time; someone taken off loses it at once.
   Making it private or public keeps the list, so making it shared again shares it with the same people. A shared
   collection shows who on its cover and beside its name, to you; the people it's shared with don't see who else is on

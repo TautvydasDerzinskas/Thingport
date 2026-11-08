@@ -1,4 +1,5 @@
 import { prisma } from "../db";
+import { kickSharing, queueCollectionsGone } from "../federation/sharedCollections";
 import { HttpError } from "../utils/fileUtils";
 import { printOutsByIds } from "./printLoader";
 import { relocatePrintsForToken } from "./printService";
@@ -273,9 +274,11 @@ export async function mergeCollections(
       skipDuplicates: true,
     });
     await moveCollectionBookmark(userId, mergedIds, primary.id, tx);
+    await queueCollectionsGone(tx, mergedIds);
     await tx.collection.deleteMany({ where: { id: { in: mergedIds } } });
     return count;
   });
+  kickSharing();
   await relocatePrintsForToken("collection", printIds);
   return { primary, merged, added };
 }
@@ -289,7 +292,11 @@ export async function deleteCollections(userId: string, ids: string[]): Promise<
     distinct: ["printId"],
     select: { printId: true },
   });
-  await prisma.collection.deleteMany({ where: { id: { in: collectionIds } } });
+  await prisma.$transaction(async (tx) => {
+    await queueCollectionsGone(tx, collectionIds);
+    await tx.collection.deleteMany({ where: { id: { in: collectionIds } } });
+  });
+  kickSharing();
   await relocatePrintsForToken(
     "collection",
     items.map((item) => item.printId),

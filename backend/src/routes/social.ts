@@ -35,7 +35,8 @@ import { sendRemoteZip, streamRemoteFile } from "../federation/remoteFiles";
 import { syncStale } from "../federation/remoteIndex";
 import { isFederationLive } from "../federation/settings";
 import { parseSortMode, splitList } from "../services/printQuery";
-import { MAX_SHARES, sharingOf, updateSharing } from "../services/collectionSharing";
+import { MAX_SHARES, remoteShareOut, sharingOf, updateSharing } from "../services/collectionSharing";
+import { personByHandle } from "../federation/sharedCollections";
 import { searchPeople } from "../services/chatService";
 
 const router = Router();
@@ -103,14 +104,18 @@ router.get(
     const live = await isFederationLive();
     const local = !live || scope === "all" || scope === "here" ? await exploreOverview(req.userId!) : EMPTY_EXPLORE;
     if (!live) {
-      res.json({ ...local, elsewhere: { people: [], recent_models: [], recent_collections: [] }, instances: [] });
+      res.json({
+        ...local,
+        elsewhere: { people: [], recent_models: [], recent_collections: [], shared_with_you: [] },
+        instances: [],
+      });
       return;
     }
     void syncStale(EXPLORE_FRESH_MS).catch(() => {});
     const [elsewhere, instances] = await Promise.all([
       scope === "here"
-        ? Promise.resolve({ people: [], recent_models: [], recent_collections: [] })
-        : remoteOverview(scope === "all" ? null : scope),
+        ? Promise.resolve({ people: [], recent_models: [], recent_collections: [], shared_with_you: [] })
+        : remoteOverview(scope === "all" ? null : scope, req.userId!),
       instancesOut(),
     ]);
     res.json({ ...local, elsewhere, instances });
@@ -206,7 +211,7 @@ router.get(
   asyncHandler(async (req, res) => {
     await assertElsewhere();
     const { limit, offset } = pageQuery(req.query, 30);
-    const page = await remoteCollection(req.params.id, limit, offset);
+    const page = await remoteCollection(req.params.id, limit, offset, req.userId!);
     if (!page) throw new HttpError(404, "Not found");
     res.json(page);
   }),
@@ -254,13 +259,21 @@ router.get(
 );
 
 // People to share a collection with: the instance's other users, by any part of their name or their whole email, as
-// a new chat finds them. Never their emails.
+// a new chat finds them; then, while connected instances are on, partners' people, and someone on a partner by their
+// exact handle (name@host), asked of that partner if it's nobody this instance knows. Never their emails.
 router.get(
   "/social/people",
   asyncHandler(async (req, res) => {
     await assertSocialOn();
-    const q = typeof req.query.q === "string" ? req.query.q : "";
-    res.json({ people: await searchPeople({ id: req.userId!, isAdmin: false }, q, { elsewhere: false }) });
+    const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 200) : "";
+    const people = await searchPeople({ id: req.userId!, isAdmin: false }, q);
+    if (q.includes("@") && (await isFederationLive())) {
+      const named = await personByHandle(q);
+      if (named && !people.some((person) => person.id === named.id)) {
+        people.push({ ...remoteShareOut(named), online: false });
+      }
+    }
+    res.json({ people });
   }),
 );
 
@@ -277,6 +290,8 @@ const sharingSchema = z.object({
   visibility: z.enum(["private", "shared", "public"]).optional(),
   add_user_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
   remove_user_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
+  add_remote_person_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
+  remove_remote_person_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
 });
 
 // Changes it: its visibility, people added to the list and taken off it (the rest stay). Those who can see it now
@@ -295,8 +310,12 @@ router.patch(
       details: {
         name: collection?.name ?? null,
         visibility: sharing.visibility,
-        ...(body.add_user_ids?.length ? { added: body.add_user_ids.length } : {}),
-        ...(body.remove_user_ids?.length ? { removed: body.remove_user_ids.length } : {}),
+        ...(body.add_user_ids?.length || body.add_remote_person_ids?.length
+          ? { added: (body.add_user_ids?.length ?? 0) + (body.add_remote_person_ids?.length ?? 0) }
+          : {}),
+        ...(body.remove_user_ids?.length || body.remove_remote_person_ids?.length
+          ? { removed: (body.remove_user_ids?.length ?? 0) + (body.remove_remote_person_ids?.length ?? 0) }
+          : {}),
       },
     });
   }),

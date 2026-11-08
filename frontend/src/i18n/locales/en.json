@@ -5432,7 +5432,7 @@
         "create": "Create",
         "saveFailed": "Failed to save the collection. Please try again.",
         "visibilityLabel": "Visibility",
-        "visibilityHelp": "Private collections are yours alone. Shared ones are seen by the people you pick, public ones by everyone, on Explore. Whoever sees one can open, download and copy its models.",
+        "visibilityHelp": "Private collections are yours alone. Shared ones are seen by the people you pick, here or on connected instances, public ones by everyone, on Explore. Whoever sees one can open, download and copy its models.",
         "private": "Private",
         "public": "Public",
         "shared": "Shared",
@@ -5441,13 +5441,14 @@
         "sharedNobody": "Nobody yet: only you can see it",
         "sharedElsewhere_one": "{{count}} on a connected instance",
         "sharedElsewhere_other": "{{count}} on connected instances",
-        "sharedHelp": "They see it as they would a public collection: they can open, download and copy its models, and are told when you share it with them. Who else it's shared with is yours to know.",
+        "sharedHelp": "They see it as they would a public collection: they can open, download and copy its models, and are told when you share it with them. Who else it's shared with is yours to know. Someone on a connected instance sees it through their own instance, which shows it to them alone; that instance's admins could see it too.",
         "keptPeople_one": "{{names}} stays on the list: pick Shared to share it again.",
         "keptPeople_other": "{{names}} stay on the list: pick Shared to share it again.",
         "andMore_one": "{{count}} more",
         "andMore_other": "{{count}} more",
         "peopleFailed": "Couldn't load who it's shared with, so who sees it can't be changed until it does.",
-        "createdNotShared": "“{{name}}” was made, but couldn't be shared. Share… in its menu tries again."
+        "createdNotShared": "“{{name}}” was made, but couldn't be shared. Share… in its menu tries again.",
+        "findPeopleHelp": "Any part of a name finds someone here or on a connected instance; an email finds someone here only when typed in full, and is never shown. Someone elsewhere you can't find: type their whole handle, like name@their-instance."
       },
       "detail": {
         "title": "{{name}}",

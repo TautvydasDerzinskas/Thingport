@@ -69,24 +69,20 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
     how: "A partner's picture, fetched signed through this instance and kept; a viewer's browser never reaches it",
   },
   "GET /explore/shared": {
-    kind: "planned",
-    when: "shared collections, partners' people",
-    how: "Collections partners' people shared with the viewer, kept from the Create of a thingport:Collection addressed to them",
+    kind: "federates",
+    how: "This instance's collections shared with the viewer; partners' people's come with GET /explore, from the Update of a thingport:Collection addressed to them",
   },
   "GET /social/people": {
-    kind: "planned",
-    when: "shared collections, partners' people",
-    how: "Partners' people from the index of their directories after this instance's, and one by exact handle, looked up there",
+    kind: "federates",
+    how: "Partners' people from the index of their directories after this instance's, and one by exact handle, read from that partner's /api/ap/people",
   },
   "GET /collection/:id/sharing": {
-    kind: "planned",
-    when: "shared collections, partners' people",
+    kind: "federates",
     how: "Partners' people on a collection's list, shown with their instance",
   },
   "PATCH /collection/:id/sharing": {
-    kind: "planned",
-    when: "shared collections, partners' people",
-    how: "Create, Update or Delete of the thingport:Collection to each partner with people on its list, addressed to them",
+    kind: "federates",
+    how: "Update of the collection to each partner with people on its list, addressed to them, or Delete once none may see it; they read it signed from /api/ap/collections",
   },
   "POST /print/:id/copy": {
     kind: "federates",

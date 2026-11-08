@@ -1,4 +1,4 @@
-import { authHeaders } from "../utils/auth";
+import { appendTokenToUrl, authHeaders } from "../utils/auth";
 import { apiBase, assertOk, assertOkWithMessage, readErrorMessage } from "./client";
 import { BULK_LIMIT, type Print } from "./prints";
 import type { RemoteRef } from "./chats";
@@ -73,6 +73,9 @@ export type CollectionSharingPatch = {
   visibility?: CollectionVisibility;
   add_user_ids?: string[];
   remove_user_ids?: string[];
+  /** People on connected instances, by their id here. */
+  add_remote_person_ids?: string[];
+  remove_remote_person_ids?: string[];
 };
 
 export type CollectionInput = {
@@ -103,6 +106,25 @@ export type CollectionMergeResult = {
   added: number;
 };
 
+// Someone elsewhere's picture comes through this instance at an address relative to the API: an <img> sends no header,
+// so the session goes in the address, as for partners' pictures on Explore.
+const sharePersonIn = (person: SharePerson): SharePerson =>
+  person.remote && person.avatar_url
+    ? { ...person, avatar_url: appendTokenToUrl(`${apiBase()}${person.avatar_url}`) }
+    : person;
+const sharingIn = (sharing: CollectionSharing): CollectionSharing => ({
+  ...sharing,
+  people: sharing.people.map(sharePersonIn),
+});
+const collectionIn = (collection: Collection): Collection =>
+  collection.shared_with
+    ? {
+        ...collection,
+        shared_with: { ...collection.shared_with, people: collection.shared_with.people.map(sharePersonIn) },
+      }
+    : collection;
+export const sharePeopleIn = (people: SharePerson[]): SharePerson[] => people.map(sharePersonIn);
+
 /** `collection` as its sharing now has it: what a card shows of who sees it. */
 export const withSharing = (collection: Collection, sharing: CollectionSharing): Collection => ({
   ...collection,
@@ -123,13 +145,13 @@ export const collectionsApi = {
   list: async (): Promise<Collection[]> => {
     const res = await fetch(`${apiBase()}/collections`, { headers: authHeaders() });
     assertOk(res, "Failed to list collections");
-    return res.json();
+    return ((await res.json()) as Collection[]).map(collectionIn);
   },
 
   get: async (id: string): Promise<Collection> => {
     const res = await fetch(`${apiBase()}/collection/${id}`, { headers: authHeaders() });
     assertOk(res, "Failed to load collection");
-    return res.json();
+    return collectionIn(await res.json());
   },
 
   create: async (input: CollectionInput): Promise<Collection> => {
@@ -149,7 +171,7 @@ export const collectionsApi = {
       body: JSON.stringify(input),
     });
     if (!res.ok) throw new Error(await readErrorMessage(res, "Update collection failed"));
-    return res.json();
+    return collectionIn(await res.json());
   },
 
   delete: async (id: string): Promise<void> => {
@@ -160,7 +182,7 @@ export const collectionsApi = {
   sharing: async (id: string): Promise<CollectionSharing> => {
     const res = await fetch(`${apiBase()}/collection/${id}/sharing`, { headers: authHeaders() });
     await assertOkWithMessage(res, "Failed to load who it's shared with");
-    return res.json();
+    return sharingIn(await res.json());
   },
 
   /** Its visibility, and people added to its list or taken off it; the others stay. */
@@ -172,7 +194,7 @@ export const collectionsApi = {
     });
     // No fallback of its own: the form says it in the reader's language when the server gave no reason.
     await assertOkWithMessage(res, "");
-    return res.json();
+    return sharingIn(await res.json());
   },
 
   /** How many models a merge of these would hold: the same whichever is kept. */

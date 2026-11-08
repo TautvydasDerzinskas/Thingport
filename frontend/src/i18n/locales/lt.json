@@ -5616,7 +5616,7 @@
         "create": "Sukurti",
         "saveFailed": "Nepavyko išsaugoti kolekcijos. Bandykite dar kartą.",
         "visibilityLabel": "Matomumas",
-        "visibilityHelp": "Privačios kolekcijos matomos tik jums. Bendrinamas mato jūsų pasirinkti žmonės, viešas – visi, skiltyje Naršyti. Kas mato kolekciją, gali atidaryti, atsisiųsti ir kopijuoti jos modelius.",
+        "visibilityHelp": "Privačios kolekcijos matomos tik jums. Bendrinamas mato jūsų pasirinkti žmonės, šiame ar sujungtuose serveriuose, viešas – visi, skiltyje Naršyti. Kas mato kolekciją, gali atidaryti, atsisiųsti ir kopijuoti jos modelius.",
         "private": "Privati",
         "public": "Vieša",
         "shared": "Bendrinama",
@@ -5627,7 +5627,7 @@
         "sharedElsewhere_one": "{{count}} sujungtame serveryje",
         "sharedElsewhere_few": "{{count}} sujungtuose serveriuose",
         "sharedElsewhere_other": "{{count}} sujungtuose serveriuose",
-        "sharedHelp": "Jie mato ją kaip viešą kolekciją: gali atidaryti, atsisiųsti ir kopijuoti jos modelius, ir gauna pranešimą, kai su jais pasidalinate. Su kuo dar ji bendrinama, žinote tik jūs.",
+        "sharedHelp": "Jie mato ją kaip viešą kolekciją: gali atidaryti, atsisiųsti ir kopijuoti jos modelius, ir gauna pranešimą, kai su jais pasidalinate. Su kuo dar ji bendrinama, žinote tik jūs. Žmogus sujungtame serveryje ją mato per savo serverį, kuris rodo ją tik jam; to serverio administratoriai irgi galėtų ją matyti.",
         "keptPeople_one": "{{names}} lieka sąraše: pasirinkite Bendrinama, kad vėl pasidalintumėte.",
         "keptPeople_few": "{{names}} lieka sąraše: pasirinkite Bendrinama, kad vėl pasidalintumėte.",
         "keptPeople_other": "{{names}} lieka sąraše: pasirinkite Bendrinama, kad vėl pasidalintumėte.",
@@ -5635,7 +5635,8 @@
         "andMore_few": "dar {{count}}",
         "andMore_other": "dar {{count}}",
         "peopleFailed": "Nepavyko įkelti, su kuo ji bendrinama, todėl kas ją mato, keisti negalima, kol tai neįsikels.",
-        "createdNotShared": "„{{name}}“ sukurta, bet nepavyko ja pasidalinti. Bandykite dar kartą per jos meniu „Bendrinti…“."
+        "createdNotShared": "„{{name}}“ sukurta, bet nepavyko ja pasidalinti. Bandykite dar kartą per jos meniu „Bendrinti…“.",
+        "findPeopleHelp": "Bet kuri vardo dalis suranda žmogų šiame ar sujungtame serveryje; el. paštas suranda žmogų šiame serveryje tik įvestas visas ir niekada nerodomas. Jei kito serverio žmogaus nerandate, įveskite visą jo slapyvardį, pvz. vardas@jo-serveris."
       },
       "detail": {
         "title": "{{name}}",
