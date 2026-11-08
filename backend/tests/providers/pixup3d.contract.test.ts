@@ -180,11 +180,14 @@ function handlerFor(scenario: string, state: State = freshState()): FetchHandler
               owned.post.id = POST_OF[id];
               return owned;
             });
-      return json({
-        ...library,
-        data: items,
-        pagination: { current_page: page, total_pages: pages, per_page: 24, total_count: items.length },
-      });
+      return answer(
+        json({
+          ...library,
+          data: items,
+          pagination: { current_page: page, total_pages: pages, per_page: 24, total_count: items.length },
+        }),
+        call,
+      );
     }
     if (p === `${API}/cart/current_post_cart`) {
       if (!me) return unauthorized();
@@ -229,12 +232,13 @@ function handlerFor(scenario: string, state: State = freshState()): FetchHandler
     ) {
       return json(loadFixture("pixup3d", "collections"));
     }
-    if (p === `/en/p/${DESIGNER}/collections/5`) return html(loadFixtureHtml("pixup3d", "collection"));
+    if (p === `/en/p/${DESIGNER}/collections/5`) return answer(html(loadFixtureHtml("pixup3d", "collection")), call);
     if (/^\/en\/p\/[^/]+\/collections\/\d+$/.test(p)) return html("<h1>Not Found</h1>", 404);
     if (p === `${API}/profiles/${DESIGNER}/get_posts_by_ids`) {
       const wanted = new Set(url.searchParams.getAll("ids[]"));
       const posts = loadFixture("pixup3d", "collection-posts");
-      return json({ ...posts, data: posts.data.filter((post: { id: number }) => wanted.has(String(post.id))) });
+      const found = posts.data.filter((post: { id: number }) => wanted.has(String(post.id)));
+      return answer(json({ ...posts, data: found }), call);
     }
     if (p.startsWith(`${API}/profiles/`)) return json({ error: "Not Found" }, 404);
     if (p === `${API}/posts`) return json(loadFixture("pixup3d", "trending"));
