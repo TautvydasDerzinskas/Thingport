@@ -102,17 +102,26 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   `/actors/<id>/collections?page=N`, their public collections, 12 a page, each with its first 200 models by id and the
   rest at `/collections/<id>/models?offset=N`, 1,000 a page. Text, files and pictures go only as far as a partner keeps
   them (20,000 characters of a model's description, 100 files), so every page fits; `/media/<kind>/<id>`, avatars,
-  uploaded covers and models' pictures; `/files/plate|file/<id>/<name>`, a shared model's files, the `url` of each
-  `Document` in its `attachment`. People are `Person`s; a model is a `thingport:Model`, a collection a
-  `thingport:Collection`, and Thingport's other terms are under `thingport:` too. What's shared is decided by the same
-  rules as Explore here (`sharers`, `sharedModelsWhere` in `services/socialService.ts`).
+  uploaded covers, models' pictures and their descriptions' images; `/files/plate|file/<id>/<name>`, a shared model's
+  files, the `url` of each `Document` in its `attachment`. People are `Person`s; a model is a `thingport:Model`, a
+  collection a `thingport:Collection`, and Thingport's other terms are under `thingport:` too. What's shared is decided
+  by the same rules as Explore here (`sharers`, `sharedModelsWhere` in `services/socialService.ts`).
+- **What a copy needs** rides on each model as optional `thingport:` terms, so an older partner reads past them:
+  `tags`, `creator`, `importedFrom` and `author` (provider and id), `category` (a starter category's names from the top
+  and its providers' ids; never a folder, which is its owner's own), `generatorScriptWithheld`, `unfillableGaps` and
+  `descriptionImages`; on each picture `generated` (a render) or `plate` (a plate's thumbnail standing in for none); on
+  each file `kind` (plate or file), a file's `role`, and a plate's `profileId`, `profile` (what its site said, with
+  the reader's version) and `thumb` (a picture that isn't a render). A model past 256 KB leaves its profiles' facts out
+  (`fitModel`), and a copy asks their site instead.
 - **Keeping the copy** (`remoteIndex.ts`): `RemotePerson`, `RemoteModel`, `RemoteCollection`, read on connecting, by
   **Check connection**, every 15 minutes (the delivery worker's tick), and when Explore is opened and it's two minutes
   old. Everything a partner says is checked: ids and pictures on its own origin, text cut to size, and a listing without
   its items refused rather than read as empty. Rows keep their ids across reads (upserted by `apId`), so links to them
   stay. Every row a read writes is stamped with its time (`syncedAt`), and what's left with an older one is what's no
   longer listed, so it goes, except a person's models or collections when not all their pages were read (past the caps,
-  a later page gone, or a next page elsewhere), and a collection's models when one of their pages wasn't. At most 2,000
+  a later page gone, or a next page elsewhere), and a collection's models when one of their pages wasn't. What a copy
+  needs is checked and kept in `RemoteModel.details` and each file's entry, null from a partner too old to say. At most
+  2,000
   models and 200 collections a person are read, and 2,000 models of each collection. A read is written in one
   transaction that ends by checking the partner is still `ACTIVE`, and forgetting a partner waits for one being written:
   a failed read leaves the last one whole, and a block or disconnect meanwhile leaves nothing behind. Disconnecting or
@@ -138,13 +147,20 @@ looks: Explore stays fast, and shows a partner's things while it's away.
 - **Copies** (`remoteCopy.ts`): `POST /explore/elsewhere/model/<id>/copy` starts one in the background (asked twice at
   once, the second hears the first) and `GET` says how it's going, file by file. A model with a file that can't be had
   isn't copied without it (`files_missing`). The files are fetched into a temporary folder, all of them together no
-  bigger than an import (`copy_too_big`, as a ZIP), and only once all of them are there is a model made
-  (`createUploadedModel`), with `Print.remoteSource`
-  saying where it came from in the same write, its description's images made links (so the copy's page fetches
-  nothing from elsewhere), then its pictures. `remoteSource` is what makes the original show **Open my copy** rather
-  than copy it again, and the copy's `copied_from_remote` (on `GET /print/:id`), which links back to the original
-  while the partner still shares it and connected instances are on. Copying someone's copy here carries it over. A
-  job's progress is in memory: a restart loses one under way, and leaves nothing half made.
+  bigger than an import (`copy_too_big`, as a ZIP), and only once all of them are there is a model made, with
+  `Print.remoteSource` saying where it came from in the same write. It's the same model as the partner's: its files
+  as plates or kept beside them as the partner marks them (by file type, as an upload, from one too old to say), its
+  tags, creator, source site and what that site had nothing for, its print profiles as their site described them
+  (the 3MF is read here), an author only if this instance knows it already (a partner's word doesn't make one for
+  everyone; Fetch missing details fills it), and the copier's own starter category matching its, by names from the top
+  and then by its providers' ids (`matchingCategoryId`), or none, which AI categorization sorts when it's on. Then its
+  pictures: plates' real ones, the gallery's real ones (the copy makes its own renders), and its description's images,
+  kept here, with any other image in it made a link, so the copy's page fetches nothing from elsewhere. A viewer who
+  has the same model from its site has it already: that one is opened instead. `remoteSource` is what makes the
+  original show **Open my copy** rather than copy it again, and the copy's `copied_from_remote` (on `GET /print/:id`),
+  which links back to the original while the partner still shares it and connected instances are on. Copying someone's
+  copy here carries it over. A job's progress is in memory: a restart loses one under way, and leaves nothing half
+  made.
 
 ### Chats
 
@@ -243,6 +259,8 @@ instead (`links.ts`), and the partner reaches it through that:
 - `tests/federation.test.ts`: the routes and the inbox filter on a test database.
 - `tests/federationExplore.test.ts`: what partners are shown, Explore with what a partner shares, which of its files
   are handed out, and where a copy came from.
+- `tests/federationCopy.test.ts`: a model published as partners read it, read and kept as a partner keeps it, and
+  copied, with this process standing in for the partner.
 - `tests/federationSurfaces.test.ts`: the rule above.
 - `tests/federationPairing.e2e.test.ts`: two real instances, each its own server and database, pairing over HTTP. It
   needs two empty, migrated databases and is skipped without them. From `backend/`:

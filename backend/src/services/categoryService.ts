@@ -312,3 +312,77 @@ export async function resetDefaultCategories(userId: string): Promise<void> {
   // Managed storage paths include the category path.
   await reorganizeManagedPrints(undefined, userId);
 }
+
+/** A model's category as another library can find its own: its names from the top, and the providers' categories that
+ *  sort into it (CategorySiteId). Only a starter category ("category") has one: a folder is its owner's own sorting. */
+export type CategoryRef = { path: string[]; siteIds: { provider: string; siteId: string }[] };
+
+// Deeper than any tree the app makes: one deeper is taken for a loop.
+const MAX_CATEGORY_DEPTH = 20;
+
+type RefRow = { id: string; name: string; kind: string; parentId: string | null };
+
+function refPath(row: RefRow, byId: ReadonlyMap<string, RefRow>): string[] | null {
+  if (row.kind !== "category") return null;
+  const names: string[] = [];
+  for (let at: RefRow | undefined = row; at; at = at.parentId ? byId.get(at.parentId) : undefined) {
+    if (names.length === MAX_CATEGORY_DEPTH) return null;
+    names.unshift(at.name);
+  }
+  return names;
+}
+
+/** Each of `userId`'s starter categories as a CategoryRef, by id. */
+export async function categoryRefs(userId: string): Promise<Map<string, CategoryRef>> {
+  const rows = await prisma.category.findMany({
+    where: { userId },
+    select: { id: true, name: true, kind: true, parentId: true, ...WITH_SITE_IDS },
+  });
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const refs = new Map<string, CategoryRef>();
+  for (const row of rows) {
+    const path = refPath(row, byId);
+    if (path) refs.set(row.id, { path, siteIds: row.siteIds.map(({ provider, siteId }) => ({ provider, siteId })) });
+  }
+  return refs;
+}
+
+/** The ref of one category, as categoryRefs gives it; null for none or a folder. */
+export async function categoryRefOf(categoryId: string | null): Promise<CategoryRef | null> {
+  if (!categoryId) return null;
+  const category = await prisma.category.findUnique({ where: { id: categoryId }, select: { userId: true } });
+  return category ? ((await categoryRefs(category.userId)).get(categoryId) ?? null) : null;
+}
+
+const nameKey = (name: string) => name.trim().toLowerCase();
+
+/** `userId`'s starter category that stands for `ref`: the one with the same names from the top, letter case aside, or
+ *  failing that (one renamed or moved) the one most of the same providers' categories sort into. Never one of their
+ *  folders. Null for none, which leaves the model to AI categorization where that's on. */
+export async function matchingCategoryId(userId: string, ref: CategoryRef | null | undefined): Promise<string | null> {
+  if (!ref?.path.length) return null;
+  const mine = await prisma.category.findMany({
+    where: { userId, kind: "category" },
+    orderBy: { position: "asc" },
+    select: { id: true, name: true, parentId: true },
+  });
+  let parents: (string | null)[] = [null];
+  for (const name of ref.path) {
+    const found = mine.filter((row) => parents.includes(row.parentId) && nameKey(row.name) === nameKey(name));
+    parents = found.map((row) => row.id);
+    if (!parents.length) break;
+  }
+  if (parents.length) return parents[0];
+
+  if (!ref.siteIds.length) return null;
+  const wanted = new Set(ref.siteIds.map(({ provider, siteId }) => `${provider}\n${siteId}`));
+  const candidates = await prisma.category.findMany({
+    where: { userId, kind: "category", siteIds: { some: { OR: ref.siteIds.map((id) => ({ ...id })) } } },
+    orderBy: { position: "asc" },
+    select: { id: true, siteIds: { select: { provider: true, siteId: true } } },
+  });
+  const shared = (row: (typeof candidates)[number]) =>
+    row.siteIds.filter(({ provider, siteId }) => wanted.has(`${provider}\n${siteId}`)).length;
+  // Stable, so equally good ones keep their order.
+  return candidates.toSorted((a, b) => shared(b) - shared(a))[0]?.id ?? null;
+}

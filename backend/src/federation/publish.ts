@@ -1,13 +1,16 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import type { Peer } from "@prisma/client";
+import type { Peer, Prisma } from "@prisma/client";
 import type { Request as ExpressRequest, Response } from "express";
 import { prisma } from "../db";
 import { resolveAvatar } from "../services/avatarService";
+import { categoryRefs, type CategoryRef } from "../services/categoryService";
+import { descriptionImagePath } from "../services/descriptionImageService";
 import { previewImagePath } from "../services/previewImageService";
 import { resolvePlateFilePath } from "../services/printCreation";
 import { managedPrintFilePath } from "../services/printFileService";
+import { storedProfile } from "../services/printProfileService";
 import { plateThumbPath } from "../services/printService";
 import { coverOut, coverPath } from "../services/publicProfileService";
 import { sharedAtOf, sharedModelCounts, sharedModelsWhere, sharers } from "../services/socialService";
@@ -38,6 +41,11 @@ const MODEL_NAME_MAX = 300;
 const MODEL_DESCRIPTION_MAX = 20_000;
 const MODEL_FILES_MAX = 100;
 const MODEL_IMAGES_MAX = 20;
+const MODEL_TAGS_MAX = 50;
+const MODEL_DESCRIPTION_IMAGES_MAX = 50;
+const CATEGORY_SITE_IDS_MAX = 200;
+// Of one model, so a page holds a few at least whatever their print profiles say.
+export const MODEL_MAX_BYTES = 256 * 1024;
 const COLLECTION_NAME_MAX = 200;
 const COLLECTION_DESCRIPTION_MAX = 5000;
 const DIRECTORY_LIMIT = 500;
@@ -230,6 +238,146 @@ export function fitPerson<T extends Record<string, unknown>>(doc: T): T {
   return fitted as T;
 }
 
+const MODEL_SELECT = {
+  id: true,
+  userId: true,
+  name: true,
+  title: true,
+  notes: true,
+  tags: true,
+  creator: true,
+  sourceProvider: true,
+  sourceExternalId: true,
+  unfillableGaps: true,
+  generatorScriptWithheld: true,
+  categoryId: true,
+  createdAt: true,
+  updatedAt: true,
+  assetsPath: true,
+  author: { select: { provider: true, externalId: true } },
+  plates: {
+    orderBy: { position: "asc" },
+    select: {
+      id: true,
+      filename: true,
+      mime: true,
+      size: true,
+      sourceInstanceId: true,
+      profile: true,
+      thumbGenerated: true,
+    },
+  },
+  previewImages: { orderBy: { position: "asc" }, select: { id: true, generated: true } },
+  files: { select: { id: true, filename: true, mime: true, size: true, role: true } },
+  descriptionImages: { select: { id: true, mime: true } },
+} satisfies Prisma.PrintSelect;
+type PublishedPrint = Prisma.PrintGetPayload<{ select: typeof MODEL_SELECT }>;
+
+/** One shared model as partners read it. Past what Explore shows, it carries what a copy needs to be the same model
+ *  (remoteCopy.ts): its tags, creator, source, starter category, print profiles, files' roles and pictures, each a
+ *  `thingport:` term an older partner reads past. */
+function modelDoc(
+  runtime: Runtime,
+  userId: string,
+  print: PublishedPrint,
+  sharedAt: Map<string, Date>,
+  refs: Map<string, CategoryRef>,
+) {
+  const images = print.previewImages.flatMap((image) => {
+    const version = mtime(previewImagePath(image.id, print.assetsPath));
+    return version === null
+      ? []
+      : [
+          {
+            type: "Image",
+            url: mediaUrl(runtime, "image", image.id, version),
+            "thingport:generated": image.generated || undefined,
+          },
+        ];
+  });
+  const thumbOf = (plate: PublishedPrint["plates"][number]) => {
+    const version = mtime(plateThumbPath(plate.id, print.assetsPath));
+    return version === null ? null : mediaUrl(runtime, "plate", plate.id, version);
+  };
+  // No pictures of its own: its plates' thumbnails instead, which a copy has with its plates.
+  const pictures = images.length
+    ? images
+    : print.plates.flatMap((plate) => {
+        const url = thumbOf(plate);
+        return url
+          ? [{ type: "Image", url, "thingport:plate": true, "thingport:generated": plate.thumbGenerated || undefined }]
+          : [];
+      });
+  const notes = print.notes?.slice(0, MODEL_DESCRIPTION_MAX) ?? null;
+  const descriptionImages = print.descriptionImages
+    .filter((image) => notes?.includes(`/description-image/${image.id}`))
+    .slice(0, MODEL_DESCRIPTION_IMAGES_MAX)
+    .flatMap((image) => {
+      const version = mtime(descriptionImagePath(image, print.assetsPath));
+      return version === null ? [] : [{ id: image.id, url: mediaUrl(runtime, "description", image.id, version) }];
+    });
+  const document = (kind: "plate" | "file", file: { id: string; filename: string; mime: string; size: number }) => ({
+    type: "Document",
+    name: file.filename,
+    mediaType: file.mime,
+    url: `${runtime.origin}${AP_PREFIX}/files/${kind}/${file.id}/${encodeURIComponent(file.filename)}`,
+    "thingport:size": file.size,
+    "thingport:kind": kind,
+  });
+  // Each file where a partner fetches it, signed: to download, open in a slicer or copy.
+  const attachment = [
+    ...print.plates.map((plate) => {
+      const provider = storedProfile(plate.profile)?.provider;
+      return {
+        ...document("plate", plate),
+        "thingport:profileId": plate.sourceInstanceId ?? undefined,
+        // What its site said of the print profile, so a copy shows it without asking the site again.
+        "thingport:profile": provider
+          ? { version: storedProfile(plate.profile)?.providerVersion ?? 0, facts: provider }
+          : undefined,
+        // A picture that isn't our own render: a copy makes its own renders.
+        "thingport:thumb": plate.thumbGenerated ? undefined : (thumbOf(plate) ?? undefined),
+      };
+    }),
+    ...print.files.map((file) => ({ ...document("file", file), "thingport:role": file.role })),
+  ].slice(0, MODEL_FILES_MAX);
+  const ref = print.categoryId ? refs.get(print.categoryId) : undefined;
+  return fitModel({
+    id: `${runtime.origin}${AP_PREFIX}/models/${print.id}`,
+    type: "thingport:Model",
+    name: (print.title?.trim() || print.name).slice(0, MODEL_NAME_MAX),
+    attributedTo: actorUrl(runtime, userId),
+    source: markdown(notes),
+    image: pictures.slice(0, MODEL_IMAGES_MAX),
+    attachment,
+    published: (sharedAt.get(print.id) ?? print.createdAt).toISOString(),
+    updated: print.updatedAt.toISOString(),
+    "thingport:tags": print.tags.length ? print.tags.slice(0, MODEL_TAGS_MAX) : undefined,
+    "thingport:creator": print.creator?.trim().slice(0, NAME_MAX) || undefined,
+    "thingport:importedFrom":
+      print.sourceProvider && print.sourceExternalId
+        ? { provider: print.sourceProvider, externalId: print.sourceExternalId }
+        : undefined,
+    "thingport:author": print.author ?? undefined,
+    "thingport:category": ref ? { path: ref.path, siteIds: ref.siteIds.slice(0, CATEGORY_SITE_IDS_MAX) } : undefined,
+    "thingport:generatorScriptWithheld": print.generatorScriptWithheld || undefined,
+    "thingport:unfillableGaps": print.unfillableGaps.length ? print.unfillableGaps : undefined,
+    "thingport:descriptionImages": descriptionImages.length ? descriptionImages : undefined,
+  });
+}
+
+/** A model as published, its print profiles' facts left out should they make it too big for a page: a copy asks their
+ *  site for them instead. */
+export function fitModel<T extends { attachment: Record<string, unknown>[] }>(doc: T): T {
+  if (bytes(doc) <= MODEL_MAX_BYTES) return doc;
+  return {
+    ...doc,
+    attachment: doc.attachment.map((file) =>
+      Object.fromEntries(Object.entries(file).filter(([key]) => key !== "thingport:profile")),
+    ),
+  };
+}
+
 /** Where a page of someone's models goes on from: after the model added at `at` with id `id`, in their order. */
 export type ModelsCursor = { at: Date; id: string };
 const cursorOf = (print: { createdAt: Date; id: string }) => `${print.createdAt.getTime()}.${print.id}`;
@@ -254,58 +402,11 @@ export async function modelsPage(userId: string, after: ModelsCursor | null = nu
     orderBy: [{ createdAt: "desc" }, { id: "asc" }],
     // One more than a page: whether there's a next one.
     take: MODELS_PAGE + 1,
-    select: {
-      id: true,
-      userId: true,
-      name: true,
-      title: true,
-      notes: true,
-      createdAt: true,
-      updatedAt: true,
-      assetsPath: true,
-      plates: { orderBy: { position: "asc" }, select: { id: true, filename: true, mime: true, size: true } },
-      previewImages: { orderBy: { position: "asc" }, select: { id: true } },
-      files: { select: { id: true, filename: true, mime: true, size: true } },
-    },
+    select: MODEL_SELECT,
   });
-  const sharedAt = await sharedAtOf(prints);
+  const [sharedAt, refs] = await Promise.all([sharedAtOf(prints), categoryRefs(userId)]);
   const base = `${actorUrl(runtime, userId)}/models`;
-  const items = prints.slice(0, MODELS_PAGE).map((print) => {
-    const images = print.previewImages.flatMap((image) => {
-      const version = mtime(previewImagePath(image.id, print.assetsPath));
-      return version === null ? [] : [{ type: "Image", url: mediaUrl(runtime, "image", image.id, version) }];
-    });
-    // No pictures of its own: its plates' thumbnails instead.
-    const pictures = images.length
-      ? images
-      : print.plates.flatMap((plate) => {
-          const version = mtime(plateThumbPath(plate.id, print.assetsPath));
-          return version === null ? [] : [{ type: "Image", url: mediaUrl(runtime, "plate", plate.id, version) }];
-        });
-    return {
-      id: `${runtime.origin}${AP_PREFIX}/models/${print.id}`,
-      type: "thingport:Model",
-      name: (print.title?.trim() || print.name).slice(0, MODEL_NAME_MAX),
-      attributedTo: actorUrl(runtime, userId),
-      source: markdown(print.notes?.slice(0, MODEL_DESCRIPTION_MAX) ?? null),
-      image: pictures.slice(0, MODEL_IMAGES_MAX),
-      // Each file where a partner fetches it, signed: to download, open in a slicer or copy.
-      attachment: [
-        ...print.plates.map((file) => ({ kind: "plate", file })),
-        ...print.files.map((file) => ({ kind: "file", file })),
-      ]
-        .slice(0, MODEL_FILES_MAX)
-        .map(({ kind, file }) => ({
-          type: "Document",
-          name: file.filename,
-          mediaType: file.mime,
-          url: `${runtime.origin}${AP_PREFIX}/files/${kind}/${file.id}/${encodeURIComponent(file.filename)}`,
-          "thingport:size": file.size,
-        })),
-      published: (sharedAt.get(print.id) ?? print.createdAt).toISOString(),
-      updated: print.updatedAt.toISOString(),
-    };
-  });
+  const items = prints.slice(0, MODELS_PAGE).map((print) => modelDoc(runtime, userId, print, sharedAt, refs));
   // As many as fit, one at least (none is near the size alone, cut as it is).
   const orderedItems: unknown[] = [];
   let size = 4096;
@@ -505,6 +606,17 @@ export async function sendMedia(res: Response, kind: string, id: string, peer?: 
     });
     if (!plate || !(await isShared(plate.print))) return notFound();
     return send(plateThumbPath(id, plate.print.assetsPath), "image/jpeg");
+  }
+  if (kind === "description") {
+    const image = await prisma.descriptionImage.findUnique({
+      where: { id },
+      select: { id: true, mime: true, print: { select: { id: true, userId: true, assetsPath: true } } },
+    });
+    if (!image || !(await isShared(image.print))) return notFound();
+    if (image.mime === "image/svg+xml") {
+      res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'");
+    }
+    return send(descriptionImagePath(image, image.print.assetsPath), image.mime);
   }
   notFound();
 }

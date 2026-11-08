@@ -1,6 +1,10 @@
-import type { Peer, Prisma } from "@prisma/client";
+import { Prisma, type Peer } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
+import { isProviderId, modelUrl, parseModelUrl } from "../providers/index.generated";
+import type { CategoryRef } from "../services/categoryService";
+import { compactFacts, hexColor, type ProviderProfileFacts } from "../services/printProfileFacts";
+import { SOURCE_GAPS, type SourceGap } from "../services/sourceGaps";
 import { originOf } from "./addresses";
 import { FederationFetchError } from "./fetch";
 import { forgetMedia, pruneMedia } from "./media";
@@ -131,12 +135,126 @@ const personSchema = z.object({
   "thingport:collections": z.string().optional().catch(undefined),
 });
 
+// What a copy needs of a model (remoteCopy.ts), each checked the same way: broken, it's left out, not the model.
+const flag = z.boolean().optional().catch(undefined);
+/** Strings, trimmed, cut to `max`, empty ones dropped; `most` of them at most. */
+const strings = (most: number, max: number) =>
+  z
+    .array(z.unknown())
+    .optional()
+    .catch(undefined)
+    .transform((list) =>
+      (list ?? [])
+        .flatMap((item) => (typeof item === "string" && item.trim() ? [item.trim().slice(0, max)] : []))
+        .slice(0, most),
+    );
+/** Items of `schema` only, `most` of them at most: one that isn't is left out, not the rest. */
+const listOf = <T extends z.ZodTypeAny>(schema: T, most: number) =>
+  z
+    .array(z.unknown())
+    .optional()
+    .catch(undefined)
+    .transform((list) =>
+      (list ?? []).slice(0, most).flatMap((item): z.output<T>[] => {
+        const parsed = schema.safeParse(item);
+        return parsed.success ? [parsed.data] : [];
+      }),
+    );
+/** A model on one of the providers this instance knows, by an id it would read off that model's own page address: a
+ *  copy asks the site for what it lacks by it, so it's never more than a link someone could paste. */
+const providerModel = z
+  .object({ provider: z.string(), externalId: z.string().trim().min(1).max(200) })
+  .optional()
+  .catch(undefined)
+  .transform((ref) => {
+    const url = ref ? modelUrl(ref.provider, ref.externalId) : null;
+    const read = url ? parseModelUrl(url) : null;
+    return read && read.provider === ref!.provider && read.externalId === ref!.externalId
+      ? { provider: read.provider as string, externalId: read.externalId }
+      : null;
+  });
+/** An author on one of the providers this instance knows: only ever looked up here, never fetched by. */
+const providerAuthor = z
+  .object({ provider: z.string(), externalId: z.string().trim().min(1).max(200) })
+  .optional()
+  .catch(undefined)
+  .transform((ref) =>
+    ref && isProviderId(ref.provider) ? { provider: ref.provider, externalId: ref.externalId } : null,
+  );
+const factText = (max: number) =>
+  z
+    .string()
+    .nullish()
+    .catch(undefined)
+    .transform((value) => value?.trim().slice(0, max) || null);
+const factAmount = z
+  .number()
+  .nullish()
+  .catch(undefined)
+  .transform((value) => (value != null && Number.isFinite(value) && value > 0 && value < 1e9 ? value : null));
+const filament = z.object({
+  type: factText(60),
+  color: z
+    .string()
+    .nullish()
+    .catch(undefined)
+    .transform((value) => hexColor(value)),
+  grams: factAmount,
+});
+const profileFacts = z
+  .object({
+    title: factText(300),
+    description: factText(5000),
+    origin: z.enum(["designer", "community"]).nullish().catch(undefined),
+    creator: factText(200),
+    seconds: factAmount,
+    grams: factAmount,
+    filaments: listOf(filament, 64),
+    plates: listOf(
+      z.object({
+        index: z.number().int().min(1).max(10_000),
+        name: factText(200),
+        seconds: factAmount,
+        grams: factAmount,
+        filaments: listOf(filament, 64),
+      }),
+      200,
+    ),
+    printer: factText(200),
+    nozzleMm: factAmount,
+    layerMm: factAmount,
+    infill: factText(20),
+    walls: z.number().int().min(0).max(1000).nullish().catch(undefined),
+    supports: z.boolean().nullish().catch(undefined),
+  })
+  .transform((facts) => compactFacts(facts as ProviderProfileFacts));
+
 const modelSchema = z.object({
   id: z.string(),
   name: text(300),
   attributedTo: z.string(),
   source,
-  image: images,
+  image: z
+    .union([z.unknown().array(), z.unknown()])
+    .optional()
+    .catch(undefined)
+    .transform((value) => (value === undefined ? [] : Array.isArray(value) ? value : [value]))
+    .pipe(
+      listOf(
+        z.union([
+          z.string().transform((url) => ({ url, generated: false, plate: false })),
+          z
+            .object({ url: z.string(), "thingport:generated": flag, "thingport:plate": flag })
+            .passthrough()
+            .transform((image) => ({
+              url: image.url,
+              generated: image["thingport:generated"] === true,
+              plate: image["thingport:plate"] === true,
+            })),
+        ]),
+        100,
+      ),
+    ),
   attachment: z
     .array(
       z
@@ -145,6 +263,19 @@ const modelSchema = z.object({
           mediaType: text(120),
           url: z.string().optional().catch(undefined),
           "thingport:size": z.number().int().min(0).optional().catch(undefined),
+          "thingport:kind": z.enum(["plate", "file"]).optional().catch(undefined),
+          "thingport:role": z.enum(["SUPPORTING", "PREPARED"]).optional().catch(undefined),
+          // A site's own id for one: letters, digits and the like, nothing that reads as part of an address.
+          "thingport:profileId": z
+            .string()
+            .regex(/^[A-Za-z0-9_.-]{1,100}$/)
+            .optional()
+            .catch(undefined),
+          "thingport:profile": z
+            .object({ version: z.number().int().min(0).max(1_000_000), facts: profileFacts })
+            .optional()
+            .catch(undefined),
+          "thingport:thumb": z.string().optional().catch(undefined),
         })
         .passthrough(),
     )
@@ -152,7 +283,49 @@ const modelSchema = z.object({
     .catch(undefined),
   published: date,
   updated: date,
+  "thingport:tags": strings(50, 100),
+  "thingport:creator": text(120),
+  "thingport:importedFrom": providerModel,
+  "thingport:author": providerAuthor,
+  "thingport:category": z
+    .object({
+      path: z.array(z.string().trim().min(1).max(200)).min(1).max(20),
+      siteIds: listOf(z.object({ provider: z.string().max(40), siteId: z.string().min(1).max(200) }), 200),
+    })
+    .optional()
+    .catch(undefined),
+  "thingport:generatorScriptWithheld": flag,
+  "thingport:unfillableGaps": strings(SOURCE_GAPS.length, 40),
+  "thingport:descriptionImages": listOf(
+    z.object({ id: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/), url: z.string() }),
+    50,
+  ),
 });
+
+/** RemoteModel.details: what a copy needs to be the same model, as its partner said it. */
+export type RemoteModelDetails = {
+  tags: string[];
+  creator: string | null;
+  importedFrom: { provider: string; externalId: string } | null;
+  author: { provider: string; externalId: string } | null;
+  category: CategoryRef | null;
+  generatorScriptWithheld: boolean;
+  unfillableGaps: SourceGap[];
+  /** Its description's images by their ids there (`/description-image/<id>`), and where each is fetched. */
+  descriptionImages: { id: string; url: string }[];
+  /** Of its pictures, the partner's own renders and its plates' thumbnails standing in: a copy has its own of both. */
+  renders: string[];
+  platePictures: string[];
+};
+
+/** A file's part of RemoteModel.files past its name, size, type and address: what a copy needs of it. */
+export type RemoteFileDetails = {
+  kind?: "plate" | "file";
+  role?: "SUPPORTING" | "PREPARED";
+  profileId?: string;
+  profile?: { version: number; facts: ProviderProfileFacts };
+  thumb?: string;
+};
 
 const collectionSchema = z.object({
   id: z.string(),
@@ -340,6 +513,56 @@ async function readModelIds(
   return { modelIds: ids.slice(0, MAX_COLLECTION_MODELS), allIds: true };
 }
 
+/** A model as it's kept (RemoteModel), from what its partner said of it. */
+export function remoteModelData(model: Model, own: (url: string | undefined) => url is string) {
+  const pictures = model.image.filter((image) => own(image.url)).slice(0, 20);
+  return {
+    title: model.name || "Untitled",
+    description: markdownOf(model.source, 20_000),
+    images: pictures.map((image) => image.url),
+    files: (model.attachment ?? []).slice(0, 100).map((file): RemoteFileDetails & Record<string, unknown> => ({
+      name: file.name ?? "file",
+      size: file["thingport:size"] ?? null,
+      mediaType: file.mediaType ?? null,
+      // Where it's fetched from, signed, to download, open or copy it: only ever on the partner's own origin.
+      url: own(file.url) ? file.url : null,
+      kind: file["thingport:kind"],
+      role: file["thingport:kind"] === "file" ? file["thingport:role"] : undefined,
+      profileId: file["thingport:kind"] === "plate" ? file["thingport:profileId"] : undefined,
+      profile: file["thingport:kind"] === "plate" ? file["thingport:profile"] : undefined,
+      thumb: file["thingport:kind"] === "plate" && own(file["thingport:thumb"]) ? file["thingport:thumb"] : undefined,
+    })) as Prisma.InputJsonValue,
+    details: (detailsOf(model, pictures, own) as Prisma.InputJsonValue | null) ?? Prisma.DbNull,
+    sharedAt: model.published,
+    updatedAt: model.updated,
+  };
+}
+
+/** What a copy of `model` needs, from what its partner said: anything to fetch only on the partner's own origin. Null
+ *  from a partner too old to say, which marks each file plate or file. */
+function detailsOf(
+  model: Model,
+  pictures: Model["image"],
+  own: (url: string | undefined) => url is string,
+): RemoteModelDetails | null {
+  if (!model.attachment?.some((file) => file["thingport:kind"])) return null;
+  const category = model["thingport:category"];
+  return {
+    tags: model["thingport:tags"],
+    creator: model["thingport:creator"] || null,
+    importedFrom: model["thingport:importedFrom"],
+    author: model["thingport:author"],
+    category: category ? { path: category.path, siteIds: category.siteIds } : null,
+    generatorScriptWithheld: model["thingport:generatorScriptWithheld"] === true,
+    unfillableGaps: model["thingport:unfillableGaps"].filter((gap): gap is SourceGap =>
+      (SOURCE_GAPS as readonly string[]).includes(gap),
+    ),
+    descriptionImages: model["thingport:descriptionImages"].filter((image) => own(image.url)),
+    renders: pictures.filter((image) => image.generated).map((image) => image.url),
+    platePictures: pictures.filter((image) => image.plate).map((image) => image.url),
+  };
+}
+
 const webLink = (href: string) => /^https?:\/\//i.test(href) && href.length <= 500;
 const markdownOf = (value: { content?: string } | undefined, max: number) =>
   value?.content?.trim() ? value.content.trim().slice(0, max) : null;
@@ -393,23 +616,7 @@ async function storeIn(
     if (!allCollections) partlyCollections.push(saved.id);
     for (const model of models) {
       if (model.attributedTo !== person.id) continue;
-      const modelData = {
-        peerId: peer.id,
-        personId: saved.id,
-        title: model.name || "Untitled",
-        description: markdownOf(model.source, 20_000),
-        images: model.image.filter((url) => own(url)).slice(0, 20),
-        files: (model.attachment ?? []).slice(0, 100).map((file) => ({
-          name: file.name ?? "file",
-          size: file["thingport:size"] ?? null,
-          mediaType: file.mediaType ?? null,
-          // Where it's fetched from, signed, to download, open or copy it: only ever on the partner's own origin.
-          url: own(file.url) ? file.url : null,
-        })) as Prisma.InputJsonValue,
-        sharedAt: model.published,
-        updatedAt: model.updated,
-        syncedAt: readAt,
-      };
+      const modelData = { peerId: peer.id, personId: saved.id, ...remoteModelData(model, own), syncedAt: readAt };
       await tx.remoteModel.upsert({
         where: { apId: model.id },
         create: { apId: model.id, ...modelData },

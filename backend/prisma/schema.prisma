@@ -1241,8 +1241,12 @@ model RemoteModel {
   /// Markdown, as its owner wrote it.
   description String?
   images      String[]
-  /// `{ name, size, mediaType }` per file.
+  /// `{ name, size, mediaType, url }` per file, with what a copy needs of each: `kind` ("plate" or "file"), `role`,
+  /// `profileId`, `profile` and `thumb`.
   files       Json         @default("[]")
+  /// What a copy needs to be the same model (federation/remoteCopy.ts): its tags, creator, source, category and the
+  /// rest, as remoteIndex.ts read them. Null from a partner that doesn't say.
+  details     Json?
   sharedAt    DateTime?
   updatedAt   DateTime?
   syncedAt    DateTime     @default(now())

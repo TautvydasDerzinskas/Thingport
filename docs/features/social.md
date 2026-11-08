@@ -53,9 +53,11 @@ instances use to reach that person.
 
 - **Someone else's model** opens with whose it is. Download it, open it in your slicer or in
   [Studio](../guides/studio.md), and customize it, but not change it.
-- **Copy to my library**, or adding it to one of your collections, makes a copy of your own: its files, pictures and
-  description. The copy stays when the original is changed, made private or deleted. Adding the same model again finds
-  the copy you already have rather than making another.
+- **Copy to my library**, or adding it to one of your collections, makes a copy of your own: its files, pictures,
+  description, tags, print profiles and the site it came from. It goes in your category of the same name, when it's in
+  one of the starter categories and you have that one; otherwise AI categorization sorts it, when that's on. The copy
+  stays when the original is changed, made private or deleted. Adding the same model again finds the copy you already
+  have rather than making another.
 
 ## Chats
 

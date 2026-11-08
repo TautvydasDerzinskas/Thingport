@@ -8,7 +8,13 @@ import { createLogger } from "../logger";
 import { createKeyedLock } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { createLog } from "./auditLog";
-import { descriptionImagePath, saveDescriptionImage } from "./descriptionImageService";
+import { categoryRefOf, matchingCategoryId } from "./categoryService";
+import {
+  DESCRIPTION_IMAGE,
+  DESCRIPTION_IMAGE_REF,
+  descriptionImagePath,
+  saveDescriptionImage,
+} from "./descriptionImageService";
 import { createPrint, discardPrint, resolvePlateFilePath } from "./printCreation";
 import { managedPrintFilePath, saveFileFromTemp } from "./printFileService";
 import { plateThumbExists, plateThumbPath, plateThumbReplaceable, saveThumbFromFile } from "./printService";
@@ -16,14 +22,11 @@ import { addPreviewImage, preferImageOverRenders, previewImagePath } from "./pre
 import { libraryCopyOf, readablePrintWhere } from "./socialService";
 
 // Copying another user's model, from one of their public collections, into the user's own library: its files, pictures,
-// description and tags, as a model of the user's that nothing of the original's later changes, privacy or deletion
-// touches. Its category isn't copied, being the owner's own sorting; AI categorization sorts it as an import, when on.
+// description, tags, source and print profiles, as a model of the user's that nothing of the original's later changes,
+// privacy or deletion touches. Its category is the user's own that matches the original's starter category, if they
+// have one; otherwise AI categorization sorts it as an import, when on. The owner's folders are theirs alone.
 
 const log = createLogger("model-copy");
-
-const DESCRIPTION_IMAGE = /!\[([^\]]*)\]\(\/description-image\/([a-z0-9]+)\)/g;
-// A local one only: what a reference to some other site's /description-image/ path is, it isn't the model's.
-const DESCRIPTION_IMAGE_REF = /(?<=^|[\s"'(<])\/description-image\/([a-z0-9]+)/g;
 
 // One copy of a model at a time for each user, so a second request for it waits for the first to finish and finds a
 // whole copy, rather than the first's row while its files are still coming (or one about to be discarded). Copies of
@@ -81,6 +84,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
     );
   }
 
+  const categoryId = await matchingCategoryId(userId, await categoryRefOf(source.categoryId));
   let created: Awaited<ReturnType<typeof createPrint>>;
   try {
     created = await createPrint(
@@ -94,7 +98,10 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
         authorId: source.authorId,
         sourceProvider: source.sourceProvider,
         sourceExternalId: source.sourceExternalId,
+        unfillableGaps: source.unfillableGaps,
         generatorScriptWithheld: source.generatorScriptWithheld,
+        categoryId,
+        categorySource: categoryId ? "RULE" : null,
         copiedFromId: source.id,
         originalId: source.originalId ?? source.id,
         // A copy of a partner's model says so too, and stands for it as the copier's own.

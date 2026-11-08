@@ -316,7 +316,7 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
     updated_at: row.updatedAt?.toISOString() ?? null,
     owner_handle: row.person.username ? `${row.person.username}@${new URL(row.peer.origin).host}` : null,
     collections,
-    library_copy_id: await libraryCopyOfRemote(viewerId, row.apId),
+    library_copy_id: await libraryCopyOfRemote(viewerId, row),
   };
 }
 

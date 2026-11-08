@@ -516,3 +516,69 @@ describe("copying, more closely", () => {
     expect((await request(app).get(`/api/collection/${target.body.id}`).set(auth(viewer))).body.item_count).toBe(1);
   });
 });
+
+describe("a copy's category", () => {
+  beforeAll(async () => {
+    await setSocialSettings({ enabled: true });
+  });
+
+  /** `account`'s starter category of these names, from the top. */
+  async function starter(account: Account, ...names: string[]): Promise<string> {
+    let parentId: string | null = null;
+    for (const name of names) {
+      const found: { id: string } = await prisma.category.findFirstOrThrow({
+        where: { userId: account.id, kind: "category", parentId, name },
+        select: { id: true },
+      });
+      parentId = found.id;
+    }
+    return parentId!;
+  }
+
+  async function sortedModel(categoryId: string): Promise<string> {
+    const id = await sharedModel(owner, `sorted-${Date.now()}`);
+    await prisma.print.update({ where: { id }, data: { categoryId, categorySource: "MANUAL" } });
+    return id;
+  }
+
+  async function copyOf(account: Account, sourceId: string) {
+    const res = await request(app).post(`/api/print/${sourceId}/copy`).set(auth(account));
+    expect(res.body.copied).toBe(true);
+    return prisma.print.findUniqueOrThrow({ where: { id: res.body.print.id } });
+  }
+
+  it("is the copier's own starter category with the same names", async () => {
+    const copy = await copyOf(viewer, await sortedModel(await starter(owner, "3D Printer", "Test Models")));
+    expect(copy).toMatchObject({
+      categoryId: await starter(viewer, "3D Printer", "Test Models"),
+      categorySource: "RULE",
+    });
+  });
+
+  it("is found by the sites' categories when the copier renamed theirs", async () => {
+    const sorter = await register("Sorter");
+    const theirs = await starter(sorter, "3D Printer", "Test Models");
+    await prisma.category.update({ where: { id: theirs }, data: { name: "Calibration" } });
+    const copy = await copyOf(sorter, await sortedModel(await starter(owner, "3D Printer", "Test Models")));
+    expect(copy.categoryId).toBe(theirs);
+  });
+
+  it("is never one of the owner's own folders, however it's named", async () => {
+    const folder = await prisma.category.create({ data: { userId: owner.id, name: "Test Models", kind: "folder" } });
+    expect((await copyOf(viewer, await sortedModel(folder.id))).categoryId).toBeNull();
+  });
+
+  it("comes with its source, and what the source had nothing for", async () => {
+    const sourceId = await sharedModel(owner, `sourced-${Date.now()}`);
+    await prisma.print.update({
+      where: { id: sourceId },
+      data: { sourceProvider: "printables", sourceExternalId: `copied-${Date.now()}`, unfillableGaps: ["author"] },
+    });
+    const copy = await copyOf(viewer, sourceId);
+    expect(copy).toMatchObject({ sourceProvider: "printables", unfillableGaps: ["author"] });
+    const page = await request(app).get(`/api/print/${copy.id}`).set(auth(viewer));
+    expect(page.body.source_url).toMatch(/^https:\/\/www\.printables\.com\//);
+    expect(page.body.source_gaps).toContain("creator");
+    expect(page.body.source_gaps).not.toContain("author");
+  });
+});
