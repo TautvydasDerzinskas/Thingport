@@ -1,11 +1,13 @@
 import { useLayoutEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
+import { scrollRestoreHeld } from "../../hooks/useScrollRestoreHold";
 
 // How long a page reached by back or forward may go without growing before its place is given up on. Counted from
-// the last time it grew, as a page can fill in a step at a time; long enough for a list no longer kept to load again
-// from a slow server. The reader scrolling ends it sooner.
+// the last time it grew, as a page can fill in a step at a time. A grid still loading its list holds it open for as
+// long as that takes (useScrollRestoreHold); the reader scrolling ends it sooner.
 const WAIT_FOR_GROWTH_MS = 8000;
-// The longest a place is followed at all, for a page whose height never settles (something animating, say).
+// The longest a place is followed at all, for a page whose height never settles (something animating, say), unless a
+// grid is still loading.
 const RESTORE_AT_MOST_MS = 20000;
 // Keys that scroll the page, outside a field being typed in. With the wheel and a moving touch, the reader scrolling for
 // themselves; Tab or a click doesn't end a restore, and a drag of the scrollbar shows as the page moving.
@@ -18,14 +20,24 @@ function scrollsThePage(event: KeyboardEvent): boolean {
   return !typing && SCROLL_KEYS.has(event.key);
 }
 
-// Each history entry's place, by its key. Outside the component, which signing out unmounts with the router: back to
-// an entry from before still finds its place.
-const places = new Map<string, number>();
+type Place = { x: number; y: number };
 
-/** Scrolls to `top` now and again each time the page grows, until it gets there, the reader scrolls, or the page
+// Each history entry's place, by entryOf. Outside the component, which signing out unmounts with the router: back to
+// an entry from before still finds its place.
+const places = new Map<string, Place>();
+
+/** Which history entry this is. The router's key, except for entries without one, which all share "default": the
+ *  page first opened, and in-page #anchors the browser added. Those go by their address, so each keeps its own place. */
+function entryOf(key: string, address: { pathname: string; search: string; hash: string }): string {
+  return key === "default" ? `default ${address.pathname}${address.search}${address.hash}` : key;
+}
+
+const here = (): Place => ({ x: window.scrollX, y: window.scrollY });
+
+/** Scrolls to `place` now and again each time the page grows, until it gets there, the reader scrolls, or the page
  *  stops growing; then calls `done`. The page's height is read each frame: html, body and #root are the window's height
  *  (index.css), so none of them changes size as the content does. */
-function scrollBackTo(top: number, done: () => void): () => void {
+function scrollBackTo(place: Place, done: () => void): () => void {
   let frame = 0;
   let height = -1;
   let seenAt = window.scrollY;
@@ -39,12 +51,14 @@ function scrollBackTo(top: number, done: () => void): () => void {
     if (now !== height) {
       height = now;
       grewAt = performance.now();
-      window.scrollTo(0, top);
-      if (Math.abs(window.scrollY - top) < 2) return stop();
+      window.scrollTo(place.x, place.y);
+      if (Math.abs(window.scrollY - place.y) < 2) return stop();
     }
     seenAt = window.scrollY;
     const at = performance.now();
-    if (at - grewAt > WAIT_FOR_GROWTH_MS || at - startedAt > RESTORE_AT_MOST_MS) return stop();
+    const held = scrollRestoreHeld();
+    if (held) grewAt = at;
+    if (at - grewAt > WAIT_FOR_GROWTH_MS || (!held && at - startedAt > RESTORE_AT_MOST_MS)) return stop();
     frame = requestAnimationFrame(step);
   };
   const onKey = (event: KeyboardEvent) => {
@@ -74,11 +88,13 @@ function scrollBackTo(top: number, done: () => void): () => void {
  *  (useRememberedList), so theirs is reached straight away. An entry with no place kept, and a reload, are left to the
  *  browser. */
 export default function ScrollReset() {
-  const { key, pathname } = useLocation();
+  const location = useLocation();
   const navigationType = useNavigationType();
-  const lastKey = useRef(key);
+  const { pathname } = location;
+  const entry = entryOf(location.key, location);
+  const lastEntry = useRef(entry);
   const lastPathname = useRef(pathname);
-  const currentKey = useRef(key);
+  const currentEntry = useRef(entry);
   // While the window isn't where the reader put it, nothing is kept: from back or forward until the entry is shown
   // (the browser's own restoring scrolls the old page meanwhile), and while a place is being scrolled back to.
   const settling = useRef(false);
@@ -89,15 +105,14 @@ export default function ScrollReset() {
   // scroll arrives would keep the top as the place of the entry being left.
   useLayoutEffect(() => {
     const keep = () => {
-      if (!settling.current) places.set(currentKey.current, window.scrollY);
+      if (!settling.current) places.set(currentEntry.current, here());
     };
     const traverse = () => {
-      // Between two entries the router doesn't tell apart (in-page #anchors the browser added, which carry no state),
-      // its key stays the same, so nothing would end the settling: those aren't a move between entries here either.
-      // The key is the router's own: the entry's state.key, or "default" without one.
-      // A restore still under way stops, though: it was for where the reader was, and they've moved within the page.
-      const to = (window.history.state as { key?: string } | null)?.key ?? "default";
-      if (to !== currentKey.current) settling.current = true;
+      // The entry back or forward goes to, as the effect below will see it (the router's key is the entry's
+      // state.key, or "default" without one). The same entry means nothing moves between entries: a restore still
+      // under way stops, as it was for where the reader was before.
+      const to = entryOf((window.history.state as { key?: string } | null)?.key ?? "default", window.location);
+      if (to !== currentEntry.current) settling.current = true;
       else stopRestore.current?.();
     };
     window.addEventListener("scroll", keep, { passive: true });
@@ -110,13 +125,13 @@ export default function ScrollReset() {
 
   useLayoutEffect(() => {
     // Mounting (and signing in, which mounts the router afresh) isn't a move between entries.
-    if (lastKey.current === key) return;
-    lastKey.current = key;
-    currentKey.current = key;
+    if (lastEntry.current === entry) return;
+    lastEntry.current = entry;
+    currentEntry.current = entry;
     const newPage = lastPathname.current !== pathname;
     lastPathname.current = pathname;
     if (navigationType === "POP") {
-      const place = places.get(key);
+      const place = places.get(entry);
       if (place === undefined) {
         settling.current = false;
         return;
@@ -132,8 +147,8 @@ export default function ScrollReset() {
     settling.current = false;
     if (newPage) window.scrollTo(0, 0);
     // Kept now too, as an entry that's never scrolled (a query change, a page that fits the window) has no scroll event.
-    places.set(key, window.scrollY);
-  }, [key, pathname, navigationType]);
+    places.set(entry, here());
+  }, [entry, pathname, navigationType]);
 
   return null;
 }

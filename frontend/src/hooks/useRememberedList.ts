@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
+import { useScrollRestoreHold } from "./useScrollRestoreHold";
 
 type Kept<T, X> = { address: string; items: T[]; hasMore: boolean; alongside: X | undefined };
 
@@ -46,6 +47,8 @@ export function useRememberedList<T, X = undefined>({
   const [items, setItems] = useState<T[]>(() => mountedWith?.items ?? []);
   const [hasMore, setHasMore] = useState(() => mountedWith?.hasMore ?? false);
   const [loading, setLoading] = useState(() => !mountedWith && loadingAtFirst);
+  // A list no longer kept loads again on the way back: ScrollReset waits for it, however slow, rather than give up.
+  useScrollRestoreHold(loading);
   // The entry whose kept list is on screen, so a later run of the load effect doesn't put it back over newer pages.
   const shownFor = useRef<string | null>(mountedWith ? key : null);
 
