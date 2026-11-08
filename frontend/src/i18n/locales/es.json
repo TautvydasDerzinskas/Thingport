@@ -3092,7 +3092,10 @@
       "empty": "Aún no hay notas para esta versión.",
       "openGithub": "Abrir en GitHub",
       "zoom": "Ampliar captura",
-      "highlight": "Destacado"
+      "highlight": "Destacado",
+      "earlier": "Versiones anteriores",
+      "backToLatest": "Volver a la más reciente",
+      "latest": "La más reciente"
     },
     "codeBlock": {
       "copy": "Copiar",

@@ -15,6 +15,8 @@ const LAST_ANNOUNCED_VERSION_KEY = "last_announced_version";
 const SEMVER = /^\d+\.\d+\.\d+$/;
 
 export const CURATED_NOTES_PATH = "release-notes/latest-release-notes.json";
+// Earlier releases' curated notes, one file per version, moved here as the next release's are written.
+export const ARCHIVE_PATH = "release-notes/archive";
 export const QUIET_RELEASES_PATH = "release-notes/quiet-releases.json";
 
 export type ReleaseNoteKind = "breaking" | "feature" | "improvement" | "fix";
@@ -34,6 +36,9 @@ export type ReleaseNoteItem = {
   url: string | null;
 };
 
+/** An earlier release with curated notes of its own, which What's new can open in their place. */
+export type EarlierRelease = { version: string; title: string | null };
+
 export type ReleaseNotes = {
   version: string;
   /** "curated" from the hand-written file, "changelog" from CHANGELOG.md, "none" when neither could be read. */
@@ -42,6 +47,8 @@ export type ReleaseNotes = {
   summary: string | null;
   items: ReleaseNoteItem[];
   releases_url: string;
+  /** The releases before this one that have curated notes, newest first, leaving out the ones these notes are. */
+  earlier: EarlierRelease[];
 };
 
 /** Where a notification opens the What's new dialog; a bare query keeps whichever page is open. */
@@ -196,8 +203,10 @@ const curatedSchema = z.object({
     .max(100),
 });
 
+type CuratedNotes = Omit<ReleaseNotes, "releases_url" | "earlier">;
+
 /** Null when the file is malformed: the changelog is shown instead. */
-export function parseCuratedNotes(data: unknown, fileUrl: string): Omit<ReleaseNotes, "releases_url"> | null {
+export function parseCuratedNotes(data: unknown, fileUrl: string): CuratedNotes | null {
   const parsed = curatedSchema.safeParse(data);
   if (!parsed.success) return null;
   const allowed = new Set(["https:", new URL(fileUrl).protocol]);
@@ -380,6 +389,44 @@ export function clearReleaseNotesCache(): void {
   cache.clear();
 }
 
+/** A curated notes file, or null when it's missing or malformed. Pictures resolve against `imagesFrom`. */
+async function readCurated(fileUrl: string, imagesFrom = fileUrl): Promise<CuratedNotes | null> {
+  const text = await fetchText(fileUrl);
+  if (!text) return null;
+  try {
+    return parseCuratedNotes(JSON.parse(text), imagesFrom);
+  } catch {
+    return null;
+  }
+}
+
+/** An archived file's pictures are named relative to release-notes/, where it was read from as the latest file. */
+function readArchived(baseUrl: string, version: string): Promise<CuratedNotes | null> {
+  return readCurated(`${baseUrl}/${ARCHIVE_PATH}/${version}.json`, `${baseUrl}/${CURATED_NOTES_PATH}`).then((notes) =>
+    notes?.version === version ? notes : null,
+  );
+}
+
+/** The releases before `version` with curated notes: the latest file's when it's behind, and the archive's, asked for
+ *  by each release the changelog lists, so the archive needs no index to keep up. Missing files are cached like any
+ *  other, so this costs the requests once per cache period. */
+async function earlierReleases(
+  baseUrl: string,
+  version: string,
+  latest: CuratedNotes | null,
+  changelog: ChangelogRelease[],
+  shownFrom: string | null,
+): Promise<EarlierRelease[]> {
+  const before = (v: string) => compareVersions(v, version) < 0 && v !== shownFrom;
+  const candidates = [...new Set(changelog.map((release) => release.version))].filter(
+    (v) => before(v) && v !== latest?.version,
+  );
+  const archived = await Promise.all(candidates.map((v) => readArchived(baseUrl, v)));
+  return [...(latest && before(latest.version) ? [latest] : []), ...archived.flatMap((notes) => notes ?? [])]
+    .toSorted((a, b) => compareVersions(b.version, a.version))
+    .map((notes) => ({ version: notes.version, title: notes.title }));
+}
+
 export async function getReleaseNotes(
   options: { version?: string | null; since?: string | null; frontendVersion?: string | null } = {},
   baseUrl = RELEASE_NOTES_URL,
@@ -387,7 +434,15 @@ export async function getReleaseNotes(
   const version = options.version ?? getBackendVersion();
   if (!version || !SEMVER.test(version)) return null;
   const releases_url = `https://github.com/${GITHUB_REPO}/releases`;
-  const empty: ReleaseNotes = { version, source: "none", title: null, summary: null, items: [], releases_url };
+  const empty: ReleaseNotes = {
+    version,
+    source: "none",
+    title: null,
+    summary: null,
+    items: [],
+    releases_url,
+    earlier: [],
+  };
   if (!baseUrl) return empty;
 
   const curatedUrl = `${baseUrl}/${CURATED_NOTES_PATH}`;
@@ -410,9 +465,9 @@ export async function getReleaseNotes(
         })
       : [];
 
-  let curated: ReturnType<typeof parseCuratedNotes> = null;
+  let latest: CuratedNotes | null = null;
   try {
-    curated = curatedText ? parseCuratedNotes(JSON.parse(curatedText), curatedUrl) : null;
+    latest = curatedText ? parseCuratedNotes(JSON.parse(curatedText), curatedUrl) : null;
   } catch {
     // not JSON: the changelog is shown instead
   }
@@ -420,22 +475,34 @@ export async function getReleaseNotes(
   // it. Those are shown to whoever hasn't seen them, but only within the same x.y line, so a lagging file can't label
   // one release's notes as another's.
   const covers =
-    curated &&
-    (curated.version === version ||
-      (minorLine(curated.version) === minorLine(version) &&
-        compareVersions(curated.version, version) < 0 &&
-        (since === null || compareVersions(curated.version, since) > 0)));
-  if (curated && covers) {
+    latest &&
+    (latest.version === version ||
+      (minorLine(latest.version) === minorLine(version) &&
+        compareVersions(latest.version, version) < 0 &&
+        (since === null || compareVersions(latest.version, since) > 0)));
+  const shownFrom = covers && latest ? latest : null;
+  const [curated, earlier] = await Promise.all([
+    // A release the latest file has moved past keeps its notes in the archive, under its own version.
+    shownFrom ?? readArchived(baseUrl, version),
+    earlierReleases(
+      baseUrl,
+      version,
+      latest,
+      backendText ? parseChangelog(backendText) : [],
+      shownFrom?.version ?? null,
+    ),
+  ]);
+  if (curated) {
     // Someone who skipped releases gets theirs from the changelog after the curated ones; commit links aren't
     // "Learn more" links.
     // A patch past the curated release brings its own changelog entries, ahead of the notes it builds on.
     const later = curated.version === version ? [] : fromChangelogs(false, version, curated.version);
-    const earlier = fromChangelogs(true, curated.version);
-    for (const item of [...later, ...earlier]) item.url = null;
+    const skipped = fromChangelogs(true, curated.version);
+    for (const item of [...later, ...skipped]) item.url = null;
     // The version the instance is actually on, so the dialog's heading matches what it updated to.
-    return { ...curated, version, items: [...later, ...curated.items, ...earlier], releases_url };
+    return { ...curated, version, items: [...later, ...curated.items, ...skipped], releases_url, earlier };
   }
 
-  if (!backendText) return empty;
-  return { ...empty, source: "changelog", items: fromChangelogs(false) };
+  if (!backendText) return { ...empty, earlier };
+  return { ...empty, source: "changelog", items: fromChangelogs(false), earlier };
 }

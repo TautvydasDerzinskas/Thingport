@@ -3105,7 +3105,10 @@
       "empty": "Pas encore de notes pour cette version.",
       "openGithub": "Ouvrir sur GitHub",
       "zoom": "Agrandir la capture",
-      "highlight": "À la une"
+      "highlight": "À la une",
+      "earlier": "Versions précédentes",
+      "backToLatest": "Revenir à la plus récente",
+      "latest": "La plus récente"
     },
     "codeBlock": {
       "copy": "Copier",

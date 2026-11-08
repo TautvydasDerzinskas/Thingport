@@ -3050,7 +3050,10 @@
       "empty": "No release notes for this version yet.",
       "openGithub": "Open on GitHub",
       "zoom": "Enlarge screenshot",
-      "highlight": "Highlight"
+      "highlight": "Highlight",
+      "earlier": "Earlier releases",
+      "backToLatest": "Back to latest",
+      "latest": "Latest"
     },
     "codeBlock": {
       "copy": "Copy",

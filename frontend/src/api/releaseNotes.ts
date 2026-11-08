@@ -17,6 +17,9 @@ export type ReleaseNoteItem = {
   url: string | null;
 };
 
+/** An earlier release with curated notes of its own, which What's new can open in their place. */
+export type EarlierRelease = { version: string; title: string | null };
+
 export type ReleaseNotes = {
   version: string;
   /** "curated" from release-notes/latest-release-notes.json, "changelog" from CHANGELOG.md, "none" when unreachable. */
@@ -25,6 +28,8 @@ export type ReleaseNotes = {
   summary: string | null;
   items: ReleaseNoteItem[];
   releases_url: string;
+  /** Newest first. Missing from a backend older than the archive's menu. */
+  earlier?: EarlierRelease[];
 };
 
 export const releaseNotesApi = {
