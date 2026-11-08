@@ -232,19 +232,7 @@ export default function ModelSidePanel({
       }}
     >
       <Stack spacing={2}>
-        <Box>
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
-            {t("models:detail.title")}
-          </Typography>
-          {/* Full title, wrapped -- unlike the page header, this box never truncates it. */}
-          <Typography
-            variant="body2"
-            sx={{ color: (muiTheme) => muiTheme.thingport.headingText, overflowWrap: "anywhere" }}
-          >
-            {print.title || print.name}
-          </Typography>
-        </Box>
-
+        {/* No title here: the page header has room for it. */}
         {print.copied_from_remote && <CopiedFromRemote origin={print.copied_from_remote} />}
 
         {owner && (
