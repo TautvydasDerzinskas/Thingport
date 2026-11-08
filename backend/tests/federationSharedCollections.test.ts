@@ -118,11 +118,14 @@ let plateId: string;
 beforeAll(async () => {
   const stand = express();
   stand.get("/api/ap/collections/:id", (req, res) => {
-    setTimeout(() => {
-      const doc = docs.get(req.params.id);
-      if (doc) res.json(doc);
-      else res.status(404).json({ error: "Not found" });
-    }, delays.get(req.params.id) ?? 0);
+    setTimeout(
+      () => {
+        const doc = docs.get(req.params.id);
+        if (doc) res.json(doc);
+        else res.status(404).json({ error: "Not found" });
+      },
+      delays.get(req.params.id) ?? 0,
+    );
   });
   stand.get("/api/ap/collections/:id/items", (req, res) => {
     // "partial": its second page is gone, so what's read of it is only part.
