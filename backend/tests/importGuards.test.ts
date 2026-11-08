@@ -287,6 +287,9 @@ describe("switching the database", () => {
   beforeAll(async () => {
     process.on("unhandledRejection", onUnhandled);
     global.fetch = nothingHere();
+    // Other files' leftovers: a RUNNING row refuses every switch, and the worker would take a QUEUED one.
+    await prisma.importJob.updateMany({ where: { status: "QUEUED" }, data: { status: "PAUSED" } });
+    await prisma.importJob.updateMany({ where: { status: "RUNNING" }, data: { status: "ERROR" } });
     admin = await makeAdmin();
     homeClient = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
 
