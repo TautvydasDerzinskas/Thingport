@@ -1,9 +1,9 @@
 name: Status badges
 
 # Writes the README's status chips: one shields.io endpoint file per workflow, its short name and a tick or a cross for
-# its latest finished run on the default branch, as GitHub's own badges report it. Those can't be given a short name or
-# a tick, hence this. The files live on the `ci/status-badges` branch, one commit replaced each time, so nothing piles
-# up. Every run writes all of them, so whichever workflow finished, and a first run after merging, leave them current.
+# the run on the default branch that finished last. GitHub's own badges can't be given a short name or a tick, hence
+# this. The files live on the `ci/status-badges` branch, one commit replaced each time, so nothing piles up. Every run
+# writes all of them, so whichever workflow finished, and a first run after merging, leave them current.
 on:
   workflow_run:
     workflows: [Website, Frontend image, Backend image, Bridge release, Extension checks, Regression pack]
@@ -35,9 +35,11 @@ jobs:
           mkdir -p "$RUNNER_TEMP/badges"
           cd "$RUNNER_TEMP/badges"
           # Thingport's colours (frontend/src/theme.ts, web/src/styles): navy labels, the button green, a deep red.
+          # Runs come newest-started first, and two can overlap (a push and a pull request), so the one that finished
+          # last is picked from the recent ones by when it was last updated, which for a finished run is its end.
           chip() {
-            conclusion=$(gh api "repos/$REPO/actions/workflows/$1.yml/runs?branch=$BRANCH&status=completed&per_page=1" \
-              --jq '.workflow_runs[0].conclusion // ""')
+            conclusion=$(gh api "repos/$REPO/actions/workflows/$1.yml/runs?branch=$BRANCH&status=completed&per_page=20" \
+              --jq '.workflow_runs | max_by(.updated_at) | .conclusion // ""')
             case "$conclusion" in
               success) message="✓" color="#008a00" ;;
               failure | timed_out | startup_failure) message="✗" color="#c62828" ;;
