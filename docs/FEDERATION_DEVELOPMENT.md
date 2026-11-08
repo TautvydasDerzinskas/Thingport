@@ -223,7 +223,8 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   models page has them. Both answer only the partner it's shared with someone on, only while it's `SHARED`; so do its
   models' files and pictures, and its owner's avatar.
 - **Keeping it.** The partner keeps it as a `RemoteCollection` with `limited`, its people here as `viewers`, and its models
-  as `RemoteModel`s with `limited` unless they're shared openly there too. Limited rows are never on Explore's public
+  as `RemoteModel`s with `limited` unless they're shared openly there too; a model shared openly keeps the details its
+  index read, since what's read as shared may be newer than what's open there. Limited rows are never on Explore's public
   rows or a person's page, and opening one, its models or their files takes being among its viewers
   (`canSeeRemoteModel`). A person named newly is notified. The read of the partner's index leaves them alone (a model
   no longer listed but still in one becomes limited), and their owner is kept while they name them. After each read of
@@ -234,9 +235,11 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   here for longer than delivery keeps trying) still turns up; a list that can't be read is the partner's `syncError`.
   Reads and deletions of one collection run one at a time, from fetching to writing, so an older read can't put back
   someone a newer one took off. Each kept collection notes when it was asked for (`RemoteCollection.fetchedAt`), by
-  the index or as shared, and the later of two reads is what's kept, whichever finishes last. A read writes nothing,
-  its owner included, once the partner is blocked: it holds the partner's row (`FOR SHARE`, last) until it's written,
-  so a block waits for it and then forgets it all. Nothing is refreshed while social features are off here.
+  the index or as shared, and the later of two reads is what's kept, whichever finishes last; on a tie, the read as
+  shared. A read writes nothing, its owner included, once the partner is blocked: it holds the partner's row
+  (`FOR SHARE`, last) until it's written, so a block waits for it and then forgets it all. Nothing is read or kept while
+  social features are off here, one turned off mid-read included, so whoever's added is told once it's read again.
+  Deleting an account locks its collections first, so a change to who sees one waits and its `Delete` is queued.
 - **Pictures.** The proxy serves a partner's picture only while something kept here names it: a person's avatar or
   cover, or a model's picture (`RemoteModel.images`, indexed). One only of models kept for shared collections goes
   only to someone who may see one of those models, whoever has its address, and is never cached by the browser; once

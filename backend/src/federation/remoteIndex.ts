@@ -672,10 +672,11 @@ async function storeIn(
       };
       const modelApIds = collection.modelIds;
       // Unless it was asked for since, as shared with some people here (sharedCollections.ts): that's newer than this,
-      // so it stays theirs alone. Checked as it's written, so a read of it finishing meanwhile counts too.
+      // so it stays theirs alone, as it does when both were asked for in the same millisecond. Checked as it's written,
+      // so a read of it finishing meanwhile counts too.
       const write = () =>
         tx.remoteCollection.updateMany({
-          where: { apId: collection.id, OR: [{ fetchedAt: null }, { fetchedAt: { lte: collection.fetchedAt } }] },
+          where: { apId: collection.id, OR: [{ fetchedAt: null }, { fetchedAt: { lt: collection.fetchedAt } }] },
           // Its models read only in part: those it had stay.
           data: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
         });

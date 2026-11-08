@@ -84,6 +84,8 @@ export async function queueCollectionsGone(db: Db, collectionIds: string[]): Pro
  *  their account. Without a Public URL nothing can be sent, and nothing stops the account going: each partner finds
  *  them gone the next time it reads them. */
 export async function queueAccountGone(db: Db, userId: string): Promise<void> {
+  // Held until the account's gone: a change to who sees one waits, then finds it gone, and one under way is read below.
+  await db.$queryRaw`SELECT id FROM "Collection" WHERE "userId" = ${userId} FOR UPDATE`;
   const collections = await db.collection.findMany({
     where: { userId, shares: { some: { remotePersonId: { not: null } } } },
     select: { id: true },
@@ -242,6 +244,8 @@ export async function refreshShared(peerId: string): Promise<void> {
     await prisma.peer.update({ where: { id: peer.id }, data: { syncError: message.slice(0, 500) } }).catch(() => {});
   }
   for (const apId of new Set([...rows.map((row) => row.apId), ...listed.urls])) {
+    // Turned off meanwhile: the rest wait too.
+    if (!(await getSocialSettings()).enabled) return;
     await readShared(peer, apId).catch((err: unknown) => {
       console.warn(`[federation] Couldn't read a collection shared from ${peer.origin}:`, (err as Error).message);
     });
@@ -288,11 +292,12 @@ function readShared(peer: Peer, apId: string): Promise<void> {
 }
 
 async function readSharedNow(peer: Peer, apId: string): Promise<void> {
-  // As of when it was asked: a read of the partner's index begun before this doesn't write over it (remoteIndex.ts).
-  const readAt = new Date();
   const runtime = await getRuntime();
   const own = (url: string | undefined): url is string => Boolean(url) && originOf(url!) === peer.origin;
   const read = async (url: string) => (await runtime.signedLoader(url)).document;
+  // As of when it's asked for: a read of the partner's index asked for before this doesn't write over it
+  // (remoteIndex.ts).
+  const readAt = new Date();
   let doc: z.infer<typeof collectionDoc>;
   try {
     doc = collectionDoc.parse(await read(apId));
@@ -315,6 +320,9 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
   // Nowhere of its own to read its models from: they're not known, not gone, so those it had stay.
   const models = own(items) ? await readModels(read, items, own) : { models: [], all: false };
   const theirs = models.models.filter((model) => model.attributedTo === doc.attributedTo.id);
+  // Turned off while it was read: nothing of it is kept, so nobody's its viewer without being told. Read again once
+  // they're on, by the Update tried again or the refresh after the next read of the index.
+  if (!(await getSocialSettings()).enabled) throw new RetryLater("Social features are off here for now");
 
   const added = await prisma
     .$transaction(
@@ -340,13 +348,12 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
         if (!owner) return null;
         for (const model of theirs) {
           const data = { peerId: peer.id, personId: owner.id, ...remoteModelData(model, own), syncedAt: readAt };
-          // One also shared openly there stays as its index has it: not limited.
-          await tx.remoteModel.upsert({
-            where: { apId: model.id },
-            create: { apId: model.id, ...data, limited: true },
-            update: data,
-            select: { id: true },
-          });
+          // One shared openly there stays as its index has it, details too: these may be newer than what's open there
+          // (made private and changed since), and its index's next read says which (remoteIndex.ts).
+          const { count } = await tx.remoteModel.updateMany({ where: { apId: model.id, limited: true }, data });
+          if (!count) {
+            await tx.remoteModel.createMany({ data: { apId: model.id, ...data, limited: true }, skipDuplicates: true });
+          }
         }
         const data = {
           peerId: peer.id,
@@ -393,10 +400,7 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
       throw err;
     });
   await pruneLimitedModels(peer.id);
-  // Not while social features are off: what it links to isn't there to open.
-  if (added?.viewers.length && (await getSocialSettings()).enabled) {
-    await tell(added.viewers, added.owner, added.name, added.id);
-  }
+  if (added?.viewers.length) await tell(added.viewers, added.owner, added.name, added.id);
 }
 
 /** Throws unless `peerId` is still an ACTIVE partner, and keeps it one until `tx` is done: a block waits for it, then
