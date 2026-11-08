@@ -229,6 +229,11 @@ const arrowRight = "M9 5l7 7-7 7";
             <span class="demo-chip" aria-hidden="true">{VIDEO.title}<span>{VIDEO.length}</span></span>
           </a>
         </div>
+        <script is:inline>
+          // Before the page's script loads, so a theme the visitor saved, apart from the system's, shows its poster.
+          document.querySelector("[data-dark-poster]").media =
+            document.documentElement.dataset.theme === "dark" ? "all" : "not all";
+        </script>
         <p class="demo-watch"><a href={watchUrl}>Watch on YouTube <Icon name="arrow" size={14} /></a></p>
       </div>
 
@@ -714,7 +719,7 @@ const arrowRight = "M9 5l7 7-7 7";
   const plainClick = (event: MouseEvent) =>
     event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
-  // The poster follows the page's theme, which the visitor may have set apart from the system's.
+  // The poster follows the theme toggle (the inline script beside it set the first one).
   const darkPoster = document.querySelector<HTMLSourceElement>("[data-dark-poster]");
   if (darkPoster) {
     const follow = () => (darkPoster.media = document.documentElement.dataset.theme === "dark" ? "all" : "not all");
@@ -765,26 +770,32 @@ const arrowRight = "M9 5l7 7-7 7";
     // The slide last asked for: while the strip glides there, the arrows step on from it, not from where it is yet.
     let current = 0;
     let gliding = false;
-    let settle: number | undefined;
     const go = (index: number) => {
       current = (index + slides.length) % slides.length;
-      gliding = true;
       showDot(current);
-      track.scrollTo({
-        left: slides[current].offsetLeft - slides[0].offsetLeft,
-        behavior: reducedMotion.matches ? "auto" : "smooth",
-      });
+      const left = slides[current].offsetLeft - slides[0].offsetLeft;
+      if (Math.abs(track.scrollLeft - left) < 1) return;
+      gliding = true;
+      track.scrollTo({ left, behavior: reducedMotion.matches ? "auto" : "smooth" });
     };
+    // When the strip stops, a glide or a swipe cut short, it settles on the slide it's at.
+    const settled = () => {
+      gliding = false;
+      current = atScroll();
+      showDot(current);
+    };
+    // The browser's own word that scrolling has finished; without it, a pause in the scroll events.
+    const hasScrollEnd = "onscrollend" in window;
+    if (hasScrollEnd) track.addEventListener("scrollend", settled);
+    let settle: number | undefined;
     let queued = false;
     track.addEventListener(
       "scroll",
       () => {
-        window.clearTimeout(settle);
-        settle = window.setTimeout(() => {
-          gliding = false;
-          current = atScroll();
-          showDot(current);
-        }, 150);
+        if (!hasScrollEnd) {
+          window.clearTimeout(settle);
+          settle = window.setTimeout(settled, 150);
+        }
         if (gliding || queued) return;
         queued = true;
         requestAnimationFrame(() => {
