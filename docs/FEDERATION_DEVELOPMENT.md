@@ -113,7 +113,8 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   each file `kind` (plate or file), a file's `role`, and a plate's `profileId`, `profile` (what its site said, with
   the reader's version), `thumb` and `thumbGenerated` (the thumb is a render, which a copy takes only where its
   instance won't render one). A model past 256 KB leaves its profiles' facts out (`fitModel`), and a copy asks their
-  site instead; still past it, its category, description's images and plates' thumbs.
+  site instead; still past it, its category, description's images and plates' thumbs, then the names at the end of
+  its files' addresses, then its description is shortened.
 - **Keeping the copy** (`remoteIndex.ts`): `RemotePerson`, `RemoteModel`, `RemoteCollection`, read on connecting, by
   **Check connection**, every 15 minutes (the delivery worker's tick), and when Explore is opened and it's two minutes
   old. Everything a partner says is checked: ids and pictures on its own origin, text cut to size, and a listing without

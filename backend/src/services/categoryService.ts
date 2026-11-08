@@ -320,30 +320,49 @@ export type CategoryRef = { path: string[]; siteIds: { provider: string; siteId:
 type RefRow = { id: string; name: string; kind: string; parentId: string | null };
 
 /** Its names from the top, however deep (validateParentCategory refuses only a loop); none for one in a loop
- *  already. */
-function refPath(row: RefRow, byId: ReadonlyMap<string, RefRow>): string[] | null {
+ *  already, or deeper than `deepest`. */
+function refPath(row: RefRow, byId: ReadonlyMap<string, RefRow>, deepest: number): string[] | null {
   if (row.kind !== "category") return null;
   const names: string[] = [];
   const seen = new Set<string>();
   for (let at: RefRow | undefined = row; at; at = at.parentId ? byId.get(at.parentId) : undefined) {
-    if (seen.has(at.id)) return null;
+    if (seen.has(at.id) || names.length === deepest) return null;
     seen.add(at.id);
-    names.unshift(at.name);
+    names.push(at.name);
   }
-  return names;
+  return names.toReversed();
 }
 
-/** Each of `userId`'s starter categories as a CategoryRef, by id. */
-export async function categoryRefs(userId: string): Promise<Map<string, CategoryRef>> {
+/** `userId`'s starter categories of `ids` as CategoryRefs, by id, each no deeper than `deepest`: only those asked
+ *  for, as a long enough chain of categories would make every one's path too many names to hold. */
+export async function categoryRefs(
+  userId: string,
+  ids: readonly (string | null)[],
+  deepest = Infinity,
+): Promise<Map<string, CategoryRef>> {
+  const refs = new Map<string, CategoryRef>();
+  const wanted = new Set(ids.filter((id): id is string => Boolean(id)));
+  if (!wanted.size) return refs;
   const rows = await prisma.category.findMany({
     where: { userId },
-    select: { id: true, name: true, kind: true, parentId: true, ...WITH_SITE_IDS },
+    select: { id: true, name: true, kind: true, parentId: true },
   });
   const byId = new Map(rows.map((row) => [row.id, row]));
-  const refs = new Map<string, CategoryRef>();
-  for (const row of rows) {
-    const path = refPath(row, byId);
-    if (path) refs.set(row.id, { path, siteIds: row.siteIds.map(({ provider, siteId }) => ({ provider, siteId })) });
+  const paths = new Map<string, string[]>();
+  for (const id of wanted) {
+    const row = byId.get(id);
+    const path = row && refPath(row, byId, deepest);
+    if (path) paths.set(id, path);
+  }
+  if (!paths.size) return refs;
+  const siteIds = await prisma.categorySiteId.findMany({
+    where: { categoryId: { in: [...paths.keys()] } },
+    orderBy: { position: "asc" },
+    select: { categoryId: true, provider: true, siteId: true },
+  });
+  for (const [id, path] of paths) {
+    const own = siteIds.filter((row) => row.categoryId === id);
+    refs.set(id, { path, siteIds: own.map(({ provider, siteId }) => ({ provider, siteId })) });
   }
   return refs;
 }
@@ -352,7 +371,7 @@ export async function categoryRefs(userId: string): Promise<Map<string, Category
 export async function categoryRefOf(categoryId: string | null): Promise<CategoryRef | null> {
   if (!categoryId) return null;
   const category = await prisma.category.findUnique({ where: { id: categoryId }, select: { userId: true } });
-  return category ? ((await categoryRefs(category.userId)).get(categoryId) ?? null) : null;
+  return category ? ((await categoryRefs(category.userId, [categoryId])).get(categoryId) ?? null) : null;
 }
 
 const nameKey = (name: string) => name.trim().toLowerCase();

@@ -322,8 +322,8 @@ function modelDoc(
       return version === null ? [] : [{ id: image.id, url: mediaUrl(runtime, "description", image.id, version) }];
     });
   const document = (kind: "plate" | "file", file: { id: string; filename: string; mime: string; size: number }) => {
-    // No half of a character left at the end, which encodeURIComponent refuses. The address's name is only a slicer's.
-    const name = file.filename.slice(0, FILE_NAME_MAX).replace(/[\uD800-\uDBFF]$/, "");
+    // The address's name is only a slicer's.
+    const name = shortName(file.filename, FILE_NAME_MAX);
     return {
       type: "Document",
       name,
@@ -385,19 +385,43 @@ function modelDoc(
   });
 }
 
+/** `name` no longer than `max`, cut before its extension (`.gcode.3mf` whole), which says what the file is, and with
+ *  no half of a character left at the cut, which encodeURIComponent refuses. */
+function shortName(name: string, max: number): string {
+  if (name.length <= max) return name;
+  const extension = /(?:\.[A-Za-z0-9]{1,10}){1,2}$/.exec(name)?.[0] ?? "";
+  return name.slice(0, max - extension.length).replace(/[\uD800-\uDBFF]$/, "") + extension;
+}
+
 /** A model as published, held to MODEL_MAX_BYTES should what a copy needs make it too big: its print profiles' facts
  *  go first (a copy asks their site instead), then its category, description's images and plates' pictures (a copy
- *  goes without). What's left is cut to what a partner keeps, which a page holds whatever it is. */
+ *  goes without), then the names in its files' addresses (a partner reads `name`), and last its description is
+ *  shortened. Past that, only text escaping as far as JSON can (six bytes a character), which a page still holds. */
 export function fitModel<T extends { attachment: Record<string, unknown>[] }>(doc: T): T {
   if (bytes(doc) <= MODEL_MAX_BYTES) return doc;
   const without = (terms: string[]) => (value: Record<string, unknown>) =>
     Object.fromEntries(Object.entries(value).filter(([key]) => !terms.includes(key)));
   const lean = { ...doc, attachment: doc.attachment.map(without(["thingport:profile"])) };
   if (bytes(lean) <= MODEL_MAX_BYTES) return lean;
-  return {
+  const fitted: Record<string, unknown> & { attachment: Record<string, unknown>[] } = {
     ...without(["thingport:category", "thingport:descriptionImages"])(lean),
     attachment: lean.attachment.map(without(["thingport:thumb", "thingport:thumbGenerated"])),
-  } as T;
+  };
+  if (bytes(fitted) > MODEL_MAX_BYTES) fitted.attachment = fitted.attachment.map(unnamed);
+  let text = (fitted.source as { content?: string } | undefined)?.content ?? "";
+  while (bytes(fitted) > MODEL_MAX_BYTES && text) {
+    text = text.slice(0, Math.floor(text.length / 2));
+    fitted.source = markdown(text);
+  }
+  return fitted as T;
+}
+
+/** A file's address without the name at its end (`/files/<kind>/<id>`), which serves it all the same. */
+function unnamed(file: Record<string, unknown>): Record<string, unknown> {
+  const tail = typeof file.name === "string" ? `/${encodeURIComponent(file.name)}` : null;
+  return tail && typeof file.url === "string" && file.url.endsWith(tail)
+    ? { ...file, url: file.url.slice(0, -tail.length) }
+    : file;
 }
 
 /** Where a page of someone's models goes on from: after the model added at `at` with id `id`, in their order. */
@@ -426,7 +450,14 @@ export async function modelsPage(userId: string, after: ModelsCursor | null = nu
     take: MODELS_PAGE + 1,
     select: MODEL_SELECT,
   });
-  const [sharedAt, refs] = await Promise.all([sharedAtOf(prints), categoryRefs(userId)]);
+  const [sharedAt, refs] = await Promise.all([
+    sharedAtOf(prints),
+    categoryRefs(
+      userId,
+      prints.map((print) => print.categoryId),
+      CATEGORY_PATH_MAX,
+    ),
+  ]);
   const base = `${actorUrl(runtime, userId)}/models`;
   const items = prints.slice(0, MODELS_PAGE).map((print) => modelDoc(runtime, userId, print, sharedAt, refs));
   // As many as fit, one at least (none is near the size alone, cut as it is).

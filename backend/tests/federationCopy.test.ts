@@ -640,7 +640,38 @@ describe("what a partner says a copy needs", () => {
     expect((doc["thingport:tags"] as string[]).every((tag) => tag.length <= 100)).toBe(true);
     const [file] = doc.attachment as { name: string; mediaType: string; url: string }[];
     expect([file.name.length, file.mediaType.length]).toEqual([255, 120]);
+    // Cut before its extension, which says what it is.
+    expect(file.name.endsWith("ü.stl")).toBe(true);
     expect(file).not.toHaveProperty("thingport:profile");
     expect(file.url.endsWith(`/${encodeURIComponent(file.name)}`)).toBe(true);
+  });
+
+  it("stays within its own size with a hundred files whose names escape", async () => {
+    const many = await register("Many");
+    const printId = await sharedModel(many, "Many", "many.stl");
+    // Six bytes a character as JSON, the most any takes.
+    const escaping = "\u0001";
+    await prisma.print.update({ where: { id: printId }, data: { notes: escaping.repeat(20_000) } });
+    await prisma.plate.updateMany({ where: { printId }, data: { filename: `${escaping.repeat(300)}.stl` } });
+    await prisma.plate.createMany({
+      data: Array.from({ length: 99 }, (_, i) => ({
+        printId,
+        position: i + 1,
+        filename: `${escaping.repeat(300)}-${i}.stl`,
+        mime: "model/stl",
+        storagePath: `fc-many-${stamp}-${i}.stl`,
+      })),
+    });
+    const page = (await modelsPage(many.id)) as { orderedItems: Record<string, unknown>[] };
+    const [doc] = page.orderedItems;
+    expect(Buffer.byteLength(JSON.stringify(doc))).toBeLessThanOrEqual(MODEL_MAX_BYTES);
+    const files = doc.attachment as { name: string; url: string }[];
+    expect(files).toHaveLength(100);
+    expect(files.every((file) => file.name.length <= 255 && file.name.endsWith(".stl"))).toBe(true);
+    // Each where it's fetched all the same, without its name at the end; the description shortened, not gone.
+    expect(files.every((file) => /\/api\/ap\/files\/plate\/[^/]+$/.test(file.url))).toBe(true);
+    const content = (doc.source as { content: string }).content;
+    expect(content.length).toBeGreaterThan(0);
+    expect(content.length).toBeLessThan(20_000);
   });
 });
