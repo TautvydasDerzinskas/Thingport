@@ -1,0 +1,527 @@
+<!doctype html>
+<!-- The README's pictures, one at a time: readme-art.mjs calls render() with a picture's name and the data it draws
+     from, then captures #art in each theme. The look is the store tiles' and the website's social card
+     (extension/store-assets, web/og): a green glow and a faint grid on the page colour, the Thingport typeface, a
+     headline with a green word and a green button. Colours are Thingport's own (frontend/src/theme.ts). -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: "Thingport";
+        src: url("../../frontend/src/assets/fonts/thingport-500.woff") format("woff");
+        font-weight: 500;
+      }
+      @font-face {
+        font-family: "Thingport";
+        src: url("../../frontend/src/assets/fonts/thingport-700.woff") format("woff");
+        font-weight: 700;
+      }
+      :root {
+        --bg: #ffffff;
+        --panel: #ffffff;
+        --border: #ebebeb;
+        --line: #d9d9d9;
+        --heading: #1f1f1f;
+        --text: #4d4d4d;
+        --muted: #858585;
+        --accent: #00b800;
+        --accent-text: #008a00;
+        --button: #008a00;
+        --glow: rgba(0, 184, 0, 0.14);
+        --glow-far: rgba(91, 229, 132, 0.12);
+        --grid: #e9e9e9;
+        --shadow: rgba(31, 40, 31, 0.18);
+        --display: "Thingport", system-ui, sans-serif;
+      }
+      :root[data-theme="dark"] {
+        --bg: #181f39;
+        --panel: #1e2746;
+        --border: #333a54;
+        --line: #3c4566;
+        --heading: #ffffff;
+        --text: #b3b7c0;
+        --muted: #969ba0;
+        --accent-text: #5be584;
+        --glow: rgba(0, 184, 0, 0.28);
+        --grid: #333a54;
+        --shadow: rgba(0, 0, 0, 0.5);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        background: transparent;
+      }
+      body {
+        padding: 0;
+        font-family: var(--display);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Every picture: the page colour with a glow from the top left, a fainter one from the bottom right, and a grid
+         that fades out from behind the copy. Transparent outside the rounded corners, so it sits on any README. */
+      .art {
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
+        color: var(--text);
+        background:
+          radial-gradient(80% 110% at 0% 0%, var(--glow) 0%, transparent 65%),
+          radial-gradient(60% 80% at 100% 100%, var(--glow-far) 0%, transparent 70%), var(--bg);
+        box-shadow: inset 0 0 0 1px var(--border);
+      }
+      .art::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+        background-size: 24px 24px;
+        opacity: 0.55;
+        mask-image: radial-gradient(80% 100% at 20% 30%, #000 0%, transparent 80%);
+      }
+      .tile {
+        width: 400px;
+        height: 225px;
+      }
+      .banner {
+        width: 810px;
+        height: 170px;
+      }
+      .badge {
+        width: 263px;
+        height: 72px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 18px;
+      }
+
+      .copy {
+        position: absolute;
+        left: 22px;
+        top: 20px;
+        bottom: 18px;
+        width: 172px;
+        display: flex;
+        flex-direction: column;
+        z-index: 2;
+      }
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent-text);
+      }
+      .eyebrow svg {
+        width: 14px;
+        height: 14px;
+      }
+      h1 {
+        margin-top: 8px;
+        font-size: 23px;
+        line-height: 1.08;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--heading);
+      }
+      h1 em {
+        font-style: normal;
+        color: var(--accent-text);
+      }
+      .copy p {
+        margin-top: 8px;
+        font-size: 12px;
+        line-height: 1.35;
+        font-weight: 500;
+      }
+      .button {
+        margin-top: auto;
+        align-self: flex-start;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--button);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .button::after {
+        content: " →";
+      }
+      .picture {
+        position: absolute;
+        left: 206px;
+        top: 24px;
+        right: 0;
+        bottom: 0;
+      }
+
+      /* A screen of the app, cropped from its top left. */
+      .screen {
+        position: absolute;
+        border-radius: 9px;
+        background: var(--panel) no-repeat top left / cover;
+        box-shadow:
+          0 14px 32px var(--shadow),
+          0 0 0 1px var(--border);
+      }
+      .play {
+        position: absolute;
+        display: grid;
+        place-items: center;
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: var(--button);
+        color: #fff;
+        box-shadow:
+          0 0 0 8px rgba(0, 184, 0, 0.18),
+          0 10px 24px var(--shadow);
+      }
+      .play svg {
+        width: 30px;
+        height: 30px;
+        margin-left: 3px;
+      }
+      .logo {
+        display: block;
+        flex: none;
+        background: no-repeat center / contain;
+      }
+
+      /* demo-video */
+      .demo .screen {
+        left: 0;
+        top: 0;
+        width: 300px;
+        height: 188px;
+        border-radius: 10px;
+        transform: perspective(900px) rotateY(-16deg) rotateX(5deg);
+        transform-origin: left center;
+      }
+      .demo .play {
+        left: 64px;
+        top: 58px;
+      }
+
+      /* screenshots */
+      .shots .screen {
+        width: 240px;
+        height: 152px;
+      }
+
+      /* provider-setup: each site's logo tile, as docs/PROVIDER_SETUP.md shows them */
+      .chips {
+        position: absolute;
+        left: 0;
+        top: 8px;
+        display: grid;
+        grid-template-columns: repeat(5, 28px);
+        gap: 9px;
+      }
+      .chips .logo {
+        width: 28px;
+        height: 28px;
+        filter: drop-shadow(0 4px 8px var(--shadow));
+      }
+
+      /* connected-instances: two instances and the requests and answers between them. Its longer headline is set a
+         size down, on three lines rather than four. */
+      .connect .copy {
+        width: 184px;
+      }
+      .connect h1 {
+        font-size: 21px;
+      }
+      .net {
+        position: absolute;
+        inset: 0 0 26px 0;
+        display: flex;
+        align-items: center;
+      }
+      .node {
+        width: 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--heading);
+      }
+      .node .logo {
+        width: 40px;
+        height: 40px;
+      }
+      .wire {
+        position: relative;
+        width: 40px;
+        height: 2px;
+        margin-top: -20px;
+        background: var(--line);
+      }
+      .wire i {
+        position: absolute;
+        top: -3px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+      .wire i:nth-child(1) {
+        left: 6%;
+      }
+      .wire i:nth-child(2) {
+        left: 40%;
+        background: #248bfb;
+      }
+      .wire i:nth-child(3) {
+        left: 74%;
+      }
+
+      /* bridge: Thingport handing a model to the slicers */
+      .banner .copy {
+        left: 26px;
+        top: 22px;
+        bottom: 20px;
+        width: 300px;
+      }
+      .banner h1 {
+        font-size: 28px;
+      }
+      .flow {
+        position: absolute;
+        left: 340px;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .flow > .logo {
+        width: 54px;
+        height: 54px;
+      }
+      .arrow-line {
+        position: relative;
+        flex: none;
+        width: 64px;
+        height: 2px;
+        margin: 0 12px;
+        background: var(--line);
+      }
+      .arrow-line::after {
+        content: "";
+        position: absolute;
+        right: -2px;
+        top: -5px;
+        border-left: 8px solid var(--line);
+        border-top: 6px solid transparent;
+        border-bottom: 6px solid transparent;
+      }
+      .slicers {
+        display: grid;
+        grid-template-columns: repeat(2, auto);
+        gap: 8px;
+      }
+      .slicers span {
+        padding: 7px 10px;
+        border-radius: 10px;
+        background: var(--panel);
+        box-shadow:
+          0 8px 18px var(--shadow),
+          0 0 0 1px var(--border);
+        color: var(--heading);
+        font-size: 12.5px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      /* bridge-compact: the banner as a tile, for phones, where the banner's text would shrink past reading */
+      .stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      .stack > .logo {
+        width: 34px;
+        height: 34px;
+      }
+      .stack .arrow-line {
+        width: 2px;
+        height: 14px;
+        margin: 0 0 4px 16px;
+      }
+      .stack .arrow-line::after {
+        right: auto;
+        top: auto;
+        left: -5px;
+        bottom: -2px;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 8px solid var(--line);
+        border-bottom: 0;
+      }
+      .stack .slicers {
+        grid-template-columns: auto;
+        gap: 6px;
+      }
+      .stack .slicers span {
+        padding: 5px 9px;
+        font-size: 12px;
+      }
+
+      /* grab-*: a store button */
+      .badge .logo {
+        width: 34px;
+        height: 34px;
+        position: relative;
+      }
+      .badge .label {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+      }
+      .badge small {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+      }
+      .badge b {
+        font-size: 19px;
+        font-weight: 700;
+        color: var(--heading);
+      }
+      .badge .go {
+        position: relative;
+        color: var(--accent-text);
+        font-size: 18px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="art"></div>
+    <script>
+      const ICONS = {
+        play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13l11-6.5z"/></svg>',
+        // Material's Cable, which the app's Downloads page shows for Bridge.
+        cable:
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20 5V4c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v1h-1v4c0 .55.45 1 1 1h1v7c0 1.1-.9 2-2 2s-2-.9-2-2V7c0-2.21-1.79-4-4-4S5 4.79 5 7v7H4c-.55 0-1 .45-1 1v4h1v1c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-1h1v-4c0-.55-.45-1-1-1H7V7c0-1.1.9-2 2-2s2 .9 2 2v10c0 2.21 1.79 4 4 4s4-1.79 4-4v-7h1c.55 0 1-.45 1-1V5h-1z"/></svg>',
+      };
+      const BROWSERS = { chrome: "Chrome", firefox: "Firefox", edge: "Edge" };
+      // The platforms with a guide of their own (docs/install/), their logos in docs/assets/platforms.
+      const PLATFORMS = { unraid: "Unraid", truenas: "TrueNAS SCALE", casaos: "CasaOS" };
+      // The slicers whose own links Bridge stands in for (bridge/README.md).
+      const SLICERS = `<div class="slicers">${["Bambu Studio", "PrusaSlicer", "Cura", "Anycubic Slicer Next"]
+        .map((name) => `<span>${name}</span>`)
+        .join("")}</div>`;
+
+      const asset = (file) => `../../${file}`;
+      const screen = (theme, shot, style = "") =>
+        `<span class="screen" style="background-image:url('${asset(`frontend/src/assets/screenshots/${theme}/${shot}.png`)}');${style}"></span>`;
+      const logo = (file, style = "") =>
+        `<span class="logo" style="background-image:url('${asset(file)}');${style}"></span>`;
+      const thingport = (theme) =>
+        logo(`frontend/src/assets/logos/thingport-icon-${theme === "dark" ? "on-dark" : "color"}.svg`);
+      const copy = ({ eyebrow, title, text, button }) =>
+        `<div class="copy"><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${text}</p><span class="button">${button}</span></div>`;
+      // A small button: a logo, a line saying what it does and the name under it (the store buttons, the install ones).
+      const button = (logoFile, what, name) =>
+        `<div class="art badge">${logo(logoFile)}<span class="label"><small>${what}</small><b>${name}</b></span><span class="go">→</span></div>`;
+
+      const ART = {
+        "demo-video": (theme) =>
+          `<div class="art tile demo">${copy({
+            eyebrow: "Demo",
+            title: "Watch <em>demo video</em>",
+            text: "A guided tour of Thingport",
+            button: "Watch on YouTube",
+          })}<div class="picture">${screen(theme, "04_models")}<span class="play">${ICONS.play}</span></div></div>`,
+        screenshots: (theme) =>
+          `<div class="art tile shots">${copy({
+            eyebrow: "Screenshots",
+            title: "The app, <em>page by page</em>",
+            text: "Library, Studio, tools, administration and Grab, in light and dark",
+            button: "See them all",
+          })}<div class="picture">${screen(theme, "01_dashboard", "left:0;top:40px")}${screen(theme, "06_model_details", "left:36px;top:20px")}${screen(theme, "41_studio", "left:72px;top:0")}</div></div>`,
+        "provider-setup": (theme, { providers }) =>
+          `<div class="art tile">${copy({
+            eyebrow: "Guide",
+            title: "Provider <em>setup</em>",
+            text: `What each of the ${providers.length} sites needs, side by side`,
+            button: "Open the guide",
+          })}<div class="picture"><div class="chips">${providers.map((p) => logo(`docs/assets/providers/${p}.svg`)).join("")}</div></div></div>`,
+        "connected-instances": (theme) =>
+          `<div class="art tile connect">${copy({
+            eyebrow: "Guide",
+            title: "Connect with <em>other Thingport instances</em>",
+            text: "Share models and chat across instances",
+            button: "Read more",
+          })}<div class="picture"><div class="net"><div class="node">${thingport(theme)}Home</div><div class="wire"><i></i><i></i><i></i></div><div class="node">${thingport(theme)}Makerspace</div></div></div></div>`,
+        bridge: (theme) =>
+          `<div class="art banner">${copy({
+            eyebrow: `${ICONS.cable}Companion app`,
+            title: "Thingport <em>Bridge</em>",
+            text: "Makes “Open in slicer” work from a self-hosted instance · Windows, macOS, Linux",
+            button: "How it works",
+          })}<div class="flow">${thingport(theme)}<span class="arrow-line"></span>${SLICERS}</div></div>`,
+        "bridge-compact": (theme) =>
+          `<div class="art tile">${copy({
+            eyebrow: `${ICONS.cable}Companion app`,
+            title: "Thingport <em>Bridge</em>",
+            text: "Makes “Open in slicer” work from a self-hosted instance",
+            button: "How it works",
+          })}<div class="picture stack" style="top:20px">${thingport(theme)}<span class="arrow-line"></span>${SLICERS}</div></div>`,
+        ...Object.fromEntries(
+          Object.entries(BROWSERS).map(([id, name]) => [
+            `grab-${id}`,
+            () => button(`frontend/src/assets/logos/browsers/${id}.svg`, "Thingport Grab for", name),
+          ]),
+        ),
+        ...Object.fromEntries(
+          Object.entries(PLATFORMS).map(([id, name]) => [
+            `install-${id}`,
+            () => button(`docs/assets/platforms/${id}.svg`, "Install on", name),
+          ]),
+        ),
+      };
+
+      /** Draws one picture, and resolves once its fonts and images have loaded. */
+      window.render = async ({ name, theme, data }) => {
+        document.documentElement.dataset.theme = theme;
+        const root = document.getElementById("art");
+        root.innerHTML = ART[name](theme, data);
+        const urls = [...root.querySelectorAll("[style*='background-image']")].map(
+          (el) => getComputedStyle(el).backgroundImage.match(/url\("(.*)"\)/)[1],
+        );
+        await Promise.all([
+          document.fonts.load('500 12px "Thingport"'),
+          document.fonts.load('700 12px "Thingport"'),
+          ...urls.map(
+            (src) =>
+              new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = resolve;
+                img.onerror = () => reject(new Error(`couldn't load ${src}`));
+                img.src = src;
+              }),
+          ),
+        ]);
+      };
+      window.names = () => Object.keys(ART);
+    </script>
+  </body>
+</html>

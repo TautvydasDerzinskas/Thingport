@@ -13,9 +13,12 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import type { ResolvedTheme } from "../../constants/settingsOptions";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import ModelCard from "../ModelsPage/ModelCard";
 
 const PAGE_SIZE = 24;
+// The most models the server answers with at once (pageQuery in backend routes/social.ts).
+const MOST_AT_ONCE = 100;
 
 type Props = {
   userId: string;
@@ -40,10 +43,10 @@ export default function ExploreUserModels({
   onGone,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
-  const [items, setItems] = useState<Print[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
+    loadingAtFirst: true,
+  });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   // A page asked for before the list was read again belongs to the old list, and is dropped.
@@ -60,8 +63,47 @@ export default function ExploreUserModels({
     onGone();
   };
 
+  // A list put back on the way back, read again quietly, so a model copied to the library meanwhile says so. Failing,
+  // the list stays as it was and says it couldn't be read, with a retry; social features switched off meanwhile send
+  // the page to read itself again, as for a first load.
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const refresh = async (count: number, mine: number) => {
+    const fresh: Print[] = [];
+    let more = false;
+    try {
+      for (let offset = 0; offset < count; offset += MOST_AT_ONCE) {
+        const limit = Math.min(MOST_AT_ONCE, count - offset);
+        const page = await socialApi.userModels(userId, { order_by: sortMode, limit, offset });
+        if (mine !== run.current) return;
+        if (!page) return gone();
+        fresh.push(...page.items);
+        more = page.hasMore;
+        if (!more) break;
+      }
+    } catch (err) {
+      if (mine !== run.current) return;
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else if (err instanceof SocialOffError) gone();
+      else setRefreshFailed(true);
+      return;
+    }
+    if (mine !== run.current) return;
+    setRefreshFailed(false);
+    setItems(fresh);
+    setHasMore(more);
+  };
+
   useEffect(() => {
     const mine = ++run.current;
+    const dropLate = () => {
+      run.current += 1;
+    };
+    setRefreshFailed(false);
+    const kept = failed ? null : returning();
+    if (kept !== null) {
+      void refresh(kept, mine);
+      return dropLate;
+    }
     // Another sort's or person's list isn't this one's: nothing of it stays to be paged on from. A page of it still on
     // its way won't clear loadingMore, so it's cleared here.
     setItems([]);
@@ -84,9 +126,7 @@ export default function ExploreUserModels({
       },
     );
     // Gone from the page, or read again: what's still on its way is dropped.
-    return () => {
-      run.current += 1;
-    };
+    return dropLate;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, sortMode, attempt]);
 
@@ -151,10 +191,17 @@ export default function ExploreUserModels({
         ))}
         {loadingMore && <CardSkeletons count={5} />}
       </Box>
-      {failed ? (
+      {failed || refreshFailed ? (
         <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ color: "text.secondary" }}>
           <Typography variant="body2">{t("models:explore.modelsLoadFailed")}</Typography>
-          <Button size="small" onClick={() => setFailed(false)}>
+          <Button
+            size="small"
+            onClick={() => {
+              if (failed) return setFailed(false);
+              setRefreshFailed(false);
+              void refresh(items.length, run.current);
+            }}
+          >
             {t("common:retry")}
           </Button>
         </Stack>

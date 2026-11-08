@@ -77,6 +77,7 @@ import { resetTools } from "./hooks/useTools";
 import { resetToolsView } from "./hooks/useToolsView";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
+import ScrollReset from "./components/Layout/ScrollReset";
 
 // Heavy (three.js, its gizmos, zod), so only fetched by someone who opens it.
 const StudioPage = React.lazy(() => import("./pages/StudioPage"));
@@ -453,6 +454,15 @@ export default function App() {
     const stored = readToken();
     return !stored || (tokenLifetime(stored)?.expiresAt ?? 0) <= Date.now();
   });
+  // Signing in or out swaps the sign-in screen and the app outside the router, so ScrollReset doesn't see it: each
+  // opens at the top rather than where the other was scrolled to.
+  const signedIn = Boolean(token);
+  const wasSignedIn = React.useRef(signedIn);
+  React.useLayoutEffect(() => {
+    if (wasSignedIn.current === signedIn) return;
+    wasSignedIn.current = signedIn;
+    window.scrollTo(0, 0);
+  }, [signedIn]);
   // Bumped when a refused request was rescued by renewing the token, so the pages load again with it.
   const [sessionKey, setSessionKey] = React.useState(0);
   const [health, setHealth] = React.useState<HealthInfo | null>(null);
@@ -775,6 +785,7 @@ export default function App() {
   return (
     <>
       <BrowserRouter>
+        <ScrollReset />
         <AppShell
           key={sessionKey}
           isAdmin={isAdmin}

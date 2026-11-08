@@ -14,6 +14,7 @@ import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
 import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import ModelCard from "../ModelsPage/ModelCard";
 import SortTabs from "../ModelsPage/SortTabs";
@@ -40,11 +41,11 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
   const { t } = useTranslation(["models", "app"]);
   const [searchParams, setSearchParams] = useSearchParams();
   const query = (searchParams.get("q") ?? "").trim();
-  const [items, setItems] = useState<Print[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
+    loadingAtFirst: true,
+  });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(items.length);
   const finishedVersion = useFinishedVersion();
   const isBackgroundReload = useBackgroundReload(finishedVersion);
   // A page on its way when the list reloads belongs to the old list, and is dropped.
@@ -94,7 +95,11 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       return;
     }
     let cancelled = false;
-    if (!background) setLoading(true);
+    // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
+    const kept = returning();
+    if (kept !== null) setOffset(kept);
+    const quiet = background || kept !== null;
+    if (!quiet) setLoading(true);
     (async () => {
       try {
         const result = await printsApi.list({
@@ -102,7 +107,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
           generative: generative || undefined,
           hide_providers: hiddenProviders,
           order_by: sortMode,
-          limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
+          limit: quiet ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
           offset: 0,
         });
         if (cancelled) return;
@@ -111,7 +116,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
         setHasMore(result.hasMore);
       } catch (err) {
         if (cancelled) return;
-        handleError(err, background ? undefined : t("models:errors.loadFailed"));
+        handleError(err, quiet ? undefined : t("models:errors.loadFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
