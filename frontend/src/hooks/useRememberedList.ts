@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
+import { useScrollRestoreHold } from "./useScrollRestoreHold";
 
 type Kept<T, X> = { address: string; items: T[]; hasMore: boolean; alongside: X | undefined };
 
@@ -46,6 +47,8 @@ export function useRememberedList<T, X = undefined>({
   const [items, setItems] = useState<T[]>(() => mountedWith?.items ?? []);
   const [hasMore, setHasMore] = useState(() => mountedWith?.hasMore ?? false);
   const [loading, setLoading] = useState(() => !mountedWith && loadingAtFirst);
+  // A list no longer kept loads again on the way back: ScrollReset waits for it, however slow, rather than give up.
+  useScrollRestoreHold(loading);
   // The entry whose kept list is on screen, so a later run of the load effect doesn't put it back over newer pages.
   const shownFor = useRef<string | null>(mountedWith ? key : null);
 
@@ -68,9 +71,11 @@ export function useRememberedList<T, X = undefined>({
       // Whatever's on screen now belongs to the entry being left: back to one shown before puts its own list back.
       shownFor.current = null;
       const { key: showing, loading: halfLoaded, ...list } = shown.current;
-      // Another entry's, half loaded, or empty: nothing worth putting back.
-      if (showing !== entry || halfLoaded || !list.items.length) return;
+      // Another entry's: what was kept of this one stays.
+      if (showing !== entry) return;
       kept.delete(entry);
+      // Half loaded, or empty (its models gone, say): nothing worth putting back, nor what it showed before.
+      if (halfLoaded || !list.items.length) return;
       kept.set(entry, list);
       while (kept.size > KEEP) kept.delete(kept.keys().next().value as string);
     };

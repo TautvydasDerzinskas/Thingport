@@ -20,6 +20,7 @@ import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useScrollRestoreHold } from "../../hooks/useScrollRestoreHold";
 import ProfileLayout, { ProfileLayoutSkeleton } from "../../components/profile/ProfileLayout";
 import UserAvatar from "../../components/UserAvatar";
 import CollectionCard from "../CollectionsPage/CollectionCard";
@@ -79,6 +80,8 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
   const [collectionsFrom, setCollectionsFrom] = useState(0);
   const [collectionsMore, setCollectionsMore] = useState(false);
   const [rereading, setRereading] = useState(false);
+  // Each time the page has been read: the models tab reads its models again after they went missing.
+  const [reads, setReads] = useState(0);
 
   const read = useCallback(
     function readPage(asked: string, fresh: boolean) {
@@ -102,6 +105,7 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
           }
           shownFor.current = asked;
           setPage(value);
+          setReads((n) => n + 1);
           setCollectionsFrom(value.collections.length);
           setCollectionsMore(value.collections.length < value.collections_total);
         },
@@ -183,6 +187,9 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
     moreCollections && !collectionsFailed,
     loadingCollections,
   );
+
+  // Back to the page: its models and collections come once it's read, so a restore waits for that too.
+  useScrollRestoreHold(!page && !off && !failed && !notFound);
 
   usePageHeader({
     title: page?.user.display_name,
@@ -302,6 +309,7 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
             viewer={viewer}
             onUnauthorized={onUnauthorized}
             onGone={refresh}
+            pageRead={reads}
           />
         ) : page.collections.length ? (
           <Stack spacing={2}>

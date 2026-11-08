@@ -30,6 +30,9 @@ type Props = {
   /** Their models went private, or social features off, since the page was read: the page reads itself again. Until
    *  it shows otherwise, this offers to try again. */
   onGone: () => void;
+  /** Goes up each time the page has read itself. Models that went missing are read again then, as the page still
+   *  showing this means they're public again. */
+  pageRead: number;
 };
 
 /** A user's own models on their Explore page, once they made them public: their My models, as the others see it. */
@@ -41,6 +44,7 @@ export default function ExploreUserModels({
   viewer,
   onUnauthorized,
   onGone,
+  pageRead,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
@@ -58,14 +62,40 @@ export default function ExploreUserModels({
     setFailed(true);
     if (err instanceof SocialOffError) onGone();
   };
+  // Models gone missing, to read again once the page has read itself; once only, so a page and a list that disagree
+  // leave it to the retry button rather than asking each other again and again.
+  const missing = useRef(false);
+  const readAgainAfterPage = useRef(false);
+  const retriedOnce = useRef(false);
   const gone = () => {
     setFailed(true);
+    if (!retriedOnce.current) missing.current = true;
     onGone();
+  };
+  useEffect(() => {
+    if (!missing.current) return;
+    missing.current = false;
+    retriedOnce.current = true;
+    readAgainAfterPage.current = true;
+    setFailed(false);
+    setAttempt((n) => n + 1);
+  }, [pageRead]);
+
+  // Social features switched off, or the models no longer public: the models shown go at once, rather than staying
+  // until the page has read itself again.
+  const goneWithModels = () => {
+    setItems([]);
+    setHasMore(false);
+    gone();
+  };
+  // Read fine, so nothing waits for the page's next read: the user's own retry may have got there first.
+  const recovered = () => {
+    retriedOnce.current = false;
+    missing.current = false;
   };
 
   // A list put back on the way back, read again quietly, so a model copied to the library meanwhile says so. Failing,
-  // the list stays as it was and says it couldn't be read, with a retry; social features switched off meanwhile send
-  // the page to read itself again, as for a first load.
+  // the list stays as it was and says it couldn't be read, with a retry; gone, it goes as for a first load.
   const [refreshFailed, setRefreshFailed] = useState(false);
   const refresh = async (count: number, mine: number) => {
     const fresh: Print[] = [];
@@ -75,7 +105,7 @@ export default function ExploreUserModels({
         const limit = Math.min(MOST_AT_ONCE, count - offset);
         const page = await socialApi.userModels(userId, { order_by: sortMode, limit, offset });
         if (mine !== run.current) return;
-        if (!page) return gone();
+        if (!page) return goneWithModels();
         fresh.push(...page.items);
         more = page.hasMore;
         if (!more) break;
@@ -83,11 +113,12 @@ export default function ExploreUserModels({
     } catch (err) {
       if (mine !== run.current) return;
       if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else if (err instanceof SocialOffError) gone();
+      else if (err instanceof SocialOffError) goneWithModels();
       else setRefreshFailed(true);
       return;
     }
     if (mine !== run.current) return;
+    recovered();
     setRefreshFailed(false);
     setItems(fresh);
     setHasMore(more);
@@ -99,7 +130,9 @@ export default function ExploreUserModels({
       run.current += 1;
     };
     setRefreshFailed(false);
-    const kept = failed ? null : returning();
+    // Read afresh after models went missing: what was kept of them is gone with them.
+    const kept = failed || readAgainAfterPage.current ? null : returning();
+    readAgainAfterPage.current = false;
     if (kept !== null) {
       void refresh(kept, mine);
       return dropLate;
@@ -116,6 +149,7 @@ export default function ExploreUserModels({
         if (mine !== run.current) return;
         setLoading(false);
         if (!page) return gone();
+        recovered();
         setItems(page.items);
         setHasMore(page.hasMore);
       },
@@ -137,7 +171,7 @@ export default function ExploreUserModels({
     try {
       const page = await socialApi.userModels(userId, { order_by: sortMode, limit: PAGE_SIZE, offset: items.length });
       if (mine !== run.current) return;
-      if (!page) return gone();
+      if (!page) return goneWithModels();
       setItems((prev) => [...prev, ...page.items]);
       setHasMore(page.hasMore);
     } catch (err) {
