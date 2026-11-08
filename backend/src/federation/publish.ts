@@ -628,15 +628,13 @@ export async function collectionModelsPage(collectionId: string, offset: number)
 // Collections shared with partners' people (federation/sharedCollections.ts): only the partner they're on reads one,
 // and only while it's shared with someone there.
 
-/** A collection its owner shared with people on `peerId`, as that partner reads it: its name, its owner, who on that
- *  partner it's shared with (`to`, nobody elsewhere) and where its models are (`thingport:items`). Null unless it's
- *  shared (SHARED) with someone there. */
-export async function sharedCollectionObject(
-  at: Pick<Runtime, "origin">,
+/** Who on `peerId` a collection is shared with, by their actors there (nobody elsewhere), and what it is: what each
+ *  change to it tells that partner (`queueSharing`). Null unless it's shared (SHARED) with someone there. */
+export async function sharedAudience(
   collectionId: string,
   peerId: string,
-  db: Pick<typeof prisma, "collection" | "collectionShare" | "user"> = prisma,
-): Promise<Record<string, unknown> | null> {
+  db: Pick<typeof prisma, "collection" | "collectionShare"> = prisma,
+) {
   const collection = await db.collection.findFirst({
     where: { id: collectionId, visibility: "SHARED" },
     select: { id: true, name: true, description: true, updatedAt: true, userId: true },
@@ -647,8 +645,22 @@ export async function sharedCollectionObject(
     orderBy: { createdAt: "asc" },
     select: { remotePerson: { select: { apId: true } } },
   });
-  if (!shares.length) return null;
-  const owner = await db.user.findUnique({
+  const to = shares.flatMap((share) => (share.remotePerson ? [share.remotePerson.apId] : []));
+  return to.length ? { collection, to } : null;
+}
+
+/** A collection its owner shared with people on `peerId`, as that partner reads it: its name, its owner, who on that
+ *  partner it's shared with (`to`, nobody elsewhere) and where its models are (`thingport:items`). Null unless it's
+ *  shared (SHARED) with someone there. */
+export async function sharedCollectionObject(
+  at: Pick<Runtime, "origin">,
+  collectionId: string,
+  peerId: string,
+): Promise<Record<string, unknown> | null> {
+  const audience = await sharedAudience(collectionId, peerId);
+  if (!audience) return null;
+  const { collection, to } = audience;
+  const owner = await prisma.user.findUnique({
     where: { id: collection.userId },
     select: { displayName: true, username: true },
   });
@@ -667,27 +679,37 @@ export async function sharedCollectionObject(
     },
     source: markdown(collection.description?.slice(0, COLLECTION_DESCRIPTION_MAX) ?? null),
     updated: collection.updatedAt.toISOString(),
-    to: shares.flatMap((share) => (share.remotePerson ? [share.remotePerson.apId] : [])),
+    to,
     "thingport:items": `${url}/items`,
   };
 }
 
-/** The addresses of every collection shared with someone on `peer`, for that partner to read each: how it finds one
- *  whose Update it never took (its social features were off longer than delivery kept trying, say). */
-export async function collectionsSharedWith(peer: Peer): Promise<unknown> {
+// A page of the collections shared with people on a partner.
+const SHARED_PAGE = 500;
+
+/** The addresses of the collections shared with someone on `peer`, a page at a time after `after` (an id), for that
+ *  partner to read each: how it finds one whose Update it never took (its social features were off longer than
+ *  delivery kept trying, say). */
+export async function collectionsSharedWith(peer: Peer, after: string | null = null): Promise<unknown> {
   const runtime = await getRuntime();
   const rows = await prisma.collection.findMany({
-    where: { visibility: "SHARED", shares: { some: { remotePerson: { peerId: peer.id } } } },
+    where: {
+      visibility: "SHARED",
+      shares: { some: { remotePerson: { peerId: peer.id } } },
+      ...(after ? { id: { gt: after } } : {}),
+    },
     orderBy: { id: "asc" },
-    take: 1000,
+    take: SHARED_PAGE + 1,
     select: { id: true },
   });
+  const page = rows.slice(0, SHARED_PAGE);
+  const base = `${runtime.origin}${AP_PREFIX}/shared`;
   return {
     "@context": CONTEXT,
-    id: `${runtime.origin}${AP_PREFIX}/shared`,
-    type: "OrderedCollection",
-    totalItems: rows.length,
-    orderedItems: rows.map((row) => collectionUrl(runtime, row.id)),
+    id: after ? `${base}?after=${after}` : base,
+    type: "OrderedCollectionPage",
+    orderedItems: page.map((row) => collectionUrl(runtime, row.id)),
+    next: rows.length > SHARED_PAGE ? `${base}?after=${page.at(-1)!.id}` : undefined,
   };
 }
 
@@ -705,9 +727,9 @@ export async function sharedCollectionItems(
   after: ModelsCursor | null,
 ): Promise<unknown | null> {
   const runtime = await getRuntime();
-  if (!(await sharedCollectionObject(runtime, collectionId, peer.id))) return null;
-  const collection = await prisma.collection.findUnique({ where: { id: collectionId }, select: { userId: true } });
-  if (!collection) return null;
+  const audience = await sharedAudience(collectionId, peer.id);
+  if (!audience) return null;
+  const { collection } = audience;
   return modelsPageOf(
     runtime,
     collection.userId,

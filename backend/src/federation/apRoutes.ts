@@ -179,8 +179,13 @@ router.get(
 router.get(
   "/shared",
   partnerOnly,
-  asyncHandler(async (_req, res) => {
-    activityJson(res, await collectionsSharedWith(res.locals.peer));
+  asyncHandler(async (req, res) => {
+    const after = req.query.after;
+    if (after !== undefined && (typeof after !== "string" || !/^[a-z0-9_-]{1,40}$/i.test(after))) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    activityJson(res, await collectionsSharedWith(res.locals.peer, after ?? null));
   }),
 );
 router.get(

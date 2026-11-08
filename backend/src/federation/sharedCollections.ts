@@ -3,12 +3,12 @@ import type { Peer, Prisma, RemotePerson } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
 import { createNotification } from "../services/notificationService";
-import { getSocialSettings } from "../services/settingsService";
+import { getPublicUrl, getSocialSettings } from "../services/settingsService";
 import { originOf } from "./addresses";
 import { here, localUserId, personOn, RetryLater, type Here } from "./chats";
 import { enqueueActivity, kickDelivery } from "./delivery";
 import { FederationFetchError } from "./fetch";
-import { sharedCollectionObject } from "./publish";
+import { sharedAudience } from "./publish";
 import { readModels, remoteModelData } from "./remoteIndex";
 import { AP_PREFIX, getRuntime } from "./runtime";
 
@@ -39,14 +39,16 @@ export async function queueSharing(db: Db, collectionId: string, alsoPeerIds: st
   const at = await here();
   const url = collectionUrl(at, collectionId);
   for (const peer of peers) {
-    const object = await sharedCollectionObject(at, collectionId, peer.id, db);
+    // Who it's for and its name only: the partner reads the rest from its address, its owner's avatar too.
+    const audience = await sharedAudience(collectionId, peer.id, db);
+    const name = audience?.collection.name.slice(0, NAME_MAX);
     await send(
       db,
       at,
       peer,
       url,
-      object
-        ? { type: "Update", to: object.to, object: { id: url, type: "Collection", name: object.name } }
+      audience
+        ? { type: "Update", to: audience.to, object: { id: url, type: "Collection", name } }
         : { type: "Delete", to: [peer.actorUrl], object: url },
     );
   }
@@ -62,15 +64,35 @@ export async function queueCollectionsGone(db: Db, collectionIds: string[]): Pro
   });
   if (!shares.length) return;
   const at = await here();
+  // One Delete of each to each partner, however many of its people were on the list.
+  const told = new Map<string, { collectionId: string; peerId: string }>();
+  for (const { collectionId, remotePerson } of shares) {
+    if (remotePerson) told.set(`${collectionId} ${remotePerson.peerId}`, { collectionId, peerId: remotePerson.peerId });
+  }
   const peers = await db.peer.findMany({
-    where: { id: { in: [...new Set(shares.flatMap((share) => share.remotePerson?.peerId ?? []))] } },
+    where: { id: { in: [...new Set([...told.values()].map((item) => item.peerId))] } },
   });
-  for (const share of shares) {
-    const peer = peers.find((item) => item.id === share.remotePerson?.peerId);
+  for (const { collectionId, peerId } of told.values()) {
+    const peer = peers.find((item) => item.id === peerId);
     if (!peer) continue;
-    const url = collectionUrl(at, share.collectionId);
+    const url = collectionUrl(at, collectionId);
     await send(db, at, peer, url, { type: "Delete", to: [peer.actorUrl], object: url });
   }
+}
+
+/** Queues `Delete` of each of `userId`'s collections shared with partners' people, in the transaction that deletes
+ *  their account. Without a Public URL nothing can be sent, and nothing stops the account going: each partner finds
+ *  them gone the next time it reads them. */
+export async function queueAccountGone(db: Db, userId: string): Promise<void> {
+  const collections = await db.collection.findMany({
+    where: { userId, shares: { some: { remotePersonId: { not: null } } } },
+    select: { id: true },
+  });
+  if (!collections.length || !(await getPublicUrl())) return;
+  await queueCollectionsGone(
+    db,
+    collections.map((collection) => collection.id),
+  );
 }
 
 /** Sends what's queued, now that the change it follows is kept. */
@@ -153,8 +175,9 @@ const DESCRIPTION_MAX = 5000;
 const VIEWERS_MAX = 100;
 // However long a big collection's models take to write, as the index's own read allows (remoteIndex.ts).
 const WRITE_TIMEOUT_MS = 5 * 60 * 1000;
-// Collections a partner lists as shared with people here: as many as are read of one.
-const SHARED_LIST_MAX = 1000;
+// Collections a partner lists as shared with people here, and the pages of that list, read at most.
+const SHARED_LIST_MAX = 10_000;
+const SHARED_LIST_PAGES = 40;
 
 async function activePeer(actorId: URL): Promise<Peer | null> {
   return prisma.peer.findFirst({ where: { actorUrl: actorId.href, status: "ACTIVE" } });
@@ -208,31 +231,49 @@ export async function refreshShared(peerId: string): Promise<void> {
     select: { apId: true },
   });
   // And whatever it says is shared with people here, so one whose Update never got here (social features were off
-  // longer than the partner kept trying, say) is found all the same.
-  const listed = await sharedListOf(peer).catch(() => []);
-  for (const apId of new Set([...rows.map((row) => row.apId), ...listed])) {
+  // longer than the partner kept trying, say) is found all the same. A list that can't be read is the partner's
+  // error to show its admin; what it did list is read with the rest.
+  const listed = await sharedListOf(peer);
+  if (listed.error) {
+    const message = `Couldn't list what its people shared with people here: ${listed.error.message}`;
+    console.warn(`[federation] ${peer.origin}: ${message}`);
+    await prisma.peer.update({ where: { id: peer.id }, data: { syncError: message.slice(0, 500) } }).catch(() => {});
+  }
+  for (const apId of new Set([...rows.map((row) => row.apId), ...listed.urls])) {
     await readShared(peer, apId).catch((err: unknown) => {
       console.warn(`[federation] Couldn't read a collection shared from ${peer.origin}:`, (err as Error).message);
     });
   }
 }
 
-const sharedList = z.object({ orderedItems: z.array(z.unknown()) });
+const sharedList = z.object({ orderedItems: z.array(z.unknown()), next: z.string().optional().catch(undefined) });
 
-/** The addresses of `peer`'s collections shared with people here, as it lists them; none from one too old to. */
-async function sharedListOf(peer: Peer): Promise<string[]> {
+/** The addresses of `peer`'s collections shared with people here, page by page as it lists them; none from one too
+ *  old to. What was listed before a page that failed, and why it did. */
+async function sharedListOf(peer: Peer): Promise<{ urls: string[]; error: Error | null }> {
   const runtime = await getRuntime();
-  let body: unknown;
+  const urls: string[] = [];
+  let url: string | undefined = `${peer.origin}${AP_PREFIX}/shared`;
   try {
-    body = (await runtime.signedLoader(`${peer.origin}${AP_PREFIX}/shared`)).document;
+    for (let page = 0; url && originOf(url) === peer.origin && page < SHARED_LIST_PAGES; page++) {
+      let body: unknown;
+      try {
+        body = (await runtime.signedLoader(url)).document;
+      } catch (err) {
+        if (page === 0 && err instanceof FederationFetchError && err.status === 404) break;
+        throw err;
+      }
+      const list = sharedList.parse(body);
+      for (const item of list.orderedItems) {
+        if (typeof item === "string" && originOf(item) === peer.origin) urls.push(item);
+      }
+      if (urls.length >= SHARED_LIST_MAX) break;
+      url = list.next;
+    }
   } catch (err) {
-    if (err instanceof FederationFetchError && err.status === 404) return [];
-    throw err;
+    return { urls: urls.slice(0, SHARED_LIST_MAX), error: err as Error };
   }
-  return sharedList
-    .parse(body)
-    .orderedItems.filter((url): url is string => typeof url === "string" && originOf(url) === peer.origin)
-    .slice(0, SHARED_LIST_MAX);
+  return { urls: urls.slice(0, SHARED_LIST_MAX), error: null };
 }
 
 /** Reads one collection `peer` says is shared with people here and keeps it as it says, with its models; or lets it
@@ -242,6 +283,8 @@ function readShared(peer: Peer, apId: string): Promise<void> {
 }
 
 async function readSharedNow(peer: Peer, apId: string): Promise<void> {
+  // As of when it was asked: a read of the partner's index begun before this doesn't write over it (remoteIndex.ts).
+  const readAt = new Date();
   const runtime = await getRuntime();
   const own = (url: string | undefined): url is string => Boolean(url) && originOf(url!) === peer.origin;
   const read = async (url: string) => (await runtime.signedLoader(url)).document;
@@ -263,16 +306,10 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
     await forget(peer.id, apId);
     return;
   }
-  const owner = await personOn(peer, {
-    id: doc.attributedTo.id,
-    name: doc.attributedTo.name ?? null,
-    preferredUsername: doc.attributedTo.preferredUsername ?? null,
-    icon: doc.attributedTo.icon,
-  });
-  if (!owner) return;
   const items = doc["thingport:items"];
-  const models = own(items) ? await readModels(read, items, own) : { models: [], all: true };
-  const theirs = models.models.filter((model) => model.attributedTo === owner.apId);
+  // Nowhere of its own to read its models from: they're not known, not gone, so those it had stay.
+  const models = own(items) ? await readModels(read, items, own) : { models: [], all: false };
+  const theirs = models.models.filter((model) => model.attributedTo === doc.attributedTo.id);
 
   const added = await prisma.$transaction(
     async (tx) => {
@@ -281,7 +318,18 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
         select: { id: true, peerId: true, modelApIds: true, viewers: { select: { userId: true } } },
       });
       if (kept && kept.peerId !== peer.id) return null;
-      const readAt = new Date();
+      // Its owner too only if all of this is kept (the check below).
+      const owner = await personOn(
+        peer,
+        {
+          id: doc.attributedTo.id,
+          name: doc.attributedTo.name ?? null,
+          preferredUsername: doc.attributedTo.preferredUsername ?? null,
+          icon: doc.attributedTo.icon,
+        },
+        tx,
+      );
+      if (!owner) return null;
       for (const model of theirs) {
         const data = { peerId: peer.id, personId: owner.id, ...remoteModelData(model, own), syncedAt: readAt };
         // One also shared openly there stays as its index has it: not limited.
@@ -318,15 +366,22 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
         data: viewers.map((userId) => ({ collectionId: saved.id, userId })),
         skipDuplicates: true,
       });
-      // Still a partner: one blocked or disconnected meanwhile keeps nothing of this.
-      const still = await tx.peer.count({ where: { id: peer.id, status: "ACTIVE" } });
-      if (!still) throw new Error("No longer connected");
-      return { id: saved.id, name: data.name, viewers: viewers.filter((userId) => !had.has(userId)) };
+      await holdPartner(tx, peer.id);
+      return { id: saved.id, name: data.name, owner, viewers: viewers.filter((userId) => !had.has(userId)) };
     },
     { timeout: WRITE_TIMEOUT_MS, maxWait: 10_000 },
   );
   await pruneLimitedModels(peer.id);
-  if (added?.viewers.length) await tell(added.viewers, owner, added.name, added.id);
+  if (added?.viewers.length) await tell(added.viewers, added.owner, added.name, added.id);
+}
+
+/** Throws unless `peerId` is still an ACTIVE partner, and keeps it one until `tx` is done: a block waits for it, then
+ *  forgets what it wrote, a person too. One blocked or disconnected already keeps nothing of it. Last in a transaction,
+ *  so it's never held while waiting on a row a read of the index has (which takes the partner's row last too). */
+async function holdPartner(tx: Prisma.TransactionClient, peerId: string): Promise<void> {
+  const still = await tx.$queryRaw<unknown[]>`
+    SELECT 1 FROM "Peer" WHERE id = ${peerId} AND status = 'ACTIVE' FOR SHARE`;
+  if (!still.length) throw new Error("No longer connected");
 }
 
 async function tell(userIds: string[], owner: RemotePerson, name: string, collectionId: string): Promise<void> {
@@ -401,16 +456,26 @@ function mayAsk(userId: string): boolean {
   return true;
 }
 
+/** Whether `host` (`name`, `name:port`, `[fd00::1]:8000`) is where `origin` is, however it's written: IPv6 shortened
+ *  or not, a default port or none. */
+function isHostOf(origin: string, host: string): boolean {
+  try {
+    const at = new URL(origin);
+    return new URL(`${at.protocol}//${host}`).host === at.host;
+  } catch {
+    return false;
+  }
+}
+
 /** Someone on a connected instance by their exact handle, `name@host`: from what this instance has of that partner,
  *  or else asked of it, for `userId` (a few times a minute). Only ever an ACTIVE partner's host: a handle naming
  *  anywhere else asks nobody. */
 export async function personByHandle(handle: string, userId: string): Promise<(RemotePerson & { peer: Peer }) | null> {
-  const match = /^@?([a-z0-9_.-]{1,40})@([a-z0-9.-]+(?::\d{1,5})?)$/i.exec(handle.trim());
+  const match = /^@?([a-z0-9_.-]{1,40})@((?:[a-z0-9.-]+|\[[0-9a-f:.]+\])(?::\d{1,5})?)$/i.exec(handle.trim());
   if (!match) return null;
   const username = match[1].toLowerCase();
-  const host = match[2].toLowerCase();
   const peers = await prisma.peer.findMany({ where: { status: "ACTIVE" } });
-  const peer = peers.find((item) => new URL(item.origin).host.toLowerCase() === host);
+  const peer = peers.find((item) => isHostOf(item.origin, match[2]));
   if (!peer) return null;
   const known = await prisma.remotePerson.findFirst({
     where: { peerId: peer.id, username },
@@ -424,11 +489,14 @@ export async function personByHandle(handle: string, userId: string): Promise<(R
     const doc = personDoc.parse(
       (await runtime.signedLoader(`${peer.origin}${AP_PREFIX}/people/${encodeURIComponent(username)}`)).document,
     );
-    const person = await personOn(peer, {
-      id: doc.id,
-      name: doc.name ?? null,
-      preferredUsername: doc.preferredUsername ?? username,
-      icon: doc.icon,
+    const person = await prisma.$transaction(async (tx) => {
+      const kept = await personOn(
+        peer,
+        { id: doc.id, name: doc.name ?? null, preferredUsername: doc.preferredUsername ?? username, icon: doc.icon },
+        tx,
+      );
+      await holdPartner(tx, peer.id);
+      return kept;
     });
     if (!person) return null;
     misses.delete(key);

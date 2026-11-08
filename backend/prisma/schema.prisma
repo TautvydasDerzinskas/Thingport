@@ -1286,6 +1286,8 @@ model RemoteModel {
   @@index([peerId])
   @@index([personId])
   @@index([sharedAt])
+  /// Which models a picture is of, for the proxy that serves it (federation/media.ts).
+  @@index([images], type: Gin)
 }
 
 /// A partner's person's public collection, and the models in it by their ids there.

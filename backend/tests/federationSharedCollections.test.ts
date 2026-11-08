@@ -15,13 +15,14 @@ import {
   personNamed,
   sendMedia,
   sendSharedFile,
+  sharedCollectionItems,
   sharedCollectionObject,
 } from "../src/federation/publish";
 import { saveDescriptionImage } from "../src/services/descriptionImageService";
 import { PLATE_PNG } from "./helpers/profileProject";
 import { remoteCollection, remoteModel } from "../src/federation/remoteExplore";
 import { activeRemoteModel } from "../src/federation/remoteFiles";
-import { syncPeer } from "../src/federation/remoteIndex";
+import { forgetPeerContent, syncPeer } from "../src/federation/remoteIndex";
 import { resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
 import {
@@ -31,6 +32,7 @@ import {
   sharedCollectionGoneFrom,
 } from "../src/federation/sharedCollections";
 import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
+import { deleteUser } from "../src/services/userAdminService";
 
 // Collections shared with partners' people, both ways: this instance telling a partner (what's queued, what it then
 // serves), and this instance as the partner told, reading the collection from a stand-in for its owner's instance.
@@ -97,11 +99,37 @@ async function mediaServed(kind: string, id: string, peer: { id: string }): Prom
 // The stand-in for the owner's instance: what it answers for its collections, people and models.
 const docs = new Map<string, unknown>();
 const people = new Map<string, unknown>();
-// A collection's document answered only after this many ms; what /api/ap/shared lists; how often a person was asked.
-const delays = new Map<string, number>();
+// Answers held until a test lets them go (`hold`), by a collection's id or "ruta-collections"; what /api/ap/shared
+// lists, on its first page and its second, or that it fails; Rūta's public collections; how often a person was asked.
+const gates = new Map<string, { reached: () => void; open: Promise<void> }>();
 const listedShared: string[] = [];
+const listedSharedNext: string[] = [];
+const sharedList = { fails: false };
 const directoryPeople: unknown[] = [];
+const openCollections: unknown[] = [];
 let peopleAsked = 0;
+
+/** Holds the stand-in's answer for `key`: `reached` once it's asked for it, `open()` to send it. */
+function hold(key: string): { reached: Promise<void>; open: () => void } {
+  let reached!: () => void;
+  let open!: () => void;
+  const asked = new Promise<void>((resolve) => (reached = resolve));
+  gates.set(key, { reached, open: new Promise<void>((resolve) => (open = resolve)) });
+  return {
+    reached: asked,
+    open: () => {
+      gates.delete(key);
+      open();
+    },
+  };
+}
+/** Sends `answer` once `key`'s gate, if any, is open. */
+function afterGate(key: string, answer: () => void): void {
+  const gate = gates.get(key);
+  if (!gate) return answer();
+  gate.reached();
+  void gate.open.then(answer);
+}
 let server: ReturnType<express.Express["listen"]>;
 
 let savedSocial: Awaited<ReturnType<typeof getSocialSettings>>;
@@ -113,19 +141,17 @@ let partnerId: string;
 let otherId: string;
 let rutaId: string;
 let collectionId: string;
+let printId: string;
 let plateId: string;
 
 beforeAll(async () => {
   const stand = express();
   stand.get("/api/ap/collections/:id", (req, res) => {
-    setTimeout(
-      () => {
-        const doc = docs.get(req.params.id);
-        if (doc) res.json(doc);
-        else res.status(404).json({ error: "Not found" });
-      },
-      delays.get(req.params.id) ?? 0,
-    );
+    afterGate(req.params.id, () => {
+      const doc = docs.get(req.params.id);
+      if (doc) res.json(doc);
+      else res.status(404).json({ error: "Not found" });
+    });
   });
   stand.get("/api/ap/collections/:id/items", (req, res) => {
     // "partial": its second page is gone, so what's read of it is only part.
@@ -171,8 +197,19 @@ beforeAll(async () => {
       ],
     });
   });
-  stand.get("/api/ap/shared", (_req, res) => {
-    res.json({ type: "OrderedCollection", orderedItems: listedShared });
+  stand.get("/api/ap/shared", (req, res) => {
+    if (sharedList.fails) {
+      res.status(500).json({ error: "Broken" });
+      return;
+    }
+    res.json({
+      type: "OrderedCollectionPage",
+      orderedItems: req.query.after ? listedSharedNext : listedShared,
+      next: !req.query.after && listedSharedNext.length ? `${PARTNER}/api/ap/shared?after=1` : undefined,
+    });
+  });
+  stand.get("/api/ap/actors/ruta/collections", (_req, res) => {
+    afterGate("ruta-collections", () => res.json({ type: "OrderedCollectionPage", orderedItems: openCollections }));
   });
   stand.get("/api/ap/media/:name", (_req, res) => {
     res.type("image/png").send(PLATE_PNG);
@@ -230,7 +267,7 @@ beforeAll(async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-fsc-"));
   fs.writeFileSync(path.join(dir, "tray.stl"), "solid tray endsolid");
   const upload = await request(app).post("/api/upload").set(auth(alex)).attach("files", path.join(dir, "tray.stl"));
-  const printId = upload.body.prints[0].id as string;
+  printId = upload.body.prints[0].id as string;
   plateId = (await prisma.plate.findFirstOrThrow({ where: { printId } })).id;
   collectionId = (
     await request(app)
@@ -283,8 +320,14 @@ describe("sharing with a partner's people", () => {
       attributedTo: { id: `${ORIGIN}/api/ap/actors/${alex.id}`, name: "Alex" },
       "thingport:items": `${ORIGIN}/api/ap/collections/${collectionId}/items`,
     });
+    // What it answers at that address: the model filed in it, whole.
+    const partnerRow = await prisma.peer.findUniqueOrThrow({ where: { id: partnerId } });
+    const items = (await sharedCollectionItems(collectionId, partnerRow, null)) as { orderedItems: { id: string }[] };
+    expect(items.orderedItems.map((item) => item.id)).toEqual([`${ORIGIN}/api/ap/models/${printId}`]);
     // Nobody on the other partner: it isn't there to read.
     expect(await sharedCollectionObject({ origin: ORIGIN }, collectionId, otherId)).toBeNull();
+    const otherRow = await prisma.peer.findUniqueOrThrow({ where: { id: otherId } });
+    expect(await sharedCollectionItems(collectionId, otherRow, null)).toBeNull();
     expect(await served(plateId, { id: partnerId })).toBe(200);
     expect(await served(plateId, { id: otherId })).toBe(404);
     expect(await served(plateId, null)).toBe(404);
@@ -332,14 +375,38 @@ describe("sharing with a partner's people", () => {
         .set(auth(alex))
         .send({ name: `Doomed ${stamp}` })
     ).body.id as string;
+    // Two of its people on it: told once all the same.
+    const tomas = await prisma.remotePerson.create({
+      data: { peerId: partnerId, apId: `${PARTNER}/api/ap/actors/tomas`, username: "tomas", displayName: "Tomas" },
+    });
     await request(app)
       .patch(`/api/collection/${doomed}/sharing`)
       .set(auth(alex))
-      .send({ visibility: "shared", add_remote_person_ids: [rutaId] });
+      .send({ visibility: "shared", add_remote_person_ids: [rutaId, tomas.id] });
     await request(app).delete(`/api/collection/${doomed}`).set(auth(alex));
     const sent = await queued(PARTNER);
     expect(sent.map((activity) => activity.type)).toEqual(["Update", "Delete"]);
     expect(objectId(sent[1])).toBe(`${ORIGIN}/api/ap/collections/${doomed}`);
+  });
+
+  it("says Delete of what someone shared once their account is deleted", async () => {
+    const erin = await register("Erin");
+    const theirs = (
+      await request(app)
+        .post("/api/collections")
+        .set(auth(erin))
+        .send({ name: `Erin's ${stamp}` })
+    ).body.id as string;
+    await request(app)
+      .patch(`/api/collection/${theirs}/sharing`)
+      .set(auth(erin))
+      .send({ visibility: "shared", add_remote_person_ids: [rutaId] });
+    await prisma.federationDelivery.deleteMany({ where: { origin: PARTNER } });
+    await deleteUser(alex.id, erin.id);
+    const sent = await queued(PARTNER);
+    expect(sent.map((activity) => [activity.type, objectId(activity)])).toEqual([
+      ["Delete", `${ORIGIN}/api/ap/collections/${theirs}`],
+    ]);
   });
 
   it("finds someone on a partner by their exact handle, asking that partner only", async () => {
@@ -356,6 +423,28 @@ describe("sharing with a partner's people", () => {
     expect(found.body.people.map((person: { id: string }) => person.id)).toContain(dana!.id);
   });
 
+  it("finds someone on a partner at an IPv6 address, however it's written", async () => {
+    const at = await prisma.peer.create({
+      data: {
+        origin: "http://[fd00::1]:8000",
+        name: "Garage",
+        status: "ACTIVE",
+        actorUrl: "http://[fd00::1]:8000/api/ap/actors/instance",
+        connectedAt: new Date(),
+      },
+    });
+    try {
+      const ivy = await prisma.remotePerson.create({
+        data: { peerId: at.id, apId: "http://[fd00::1]:8000/api/ap/actors/ivy", username: "ivy", displayName: "Ivy" },
+      });
+      expect((await personByHandle("ivy@[fd00::1]:8000", alex.id))?.id).toBe(ivy.id);
+      expect((await personByHandle("@ivy@[FD00:0::1]:8000", alex.id))?.id).toBe(ivy.id);
+      expect(await personByHandle("ivy@[fd00::2]:8000", alex.id)).toBeNull();
+    } finally {
+      await prisma.peer.delete({ where: { id: at.id } });
+    }
+  });
+
   it("asks a partner for so many handles a minute, and no more", async () => {
     const before = peopleAsked;
     for (let n = 0; n < 15; n++) await personByHandle(`ghost${n}-${stamp}@203.0.113.120`, carl.id);
@@ -368,8 +457,9 @@ describe("sharing with a partner's people", () => {
       .set(auth(alex))
       .send({ visibility: "shared", add_remote_person_ids: [rutaId] });
     const partnerRow = await prisma.peer.findUniqueOrThrow({ where: { id: partnerId } });
-    const listed = (await collectionsSharedWith(partnerRow)) as { orderedItems: string[] };
+    const listed = (await collectionsSharedWith(partnerRow)) as { orderedItems: string[]; next?: string };
     expect(listed.orderedItems).toContain(`${ORIGIN}/api/ap/collections/${collectionId}`);
+    expect(listed.next).toBeUndefined();
     const other = (await collectionsSharedWith(await prisma.peer.findUniqueOrThrow({ where: { id: otherId } }))) as {
       orderedItems: string[];
     };
@@ -380,6 +470,36 @@ describe("sharing with a partner's people", () => {
     // Alex shares with someone there, so the partner may fetch his avatar; Carl shares nothing with anyone.
     expect(await personNamed(await usernameOf(alex), partnerRow)).toMatchObject({ icon: { type: "Image" } });
     expect(await personNamed(await usernameOf(carl), partnerRow)).toMatchObject({ icon: undefined });
+  });
+
+  it("lists what it shares with a partner's people a page at a time", async () => {
+    await prisma.collection.createMany({
+      data: Array.from({ length: 501 }, (_, n) => ({
+        userId: carl.id,
+        name: `Bin ${n} ${stamp}`,
+        nameNormalized: `bin ${n} ${stamp}`,
+        visibility: "SHARED" as const,
+      })),
+    });
+    const many = await prisma.collection.findMany({ where: { userId: carl.id }, select: { id: true } });
+    try {
+      await prisma.collectionShare.createMany({
+        data: many.map((collection) => ({ collectionId: collection.id, remotePersonId: rutaId })),
+      });
+      const partnerRow = await prisma.peer.findUniqueOrThrow({ where: { id: partnerId } });
+      const first = (await collectionsSharedWith(partnerRow)) as { orderedItems: string[]; next?: string };
+      expect(first.orderedItems).toHaveLength(500);
+      const after = new URL(first.next!).searchParams.get("after");
+      const second = (await collectionsSharedWith(partnerRow, after)) as { orderedItems: string[]; next?: string };
+      expect(second.next).toBeUndefined();
+      const all = [...first.orderedItems, ...second.orderedItems];
+      expect(new Set(all).size).toBe(all.length);
+      for (const collection of [...many, { id: collectionId }]) {
+        expect(all).toContain(`${ORIGIN}/api/ap/collections/${collection.id}`);
+      }
+    } finally {
+      await prisma.collection.deleteMany({ where: { id: { in: many.map((collection) => collection.id) } } });
+    }
   });
 
   it("hands the partner a shared model's description pictures too", async () => {
@@ -532,10 +652,27 @@ describe("a partner's person sharing a collection with people here", () => {
 
   it("lets a Delete that came during a read have the last word", async () => {
     docs.set("c7", doc("c7", [actor(bea.id)]));
-    delays.set("c7", 400);
+    const held = hold("c7");
     const reading = sharedCollectionFrom(actorOf(PARTNER), apId("c7"));
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // The read has asked for it: the Delete comes while it's out.
+    await held.reached;
+    let found!: () => void;
+    const peerFound = new Promise<void>((resolve) => (found = resolve));
+    const findFirst = prisma.peer.findFirst.bind(prisma.peer);
+    const looked = vi.spyOn(prisma.peer, "findFirst").mockImplementation((async (...args: [never]) => {
+      const peer = await findFirst(...args);
+      found();
+      return peer;
+    }) as never);
     const gone = sharedCollectionGoneFrom(actorOf(PARTNER), apId("c7"));
+    try {
+      // The Delete has found its partner, and so is waiting its turn, before the read is let go.
+      await peerFound;
+      await new Promise((resolve) => setImmediate(resolve));
+    } finally {
+      looked.mockRestore();
+      held.open();
+    }
     await Promise.all([reading, gone]);
     expect(await gone).toBe(true);
     expect(await prisma.remoteCollection.count({ where: { apId: apId("c7") } })).toBe(0);
@@ -578,14 +715,124 @@ describe("a partner's person sharing a collection with people here", () => {
     const url = `${PARTNER}/api/ap/media/pic-${stamp}`;
     await prisma.remoteModel.update({ where: { apId: shared.modelApIds[0] }, data: { images: [url] } });
     const address = `/api${mediaAddress(url)}`;
-    expect((await request(app).get(address).set(auth(bea))).status).toBe(200);
+    const theirs = await request(app).get(address).set(auth(bea));
+    expect(theirs.status).toBe(200);
+    // Not kept by the browser either, where someone else may sign in next.
+    expect(theirs.headers["cache-control"]).toBe("private, no-store");
     // Kept here now, and still nobody else's: not fetched again, and not handed to them from what's kept.
     expect((await request(app).get(address).set(auth(carl))).status).toBe(404);
+    // Once it's no longer shared with anyone here, it's nobody's, though it's still kept on disk for now.
+    await sharedCollectionGoneFrom(actorOf(PARTNER), apId("c9"));
+    expect((await request(app).get(address).set(auth(bea))).status).toBe(404);
   });
 
   it("isn't taken from a partner speaking for another's collection", async () => {
     docs.set("c3", doc("c3", [actor(bea.id)]));
     await sharedCollectionFrom(actorOf(OTHER), apId("c3"));
     expect(await prisma.remoteCollection.count({ where: { apId: apId("c3") } })).toBe(0);
+  });
+
+  it("keeps the models it had when it says nowhere of its own to read them", async () => {
+    docs.set("c10", doc("c10", [actor(bea.id)]));
+    await sharedCollectionFrom(actorOf(PARTNER), apId("c10"));
+    const before = (await prisma.remoteCollection.findUniqueOrThrow({ where: { apId: apId("c10") } })).modelApIds;
+    expect(before).toHaveLength(2);
+    for (const items of [undefined, "http://198.51.100.9/api/ap/collections/c10/items"]) {
+      docs.set("c10", { ...doc("c10", [actor(bea.id)]), "thingport:items": items });
+      await sharedCollectionFrom(actorOf(PARTNER), apId("c10"));
+      const kept = await prisma.remoteCollection.findUniqueOrThrow({ where: { apId: apId("c10") } });
+      expect(kept.modelApIds.toSorted()).toEqual(before.toSorted());
+      expect(await prisma.remoteModel.count({ where: { apId: { in: before } } })).toBe(2);
+    }
+  });
+
+  it("follows the list of what's shared a page at a time, and says when it can't be read", async () => {
+    docs.set("c11", doc("c11", [actor(bea.id)]));
+    listedSharedNext.push(apId("c11"));
+    try {
+      await refreshShared(partnerId);
+      expect(await prisma.remoteCollection.findUnique({ where: { apId: apId("c11") } })).toMatchObject({
+        limited: true,
+      });
+      // Broken now: said, and what's kept is read all the same.
+      sharedList.fails = true;
+      docs.set("c11", { ...doc("c11", [actor(bea.id)]), name: "Hooks, renamed" });
+      await refreshShared(partnerId);
+      expect((await prisma.peer.findUniqueOrThrow({ where: { id: partnerId } })).syncError).toMatch(
+        /Couldn't list what its people shared/,
+      );
+      expect(await prisma.remoteCollection.findUnique({ where: { apId: apId("c11") } })).toMatchObject({
+        name: "Hooks, renamed",
+      });
+    } finally {
+      sharedList.fails = false;
+      listedSharedNext.length = 0;
+      await prisma.peer.update({ where: { id: partnerId }, data: { syncError: null } });
+    }
+  });
+
+  it("isn't made public again by a read of what's shared openly that began before it was read", async () => {
+    const ruta = await prisma.remotePerson.findUniqueOrThrow({ where: { id: rutaId } });
+    directoryPeople.push({
+      id: ruta.apId,
+      type: "Person",
+      name: "Ruta",
+      preferredUsername: "ruta",
+      "thingport:collections": `${PARTNER}/api/ap/actors/ruta/collections`,
+    });
+    // Public there as the index is read; shared with Bea alone by the time that read is written.
+    openCollections.push({
+      id: apId("c12"),
+      type: "thingport:Collection",
+      name: "Hooks",
+      attributedTo: ruta.apId,
+      "thingport:models": { first: { orderedItems: [] } },
+    });
+    const held = hold("ruta-collections");
+    try {
+      const syncing = syncPeer(partnerId);
+      await held.reached;
+      docs.set("c12", doc("c12", [actor(bea.id)]));
+      await sharedCollectionFrom(actorOf(PARTNER), apId("c12"));
+      held.open();
+      await syncing;
+      const kept = await prisma.remoteCollection.findUniqueOrThrow({
+        where: { apId: apId("c12") },
+        include: { viewers: true },
+      });
+      expect(kept.limited).toBe(true);
+      expect(kept.viewers.map((viewer) => viewer.userId)).toEqual([bea.id]);
+      expect(await remoteCollection(kept.id, 30, 0, carl.id)).toBeNull();
+    } finally {
+      held.open();
+      directoryPeople.length = 0;
+      openCollections.length = 0;
+    }
+  });
+
+  // Last: it forgets everything of the partner's.
+  it("keeps nothing of a read that a block of its partner finished during, its owner neither", async () => {
+    const zoe = `${PARTNER}/api/ap/actors/zoe`;
+    docs.set("c13", {
+      ...doc("c13", [actor(bea.id)]),
+      attributedTo: { id: zoe, type: "Person", name: "Zoe", preferredUsername: "zoe" },
+    });
+    const held = hold("c13");
+    const reading = sharedCollectionFrom(actorOf(PARTNER), apId("c13")).then(
+      () => null,
+      (err: Error) => err,
+    );
+    try {
+      await held.reached;
+      await prisma.peer.update({ where: { id: partnerId }, data: { status: "BLOCKED" } });
+      await forgetPeerContent(partnerId);
+      held.open();
+      expect((await reading)?.message).toBe("No longer connected");
+      expect(await prisma.remotePerson.count({ where: { apId: zoe } })).toBe(0);
+      expect(await prisma.remoteCollection.count({ where: { apId: apId("c13") } })).toBe(0);
+    } finally {
+      held.open();
+      await prisma.peer.update({ where: { id: partnerId }, data: { status: "ACTIVE" } });
+    }
   });
 });

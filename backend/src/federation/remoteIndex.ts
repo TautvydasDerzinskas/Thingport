@@ -379,6 +379,8 @@ async function sync(peerId: string): Promise<void> {
   const peer = await prisma.peer.findUnique({ where: { id: peerId } });
   if (!peer || peer.status !== "ACTIVE" || !(await isFederationLive())) return;
   try {
+    // What's read is as of now, or later: a collection shared with people here read since is newer (`storeIn`).
+    const startedAt = new Date();
     const runtime = await getRuntime();
     const own = (url: string | undefined): url is string => Boolean(url) && originOf(url!) === peer.origin;
     const read = async (url: string) => (await runtime.signedLoader(url)).document;
@@ -410,7 +412,7 @@ async function sync(peerId: string): Promise<void> {
         allCollections: collections.all,
       });
     }
-    const written = store(peer, people, own);
+    const written = store(peer, people, own, startedAt);
     storing.set(peer.id, written);
     try {
       await written;
@@ -591,16 +593,26 @@ const markdownOf = (value: { content?: string } | undefined, max: number) =>
   value?.content?.trim() ? value.content.trim().slice(0, max) : null;
 
 /** The index for one partner, made to match what it just said: kept rows keep their ids, so links to them stay. */
-async function store(peer: Peer, people: Shared[], own: (url: string | undefined) => url is string): Promise<void> {
+async function store(
+  peer: Peer,
+  people: Shared[],
+  own: (url: string | undefined) => url is string,
+  startedAt: Date,
+): Promise<void> {
   // All of it or none: a write that fails leaves the last complete read as it was.
-  await prisma.$transaction((tx) => storeIn(tx, peer, people, own), { timeout: STORE_TIMEOUT_MS, maxWait: 10_000 });
+  await prisma.$transaction((tx) => storeIn(tx, peer, people, own, startedAt), {
+    timeout: STORE_TIMEOUT_MS,
+    maxWait: 10_000,
+  });
 }
 
+/** `startedAt`: when what's in `people` began to be read. */
 async function storeIn(
   tx: Prisma.TransactionClient,
   peer: Peer,
   people: Shared[],
   own: (url: string | undefined) => url is string,
+  startedAt: Date,
 ): Promise<void> {
   // Every row written now is marked with it: what's left unmarked is what the partner no longer shares, found without
   // listing what it does (a big partner's ids would pass what one query may take).
@@ -667,18 +679,23 @@ async function storeIn(
         limited: false,
       };
       const modelApIds = collection.modelIds;
-      await tx.remoteCollection.upsert({
-        where: { apId: collection.id },
-        create: { apId: collection.id, ...collectionData, modelApIds },
+      // Unless it was read since as shared with some people here: that's newer than what this says, so it stays
+      // theirs alone. Checked as it's written, so a read of it finishing meanwhile counts too.
+      const { count: written } = await tx.remoteCollection.updateMany({
+        where: { apId: collection.id, NOT: { limited: true, syncedAt: { gte: startedAt } } },
         // Its models read only in part: those it had stay.
-        update: {
-          ...(collection.allIds ? { ...collectionData, modelApIds } : collectionData),
-          viewers: { deleteMany: {} },
-        },
-        select: { id: true },
+        data: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
       });
+      if (!written) {
+        await tx.remoteCollection.createMany({
+          data: { apId: collection.id, ...collectionData, modelApIds },
+          skipDuplicates: true,
+        });
+      }
     }
   }
+  // One that was shared with some people here and is public there now is for everyone: nobody's its viewer.
+  await tx.remoteCollectionViewer.deleteMany({ where: { collection: { peerId: peer.id, limited: false } } });
   // Whatever it no longer shares goes, except what was sent to people here rather than listed: a collection shared
   // with them goes when its owner's instance says so (sharedCollections.ts), and a model no longer shared openly but
   // still in one stays for them.

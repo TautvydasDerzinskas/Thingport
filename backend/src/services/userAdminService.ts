@@ -4,6 +4,7 @@ import path from "node:path";
 import type { Role } from "@prisma/client";
 import { STORAGE, STUDIO_ASSETS } from "../config";
 import { prisma } from "../db";
+import { kickSharing, queueAccountGone } from "../federation/sharedCollections";
 import { HttpError } from "../utils/fileUtils";
 import { deleteAllPrintsForUser } from "./adminService";
 import { createLog } from "./auditLog";
@@ -109,7 +110,16 @@ export async function deleteUser(actorId: string, targetId: string): Promise<{ m
   await fs.rm(path.join(STUDIO_ASSETS, `u-${target.id}`), { recursive: true, force: true });
   // Rooms they shared with partners' people: told once they're out of them.
   const rooms = await roomsWithPartnersOf(target.id);
-  await prisma.user.delete({ where: { id: target.id } });
+  // Collections they shared with partners' people: those partners told they're gone, by what's queued with it.
+  await prisma.$transaction(
+    async (tx) => {
+      await queueAccountGone(tx, target.id);
+      await tx.user.delete({ where: { id: target.id } });
+      // However much goes with the account.
+    },
+    { timeout: 2 * 60 * 1000 },
+  );
+  kickSharing();
   await afterAccountGone(target.id, rooms).catch((err) => console.error("[federation] Couldn't tell partners:", err));
   // Their models went with the account, so an author only they had is now an author of nothing.
   for (const authorId of authorIds) await deleteAuthorIfOrphaned(authorId);

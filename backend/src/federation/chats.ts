@@ -373,15 +373,20 @@ async function senderPeer(actorId: URL): Promise<Peer | null> {
 }
 
 /** Someone on `peer`, as a message or room names them: who the index has, or kept from now on as the message said,
- *  unlisted (they may share nothing there). Only someone on that partner's own origin. */
-export async function personOn(peer: Peer, person: IncomingPerson): Promise<RemotePerson | null> {
+ *  unlisted (they may share nothing there). Only someone on that partner's own origin. In `db`'s transaction, if given:
+ *  nothing it writes is kept unless that is. */
+export async function personOn(
+  peer: Peer,
+  person: IncomingPerson,
+  db: Db | typeof prisma = prisma,
+): Promise<RemotePerson | null> {
   if (originOf(person.id) !== peer.origin) return null;
   const card = cardOf(person);
-  const found = await prisma.remotePerson.findUnique({ where: { apId: person.id } });
+  const found = await db.remotePerson.findUnique({ where: { apId: person.id } });
   if (found) {
     if (found.peerId !== peer.id) return null;
     if (found.listed) return found;
-    return prisma.remotePerson.update({
+    return db.remotePerson.update({
       where: { id: found.id },
       data: {
         displayName: card.name,
@@ -390,21 +395,20 @@ export async function personOn(peer: Peer, person: IncomingPerson): Promise<Remo
       },
     });
   }
-  try {
-    return await prisma.remotePerson.create({
-      data: {
-        peerId: peer.id,
-        apId: person.id,
-        displayName: card.name,
-        username: card.handle?.split("@")[0] ?? null,
-        avatarUrl: person.icon && originOf(person.icon) === peer.origin ? person.icon : null,
-        listed: false,
-      },
-    });
-  } catch {
-    // Kept by a message that came at the same moment.
-    return prisma.remotePerson.findUnique({ where: { apId: person.id } });
-  }
+  // Or kept by a message that came at the same moment: skipped, not failed, which would undo a transaction it's in.
+  await db.remotePerson.createMany({
+    data: {
+      peerId: peer.id,
+      apId: person.id,
+      displayName: card.name,
+      username: card.handle?.split("@")[0] ?? null,
+      avatarUrl: person.icon && originOf(person.icon) === peer.origin ? person.icon : null,
+      listed: false,
+    },
+    skipDuplicates: true,
+  });
+  const kept = await db.remotePerson.findUnique({ where: { apId: person.id } });
+  return kept?.peerId === peer.id ? kept : null;
 }
 
 export type Arrival = {
