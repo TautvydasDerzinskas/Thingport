@@ -28,6 +28,8 @@ export type PickerPerson = UserCard & { online?: boolean; remote?: RemoteRef | n
 type Props<P extends PickerPerson> = {
   /** Finds people for what's typed: a chat's search, or sharing's. */
   search: (query: string) => Promise<P[]>;
+  /** Nothing can be picked or taken off meanwhile, as while what's picked is being saved. */
+  disabled?: boolean;
   /** Picks one, as starting a chat does; or with `selected`, ticks any number. */
   onPick?: (person: P) => void;
   selected?: P[];
@@ -47,6 +49,7 @@ const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", c
  *  are on, people on partner instances, each with theirs. */
 export default function PeoplePicker<P extends PickerPerson>({
   search,
+  disabled = false,
   onPick,
   selected,
   onSelectedChange,
@@ -83,6 +86,7 @@ export default function PeoplePicker<P extends PickerPerson>({
   }, [debounced, onUnauthorized, search]);
 
   const toggle = (person: P) => {
+    if (disabled) return;
     if (!selected || !onSelectedChange) {
       onPick?.(person);
       return;
@@ -124,7 +128,7 @@ export default function PeoplePicker<P extends PickerPerson>({
               size="small"
               avatar={<UserAvatar user={person} size={20} />}
               label={person.display_name}
-              onDelete={() => toggle(person)}
+              onDelete={disabled ? undefined : () => toggle(person)}
             />
           ))}
         </Box>
@@ -146,6 +150,7 @@ export default function PeoplePicker<P extends PickerPerson>({
           <List dense disablePadding>
             {shown.map((person) => (
               <ListItemButton
+                disabled={disabled}
                 key={person.id}
                 onClick={() => toggle(person)}
                 selected={multi && selectedIds.has(person.id)}

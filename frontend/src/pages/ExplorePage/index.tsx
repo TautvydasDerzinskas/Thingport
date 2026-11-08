@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -87,21 +87,31 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   // With connected instances on, someone on another instance can be asked for, here.
   const federation = useSocialStatus()?.federation === true;
 
+  /** Explore as it came: what's shown from now on, Show more's pages starting again from it. */
+  const accept = useCallback(
+    (value: ExploreOverview) => {
+      setFailed(false);
+      setOverview(value);
+      // A page asked for before this came belongs to the Explore it replaced.
+      sharedAsk.current += 1;
+      setLoadingShared(false);
+      setMoreShared({ items: [], total: null });
+      setInstances(value.instances ?? []);
+      // A partner no longer there: back to everything.
+      if (scope !== "all" && scope !== "here" && !(value.instances ?? []).some((item) => item.id === scope)) {
+        setScope("all");
+      }
+    },
+    [scope],
+  );
+
   useEffect(() => {
     const asked = ++latest.current;
     sharedAsk.current += 1;
     setLoadingShared(false);
     socialApi.explore(scope).then(
       (value) => {
-        if (asked !== latest.current) return;
-        setFailed(false);
-        setOverview(value);
-        setMoreShared({ items: [], total: null });
-        setInstances(value.instances ?? []);
-        // A partner no longer there: back to everything.
-        if (scope !== "all" && scope !== "here" && !(value.instances ?? []).some((item) => item.id === scope)) {
-          setScope("all");
-        }
+        if (asked === latest.current) accept(value);
       },
       (err) => {
         if (asked !== latest.current) return;
@@ -112,7 +122,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     return () => {
       latest.current += 1;
     };
-  }, [onUnauthorized, scope]);
+  }, [onUnauthorized, scope, accept]);
 
   // A copy made from a card's menu: the card says so from then on, wherever the model shows on the page.
   const replaceModel = (updated: Print) =>
@@ -256,6 +266,13 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
       const page = await socialApi.sharedWithYou({ limit: SHARED_MORE, offset: sharedWithYou.length });
       if (asked !== sharedAsk.current) return;
       const known = new Set(sharedWithYou.map((collection) => collection.id));
+      // Something shared since Explore loaded moved the ranking under its pages: start again from the top.
+      if (page.items.some((collection) => known.has(collection.id))) {
+        const again = ++latest.current;
+        const value = await socialApi.explore(scope);
+        if (again === latest.current) accept(value);
+        return;
+      }
       // The total as it is now: one unshared meanwhile leaves no button asking for it again.
       setMoreShared((prev) => ({
         items: [...prev.items, ...page.items.filter((collection) => !known.has(collection.id))],

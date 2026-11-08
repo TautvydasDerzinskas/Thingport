@@ -170,7 +170,8 @@ export const collectionsApi = {
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(patch),
     });
-    await assertOkWithMessage(res, "Failed to change who it's shared with");
+    // No fallback of its own: the form says it in the reader's language when the server gave no reason.
+    await assertOkWithMessage(res, "");
     return res.json();
   },
 

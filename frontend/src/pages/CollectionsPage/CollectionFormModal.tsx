@@ -79,6 +79,8 @@ export default function CollectionFormModal({ collection, share = false, onClose
     if (!collectionId || !social?.enabled) return;
     let current = true;
     setLoadFailed(false);
+    // Loaded again (social features back on, or Retry): nothing about who sees it changes until it's here.
+    setSavedPeople(null);
     collectionsApi.sharing(collectionId).then(
       (sharing) => {
         if (!current) return;
@@ -122,7 +124,7 @@ export default function CollectionFormModal({ collection, share = false, onClose
       await onSubmit({ name: trimmedName, description: description.trim() || null, tags }, sharingPatch());
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("models:collections.form.saveFailed"));
+      setError(err instanceof Error && err.message ? err.message : t("models:collections.form.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -236,6 +238,8 @@ export default function CollectionFormModal({ collection, share = false, onClose
                   ) : (
                     <PeoplePicker
                       search={socialApi.people}
+                      // What's picked is sent as Save is pressed: a change made while it saves would be lost.
+                      disabled={saving}
                       selected={people}
                       onSelectedChange={setPeople}
                       // Opened from Share…: finding someone is the first thing to do.
@@ -278,7 +282,8 @@ export default function CollectionFormModal({ collection, share = false, onClose
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={saving || !trimmedName}
+          // Waiting for who it's shared with: the form may show a change it can't send until that's here.
+          disabled={saving || !trimmedName || (Boolean(social?.enabled) && isEdit && !sharingReady && !loadFailed)}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {isEdit ? t("common:save") : t("models:collections.form.create")}

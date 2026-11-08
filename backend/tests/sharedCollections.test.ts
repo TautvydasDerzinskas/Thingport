@@ -38,10 +38,14 @@ let printId: string;
 
 const sharing = (body: Record<string, unknown>, as: Account = alex) =>
   request(app).patch(`/api/collection/${collectionId}/sharing`).set(auth(as)).send(body);
-const canOpen = async (account: Account) =>
-  (await request(app).get(`/api/collection/${collectionId}`).set(auth(account))).status === 200;
-const canRead = async (account: Account) =>
-  (await request(app).get(`/api/print/${printId}`).set(auth(account))).status === 200;
+/** Whether `account` may open the collection, or read its model: 200 or 404, and nothing else passes as either. */
+async function allowed(url: string, account: Account): Promise<boolean> {
+  const { status } = await request(app).get(url).set(auth(account));
+  expect([200, 404]).toContain(status);
+  return status === 200;
+}
+const canOpen = (account: Account) => allowed(`/api/collection/${collectionId}`, account);
+const canRead = (account: Account) => allowed(`/api/print/${printId}`, account);
 const sharedNotes = (account: Account) =>
   prisma.notification.count({
     where: { userId: account.id, type: "share", internalPath: `/explore/collections/${collectionId}` },
@@ -229,6 +233,74 @@ describe("a collection shared with picked people", () => {
       .send({ primary_id: collectionId, ids: [extra] });
     expect(merged.status).toBe(200);
     expect(merged.body.collection).toMatchObject({ visibility: "shared", shared_with: { count: 1 } });
+  });
+
+  it("is shared with 100 people at most, and a change past that changes nothing", async () => {
+    const crowd = Array.from({ length: 101 }, (_, n) => ({
+      email: `shared-crowd-${n}-${RUN}@example.com`,
+      displayName: `Crowd ${n}`,
+    }));
+    await prisma.user.createMany({ data: crowd });
+    const ids = (
+      await prisma.user.findMany({ where: { email: { in: crowd.map((user) => user.email) } }, select: { id: true } })
+    ).map((user) => user.id);
+    const big = (
+      await request(app)
+        .post("/api/collections")
+        .set(auth(alex))
+        .send({ name: `Big ${RUN}` })
+    ).body.id as string;
+    const share = (body: Record<string, unknown>) =>
+      request(app).patch(`/api/collection/${big}/sharing`).set(auth(alex)).send(body);
+    try {
+      expect((await share({ add_user_ids: ids.slice(0, 100) })).body.people).toHaveLength(100);
+      const refused = await share({ visibility: "shared", add_user_ids: ids.slice(100) });
+      expect(refused.status).toBe(422);
+      expect(refused.body.code).toBe("too_many_people");
+      // Nothing of it was kept: not the person past the limit, and not the visibility asked with them.
+      const kept = await request(app).get(`/api/collection/${big}/sharing`).set(auth(alex));
+      expect(kept.body).toMatchObject({ visibility: "private" });
+      expect(kept.body.people).toHaveLength(100);
+    } finally {
+      await request(app).delete(`/api/collection/${big}`).set(auth(alex));
+      await prisma.user.deleteMany({ where: { id: { in: ids } } });
+    }
+  });
+
+  it("can't be shared when it's a tool's, by any route", async () => {
+    const tool = await prisma.tool.create({
+      data: {
+        source: "own",
+        scope: alex.id,
+        slug: `shared-${RUN}`,
+        userId: alex.id,
+        manifest: {},
+        script: "",
+        sha: "x",
+      },
+    });
+    const name = `Tool parts ${RUN}`;
+    const toolCollection = await prisma.collection.create({
+      data: { userId: alex.id, name, nameNormalized: name.toLowerCase(), toolId: tool.id },
+    });
+    try {
+      // The trailing slash gets past the tool lock in front of the route: the route itself refuses.
+      const patched = await request(app)
+        .patch(`/api/collection/${toolCollection.id}/`)
+        .set(auth(alex))
+        .send({ name, visibility: "shared" });
+      expect(patched.status).toBe(403);
+      const shared = await request(app)
+        .patch(`/api/collection/${toolCollection.id}/sharing`)
+        .set(auth(alex))
+        .send({ visibility: "shared" });
+      expect(shared.body.code).toBe("TOOL_OWNED");
+      expect((await prisma.collection.findUniqueOrThrow({ where: { id: toolCollection.id } })).visibility).toBe(
+        "PRIVATE",
+      );
+    } finally {
+      await prisma.tool.delete({ where: { id: tool.id } });
+    }
   });
 
   it("finds people to share with by name, never by part of an email", async () => {

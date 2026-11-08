@@ -245,6 +245,13 @@ router.patch(
     if (!collection) throw new HttpError(404, "Collection not found");
     await assertCollectionNameAvailable(req.userId!, body.name, collection.id);
     const renamed = body.name !== collection.name;
+    // Written only when asked for: a save of its name alone mustn't put back the visibility read a moment ago over a
+    // change made meanwhile.
+    const visibility = visibilityAsked(body, collection.visibility);
+    const visibilityChange = visibility !== collection.visibility ? { visibility } : {};
+    if (collection.toolId && visibilityChange.visibility) {
+      throw new HttpError(403, `"${collection.name}" belongs to a tool and can't be changed`, "TOOL_OWNED");
+    }
     const updated = await prisma.collection.update({
       where: { id: collection.id },
       data: {
@@ -252,7 +259,7 @@ router.patch(
         nameNormalized: normalizeCollectionName(body.name),
         description: body.description?.trim() || null,
         tags: normalizeTags(body.tags),
-        visibility: visibilityAsked(body, collection.visibility),
+        ...visibilityChange,
       },
     });
     await tellGained(collection, updated);
