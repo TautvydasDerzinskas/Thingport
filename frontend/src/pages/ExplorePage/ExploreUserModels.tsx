@@ -88,6 +88,11 @@ export default function ExploreUserModels({
     setHasMore(false);
     gone();
   };
+  // Read fine, so nothing waits for the page's next read: the user's own retry may have got there first.
+  const recovered = () => {
+    retriedOnce.current = false;
+    missing.current = false;
+  };
 
   // A list put back on the way back, read again quietly, so a model copied to the library meanwhile says so. Failing,
   // the list stays as it was and says it couldn't be read, with a retry; gone, it goes as for a first load.
@@ -113,7 +118,7 @@ export default function ExploreUserModels({
       return;
     }
     if (mine !== run.current) return;
-    retriedOnce.current = false;
+    recovered();
     setRefreshFailed(false);
     setItems(fresh);
     setHasMore(more);
@@ -144,7 +149,7 @@ export default function ExploreUserModels({
         if (mine !== run.current) return;
         setLoading(false);
         if (!page) return gone();
-        retriedOnce.current = false;
+        recovered();
         setItems(page.items);
         setHasMore(page.hasMore);
       },
