@@ -6,10 +6,11 @@ import { scrollRestoreHeld } from "../../hooks/useScrollRestoreHold";
 // the last time it grew, as a page can fill in a step at a time. A grid still loading its list holds it open
 // (useScrollRestoreHold), up to HELD_AT_MOST_MS; the reader scrolling ends it sooner.
 const WAIT_FOR_GROWTH_MS = 8000;
-// The longest a place is followed at all, for a page whose height never settles (something animating, say).
+// The longest a place is followed with nothing holding it open, for a page whose size never settles (something
+// animating, say). Counted from when the last hold ended, so the pages after a slow first one still get there.
 const RESTORE_AT_MOST_MS = 20000;
 // The longest while a grid is still loading: a slow server's list gets there, one that never answers doesn't keep the
-// restore going.
+// restore going. With RESTORE_AT_MOST_MS after it, a restore lasts 80 s at most.
 const HELD_AT_MOST_MS = 60000;
 // Keys that scroll the page, outside a field being typed in. With the wheel and a moving touch, the reader scrolling for
 // themselves; Tab or a click doesn't end a restore, and a drag of the scrollbar shows as the page moving.
@@ -36,32 +37,36 @@ function entryOf(key: string, address: { pathname: string; search: string; hash:
 
 const here = (): Place => ({ x: window.scrollX, y: window.scrollY });
 
-/** Scrolls to `place` now and again each time the page grows, until it gets there, the reader scrolls, or the page
- *  stops growing; then calls `done`. The page's height is read each frame: html, body and #root are the window's height
+/** Scrolls to `place` now and again each time the page changes size, until it gets there, the reader scrolls, or the
+ *  page stops growing; then calls `done`. The page's size is read each frame: html, body and #root are the window's size
  *  (index.css), so none of them changes size as the content does. */
 function scrollBackTo(place: Place, done: () => void): () => void {
   let frame = 0;
-  let height = -1;
-  let seenAt = window.scrollY;
+  let size = "";
+  let seen = here();
   const startedAt = performance.now();
   let grewAt = startedAt;
+  let heldAt = startedAt;
+  const near = (a: Place, b: Place) => Math.abs(a.x - b.x) < 2 && Math.abs(a.y - b.y) < 2;
   const step = () => {
-    const now = document.documentElement.scrollHeight;
-    // Moved while the page stayed the same size: that's the reader, dragging the scrollbar say, which sends no wheel,
+    const { scrollWidth, scrollHeight } = document.documentElement;
+    const now = `${scrollWidth}x${scrollHeight}`;
+    // Moved while the page stayed the same size: that's the reader, dragging a scrollbar say, which sends no wheel,
     // touch or key. A change of size can move it too, as the browser keeps what's on screen in place.
-    if (now === height && Math.abs(window.scrollY - seenAt) > 2) return stop();
-    if (now !== height) {
-      height = now;
+    if (now === size && !near(here(), seen)) return stop();
+    if (now !== size) {
+      size = now;
       grewAt = performance.now();
       window.scrollTo(place.x, place.y);
-      if (Math.abs(window.scrollY - place.y) < 2) return stop();
+      // Across as well as down: a page not yet as wide as it was gets there down only.
+      if (near(here(), place)) return stop();
     }
-    seenAt = window.scrollY;
+    seen = here();
     const at = performance.now();
-    const held = scrollRestoreHeld();
-    if (held) grewAt = at;
-    if (at - grewAt > WAIT_FOR_GROWTH_MS || at - startedAt > (held ? HELD_AT_MOST_MS : RESTORE_AT_MOST_MS))
-      return stop();
+    if (scrollRestoreHeld()) {
+      grewAt = heldAt = at;
+      if (at - startedAt > HELD_AT_MOST_MS) return stop();
+    } else if (at - grewAt > WAIT_FOR_GROWTH_MS || at - heldAt > RESTORE_AT_MOST_MS) return stop();
     frame = requestAnimationFrame(step);
   };
   const onKey = (event: KeyboardEvent) => {

@@ -81,15 +81,17 @@ export default function ExploreUserModels({
     setAttempt((n) => n + 1);
   }, [pageRead]);
 
-  // A list put back on the way back, read again quietly, so a model copied to the library meanwhile says so. Failing,
-  // the list stays as it was and says it couldn't be read, with a retry. Social features switched off meanwhile, or the
-  // models no longer public, take the models away at once and send the page to read itself again, as for a first load.
-  const [refreshFailed, setRefreshFailed] = useState(false);
+  // Social features switched off, or the models no longer public: the models shown go at once, rather than staying
+  // until the page has read itself again.
   const goneWithModels = () => {
     setItems([]);
     setHasMore(false);
     gone();
   };
+
+  // A list put back on the way back, read again quietly, so a model copied to the library meanwhile says so. Failing,
+  // the list stays as it was and says it couldn't be read, with a retry; gone, it goes as for a first load.
+  const [refreshFailed, setRefreshFailed] = useState(false);
   const refresh = async (count: number, mine: number) => {
     const fresh: Print[] = [];
     let more = false;
@@ -164,7 +166,7 @@ export default function ExploreUserModels({
     try {
       const page = await socialApi.userModels(userId, { order_by: sortMode, limit: PAGE_SIZE, offset: items.length });
       if (mine !== run.current) return;
-      if (!page) return gone();
+      if (!page) return goneWithModels();
       setItems((prev) => [...prev, ...page.items]);
       setHasMore(page.hasMore);
     } catch (err) {

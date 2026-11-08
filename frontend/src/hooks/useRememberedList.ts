@@ -71,9 +71,11 @@ export function useRememberedList<T, X = undefined>({
       // Whatever's on screen now belongs to the entry being left: back to one shown before puts its own list back.
       shownFor.current = null;
       const { key: showing, loading: halfLoaded, ...list } = shown.current;
-      // Another entry's, half loaded, or empty: nothing worth putting back.
-      if (showing !== entry || halfLoaded || !list.items.length) return;
+      // Another entry's: what was kept of this one stays.
+      if (showing !== entry) return;
       kept.delete(entry);
+      // Half loaded, or empty (its models gone, say): nothing worth putting back, nor what it showed before.
+      if (halfLoaded || !list.items.length) return;
       kept.set(entry, list);
       while (kept.size > KEEP) kept.delete(kept.keys().next().value as string);
     };

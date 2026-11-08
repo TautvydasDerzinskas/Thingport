@@ -20,6 +20,7 @@ import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useScrollRestoreHold } from "../../hooks/useScrollRestoreHold";
 import ProfileLayout, { ProfileLayoutSkeleton } from "../../components/profile/ProfileLayout";
 import UserAvatar from "../../components/UserAvatar";
 import CollectionCard from "../CollectionsPage/CollectionCard";
@@ -186,6 +187,9 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
     moreCollections && !collectionsFailed,
     loadingCollections,
   );
+
+  // Back to the page: its models and collections come once it's read, so a restore waits for that too.
+  useScrollRestoreHold(!page && !off && !failed && !notFound);
 
   usePageHeader({
     title: page?.user.display_name,
