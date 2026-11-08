@@ -14,6 +14,22 @@ function greetingKey(hour: number): string {
   return "evening";
 }
 
+const BE_SHORT_DATE = {
+  weekdays: ["нд", "пн", "аўт", "ср", "чц", "пт", "сб"],
+  months: ["студз.", "лют.", "сак.", "крас.", "май", "чэрв.", "ліп.", "жн.", "вер.", "кастр.", "ліст.", "снеж."],
+};
+
+export function shortDate(language: string, now: Date) {
+  // Chromium's ICU omits Belarusian, so its Intl formatter silently falls back to English.
+  if (language === "be" && !Intl.DateTimeFormat.supportedLocalesOf([language]).length) {
+    return { weekday: BE_SHORT_DATE.weekdays[now.getDay()], day: `${now.getDate()} ${BE_SHORT_DATE.months[now.getMonth()]}` };
+  }
+  return {
+    weekday: new Intl.DateTimeFormat(language, { weekday: "short" }).format(now),
+    day: new Intl.DateTimeFormat(language, { month: "short", day: "numeric" }).format(now),
+  };
+}
+
 /** Re-renders on each new minute, lined up with the wall clock rather than drifting from mount time. */
 function useMinute(): Date {
   const [now, setNow] = useState(() => new Date());
@@ -56,8 +72,7 @@ export default function ClockCard({ hourCycle, showDate, showGreeting }: Props) 
     .join("")
     .trim();
   const dayPeriod = parts.find((part) => part.type === "dayPeriod")?.value;
-  const weekday = new Intl.DateTimeFormat(i18n.language, { weekday: "short" }).format(now);
-  const day = new Intl.DateTimeFormat(i18n.language, { month: "short", day: "numeric" }).format(now);
+  const { weekday, day } = shortDate(i18n.language, now);
 
   return (
     <DashboardCard

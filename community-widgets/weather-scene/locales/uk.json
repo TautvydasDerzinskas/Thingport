@@ -30,7 +30,7 @@
   "error.notFound": "Місце не знайдено",
   "error.failed": "Не вдалося завантажити погоду",
   "settings.location": "Місце",
-  "settings.locationHint": "Місто або широта,довгота",
+  "settings.locationHint": "Місто або широта, довгота",
   "settings.name": "Назва для показу",
   "settings.nameHint": "Назва місця",
   "settings.units": "Одиниці",

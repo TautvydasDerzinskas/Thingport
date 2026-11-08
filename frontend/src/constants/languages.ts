@@ -14,7 +14,11 @@ export const LOCALES: Record<string, Locale> = Object.fromEntries(
 
 export const FALLBACK_LANGUAGE = "en";
 
+// Chromium's ICU data names `be` in English even when asked in Belarusian.
+const SELF_LANGUAGE_NAMES: Record<string, string> = { be: "Беларуская" };
+
 function displayName(code: string, inLanguage: string): string {
+  if (code === inLanguage && SELF_LANGUAGE_NAMES[code]) return SELF_LANGUAGE_NAMES[code];
   try {
     const name = new Intl.DisplayNames([inLanguage], { type: "language" }).of(code) ?? code;
     return name.charAt(0).toLocaleUpperCase(inLanguage) + name.slice(1);

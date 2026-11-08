@@ -20,6 +20,7 @@ for (const key of read("en")) {
   if (PLURAL.test(key)) plurals.add(key.replace(PLURAL, ""));
   else plain.push(key);
 }
+const plainSet = new Set(plain);
 
 const only = process.argv[2];
 const codes = readdirSync(dir)
@@ -34,9 +35,21 @@ if (only && codes.length === 0) {
 
 for (const code of codes) {
   const forms = [...pluralForms(code)];
-  const en = new Set([...plain, ...[...plurals].flatMap((base) => forms.map((form) => `${base}_${form}`))]);
+  const localeLeaves = read(code);
+  const localizedPlurals = new Set(
+    localeLeaves.filter((key) => PLURAL.test(key)).map((key) => key.replace(PLURAL, "")),
+  );
+  const en = new Set([
+    ...plain.flatMap((key) => (localizedPlurals.has(key) ? forms.map((form) => `${key}_${form}`) : [key])),
+    ...[...plurals].flatMap((base) => forms.map((form) => `${base}_${form}`)),
+  ]);
   // Extra plural forms a translator added (Lithuanian `_many`) aren't stale, just unused by this locale's whole numbers.
-  const locale = new Set(read(code).filter((key) => en.has(key) || !plurals.has(key.replace(PLURAL, ""))));
+  const locale = new Set(
+    localeLeaves.filter((key) => {
+      const base = key.replace(PLURAL, "");
+      return en.has(key) || !(PLURAL.test(key) && (plurals.has(base) || plainSet.has(base)));
+    }),
+  );
   const missing = [...en].filter((key) => !locale.has(key));
   const stale = [...locale].filter((key) => !en.has(key));
   const done = Math.floor(((en.size - missing.length) / en.size) * 100);
