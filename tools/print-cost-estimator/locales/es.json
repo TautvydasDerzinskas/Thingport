@@ -161,7 +161,7 @@
   "setup.f.watts": "Potencia",
   "setup.f.watts.help": "Vatios medios mientras imprime. El PLA en una impresora cerrada ronda los 100–120 W; una cama caliente lo sube.",
   "setup.itsName": "Su nombre",
-  "setup.kept": "Guardado en esta instancia de Thingport, para ti",
+  "setup.kept": "Guardado en este Thingport, para ti",
   "setup.material": "Filamento",
   "setup.material.g1": "La bobina",
   "setup.printer": "Impresora",

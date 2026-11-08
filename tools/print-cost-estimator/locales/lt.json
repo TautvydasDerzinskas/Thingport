@@ -161,7 +161,7 @@
   "setup.f.watts": "Galia",
   "setup.f.watts.help": "Vidutiniai vatai spausdinant. PLA uždarame spausdintuve – apie 100–120 W; šildomas stalas pakelia daugiau.",
   "setup.itsName": "Pavadinimas",
-  "setup.kept": "Saugoma šiame Thingport serveryje, jums",
+  "setup.kept": "Saugoma šiame Thingport, jums",
   "setup.material": "Gija",
   "setup.material.g1": "Ritė",
   "setup.printer": "Spausdintuvas",

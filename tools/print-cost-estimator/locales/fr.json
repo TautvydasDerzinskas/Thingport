@@ -161,7 +161,7 @@
   "setup.f.watts": "Puissance",
   "setup.f.watts.help": "Watts moyens pendant l'impression. Le PLA sur une imprimante fermée tourne autour de 100–120 W ; un plateau chauffant fait monter.",
   "setup.itsName": "Son nom",
-  "setup.kept": "Gardé sur cette instance Thingport, pour vous",
+  "setup.kept": "Gardé sur ce Thingport, pour vous",
   "setup.material": "Filament",
   "setup.material.g1": "La bobine",
   "setup.printer": "Imprimante",

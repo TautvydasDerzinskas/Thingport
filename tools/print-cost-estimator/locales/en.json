@@ -161,7 +161,7 @@
   "setup.f.watts": "Power",
   "setup.f.watts.help": "Average watts while printing. PLA on an enclosed printer sits around 100–120 W; a hot bed pushes it higher.",
   "setup.itsName": "Its name",
-  "setup.kept": "Kept on this Thingport instance, for you",
+  "setup.kept": "Kept on this Thingport, for you",
   "setup.material": "Filament",
   "setup.material.g1": "The spool",
   "setup.printer": "Printer",
