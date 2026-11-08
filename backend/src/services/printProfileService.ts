@@ -336,10 +336,13 @@ export type PrintProfilesOut = {
   profiles: Record<string, PrintProfileOut>;
 };
 
-/** The model's profiles as they stand. */
+/** The model's profiles as they stand. `filling` is whether a fill was waiting or running when `plates` were read
+ *  (profileFillRunning, taken before reading them): taken after, a fill finishing in between would say it's done while
+ *  what was read is from before it, and a page following along would stop there, showing that. */
 export async function printProfilesOut(
   print: { id: string; sourceProvider: string | null },
   plates: ProfilePlate[],
+  filling: boolean,
 ): Promise<PrintProfilesOut> {
   const profilePlates = plates.filter((plate) => plate.sourceInstanceId);
   const profiles: Record<string, PrintProfileOut> = {};
@@ -349,7 +352,7 @@ export async function printProfilesOut(
   }
   return {
     pending: profilesPending(profilePlates, await providerReadsProfiles(print.sourceProvider)),
-    filling: profileFillRunning(print.id),
+    filling,
     profiles,
   };
 }

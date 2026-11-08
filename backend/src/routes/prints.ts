@@ -245,8 +245,10 @@ async function readableProfiles(userId: string, printId: string) {
 router.get(
   "/print/:id/profiles",
   asyncHandler(async (req, res) => {
+    // Before what's stored is read: see printProfilesOut.
+    const filling = profileFillRunning(req.params.id);
     const { print, plates } = await readableProfiles(req.userId!, req.params.id);
-    res.json(await printProfilesOut(print, plates));
+    res.json(await printProfilesOut(print, plates, filling));
   }),
 );
 
@@ -254,11 +256,12 @@ router.get(
 router.post(
   "/print/:id/profiles/fill",
   asyncHandler(async (req, res) => {
+    const filling = profileFillRunning(req.params.id);
     const { print, plates } = await readableProfiles(req.userId!, req.params.id);
     if (print.userId !== req.userId) throw new HttpError(404, "Print not found");
-    const before = await printProfilesOut(print, plates);
+    const before = await printProfilesOut(print, plates, filling);
     if (before.pending) startProfileFill(print.id);
-    res.json({ ...before, filling: profileFillRunning(print.id) });
+    res.json({ ...before, filling: filling || profileFillRunning(print.id) });
   }),
 );
 
