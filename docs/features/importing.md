@@ -36,7 +36,8 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
 
 - Its model files, and on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint, its print profiles:
   the one the link points to, all of the designer's, or the community's too. Each profile becomes its own file on the
-  model.
+  model. Ones left out, or that failed, can be added later: while the model in your library lacks any of the page's
+  profiles, Thingport Grab shows its icon there and adds just those, downloading nothing you already have.
 - The OpenSCAD script it was generated from, where its creator shared one, whichever site it came from, so it can be
   [customised and generated again](supporting-files.md#models-you-can-generate-again). MakerWorld also says when a
   creator kept the script back, and the model is marked **Script not shared**. On a MakerWorld page, Thingport Grab
