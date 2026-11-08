@@ -5201,6 +5201,7 @@
       "addToFavorites": "Pridėti prie mėgstamų",
       "removeFromFavorites": "Pašalinti iš mėgstamų",
       "favoriteFailed": "Nepavyko atnaujinti mėgstamų. Bandykite dar kartą.",
+      "title": "Pavadinimas",
       "category": "Kategorija",
       "size": "Dydis",
       "sizeHint": "Bendras visų šio modelio failų dydis saugykloje",

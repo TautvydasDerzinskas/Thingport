@@ -5088,6 +5088,7 @@
       "addToFavorites": "Añadir a favoritos",
       "removeFromFavorites": "Quitar de favoritos",
       "favoriteFailed": "No se pudieron actualizar los favoritos. Inténtalo de nuevo.",
+      "title": "Título",
       "category": "Categoría",
       "size": "Tamaño",
       "sizeHint": "Tamaño total de todos los archivos de este modelo en el almacenamiento",

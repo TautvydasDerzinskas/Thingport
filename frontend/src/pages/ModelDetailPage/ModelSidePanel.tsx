@@ -231,8 +231,21 @@ export default function ModelSidePanel({
         top: "var(--topbar-height, 80px)",
       }}
     >
-      <Stack spacing={2}>
-        {/* No title here: the page header has room for it. */}
+      {/* Flex gap rather than margins: a part hidden at this size takes no room. */}
+      <Stack spacing={2} useFlexGap>
+        {/* Below md the page is one column and the header cuts a long name short (phones can't hover for the whole
+            of it), so the full name shows here; wider screens give the header the room. */}
+        <Box sx={{ display: { xs: "block", md: "none" } }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+            {t("models:detail.title")}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: (muiTheme) => muiTheme.thingport.headingText, overflowWrap: "anywhere" }}
+          >
+            {print.title || print.name}
+          </Typography>
+        </Box>
         {print.copied_from_remote && <CopiedFromRemote origin={print.copied_from_remote} />}
 
         {owner && (
