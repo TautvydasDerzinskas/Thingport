@@ -69,6 +69,21 @@ export async function keepRenewedPixup3dSession(userId: string, used: string, se
   });
 }
 
+/** `read` run with the user's sign-in, null without one, and whatever newer session PIXUP answered with kept after,
+ *  failed or not. */
+export async function withPixup3dSession<T>(
+  userId: string,
+  read: (session: Pixup3dSession | null) => Promise<T>,
+): Promise<T> {
+  const session = await getUserPixup3dSession(userId);
+  const used = session?.session;
+  try {
+    return await read(session);
+  } finally {
+    if (session && used) await keepRenewedPixup3dSession(userId, used, session).catch(() => undefined);
+  }
+}
+
 export async function markPixup3dSessionRejected(userId: string): Promise<void> {
   await rejectConnection(userId, ID);
 }
@@ -89,11 +104,24 @@ export async function getPixup3dConnection(
 export async function pixup3dMemberOf(userId: string): Promise<Pixup3dMember | null> {
   const [{ account }, session] = await Promise.all([getPixup3dConnection(userId), getUserPixup3dSession(userId)]);
   if (account || !session) return session ? account : null;
+  const used = session.session;
   const check = await checkPixup3dAuth(session);
-  if (check === "rejected") await markPixup3dSessionRejected(userId);
+  // What the check says applies only to the sign-in it checked: a disconnect, or a new sign-in saved meanwhile, wins.
+  const stillStored = { ...ROW(userId), rejectedAt: null, secret: { path: ["session"], equals: used } };
+  if (check === "rejected") {
+    await prisma.providerConnection.updateMany({ where: stillStored, data: { rejectedAt: new Date() } });
+    return null;
+  }
   if (typeof check !== "object") return null;
-  await setUserPixup3dSession(userId, session, check);
-  return check;
+  const { count } = await prisma.providerConnection.updateMany({
+    where: stillStored,
+    data: {
+      accountId: check.username,
+      accountName: check.name ?? check.username,
+      secret: { session: session.session } as Prisma.InputJsonValue,
+    },
+  });
+  return count ? check : null;
 }
 
 /** Shown wherever an import needs the user's sign-in, and there's none. */

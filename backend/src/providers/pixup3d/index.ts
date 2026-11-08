@@ -53,6 +53,7 @@ import {
   keepRenewedPixup3dSession,
   markPixup3dSessionRejected,
   PIXUP3D_CONNECT,
+  withPixup3dSession,
 } from "./session";
 
 const SESSION_CODE = MANIFESTS.pixup3d.errorCodes.session;
@@ -141,18 +142,16 @@ export const pixup3dImport: SourcedImport<Pixup3dSession, Pixup3dModelResolution
 export const pixup3dTrending: ProviderTrending = { fetch: (_userId, limit) => fetchPixup3dTrending(limit) };
 
 /** The models the user owns, where their sign-in can say; null where it can't, which marks nothing. */
-async function ownedPosts(userId: string): Promise<Set<string> | null> {
-  const session = await getUserPixup3dSession(userId);
-  if (!session) return null;
-  const used = session.session;
-  try {
-    return await fetchPixup3dOwnedPosts(session);
-  } catch (err) {
-    if (err instanceof Pixup3dAuthError) await markPixup3dSessionRejected(userId);
-    return null;
-  } finally {
-    await keepRenewedPixup3dSession(userId, used, session).catch(() => undefined);
-  }
+function ownedPosts(userId: string): Promise<Set<string> | null> {
+  return withPixup3dSession(userId, async (session) => {
+    if (!session) return null;
+    try {
+      return await fetchPixup3dOwnedPosts(session);
+    } catch (err) {
+      if (err instanceof Pixup3dAuthError) await markPixup3dSessionRejected(userId);
+      return null;
+    }
+  });
 }
 
 /** A wishlist or a collection, from a PIXUP link; anyone's to read, a private collection its owner's. Its first
@@ -172,8 +171,9 @@ export async function pixup3dListOf(
       return { title: pixup3dWishlistName(wishlist.username), listing: found };
     }
     // Read with the sign-in where there is one: a private collection shows only to its owner.
-    const session = await getUserPixup3dSession(userId);
-    const found = await fetchPixup3dCollection(collection!.username, collection!.collectionId, maxItems, session);
+    const found = await withPixup3dSession(userId, (session) =>
+      fetchPixup3dCollection(collection!.username, collection!.collectionId, maxItems, session),
+    );
     if (!found) throw new HttpError(404, "That collection can't be found. It may have been deleted, or be private.");
     return { title: found.info.title, listing: found };
   } catch (err) {

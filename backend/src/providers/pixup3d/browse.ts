@@ -9,7 +9,7 @@ import {
   Pixup3dRateLimitError,
   pixup3dWishlistCard,
 } from "./api";
-import { getPixup3dConnection, getUserPixup3dSession, keepRenewedPixup3dSession, pixup3dMemberOf } from "./session";
+import { getPixup3dConnection, pixup3dMemberOf, withPixup3dSession } from "./session";
 
 export const pixup3dBrowse: ProviderBrowse = {
   async account(userId) {
@@ -21,18 +21,17 @@ export const pixup3dBrowse: ProviderBrowse = {
   // sign-in says whose they are.
   async cards(userId) {
     const me = await pixup3dMemberOf(userId);
-    const session = me && (await getUserPixup3dSession(userId));
-    if (!me || !session) {
-      throw new HttpError(409, "Connect PIXUP in Configuration > Providers, or visit it signed in with Thingport Grab");
-    }
-    const used = session.session;
-    try {
+    return withPixup3dSession(userId, async (session) => {
+      if (!me || !session) {
+        throw new HttpError(
+          409,
+          "Connect PIXUP in Configuration > Providers, or visit it signed in with Thingport Grab",
+        );
+      }
       const wishlist = await pixup3dWishlistCard(me.username);
       const collections = await fetchPixup3dCollectionCards(me.username, session);
       return [...(wishlist ? [wishlist] : []), ...collections];
-    } finally {
-      await keepRenewedPixup3dSession(userId, used, session).catch(() => undefined);
-    }
+    });
   },
   // Anyone's wishlist or collection, by its link; a private collection only its owner's.
   async card(userId, source) {
@@ -40,7 +39,9 @@ export const pixup3dBrowse: ProviderBrowse = {
     if (wishlist) return pixup3dWishlistCard(wishlist.username);
     const collection = parsePixup3dCollectionUrl(source.url);
     if (!collection) return null;
-    return pixup3dCollectionCard(collection.username, collection.collectionId, await getUserPixup3dSession(userId));
+    return withPixup3dSession(userId, (session) =>
+      pixup3dCollectionCard(collection.username, collection.collectionId, session),
+    );
   },
   httpError(err) {
     if (err instanceof Pixup3dAuthError) return new HttpError(400, err.message);

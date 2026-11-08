@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
+import { noteImportActivity } from "../../services/importActivity";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
@@ -53,7 +54,6 @@ const PAGE_SIZE = 24;
 const LISTING_MAX_ENTRIES = 600;
 // Past these there are surely no more.
 const MAX_PAGES = 500;
-const MAX_LIBRARY_PAGES = 50;
 const CARD_THUMBNAILS = 4;
 
 export class Pixup3dAuthError extends Error {
@@ -148,6 +148,7 @@ async function request(url: string, init: RequestInit): Promise<Answer> {
       redirect: "manual",
       signal: controller.signal,
     });
+    noteImportActivity();
     if (init.session) {
       const renewed = renewedSession(res.headers);
       if (renewed) init.session.session = renewed;
@@ -290,10 +291,10 @@ const SIZE_LABEL = /^(?:XS|S|M|L|XL|XXL):\s/i;
 /** The pictures its page's structured data lists, the cover first, each named as it was uploaded. Apart from the
  *  fetch, so it can be tested on its own. */
 export function pixup3dGalleryFrom(product: Record<string, unknown> | null): { url: string; filename: string }[] {
-  const urls = unique([product?.image].flat().map(webImage));
+  const urls = unique([product?.image].flat().map(webImage)).filter((url) => URL.canParse(url));
   const names = urls.map((url) => {
-    const base = decodeURIComponent(new URL(url).pathname.split("/").pop() ?? "").replace(SIZE_PREFIX, "");
-    return base || "picture.jpg";
+    const last = new URL(url).pathname.split("/").pop() ?? "";
+    return decoded(last).replace(SIZE_PREFIX, "") || "picture.jpg";
   });
   return urls.map((url, index) => {
     // Pictures are uploaded one by one, so two can share a name (`2.jpg`): the upload's number tells them apart.
@@ -301,6 +302,15 @@ export function pixup3dGalleryFrom(product: Record<string, unknown> | null): { u
     const shared = names.filter((name) => name === names[index]).length > 1;
     return { url, filename: shared && upload ? `${upload}-${names[index]}` : names[index] };
   });
+}
+
+/** A path segment as its name reads, or as written where its percent-encoding is malformed (`100%.jpg`). */
+function decoded(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
 }
 
 /** Its categories, as its breadcrumb links to them (`/posts?c=<id>`): the deepest first. */
@@ -430,13 +440,19 @@ async function fetchCart(session: Pixup3dSession): Promise<Cart> {
   if (res.status === 401) throw new Pixup3dAuthError();
   if (res.status !== 200) throw failure("your cart", res);
   const data = asRecord(res.data);
+  const variants = asRecord(data?.cart)?.variants;
+  const finalPrice = asCount(asRecord(data?.order)?.final_price);
+  // Only a cart it says the contents and the total of: anything else can't be shown to be free, so isn't checked out.
+  if (!Array.isArray(variants) || finalPrice === null) throw failure("your cart", res);
   return {
-    variants: recordsOf(asRecord(data?.cart)?.variants).flatMap((variant) => {
-      const id = asText(variant.id);
-      return id ? [{ id, price: priceOf(variant.price) }] : [];
-    }),
-    finalPrice: priceOf(asRecord(data?.order)?.final_price),
+    variants: recordsOf(variants).map((variant) => ({ id: asText(variant.id) ?? "", price: priceOf(variant.price) })),
+    finalPrice,
   };
+}
+
+/** Whether checking the cart out would cost anything: its total, or any one thing in it. */
+function costsMoney(cart: Cart): boolean {
+  return cart.finalPrice > 0 || cart.variants.some((variant) => variant.price > 0);
 }
 
 /** The CSRF token its cart page gives the session, which its scripts send with whatever they change. */
@@ -454,7 +470,7 @@ async function cartToken(session: Pixup3dSession): Promise<string> {
  *  after it. */
 export async function placePixup3dFreeOrder(variantIds: string[], session: Pixup3dSession): Promise<void> {
   const before = await fetchCart(session);
-  if (before.finalPrice > 0 || before.variants.some((variant) => variant.price > 0)) throw new Pixup3dCartError();
+  if (costsMoney(before)) throw new Pixup3dCartError();
   const token = await cartToken(session);
   const added: string[] = [];
   for (const id of variantIds) {
@@ -464,8 +480,9 @@ export async function placePixup3dFreeOrder(variantIds: string[], session: Pixup
     if (res.status !== 200 || asText(asRecord(res.data)?.status) !== "ok") throw failure("its cart", res);
     added.push(id);
   }
+  // Asked again, as what was put in is priced by the cart, not by the model's page.
   const cart = await fetchCart(session);
-  if (cart.finalPrice > 0) {
+  if (costsMoney(cart)) {
     for (const id of added) {
       await api(`/cart/variants/${encodeURIComponent(id)}`, { session, method: "DELETE", csrf: token }).catch(
         () => undefined,
@@ -788,7 +805,7 @@ export async function pixup3dWishlistCard(username: string): Promise<ProviderCol
  *  one they haven't, in a list. */
 export async function fetchPixup3dOwnedPosts(session: Pixup3dSession): Promise<Set<string>> {
   const owned = new Set<string>();
-  for (let page = 1, pages = 1; page <= pages && page <= MAX_LIBRARY_PAGES; page++) {
+  for (let page = 1, pages = 1; page <= pages; page++) {
     const query = new URLSearchParams({ page: String(page), per_page: String(PAGE_SIZE), kw: "", filter: "all" });
     const res = await api(`/profile/purchased_variants?${query}`, { session });
     if (res.status === 401) throw new Pixup3dAuthError();

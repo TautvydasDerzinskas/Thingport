@@ -7,6 +7,7 @@ import {
   pixup3dModelFrom,
   placePixup3dFreeOrder,
   renewedSession,
+  resolvePixup3dModel,
   withoutUploadNumbers,
 } from "../../src/providers/pixup3d/api";
 import { pixup3dBrowse } from "../../src/providers/pixup3d/browse";
@@ -15,8 +16,10 @@ import { pixup3dImportableVariants, pixup3dTrending } from "../../src/providers/
 import {
   getPixup3dConnection,
   normalizePixup3dSession,
+  pixup3dMemberOf,
   setUserPixup3dSession,
 } from "../../src/providers/pixup3d/session";
+import { withImportActivity } from "../../src/services/importActivity";
 import { fetchListing } from "../../src/services/collectionSyncRunner";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
 import {
@@ -52,6 +55,8 @@ vi.mock("node:dns/promises", () => ({
 
 const SESSION = "c2Vzc2lvbi1kYXRhLWZvci10ZXN0cy1vbmx5%3D%3D--aXYtZm9yLXRlc3Rz--dGFnLWZvci10ZXN0cw%3D%3D";
 const RENEWED = "cmVuZXdlZC1zZXNzaW9uLWRhdGEtZm9yLXRlc3Rz--bmV3LWl2LXZhbHVl--bmV3LXRhZy12YWx1ZQ%3D%3D";
+// Another sign-in, saved while a request of Thingport's is out.
+const OTHER = "b3RoZXItc2Vzc2lvbi1kYXRhLWZvci10ZXN0cw%3D%3D--b3RoZXItaXY--b3RoZXItdGFn";
 const TOKEN = "Q1NSRi10b2tlbi1mb3ItdGVzdHMtb25seS1ub3QtcmVhbC0wMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA";
 const POST = "427";
 const MODEL_URL = `https://pixup3d.com/en/posts/${POST}`;
@@ -72,7 +77,8 @@ const fileUrl = (group: string) =>
   `https://file.pixup3d.com/uploads/post_file_package/file/${group}/package.zip?response-content-disposition=` +
   "attachment%3B+filename%3D%22Phrozen_XP_Finder.zip%22&Expires=1794167667&Signature=abc&Key-Pair-Id=K1";
 // Each variant's model, for the library.
-const POST_OF: Record<string, number> = { [STL_VARIANT]: 427, [PAID_VARIANT]: 11033, [XENO]: 9031 };
+// "4598" stands in for the variant of the collection's first model, a paid one.
+const POST_OF: Record<string, number> = { [STL_VARIANT]: 427, [PAID_VARIANT]: 11033, [XENO]: 9031, "4598": 4598 };
 
 /** What the site holds for the member while a test runs: what they own, what's in their cart. */
 type State = {
@@ -84,6 +90,12 @@ type State = {
   renews?: boolean;
   /** Where a checkout sends the member: the library, unless said otherwise. */
   checkoutTo?: string;
+  /** What a cart answer says, in place of what's in it: a broken one, or one priced by the cart. */
+  cartAnswer?: (answer: ReturnType<typeof cartAnswer>) => unknown;
+  /** How many pages the library runs to; what's owned is on the last. */
+  libraryPages?: number;
+  /** Run before a request whose path matches is answered, such as another sign-in saved meanwhile. */
+  before?: { path: RegExp; run: () => Promise<void> };
 };
 
 const freshState = (state: Partial<State> = {}): State => ({ owned: new Set([STL_VARIANT]), cart: [], ...state });
@@ -112,6 +124,7 @@ function handlerFor(scenario: string, state: State = freshState()): FetchHandler
   };
   return async (call) => {
     const { url, method } = call;
+    if (state.before?.path.test(url.pathname)) await state.before.run();
     if (url.hostname === "file.pixup3d.com" && url.pathname.endsWith("/package.zip")) {
       return binary(
         await zip("pixup3d:files", {
@@ -156,19 +169,28 @@ function handlerFor(scenario: string, state: State = freshState()): FetchHandler
       if (!me) return unauthorized();
       const library = loadFixture("pixup3d", "library");
       const [item] = library.data;
-      const items = [...state.owned].map((id) => {
-        const owned = structuredClone(item);
-        owned.id = Number(id);
-        owned.post.id = POST_OF[id];
-        return owned;
-      });
+      const pages = state.libraryPages ?? 1;
+      const page = Number(url.searchParams.get("page") ?? "1");
+      const items =
+        page !== pages
+          ? []
+          : [...state.owned].map((id) => {
+              const owned = structuredClone(item);
+              owned.id = Number(id);
+              owned.post.id = POST_OF[id];
+              return owned;
+            });
       return json({
         ...library,
         data: items,
-        pagination: { current_page: 1, total_pages: 1, per_page: 24, total_count: items.length },
+        pagination: { current_page: page, total_pages: pages, per_page: 24, total_count: items.length },
       });
     }
-    if (p === `${API}/cart/current_post_cart`) return me ? answer(json(cartAnswer(state)), call) : unauthorized();
+    if (p === `${API}/cart/current_post_cart`) {
+      if (!me) return unauthorized();
+      const cart = cartAnswer(state);
+      return answer(json(state.cartAnswer ? state.cartAnswer(cart) : cart), call);
+    }
     if (p === "/cart" && method === "GET") {
       return me
         ? answer(html(loadFixtureHtml("pixup3d", "cart-page")), call)
@@ -374,6 +396,45 @@ describe("PIXUP specifics", () => {
     });
     expect(row.secret).toEqual({ session: RENEWED });
     expect((await getPixup3dConnection(ctx.userId)).state).toBe("connected");
+
+    // Grab saves a new sign-in while the import is out: the one PIXUP renewed for the import doesn't replace it.
+    await prisma.print.deleteMany({ where: { userId: ctx.userId, sourceProvider: "pixup3d" } });
+    await connect(ctx.userId);
+    const replace = { path: /\/download$/, run: () => setUserPixup3dSession(ctx.userId, { session: OTHER }) };
+    ctx.install(handlerFor("ok", freshState({ renews: true, before: replace })));
+    expectStatus(await ctx.importUrl(), 200);
+    const kept = await prisma.providerConnection.findFirstOrThrow({
+      where: { userId: ctx.userId, provider: "pixup3d" },
+    });
+    expect(kept.secret).toEqual({ session: OTHER });
+  });
+
+  it("refuses a cart it can't read, rather than taking it for an empty one", async () => {
+    await connect(ctx.userId);
+    const state = freshState({ owned: new Set(), cartAnswer: () => ({ error: "Something went wrong" }) });
+    const stub = ctx.install(handlerFor("ok", state));
+    expect((await ctx.importUrl()).status).toBeGreaterThanOrEqual(400);
+    expect(callsTo(stub.calls, /\/cart\/variants\//)).toEqual([]);
+    expect(callsTo(stub.calls, "/cart/checkout")).toEqual([]);
+  });
+
+  it("checks what it put in the cart is free as the cart prices it, and takes it out again if not", async () => {
+    await connect(ctx.userId);
+    // Free on the model's page, but the cart prices it: a promotion brings the total to $0 all the same.
+    const pricedByCart = (answer: ReturnType<typeof cartAnswer>) => ({
+      ...answer,
+      cart: { ...answer.cart, variants: answer.cart.variants.map((v: object) => ({ ...v, price: "3.0" })) },
+    });
+    const state = freshState({ owned: new Set(), cartAnswer: pricedByCart });
+    const stub = ctx.install(handlerFor("ok", state));
+    const res = await ctx.importUrl();
+    expect(res.status).toBe(409);
+    expect(callsTo(stub.calls, `${API}/cart/variants/${STL_VARIANT}`).map((call) => call.method)).toEqual([
+      "POST",
+      "DELETE",
+    ]);
+    expect(callsTo(stub.calls, "/cart/checkout")).toEqual([]);
+    expect(state.cart).toEqual([]);
   });
 
   it("marks the paid models of a list the user hasn't bought", async () => {
@@ -394,6 +455,11 @@ describe("PIXUP specifics", () => {
     ctx.install(handlerFor("ok", freshState({ owned: new Set([XENO]) })));
     const owned = await ctx.post(spec.list!.endpoint, { url: WISHLIST_URL });
     expect((owned.body.entries as { blocked?: string }[]).every((e) => !e.blocked)).toBe(true);
+
+    // However far down a long library the purchase is.
+    ctx.install(handlerFor("ok", freshState({ owned: new Set([XENO]), libraryPages: 60 })));
+    const deep = await ctx.post(spec.list!.endpoint, { url: WISHLIST_URL });
+    expect((deep.body.entries as { blocked?: string }[]).every((e) => !e.blocked)).toBe(true);
   });
 
   it("reads a collection in its own order, which its API doesn't keep", async () => {
@@ -422,6 +488,51 @@ describe("PIXUP specifics", () => {
     ctx.install(handlerFor("ok", freshState({ owned: new Set() })));
     const sync = { userId: ctx.userId, provider: "pixup3d", externalId: `${DESIGNER}/5`, sourceUrl: COLLECTION_URL };
     expect(await fetchListing(sync)).toEqual([]);
+
+    ctx.install(handlerFor("ok", freshState({ owned: new Set(["4598"]) })));
+    expect(await fetchListing(sync)).toEqual(["4598"]);
+  });
+
+  it("keeps the newer session PIXUP answers a collection's read with", async () => {
+    await connect(ctx.userId);
+    ctx.install(handlerFor("ok", freshState({ renews: true })));
+    expectStatus(await ctx.post(spec.list!.endpoint, { url: COLLECTION_URL }), 200);
+    const row = await prisma.providerConnection.findFirstOrThrow({
+      where: { userId: ctx.userId, provider: "pixup3d" },
+    });
+    expect(row.secret).toEqual({ session: RENEWED });
+  });
+
+  it("holds a collection's sync, rather than unsyncing it, when it's gone because the sign-in ran out", async () => {
+    await connect(ctx.userId);
+    const gone = {
+      userId: ctx.userId,
+      provider: "pixup3d",
+      externalId: `${DESIGNER}/99`,
+      sourceUrl: `https://pixup3d.com/en/p/${DESIGNER}/collections/99`,
+    };
+    ctx.stub("ok");
+    expect(await fetchListing(gone)).toBeNull();
+    ctx.stub("rejected");
+    await expect(fetchListing(gone)).rejects.toThrow(/didn't accept your sign-in/);
+  });
+
+  it("keeps whose a sign-in is only while it's still the one stored", async () => {
+    // A new sign-in saved while the check is out: the check's answer is about the old one, so nothing comes of it.
+    await connect(ctx.userId, null);
+    const replace = { path: /current_user$/, run: () => setUserPixup3dSession(ctx.userId, { session: OTHER }) };
+    ctx.install(handlerFor("ok", freshState({ before: replace })));
+    expect(await pixup3dMemberOf(ctx.userId)).toBeNull();
+    const row = await prisma.providerConnection.findFirstOrThrow({
+      where: { userId: ctx.userId, provider: "pixup3d" },
+    });
+    expect([row.secret, row.accountId]).toEqual([{ session: OTHER }, null]);
+
+    // Nor does turning the old one down mark the new one expired.
+    await connect(ctx.userId, null);
+    ctx.install(handlerFor("rejected", freshState({ before: replace })));
+    expect(await pixup3dMemberOf(ctx.userId)).toBeNull();
+    expect((await getPixup3dConnection(ctx.userId)).state).toBe("connected");
   });
 
   it("shows the user's wishlist and own collections in the Browse tab, by whom their sign-in says they are", async () => {
@@ -482,6 +593,11 @@ describe("PIXUP pages", () => {
     });
   });
 
+  it("keeps a picture whose name has a stray percent sign, as written", () => {
+    const gallery = pixup3dGalleryFrom({ image: ["https://file.pixup3d.com/uploads/post_img/file/11/x4_100%.jpg"] });
+    expect(gallery.map((image) => image.filename)).toEqual(["100%.jpg"]);
+  });
+
   it("tells pictures uploaded under the same name apart", () => {
     const gallery = pixup3dGalleryFrom({
       image: [
@@ -524,6 +640,15 @@ describe("PIXUP pages", () => {
   it("leaves out the variants of nothing but sliced files", () => {
     const resolved = pixup3dModelFrom(loadFixture("pixup3d", "post"), null)!;
     expect(pixup3dImportableVariants(resolved.variants).map((variant) => variant.id)).toEqual([STL_VARIANT]);
+  });
+});
+
+describe("PIXUP and the import line", () => {
+  it("counts each of its answers as a sign of life for the import worker's watchdog", async () => {
+    ctx.stub("ok");
+    const activity = { lastActivity: 0 };
+    await withImportActivity(activity, () => resolvePixup3dModel(POST));
+    expect(activity.lastActivity).toBeGreaterThan(0);
   });
 });
 
