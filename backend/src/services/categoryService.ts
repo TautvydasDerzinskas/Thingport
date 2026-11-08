@@ -312,3 +312,97 @@ export async function resetDefaultCategories(userId: string): Promise<void> {
   // Managed storage paths include the category path.
   await reorganizeManagedPrints(undefined, userId);
 }
+
+/** A model's category as another library can find its own: its names from the top, and the providers' categories that
+ *  sort into it (CategorySiteId). Only a starter category ("category") has one: a folder is its owner's own sorting. */
+export type CategoryRef = { path: string[]; siteIds: { provider: string; siteId: string }[] };
+
+type RefRow = { id: string; name: string; kind: string; parentId: string | null };
+
+/** Its names from the top, however deep (validateParentCategory refuses only a loop); none for one in a loop
+ *  already, or deeper than `deepest`. */
+function refPath(row: RefRow, byId: ReadonlyMap<string, RefRow>, deepest: number): string[] | null {
+  if (row.kind !== "category") return null;
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (let at: RefRow | undefined = row; at; at = at.parentId ? byId.get(at.parentId) : undefined) {
+    if (seen.has(at.id) || names.length === deepest) return null;
+    seen.add(at.id);
+    names.push(at.name);
+  }
+  return names.toReversed();
+}
+
+/** `userId`'s starter categories of `ids` as CategoryRefs, by id, each no deeper than `deepest`: only those asked
+ *  for, as a long enough chain of categories would make every one's path too many names to hold. */
+export async function categoryRefs(
+  userId: string,
+  ids: readonly (string | null)[],
+  deepest = Infinity,
+): Promise<Map<string, CategoryRef>> {
+  const refs = new Map<string, CategoryRef>();
+  const wanted = new Set(ids.filter((id): id is string => Boolean(id)));
+  if (!wanted.size) return refs;
+  const rows = await prisma.category.findMany({
+    where: { userId },
+    select: { id: true, name: true, kind: true, parentId: true },
+  });
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const paths = new Map<string, string[]>();
+  for (const id of wanted) {
+    const row = byId.get(id);
+    const path = row && refPath(row, byId, deepest);
+    if (path) paths.set(id, path);
+  }
+  if (!paths.size) return refs;
+  const siteIds = await prisma.categorySiteId.findMany({
+    where: { categoryId: { in: [...paths.keys()] } },
+    orderBy: { position: "asc" },
+    select: { categoryId: true, provider: true, siteId: true },
+  });
+  for (const [id, path] of paths) {
+    const own = siteIds.filter((row) => row.categoryId === id);
+    refs.set(id, { path, siteIds: own.map(({ provider, siteId }) => ({ provider, siteId })) });
+  }
+  return refs;
+}
+
+/** The ref of one category, as categoryRefs gives it; null for none or a folder. */
+export async function categoryRefOf(categoryId: string | null): Promise<CategoryRef | null> {
+  if (!categoryId) return null;
+  const category = await prisma.category.findUnique({ where: { id: categoryId }, select: { userId: true } });
+  return category ? ((await categoryRefs(category.userId, [categoryId])).get(categoryId) ?? null) : null;
+}
+
+const nameKey = (name: string) => name.trim().toLowerCase();
+
+/** `userId`'s starter category that stands for `ref`: the one with the same names from the top, letter case aside, or
+ *  failing that (one renamed or moved) the one most of the same providers' categories sort into. Never one of their
+ *  folders. Null for none, which leaves the model to AI categorization where that's on. */
+export async function matchingCategoryId(userId: string, ref: CategoryRef | null | undefined): Promise<string | null> {
+  if (!ref?.path.length) return null;
+  const mine = await prisma.category.findMany({
+    where: { userId, kind: "category" },
+    orderBy: { position: "asc" },
+    select: { id: true, name: true, parentId: true },
+  });
+  let parents: (string | null)[] = [null];
+  for (const name of ref.path) {
+    const found = mine.filter((row) => parents.includes(row.parentId) && nameKey(row.name) === nameKey(name));
+    parents = found.map((row) => row.id);
+    if (!parents.length) break;
+  }
+  if (parents.length) return parents[0];
+
+  if (!ref.siteIds.length) return null;
+  const wanted = new Set(ref.siteIds.map(({ provider, siteId }) => `${provider}\n${siteId}`));
+  const candidates = await prisma.category.findMany({
+    where: { userId, kind: "category", siteIds: { some: { OR: ref.siteIds.map((id) => ({ ...id })) } } },
+    orderBy: { position: "asc" },
+    select: { id: true, siteIds: { select: { provider: true, siteId: true } } },
+  });
+  const shared = (row: (typeof candidates)[number]) =>
+    row.siteIds.filter(({ provider, siteId }) => wanted.has(`${provider}\n${siteId}`)).length;
+  // Stable, so equally good ones keep their order.
+  return candidates.toSorted((a, b) => shared(b) - shared(a))[0]?.id ?? null;
+}

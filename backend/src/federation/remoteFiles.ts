@@ -12,13 +12,19 @@ import { prisma } from "../db";
 import { HttpError, sanitizeFilename } from "../utils/fileUtils";
 import { writeZip } from "../utils/zipWriter";
 import { originOf } from "./addresses";
+import type { RemoteFileDetails } from "./remoteIndex";
 import { signedGet } from "./signedFetch";
 
 /** A partner's model's files, through this instance: streamed to a viewer to download or open in a slicer, fetched
  *  whole to zip them or copy them (remoteCopy.ts). Never kept: what's in a viewer's library is their own copy. Only
  *  from an ACTIVE partner, and only the addresses its own model document gave, on its own origin. */
 
-export type RemoteFile = { name: string; size: number | null; mediaType: string | null; url: string | null };
+export type RemoteFile = {
+  name: string;
+  size: number | null;
+  mediaType: string | null;
+  url: string | null;
+} & RemoteFileDetails;
 export type RemoteModelRow = RemoteModel & { peer: Peer; person: RemotePerson };
 
 // However long a big file takes; the connection's own idle limit still ends one that stalls.
@@ -37,13 +43,28 @@ export async function activeRemoteModel(id: string): Promise<RemoteModelRow> {
  *  keeps them: anything else is never fetched. */
 export function filesOf(model: Pick<RemoteModel, "files">, origin: string): RemoteFile[] {
   const list = Array.isArray(model.files) ? (model.files as Record<string, unknown>[]) : [];
+  const own = (url: unknown): url is string => typeof url === "string" && originOf(url) === origin;
   return list.map((file) => ({
     name: typeof file.name === "string" ? file.name : "file",
     size: typeof file.size === "number" ? file.size : null,
     mediaType: typeof file.mediaType === "string" ? file.mediaType : null,
-    url: typeof file.url === "string" && originOf(file.url) === origin ? file.url : null,
+    url: own(file.url) ? file.url : null,
+    // As remoteIndex.ts checked them; a row from before has none.
+    kind: file.kind === "plate" || file.kind === "file" ? file.kind : undefined,
+    role: file.role === "SUPPORTING" || file.role === "PREPARED" ? file.role : undefined,
+    profileId: typeof file.profileId === "string" ? file.profileId : undefined,
+    profile: isProfile(file.profile) ? file.profile : undefined,
+    thumb: own(file.thumb) ? file.thumb : undefined,
+    thumbGenerated: own(file.thumb) && file.thumbGenerated === true ? true : undefined,
   }));
 }
+
+const isProfile = (value: unknown): value is NonNullable<RemoteFileDetails["profile"]> =>
+  typeof value === "object" &&
+  value !== null &&
+  typeof (value as { version?: unknown }).version === "number" &&
+  typeof (value as { facts?: unknown }).facts === "object" &&
+  (value as { facts?: unknown }).facts !== null;
 
 /** A file's key in the address a viewer gets, from its own address at the partner: a read that reorders the model's
  *  files never turns an address handed out into another file, and one no longer shared answers 404. */

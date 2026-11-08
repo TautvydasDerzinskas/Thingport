@@ -301,6 +301,16 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
       body: form,
     });
     const printId = (await uploaded.json()).prints[0].id;
+    // Sorted and tagged as she has it: a copy is the same model, in the copier's own category of the same names.
+    const testModels = async (instance: Instance) => {
+      const categories: { id: string; name: string; parent_id: string | null }[] = (
+        await call(instance, "GET", "/categories")
+      ).body;
+      const printer = categories.find((category) => category.name === "3D Printer" && !category.parent_id)!;
+      return categories.find((category) => category.name === "Test Models" && category.parent_id === printer.id)!.id;
+    };
+    await call(ruta, "POST", `/print/${printId}/category`, { category_id: await testModels(ruta) });
+    await call(ruta, "POST", `/print/${printId}/tags`, { tags: ["Gridfinity", "Bin"] });
     const collection = await call(ruta, "POST", "/collections", { name: "Tool wall", is_public: true });
     await call(ruta, "POST", `/collection/${collection.body.id}/items/${printId}`);
 
@@ -366,6 +376,9 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     const copy = await call(a, "GET", `/print/${copied.copy_id}`);
     expect(copy.body).toMatchObject({
       title: "gridfinity-bin",
+      tags: ["Gridfinity", "Bin"],
+      category_id: await testModels(a),
+      category_source: "rule",
       plates: [expect.objectContaining({ filename: "gridfinity-bin.stl" })],
       copied_from_remote: {
         instance: { origin: b.base },
