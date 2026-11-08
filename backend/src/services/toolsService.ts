@@ -70,7 +70,7 @@ export async function toolAccessOf(user: ToolUser): Promise<ToolAccessOut> {
 
 export async function assertCanUseTools(user: ToolUser): Promise<ToolAccessOut> {
   const access = await toolAccessOf(user);
-  if (!access.canUse) throw new HttpError(403, "Tools aren't available to you on this Thingport", "TOOLS_OFF");
+  if (!access.canUse) throw new HttpError(403, "Tools aren't available to you on this Thingport instance", "TOOLS_OFF");
   return access;
 }
 
@@ -178,7 +178,7 @@ export async function usableTool(user: ToolUser, toolId: string): Promise<Tool &
   const parsed = tool && manifestOf(tool);
   if (!tool || !parsed || (tool.source === "own" && !mine)) throw new HttpError(404, "No such tool");
   if (mine && !access.canCreate)
-    throw new HttpError(403, "Users' own tools are turned off on this Thingport", "USER_TOOLS_OFF");
+    throw new HttpError(403, "Users' own tools are turned off on this Thingport instance", "USER_TOOLS_OFF");
   return { ...tool, parsed };
 }
 
@@ -190,7 +190,7 @@ export async function saveOwnTool(
 ): Promise<ToolOut> {
   const access = await assertCanUseTools(user);
   if (!access.canCreate)
-    throw new HttpError(403, "Users' own tools are turned off on this Thingport", "USER_TOOLS_OFF");
+    throw new HttpError(403, "Users' own tools are turned off on this Thingport instance", "USER_TOOLS_OFF");
   if (!SLUG.test(input.slug))
     throw new HttpError(400, "The slug is 2-40 lowercase letters, digits and dashes, starting with a letter or digit");
   if (input.manifest.collection)

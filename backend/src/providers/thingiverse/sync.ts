@@ -10,8 +10,8 @@ import {
 } from "./api";
 
 const DISCONNECTED: SyncProblem = {
-  error: "Thingiverse isn't connected on this Thingport",
-  reason: "Thingiverse isn't connected on this Thingport.",
+  error: "Thingiverse isn't connected on this Thingport instance",
+  reason: "Thingiverse isn't connected on this Thingport instance.",
   fix: "an admin connects it again",
 };
 

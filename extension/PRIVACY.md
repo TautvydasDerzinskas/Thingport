@@ -114,7 +114,7 @@ from the image servers of the sites you viewed them on, without saying which pag
 - On a collection, likes or bookmarks page, when you open the extension's panel: the page's address, to check whether
   that list is synced. When you turn sync on: the list's name and the ids of the models listed in it, so your instance
   knows which models are new later.
-- A request for the slicer picked in your Thingport Configuration, when a MakerWorld model page opens, so
+- A request for the slicer picked in your Thingport instance's Configuration, when a MakerWorld model page opens, so
   the **Download normalized** button's explanation can name that slicer.
 - If you're logged into MakerWorld in this browser: your MakerWorld session cookie, when you import from MakerWorld or
   open the extension's panel on one of its model pages. MakerWorld requires it to download files. The extension also

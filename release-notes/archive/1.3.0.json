@@ -38,8 +38,8 @@
     {
       "type": "feature",
       "highlight": true,
-      "title": "Share widgets with every Thingport",
-      "description": "Widgets the community publishes install in one click under Customize dashboard → Custom widgets → Community. Before you install one, you see its author, version and description, and which sites it may reach. Updates wait until you approve them. The first, Weather scene, draws the weather as an animated sky. To share a widget you made, download it for publishing from Mine and open a pull request; once it's merged, every Thingport can install it. Admins can turn users' own and community widgets on or off under Administration → Dashboard, and see who uses which.",
+      "title": "Share widgets with every Thingport instance",
+      "description": "Widgets the community publishes install in one click under Customize dashboard → Custom widgets → Community. Before you install one, you see its author, version and description, and which sites it may reach. Updates wait until you approve them. The first, Weather scene, draws the weather as an animated sky. To share a widget you made, download it for publishing from Mine and open a pull request; once it's merged, every Thingport instance can install it. Admins can turn users' own and community widgets on or off under Administration → Dashboard, and see who uses which.",
       "images": [
         {
           "src": "screenshots/1.3.0-community-widgets.webp",
@@ -104,8 +104,10 @@
     {
       "type": "feature",
       "title": "Thingport Grab: Thingiverse in dark mode, without ads",
-      "description": "Thingport Grab, updated through your browser's extension store, adds extras that work even without a Thingport: a dark theme for Thingiverse that follows your system theme, and hiding Thingiverse's banners, ad cards and video ads. Each can be switched off in the popup. The popup gets a dark theme of its own, and a History tab with your recent imports and the last models you opened. Disconnect now also removes Grab's connection from your Thingport profile.",
-      "images": [{ "src": "screenshots/1.3.0-grab-features.webp", "caption": "Extras that work without a Thingport" }]
+      "description": "Thingport Grab, updated through your browser's extension store, adds extras that work even without a Thingport instance: a dark theme for Thingiverse that follows your system theme, and hiding Thingiverse's banners, ad cards and video ads. Each can be switched off in the popup. The popup gets a dark theme of its own, and a History tab with your recent imports and the last models you opened. Disconnect now also removes Grab's connection from your Thingport profile.",
+      "images": [
+        { "src": "screenshots/1.3.0-grab-features.webp", "caption": "Extras that work without a Thingport instance" }
+      ]
     },
     {
       "type": "feature",

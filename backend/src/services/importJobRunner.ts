@@ -90,7 +90,7 @@ function blockedText(provider: string): string {
 }
 
 export const PROVIDER_OFF_TEXT = (name: string) =>
-  `${name} was turned off on this Thingport; an admin can turn it back on in Administration → Providers`;
+  `${name} was turned off on this Thingport instance; an admin can turn it back on in Administration → Providers`;
 
 export function classifyImportFailure(err: unknown): ImportFailureReason {
   if (err instanceof MakerworldAuthError) return "auth";
@@ -1056,7 +1056,7 @@ async function deferSyncRest(job: ImportJob, currentItemId: string | null, reaso
           // notification about the others.
           lastError:
             reason === "disabled"
-              ? `${providerName(sync.provider)} is turned off on this Thingport`
+              ? `${providerName(sync.provider)} is turned off on this Thingport instance`
               : reason === "blocked"
                 ? blockedText(sync.provider)
                 : reason === "downloadLimit"

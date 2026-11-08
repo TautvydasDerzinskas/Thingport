@@ -64,7 +64,7 @@ export async function assertProviderEnabled(provider: string | null | undefined)
   if (await isProviderEnabled(provider)) return;
   throw new HttpError(
     403,
-    `${MANIFESTS[provider as Provider].name} is turned off on this Thingport. An admin can turn it back on in Administration > Providers.`,
+    `${MANIFESTS[provider as Provider].name} is turned off on this Thingport instance. An admin can turn it back on in Administration > Providers.`,
     PROVIDER_DISABLED_CODE,
   );
 }

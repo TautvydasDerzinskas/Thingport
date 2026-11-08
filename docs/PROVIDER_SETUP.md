@@ -76,9 +76,9 @@ badge, shows the same in short.
 importing straight from a model's page, it hands your browser's sign-in to Thingport, so the sites that need one connect
 by just being visited, and stay connected. On MakerOnline it does the downloading itself, so there it's required, and
 on OwlCAD it exports CAD projects from OwlCAD's own editor. Install it from the **Downloads** page and connect it with
-**Pair with Thingport** in its popup: that opens your Thingport in a tab, where you approve that browser, so no password
-is kept in Grab (see [its setup](../extension/README.md#setup)). Sites after MakerWorld, Printables and Thingiverse
-need one click first, on the site in Grab's popup (a + marks one that's off) or on **Enable all**.
+**Pair with Thingport** in its popup: that opens your Thingport instance in a tab, where you approve that browser, so no
+password is kept in Grab (see [its setup](../extension/README.md#setup)). Sites after MakerWorld, Printables and
+Thingiverse need one click first, on the site in Grab's popup (a + marks one that's off) or on **Enable all**.
 If a reverse proxy upgrades your instance's `http://` address to `https://` on the same host, Grab follows that
 upgrade. It never sends your sign-in along any other redirect: then enter the final address in Grab instead. Grab spots
 the upgrade with a GET request, so a proxy that redirects only other methods, such as POST, needs the final address too.
@@ -130,7 +130,7 @@ listed.
 
 ## Turning a provider off
 
-Admins choose which providers this Thingport imports from, under **Administration → Providers**. All are on by
+Admins choose which providers this Thingport instance imports from, under **Administration → Providers**. All are on by
 default. Turn one off and nothing new comes from it for anyone: links to it, Thingport Grab and the import queue are
 refused, its synced collections pause, and background jobs skip it. It also disappears from everyone's
 **Configuration → Providers**. Models already imported from it stay as they are, and turning it back on picks up where

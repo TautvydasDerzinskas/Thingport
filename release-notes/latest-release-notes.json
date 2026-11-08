@@ -80,7 +80,7 @@
     {
       "type": "feature",
       "highlight": true,
-      "title": "Share collections with the people on your Thingport",
+      "title": "Share collections with the people on your Thingport instance",
       "description": "Thingport has always given everyone in a household a library of their own. Now an admin can let them share: Social features, a switch at the top of Administration → Users, is off until it's turned on. A collection's form then offers Private or Public, private by default, and Explore appears in the sidebar once there's more than one user: the people who share, the newest shared models, recently updated public collections and the most collected models. Someone else's public collection and its models open with whose they are, and can be downloaded, opened in a slicer or in Studio and customized, but not changed. Adding one of their models to a collection of yours makes your own copy, which stays when the original goes private or is deleted. Others see your display name, never your email.",
       "images": [
         {

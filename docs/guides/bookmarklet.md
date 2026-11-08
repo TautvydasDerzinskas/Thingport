@@ -1,8 +1,8 @@
 # Import with a bookmarklet
 
 A bookmarklet is a bookmark that runs a small piece of code instead of opening a page. Thingport's bookmarklet sends
-the page you're on to your Thingport: click it on a model's page, and Thingport opens in a new tab with the import
-dialog already filled in with that page's link. One more click on **Import** and the model is on its way.
+the page you're on to your Thingport instance: click it on a model's page, and Thingport opens in a new tab with the
+import dialog already filled in with that page's link. One more click on **Import** and the model is on its way.
 
 > **[Thingport Grab](../../extension/README.md), the browser extension, is the recommended way to import.** It
 > imports right on the model page, files the model into a collection, imports whole collections, and some sites, such
