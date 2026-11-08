@@ -631,19 +631,24 @@ describe("what a partner says a copy needs", () => {
         profile: { provider: { ...FACTS, title: "x".repeat(MODEL_MAX_BYTES) } },
       },
     });
-    const page = (await modelsPage(big.id)) as { orderedItems: Record<string, unknown>[] };
-    expect(Buffer.byteLength(JSON.stringify(page))).toBeLessThanOrEqual(PAGE_BYTES);
-    const [doc] = page.orderedItems;
-    expect(Buffer.byteLength(JSON.stringify(doc))).toBeLessThanOrEqual(MODEL_MAX_BYTES);
-    // A category a partner wouldn't keep isn't sent; the rest is cut to what it keeps.
-    expect(doc["thingport:category"]).toBeUndefined();
-    expect((doc["thingport:tags"] as string[]).every((tag) => tag.length <= 100)).toBe(true);
-    const [file] = doc.attachment as { name: string; mediaType: string; url: string }[];
-    expect([file.name.length, file.mediaType.length]).toEqual([255, 120]);
-    // Cut before its extension, which says what it is.
-    expect(file.name.endsWith("ü.stl")).toBe(true);
-    expect(file).not.toHaveProperty("thingport:profile");
-    expect(file.url.endsWith(`/${encodeURIComponent(file.name)}`)).toBe(true);
+    try {
+      const page = (await modelsPage(big.id)) as { orderedItems: Record<string, unknown>[] };
+      expect(Buffer.byteLength(JSON.stringify(page))).toBeLessThanOrEqual(PAGE_BYTES);
+      const [doc] = page.orderedItems;
+      expect(Buffer.byteLength(JSON.stringify(doc))).toBeLessThanOrEqual(MODEL_MAX_BYTES);
+      // A category a partner wouldn't keep isn't sent; the rest is cut to what it keeps.
+      expect(doc["thingport:category"]).toBeUndefined();
+      expect((doc["thingport:tags"] as string[]).every((tag) => tag.length <= 100)).toBe(true);
+      const [file] = doc.attachment as { name: string; mediaType: string; url: string }[];
+      expect([file.name.length, file.mediaType.length]).toEqual([255, 120]);
+      // Cut before its extension, which says what it is.
+      expect(file.name.endsWith("ü.stl")).toBe(true);
+      expect(file).not.toHaveProperty("thingport:profile");
+      expect(file.url.endsWith(`/${encodeURIComponent(file.name)}`)).toBe(true);
+    } finally {
+      // Gone again: no other file's storage move should meet names like these.
+      expect((await request(app).delete(`/api/print/${printId}`).set(auth(big))).status).toBe(200);
+    }
   });
 
   it("stays within its own size with a hundred files whose names escape", async () => {
@@ -662,16 +667,21 @@ describe("what a partner says a copy needs", () => {
         storagePath: `fc-many-${stamp}-${i}.stl`,
       })),
     });
-    const page = (await modelsPage(many.id)) as { orderedItems: Record<string, unknown>[] };
-    const [doc] = page.orderedItems;
-    expect(Buffer.byteLength(JSON.stringify(doc))).toBeLessThanOrEqual(MODEL_MAX_BYTES);
-    const files = doc.attachment as { name: string; url: string }[];
-    expect(files).toHaveLength(100);
-    expect(files.every((file) => file.name.length <= 255 && file.name.endsWith(".stl"))).toBe(true);
-    // Each where it's fetched all the same, without its name at the end; the description shortened, not gone.
-    expect(files.every((file) => /\/api\/ap\/files\/plate\/[^/]+$/.test(file.url))).toBe(true);
-    const content = (doc.source as { content: string }).content;
-    expect(content.length).toBeGreaterThan(0);
-    expect(content.length).toBeLessThan(20_000);
+    try {
+      const page = (await modelsPage(many.id)) as { orderedItems: Record<string, unknown>[] };
+      const [doc] = page.orderedItems;
+      expect(Buffer.byteLength(JSON.stringify(doc))).toBeLessThanOrEqual(MODEL_MAX_BYTES);
+      const files = doc.attachment as { name: string; url: string }[];
+      expect(files).toHaveLength(100);
+      expect(files.every((file) => file.name.length <= 255 && file.name.endsWith(".stl"))).toBe(true);
+      // Each where it's fetched all the same, without its name at the end; the description shortened, not gone.
+      expect(files.every((file) => /\/api\/ap\/files\/plate\/[^/]+$/.test(file.url))).toBe(true);
+      const content = (doc.source as { content: string }).content;
+      expect(content.length).toBeGreaterThan(0);
+      expect(content.length).toBeLessThan(20_000);
+    } finally {
+      // Gone again: these names make one storage path, which a later storage move would refuse.
+      expect((await request(app).delete(`/api/print/${printId}`).set(auth(many))).status).toBe(200);
+    }
   });
 });
