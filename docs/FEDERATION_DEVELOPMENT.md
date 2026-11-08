@@ -229,6 +229,12 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   no longer listed but still in one becomes limited), and their owner is kept while they name them. After each read of
   the index, every collection kept this way is read again: what's filed in it since, a new name, or a `404` that means
   it's no longer shared with anyone here.
+- **Found again, read one at a time.** Each refresh also reads `/api/ap/shared`, every collection the partner's
+  people shared with people here, so one whose `Update` never got here (social features off here for longer than
+  delivery keeps trying) still turns up. Reads and deletions of one collection run one at a time, from fetching to
+  writing, so an older read can't put back someone a newer one took off.
+- **Pictures.** One referenced only by models kept for shared collections is served through the proxy only to someone
+  who may see one of those models, whoever has its address.
 - **Trust.** This instance can't check who on the partner opens it: the partner shows it to the people named, as it
   does a direct message. The form's `?` says so.
 - **Finding someone.** The people picker lists partners' people the index knows, and someone by exact handle

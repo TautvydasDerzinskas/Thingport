@@ -40,7 +40,7 @@ export function mediaAddress(url: string | null | undefined): string | null {
 }
 
 /** The picture behind an address `mediaAddress` gave, from what's kept or fetched now. */
-export async function sendRemoteMedia(token: string, res: Response): Promise<void> {
+export async function sendRemoteMedia(token: string, res: Response, viewerId: string): Promise<void> {
   const notFound = () => void res.status(404).json({ detail: "Not found" });
   const [encoded, signature] = token.split(".");
   if (!encoded || !signature) return notFound();
@@ -51,6 +51,8 @@ export async function sendRemoteMedia(token: string, res: Response): Promise<voi
   const origin = originOf(url);
   const peer = origin ? await prisma.peer.findUnique({ where: { origin }, select: { id: true, status: true } }) : null;
   if (!peer || peer.status !== "ACTIVE") return notFound();
+  // Kept here or not, a picture only of what was shared with some people here is theirs alone.
+  if (!(await mayView(url, peer.id, viewerId))) return notFound();
 
   const file = path.join(MEDIA_DIR, peer.id, mediaName(url));
   let type = await fs.readFile(`${file}.type`, "utf8").catch(() => null);
@@ -76,6 +78,23 @@ export async function sendRemoteMedia(token: string, res: Response): Promise<voi
   res.sendFile(file, (err) => {
     if (err && !res.headersSent) notFound();
   });
+}
+
+/** Whether `viewerId` may see a partner's picture: any picture of something shared openly there, or of nothing kept as
+ *  a model (a person's avatar or cover); one of models kept only for collections shared with some people here (a
+ *  picture, a plate's, or one in a description) only by those people, so its address alone shows it to nobody else,
+ *  nor to someone taken off since. */
+async function mayView(url: string, peerId: string, viewerId: string): Promise<boolean> {
+  const models = await prisma.$queryRaw<{ apId: string; limited: boolean }[]>`
+    SELECT "apId", limited FROM "RemoteModel"
+    WHERE "peerId" = ${peerId}
+      AND (${url} = ANY(images) OR position(${url} in files::text) > 0 OR position(${url} in details::text) > 0)`;
+  if (!models.length || models.some((model) => !model.limited)) return true;
+  const { canSeeRemoteModel } = await import("./sharedCollections");
+  for (const model of models) {
+    if (await canSeeRemoteModel({ apId: model.apId, peerId, limited: true }, viewerId)) return true;
+  }
+  return false;
 }
 
 /** Fetches a picture, signed as this instance, from that partner only; its type, once it's kept. */

@@ -672,6 +672,25 @@ export async function sharedCollectionObject(
   };
 }
 
+/** The addresses of every collection shared with someone on `peer`, for that partner to read each: how it finds one
+ *  whose Update it never took (its social features were off longer than delivery kept trying, say). */
+export async function collectionsSharedWith(peer: Peer): Promise<unknown> {
+  const runtime = await getRuntime();
+  const rows = await prisma.collection.findMany({
+    where: { visibility: "SHARED", shares: { some: { remotePerson: { peerId: peer.id } } } },
+    orderBy: { id: "asc" },
+    take: 1000,
+    select: { id: true },
+  });
+  return {
+    "@context": CONTEXT,
+    id: `${runtime.origin}${AP_PREFIX}/shared`,
+    type: "OrderedCollection",
+    totalItems: rows.length,
+    orderedItems: rows.map((row) => collectionUrl(runtime, row.id)),
+  };
+}
+
 /** The document at a shared collection's address, for the partner it's shared with people on; null otherwise. */
 export async function sharedCollectionDoc(collectionId: string, peer: Peer): Promise<unknown | null> {
   const object = await sharedCollectionObject(await getRuntime(), collectionId, peer.id);
@@ -699,15 +718,16 @@ export async function sharedCollectionItems(
 }
 
 /** Someone here by their username, for a partner whose person types their handle to share a collection with them:
- *  their name and avatar, nothing more. Null for no one of that name. */
-export async function personNamed(username: string): Promise<unknown | null> {
+ *  their name, and their avatar where that partner may fetch it (avatarShownTo), nothing more. Null for no one of that
+ *  name. */
+export async function personNamed(username: string, peer: Peer): Promise<unknown | null> {
   const user = await prisma.user.findUnique({
     where: { username: username.toLowerCase() },
     select: { id: true, displayName: true, username: true },
   });
   if (!user) return null;
   const runtime = await getRuntime();
-  const icon = await avatarIcon(runtime, user.id);
+  const icon = (await avatarShownTo(user.id, peer)) ? await avatarIcon(runtime, user.id) : null;
   return {
     "@context": CONTEXT,
     id: actorUrl(runtime, user.id),
@@ -716,6 +736,15 @@ export async function personNamed(username: string): Promise<unknown | null> {
     preferredUsername: user.username ?? undefined,
     icon: icon ? { type: "Image", url: icon } : undefined,
   };
+}
+
+const sharesSomething = async (userId: string) => (await sharers()).some((row) => row.userId === userId);
+
+/** Whether `peer` may fetch someone's avatar: they share something on Explore, or are in a chat with its people, or
+ *  share a collection with them or have one shared by them. */
+async function avatarShownTo(userId: string, peer: Peer | null): Promise<boolean> {
+  if (peer && ((await inChatWith(userId, peer.id)) || (await sharingWith(userId, peer.id)))) return true;
+  return sharesSomething(userId);
 }
 
 /** Someone here who shared a collection with people on `peerId`, or whom someone there shared one with: their avatar
@@ -742,12 +771,9 @@ export async function sendMedia(res: Response, kind: string, id: string, peer?: 
     });
   };
   const notFound = () => void res.status(404).json({ error: "Not found" });
-  const sharesSomething = async (userId: string) => (await sharers()).some((row) => row.userId === userId);
-
   if (kind === "avatar" || kind === "cover") {
-    const known =
-      kind === "avatar" && peer ? (await inChatWith(id, peer.id)) || (await sharingWith(id, peer.id)) : false;
-    if (!known && !(await sharesSomething(id))) return notFound();
+    const shown = kind === "avatar" ? await avatarShownTo(id, peer ?? null) : await sharesSomething(id);
+    if (!shown) return notFound();
     if (kind === "avatar") {
       const avatar = await resolveAvatar(id).catch(() => null);
       if (avatar?.kind === "file") return send(avatar.path, "image/webp");
@@ -786,7 +812,7 @@ export async function sendMedia(res: Response, kind: string, id: string, peer?: 
       where: { id },
       select: { id: true, mime: true, print: { select: { id: true, userId: true, assetsPath: true } } },
     });
-    if (!image || !(await isShared(image.print))) return notFound();
+    if (!image || !(await isShared(image.print, peer))) return notFound();
     if (image.mime === "image/svg+xml") {
       res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'");
     }

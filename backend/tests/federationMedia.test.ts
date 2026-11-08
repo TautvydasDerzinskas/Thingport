@@ -28,7 +28,7 @@ const PARTNER = "http://203.0.113.81";
 const PNG = Buffer.from("89504e470d0a1a0a0000000d49484452", "hex");
 let peerId: string;
 
-const app = express().get("/media/:token", (req, res) => void sendRemoteMedia(req.params.token, res));
+const app = express().get("/media/:token", (req, res) => void sendRemoteMedia(req.params.token, res, "viewer"));
 const tokenOf = (url: string) => mediaAddress(url)!.split("/").pop()!;
 
 beforeAll(async () => {

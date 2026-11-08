@@ -221,7 +221,7 @@ router.get(
   "/explore/elsewhere/media/:token",
   asyncHandler(async (req, res) => {
     await assertElsewhere();
-    await sendRemoteMedia(req.params.token, res);
+    await sendRemoteMedia(req.params.token, res, req.userId!);
   }),
 );
 
@@ -268,7 +268,7 @@ router.get(
     const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 200) : "";
     const people = await searchPeople({ id: req.userId!, isAdmin: false }, q);
     if (q.includes("@") && (await isFederationLive())) {
-      const named = await personByHandle(q);
+      const named = await personByHandle(q, req.userId!);
       if (named && !people.some((person) => person.id === named.id)) {
         people.push({ ...remoteShareOut(named), online: false });
       }

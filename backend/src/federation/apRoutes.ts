@@ -14,6 +14,7 @@ import {
   modelsPage,
   parseModelsCursor,
   person,
+  collectionsSharedWith,
   personNamed,
   sendMedia,
   sendSharedFile,
@@ -174,7 +175,14 @@ router.get(
     else res.status(404).json({ error: "Not found" });
   }),
 );
-// A collection shared with people on the partner asking, and its models (sharedCollections.ts).
+// The collections shared with people on the partner asking, each, and its models (sharedCollections.ts).
+router.get(
+  "/shared",
+  partnerOnly,
+  asyncHandler(async (_req, res) => {
+    activityJson(res, await collectionsSharedWith(res.locals.peer));
+  }),
+);
 router.get(
   "/collections/:id",
   partnerOnly,
@@ -202,7 +210,9 @@ router.get(
   "/people/:username",
   partnerOnly,
   asyncHandler(async (req, res) => {
-    const body = /^[a-z0-9_.-]{1,40}$/i.test(req.params.username) ? await personNamed(req.params.username) : null;
+    const body = /^[a-z0-9_.-]{1,40}$/i.test(req.params.username)
+      ? await personNamed(req.params.username, res.locals.peer)
+      : null;
     if (body) activityJson(res, body);
     else res.status(404).json({ error: "Not found" });
   }),

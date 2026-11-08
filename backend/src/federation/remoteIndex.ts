@@ -684,9 +684,11 @@ async function storeIn(
   // still in one stays for them.
   const stale = { peerId: peer.id, syncedAt: { lt: readAt } };
   await tx.remoteCollection.deleteMany({ where: { ...stale, limited: false, personId: { notIn: partlyCollections } } });
+  // Someone whose models were read only in part keeps the rest as they were: one not read may still be shared openly.
+  const readInPart = partly.length ? Prisma.sql`AND m."personId" NOT IN (${Prisma.join(partly)})` : Prisma.empty;
   await tx.$executeRaw`
     UPDATE "RemoteModel" m SET limited = true
-    WHERE m."peerId" = ${peer.id} AND m."syncedAt" < ${readAt} AND NOT m.limited
+    WHERE m."peerId" = ${peer.id} AND m."syncedAt" < ${readAt} AND NOT m.limited ${readInPart}
       AND EXISTS (
         SELECT 1 FROM "RemoteCollection" c
         WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")

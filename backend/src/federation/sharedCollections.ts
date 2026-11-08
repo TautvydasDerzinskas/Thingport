@@ -151,6 +151,10 @@ const collectionDoc = z.object({
 const NAME_MAX = 200;
 const DESCRIPTION_MAX = 5000;
 const VIEWERS_MAX = 100;
+// However long a big collection's models take to write, as the index's own read allows (remoteIndex.ts).
+const WRITE_TIMEOUT_MS = 5 * 60 * 1000;
+// Collections a partner lists as shared with people here: as many as are read of one.
+const SHARED_LIST_MAX = 1000;
 
 async function activePeer(actorId: URL): Promise<Peer | null> {
   return prisma.peer.findFirst({ where: { actorUrl: actorId.href, status: "ACTIVE" } });
@@ -169,11 +173,29 @@ export async function sharedCollectionFrom(actorId: URL, objectId: string): Prom
 export async function sharedCollectionGoneFrom(actorId: URL, objectId: string): Promise<boolean> {
   const peer = await activePeer(actorId);
   if (!peer) return false;
-  const { count } = await prisma.remoteCollection.deleteMany({
-    where: { apId: objectId, peerId: peer.id, limited: true },
+  let gone = false;
+  await oneAtATime(objectId, async () => {
+    const { count } = await prisma.remoteCollection.deleteMany({
+      where: { apId: objectId, peerId: peer.id, limited: true },
+    });
+    if (count) await pruneLimitedModels(peer.id);
+    gone = count > 0;
   });
-  if (count) await pruneLimitedModels(peer.id);
-  return count > 0;
+  return gone;
+}
+
+// What's being read or let go of each collection, by its address: one at a time, from fetching it to writing it, so an
+// older read can't write over a newer one (or bring back someone taken off its list) by finishing last.
+const busy = new Map<string, Promise<void>>();
+function oneAtATime(apId: string, work: () => Promise<void>): Promise<void> {
+  const done = (busy.get(apId) ?? Promise.resolve()).catch(() => {}).then(work);
+  busy.set(apId, done);
+  void done
+    .finally(() => {
+      if (busy.get(apId) === done) busy.delete(apId);
+    })
+    .catch(() => {});
+  return done;
 }
 
 /** Every collection shared with people here by `peer`'s people, read again: what's changed in them, and those no
@@ -185,16 +207,41 @@ export async function refreshShared(peerId: string): Promise<void> {
     where: { peerId, limited: true },
     select: { apId: true },
   });
-  for (const row of rows) {
-    await readShared(peer, row.apId).catch((err: unknown) => {
+  // And whatever it says is shared with people here, so one whose Update never got here (social features were off
+  // longer than the partner kept trying, say) is found all the same.
+  const listed = await sharedListOf(peer).catch(() => []);
+  for (const apId of new Set([...rows.map((row) => row.apId), ...listed])) {
+    await readShared(peer, apId).catch((err: unknown) => {
       console.warn(`[federation] Couldn't read a collection shared from ${peer.origin}:`, (err as Error).message);
     });
   }
 }
 
+const sharedList = z.object({ orderedItems: z.array(z.unknown()) });
+
+/** The addresses of `peer`'s collections shared with people here, as it lists them; none from one too old to. */
+async function sharedListOf(peer: Peer): Promise<string[]> {
+  const runtime = await getRuntime();
+  let body: unknown;
+  try {
+    body = (await runtime.signedLoader(`${peer.origin}${AP_PREFIX}/shared`)).document;
+  } catch (err) {
+    if (err instanceof FederationFetchError && err.status === 404) return [];
+    throw err;
+  }
+  return sharedList
+    .parse(body)
+    .orderedItems.filter((url): url is string => typeof url === "string" && originOf(url) === peer.origin)
+    .slice(0, SHARED_LIST_MAX);
+}
+
 /** Reads one collection `peer` says is shared with people here and keeps it as it says, with its models; or lets it
- *  go once it's no longer shared with anyone here (or isn't there). */
-async function readShared(peer: Peer, apId: string): Promise<void> {
+ *  go once it's no longer shared with anyone here (or isn't there). One read of a collection at a time. */
+function readShared(peer: Peer, apId: string): Promise<void> {
+  return oneAtATime(apId, () => readSharedNow(peer, apId));
+}
+
+async function readSharedNow(peer: Peer, apId: string): Promise<void> {
   const runtime = await getRuntime();
   const own = (url: string | undefined): url is string => Boolean(url) && originOf(url!) === peer.origin;
   const read = async (url: string) => (await runtime.signedLoader(url)).document;
@@ -227,52 +274,57 @@ async function readShared(peer: Peer, apId: string): Promise<void> {
   const models = own(items) ? await readModels(read, items, own) : { models: [], all: true };
   const theirs = models.models.filter((model) => model.attributedTo === owner.apId);
 
-  const added = await prisma.$transaction(async (tx) => {
-    const kept = await tx.remoteCollection.findUnique({
-      where: { apId },
-      select: { id: true, peerId: true, modelApIds: true, viewers: { select: { userId: true } } },
-    });
-    if (kept && kept.peerId !== peer.id) return null;
-    const readAt = new Date();
-    for (const model of theirs) {
-      const data = { peerId: peer.id, personId: owner.id, ...remoteModelData(model, own), syncedAt: readAt };
-      // One also shared openly there stays as its index has it: not limited.
-      await tx.remoteModel.upsert({
-        where: { apId: model.id },
-        create: { apId: model.id, ...data, limited: true },
+  const added = await prisma.$transaction(
+    async (tx) => {
+      const kept = await tx.remoteCollection.findUnique({
+        where: { apId },
+        select: { id: true, peerId: true, modelApIds: true, viewers: { select: { userId: true } } },
+      });
+      if (kept && kept.peerId !== peer.id) return null;
+      const readAt = new Date();
+      for (const model of theirs) {
+        const data = { peerId: peer.id, personId: owner.id, ...remoteModelData(model, own), syncedAt: readAt };
+        // One also shared openly there stays as its index has it: not limited.
+        await tx.remoteModel.upsert({
+          where: { apId: model.id },
+          create: { apId: model.id, ...data, limited: true },
+          update: data,
+          select: { id: true },
+        });
+      }
+      const data = {
+        peerId: peer.id,
+        personId: owner.id,
+        name: (doc.name?.trim() || "Untitled").slice(0, NAME_MAX),
+        description: doc.source?.content?.trim().slice(0, DESCRIPTION_MAX) || null,
+        updatedAt: doc.updated,
+        syncedAt: readAt,
+        limited: true,
+        // Its models read only in part: those it had stay, beside those read now.
+        modelApIds: models.all
+          ? theirs.map((model) => model.id)
+          : [...new Set([...theirs.map((model) => model.id), ...(kept?.modelApIds ?? [])])],
+      };
+      const saved = await tx.remoteCollection.upsert({
+        where: { apId },
+        create: { apId, ...data },
         update: data,
         select: { id: true },
       });
-    }
-    const data = {
-      peerId: peer.id,
-      personId: owner.id,
-      name: (doc.name?.trim() || "Untitled").slice(0, NAME_MAX),
-      description: doc.source?.content?.trim().slice(0, DESCRIPTION_MAX) || null,
-      updatedAt: doc.updated,
-      syncedAt: readAt,
-      limited: true,
-      // Its models read only in part: those it had stay.
-      modelApIds: models.all ? theirs.map((model) => model.id) : (kept?.modelApIds ?? theirs.map((model) => model.id)),
-    };
-    const saved = await tx.remoteCollection.upsert({
-      where: { apId },
-      create: { apId, ...data },
-      update: data,
-      select: { id: true },
-    });
-    const viewers = users.map((user) => user.id);
-    const had = new Set(kept?.viewers.map((viewer) => viewer.userId) ?? []);
-    await tx.remoteCollectionViewer.deleteMany({ where: { collectionId: saved.id, userId: { notIn: viewers } } });
-    await tx.remoteCollectionViewer.createMany({
-      data: viewers.map((userId) => ({ collectionId: saved.id, userId })),
-      skipDuplicates: true,
-    });
-    // Still a partner: one blocked or disconnected meanwhile keeps nothing of this.
-    const still = await tx.peer.count({ where: { id: peer.id, status: "ACTIVE" } });
-    if (!still) throw new Error("No longer connected");
-    return { id: saved.id, name: data.name, viewers: viewers.filter((userId) => !had.has(userId)) };
-  });
+      const viewers = users.map((user) => user.id);
+      const had = new Set(kept?.viewers.map((viewer) => viewer.userId) ?? []);
+      await tx.remoteCollectionViewer.deleteMany({ where: { collectionId: saved.id, userId: { notIn: viewers } } });
+      await tx.remoteCollectionViewer.createMany({
+        data: viewers.map((userId) => ({ collectionId: saved.id, userId })),
+        skipDuplicates: true,
+      });
+      // Still a partner: one blocked or disconnected meanwhile keeps nothing of this.
+      const still = await tx.peer.count({ where: { id: peer.id, status: "ACTIVE" } });
+      if (!still) throw new Error("No longer connected");
+      return { id: saved.id, name: data.name, viewers: viewers.filter((userId) => !had.has(userId)) };
+    },
+    { timeout: WRITE_TIMEOUT_MS, maxWait: 10_000 },
+  );
   await pruneLimitedModels(peer.id);
   if (added?.viewers.length) await tell(added.viewers, owner, added.name, added.id);
 }
@@ -329,11 +381,30 @@ export async function canSeeRemoteModel(
 
 // A handle nobody answered to on that partner, asked again only after this: someone typing doesn't ask it each key.
 const MISS_MS = 60 * 1000;
+const MISSES_MAX = 1000;
 const misses = new Map<string, number>();
+// Handles a person may have asked of partners a minute, whatever they type: each is a signed request to that partner.
+const ASKS_PER_MINUTE = 10;
+const asked = new Map<string, number[]>();
+
+/** Whether `userId` may ask a partner for someone now, counted if so. */
+function mayAsk(userId: string): boolean {
+  const now = Date.now();
+  const recent = (asked.get(userId) ?? []).filter((at) => now - at < 60_000);
+  if (recent.length >= ASKS_PER_MINUTE) {
+    asked.set(userId, recent);
+    return false;
+  }
+  recent.push(now);
+  asked.set(userId, recent);
+  if (asked.size > MISSES_MAX) asked.delete(asked.keys().next().value!);
+  return true;
+}
 
 /** Someone on a connected instance by their exact handle, `name@host`: from what this instance has of that partner,
- *  or else asked of it. Only ever an ACTIVE partner's host: a handle naming anywhere else asks nobody. */
-export async function personByHandle(handle: string): Promise<(RemotePerson & { peer: Peer }) | null> {
+ *  or else asked of it, for `userId` (a few times a minute). Only ever an ACTIVE partner's host: a handle naming
+ *  anywhere else asks nobody. */
+export async function personByHandle(handle: string, userId: string): Promise<(RemotePerson & { peer: Peer }) | null> {
   const match = /^@?([a-z0-9_.-]{1,40})@([a-z0-9.-]+(?::\d{1,5})?)$/i.exec(handle.trim());
   if (!match) return null;
   const username = match[1].toLowerCase();
@@ -347,7 +418,7 @@ export async function personByHandle(handle: string): Promise<(RemotePerson & { 
   });
   if (known) return known;
   const key = `${peer.id} ${username}`;
-  if (Date.now() - (misses.get(key) ?? 0) < MISS_MS) return null;
+  if (Date.now() - (misses.get(key) ?? 0) < MISS_MS || !mayAsk(userId)) return null;
   try {
     const runtime = await getRuntime();
     const doc = personDoc.parse(
@@ -365,6 +436,8 @@ export async function personByHandle(handle: string): Promise<(RemotePerson & { 
   } catch {
     for (const [name, at] of misses) if (Date.now() - at >= MISS_MS) misses.delete(name);
     misses.set(key, Date.now());
+    // The oldest go first past the cap: Maps keep the order things were put in.
+    while (misses.size > MISSES_MAX) misses.delete(misses.keys().next().value!);
     return null;
   }
 }

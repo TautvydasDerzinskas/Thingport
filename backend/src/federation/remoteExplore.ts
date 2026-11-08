@@ -106,11 +106,20 @@ async function collectionCardsOut(rows: CollectionRow[]): Promise<RemoteCollecti
   // What's in a collection is its owner's own models.
   const owners = [...new Set(rows.map((row) => row.personId))];
   const indexed = owners.length
-    ? await prisma.remoteModel.findMany({ where: { personId: { in: owners } }, select: { apId: true, personId: true } })
+    ? await prisma.remoteModel.findMany({
+        where: { personId: { in: owners } },
+        select: { apId: true, personId: true, limited: true },
+      })
     : [];
-  const have = new Set(indexed.map((model) => `${model.personId} ${model.apId}`));
+  // A collection shared openly holds only what's shared openly there: a model kept for a collection shared with some
+  // people here is theirs to see, even where the open one still names it. One shared with the viewer holds it all.
+  const open = new Set(indexed.filter((model) => !model.limited).map((model) => `${model.personId} ${model.apId}`));
+  const all = new Set(indexed.map((model) => `${model.personId} ${model.apId}`));
   const inIt = new Map(
-    rows.map((row) => [row.id, row.modelApIds.filter((apId) => have.has(`${row.personId} ${apId}`))]),
+    rows.map((row) => [
+      row.id,
+      row.modelApIds.filter((apId) => (row.limited ? all : open).has(`${row.personId} ${apId}`)),
+    ]),
   );
   // A few more than the four shown, as some have no picture.
   const candidates = [...new Set(rows.flatMap((row) => inIt.get(row.id)!.slice(0, 8)))];
@@ -367,7 +376,8 @@ export async function remoteCollection(
   if (!row || !(await canSeeCollection(row, viewerId))) return null;
   const [collection] = await collectionCardsOut([row]);
   const indexed = await prisma.remoteModel.findMany({
-    where: { personId: row.personId, apId: { in: row.modelApIds } },
+    // As its card counts them: one shared openly holds only what's shared openly there.
+    where: { personId: row.personId, apId: { in: row.modelApIds }, ...(row.limited ? {} : { limited: false }) },
     select: { apId: true },
   });
   const have = new Set(indexed.map((model) => model.apId));
