@@ -48,6 +48,8 @@ export type NewPlateInput = {
   copyFromPath?: string; // copied into managed storage, source left intact
   sourcePath?: string; // no-copy: file stays at this path, storagePath is still rendered/recorded
   sourceInstanceId?: string | null;
+  /** What was read of the print profile it is (Plate.profile), carried over by a copy so it isn't read again. */
+  profile?: Prisma.JsonValue | null;
 };
 
 /** A file that is a script a model can be generated from, rather than geometry to print. */
@@ -199,6 +201,7 @@ async function createPlateAtPosition(
         storagePath,
         sourcePath: input.sourcePath ?? null,
         sourceInstanceId: input.sourceInstanceId ?? null,
+        profile: input.profile == null ? undefined : (input.profile as Prisma.InputJsonValue),
         contentSha256,
         ...marker,
       },
@@ -210,6 +213,10 @@ async function createPlateAtPosition(
   }
 
   await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
+  // A print profile's facts are read once its import has settled. Loaded when used: the service reaches this file.
+  if (record.sourceInstanceId) {
+    void import("./printProfileService").then(({ scheduleProfileFill }) => scheduleProfileFill(print.id));
+  }
   return { record, effectivePath };
 }
 

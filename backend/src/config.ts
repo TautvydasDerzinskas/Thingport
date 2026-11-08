@@ -144,6 +144,9 @@ export const IMPORT_HTML_MAX_BYTES = Math.max(64, IMPORT_HTML_MAX_KB) * 1024;
 export const IMPORT_COLLECTION_DELAY_MS = envInt("IMPORT_COLLECTION_DELAY_MS", 1000);
 // Wait before retrying a file download Cloudflare challenged or rate-limited.
 export const IMPORT_DOWNLOAD_RETRY_DELAY_MS = envInt("IMPORT_DOWNLOAD_RETRY_DELAY_MS", 2000);
+// How long after an import adds a print profile its facts are read (services/printProfileService.ts), so a model's
+// profiles coming in one by one are read together. Negative leaves it to the model page, as the tests do.
+export const PROFILE_FILL_AFTER_IMPORT_MS = envInt("PROFILE_FILL_AFTER_IMPORT_MS", 4000);
 // MakerWorld's CAPTCHA trips on bursts, so in collection imports this delay precedes every
 // MakerWorld request (listing pages, each resolution step, each image), not just each model.
 // MakerWorld's pacing against its CAPTCHA, here with the other settings an admin can set by environment variable.

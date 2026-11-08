@@ -30,6 +30,8 @@ import {
 } from "../services/modelPreviewCache";
 import { getPreviewMode } from "../services/settingsService";
 import { readablePrintWhere } from "../services/socialService";
+import { isProfileProject, plateThumbEntry } from "../services/printProfileFile";
+import { readZipEntry } from "../utils/zipReader";
 
 const router = Router();
 router.use(requireAuth);
@@ -121,6 +123,31 @@ router.get(
     res.setHeader("Content-Type", "image/jpeg");
     res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
     res.sendFile(path.resolve(thumbPath));
+  }),
+);
+
+const PLATE_PICTURE_LIMIT = 8 * 1024 * 1024;
+
+// A build plate's own picture out of a print profile's 3MF, read from the file each time rather than kept: the file
+// already holds it, and it changes with the file.
+router.get(
+  "/plate/:plateId/profile-plate/:index.png",
+  asyncHandler(async (req, res) => {
+    const index = Number(req.params.index);
+    if (!Number.isInteger(index) || index < 1 || index > 9999) throw new HttpError(404, "Not found");
+    const plate = await prisma.plate.findFirst({
+      where: { id: req.params.plateId, print: await readablePrintWhere(req.userId!) },
+    });
+    if (!plate || !isProfileProject(plate.filename)) throw new HttpError(404, "Not found");
+    const filePath = resolvePlateFilePath(plate);
+    const png = filePath
+      ? await readZipEntry(filePath, plateThumbEntry(index), PLATE_PICTURE_LIMIT).catch(() => null)
+      : null;
+    if (!png) throw new HttpError(404, "Not found");
+    res.setHeader("Content-Type", "image/png");
+    // Versioned URLs change with the plate; the bare one is asked for again.
+    res.setHeader("Cache-Control", req.query.v ? "private, max-age=31536000, immutable" : "private, no-cache");
+    res.send(png);
   }),
 );
 

@@ -38,6 +38,9 @@ import { hasGeneratorScript, useCustomize } from "./useCustomize";
 import NormalizedOpenButton from "./NormalizedOpenButton";
 import CopiedFromRemote from "./CopiedFromRemote";
 import ModelFileSelect from "./ModelFileSelect";
+import PrintProfilesSection from "./PrintProfiles";
+import type { ProfileEntry } from "./PrintProfiles/entries";
+import type { PrintProfilesView } from "../../api/settings";
 import OpenInSlicerButton from "./OpenInSlicerButton";
 import { useNormalizedOpen } from "./useNormalizedOpen";
 import AddToCollectionModal from "./AddToCollectionModal";
@@ -84,6 +87,15 @@ type Props = {
   onUpdated?: (print: Print) => void;
   /** Shown as the author of a direct upload, which has none. */
   viewer?: AuthUser | null;
+  /** The model's print profiles, the designer's first; empty for a model without (or from an older backend). */
+  profileEntries?: ProfileEntry[] | null;
+  /** How to show them: null while the setting loads, "off" as plain files. */
+  profilesView?: PrintProfilesView | null;
+  /** The file every action applies to, when the page keeps it (so the 3D preview opens on it too). */
+  selectedKey?: string | null;
+  onSelectKey?: (key: string) => void;
+  /** Opens the 3D preview on one of a profile's build plates. */
+  onPreviewPlate?: (key: string, plateIndex: number) => void;
 };
 
 /** The detail page's sticky summary card. */
@@ -95,6 +107,11 @@ export default function ModelSidePanel({
   onUnauthorized,
   onUpdated,
   viewer,
+  profileEntries,
+  profilesView,
+  selectedKey: pageSelectedKey,
+  onSelectKey,
+  onPreviewPlate,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
@@ -107,9 +124,18 @@ export default function ModelSidePanel({
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
   const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor } = useOpenInSlicer(print);
-  // Every action below applies to this file; the first until one is picked.
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const selectedFile = files.find((file) => file.key === selectedKey) ?? files[0] ?? null;
+  // Every action below applies to this file; until one is picked, the first profile (the designer's, where there is
+  // one), else the first file.
+  const [ownSelectedKey, setOwnSelectedKey] = useState<string | null>(null);
+  const selectedKey = onSelectKey ? (pageSelectedKey ?? null) : ownSelectedKey;
+  const selectKey = onSelectKey ?? setOwnSelectedKey;
+  const entries = profileEntries ?? [];
+  const profilesShown = entries.length > 0 && !!profilesView && profilesView !== "off";
+  // The setting isn't known yet: a placeholder, rather than files that turn into profiles a moment later.
+  const profilesUnsettled = entries.length > 0 && profilesView == null;
+  const firstProfileFile = profilesShown ? files.find((file) => file.key === entries[0].key) : undefined;
+  const selectedFile = files.find((file) => file.key === selectedKey) ?? firstProfileFile ?? files[0] ?? null;
+  const otherFiles = profilesShown ? files.filter((file) => !entries.some((entry) => entry.key === file.key)) : [];
   const normalizedTarget = normalizedTargetFor(selectedFile);
 
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
@@ -205,12 +231,14 @@ export default function ModelSidePanel({
         top: "var(--topbar-height, 80px)",
       }}
     >
-      <Stack spacing={2}>
-        <Box>
+      {/* Flex gap rather than margins: a part hidden at this size takes no room. */}
+      <Stack spacing={2} useFlexGap>
+        {/* Below md the page is one column and the header cuts a long name short (phones can't hover for the whole
+            of it), so the full name shows here; wider screens give the header the room. */}
+        <Box sx={{ display: { xs: "block", md: "none" } }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
             {t("models:detail.title")}
           </Typography>
-          {/* Full title, wrapped -- unlike the page header, this box never truncates it. */}
           <Typography
             variant="body2"
             sx={{ color: (muiTheme) => muiTheme.thingport.headingText, overflowWrap: "anywhere" }}
@@ -218,7 +246,6 @@ export default function ModelSidePanel({
             {print.title || print.name}
           </Typography>
         </Box>
-
         {print.copied_from_remote && <CopiedFromRemote origin={print.copied_from_remote} />}
 
         {owner && (
@@ -458,8 +485,22 @@ export default function ModelSidePanel({
           </Stack>
         )}
 
-        {selectedFile && files.length > 1 && (
-          <ModelFileSelect files={files} selected={selectedFile} onSelect={(file) => setSelectedKey(file.key)} />
+        {profilesShown ? (
+          <PrintProfilesSection
+            view={profilesView}
+            entries={entries}
+            otherFiles={otherFiles}
+            selectedKey={selectedFile?.key ?? null}
+            onSelect={selectKey}
+            onPreviewPlate={onPreviewPlate}
+          />
+        ) : profilesUnsettled ? (
+          <Skeleton variant="rounded" height={58} sx={{ borderRadius: 2 }} />
+        ) : (
+          selectedFile &&
+          files.length > 1 && (
+            <ModelFileSelect files={files} selected={selectedFile} onSelect={(file) => selectKey(file.key)} />
+          )
         )}
         {selectedFile && (
           <OpenInSlicerButton

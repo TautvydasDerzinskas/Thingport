@@ -277,14 +277,33 @@ async function fetchProfiles(groupId: string): Promise<Record<string, unknown>[]
   return isRecord(result) && Array.isArray(result.list) ? result.list.filter(isRecord) : [];
 }
 
-/** By alias or id. Null for a model that doesn't exist, was deleted or isn't public. */
-export async function resolveCrealitycloudModel(modelId: string): Promise<CrealitycloudModelResolution | null> {
+/** The model's details and its print profiles' rows as the site answers them, by alias or id. Null for a model that
+ *  doesn't exist, was deleted or isn't public. */
+export async function fetchCrealitycloudModelRows(
+  modelId: string,
+): Promise<{ groupItem: Record<string, unknown>; groupId: string; profiles: Record<string, unknown>[] } | null> {
   const { code, message, result } = await fetchApi("/v3/model/modelGroupDetail", { id: modelId }, null);
   if (code !== null && MISSING_CODES.has(code)) return null;
   if (code !== CODE_OK || !isRecord(result) || !isRecord(result.groupItem)) throw failure("this model", code, message);
   const groupId = id(result.groupItem.id);
   if (!groupId) return null;
-  return crealitycloudMetaFromDetail(result.groupItem, await fetchProfiles(groupId));
+  return { groupItem: result.groupItem, groupId, profiles: await fetchProfiles(groupId) };
+}
+
+/** By alias or id. Null for a model that doesn't exist, was deleted or isn't public. */
+export async function resolveCrealitycloudModel(modelId: string): Promise<CrealitycloudModelResolution | null> {
+  const rows = await fetchCrealitycloudModelRows(modelId);
+  return rows ? crealitycloudMetaFromDetail(rows.groupItem, rows.profiles) : null;
+}
+
+/** One print profile's own details, its plates among them, which anyone may read (unlike its file). Null when the site
+ *  won't say: its plates are an extra that the profile's list row does without. */
+export async function fetchCrealitycloudProfileDetail(
+  groupId: string,
+  profileId: string,
+): Promise<Record<string, unknown> | null> {
+  const { code, result } = await fetchApi("/v3/model/3mfDetail", { modelGroupId: groupId, id: profileId }, null);
+  return code === CODE_OK && isRecord(result) ? result : null;
 }
 
 export type CrealitycloudProfileScope = "url" | "designer" | "all";

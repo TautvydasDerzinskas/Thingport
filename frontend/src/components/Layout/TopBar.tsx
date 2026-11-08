@@ -132,7 +132,8 @@ export default function TopBar({
           textAlign: { xs: "center", md: "left" },
         }}
       >
-        <Typography variant="h6" fontWeight={700} noWrap>
+        {/* A title too long for the bar is cut short; it's whole on hover. */}
+        <Typography variant="h6" fontWeight={700} noWrap title={typeof title === "string" ? title : undefined}>
           {title}
         </Typography>
         {subtitle && (
