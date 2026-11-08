@@ -1,5 +1,5 @@
 ---
-import { Image } from "astro:assets";
+import { Image, getImage } from "astro:assets";
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Icon from "../components/Icon.astro";
@@ -44,6 +44,12 @@ const VIDEO = {
   uploaded: "2026-11-07T11:52:24-08:00",
 };
 const watchUrl = `https://www.youtube.com/watch?v=${VIDEO.id}&t=${VIDEO.start}s`;
+
+// One poster in a <picture>, so a visitor downloads only their theme's; the script keeps it with the theme toggle.
+const POSTER_SIZES = "(min-width: 68rem) 66rem, 100vw";
+const POSTER_WIDTHS = [640, 960, 1280, 1600, 2000];
+const posterLight = await getImage({ src: models, widths: POSTER_WIDTHS, format: "webp" });
+const posterDark = await getImage({ src: modelsDark, widths: POSTER_WIDTHS, format: "webp" });
 const embedUrl = `https://www.youtube-nocookie.com/embed/${VIDEO.id}?start=${VIDEO.start}&autoplay=1&rel=0`;
 
 const FIND_SLIDES = [
@@ -195,23 +201,26 @@ const arrowRight = "M9 5l7 7-7 7";
             data-video-title={VIDEO.title}
             aria-label={`Play the video: ${VIDEO.title}, ${VIDEO.spoken}`}
           >
-            <Image
-              class="only-light"
-              src={models}
-              alt=""
-              widths={[640, 960, 1280, 1600, 2000]}
-              sizes="(min-width: 68rem) 66rem, 100vw"
-              loading="eager"
-              fetchpriority="high"
-            />
-            <Image
-              class="only-dark"
-              src={modelsDark}
-              alt=""
-              widths={[640, 960, 1280, 1600, 2000]}
-              sizes="(min-width: 68rem) 66rem, 100vw"
-              loading="eager"
-            />
+            <picture>
+              <source
+                media="(prefers-color-scheme: dark)"
+                srcset={posterDark.srcSet.attribute}
+                sizes={POSTER_SIZES}
+                type="image/webp"
+                data-dark-poster
+              />
+              <img
+                src={posterLight.src}
+                srcset={posterLight.srcSet.attribute}
+                sizes={POSTER_SIZES}
+                width={models.width}
+                height={models.height}
+                alt=""
+                loading="eager"
+                fetchpriority="high"
+                decoding="async"
+              />
+            </picture>
             <span class="play" aria-hidden="true">
               <svg width="40" height="40" viewBox="0 0 24 24"
                 ><path d="M8 5.5v13l11-6.5z" fill="currentColor"></path></svg
@@ -220,6 +229,7 @@ const arrowRight = "M9 5l7 7-7 7";
             <span class="demo-chip" aria-hidden="true">{VIDEO.title}<span>{VIDEO.length}</span></span>
           </a>
         </div>
+        <p class="demo-watch"><a href={watchUrl}>Watch on YouTube <Icon name="arrow" size={14} /></a></p>
       </div>
 
       <div class="container">
@@ -704,6 +714,17 @@ const arrowRight = "M9 5l7 7-7 7";
   const plainClick = (event: MouseEvent) =>
     event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
+  // The poster follows the page's theme, which the visitor may have set apart from the system's.
+  const darkPoster = document.querySelector<HTMLSourceElement>("[data-dark-poster]");
+  if (darkPoster) {
+    const follow = () => (darkPoster.media = document.documentElement.dataset.theme === "dark" ? "all" : "not all");
+    follow();
+    new MutationObserver(follow).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+  }
+
   // The demo: the poster is a link to YouTube until it's pressed, then the player takes its place, already playing.
   for (const link of document.querySelectorAll<HTMLAnchorElement>("[data-video-embed]")) {
     const warm = () => {
@@ -736,11 +757,21 @@ const arrowRight = "M9 5l7 7-7 7";
     const track = carousel.querySelector<HTMLElement>("[data-track]")!;
     const slides = [...track.children] as HTMLElement[];
     const dots = [...carousel.querySelectorAll<HTMLButtonElement>("[data-dot]")];
+    const showDot = (index: number) => dots.forEach((dot, i) => dot.setAttribute("aria-current", String(i === index)));
+    const atScroll = () => {
+      const step = slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : 1;
+      return Math.min(slides.length - 1, Math.max(0, Math.round(track.scrollLeft / step)));
+    };
+    // The slide last asked for: while the strip glides there, the arrows step on from it, not from where it is yet.
     let current = 0;
+    let gliding = false;
+    let settle: number | undefined;
     const go = (index: number) => {
-      const target = slides[(index + slides.length) % slides.length];
+      current = (index + slides.length) % slides.length;
+      gliding = true;
+      showDot(current);
       track.scrollTo({
-        left: target.offsetLeft - slides[0].offsetLeft,
+        left: slides[current].offsetLeft - slides[0].offsetLeft,
         behavior: reducedMotion.matches ? "auto" : "smooth",
       });
     };
@@ -748,13 +779,19 @@ const arrowRight = "M9 5l7 7-7 7";
     track.addEventListener(
       "scroll",
       () => {
-        if (queued) return;
+        window.clearTimeout(settle);
+        settle = window.setTimeout(() => {
+          gliding = false;
+          current = atScroll();
+          showDot(current);
+        }, 150);
+        if (gliding || queued) return;
         queued = true;
         requestAnimationFrame(() => {
           queued = false;
-          const step = slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : 1;
-          current = Math.min(slides.length - 1, Math.max(0, Math.round(track.scrollLeft / step)));
-          dots.forEach((dot, i) => dot.setAttribute("aria-current", String(i === current)));
+          if (gliding) return;
+          current = atScroll();
+          showDot(current);
         });
       },
       { passive: true },
@@ -967,6 +1004,23 @@ const arrowRight = "M9 5l7 7-7 7";
     opacity: 0.75;
     font-variant-numeric: tabular-nums;
   }
+  /* Stays when the player takes the poster's place, for a browser that blocks the embed. */
+  .demo-watch {
+    max-width: 66rem;
+    margin: 0.75rem auto 0;
+    font-size: 0.875rem;
+    text-align: right;
+  }
+  .demo-watch a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .demo-watch a:hover {
+    text-decoration: underline;
+  }
   @media (max-width: 40rem) {
     .play {
       width: 4rem;
@@ -991,14 +1045,20 @@ const arrowRight = "M9 5l7 7-7 7";
     padding: 0;
     display: grid;
     gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
   .flow li {
     position: relative;
     display: flex;
     min-width: 0;
   }
-  @media (min-width: 60rem) {
+  @media (min-width: 36rem) {
+    .flow {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  /* Four in a row only once the Share card's two addresses fit side by side. */
+  @media (min-width: 72rem) {
     .flow {
       grid-template-columns: repeat(4, minmax(0, 1fr));
       column-gap: 2.75rem;
@@ -1105,6 +1165,7 @@ const arrowRight = "M9 5l7 7-7 7";
   }
   .hosts {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
     font-family: var(--font-mono);
