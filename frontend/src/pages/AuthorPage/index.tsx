@@ -26,6 +26,7 @@ import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 import { importProviderInfo, printProviderInfo, providerChipSx } from "../../constants/importProviders";
@@ -49,6 +50,8 @@ import AvatarDialog from "../../components/profile/AvatarDialog";
 import EditableAvatar from "../../components/profile/EditableAvatar";
 
 const PAGE_SIZE = 24;
+// What the page shows beside the grid, put back with it on the way back.
+type AuthorAlongside = { author: Author | null; myLinks: Author[] };
 
 type Props = {
   theme: ResolvedTheme;
@@ -75,16 +78,17 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
   const isBackgroundReload = useBackgroundReload(finishedVersion);
   // A page on its way when the list reloads belongs to the old list, and is dropped.
   const listRun = useRef(0);
-  const [author, setAuthor] = useState<Author | null>(null);
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning, restored } = useRememberedList<
+    Print,
+    AuthorAlongside
+  >({ loadingAtFirst: true, alongside: (): AuthorAlongside => ({ author, myLinks }) });
+  const [author, setAuthor] = useState<Author | null>(restored?.author ?? null);
   const [notFound, setNotFound] = useState(false);
-  const [items, setItems] = useState<Print[]>([]);
-  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(items.length);
   const selection = useModelSelection(items);
   // Authors the viewer has claimed: self-mode provider chips, and whether "It's me!" shows.
-  const [myLinks, setMyLinks] = useState<Author[]>([]);
+  const [myLinks, setMyLinks] = useState<Author[]>(restored?.myLinks ?? []);
   const [linking, setLinking] = useState(false);
   const [editing, setEditing] = useState(false);
   const [changingAvatar, setChangingAvatar] = useState(false);
@@ -136,8 +140,11 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
     if (!authorId) return;
     let cancelled = false;
     listRun.current += 1;
-    const background = isBackgroundReload();
-    const limit = background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE;
+    // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
+    const kept = returning();
+    if (kept !== null) setOffset(kept);
+    const background = isBackgroundReload() || kept !== null;
+    const limit = background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE;
     if (!background) {
       setLoading(true);
       setNotFound(false);

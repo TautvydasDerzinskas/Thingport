@@ -28,7 +28,14 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
     id: "models",
     title: "Models",
     description: "List models and read their details.",
-    paths: ["/prints", "/prints/sources", "/prints/missing-files", "/print/:id", "/print/:id/quality"],
+    paths: [
+      "/prints",
+      "/prints/sources",
+      "/prints/missing-files",
+      "/print/:id",
+      "/print/:id/quality",
+      "/print/:id/profiles",
+    ],
   },
   {
     id: "dashboard",
@@ -112,6 +119,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
     paths: [
       "/plate/:id/thumb.jpg",
       "/plate/:id/render.png",
+      "/plate/:id/profile-plate/:index.png",
       "/print/:id/thumb.jpg",
       "/preview-image/:id/file.jpg",
       "/description-image/:id",

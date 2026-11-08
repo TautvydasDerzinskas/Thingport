@@ -5,19 +5,34 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonBase from "@mui/material/ButtonBase";
 import Dialog from "@mui/material/Dialog";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { alpha, useTheme, type Theme } from "@mui/material/styles";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import HistoryIcon from "@mui/icons-material/History";
 import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
-import { releaseNotesApi, type ReleaseNoteItem, type ReleaseNoteKind, type ReleaseNotes } from "../../api/releaseNotes";
+import {
+  releaseNotesApi,
+  type EarlierRelease,
+  type ReleaseNoteItem,
+  type ReleaseNoteKind,
+  type ReleaseNotes,
+} from "../../api/releaseNotes";
 import CodeBlock from "../CodeBlock";
 import { ListRowSkeletons } from "../ListSkeleton";
 
@@ -316,13 +331,25 @@ type Props = {
   onClose: () => void;
 };
 
-/** The changes in this version: the hand-written notes when there are some for it, otherwise its changelog. */
+/** The changes in this version: the hand-written notes when there are some for it, otherwise its changelog. Earlier
+ *  releases' notes open from the history menu, and Back to latest returns to the ones it opened on. */
 export default function WhatsNewDialog({ request, onClose }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const theme = useTheme();
   const [notes, setNotes] = React.useState<ReleaseNotes | null>(null);
   const [failed, setFailed] = React.useState(false);
   const [zoomed, setZoomed] = React.useState<ReleaseNoteItem["images"][0] | null>(null);
+  // Both kept with the request they belong to, so opening the dialog again starts on its own notes, menu and all.
+  const [opened, setOpened] = React.useState<{ request: WhatsNewRequest; version: string } | null>(null);
+  const [offered, setOffered] = React.useState<{
+    request: WhatsNewRequest;
+    latest: string;
+    earlier: EarlierRelease[];
+  } | null>(null);
+  const earlierVersion = request && opened?.request === request ? opened.version : null;
+  const menu = request && offered?.request === request ? offered : null;
+  const [menuAnchor, setMenuAnchor] = React.useState<HTMLElement | null>(null);
+  const body = React.useRef<HTMLDivElement>(null);
 
   // Before paint, so reopening shows the loading state rather than the last notes for a frame.
   React.useLayoutEffect(() => {
@@ -330,14 +357,25 @@ export default function WhatsNewDialog({ request, onClose }: Props) {
     let active = true;
     setNotes(null);
     setFailed(false);
+    body.current?.scrollTo({ top: 0 });
     releaseNotesApi
-      .get(request)
-      .then((result) => active && setNotes(result))
+      .get(earlierVersion ? { version: earlierVersion } : request)
+      .then((result) => {
+        if (!active) return;
+        setNotes(result);
+        // The menu is the opened notes' list, so it stays the same while an earlier release is shown.
+        if (!earlierVersion) setOffered({ request, latest: result.version, earlier: result.earlier ?? [] });
+      })
       .catch(() => active && setFailed(true));
     return () => {
       active = false;
     };
-  }, [request]);
+  }, [request, earlierVersion]);
+
+  const show = (version: string | null) => {
+    setMenuAnchor(null);
+    setOpened(version && request ? { request, version } : null);
+  };
 
   const accent = theme.palette.primary.main;
   const loading = !notes && !failed;
@@ -377,15 +415,25 @@ export default function WhatsNewDialog({ request, onClose }: Props) {
             borderBottom: `1px solid ${alpha(accent, 0.25)}`,
           }}
         >
-          <IconButton
-            aria-label={t("common:close")}
-            onClick={onClose}
-            size="small"
-            sx={{ position: "absolute", right: 12, top: 12 }}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ pr: 5 }}>
+          <Stack direction="row" spacing={0.5} sx={{ position: "absolute", right: 12, top: 12 }}>
+            {menu && menu.earlier.length > 0 && (
+              <Tooltip title={t("whatsNew.earlier")}>
+                <IconButton
+                  aria-label={t("whatsNew.earlier")}
+                  aria-haspopup="menu"
+                  aria-expanded={Boolean(menuAnchor)}
+                  onClick={(event) => setMenuAnchor(event.currentTarget)}
+                  size="small"
+                >
+                  <HistoryIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            <IconButton aria-label={t("common:close")} onClick={onClose} size="small">
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Stack>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ pr: menu?.earlier.length ? 9 : 5 }}>
             <Box
               sx={{
                 width: 40,
@@ -415,9 +463,14 @@ export default function WhatsNewDialog({ request, onClose }: Props) {
               </Typography>
             </Box>
           </Stack>
+          {earlierVersion && (
+            <Button size="small" startIcon={<ArrowBackIcon />} onClick={() => show(null)} sx={{ mt: 1, ml: -0.5 }}>
+              {t("whatsNew.backToLatest")}
+            </Button>
+          )}
         </Box>
 
-        <Box sx={{ px: 3, pt: 2, pb: 2, overflowY: "auto", flex: "1 1 auto", minHeight: 0 }}>
+        <Box ref={body} sx={{ px: 3, pt: 2, pb: 2, overflowY: "auto", flex: "1 1 auto", minHeight: 0 }}>
           {loading && <ListRowSkeletons count={5} lead="circle" leadSize={24} twoLines />}
           {empty && (
             <Stack alignItems="center" spacing={1.5} sx={{ py: 3, textAlign: "center", ...enter(0) }}>
@@ -482,6 +535,40 @@ export default function WhatsNewDialog({ request, onClose }: Props) {
           </Button>
         </Stack>
       </Dialog>
+
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={() => setMenuAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{ paper: { sx: { maxWidth: 360 } }, list: { "aria-label": t("whatsNew.earlier") } }}
+      >
+        {menu && (
+          <MenuItem selected={!earlierVersion} onClick={() => show(null)}>
+            <ListItemIcon>{!earlierVersion && <CheckIcon fontSize="small" />}</ListItemIcon>
+            <ListItemText
+              primary={t("whatsNew.versionLabel", { version: menu.latest })}
+              secondary={t("whatsNew.latest")}
+            />
+          </MenuItem>
+        )}
+        <Divider />
+        {menu?.earlier.map((release) => (
+          <MenuItem
+            key={release.version}
+            selected={earlierVersion === release.version}
+            onClick={() => show(release.version)}
+          >
+            <ListItemIcon>{earlierVersion === release.version && <CheckIcon fontSize="small" />}</ListItemIcon>
+            <ListItemText
+              primary={t("whatsNew.versionLabel", { version: release.version })}
+              secondary={release.title}
+              slotProps={{ secondary: { noWrap: true } }}
+            />
+          </MenuItem>
+        ))}
+      </Menu>
 
       <Dialog
         open={Boolean(zoomed)}

@@ -22,6 +22,8 @@ export type ImportStatus = {
   state?: "imported" | "profile_missing" | "profile_unknown" | string;
   /** Missing from instances older than 1.4.0. */
   gaps?: SourceGap[];
+  /** The print profiles the library's model has a file of. Missing from instances older than 1.6.0. */
+  imported_profile_ids?: string[];
 };
 
 export type FillGapsResult = { filled: SourceGap[]; remaining: SourceGap[] };

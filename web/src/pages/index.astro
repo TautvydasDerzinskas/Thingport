@@ -1,385 +1,1257 @@
 ---
-import { Image } from "astro:assets";
+import { Image, getImage } from "astro:assets";
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Icon from "../components/Icon.astro";
-import { LINKS, PROVIDER_NAMES, SITE_DESCRIPTION, SITE_NAME } from "../lib/site.mjs";
+import { communityItems } from "../lib/community";
+import { LINKS, PROVIDER_NAMES, SITE_NAME } from "../lib/site.mjs";
 import { formatDate, url } from "../lib/url";
-import dashboard from "../../../frontend/src/assets/screenshots/light/01_dashboard.png";
-import dashboardDark from "../../../frontend/src/assets/screenshots/dark/01_dashboard.png";
-import configProviders from "../../../frontend/src/assets/screenshots/light/03_dashboard_configuration.png";
-import configProvidersDark from "../../../frontend/src/assets/screenshots/dark/03_dashboard_configuration.png";
+import grabCollection from "../../../extension/docs/screenshots/collection-makerworld.jpg";
+import grabCollectionDark from "../../../extension/docs/screenshots/collection-makerworld-dark.jpg";
 import models from "../../../frontend/src/assets/screenshots/light/04_models.png";
 import modelsDark from "../../../frontend/src/assets/screenshots/dark/04_models.png";
-import modelDetails from "../../../frontend/src/assets/screenshots/light/06_model_details.png";
-import modelDetailsDark from "../../../frontend/src/assets/screenshots/dark/06_model_details.png";
-import preview3d from "../../../frontend/src/assets/screenshots/light/07_model_3d_preview.png";
-import preview3dDark from "../../../frontend/src/assets/screenshots/dark/07_model_3d_preview.png";
 import collections from "../../../frontend/src/assets/screenshots/light/09_collections.png";
 import collectionsDark from "../../../frontend/src/assets/screenshots/dark/09_collections.png";
-import profile from "../../../frontend/src/assets/screenshots/light/14_profile.png";
-import profileDark from "../../../frontend/src/assets/screenshots/dark/14_profile.png";
+import toolsPage from "../../../frontend/src/assets/screenshots/light/31_tools.png";
+import toolsPageDark from "../../../frontend/src/assets/screenshots/dark/31_tools.png";
 import toolWindow from "../../../frontend/src/assets/screenshots/light/32_tool_window.png";
 import toolWindowDark from "../../../frontend/src/assets/screenshots/dark/32_tool_window.png";
-import customize from "../../../frontend/src/assets/screenshots/light/35_model_customize.png";
-import customizeDark from "../../../frontend/src/assets/screenshots/dark/35_model_customize.png";
-import grabPrintables from "../../../extension/docs/screenshots/panel-printables.jpg";
-import grabPrintablesDark from "../../../extension/docs/screenshots/panel-printables-dark.jpg";
+import collectionSync from "../../../frontend/src/assets/screenshots/light/36_collection_sync.png";
+import collectionSyncDark from "../../../frontend/src/assets/screenshots/dark/36_collection_sync.png";
+import aiCompare from "../../../frontend/src/assets/screenshots/light/39_ai_description_compare.png";
+import aiCompareDark from "../../../frontend/src/assets/screenshots/dark/39_ai_description_compare.png";
+import studio from "../../../frontend/src/assets/screenshots/light/41_studio.png";
+import studioDark from "../../../frontend/src/assets/screenshots/dark/41_studio.png";
+import partnerModel from "../../../frontend/src/assets/screenshots/light/44_partner_model.png";
+import partnerModelDark from "../../../frontend/src/assets/screenshots/dark/44_partner_model.png";
 
-const otherSites = PROVIDER_NAMES.length - 3;
+const providerCount = PROVIDER_NAMES.length;
+const otherSites = providerCount - 3;
+const home = new URL(url(), Astro.site).href;
+const absolute = (path: string) => new URL(path, Astro.site).href;
 
-const FEATURES = [
+const description = `Free, self-hosted 3D model library. Import from MakerWorld, Printables, Thingiverse and ${otherSites} more sites, design parts with AI and share with friends.`;
+
+// The hero's demo. Until it's played the poster is the app's own Models page, in the visitor's theme, so nothing loads
+// from YouTube; then youtube-nocookie's player takes its place, which sets no cookies until the video plays.
+const VIDEO = {
+  id: "8g-JoWckL2Y",
+  title: "Thingport 1.6.0 demo",
+  start: 6,
+  length: "8:37",
+  spoken: "8 minutes 37 seconds",
+  duration: "PT8M37S",
+  uploaded: "2026-11-07T11:52:24-08:00",
+};
+const watchUrl = `https://www.youtube.com/watch?v=${VIDEO.id}&t=${VIDEO.start}s`;
+
+// One poster in a <picture>, so a visitor downloads only their theme's; the script keeps it with the theme toggle.
+const POSTER_SIZES = "(min-width: 68rem) 66rem, 100vw";
+const POSTER_WIDTHS = [640, 960, 1280, 1600, 2000];
+const posterLight = await getImage({ src: models, widths: POSTER_WIDTHS, format: "webp" });
+const posterDark = await getImage({ src: modelsDark, widths: POSTER_WIDTHS, format: "webp" });
+const embedUrl = `https://www.youtube-nocookie.com/embed/${VIDEO.id}?start=${VIDEO.start}&autoplay=1&rel=0`;
+
+const FIND_SLIDES = [
   {
-    icon: "import",
-    title: "Import from anywhere",
-    text: `Paste a link from MakerWorld, Printables, Thingiverse or ${otherSites} other sites, or bring in whole collections and likes at once, and keep them in sync. Already have a library? Upload folders and ZIPs, or copy it into a watched folder.`,
+    light: grabCollection,
+    dark: grabCollectionDark,
+    caption: "Import a whole collection, and keep it in sync",
+    alt: "Thingport Grab on a MakerWorld collection page, ready to import its models and keep the collection in sync",
   },
   {
-    icon: "cube",
-    title: "3D preview in the browser",
-    text: "Spin STL, 3MF, STEP and OBJ files without opening a slicer, multicolour ones in their own colours. Multi-plate 3MF projects get a thumbnail for every plate, and STL, OBJ and 3MF files are checked for print problems when you first open the model.",
+    light: models,
+    dark: modelsDark,
+    caption: "Every model in one library, filtered your way",
+    alt: "The Models page: imported models in a grid, with categories and filters",
   },
   {
-    icon: "folder",
-    title: "Organized your way",
-    text: "Nested categories, collections, tags, favourites and browsing history, a filter by site, plus full-text search across everything you've saved.",
+    light: collections,
+    dark: collectionsDark,
+    caption: "Collections, your own and the ones you imported",
+    alt: "The Collections page with collections of models",
   },
   {
-    icon: "printer",
-    title: "Ready to print",
-    text: "Keep instructions and sliced prints next to the model, and open files straight in Bambu Studio, OrcaSlicer, PrusaSlicer, Cura and other popular slicers.",
+    light: collectionSync,
+    dark: collectionSyncDark,
+    caption: "Synced collections bring in what's added later",
+    alt: "A collection kept in sync with the site it came from",
   },
-  {
-    icon: "wrench",
-    title: "Tools that build models",
-    text: "Small apps in windows of their own: planners for Multiboard, Gridfinity and Skadis, QR code and keyring generators, a print cost estimator and more. A model that came with its OpenSCAD script can be changed and generated again, right in your browser.",
-  },
-  {
-    icon: "server",
-    title: "Your files, on your disk",
-    text: "Models are stored as plain files in a folder layout you choose, not in a black box. Change the layout later and existing files are moved to match, and if they ever go missing, Thingport can fetch them again from the sites they came from.",
-  },
-  {
-    icon: "sparkle",
-    title: "AI you can put to work",
-    text: "Describe a part and Studio's AI designs it step by step, or reworks a model you have. AI also sorts models into your categories and cleans up descriptions, on a local model, a cloud API or Claude, and assistants reach your whole library over MCP.",
-  },
-  {
-    icon: "users",
-    title: "Built for a household",
-    text: "Multiple accounts, open or invite-only sign-up and single sign-on through your own OIDC provider, with collections and chats to share once an admin allows it. Light and dark themes, and English, Spanish, French and Lithuanian out of the box.",
-  },
-  {
-    icon: "shield",
-    title: "Admin in the browser",
-    text: "System Health, users and logs, providers you can switch off, storage layout, AI models, tools and social features, all from the Administration pages.",
-  },
-] as const;
+];
+
+// The most visual first; a tool added later still shows, at the end, under its own name.
+const TOOL_ORDER = [
+  "multiboard-planner",
+  "gridfinity-drawer",
+  "skadis-planner",
+  "keyring-generator",
+  "qr-code-generator",
+  "enclosure-generator",
+  "print-cost-estimator",
+  "makerworld-3mf-normalizer",
+  "openscad-customizer",
+];
+const SHORT_NAMES: Record<string, string> = {
+  "multiboard-planner": "Multiboard",
+  "gridfinity-drawer": "Gridfinity",
+  "skadis-planner": "Skadis",
+  "keyring-generator": "Keyring",
+  "qr-code-generator": "QR code",
+  "enclosure-generator": "Enclosure",
+  "print-cost-estimator": "Print cost",
+  "makerworld-3mf-normalizer": "3MF normalizer",
+  "openscad-customizer": "Script customizer",
+};
+const orderOf = (slug: string) => (TOOL_ORDER.includes(slug) ? TOOL_ORDER.indexOf(slug) : TOOL_ORDER.length);
+const tools = (await communityItems("tools"))
+  .filter((tool) => tool.screenshots.length > 0)
+  .sort((a, b) => orderOf(a.slug) - orderOf(b.slug));
+
+const OWN_TOOL_SHOTS = [
+  { light: toolsPage, dark: toolsPageDark, caption: "The Tools page: install one, or write your own" },
+  { light: toolWindow, dark: toolWindowDark, caption: "Every tool opens in a window of its own" },
+];
 
 const posts = (await getCollection("blog", ({ data }) => !data.draft))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 3);
 
+const license = "https://www.gnu.org/licenses/agpl-3.0.html";
 const jsonLd = [
   {
     "@type": "SoftwareApplication",
+    "@id": `${home}#app`,
     name: SITE_NAME,
-    description: SITE_DESCRIPTION,
+    description,
     applicationCategory: "MultimediaApplication",
+    applicationSubCategory: "3D model library",
     operatingSystem: "Linux, macOS, Windows (Docker)",
-    url: new URL(url(), Astro.site).href,
+    url: home,
     downloadUrl: LINKS.github,
-    license: "https://www.gnu.org/licenses/agpl-3.0.html",
+    installUrl: absolute(url("docs/install/")),
+    license,
+    isAccessibleForFree: true,
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    screenshot: new URL(dashboard.src, Astro.site).href,
+    screenshot: [absolute(models.src), absolute(studio.src)],
+    featureList: [
+      `Import 3D models from ${providerCount} sites, MakerWorld, Printables and Thingiverse among them`,
+      "Upload STL, 3MF, STEP and OBJ files, folders and ZIPs",
+      "3D preview in the browser",
+      "AI that sorts models into your categories and tidies their descriptions",
+      "Studio: change models or design new parts with AI",
+      "Tools and an OpenSCAD script customizer that generate models",
+      "Connected Thingport instances to share models with friends, over ActivityPub",
+      "REST API and MCP server",
+    ],
+    subjectOf: { "@id": `${home}#demo` },
+  },
+  {
+    "@type": "VideoObject",
+    "@id": `${home}#demo`,
+    name: VIDEO.title,
+    description: "A demo of Thingport, the free, self-hosted 3D model library for 3D printing.",
+    thumbnailUrl: [
+      `https://i.ytimg.com/vi/${VIDEO.id}/maxresdefault.jpg`,
+      `https://i.ytimg.com/vi/${VIDEO.id}/hqdefault.jpg`,
+    ],
+    uploadDate: VIDEO.uploaded,
+    duration: VIDEO.duration,
+    embedUrl: `https://www.youtube.com/embed/${VIDEO.id}`,
+    url: `https://www.youtube.com/watch?v=${VIDEO.id}`,
+    inLanguage: "en",
+    publisher: { "@id": `${home}#organization` },
   },
   {
     "@type": "SoftwareSourceCode",
     name: SITE_NAME,
     codeRepository: LINKS.github,
     programmingLanguage: ["TypeScript"],
-    license: "https://www.gnu.org/licenses/agpl-3.0.html",
+    license,
   },
 ];
+
+const arrowLeft = "M15 5l-7 7 7 7";
+const arrowRight = "M9 5l7 7-7 7";
 ---
 
-<BaseLayout title="Thingport · Self-hosted 3D model library for 3D printing" jsonLd={jsonLd}>
-  <section class="hero">
-    <div class="container hero-inner">
-      <span class="eyebrow">Free · Open source · Self-hosted</span>
-      <h1>Your personal <span class="accent">3D model library</span></h1>
-      <p class="lead">
-        Collect, organize and preview the 3D printing models you find on MakerWorld, Printables, Thingiverse and{" "}
-        {otherSites} other sites, in one library that runs on your own server.
-      </p>
-      <div class="ctas">
-        <a class="btn btn-primary" href={url("docs/install/")}>Install Thingport <Icon name="arrow" /></a>
-        <a class="btn btn-secondary" href={LINKS.github}><Icon name="github" /> View on GitHub</a>
-      </div>
-      <p class="hint muted">
-        Runs anywhere Docker does, including a NAS. <code>docker compose up -d</code> and you're in.
-      </p>
-    </div>
-    <div class="container">
-      <div class="shot hero-shot">
-        <Image
-          class="only-light"
-          src={dashboard}
-          alt="The Thingport dashboard: clock, weather, uptime and server load, links to model sites, the top printed models and the Thingport blog"
-          widths={[640, 960, 1280, 1600]}
-          sizes="(min-width: 72rem) 70rem, 100vw"
-          loading="eager"
-          fetchpriority="high"
-        />
-        <Image
-          class="only-dark"
-          src={dashboardDark}
-          alt="The Thingport dashboard: clock, weather, uptime and server load, links to model sites, the top printed models and the Thingport blog"
-          widths={[640, 960, 1280, 1600]}
-          sizes="(min-width: 72rem) 70rem, 100vw"
-        />
-      </div>
-    </div>
-  </section>
-
-  <section class="sources" aria-label="Supported sources">
-    <div class="container sources-inner">
-      <span class="muted">Imports from</span>
-      <strong>MakerWorld</strong>
-      <strong>Printables</strong>
-      <strong>Thingiverse</strong>
-      <a class="more-sites" href={url("docs/providers/")}>+{otherSites} more</a>
-      <span class="muted">and your own</span>
-      <strong>STL · 3MF · STEP · OBJ · ZIP</strong>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Why Thingport</span>
-        <h2>Bookmarks, downloads and random folders, replaced by one library</h2>
-        <p>
-          Models you want to keep end up scattered across sites, browser bookmarks and your Downloads folder. Thingport
-          keeps a real copy of each one, with its files, photos and source link, where you can actually find it again.
+<BaseLayout title="Thingport: Self-hosted 3D model library for 3D printing" description={description} jsonLd={jsonLd}>
+  <div class="home">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero-inner">
+        <h1 id="hero-title">
+          <span class="kicker">Free, open-source, self-hosted 3D model library</span>
+          Find it. <span class="accent">Keep it.</span> Make it. Share it.
+        </h1>
+        <p class="lead">
+          Thingport imports 3D models from MakerWorld, Printables, Thingiverse and {otherSites} other sites into your own
+          library, helps you change them or even design new ones with AI, and makes sharing them with friends easy.
         </p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary btn-lg" href={url("docs/install/")}>Install Thingport <Icon name="arrow" /></a>
+          <p class="muted"><code>docker compose up -d</code> on any machine or NAS</p>
+        </div>
       </div>
-      <ul class="feature-grid">
-        {
-          FEATURES.map((f) => (
-            <li class="card feature">
-              <span class="feature-icon">
-                <Icon name={f.icon} size={22} />
+
+      <div class="container">
+        <div class="demo" id="demo">
+          <a
+            class="demo-play"
+            href={watchUrl}
+            data-video-embed={embedUrl}
+            data-video-title={VIDEO.title}
+            aria-label={`Play the video: ${VIDEO.title}, ${VIDEO.spoken}`}
+          >
+            <picture>
+              <source
+                media="(prefers-color-scheme: dark)"
+                srcset={posterDark.srcSet.attribute}
+                sizes={POSTER_SIZES}
+                type="image/webp"
+                data-dark-poster
+              />
+              <img
+                src={posterLight.src}
+                srcset={posterLight.srcSet.attribute}
+                sizes={POSTER_SIZES}
+                width={models.width}
+                height={models.height}
+                alt=""
+                loading="eager"
+                fetchpriority="high"
+                decoding="async"
+              />
+            </picture>
+            <span class="play" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 24 24"
+                ><path d="M8 5.5v13l11-6.5z" fill="currentColor"></path></svg
+              >
+            </span>
+            <span class="demo-chip" aria-hidden="true">{VIDEO.title}<span>{VIDEO.length}</span></span>
+          </a>
+        </div>
+        <script is:inline>
+          // Before the page's script loads, so a theme the visitor saved, apart from the system's, shows its poster.
+          document.querySelector("[data-dark-poster]").media =
+            document.documentElement.dataset.theme === "dark" ? "all" : "not all";
+        </script>
+        <p class="demo-watch"><a href={watchUrl}>Watch on YouTube <Icon name="arrow" size={14} /></a></p>
+      </div>
+
+      <div class="container">
+        <ol class="flow" aria-label="How Thingport works">
+          <li>
+            <a class="flow-card" href="#find">
+              <span class="flow-no">01 · Find</span>
+              <span class="chips">
+                <span class="chip">MakerWorld</span>
+                <span class="chip">Printables</span>
+                <span class="chip">Thingiverse</span>
+                <span class="chip more">+{otherSites}</span>
               </span>
-              <h3>{f.title}</h3>
-              <p>{f.text}</p>
-            </li>
-          ))
-        }
-      </ul>
-      <p class="more"><a href={url("features/")}>See all features <Icon name="arrow" size={16} /></a></p>
-    </div>
-  </section>
-
-  <section class="section alt">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Tour</span>
-        <h2>See your whole collection at a glance</h2>
+              <span class="flow-text">Import from {providerCount} sites, or your own files</span>
+            </a>
+          </li>
+          <li>
+            <a class="flow-card keep" href="#keep">
+              <span class="flow-no">02 · Keep</span>
+              <span class="mini">
+                <span class="row"><span class="name">Gridfinity bin</span><span class="tag">Storage · AI</span></span>
+                <span class="row"><span class="name">Cable clip</span><span class="tag">Desk · AI</span></span>
+              </span>
+              <span class="flow-text">A real copy, sorted for you by AI</span>
+            </a>
+          </li>
+          <li>
+            <a class="flow-card" href="#make">
+              <span class="flow-no">03 · Make</span>
+              <span class="flow-thumb">
+                <Image class="only-light" src={studio} alt="" widths={[320, 640]} sizes="16rem" />
+                <Image class="only-dark" src={studioDark} alt="" widths={[320, 640]} sizes="16rem" />
+              </span>
+              <span class="flow-text">Change it, or describe a new part</span>
+            </a>
+          </li>
+          <li>
+            <a class="flow-card" href="#share">
+              <span class="flow-no">04 · Share</span>
+              <span class="hosts">
+                <span>home.lan</span>
+                <svg width="24" height="14" viewBox="0 0 28 14" fill="none" aria-hidden="true">
+                  <path
+                    d="M2 4h22m-4-3l4 3-4 3M26 10H4m4-3l-4 3 4 3"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+                </svg>
+                <span>workshop.lan</span>
+              </span>
+              <span class="flow-text">With friends on their own Thingport instance</span>
+            </a>
+          </li>
+        </ol>
       </div>
-      <div class="gallery">
-        {
-          [
-            { img: models, dark: modelsDark, caption: "Browse and filter the library" },
-            { img: modelDetails, dark: modelDetailsDark, caption: "Every model's files, photos and source" },
-            { img: preview3d, dark: preview3dDark, caption: "Inspect models in 3D" },
-            { img: customize, dark: customizeDark, caption: "Change a model and generate it again" },
-            { img: collections, dark: collectionsDark, caption: "Group models into collections" },
-            { img: toolWindow, dark: toolWindowDark, caption: "Tools that make things to print" },
-            { img: profile, dark: profileDark, caption: "Look back on your activity" },
-            { img: configProviders, dark: configProvidersDark, caption: "Connect the sites you import from" },
-          ].map(({ img, dark, caption }) => (
-            <figure class="shot">
-              <Image
-                class="only-light"
-                src={img}
-                alt={caption}
-                widths={[480, 800, 1100]}
-                sizes="(min-width: 48rem) 34rem, 100vw"
-              />
-              <Image
-                class="only-dark"
-                src={dark}
-                alt={caption}
-                widths={[480, 800, 1100]}
-                sizes="(min-width: 48rem) 34rem, 100vw"
-              />
-              <figcaption>{caption}</figcaption>
-            </figure>
-          ))
-        }
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="section">
-    <div class="container split">
-      <div>
-        <span class="eyebrow">Companion apps</span>
-        <h2>Save a model without leaving the page you found it on</h2>
-        <p>
-          <strong>Thingport Grab</strong> is a browser extension for Chrome, Edge and Firefox. It adds an import button to
-          model pages on all {PROVIDER_NAMES.length} sites, pairs with your Thingport without saving a password, and hands
-          it your sign-in on the sites that need one. Even without Thingport, it adds a “Download normalized” button to MakerWorld
-          that converts Bambu Studio projects for PrusaSlicer, Cura and other slicers, right in your browser.
-        </p>
-        <p>
-          <strong>Thingport Bridge</strong> is a small desktop helper that lets “Open in slicer” launch Bambu Studio, PrusaSlicer,
-          Cura or Anycubic Slicer Next from your own server.
-        </p>
-        <div class="ctas">
-          <a class="btn btn-secondary" href={url("docs/grab/")}><Icon name="puzzle" /> Thingport Grab</a>
-          <a class="btn btn-secondary" href={url("docs/bridge/")}><Icon name="printer" /> Thingport Bridge</a>
+    <section id="find" class="section top-rule" aria-labelledby="find-title">
+      <div class="container feature-row">
+        <div class="feature-text">
+          <p class="step-num" aria-hidden="true">01</p>
+          <h2 id="find-title">Import 3D models from MakerWorld, Printables, Thingiverse and {otherSites} more sites</h2>
+          <p>
+            Bring in a whole collection or your likes at once with the <a href={url("docs/grab/")}>Thingport Grab</a> browser
+            extension, keep them in sync, or paste a single link. Each model comes with its files, print profiles, photos,
+            description, tags and author.
+          </p>
+          <p>
+            Already have a folder of STL, 3MF, STEP and OBJ files? <a href={url("docs/guides/existing-library/")}
+              >Upload folders and ZIPs</a
+            >, or drop them in a watched folder.
+          </p>
+          <a class="text-link" href={url("docs/providers/")}
+            >Compare all {providerCount} providers <Icon name="arrow" size={16} /></a
+          >
         </div>
-      </div>
-      <div class="shot">
-        <Image
-          class="only-light"
-          src={grabPrintables}
-          alt="Thingport Grab's import panel on a Printables model page"
-          widths={[480, 800, 1100]}
-          sizes="(min-width: 48rem) 34rem, 100vw"
-        />
-        <Image
-          class="only-dark"
-          src={grabPrintablesDark}
-          alt="Thingport Grab's import panel on a Printables model page"
-          widths={[480, 800, 1100]}
-          sizes="(min-width: 48rem) 34rem, 100vw"
-        />
-      </div>
-    </div>
-  </section>
-
-  <section class="section alt">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Get started</span>
-        <h2>Up and running in three steps</h2>
-        <p>Thingport ships as pre-built Docker images, so there's nothing to compile.</p>
-      </div>
-      <ol class="steps">
-        <li class="card">
-          <span class="step-no">1</span>
-          <h3>Grab the compose file</h3>
-          <p>Create a folder with <code>docker-compose.yml</code> and a <code>.env</code> holding your secrets.</p>
-        </li>
-        <li class="card">
-          <span class="step-no">2</span>
-          <h3>Start it</h3>
-          <p>Run <code>docker compose up -d</code>. Postgres, the API and the web app all start together.</p>
-        </li>
-        <li class="card">
-          <span class="step-no">3</span>
-          <h3>Sign up</h3>
-          <p>Open Thingport in your browser. The first account you register becomes the admin.</p>
-        </li>
-      </ol>
-      <div class="ctas">
-        <a class="btn btn-primary" href={url("docs/install/")}>Read the install guide <Icon name="arrow" /></a>
-        <span class="muted platforms">
-          Guides for <a href={url("docs/install/unraid/")}>Unraid</a>, <a href={url("docs/install/truenas/")}
-            >TrueNAS SCALE</a
-          > and <a href={url("docs/install/casaos/")}>CasaOS</a>
-        </span>
-      </div>
-    </div>
-  </section>
-
-  {
-    posts.length > 0 && (
-      <section class="section">
-        <div class="container">
-          <div class="section-head">
-            <span class="eyebrow">Blog</span>
-            <h2>Latest news</h2>
-          </div>
-          <ul class="posts">
-            {posts.map((post) => (
-              <li class="card post">
-                <time datetime={post.data.pubDate.toISOString()} class="muted">
-                  {formatDate(post.data.pubDate)}
-                </time>
-                <h3>
-                  <a href={url(`blog/${post.id}/`)}>{post.data.title}</a>
-                </h3>
-                <p>{post.data.description}</p>
-              </li>
-            ))}
+        <div class="feature-media carousel" data-carousel>
+          <ul class="slides" data-track tabindex="0" aria-label="Importing and browsing models, in screenshots">
+            {
+              FIND_SLIDES.map((slide) => (
+                <li class="slide">
+                  <figure>
+                    <div class="frame">
+                      <Image
+                        class="only-light"
+                        src={slide.light}
+                        alt={slide.alt}
+                        widths={[640, 960, 1280]}
+                        sizes="(min-width: 72rem) 39rem, (min-width: 60rem) 55vw, 100vw"
+                      />
+                      <Image
+                        class="only-dark"
+                        src={slide.dark}
+                        alt={slide.alt}
+                        widths={[640, 960, 1280]}
+                        sizes="(min-width: 72rem) 39rem, (min-width: 60rem) 55vw, 100vw"
+                      />
+                    </div>
+                    <figcaption>{slide.caption}</figcaption>
+                  </figure>
+                </li>
+              ))
+            }
           </ul>
+          <div class="car-arrows" data-js hidden>
+            <button type="button" class="car-btn prev" data-prev aria-label="Previous screenshot">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d={arrowLeft}></path></svg>
+            </button>
+            <button type="button" class="car-btn next" data-next aria-label="Next screenshot">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d={arrowRight}></path></svg>
+            </button>
+          </div>
+          <div class="dots" data-js hidden>
+            {
+              FIND_SLIDES.map((slide, i) => (
+                <button
+                  type="button"
+                  data-dot
+                  aria-label={`Show screenshot ${i + 1}: ${slide.caption}`}
+                  aria-current={i === 0 ? "true" : "false"}
+                >
+                  <span />
+                </button>
+              ))
+            }
+          </div>
         </div>
-      </section>
-    )
-  }
+      </div>
+    </section>
 
-  <section class="section">
-    <div class="container">
-      <div class="card cta-band">
-        <div>
-          <h2>Thingport is free and open source</h2>
-          <p class="muted">
-            AGPL-3.0 licensed and built in the open. Star it, report a bug, send a pull request, or help fund
-            development.
+    <section id="keep" class="section alt" aria-labelledby="keep-title">
+      <div class="container feature-row reverse">
+        <div class="feature-text">
+          <p class="step-num" aria-hidden="true">02</p>
+          <h2 id="keep-title">Keep a 3D model library on your own server, sorted by AI</h2>
+          <p>
+            Every model is a real copy on your disk, kept even if the site removes it. Preview STL, 3MF, STEP and OBJ
+            files in 3D in the browser, open them straight in your slicer, and find anything again with categories,
+            collections, tags and search.
+          </p>
+          <p>
+            Turn on AI and new imports are sorted into your own categories, and messy descriptions are tidied and
+            translated into English. Run the model on your own hardware with Ollama, LM Studio or vLLM, or use a cloud
+            API such as OpenAI, Gemini or Claude.
+          </p>
+          <a class="text-link" href={url("docs/guides/ai/")}>Set up AI <Icon name="arrow" size={16} /></a>
+        </div>
+        <figure class="feature-media shot">
+          <Image
+            class="only-light"
+            src={aiCompare}
+            alt="A model description before and after AI clean-up and translation into English, side by side, with Revert"
+            widths={[640, 960, 1280]}
+            sizes="(min-width: 72rem) 39rem, (min-width: 60rem) 55vw, 100vw"
+          />
+          <Image
+            class="only-dark"
+            src={aiCompareDark}
+            alt="A model description before and after AI clean-up and translation into English, side by side, with Revert"
+            widths={[640, 960, 1280]}
+            sizes="(min-width: 72rem) 39rem, (min-width: 60rem) 55vw, 100vw"
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section id="make" class="section" aria-labelledby="make-title">
+      <div class="container">
+        <div class="make-head">
+          <div>
+            <p class="step-num" aria-hidden="true">03</p>
+            <h2 id="make-title">Change models or design new parts with AI in Studio</h2>
+          </div>
+          <div>
+            <p>
+              Describe a part, or a change to a model you kept, and Studio's AI designs it step by step, checks it for
+              printing and saves it to your library. Every step is a CAD command you can take yourself, and the same
+              commands are tools for your assistant over MCP.
+            </p>
+            <a class="text-link" href={url("docs/guides/studio/")}>Read about Studio <Icon name="arrow" size={16} /></a>
+          </div>
+        </div>
+        <figure class="shot make-shot">
+          <Image
+            class="only-light"
+            src={studio}
+            alt="Thingport Studio with a desk organiser the AI designed in 14 steps, and the Ask AI conversation beside it"
+            widths={[640, 960, 1280, 1600]}
+            sizes="(min-width: 72rem) 70rem, 100vw"
+          />
+          <Image
+            class="only-dark"
+            src={studioDark}
+            alt="Thingport Studio with a desk organiser the AI designed in 14 steps, and the Ask AI conversation beside it"
+            widths={[640, 960, 1280, 1600]}
+            sizes="(min-width: 72rem) 70rem, 100vw"
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section id="share" class="section alt" aria-labelledby="share-title">
+      <div class="container feature-row">
+        <div class="feature-text">
+          <p class="step-num" aria-hidden="true">04</p>
+          <h2 id="share-title">Share models with friends on their own Thingport instance</h2>
+          <p>
+            Connect your Thingport instance with a friend's, your makerspace's or the one at work. Their people and
+            models appear on your Explore, you can chat across instances, and Copy to my library keeps a model even if
+            they delete theirs.
+          </p>
+          <p>
+            Connected instances talk ActivityPub, the protocol behind the fediverse, but only with Thingport instances
+            an admin approved. Nothing private leaves.
+          </p>
+          <a class="text-link" href={url("docs/guides/connected-instances/")}
+            >Connect Thingport instances <Icon name="arrow" size={16} /></a
+          >
+        </div>
+        <figure class="feature-media shot">
+          <Image
+            class="only-light"
+            src={partnerModel}
+            alt="A model from a connected Thingport instance, opened here, with Copy to my library"
+            widths={[640, 960, 1280]}
+            sizes="(min-width: 72rem) 39rem, (min-width: 60rem) 55vw, 100vw"
+          />
+          <Image
+            class="only-dark"
+            src={partnerModelDark}
+            alt="A model from a connected Thingport instance, opened here, with Copy to my library"
+            widths={[640, 960, 1280]}
+            sizes="(min-width: 72rem) 39rem, (min-width: 60rem) 55vw, 100vw"
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section id="tools" class="section" aria-labelledby="tools-title">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">Tools</span>
+          <h2 id="tools-title">Generate models on the fly with tools and OpenSCAD scripts</h2>
+          <p>
+            Small apps that open in a window of their own and save what they make straight into your library. Pick one
+            to see it.
           </p>
         </div>
-        <div class="ctas">
-          <a class="btn btn-primary" href={LINKS.github}><Icon name="github" /> Star on GitHub</a>
-          <a class="btn btn-secondary" href={LINKS.sponsors}><Icon name="heart" /> Sponsor</a>
+        <div class="tools" data-tools>
+          <div class="tool-tiles" data-tool-list>
+            {
+              tools.map((tool) => (
+                <a class="tool-tile" href={tool.href} data-tool-tab={`tool-${tool.slug}`} aria-label={tool.name}>
+                  {tool.icon ? <img src={tool.icon} alt="" width="48" height="48" /> : <Icon name="wrench" size={32} />}
+                  <span>{SHORT_NAMES[tool.slug] ?? tool.name}</span>
+                </a>
+              ))
+            }
+            <a
+              class="tool-tile"
+              href={url("docs/developers/first-tool/")}
+              data-tool-tab="tool-your-own"
+              aria-label="Your own tool"
+            >
+              <svg class="own-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <rect
+                  x="5"
+                  y="5"
+                  width="38"
+                  height="38"
+                  rx="9"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-dasharray="5 4"></rect>
+                <path d="M24 15v18M15 24h18" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+              </svg>
+              <span>Your own</span>
+            </a>
+          </div>
+
+          {
+            tools.map((tool, i) => (
+              <div class="tool-panel" id={`tool-${tool.slug}`} hidden={i !== 0}>
+                <div class="tool-shots">
+                  {tool.screenshots.map((shot, j) => (
+                    <figure data-shot hidden={j !== 0}>
+                      <div class="frame">
+                        <img
+                          src={shot.src}
+                          alt={shot.caption ?? `${tool.name}, screenshot ${j + 1} of ${tool.screenshots.length}`}
+                          width={shot.width}
+                          height={shot.height}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </div>
+                      {shot.caption && <figcaption>{shot.caption}</figcaption>}
+                    </figure>
+                  ))}
+                  {tool.screenshots.length > 1 && (
+                    <div class="dots" data-shot-dots hidden>
+                      {tool.screenshots.map((_, j) => (
+                        <button
+                          type="button"
+                          data-shot-dot
+                          aria-label={`Show ${tool.name} screenshot ${j + 1} of ${tool.screenshots.length}`}
+                          aria-current={j === 0 ? "true" : "false"}
+                        >
+                          <span />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div class="tool-about">
+                  <div class="tool-name">
+                    {tool.icon ? (
+                      <img src={tool.icon} alt="" width="40" height="40" />
+                    ) : (
+                      <Icon name="wrench" size={28} />
+                    )}
+                    <h3>{tool.name}</h3>
+                  </div>
+                  <p>{tool.description}</p>
+                  <a class="text-link" href={tool.href}>
+                    More about the {tool.name} <Icon name="arrow" size={16} />
+                  </a>
+                </div>
+              </div>
+            ))
+          }
+          <div class="tool-panel" id="tool-your-own" hidden>
+            <div class="tool-shots">
+              {
+                OWN_TOOL_SHOTS.map((shot, j) => (
+                  <figure data-shot hidden={j !== 0}>
+                    <div class="frame">
+                      <Image
+                        class="only-light"
+                        src={shot.light}
+                        alt={shot.caption}
+                        widths={[640, 960, 1280]}
+                        sizes="(min-width: 72rem) 44rem, 100vw"
+                      />
+                      <Image
+                        class="only-dark"
+                        src={shot.dark}
+                        alt={shot.caption}
+                        widths={[640, 960, 1280]}
+                        sizes="(min-width: 72rem) 44rem, 100vw"
+                      />
+                    </div>
+                    <figcaption>{shot.caption}</figcaption>
+                  </figure>
+                ))
+              }
+              <div class="dots" data-shot-dots hidden>
+                {
+                  OWN_TOOL_SHOTS.map((_, j) => (
+                    <button
+                      type="button"
+                      data-shot-dot
+                      aria-label={`Show screenshot ${j + 1} of ${OWN_TOOL_SHOTS.length}`}
+                      aria-current={j === 0 ? "true" : "false"}
+                    >
+                      <span />
+                    </button>
+                  ))
+                }
+              </div>
+            </div>
+            <div class="tool-about">
+              <div class="tool-name">
+                <svg class="own-icon" width="40" height="40" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                  <rect
+                    x="5"
+                    y="5"
+                    width="38"
+                    height="38"
+                    rx="9"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-dasharray="5 4"></rect>
+                  <path d="M24 15v18M15 24h18" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                </svg>
+                <h3>Your own tool</h3>
+              </div>
+              <p>
+                Tools are small apps that read your library and save back into it. Install one the community shared, or
+                write your own with the tools SDK.
+              </p>
+              <a class="text-link" href={url("docs/developers/first-tool/")}
+                >Write your first tool <Icon name="arrow" size={16} /></a
+              >
+            </div>
+          </div>
+        </div>
+        <p class="tools-more">
+          <a class="text-link" href={url("community/tools/")}>Browse all tools <Icon name="arrow" size={16} /></a>
+        </p>
+      </div>
+    </section>
+
+    <section class="section alt" aria-labelledby="rules-title">
+      <div class="container">
+        <h2 id="rules-title" class="center-title">Your server, your rules</h2>
+        <ul class="rules">
+          <li class="card">
+            <h3>Runs where you do</h3>
+            <p>
+              Docker on any machine or NAS, with guides for <a href={url("docs/install/unraid/")}>Unraid</a>, <a
+                href={url("docs/install/truenas/")}>TrueNAS SCALE</a
+              > and <a href={url("docs/install/casaos/")}>CasaOS</a>. Plain HTTP on a LAN is fine.
+            </p>
+          </li>
+          <li class="card">
+            <h3>Off until you say so</h3>
+            <p>AI and connected instances stay off, and silent, until an admin turns them on.</p>
+          </li>
+          <li class="card">
+            <h3>Open all the way</h3>
+            <p>
+              <a href={LINKS.license}>AGPL-3.0</a>, a <a href={url("docs/guides/api-token/")}>REST API</a> and an <a
+                href={url("docs/guides/mcp/")}>MCP server</a
+              >, with tokens you scope tool by tool.
+            </p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    {
+      posts.length > 0 && (
+        <section class="section" aria-labelledby="blog-title">
+          <div class="container">
+            <div class="section-head">
+              <span class="eyebrow">Blog</span>
+              <h2 id="blog-title">Latest news</h2>
+            </div>
+            <ul class="posts">
+              {posts.map((post) => (
+                <li class="card post">
+                  <time datetime={post.data.pubDate.toISOString()} class="muted">
+                    {formatDate(post.data.pubDate)}
+                  </time>
+                  <h3>
+                    <a href={url(`blog/${post.id}/`)}>{post.data.title}</a>
+                  </h3>
+                  <p>{post.data.description}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )
+    }
+
+    <section class="install" aria-labelledby="install-title">
+      <div class="container">
+        <div class="card cta-band">
+          <div>
+            <h2 id="install-title">Install Thingport in three steps</h2>
+            <p class="muted">
+              Grab the compose file, run <code>docker compose up -d</code>, and sign up: the first account is the admin.
+            </p>
+          </div>
+          <div class="band-ctas">
+            <a class="btn btn-primary btn-lg" href={url("docs/install/")}
+              >Read the install guide <Icon name="arrow" /></a
+            >
+            <a class="btn btn-secondary btn-lg" href={LINKS.github}><Icon name="github" /> Star on GitHub</a>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 </BaseLayout>
 
+<script>
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const plainClick = (event: MouseEvent) =>
+    event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
+
+  // The poster follows the theme toggle (the inline script beside it set the first one).
+  const darkPoster = document.querySelector<HTMLSourceElement>("[data-dark-poster]");
+  if (darkPoster) {
+    const follow = () => (darkPoster.media = document.documentElement.dataset.theme === "dark" ? "all" : "not all");
+    follow();
+    new MutationObserver(follow).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+  }
+
+  // The demo: the poster is a link to YouTube until it's pressed, then the player takes its place, already playing.
+  for (const link of document.querySelectorAll<HTMLAnchorElement>("[data-video-embed]")) {
+    const warm = () => {
+      if (document.querySelector('link[data-warm="youtube"]')) return;
+      const hint = document.createElement("link");
+      hint.rel = "preconnect";
+      hint.href = "https://www.youtube-nocookie.com";
+      hint.dataset.warm = "youtube";
+      document.head.append(hint);
+    };
+    link.addEventListener("pointerenter", warm, { once: true });
+    link.addEventListener("focus", warm, { once: true });
+    link.addEventListener("click", (event) => {
+      if (!plainClick(event)) return;
+      event.preventDefault();
+      const player = document.createElement("iframe");
+      player.src = link.dataset.videoEmbed!;
+      player.title = link.dataset.videoTitle ?? "";
+      player.allow =
+        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+      player.allowFullscreen = true;
+      player.referrerPolicy = "strict-origin-when-cross-origin";
+      link.replaceWith(player);
+      player.focus();
+    });
+  }
+
+  // The Find screenshots: a strip that scrolls and snaps on its own; the arrows and dots only steer it.
+  for (const carousel of document.querySelectorAll<HTMLElement>("[data-carousel]")) {
+    const track = carousel.querySelector<HTMLElement>("[data-track]")!;
+    const slides = [...track.children] as HTMLElement[];
+    const dots = [...carousel.querySelectorAll<HTMLButtonElement>("[data-dot]")];
+    const showDot = (index: number) => dots.forEach((dot, i) => dot.setAttribute("aria-current", String(i === index)));
+    const atScroll = () => {
+      const step = slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : 1;
+      return Math.min(slides.length - 1, Math.max(0, Math.round(track.scrollLeft / step)));
+    };
+    // The slide last asked for: while the strip glides there, the arrows step on from it, not from where it is yet.
+    let current = 0;
+    let gliding = false;
+    const go = (index: number) => {
+      current = (index + slides.length) % slides.length;
+      showDot(current);
+      const left = slides[current].offsetLeft - slides[0].offsetLeft;
+      if (Math.abs(track.scrollLeft - left) < 1) return;
+      gliding = true;
+      track.scrollTo({ left, behavior: reducedMotion.matches ? "auto" : "smooth" });
+    };
+    // When the strip stops, a glide or a swipe cut short, it settles on the slide it's at.
+    const settled = () => {
+      gliding = false;
+      current = atScroll();
+      showDot(current);
+    };
+    // The browser's own word that scrolling has finished; without it, a pause in the scroll events.
+    const hasScrollEnd = "onscrollend" in window;
+    if (hasScrollEnd) track.addEventListener("scrollend", settled);
+    let settle: number | undefined;
+    let queued = false;
+    track.addEventListener(
+      "scroll",
+      () => {
+        if (!hasScrollEnd) {
+          window.clearTimeout(settle);
+          settle = window.setTimeout(settled, 150);
+        }
+        if (gliding || queued) return;
+        queued = true;
+        requestAnimationFrame(() => {
+          queued = false;
+          if (gliding) return;
+          current = atScroll();
+          showDot(current);
+        });
+      },
+      { passive: true },
+    );
+    carousel.querySelector("[data-prev]")?.addEventListener("click", () => go(current - 1));
+    carousel.querySelector("[data-next]")?.addEventListener("click", () => go(current + 1));
+    dots.forEach((dot, i) => dot.addEventListener("click", () => go(i)));
+    for (const control of carousel.querySelectorAll<HTMLElement>("[data-js]")) control.hidden = false;
+    carousel.classList.add("ready");
+  }
+
+  // The tools: without JavaScript each icon links to its tool's page; with it, they're tabs over the panel below.
+  const toolsRoot = document.querySelector<HTMLElement>("[data-tools]");
+  if (toolsRoot) {
+    const list = toolsRoot.querySelector<HTMLElement>("[data-tool-list]")!;
+    const tabs = [...list.querySelectorAll<HTMLAnchorElement>("[data-tool-tab]")];
+    const panels = tabs.map((tab) => document.getElementById(tab.dataset.toolTab!)!);
+    const select = (index: number, focus = false) => {
+      tabs.forEach((tab, i) => {
+        const on = i === index;
+        tab.setAttribute("aria-selected", String(on));
+        tab.tabIndex = on ? 0 : -1;
+        panels[i].hidden = !on;
+      });
+      if (focus) tabs[index].focus();
+    };
+    list.setAttribute("role", "tablist");
+    list.setAttribute("aria-label", "Tools");
+    tabs.forEach((tab, i) => {
+      tab.id = `${panels[i].id}-tab`;
+      tab.setAttribute("role", "tab");
+      tab.setAttribute("aria-controls", panels[i].id);
+      panels[i].setAttribute("role", "tabpanel");
+      panels[i].setAttribute("aria-labelledby", tab.id);
+      panels[i].tabIndex = 0;
+      tab.addEventListener("click", (event) => {
+        if (!plainClick(event)) return;
+        event.preventDefault();
+        select(i);
+      });
+      tab.addEventListener("keydown", (event) => {
+        const keys: Record<string, number> = {
+          ArrowRight: i + 1,
+          ArrowDown: i + 1,
+          ArrowLeft: i - 1,
+          ArrowUp: i - 1,
+          Home: 0,
+          End: tabs.length - 1,
+        };
+        if (!(event.key in keys)) return;
+        event.preventDefault();
+        select((keys[event.key] + tabs.length) % tabs.length, true);
+      });
+    });
+    select(0);
+
+    for (const panel of panels) {
+      const shots = [...panel.querySelectorAll<HTMLElement>("[data-shot]")];
+      const dots = [...panel.querySelectorAll<HTMLButtonElement>("[data-shot-dot]")];
+      dots.forEach((dot, n) =>
+        dot.addEventListener("click", () => {
+          shots.forEach((shot, i) => (shot.hidden = i !== n));
+          dots.forEach((other, i) => other.setAttribute("aria-current", String(i === n)));
+        }),
+      );
+      panel.querySelector<HTMLElement>("[data-shot-dots]")?.removeAttribute("hidden");
+    }
+  }
+</script>
+
 <style>
+  .home :is(h1, h2, h3) {
+    font-weight: 700;
+  }
+  .home [hidden] {
+    display: none !important;
+  }
+
+  /* Hero */
   .hero {
     background: var(--hero-glow);
-    padding-top: clamp(3rem, 9vw, 6rem);
+    padding-block: clamp(3rem, 8vw, 5rem) clamp(3rem, 7vw, 4.5rem);
   }
   .hero-inner {
     text-align: center;
-    max-width: 52rem;
   }
   h1 {
-    font-size: clamp(2.3rem, 7vw, 4rem);
-    margin-bottom: 1.25rem;
+    font-size: clamp(2.2rem, 4.8vw, 3.6rem);
+    margin: 0;
   }
-  /* The link green in light, where the brand green is too faint to read; dark keeps the brand green. */
+  .kicker {
+    display: block;
+    margin-bottom: 1rem;
+    font-family: var(--font-body);
+    font-size: clamp(0.85rem, 1.6vw, 1rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--link);
+  }
   .accent {
     color: var(--link);
   }
-  :global(:root[data-theme="dark"]) .accent {
-    color: var(--accent);
-  }
   .lead {
-    font-size: clamp(1.075rem, 2.2vw, 1.25rem);
+    max-width: 48rem;
+    margin: 1.25rem auto 0;
+    font-size: clamp(1.05rem, 2.1vw, 1.2rem);
     color: var(--text-muted);
-    max-width: 40rem;
-    margin-inline: auto;
   }
-  .ctas {
+  .hero-ctas {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    align-items: center;
-    margin-top: 1.75rem;
-  }
-  .hero .ctas {
+    gap: 0.75rem 1.25rem;
     justify-content: center;
+    align-items: center;
+    margin-top: 1.5rem;
   }
-  .hint {
+  .hero-ctas p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+  code {
+    color: var(--heading);
+  }
+  .btn-lg {
+    padding: 0.8rem 1.4rem;
+    border-radius: var(--radius);
+    font-weight: 700;
+  }
+
+  /* The demo video */
+  .demo {
+    position: relative;
+    max-width: 66rem;
+    margin: clamp(2rem, 5vw, 2.5rem) auto 0;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #0b0f1a;
+    box-shadow:
+      0 2px 4px rgba(16, 24, 40, 0.06),
+      0 24px 64px rgba(16, 24, 40, 0.18);
+  }
+  :global(:root[data-theme="dark"]) .demo {
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  }
+  .demo-play {
+    position: absolute;
+    inset: 0;
+    display: block;
+    color: #ffffff;
+  }
+  .demo-play:focus-visible {
+    outline: 3px solid var(--accent-light);
+    outline-offset: -6px;
+  }
+  /* Pinned to the top, so the page's toolbar stays in the picture. */
+  .demo-play :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+  .demo :global(iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .play {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    width: 6rem;
+    height: 6rem;
+    margin: auto;
+    border-radius: 50%;
+    background: var(--button);
+    color: #ffffff;
+    box-shadow:
+      0 0 0 12px rgba(0, 184, 0, 0.2),
+      0 12px 36px rgba(0, 0, 0, 0.35);
+    transition:
+      transform 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .demo-play:hover .play,
+  .demo-play:focus-visible .play {
+    transform: scale(1.08);
+    background: var(--button-hover);
+  }
+  .demo-chip {
+    position: absolute;
+    left: 1rem;
+    bottom: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(10, 14, 26, 0.8);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .demo-chip span {
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Stays when the player takes the poster's place, for a browser that blocks the embed. */
+  .demo-watch {
+    max-width: 66rem;
+    margin: 0.75rem auto 0;
+    font-size: 0.875rem;
+    text-align: right;
+  }
+  .demo-watch a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .demo-watch a:hover {
+    text-decoration: underline;
+  }
+  @media (max-width: 40rem) {
+    .play {
+      width: 4rem;
+      height: 4rem;
+      box-shadow: 0 0 0 8px rgba(0, 184, 0, 0.2);
+    }
+    .play svg {
+      width: 28px;
+      height: 28px;
+    }
+    .demo-chip {
+      left: 0.6rem;
+      bottom: 0.6rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  /* Find, keep, make, share: the four steps under the video */
+  .flow {
+    list-style: none;
+    margin: clamp(2.5rem, 6vw, 3.5rem) 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .flow li {
+    position: relative;
+    display: flex;
+    min-width: 0;
+  }
+  @media (min-width: 36rem) {
+    .flow {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  /* Four in a row only once the Share card's two addresses fit side by side. */
+  @media (min-width: 72rem) {
+    .flow {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: 2.75rem;
+    }
+    .flow li + li::before {
+      content: "";
+      position: absolute;
+      left: -2.075rem;
+      top: 50%;
+      width: 1.4rem;
+      height: 1.4rem;
+      transform: translateY(-50%);
+      background: var(--accent);
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14m-5-5l5 5-5 5'/%3E%3C/svg%3E")
+        center / contain no-repeat;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14m-5-5l5 5-5 5'/%3E%3C/svg%3E")
+        center / contain no-repeat;
+    }
+  }
+  .flow-card {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.1rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    color: var(--text);
+    text-align: left;
+    text-decoration: none;
+    transition:
+      transform 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .flow-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .flow-card.keep {
+    border-color: var(--accent);
+  }
+  .flow-no {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--link);
+  }
+  .flow-text {
+    margin-top: auto;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .chip {
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--heading);
+  }
+  .chip.more {
+    border-color: transparent;
+    background: var(--accent-soft);
+    font-weight: 700;
+    color: var(--link);
+  }
+  .mini {
+    display: grid;
+    gap: 5px;
+    font-size: 0.75rem;
+  }
+  .mini .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: var(--bg);
+    line-height: 1.4;
+  }
+  .mini .name {
+    font-weight: 600;
+    color: var(--heading);
+  }
+  .mini .tag {
+    font-weight: 700;
+    color: var(--link);
+  }
+  .flow-thumb :global(img) {
+    display: block;
+    width: 100%;
+    height: 58px;
+    object-fit: cover;
+    object-position: 45% 45%;
+    border-radius: 6px;
+  }
+  .hosts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .hosts span {
+    padding: 5px 7px;
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--heading);
+  }
+  .hosts svg {
+    flex: none;
+    color: var(--accent);
+  }
+
+  /* The numbered sections */
+  .top-rule {
+    border-top: 1px solid var(--border);
+  }
+  .alt {
+    background: var(--panel-alt);
+    border-block: 1px solid var(--border);
+  }
+  .feature-row {
+    display: grid;
+    gap: clamp(2rem, 5vw, 3rem);
+    align-items: center;
+  }
+  @media (min-width: 60rem) {
+    .feature-row {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    }
+    .feature-row.reverse {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    }
+    .feature-row.reverse .feature-media {
+      order: -1;
+    }
+  }
+  .feature-text,
+  .feature-media {
+    min-width: 0;
+  }
+  .step-num {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 4rem;
+    line-height: 1;
+    color: var(--accent-soft);
+    -webkit-text-stroke: 1.5px var(--accent);
+  }
+  .feature-text h2,
+  .make-head h2 {
+    margin: 0.875rem 0 0;
+    font-size: clamp(1.8rem, 3.6vw, 2.5rem);
+  }
+  .feature-text p:not(.step-num),
+  .make-head p:not(.step-num) {
+    margin: 0.875rem 0 0;
+    font-size: 1.0625rem;
+    color: var(--text-muted);
+  }
+  .text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     margin-top: 1.25rem;
-    font-size: 0.925rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .text-link:hover {
+    text-decoration: underline;
   }
   .shot {
     margin: 0;
@@ -393,37 +1265,292 @@ const jsonLd = [
     display: block;
     width: 100%;
     height: auto;
-    /* .only-dark's display: revert makes the dark one inline; this keeps it flush with the frame. */
     vertical-align: bottom;
   }
-  .hero-shot {
-    margin-top: clamp(2.5rem, 6vw, 4rem);
-    box-shadow: 0 30px 80px -20px rgba(16, 24, 40, 0.25);
+  .make-head {
+    display: grid;
+    gap: 1rem 3rem;
+    align-items: end;
   }
-  .sources {
-    border-block: 1px solid var(--border);
+  @media (min-width: 60rem) {
+    .make-head {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    }
+  }
+  .make-shot {
+    margin-top: 2rem;
+  }
+
+  /* Screenshot frames: the Find strip and the tools */
+  .frame {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     background: var(--panel);
-    margin-top: clamp(2.5rem, 6vw, 4rem);
+    box-shadow: var(--shadow);
   }
-  .sources-inner {
+  .frame :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  figure {
+    margin: 0;
+  }
+  .dots {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: baseline;
-    gap: 0.5rem 1.25rem;
-    padding-block: 1.25rem;
+    gap: 2px;
   }
-  .sources strong,
-  .more-sites {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: 1.1rem;
+  .dots button {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
   }
-  .sources strong {
+  .dots span {
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-muted) 45%, transparent);
+    transition:
+      width 0.2s ease,
+      background-color 0.2s ease;
+  }
+  .dots [aria-current="true"] span {
+    width: 22px;
+    background: var(--accent);
+  }
+
+  .carousel {
+    position: relative;
+  }
+  .slides {
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .slides::-webkit-scrollbar {
+    display: none;
+  }
+  .slides:focus-visible {
+    outline-offset: 4px;
+  }
+  .slide {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+  .slide figcaption {
+    margin-top: 0.75rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
     color: var(--heading);
   }
-  .feature-grid,
-  .steps,
+  .carousel.ready .slide figcaption {
+    padding-right: 8.5rem;
+  }
+  .car-arrows {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    aspect-ratio: 16 / 10;
+    pointer-events: none;
+  }
+  .car-btn {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--panel);
+    color: var(--heading);
+    box-shadow: 0 4px 14px rgba(16, 24, 40, 0.18);
+    cursor: pointer;
+    pointer-events: auto;
+    translate: 0 -50%;
+    transition:
+      scale 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .car-btn:hover {
+    scale: 1.06;
+    border-color: var(--accent);
+  }
+  .car-btn svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .car-btn.prev {
+    left: 0.75rem;
+  }
+  .car-btn.next {
+    right: 0.75rem;
+  }
+  .carousel .dots {
+    position: absolute;
+    right: 0;
+    bottom: -2px;
+  }
+
+  /* Tools */
+  .center {
+    margin-inline: auto;
+    text-align: center;
+  }
+  .section-head h2 {
+    font-size: clamp(1.8rem, 3.6vw, 2.5rem);
+  }
+  .tool-tiles {
+    display: grid;
+    gap: 0.625rem;
+    grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr));
+  }
+  .tool-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    min-height: 6.5rem;
+    padding: 0.875rem 0.375rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--heading);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+    transition:
+      transform 0.15s ease,
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .tool-tile:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .tool-tile[aria-selected="true"] {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .tool-tile img,
+  .tool-tile svg {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    transition: transform 0.2s ease;
+  }
+  .tool-tile:hover img,
+  .tool-tile:hover svg {
+    transform: scale(1.08);
+  }
+  .own-icon {
+    color: var(--link);
+  }
+  .tool-panel {
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+    margin-top: 1rem;
+    padding: clamp(0.875rem, 2.4vw, 1.5rem);
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  @media (min-width: 56rem) {
+    .tool-panel {
+      grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+    }
+  }
+  .tool-panel:focus-visible {
+    outline-offset: 4px;
+  }
+  .tool-shots .frame {
+    border-radius: var(--radius-sm);
+  }
+  .tool-shots figcaption {
+    margin-top: 0.625rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+  .tool-shots .dots {
+    margin: 0.25rem 0 0 -10px;
+  }
+  .tool-name {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .tool-name img,
+  .tool-name svg {
+    flex: none;
+    width: 40px;
+    height: 40px;
+  }
+  .tool-name h3 {
+    margin: 0;
+    font-size: 1.375rem;
+  }
+  .tool-about p {
+    margin: 0.75rem 0 0;
+    color: var(--text-muted);
+  }
+  .tools-more {
+    margin: 1.5rem 0 0;
+    text-align: center;
+  }
+
+  /* Your server, your rules */
+  .center-title {
+    margin: 0;
+    font-size: clamp(1.6rem, 3.2vw, 2.2rem);
+    text-align: center;
+  }
+  .rules {
+    list-style: none;
+    margin: 2rem 0 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  }
+  .rules li {
+    padding: 1.5rem;
+  }
+  .rules h3 {
+    margin: 0;
+    font-size: 1.1875rem;
+  }
+  .rules p {
+    margin: 0.5rem 0 0;
+    color: var(--text-muted);
+  }
+
+  /* Blog */
   .posts {
     list-style: none;
     margin: 0;
@@ -432,74 +1559,12 @@ const jsonLd = [
     gap: 1.25rem;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
   }
-  .feature,
-  .steps li,
   .post {
     padding: 1.5rem;
   }
-  .feature h3,
-  .steps h3,
-  .post h3 {
-    font-size: 1.15rem;
-    margin-top: 0.9rem;
-  }
-  .feature p,
-  .steps p,
-  .post p {
-    margin: 0;
-    color: var(--text-muted);
-  }
-  .feature-icon,
-  .step-no {
-    display: inline-grid;
-    place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: var(--radius-sm);
-    background: var(--accent-soft);
-    color: var(--link);
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
-  .more {
-    margin-top: 1.75rem;
-  }
-  .more a {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-weight: 600;
-  }
-  .alt {
-    background: var(--panel-alt);
-    border-block: 1px solid var(--border);
-  }
-  .gallery {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-  }
-  figcaption {
-    padding: 0.75rem 1rem;
-    border-top: 1px solid var(--border);
-    font-weight: 600;
-    color: var(--heading);
-    font-size: 0.95rem;
-  }
-  .split {
-    display: grid;
-    gap: 2.5rem;
-    align-items: center;
-    grid-template-columns: 1fr 1.1fr;
-  }
-  .split h2 {
-    font-size: clamp(1.6rem, 3.5vw, 2.25rem);
-  }
-  .platforms {
-    font-size: 0.95rem;
-  }
   .post h3 {
     margin-top: 0.4rem;
+    font-size: 1.125rem;
   }
   .post h3 a {
     color: var(--heading);
@@ -511,6 +1576,15 @@ const jsonLd = [
   .post time {
     font-size: 0.875rem;
   }
+  .post p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  /* Install */
+  .install {
+    padding-bottom: clamp(3rem, 6vw, 4rem);
+  }
   .cta-band {
     display: flex;
     flex-wrap: wrap;
@@ -520,19 +1594,20 @@ const jsonLd = [
     padding: clamp(1.5rem, 4vw, 2.5rem);
     background: var(--hero-glow), var(--panel);
   }
+  .cta-band > div:first-child {
+    flex: 1 1 24rem;
+    min-width: 0;
+  }
   .cta-band h2 {
+    margin: 0;
     font-size: clamp(1.4rem, 3vw, 1.9rem);
   }
   .cta-band p {
-    margin: 0;
-    max-width: 34rem;
+    margin: 0.5rem 0 0;
   }
-  .cta-band .ctas {
-    margin-top: 0;
-  }
-  @media (max-width: 48rem) {
-    .split {
-      grid-template-columns: 1fr;
-    }
+  .band-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 </style>

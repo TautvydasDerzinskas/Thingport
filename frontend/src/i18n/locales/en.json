@@ -357,7 +357,7 @@
           "writeConfirmTitle": "Let the assistant use “{{tool}}”?",
           "writeConfirmMessage": "This tool changes your library. An assistant connected with this token will be able to use it without asking you each time. Nothing it does deletes models.",
           "writeConfirm": "Turn on",
-          "adminOff": "An admin has turned MCP off on this Thingport.",
+          "adminOff": "An admin has turned MCP off on this Thingport instance.",
           "adminReadOnly": "An admin allows only the tools that read.",
           "copyCommand": "Copy command",
           "reads": "Reads your library",
@@ -1182,7 +1182,7 @@
         "noExport": "The script has no export default function.",
         "failed": "{{name}} stopped with an error",
         "removed": "This widget was removed.",
-        "off": "Custom widgets are turned off on this Thingport.",
+        "off": "Custom widgets are turned off on this Thingport instance.",
         "title": "Custom widgets",
         "tabs": {
           "mine": "Mine",
@@ -1211,7 +1211,7 @@
         "installed": "Installed {{name}}",
         "isInstalled": "Installed",
         "retry": "Try again",
-        "communityError": "Couldn't load the community widgets. Check that this Thingport can reach GitHub.",
+        "communityError": "Couldn't load the community widgets. Check that this Thingport instance can reach GitHub.",
         "communityEmpty": "No community widgets yet. Be the first: see Build & share.",
         "reaches_one": "Reaches {{count}} host",
         "reaches_other": "Reaches {{count}} hosts",
@@ -1306,7 +1306,7 @@
           "publish1": "Download your widget from Mine (⋮, then Download for publishing).",
           "publish2": "Fork the Thingport repository and unzip it into the <folder>community-widgets</folder> folder.",
           "publish3": "Add its folder name to community-widgets/index.json, and say what it does in its README.md.",
-          "publish4": "Open a pull request. Once it’s merged, every Thingport can install it.",
+          "publish4": "Open a pull request. Once it’s merged, every Thingport instance can install it.",
           "guide": "Read the full guide"
         },
         "ai": {
@@ -2530,35 +2530,48 @@
             "unreachable": "Not reachable",
             "localHelp": "Only instances on your network or VPN can reach this one. You can still connect to instances on the internet: yours keeps a link open to them.",
             "publicHelp": "Instances on the internet can reach it if your router or proxy lets them in. A partner reaching it confirms that.",
-            "unreachableHelp": "Other instances can't reach it at its Public URL. Check again once that's fixed."
+            "unreachableHelp": "Other instances can't reach it at its Public URL. Check again once that's fixed.",
+            "linksOnly": "Links only",
+            "linksOnlyHelp": "Other instances can't reach it at its Public URL, so it keeps a link open to each one it connects to. Check again after fixing that."
           },
           "check": {
             "intro": "First, whether other Thingport instances could reach this one.",
             "checking": "Checking…",
             "failed": "Couldn't check.",
-            "notReachableNow": "Other instances couldn't reach this one at its Public URL just now. Fix the address, then check again.",
             "urlSet": "The Public URL is set",
             "urlNotSet": "There's no Public URL",
             "leadsHere": "It leads back to this instance",
             "leadsHereDetail": "Answered with this instance's secret",
             "leadsElsewhere": "It doesn't lead back to this instance",
             "leadsElsewhereDetail": "Something else answers at that address",
+            "leadsElsewhereAnswered": "Something else answers there: {{answer}}",
             "noLoopback": "It didn't answer from here",
             "noLoopbackDetail": "Some routers can't reach their own public address",
-            "noAnswer": "It doesn't answer",
-            "noAnswerDetail": "Nothing answered within 8 seconds",
+            "failure": {
+              "reserved": "It's this machine or a reserved range",
+              "notFound": "Its name doesn't resolve here",
+              "notFoundDetail": "This instance can't look up {{host}}",
+              "timeout": "It doesn't answer",
+              "timeoutDetail": "Nothing answered within 8 seconds",
+              "refused": "It refuses the connection",
+              "refusedDetail": "Nothing takes connections at {{host}}",
+              "certificate": "Its certificate isn't trusted",
+              "redirect": "It answers with a redirect",
+              "failed": "It couldn't be reached"
+            },
             "addressLocal": "Its address is on your local network",
             "addressPublic": "Its address is public",
-            "addressSkipped": "Address not checked",
             "localTitle": "Local network only",
             "localText": "Instances on your network or VPN can connect with this one. Instances on the internet can't reach it, but you can still connect to them: yours keeps a link open.",
             "publicTitle": "Reachable, not confirmed yet",
             "publicText": "Instances on the internet should reach it, if your router or proxy lets them in. The first connection confirms it.",
             "unverifiedTitle": "Public, but it didn't answer itself",
             "unverifiedText": "Instances on the internet may still reach it. The first connection will tell.",
+            "linksOnlyTitle": "Links only",
+            "linksOnlyText": "Other instances can't reach this one at its Public URL. It can still connect to the ones it reaches, keeping a link open to each.",
             "unreachableTitle": "Not reachable",
             "notSetText": "Set this instance's Public URL first: other instances reach it there.",
-            "unreachableText": "Other instances couldn't reach it either. Check the Public URL, or the proxy in front of Thingport.",
+            "reservedText": "Its Public URL is this machine or a reserved range, which other instances never connect to: to each of them, localhost is itself. Set the address it has on your network.",
             "publicUrlButton": "Public URL",
             "youApprove": "You approve every instance before it connects, and can pause or block one any time.",
             "helpApprove": "Other instances' requests wait here for an admin, and so do your users' requests to reach someone elsewhere.",
@@ -2578,6 +2591,10 @@
             "matches": "The keys match",
             "linkSuggestedTitle": "{{name}} can't reach your instance",
             "linkSuggestedText": "Yours is on your network only, so it keeps a link open to {{name}} instead. Everything works both ways while it's running.",
+            "linkUnreachableTitle": "{{name}} can't reach your instance",
+            "linkUnreachableText": "Nothing reaches yours at its Public URL, so it keeps a link open to {{name}} instead. Everything works both ways while it's running.",
+            "linkUnconfirmedTitle": "{{name}} may not reach your instance",
+            "linkUnconfirmedText": "Nothing has reached yours from the internet yet, so it keeps a link open to {{name}} to be safe. Everything works both ways while it's running.",
             "linkOnTitle": "Keeping a link open to {{name}}",
             "linkOnText": "For when {{name}} can't reach your instance: yours connects out to it, and everything works both ways while it's running.",
             "linkOffTitle": "{{name}} reaches your instance directly",
@@ -2593,6 +2610,8 @@
           },
           "errors": {
             "invalid_address": "That isn't an instance's address.",
+            "no_public_url": "Set this instance's Public URL first: other instances know it by that.",
+            "reserved_address": "This instance's Public URL is this machine or a reserved range. Set the address it has on your network.",
             "same_instance": "That's this instance.",
             "unreachable": "That instance didn't answer. Is the address right, and can this instance reach it? If it's on someone's home network, ask its admin to connect to yours instead.",
             "not_thingport": "That isn't a Thingport instance.",
@@ -2856,6 +2875,15 @@
         "failed": "Couldn't save the model card choice.",
         "help": "What model cards show first. Images: the pictures a model came with, or a 3D render where it has none. 3D renders: a render of every model in your render color, or its pictures where the file can't be drawn."
       },
+      "printProfiles": {
+        "heading": "Print profiles",
+        "help": "How models imported with print profiles show them: as a list, a picker or picture tiles, with each one's print time, filament and plates. Off shows them as plain files.",
+        "off": "Off",
+        "list": "List",
+        "picker": "Picker",
+        "tiles": "Tiles",
+        "failed": "Couldn't save how print profiles are shown."
+      },
       "hoverSlideshow": {
         "heading": "Hover slideshow",
         "failed": "Couldn't save the hover slideshow choice.",
@@ -2887,7 +2915,7 @@
       "connectTitle": "Connect {{name}}",
       "disconnectTitle": "Disconnect {{name}}?",
       "disconnectMessage": "Your {{name}} key is removed, and imports from {{name}} stop working until you connect it again.",
-      "disconnectMessageShared": "The {{name}} token is removed for everyone on this Thingport, and imports from {{name}} stop working until it's connected again.",
+      "disconnectMessageShared": "The {{name}} token is removed for everyone on this Thingport instance, and imports from {{name}} stop working until it's connected again.",
       "failed": "Failed to save -- try again.",
       "comingSoon": "Coming soon"
     },
@@ -3031,7 +3059,10 @@
       "empty": "No release notes for this version yet.",
       "openGithub": "Open on GitHub",
       "zoom": "Enlarge screenshot",
-      "highlight": "Highlight"
+      "highlight": "Highlight",
+      "earlier": "Earlier releases",
+      "backToLatest": "Back to latest",
+      "latest": "Latest"
     },
     "codeBlock": {
       "copy": "Copy",
@@ -3124,7 +3155,7 @@
         "emptyAdmin": "No tools yet. Install one from the repository.",
         "emptyCreate": "No tools yet. Make your own, or ask an admin to install some.",
         "install": "Install tools",
-        "noAccess": "Tools aren't available to you on this Thingport.",
+        "noAccess": "Tools aren't available to you on this Thingport instance.",
         "dropHere": "Drop a tool here",
         "layout": "Show as",
         "layoutFlat": "One grid",
@@ -4894,6 +4925,40 @@
       "internalPlatesDivider": "{{count}} plates in this file",
       "internalPlateObjectCount_one": "{{count}} object",
       "internalPlateObjectCount_other": "{{count}} objects",
+      "profiles": {
+        "label_one": "Print profile · {{count}}",
+        "label_other": "Print profiles · {{count}}",
+        "labelOne": "Print profile",
+        "help": "Ready-to-print setups of this model, each with its own printer, settings, plates and filament. Open and Download use the one picked.",
+        "position": "{{n}} of {{count}}",
+        "designer": "Designer",
+        "community": "Community",
+        "fromDesigner": "From the designer",
+        "communityGroup": "Community",
+        "otherFiles": "Other files",
+        "otherFile": "Other file",
+        "byCreator": "by {{name}}",
+        "plates_one": "{{count}} plate",
+        "plates_other": "{{count}} plates",
+        "platesLabel": "Plates",
+        "platesInProfile_one": "{{count}} plate in this profile",
+        "platesInProfile_other": "{{count}} plates in this profile",
+        "time": "Print time",
+        "filament": "Filament",
+        "minutes": "{{m}}m",
+        "hours": "{{h}}h",
+        "hoursMinutes": "{{h}}h {{m}}m",
+        "nozzle": "{{mm}} mm nozzle",
+        "layers": "{{mm}} mm layers",
+        "infill": "{{value}} infill",
+        "walls_one": "{{count}} wall",
+        "walls_other": "{{count}} walls",
+        "supports": "supports",
+        "showMore": "Show {{count}} more",
+        "showFewer": "Show fewer",
+        "pickAria": "Print profile: {{name}}",
+        "previewPlate": "Show {{plate}} in 3D"
+      },
       "previewToolbar": {
         "label": "Preview options",
         "top": "Top",
@@ -5380,7 +5445,7 @@
         "notFound": "Collection not found."
       },
       "sync": {
-        "badgeOff": "{{provider}} is turned off on this Thingport, so nothing syncs until an admin turns it back on",
+        "badgeOff": "{{provider}} is turned off on this Thingport instance, so nothing syncs until an admin turns it back on",
         "menuProviderOff": "{{provider}} is turned off",
         "badge": "Synced with a {{provider}} collection",
         "menu": "Sync configuration",
@@ -5965,10 +6030,10 @@
           "Copy the App Token it shows and paste it below."
         ],
         "placeholder": "Paste the App Token",
-        "shared": "This token is shared by everyone on this Thingport."
+        "shared": "This token is shared by everyone on this Thingport instance."
       },
       "status": {
-        "adminOnly": "Only an admin of this Thingport can set this up.",
+        "adminOnly": "Only an admin of this Thingport instance can set this up.",
         "disabledReason": "Thingiverse: the admin hasn't configured an API key yet"
       },
       "about": {
@@ -5982,7 +6047,7 @@
         ]
       },
       "admin": {
-        "description": "Imports, collections and liked models, through this Thingport's App Token.",
+        "description": "Imports, collections and liked models, through this Thingport instance's App Token.",
         "keyStatus": {
           "set": "App Token set",
           "missing": "No App Token: Thingiverse imports won't work until one is set"
@@ -6004,7 +6069,7 @@
         }
       },
       "sync": {
-        "notConnected": "Thingiverse isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "notConnected": "Thingiverse isn't connected on this Thingport instance yet. An admin can connect it in Configuration > Providers.",
         "usernameHint": "Thingport lists your public Thingiverse collections. It only needs asking once.",
         "usernamePlaceholder": "Username or profile link",
         "showing": "Showing @{{user}}'s public collections.",
@@ -6036,7 +6101,7 @@
         ]
       },
       "admin": {
-        "description": "Models and public collections, through this Thingport's API key; bought models through each user's own MyMiniFactory account.",
+        "description": "Models and public collections, through this Thingport instance's API key; bought models through each user's own MyMiniFactory account.",
         "keyStatus": {
           "set": "API key set",
           "missing": "No API key: MyMiniFactory imports won't work until one is set"
@@ -6058,7 +6123,7 @@
         }
       },
       "sync": {
-        "notConnected": "MyMiniFactory isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "notConnected": "MyMiniFactory isn't connected on this Thingport instance yet. An admin can connect it in Configuration > Providers.",
         "usernameHint": "Thingport lists your public MyMiniFactory collections. It only needs asking once.",
         "usernamePlaceholder": "Username or profile link",
         "showing": "Showing @{{user}}'s public collections.",

@@ -18,6 +18,7 @@ import type {
   User,
 } from "@prisma/client";
 import type { AssetHome } from "./services/modelAssets";
+import type { PrintProfileOut } from "./services/printProfileService";
 import { plateThumbPath } from "./services/printService";
 import { previewImagePath } from "./services/previewImageService";
 import { preparedFilename } from "./services/preparedPrint";
@@ -121,6 +122,11 @@ export type PlateOut = {
   /** The file carries colours of its own -- a painted project, or a script's `color()` calls. True once the
    *  render found them, so its picture of the model is a colour one rather than the grey cards tint. */
   own_colors: boolean;
+  /** The provider's id of the print profile this file is, for a model imported with print profiles; null for any
+   *  other file. */
+  profile_id: string | null;
+  /** That profile as the model page shows it, on the detail fetch only (services/printProfileService.ts). */
+  profile?: PrintProfileOut | null;
 };
 
 export type PrintFileOut = {
@@ -212,6 +218,10 @@ export type PrintOut = {
   /** Set on a copy of a partner instance's model (federation/remoteCopy.ts), on the detail fetch only: where it
    *  came from. */
   copied_from_remote: RemoteOriginOut | null;
+  /** On the detail fetch of a model with print profiles: reading them now would find something new, so its owner's
+   *  model page starts that (POST /print/:id/profiles/fill); and one is already waiting or running. */
+  profiles_pending?: boolean;
+  profiles_filling?: boolean;
 };
 
 export type RemoteOriginOut = {
@@ -295,6 +305,7 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     preview_glb_url: previewGlbUrl(plate),
     render_url: renderUrl(plate, home),
     own_colors: modelColorImagePath(plate.id, home) !== null,
+    profile_id: plate.sourceInstanceId ?? null,
   };
 }
 

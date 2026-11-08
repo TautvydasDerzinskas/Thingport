@@ -25,6 +25,53 @@ export type Plate = {
   preview_glb_url?: string | null; // /plate/{plateId}/preview.glb?v=... once background pre-render finishes
   render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
   own_colors?: boolean; // the file carries colours of its own, so our picture of it is a colour render
+  /** The provider's id of the print profile this file is; null or absent for any other file (and from an older
+   *  backend). */
+  profile_id?: string | null;
+  /** That profile as the model page shows it, from the detail fetch only. */
+  profile?: PrintProfile | null;
+};
+
+export type ProfileFilament = { type: string | null; color: string | null; grams: number | null };
+
+export type ProfilePlate = {
+  /** Numbered from 1, as slicers number build plates. */
+  index: number;
+  name: string | null;
+  seconds: number | null;
+  grams: number | null;
+  filaments: ProfileFilament[];
+  objects: number | null;
+  /** /plate/{plateId}/profile-plate/{index}.png?v=...: the plate's picture from the 3MF. */
+  thumb_url: string | null;
+};
+
+/** A print profile a model was imported with, as its provider and its 3MF describe it. Unknown facts are null or
+ *  empty; without a title, the file's name stands in. */
+export type PrintProfile = {
+  title: string | null;
+  description: string | null;
+  origin: "designer" | "community" | null;
+  creator: string | null;
+  seconds: number | null;
+  grams: number | null;
+  filaments: ProfileFilament[];
+  plates: ProfilePlate[];
+  printer: string | null;
+  nozzle_mm: number | null;
+  layer_mm: number | null;
+  infill: string | null;
+  walls: number | null;
+  supports: boolean | null;
+};
+
+export type PrintProfiles = {
+  /** Reading them now would find something new: the owner's page starts it. */
+  pending: boolean;
+  /** A read is waiting or running. */
+  filling: boolean;
+  /** By plate id. */
+  profiles: Record<string, PrintProfile>;
 };
 
 export type PrintFile = {
@@ -122,6 +169,10 @@ export type Print = {
   library_copy_id?: string | null;
   /** On a copy of a partner instance's model, from the detail fetch: where it came from. */
   copied_from_remote?: RemoteOrigin | null;
+  /** From the detail fetch of a model with print profiles: reading them now would find something new, and one is
+   *  already waiting or running. */
+  profiles_pending?: boolean;
+  profiles_filling?: boolean;
 };
 
 export type ListPrintsResult = {
@@ -299,6 +350,21 @@ export const printsApi = {
     const res = await fetch(`${apiBase()}/print/${id}/quality`, { method: "POST", headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to start the quality check");
+    return res.json();
+  },
+
+  getProfiles: async (id: string): Promise<PrintProfiles> => {
+    const res = await fetch(`${apiBase()}/print/${id}/profiles`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the print profiles");
+    return res.json();
+  },
+
+  /** Starts reading what's missing of the model's print profiles; returns at once, `filling` while it runs. */
+  fillProfiles: async (id: string): Promise<PrintProfiles> => {
+    const res = await fetch(`${apiBase()}/print/${id}/profiles/fill`, { method: "POST", headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to read the print profiles");
     return res.json();
   },
 

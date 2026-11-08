@@ -91,6 +91,9 @@ model User {
   dashboardTemplates       Json?
   // What model cards lead with, one of CARD_PREVIEWS; null means "images".
   cardPreview              String?
+  // How a model page shows the print profiles a model was imported with, one of PRINT_PROFILES_VIEWS ("off" shows
+  // them as plain files); null means "picker".
+  printProfilesView        String?
   // Where Studio's assistant shows its conversation, one of STUDIO_PROMPT_LAYOUTS; null means "bar".
   studioPromptLayout       String?
   // The units a new Studio design starts in, one of STUDIO_UNITS; null means "mm".
@@ -591,9 +594,12 @@ model Plate {
   size             Int      @default(0)
   storagePath      String   @unique
   sourcePath       String?
-  // The MakerWorld profile ("instance") this file came from. Each profile's 3MF has its own print
+  // The print profile ("instance" on MakerWorld) this file came from. Each profile's 3MF has its own print
   // settings, so each gets its own Plate.
   sourceInstanceId String?
+  // What the model page shows of that profile -- its name, time, filament, plates, printer and settings -- read from
+  // its provider and its 3MF (services/printProfileService.ts StoredProfile). Null until first read.
+  profile          Json?
   // SHA-256 of the file, recorded when it's stored (with file reuse on) or when first needed. The file may be edited
   // outside Thingport, so this is checked against the file before it's relied on.
   contentSha256    String?

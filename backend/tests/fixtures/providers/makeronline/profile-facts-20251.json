@@ -1,0 +1,147 @@
+{
+  "code": 0,
+  "data": {
+    "id": 20251,
+    "user_id": "a284a6f2-d896-4e57-a791-f048276c5a15",
+    "print_profiles": [
+      {
+        "id": 8063,
+        "title": "Poop Basket Multicolor reduced material",
+        "desc": "<p>I have optimized the printing profile to reduce the material waste from 150g to 110g, also no media is needed.&nbsp;</p>",
+        "user_id": "22c67c74-d06c-491d-b2cf-df1f6a6f1dce",
+        "user_display_name": "3DPremiun",
+        "is_author": 0,
+        "print_time_label": "11h 52m 23s",
+        "printer_label": "Kobra 3、Kobra S1 Max、Kobra S1、Kobra 4、Kobra X、Kobra 3 V2、Kobra 3 Max",
+        "nozzle": "0.4",
+        "plate_count": 1,
+        "materials_label": [
+          {
+            "paint_color": "0,0,128",
+            "material_type": "PLA",
+            "filament_used_g": 0.37
+          },
+          {
+            "paint_color": "255,255,255",
+            "material_type": "PLA",
+            "filament_used_g": 103.32
+          }
+        ],
+        "files": [
+          {
+            "id": 1,
+            "name": "",
+            "print_time": "11h 52m 23s",
+            "nozzle": 0.4,
+            "layer": 0.2,
+            "materials": [
+              {
+                "paint_color": "0,0,128",
+                "material_type": "PLA",
+                "filament_used_g": 0.37
+              },
+              {
+                "paint_color": "255,255,255",
+                "material_type": "PLA",
+                "filament_used_g": 103.32
+              }
+            ],
+            "print_profile_id": 8063
+          }
+        ]
+      },
+      {
+        "id": 60776,
+        "title": "0.2mm PLA 15% Color",
+        "desc": "<p>0.2mm PLA 15% Color&nbsp;Red and Grey </p>",
+        "user_id": "1fccefe2-cf09-4086-a8b9-702b9a8118d9",
+        "user_display_name": "Logisch",
+        "is_author": 0,
+        "print_time_label": "11h 11m 54s",
+        "printer_label": "Kobra 3、Kobra S1 Max、Kobra S1、Kobra 4、Kobra X、Kobra 3 V2、Kobra 3 Max",
+        "nozzle": "0.4",
+        "plate_count": 1,
+        "materials_label": [
+          {
+            "paint_color": "255,0,0",
+            "material_type": "PLA",
+            "filament_used_g": 0.39
+          },
+          {
+            "paint_color": "128,128,128",
+            "material_type": "PLA",
+            "filament_used_g": 104.46
+          }
+        ],
+        "files": [
+          {
+            "id": 1,
+            "name": "",
+            "print_time": "11h 11m 54s",
+            "nozzle": 0.4,
+            "layer": 0.2,
+            "materials": [
+              {
+                "paint_color": "255,0,0",
+                "material_type": "PLA",
+                "filament_used_g": 0.39
+              },
+              {
+                "paint_color": "128,128,128",
+                "material_type": "PLA",
+                "filament_used_g": 104.46
+              }
+            ],
+            "print_profile_id": 60776
+          }
+        ]
+      },
+      {
+        "id": 66875,
+        "title": "Kobra 3",
+        "desc": "",
+        "user_id": "cbd84b35-759f-4ec9-9d4d-da63891e5f1c",
+        "user_display_name": "MrEndboss",
+        "is_author": 0,
+        "print_time_label": "10h 15m 26s",
+        "printer_label": "Kobra 3、Kobra S1 Max、Kobra S1、Kobra 4、Kobra X、Kobra 3 V2、Kobra 3 Max",
+        "nozzle": "0.4",
+        "plate_count": 1,
+        "materials_label": [
+          {
+            "paint_color": "0,0,0",
+            "material_type": "PLA",
+            "filament_used_g": 1.04
+          },
+          {
+            "paint_color": "64,0,64",
+            "material_type": "PLA",
+            "filament_used_g": 141.89
+          }
+        ],
+        "files": [
+          {
+            "id": 1,
+            "name": "",
+            "print_time": "10h 15m 26s",
+            "nozzle": 0.4,
+            "layer": 0.2,
+            "materials": [
+              {
+                "paint_color": "0,0,0",
+                "material_type": "PLA",
+                "filament_used_g": 1.04
+              },
+              {
+                "paint_color": "64,0,64",
+                "material_type": "PLA",
+                "filament_used_g": 141.89
+              }
+            ],
+            "print_profile_id": 66875
+          }
+        ]
+      }
+    ]
+  }
+}

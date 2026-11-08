@@ -250,6 +250,26 @@ describe("the links import queue", () => {
     expect(print!.plates).toHaveLength(2);
   });
 
+  it("adds a link's missing profiles to the model that has the rest, downloading none it has", async () => {
+    const id = String((stamp % 1_000_000_000) + 11);
+    const pageUrl = `https://makerworld.com/en/models/${id}-phoenix`;
+    const first = await waitJob((await startLinks([`${pageUrl}#profileId-1`])).body.job_id);
+    expect(first.status).toBe("DONE");
+    const fetchMock = vi.mocked(global.fetch);
+    fetchMock.mockClear();
+
+    // What Grab's "Add to the queue" sends for every missing print profile.
+    const job = await waitJob((await startLinks([pageUrl], { scope: "all" })).body.job_id);
+    expect(job.status).toBe("DONE");
+    const print = await prisma.print.findFirstOrThrow({
+      where: { sourceExternalId: id, user: { email: `links-${stamp}@example.com` } },
+      include: { plates: true },
+    });
+    expect(print.plates.map((plate) => plate.sourceInstanceId).toSorted()).toEqual(["1", "2"]);
+    const downloads = fetchMock.mock.calls.map(([input]) => String(input)).filter((url) => url.includes("/f3mf"));
+    expect(downloads).toEqual([expect.stringContaining("/instance/2/f3mf")]);
+  });
+
   it("lists each link with its status and failure reason", async () => {
     const goodId = String((stamp % 1_000_000_000) + 9);
     const badId = String((stamp % 1_000_000_000) + 10);

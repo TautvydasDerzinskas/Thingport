@@ -155,8 +155,8 @@ tab starts a run over your library and lists what's waiting for review.
   <img src="../../frontend/src/assets/screenshots/light/38_ai_categorization.png" alt="AI Categorization settings: which AI, the mode, categorizing new imports and sending the first preview image" width="100%">
 </picture>
 
-Once a feature is on, it's there for everyone on this Thingport, and each person's runs and suggestions cover their own
-library.
+Once a feature is on, it's there for everyone on this Thingport instance, and each person's runs and suggestions cover
+their own library.
 
 ### Studio assistant
 

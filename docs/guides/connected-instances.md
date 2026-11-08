@@ -15,9 +15,10 @@ This guide is the admin's step by step. For what connecting gives the people on 
 ## Before you start
 
 - **Social features on.** Connected instances build on them: **Administration → Social → Social features**.
-- **A Public URL other instances can reach.** It's set under **Administration → Auth → Public URL**, for example
-  `http://192.168.1.20:8080` or `https://things.example.org`. The instances must be able to reach each other there, or
-  at least one the other (see [When one instance can't be reached](#when-one-instance-cant-be-reached)):
+- **A Public URL**, the address other instances know this one by. It's set under **Administration → Auth → Public
+  URL**, for example `http://192.168.1.20:8080` or `https://things.example.org`. The instances must be able to reach
+  each other there, or at least one the other (see
+  [When one instance can't be reached](#when-one-instance-cant-be-reached)):
   - **On one network or VPN** (a home LAN, Tailscale, WireGuard), that just works, over plain HTTP too.
   - **Over the internet**, the instance needs a public address: a port forwarded on your router, a reverse proxy or a
     tunnel. Everything goes to paths under `/api/`, which every Thingport setup already sends to the backend, so a
@@ -35,12 +36,23 @@ could reach it, without asking anyone outside:
 
 The result is one of:
 
-| Result                                  | Meaning                                                                                                                                                                                      |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Local network only**                  | Instances on your network or VPN can connect. Instances on the internet can't reach it, but it can still connect to them through a link.                                                     |
-| **Reachable, not confirmed yet**        | A public address that answered. Instances on the internet should reach it, if your router or proxy lets them in. The first partner that reaches it confirms it, and the status then says so. |
-| **Public, but it didn't answer itself** | A public address that didn't answer from inside. Some routers can't reach their own public address; outside instances may still reach it. The first connection will tell.                    |
-| **Not reachable**                       | There's no Public URL, something else answers there, or nothing does. It can't be turned on until that's fixed.                                                                              |
+| Result                                  | Meaning                                                                                                                                                                                                        |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Local network only**                  | Instances on your network or VPN can connect. Instances on the internet can't reach it, but it can still connect to them through a link.                                                                       |
+| **Reachable, not confirmed yet**        | A public address that answered. Instances on the internet should reach it, if your router or proxy lets them in. The first partner that reaches it confirms it, and the status then says so.                   |
+| **Public, but it didn't answer itself** | A public address that didn't answer from inside. Some routers can't reach their own public address; outside instances may still reach it. The first connection will tell.                                      |
+| **Links only**                          | Nothing answered at the Public URL, or something else did. Other instances can't connect to this one, but it can still connect to the ones it reaches, keeping a link open to each.                            |
+| **Not reachable**                       | There's no Public URL, or it's this machine (`localhost`, `127.0.0.1`) or a reserved range such as link-local `169.254.x.x`, which other instances never connect to. It can't be turned on until that's fixed. |
+
+When the Public URL didn't lead back here, the check says what it found: nothing answering within 8 seconds, a name
+this instance can't look up, a refused connection, a certificate it doesn't trust, a redirect (instances don't follow
+them), or what something else answered with.
+
+> [!NOTE]
+> **A certificate of your own**, a self-signed one say, isn't trusted by other instances, or by this one checking
+> itself, so the check finds **Links only**. Links don't need it. For instances on your network to connect to this one
+> too, each of them has to trust it, this one included: point the `NODE_EXTRA_CA_CERTS` environment variable at the
+> certificate inside the container. Or use plain HTTP on your network.
 
 **Check again** on the page runs the check whenever you change something.
 
@@ -71,7 +83,8 @@ instances that reach each other.
 
 - **The one that can't be reached connects.** The other can't look it up: looking it up there says to answer your
   request instead. **Connect to an instance** turns on **Keep a link open** by itself when this instance is on your
-  network only and the other is on the internet; switch it on yourself if theirs can't reach yours for another reason.
+  network only and the other is on the internet, and for every instance while this one is **Links only**; switch it on
+  yourself if theirs can't reach yours for another reason.
 - **The key is how they know it's you.** Their admin can't check your address from there, so compare the key as usual.
   Your request shows there as reaching them through a link.
 - **While your instance is off**, what's said to your people waits on their side and arrives once it's back, and their

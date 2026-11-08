@@ -1,0 +1,116 @@
+{
+  "code": 0,
+  "data": {
+    "id": "2116512779451957248",
+    "modelId": "G4555401",
+    "authorId": "2047049039551672366",
+    "settingInfoList": [
+      {
+        "settingOutId": "G4697158",
+        "id": "2116512779879776256",
+        "settingName": "0.2mm layer, 2 walls, 15% infill",
+        "settingContent": "<p>🍬 <strong>Sweet Twist – Functional Candy Dispenser</strong></p><p>Parts are arranged for easy printing and assembly. The components can be printed in different colors to create your own unique combination.</p><p>The rotating dispensing mechanism, refillable lid and collection tray are printed separately.</p><p>An illustrated assembly guide is included.</p><p><strong>Recommended:</strong> PLA, 0.2 mm layer height, 2 walls and 15% infill.&nbsp;</p><p>Enjoy printing your own Sweet Twist! 💕</p>",
+        "isCreator": true,
+        "userId": "2047049039551672366",
+        "filamentType": ["PLA", "PLA", "PLA", "PLA"],
+        "filamentColour": ["#FEC600", "#00B1B7", "#EC008C", "#0000FF"],
+        "author": {
+          "userId": "U0038273319",
+          "nickname": "Ams Design"
+        },
+        "settingParamList": [
+          {
+            "printTime": 440.0,
+            "filamentWeightG": 235.31,
+            "layerHeightMm": 0.2,
+            "nozzleDiameterMm": 0.4,
+            "wallLoops": 2,
+            "infillDensity": 15.0,
+            "supportEnabled": false,
+            "printerModel": null,
+            "materialList": [
+              {
+                "materialName": "PLA",
+                "materialColor": "#00B1B7",
+                "materialWeight": null
+              },
+              {
+                "materialName": "PLA",
+                "materialColor": "#EC008C",
+                "materialWeight": null
+              },
+              {
+                "materialName": "PLA",
+                "materialColor": "#FEC600",
+                "materialWeight": null
+              },
+              {
+                "materialName": "PLA",
+                "materialColor": "#0000FF",
+                "materialWeight": null
+              }
+            ]
+          }
+        ],
+        "plateList": [
+          {
+            "plateIndex": 0,
+            "plateName": "Plate 1",
+            "printTime": 276.0,
+            "filamentWeightG": 160.26,
+            "materialList": [
+              {
+                "materialName": "PLA",
+                "materialColor": "#00B1B7",
+                "materialWeight": 160.26,
+                "filamentColourIndex": 1
+              }
+            ]
+          },
+          {
+            "plateIndex": 1,
+            "plateName": "Plate 2",
+            "printTime": 57.0,
+            "filamentWeightG": 22.47,
+            "materialList": [
+              {
+                "materialName": "PLA",
+                "materialColor": "#EC008C",
+                "materialWeight": 22.47,
+                "filamentColourIndex": 2
+              }
+            ]
+          },
+          {
+            "plateIndex": 2,
+            "plateName": "Plate 3",
+            "printTime": 92.0,
+            "filamentWeightG": 45.43,
+            "materialList": [
+              {
+                "materialName": "PLA",
+                "materialColor": "#FEC600",
+                "materialWeight": 45.43,
+                "filamentColourIndex": 0
+              }
+            ]
+          },
+          {
+            "plateIndex": 3,
+            "plateName": "Plate 4",
+            "printTime": 16.0,
+            "filamentWeightG": 7.15,
+            "materialList": [
+              {
+                "materialName": "PLA",
+                "materialColor": "#0000FF",
+                "materialWeight": 7.15,
+                "filamentColourIndex": 3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

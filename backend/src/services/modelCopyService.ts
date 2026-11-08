@@ -109,6 +109,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
                 mime: plate.mime,
                 copyFromPath: from,
                 sourceInstanceId: plate.sourceInstanceId,
+                profile: plate.profile,
               },
             ]
           : [],

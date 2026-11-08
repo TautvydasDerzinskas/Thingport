@@ -207,6 +207,59 @@ describe("release notes", () => {
     }
   });
 
+  it("reads an earlier release's notes from the archive, and lists the releases that have some", async () => {
+    const files: Record<string, string> = {
+      "/release-notes/latest-release-notes.json": JSON.stringify({
+        version: "1.2.0",
+        title: "Latest title",
+        items: [{ type: "feature", title: "Curated feature" }],
+      }),
+      "/release-notes/archive/1.1.0.json": JSON.stringify({
+        version: "1.1.0",
+        title: "Archived title",
+        items: [{ type: "feature", title: "Archived feature", images: [{ src: "screenshots/1.1.0-shot.webp" }] }],
+      }),
+      // Named for one release but holding another's, so it's never shown as the one it's named for.
+      "/release-notes/archive/1.1.1.json": JSON.stringify({
+        version: "1.1.0",
+        items: [{ type: "fix", title: "Wrong" }],
+      }),
+      "/backend/CHANGELOG.md": BACKEND_CHANGELOG,
+      "/frontend/CHANGELOG.md": FRONTEND_CHANGELOG,
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const body = files[new URL(String(input)).pathname];
+      return new Response(body ?? "", { status: body ? 200 : 404 });
+    });
+    try {
+      clearReleaseNotesCache();
+      const latest = await getReleaseNotes({ version: "1.2.0" }, "https://notes.example");
+      expect(latest?.earlier).toEqual([{ version: "1.1.0", title: "Archived title" }]);
+
+      const archived = await getReleaseNotes({ version: "1.1.0" }, "https://notes.example");
+      expect(archived).toMatchObject({ source: "curated", version: "1.1.0", title: "Archived title", earlier: [] });
+      // Its pictures are where they were when it was the latest file.
+      expect(archived?.items[0].images[0].url).toBe("https://notes.example/release-notes/screenshots/1.1.0-shot.webp");
+
+      // A release without notes of its own comes from the changelog, with the earlier ones still offered.
+      const patch = await getReleaseNotes({ version: "1.1.1" }, "https://notes.example");
+      expect(patch?.source).toBe("changelog");
+      expect(patch?.earlier.map((release) => release.version)).toEqual(["1.1.0"]);
+
+      // A hotfix shows the notes of the release it fixes, which aren't offered again beside them.
+      const hotfix = await getReleaseNotes({ version: "1.2.1" }, "https://notes.example");
+      expect(hotfix?.title).toBe("Latest title");
+      expect(hotfix?.earlier.map((release) => release.version)).toEqual(["1.1.0"]);
+
+      // A release whose notes aren't written yet offers the latest file's among the earlier ones.
+      const next = await getReleaseNotes({ version: "1.3.0" }, "https://notes.example");
+      expect(next?.earlier.map((release) => release.version)).toEqual(["1.2.0", "1.1.0"]);
+    } finally {
+      fetchMock.mockRestore();
+      clearReleaseNotesCache();
+    }
+  });
+
   it("resolves curated screenshots against the file and drops unsafe ones", () => {
     const notes = parseCuratedNotes(
       {

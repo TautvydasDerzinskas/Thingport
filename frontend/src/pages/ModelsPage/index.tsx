@@ -22,6 +22,7 @@ import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { buildCategoryTree, subtreeIds } from "../../utils/categoryTree";
 import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import { useCategoriesView } from "../../hooks/useCategoriesView";
 import CategoriesPanel from "./CategoriesPanel";
@@ -68,10 +69,11 @@ export default function ModelsPage({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [items, setItems] = useState<Print[]>([]);
-  const [loading, setLoading] = useState(false);
+  // The category reaches the address only after it's been picked, so it's named here too: picking one is a new list.
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
+    extra: categoryId ?? "",
+  });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
   const selection = useModelSelection(items);
   const [searchParams, setSearchParams] = useSearchParams();
   const [categoriesView, setCategoriesView] = useCategoriesView();
@@ -203,7 +205,9 @@ export default function ModelsPage({
 
   useEffect(() => {
     const run = ++listRun.current;
-    const background = isBackgroundReload();
+    // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
+    const kept = returning();
+    const background = isBackgroundReload() || kept !== null;
     if (!background) setLoading(true);
     (async () => {
       try {
@@ -217,7 +221,7 @@ export default function ModelsPage({
             generative: generative || undefined,
             hide_providers: hiddenProviders,
             order_by: sortMode,
-            limit: background ? keepLoaded(PAGE_SIZE, items.length) : PAGE_SIZE,
+            limit: background ? keepLoaded(PAGE_SIZE, kept ?? items.length) : PAGE_SIZE,
             offset: 0,
           });
           if (run !== listRun.current) return;

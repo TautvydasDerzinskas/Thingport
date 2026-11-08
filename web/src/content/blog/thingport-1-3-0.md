@@ -65,8 +65,8 @@ approve them.
 The first one, **Weather scene**, draws the weather as an animated sky. To share a widget you made, download it for
 publishing from **Mine** and open a pull request against
 [community-widgets](https://github.com/TautvydasDerzinskas/Thingport/tree/main/community-widgets); once it's merged,
-every Thingport can install it. Admins can turn users' own and community widgets on or off under **Administration →
-Dashboard**, and see who uses which.
+every Thingport instance can install it. Admins can turn users' own and community widgets on or off under
+**Administration → Dashboard**, and see who uses which.
 
 ## Two new sites: eufyMake and Pinshape
 
@@ -131,11 +131,11 @@ from Thingport without Bridge. More in [Slicers](/docs/features/slicers/).
 
 ## Thingport Grab: Thingiverse in dark mode, without ads
 
-Thingport Grab, updated through your browser's extension store, adds extras that work even without a Thingport: a dark
-theme for Thingiverse that follows your system theme, and hiding Thingiverse's banners, ad cards and video ads. Each
-can be switched off in the popup.
+Thingport Grab, updated through your browser's extension store, adds extras that work even without a Thingport instance:
+a dark theme for Thingiverse that follows your system theme, and hiding Thingiverse's banners, ad cards and video ads.
+Each can be switched off in the popup.
 
-![Extras that work without a Thingport](../../../../release-notes/screenshots/1.3.0-grab-features.webp)
+![Extras that work without a Thingport instance](../../../../release-notes/screenshots/1.3.0-grab-features.webp)
 
 The popup gets a dark theme of its own, and a History tab with your recent imports and the last models you opened.
 Disconnect now also removes Grab's connection from your Thingport profile. See [Thingport Grab](/docs/grab/).

@@ -57,7 +57,7 @@ const SECTIONS: FeatureSection[] = [
     short: "Providers",
     icon: "globe",
     title: "Choose where models come from",
-    intro: `All ${PROVIDER_NAMES.length} sites Thingport imports from are on by default. Turn off any this Thingport shouldn't use.`,
+    intro: `All ${PROVIDER_NAMES.length} sites Thingport imports from are on by default. Turn off any this Thingport instance shouldn't use.`,
     points: [
       "A provider that's off is off for everyone: links to it, Thingport Grab and the import queue are refused, and it's hidden from each person's provider settings.",
       "Its synced collections pause and background jobs skip it. Models already imported from it stay as they are.",
@@ -144,7 +144,7 @@ const SECTIONS: FeatureSection[] = [
     short: "Users",
     icon: "users",
     title: "Manage the people using it",
-    intro: "Everyone with an account on this Thingport, with what they've stored and how they sign in.",
+    intro: "Everyone with an account on this Thingport instance, with what they've stored and how they sign in.",
     points: [
       "Model and collection counts per person, and whether their MakerWorld account is connected.",
       "Make members admins. Only the instance owner, the first account, can take that back.",
@@ -215,8 +215,8 @@ const MORE = [
     <span class="eyebrow" data-pagefind-ignore>Features · Administration</span>
     <h1>Everything an admin needs, in the browser</h1>
     <p>
-      The first account on a Thingport is its admin. Administration, in the sidebar, has a page for each part of the
-      instance, so there's no config file to edit after the first start.
+      The first account on a Thingport instance is its admin. Administration, in the sidebar, has a page for each part
+      of the instance, so there's no config file to edit after the first start.
     </p>
     <FeatureJump sections={[...SECTIONS, { id: "more", short: "And more", icon: "sliders" }]} />
   </div>

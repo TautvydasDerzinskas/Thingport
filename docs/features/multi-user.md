@@ -1,6 +1,6 @@
 # Multi-user
 
-One Thingport, separate libraries for everyone in the household or workshop. Each person has their own models,
+One Thingport instance, separate libraries for everyone in the household or workshop. Each person has their own models,
 collections, categories, tags and settings. Imports take turns in one line for the whole server, but everyone has their
 own [import queue](importing.md#the-import-queue) and sees other people's imports there only as private rows.
 

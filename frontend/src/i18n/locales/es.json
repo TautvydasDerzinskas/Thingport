@@ -215,7 +215,7 @@
         "copied": "Copiado",
         "failed": "Algo ha salido mal con tu token de API. Inténtalo de nuevo.",
         "mcp": {
-          "adminOff": "Un administrador ha desactivado MCP en este Thingport.",
+          "adminOff": "Un administrador ha desactivado MCP en esta instancia de Thingport.",
           "adminReadOnly": "Un administrador solo permite las herramientas de lectura.",
           "copyCommand": "Copiar comando",
           "heading": "MCP",
@@ -1208,7 +1208,7 @@
         "noExport": "El script no tiene una función export default.",
         "failed": "{{name}} se detuvo con un error",
         "removed": "Este widget se eliminó.",
-        "off": "Los widgets personalizados están desactivados en este Thingport.",
+        "off": "Los widgets personalizados están desactivados en esta instancia de Thingport.",
         "title": "Widgets personalizados",
         "tabs": {
           "mine": "Míos",
@@ -1237,7 +1237,7 @@
         "installed": "{{name}} instalado",
         "isInstalled": "Instalado",
         "retry": "Reintentar",
-        "communityError": "No se pudieron cargar los widgets de la comunidad. Comprueba que este Thingport puede acceder a GitHub.",
+        "communityError": "No se pudieron cargar los widgets de la comunidad. Comprueba que esta instancia de Thingport puede acceder a GitHub.",
         "communityEmpty": "Aún no hay widgets de la comunidad. Sé el primero: mira Crear y compartir.",
         "reaches_one": "Accede a {{count}} host",
         "reaches_other": "Accede a {{count}} hosts",
@@ -1333,7 +1333,7 @@
           "publish1": "Descarga tu widget desde Míos (⋮ y luego Descargar para publicar).",
           "publish2": "Haz un fork del repositorio de Thingport y descomprímelo en la carpeta <folder>community-widgets</folder>.",
           "publish3": "Añade el nombre de su carpeta a community-widgets/index.json y explica qué hace en su README.md.",
-          "publish4": "Abre un pull request. Cuando se fusione, cualquier Thingport podrá instalarlo.",
+          "publish4": "Abre un pull request. Cuando se fusione, cualquier instancia de Thingport podrá instalarlo.",
           "guide": "Leer la guía completa"
         },
         "ai": {
@@ -2571,35 +2571,48 @@
             "unreachable": "Inalcanzable",
             "localHelp": "Solo las instancias de tu red o VPN pueden llegar a esta. Aun así puedes conectarte a las de internet: la tuya mantiene un enlace abierto con ellas.",
             "publicHelp": "Las instancias de internet pueden llegar a ella si tu router o proxy las deja pasar. Lo confirma una asociada que llegue.",
-            "unreachableHelp": "Otras instancias no pueden llegar a ella en su URL pública. Comprueba de nuevo cuando esté arreglado."
+            "unreachableHelp": "Otras instancias no pueden llegar a ella en su URL pública. Comprueba de nuevo cuando esté arreglado.",
+            "linksOnly": "Solo enlaces",
+            "linksOnlyHelp": "Otras instancias no pueden llegar a ella en su URL pública, así que mantiene un enlace abierto con cada una a la que se conecta. Comprueba de nuevo cuando esté arreglado."
           },
           "check": {
             "intro": "Primero, si otras instancias de Thingport podrían llegar a esta.",
             "checking": "Comprobando…",
             "failed": "No se pudo comprobar.",
-            "notReachableNow": "Otras instancias no han podido llegar a esta en su URL pública. Corrige la dirección y vuelve a comprobarlo.",
             "urlSet": "La URL pública está definida",
             "urlNotSet": "No hay URL pública",
             "leadsHere": "Lleva de vuelta a esta instancia",
             "leadsHereDetail": "Respondió con el secreto de esta instancia",
             "leadsElsewhere": "No lleva a esta instancia",
             "leadsElsewhereDetail": "En esa dirección responde otra cosa",
+            "leadsElsewhereAnswered": "En esa dirección responde otra cosa: {{answer}}",
             "noLoopback": "No respondió desde aquí",
             "noLoopbackDetail": "Algunos routers no alcanzan su propia dirección pública",
-            "noAnswer": "No responde",
-            "noAnswerDetail": "Nada respondió en 8 segundos",
+            "failure": {
+              "reserved": "Es esta máquina o un rango reservado",
+              "notFound": "Su nombre no se resuelve aquí",
+              "notFoundDetail": "Esta instancia no encuentra {{host}}",
+              "timeout": "No responde",
+              "timeoutDetail": "Nada respondió en 8 segundos",
+              "refused": "Rechaza la conexión",
+              "refusedDetail": "Nada acepta conexiones en {{host}}",
+              "certificate": "Su certificado no es de confianza",
+              "redirect": "Responde con una redirección",
+              "failed": "No se pudo llegar a ella"
+            },
             "addressLocal": "Su dirección está en tu red local",
             "addressPublic": "Su dirección es pública",
-            "addressSkipped": "Dirección sin comprobar",
             "localTitle": "Solo red local",
             "localText": "Las instancias de tu red o VPN pueden conectarse con esta. Las de internet no pueden llegar a ella, pero aun así puedes conectarte a ellas: la tuya mantiene un enlace abierto.",
             "publicTitle": "Alcanzable, sin confirmar",
             "publicText": "Las instancias de internet deberían llegar a ella, si tu router o proxy las deja pasar. La primera conexión lo confirma.",
             "unverifiedTitle": "Pública, pero no se respondió a sí misma",
             "unverifiedText": "Puede que las instancias de internet sí lleguen. La primera conexión lo dirá.",
+            "linksOnlyTitle": "Solo enlaces",
+            "linksOnlyText": "Otras instancias no pueden llegar a esta en su URL pública. Aun así puede conectarse a las que alcanza, manteniendo un enlace abierto con cada una.",
             "unreachableTitle": "Inalcanzable",
             "notSetText": "Define primero la URL pública de esta instancia: allí la alcanzan las demás.",
-            "unreachableText": "Otras instancias tampoco podrían llegar. Revisa la URL pública o el proxy que hay delante de Thingport.",
+            "reservedText": "Su URL pública es esta máquina o un rango reservado, al que otras instancias nunca se conectan: para cada una, localhost es ella misma. Define la dirección que tiene en tu red.",
             "publicUrlButton": "URL pública",
             "youApprove": "Apruebas cada instancia antes de que se conecte, y puedes pausarla o bloquearla cuando quieras.",
             "helpApprove": "Las solicitudes de otras instancias esperan aquí a un administrador, igual que las de tus usuarios para llegar a alguien de fuera.",
@@ -2619,6 +2632,10 @@
             "matches": "Las claves coinciden",
             "linkSuggestedTitle": "{{name}} no puede llegar a tu instancia",
             "linkSuggestedText": "La tuya solo está en tu red, así que mantiene un enlace abierto con {{name}}. Todo funciona en ambos sentidos mientras esté en marcha.",
+            "linkUnreachableTitle": "{{name}} no puede llegar a tu instancia",
+            "linkUnreachableText": "Nada llega a la tuya en su URL pública, así que mantiene un enlace abierto con {{name}}. Todo funciona en ambos sentidos mientras esté en marcha.",
+            "linkUnconfirmedTitle": "Puede que {{name}} no llegue a tu instancia",
+            "linkUnconfirmedText": "Nada ha llegado aún a la tuya desde internet, así que mantiene un enlace abierto con {{name}} por si acaso. Todo funciona en ambos sentidos mientras esté en marcha.",
             "linkOnTitle": "Manteniendo un enlace abierto con {{name}}",
             "linkOnText": "Para cuando {{name}} no puede llegar a tu instancia: la tuya se conecta a ella, y todo funciona en ambos sentidos mientras esté en marcha.",
             "linkOffTitle": "{{name}} llega a tu instancia directamente",
@@ -2634,6 +2651,8 @@
           },
           "errors": {
             "invalid_address": "Esa no es la dirección de una instancia.",
+            "no_public_url": "Define primero la URL pública de esta instancia: las demás la conocen por ella.",
+            "reserved_address": "La URL pública de esta instancia es esta máquina o un rango reservado. Define la dirección que tiene en tu red.",
             "same_instance": "Esa es esta instancia.",
             "unreachable": "Esa instancia no respondió. ¿Es correcta la dirección y puede esta instancia llegar a ella? Si está en la red doméstica de alguien, pide a su administrador que se conecte a la tuya.",
             "not_thingport": "Esa no es una instancia de Thingport.",
@@ -2898,6 +2917,15 @@
         "failed": "No se pudo guardar la opción de las tarjetas de modelos.",
         "help": "Lo que muestran primero las tarjetas de modelos. Imágenes: las imágenes que trae el modelo, o un render 3D si no tiene ninguna. Renders 3D: un render de cada modelo en tu color del render, o sus imágenes si el archivo no se puede dibujar."
       },
+      "printProfiles": {
+        "heading": "Perfiles de impresión",
+        "help": "Cómo se muestran los perfiles de impresión de los modelos importados con ellos: en lista, en un selector o como mosaicos con imagen, con el tiempo de impresión, el filamento y las placas de cada uno. Desactivado los muestra como simples archivos.",
+        "off": "Desactivado",
+        "list": "Lista",
+        "picker": "Selector",
+        "tiles": "Mosaico",
+        "failed": "No se pudo guardar cómo se muestran los perfiles de impresión."
+      },
       "hoverSlideshow": {
         "heading": "Presentación al pasar el cursor",
         "failed": "No se pudo guardar la opción de la presentación al pasar el cursor.",
@@ -2929,7 +2957,7 @@
       "connectTitle": "Conectar {{name}}",
       "disconnectTitle": "¿Desconectar {{name}}?",
       "disconnectMessage": "Se elimina tu clave de {{name}} y las importaciones desde {{name}} dejan de funcionar hasta que vuelvas a conectarlo.",
-      "disconnectMessageShared": "El token de {{name}} se elimina para todos en este Thingport, y las importaciones desde {{name}} dejan de funcionar hasta que se vuelva a conectar.",
+      "disconnectMessageShared": "El token de {{name}} se elimina para todos en esta instancia de Thingport, y las importaciones desde {{name}} dejan de funcionar hasta que se vuelva a conectar.",
       "failed": "No se pudo guardar. Inténtalo de nuevo.",
       "comingSoon": "Próximamente"
     },
@@ -3073,7 +3101,10 @@
       "empty": "Aún no hay notas para esta versión.",
       "openGithub": "Abrir en GitHub",
       "zoom": "Ampliar captura",
-      "highlight": "Destacado"
+      "highlight": "Destacado",
+      "earlier": "Versiones anteriores",
+      "backToLatest": "Volver a la más reciente",
+      "latest": "La más reciente"
     },
     "codeBlock": {
       "copy": "Copiar",
@@ -3166,7 +3197,7 @@
         "emptyAdmin": "Aún no hay herramientas. Instala alguna desde el repositorio.",
         "emptyCreate": "Aún no hay herramientas. Crea la tuya o pide a un administrador que instale alguna.",
         "install": "Instalar herramientas",
-        "noAccess": "Las herramientas no están disponibles para ti en este Thingport.",
+        "noAccess": "Las herramientas no están disponibles para ti en esta instancia de Thingport.",
         "dropHere": "Suelta una herramienta aquí",
         "layout": "Mostrar como",
         "layoutFlat": "Una cuadrícula",
@@ -4954,6 +4985,40 @@
       "internalPlatesDivider": "{{count}} placas en este archivo",
       "internalPlateObjectCount_one": "{{count}} objeto",
       "internalPlateObjectCount_other": "{{count}} objetos",
+      "profiles": {
+        "label_one": "Perfil de impresión · {{count}}",
+        "label_other": "Perfiles de impresión · {{count}}",
+        "labelOne": "Perfil de impresión",
+        "help": "Configuraciones de este modelo listas para imprimir, cada una con su impresora, ajustes, placas y filamento. Abrir y Descargar usan la elegida.",
+        "position": "{{n}} de {{count}}",
+        "designer": "Diseñador",
+        "community": "Comunidad",
+        "fromDesigner": "Del diseñador",
+        "communityGroup": "Comunidad",
+        "otherFiles": "Otros archivos",
+        "otherFile": "Otro archivo",
+        "byCreator": "de {{name}}",
+        "plates_one": "{{count}} placa",
+        "plates_other": "{{count}} placas",
+        "platesLabel": "Placas",
+        "platesInProfile_one": "{{count}} placa en este perfil",
+        "platesInProfile_other": "{{count}} placas en este perfil",
+        "time": "Tiempo de impresión",
+        "filament": "Filamento",
+        "minutes": "{{m}} min",
+        "hours": "{{h}} h",
+        "hoursMinutes": "{{h}} h {{m}} min",
+        "nozzle": "boquilla de {{mm}} mm",
+        "layers": "capas de {{mm}} mm",
+        "infill": "{{value}} de relleno",
+        "walls_one": "{{count}} pared",
+        "walls_other": "{{count}} paredes",
+        "supports": "soportes",
+        "showMore": "Mostrar {{count}} más",
+        "showFewer": "Mostrar menos",
+        "pickAria": "Perfil de impresión: {{name}}",
+        "previewPlate": "Ver {{plate}} en 3D"
+      },
       "previewToolbar": {
         "label": "Opciones de vista previa",
         "top": "Superior",
@@ -5440,7 +5505,7 @@
         "notFound": "Colección no encontrada."
       },
       "sync": {
-        "badgeOff": "{{provider}} está desactivado en este Thingport, así que no se sincroniza nada hasta que un administrador lo vuelva a activar",
+        "badgeOff": "{{provider}} está desactivado en esta instancia de Thingport, así que no se sincroniza nada hasta que un administrador lo vuelva a activar",
         "menuProviderOff": "{{provider}} está desactivado",
         "badge": "Sincronizada con una colección de {{provider}}",
         "menu": "Configuración de sincronización",
@@ -6028,10 +6093,10 @@
           "Copia el token de aplicación que aparece y pégalo abajo."
         ],
         "placeholder": "Pega el token de aplicación",
-        "shared": "Este token lo comparten todos los usuarios de este Thingport."
+        "shared": "Este token lo comparten todos los usuarios de esta instancia de Thingport."
       },
       "status": {
-        "adminOnly": "Solo un administrador de este Thingport puede configurar esto.",
+        "adminOnly": "Solo un administrador de esta instancia de Thingport puede configurar esto.",
         "disabledReason": "Thingiverse: el administrador aún no ha configurado una clave de API"
       },
       "about": {
@@ -6045,7 +6110,7 @@
         ]
       },
       "admin": {
-        "description": "Importaciones, colecciones y modelos que te gustan, mediante el token de aplicación de este Thingport.",
+        "description": "Importaciones, colecciones y modelos que te gustan, mediante el token de aplicación de esta instancia de Thingport.",
         "keyStatus": {
           "set": "Token de aplicación configurado",
           "missing": "Sin token de aplicación: las importaciones de Thingiverse no funcionarán hasta que se configure uno"
@@ -6067,7 +6132,7 @@
         }
       },
       "sync": {
-        "notConnected": "Thingiverse aún no está conectado en este Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
+        "notConnected": "Thingiverse aún no está conectado en esta instancia de Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
         "usernameHint": "Thingport muestra tus colecciones públicas de Thingiverse. Solo hace falta pedirlo una vez.",
         "usernamePlaceholder": "Nombre de usuario o enlace del perfil",
         "showing": "Mostrando las colecciones públicas de @{{user}}.",
@@ -6099,7 +6164,7 @@
         ]
       },
       "admin": {
-        "description": "Modelos y colecciones públicas, mediante la clave de API de este Thingport; los modelos comprados, mediante la cuenta de MyMiniFactory de cada usuario.",
+        "description": "Modelos y colecciones públicas, mediante la clave de API de esta instancia de Thingport; los modelos comprados, mediante la cuenta de MyMiniFactory de cada usuario.",
         "keyStatus": {
           "set": "Clave de API configurada",
           "missing": "Sin clave de API: las importaciones de MyMiniFactory no funcionarán hasta que se configure una"
@@ -6121,7 +6186,7 @@
         }
       },
       "sync": {
-        "notConnected": "MyMiniFactory aún no está conectado en este Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
+        "notConnected": "MyMiniFactory aún no está conectado en esta instancia de Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
         "usernameHint": "Thingport muestra tus colecciones públicas de MyMiniFactory. Solo hace falta pedirlo una vez.",
         "usernamePlaceholder": "Nombre de usuario o enlace del perfil",
         "showing": "Mostrando las colecciones públicas de @{{user}}.",

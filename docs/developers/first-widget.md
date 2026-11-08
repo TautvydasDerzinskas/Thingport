@@ -279,4 +279,4 @@ them back as the files a widget is shared as, and this is its metadata:
   `onResize` for a panel that changes shape.
 - [Recipes](recipes.md): a panel of the library's totals, and one following an OctoPrint printer.
 - [Your first tool](first-tool.md), for something that opens in its own window.
-- [Publishing](publishing.md), to offer it to every Thingport.
+- [Publishing](publishing.md), to offer it to every Thingport instance.

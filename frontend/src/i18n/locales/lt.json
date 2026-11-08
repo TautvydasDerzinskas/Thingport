@@ -360,7 +360,7 @@
           "writeConfirmTitle": "Leisti asistentui naudoti „{{tool}}“?",
           "writeConfirmMessage": "Šis įrankis keičia jūsų biblioteką. Su šiuo raktu prijungtas asistentas galės jį naudoti kiekvieną kartą jūsų neklausdamas. Jis niekada netrina modelių.",
           "writeConfirm": "Įjungti",
-          "adminOff": "Administratorius šiame Thingport išjungė MCP.",
+          "adminOff": "Administratorius šiame Thingport serveryje išjungė MCP.",
           "adminReadOnly": "Administratorius leidžia tik skaitančius įrankius.",
           "copyCommand": "Kopijuoti komandą",
           "reads": "Skaito biblioteką",
@@ -1216,7 +1216,7 @@
         "noExport": "Skripte nėra export default funkcijos.",
         "failed": "{{name}} sustojo dėl klaidos",
         "removed": "Šis valdiklis pašalintas.",
-        "off": "Šiame Thingport pasirinktiniai valdikliai išjungti.",
+        "off": "Šiame Thingport serveryje pasirinktiniai valdikliai išjungti.",
         "title": "Pasirinktiniai valdikliai",
         "tabs": {
           "mine": "Mano",
@@ -1245,7 +1245,7 @@
         "installed": "„{{name}}“ įdiegtas",
         "isInstalled": "Įdiegtas",
         "retry": "Bandyti dar kartą",
-        "communityError": "Nepavyko įkelti bendruomenės valdiklių. Patikrinkite, ar šis Thingport pasiekia GitHub.",
+        "communityError": "Nepavyko įkelti bendruomenės valdiklių. Patikrinkite, ar šis Thingport serveris pasiekia GitHub.",
         "communityEmpty": "Bendruomenės valdiklių dar nėra. Būkite pirmas: žr. „Kurti ir dalintis“.",
         "reaches_one": "Pasiekia {{count}} serverį",
         "reaches_other": "Pasiekia {{count}} serverių",
@@ -1343,7 +1343,7 @@
           "publish1": "Atsisiųskite valdiklį skiltyje „Mano“ (⋮, tada „Atsisiųsti publikavimui“).",
           "publish2": "Sukurkite Thingport saugyklos kopiją (fork) ir išskleiskite jį į aplanką <folder>community-widgets</folder>.",
           "publish3": "Įrašykite aplanko pavadinimą į community-widgets/index.json ir aprašykite valdiklį README.md faile.",
-          "publish4": "Atidarykite pull request. Kai jis bus priimtas, kiekvienas Thingport galės jį įdiegti.",
+          "publish4": "Atidarykite pull request. Kai jis bus priimtas, kiekvienas Thingport serveris galės jį įdiegti.",
           "guide": "Skaityti visą vadovą"
         },
         "ai": {
@@ -2628,35 +2628,48 @@
             "unreachable": "Nepasiekiamas",
             "localHelp": "Šį serverį pasiekia tik jūsų tinklo ar VPN serveriai. Prie interneto serverių vis tiek galite prisijungti: jūsų serveris laiko atvirą ryšį su jais.",
             "publicHelp": "Interneto serveriai jį pasiekia, jei leidžia jūsų maršrutizatorius ar tarpinis serveris. Tai patvirtina jį pasiekęs partneris.",
-            "unreachableHelp": "Kiti serveriai jo nepasiekia viešu adresu. Patikrinkite dar kartą tai sutvarkę."
+            "unreachableHelp": "Kiti serveriai jo nepasiekia viešu adresu. Patikrinkite dar kartą tai sutvarkę.",
+            "linksOnly": "Tik per ryšius",
+            "linksOnlyHelp": "Kiti serveriai jo nepasiekia viešu adresu, todėl jis laiko atvirą ryšį su kiekvienu, prie kurio jungiasi. Patikrinkite dar kartą tai sutvarkę."
           },
           "check": {
             "intro": "Pirmiausia – ar kiti Thingport serveriai galėtų pasiekti šį.",
             "checking": "Tikrinama…",
             "failed": "Nepavyko patikrinti.",
-            "notReachableNow": "Kiti serveriai ką tik negalėjo pasiekti šio serverio jo viešu adresu. Pataisykite adresą ir patikrinkite dar kartą.",
             "urlSet": "Viešas adresas nustatytas",
             "urlNotSet": "Viešas adresas nenustatytas",
             "leadsHere": "Jis veda atgal į šį serverį",
             "leadsHereDetail": "Atsakė šio serverio paslaptimi",
             "leadsElsewhere": "Jis neveda į šį serverį",
             "leadsElsewhereDetail": "Tuo adresu atsako kažkas kita",
+            "leadsElsewhereAnswered": "Ten atsako kažkas kita: {{answer}}",
             "noLoopback": "Iš čia neatsakė",
             "noLoopbackDetail": "Kai kurie maršrutizatoriai nepasiekia savo viešo adreso",
-            "noAnswer": "Neatsako",
-            "noAnswerDetail": "Per 8 sekundes niekas neatsakė",
+            "failure": {
+              "reserved": "Tai šis kompiuteris arba rezervuotas diapazonas",
+              "notFound": "Jo vardas čia nerandamas",
+              "notFoundDetail": "Šis serveris neranda {{host}}",
+              "timeout": "Neatsako",
+              "timeoutDetail": "Per 8 sekundes niekas neatsakė",
+              "refused": "Jungtis atmesta",
+              "refusedDetail": "{{host}} niekas nepriima jungčių",
+              "certificate": "Jo sertifikatu nepasitikima",
+              "redirect": "Atsako peradresavimu",
+              "failed": "Nepavyko pasiekti"
+            },
             "addressLocal": "Adresas yra jūsų vietiniame tinkle",
             "addressPublic": "Adresas viešas",
-            "addressSkipped": "Adresas netikrintas",
             "localTitle": "Tik vietinis tinklas",
             "localText": "Prisijungti gali jūsų tinklo ar VPN serveriai. Interneto serveriai šio nepasiekia, bet prie jų vis tiek galite prisijungti: jūsų serveris laiko atvirą ryšį.",
             "publicTitle": "Pasiekiamas, dar nepatvirtinta",
             "publicText": "Interneto serveriai turėtų jį pasiekti, jei leidžia jūsų maršrutizatorius ar tarpinis serveris. Tai patvirtins pirmasis sujungimas.",
             "unverifiedTitle": "Viešas, bet sau neatsakė",
             "unverifiedText": "Interneto serveriai vis tiek gali jį pasiekti. Paaiškės per pirmąjį sujungimą.",
+            "linksOnlyTitle": "Tik per ryšius",
+            "linksOnlyText": "Kiti serveriai šio nepasiekia viešu adresu. Jis vis tiek gali jungtis prie tų, kuriuos pasiekia, laikydamas atvirą ryšį su kiekvienu.",
             "unreachableTitle": "Nepasiekiamas",
             "notSetText": "Pirmiausia nustatykite šio serverio viešą adresą: juo jį pasiekia kiti serveriai.",
-            "unreachableText": "Kiti serveriai jo irgi nepasiektų. Patikrinkite viešą adresą arba tarpinį serverį prieš Thingport.",
+            "reservedText": "Jo viešas adresas yra šis kompiuteris arba rezervuotas diapazonas, prie kurio kiti serveriai niekada nesijungia: kiekvienam iš jų localhost reiškia jį patį. Nustatykite adresą, kurį jis turi jūsų tinkle.",
             "publicUrlButton": "Viešas adresas",
             "youApprove": "Kiekvieną serverį patvirtinate prieš jam prisijungiant ir bet kada galite jį pristabdyti ar užblokuoti.",
             "helpApprove": "Kitų serverių prašymai laukia administratoriaus čia, kaip ir jūsų naudotojų prašymai pasiekti ką nors kitur.",
@@ -2676,6 +2689,10 @@
             "matches": "Raktai sutampa",
             "linkSuggestedTitle": "{{name}} nepasiekia jūsų serverio",
             "linkSuggestedText": "Jūsų serveris pasiekiamas tik jūsų tinkle, todėl jis pats laiko atvirą ryšį su {{name}}. Kol jis veikia, viskas veikia abiem kryptimis.",
+            "linkUnreachableTitle": "{{name}} nepasiekia jūsų serverio",
+            "linkUnreachableText": "Jūsų serverio viešu adresu niekas nepasiekia, todėl jis pats laiko atvirą ryšį su {{name}}. Kol jis veikia, viskas veikia abiem kryptimis.",
+            "linkUnconfirmedTitle": "{{name}} gali nepasiekti jūsų serverio",
+            "linkUnconfirmedText": "Iš interneto jūsų serverio dar niekas nepasiekė, todėl dėl viso pikto jis pats laiko atvirą ryšį su {{name}}. Kol jis veikia, viskas veikia abiem kryptimis.",
             "linkOnTitle": "Laikomas atviras ryšys su {{name}}",
             "linkOnText": "Kai {{name}} nepasiekia jūsų serverio: jūsų serveris jungiasi pats, ir kol jis veikia, viskas veikia abiem kryptimis.",
             "linkOffTitle": "{{name}} jūsų serverį pasiekia tiesiogiai",
@@ -2691,6 +2708,8 @@
           },
           "errors": {
             "invalid_address": "Tai ne serverio adresas.",
+            "no_public_url": "Pirmiausia nustatykite šio serverio viešą adresą: juo jį pažįsta kiti serveriai.",
+            "reserved_address": "Šio serverio viešas adresas yra šis kompiuteris arba rezervuotas diapazonas. Nustatykite adresą, kurį jis turi jūsų tinkle.",
             "same_instance": "Tai šis serveris.",
             "unreachable": "Tas serveris neatsakė. Ar adresas teisingas ir ar šis serveris jį pasiekia? Jei jis kieno nors namų tinkle, paprašykite jo administratoriaus prisijungti prie jūsų.",
             "not_thingport": "Tai ne Thingport serveris.",
@@ -2981,6 +3000,15 @@
         "failed": "Nepavyko išsaugoti modelių kortelių pasirinkimo.",
         "help": "Ką modelių kortelės rodo pirmiausia. Nuotraukos: paveikslėliai, su kuriais modelis atkeliavo, arba 3D vaizdas, jei jų nėra. 3D vaizdai: kiekvieno modelio vaizdas jūsų atvaizdo spalva arba jo nuotraukos, jei failo nupiešti nepavyksta."
       },
+      "printProfiles": {
+        "heading": "Spausdinimo profiliai",
+        "help": "Kaip rodomi modelių, importuotų su spausdinimo profiliais, profiliai: sąrašu, parinkikliu ar paveikslėlių plytelėmis, su kiekvieno spausdinimo laiku, gija ir plokštėmis. Išjungus jie rodomi kaip paprasti failai.",
+        "off": "Išjungta",
+        "list": "Sąrašas",
+        "picker": "Parinkiklis",
+        "tiles": "Plytelės",
+        "failed": "Nepavyko išsaugoti, kaip rodomi spausdinimo profiliai."
+      },
       "hoverSlideshow": {
         "heading": "Skaidrės užvedus",
         "failed": "Nepavyko išsaugoti skaidrių užvedus nustatymo.",
@@ -3012,7 +3040,7 @@
       "connectTitle": "Prijungti {{name}}",
       "disconnectTitle": "Atjungti {{name}}?",
       "disconnectMessage": "Jūsų {{name}} raktas bus pašalintas, o importavimas iš {{name}} neveiks, kol vėl prijungsite.",
-      "disconnectMessageShared": "{{name}} raktas bus pašalintas visiems šio Thingport naudotojams, o importavimas iš {{name}} neveiks, kol jis vėl bus prijungtas.",
+      "disconnectMessageShared": "{{name}} raktas bus pašalintas visiems šio Thingport serverio naudotojams, o importavimas iš {{name}} neveiks, kol jis vėl bus prijungtas.",
       "failed": "Nepavyko išsaugoti -- bandykite dar kartą.",
       "comingSoon": "Jau netrukus"
     },
@@ -3156,7 +3184,10 @@
       "empty": "Šiai versijai naujienų dar nėra.",
       "openGithub": "Atidaryti GitHub",
       "zoom": "Padidinti ekrano vaizdą",
-      "highlight": "Svarbiausia"
+      "highlight": "Svarbiausia",
+      "earlier": "Ankstesnės versijos",
+      "backToLatest": "Grįžti į naujausią",
+      "latest": "Naujausia"
     },
     "codeBlock": {
       "copy": "Kopijuoti",
@@ -3249,7 +3280,7 @@
         "emptyAdmin": "Kol kas nėra įrankių. Įdiekite kurį nors iš saugyklos.",
         "emptyCreate": "Kol kas nėra įrankių. Susikurkite savo arba paprašykite administratoriaus įdiegti.",
         "install": "Įdiegti įrankius",
-        "noAccess": "Šiame Thingport įrankiai jums neprieinami.",
+        "noAccess": "Šiame Thingport serveryje įrankiai jums neprieinami.",
         "dropHere": "Numesk įrankį čia",
         "layout": "Rodyti kaip",
         "layoutFlat": "Vieną tinklelį",
@@ -5063,6 +5094,44 @@
       "internalPlateObjectCount_one": "{{count}} objektas",
       "internalPlateObjectCount_few": "{{count}} objektai",
       "internalPlateObjectCount_other": "{{count}} objektų",
+      "profiles": {
+        "label_one": "Spausdinimo profilis · {{count}}",
+        "label_few": "Spausdinimo profiliai · {{count}}",
+        "label_other": "Spausdinimo profiliai · {{count}}",
+        "labelOne": "Spausdinimo profilis",
+        "help": "Paruošti spausdinti šio modelio nustatymai, kiekvienas su savo spausdintuvu, nustatymais, plokštėmis ir gija. Atidaryti ir Atsisiųsti naudoja pasirinktą.",
+        "position": "{{n}} iš {{count}}",
+        "designer": "Dizaineris",
+        "community": "Bendruomenė",
+        "fromDesigner": "Iš dizainerio",
+        "communityGroup": "Bendruomenė",
+        "otherFiles": "Kiti failai",
+        "otherFile": "Kitas failas",
+        "byCreator": "sukūrė {{name}}",
+        "plates_one": "{{count}} plokštė",
+        "plates_few": "{{count}} plokštės",
+        "plates_other": "{{count}} plokščių",
+        "platesLabel": "Plokštės",
+        "platesInProfile_one": "{{count}} plokštė šiame profilyje",
+        "platesInProfile_few": "{{count}} plokštės šiame profilyje",
+        "platesInProfile_other": "{{count}} plokščių šiame profilyje",
+        "time": "Spausdinimo laikas",
+        "filament": "Gija",
+        "minutes": "{{m}} min.",
+        "hours": "{{h}} val.",
+        "hoursMinutes": "{{h}} val. {{m}} min.",
+        "nozzle": "{{mm}} mm antgalis",
+        "layers": "{{mm}} mm sluoksniai",
+        "infill": "{{value}} užpildas",
+        "walls_one": "{{count}} sienelė",
+        "walls_few": "{{count}} sienelės",
+        "walls_other": "{{count}} sienelių",
+        "supports": "atramos",
+        "showMore": "Rodyti dar {{count}}",
+        "showFewer": "Rodyti mažiau",
+        "pickAria": "Spausdinimo profilis: {{name}}",
+        "previewPlate": "Rodyti {{plate}} 3D peržiūroje"
+      },
       "previewToolbar": {
         "label": "Peržiūros parinktys",
         "top": "Viršus",
@@ -5560,7 +5629,7 @@
         "notFound": "Kolekcija nerasta."
       },
       "sync": {
-        "badgeOff": "{{provider}} šiame Thingport išjungtas, todėl niekas nesinchronizuojama, kol administratorius jo vėl neįjungs",
+        "badgeOff": "{{provider}} šiame Thingport serveryje išjungtas, todėl niekas nesinchronizuojama, kol administratorius jo vėl neįjungs",
         "menuProviderOff": "{{provider}} išjungtas",
         "badge": "Sinchronizuojama su {{provider}} kolekcija",
         "menu": "Sinchronizavimo konfigūracija",
@@ -6255,10 +6324,10 @@
           "Nukopijuokite rodomą App Token ir įklijuokite jį žemiau."
         ],
         "placeholder": "Įklijuokite App Token",
-        "shared": "Šis raktas bendras visiems šio Thingport naudotojams."
+        "shared": "Šis raktas bendras visiems šio Thingport serverio naudotojams."
       },
       "status": {
-        "adminOnly": "Tai nustatyti gali tik šio Thingport administratorius.",
+        "adminOnly": "Tai nustatyti gali tik šio Thingport serverio administratorius.",
         "disabledReason": "Thingiverse: administratorius dar nesukonfigūravo API rakto"
       },
       "about": {
@@ -6272,7 +6341,7 @@
         ]
       },
       "admin": {
-        "description": "Importai, kolekcijos ir patikę modeliai, naudojant šio Thingport programėlės raktą.",
+        "description": "Importai, kolekcijos ir patikę modeliai, naudojant šio Thingport serverio programėlės raktą.",
         "keyStatus": {
           "set": "Programėlės raktas nustatytas",
           "missing": "Nėra programėlės rakto: Thingiverse importai neveiks, kol jo nenustatysite"
@@ -6294,7 +6363,7 @@
         }
       },
       "sync": {
-        "notConnected": "Thingiverse šiame Thingport dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
+        "notConnected": "Thingiverse šiame Thingport serveryje dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
         "usernameHint": "Thingport parodys jūsų viešas Thingiverse kolekcijas. Paklausiama tik kartą.",
         "usernamePlaceholder": "Vartotojo vardas arba profilio nuoroda",
         "showing": "Rodomos viešos @{{user}} kolekcijos.",
@@ -6326,7 +6395,7 @@
         ]
       },
       "admin": {
-        "description": "Modeliai ir viešos kolekcijos, naudojant šio Thingport API raktą; nusipirkti modeliai – per kiekvieno naudotojo MyMiniFactory paskyrą.",
+        "description": "Modeliai ir viešos kolekcijos, naudojant šio Thingport serverio API raktą; nusipirkti modeliai – per kiekvieno naudotojo MyMiniFactory paskyrą.",
         "keyStatus": {
           "set": "API raktas nustatytas",
           "missing": "Nėra API rakto: MyMiniFactory importai neveiks, kol jo nenustatysite"
@@ -6348,7 +6417,7 @@
         }
       },
       "sync": {
-        "notConnected": "MyMiniFactory šiame Thingport dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
+        "notConnected": "MyMiniFactory šiame Thingport serveryje dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
         "usernameHint": "Thingport parodys jūsų viešas MyMiniFactory kolekcijas. Paklausiama tik kartą.",
         "usernamePlaceholder": "Vartotojo vardas arba profilio nuoroda",
         "showing": "Rodomos viešos @{{user}} kolekcijos.",

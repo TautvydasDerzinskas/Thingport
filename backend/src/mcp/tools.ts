@@ -21,6 +21,7 @@ import {
 } from "../services/collectionService";
 import { getDashboardSummary } from "../services/dashboardService";
 import { printOutById } from "../services/printLoader";
+import type { PrintProfileOut } from "../services/printProfileService";
 import { listPrints, PRINT_SORT_MODES, SELF_AUTHOR_ID, type PrintListPage } from "../services/printQuery";
 import { search } from "../services/searchService";
 import { getImportTask, startImportTask, type ImportTaskState } from "../services/importTaskService";
@@ -176,12 +177,40 @@ const listModels: McpToolDefinition = {
   },
 };
 
+const minutes = (seconds: number | null) => (seconds == null ? null : Math.round(seconds / 60));
+
+/** A print profile as get_model gives it: plain names and units an assistant can quote. */
+function profileForAi(profile: PrintProfileOut) {
+  return {
+    name: profile.title,
+    made_by: profile.origin,
+    creator: profile.creator,
+    printer: profile.printer,
+    nozzle_mm: profile.nozzle_mm,
+    layer_height_mm: profile.layer_mm,
+    infill: profile.infill,
+    walls: profile.walls,
+    supports: profile.supports,
+    print_time_minutes: minutes(profile.seconds),
+    filament_grams: profile.grams,
+    filaments: profile.filaments,
+    plates: profile.plates.map((plate) => ({
+      number: plate.index,
+      name: plate.name,
+      print_time_minutes: minutes(plate.seconds),
+      filament_grams: plate.grams,
+    })),
+  };
+}
+
 const getModel: McpToolDefinition = {
   name: "get_model",
   title: "Get a model",
   description:
     "Everything about one model: its description, files, tags, category, author, collections, where it was " +
-    "imported from, and how often it was viewed and printed. Change it with edit_model.",
+    "imported from, and how often it was viewed and printed. A file that is one of the print profiles the model was " +
+    "imported with carries `print_profile`: its name, whether the designer or the community made it, the printer, " +
+    "settings, print time in minutes, filament in grams, and its build plates. Change it with edit_model.",
   readOnly: true,
   inputSchema: { id: z.string().min(1).describe("The model's id, from search_models or list_models.") },
   async run(ctx, args) {
@@ -205,7 +234,11 @@ const getModel: McpToolDefinition = {
             links: print.author.links,
           }
         : null,
-      files: print.plates.map((plate) => ({ name: plate.filename, size_bytes: plate.size })),
+      files: print.plates.map((plate) => ({
+        name: plate.filename,
+        size_bytes: plate.size,
+        ...(plate.profile ? { print_profile: profileForAi(plate.profile) } : {}),
+      })),
       supporting_file_count: print.supporting_file_count,
       image_count: print.preview_images.length,
       total_size_bytes: print.total_size,
@@ -1308,7 +1341,7 @@ const listToolsTool: McpToolDefinition = {
       note: access.canCreate
         ? undefined
         : access.canUse
-          ? "Users' own tools are off on this Thingport: an admin turns them on under Administration > Tools."
+          ? "Users' own tools are off on this Thingport instance: an admin turns them on under Administration > Tools."
           : "Tools aren't available to this user: an admin turns them on under Administration > Tools.",
       tools: tools.map((tool) => ({
         id: tool.id,

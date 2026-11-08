@@ -136,8 +136,14 @@ import {
   withStoredMakerworldCookie,
 } from "./makerworld/session";
 import { liftCaptchaCooloffByHand } from "./makerworld/captcha";
+import { makerworldProfileFacts } from "./makerworld/profileFacts";
+import { snapmakerProfileFacts } from "./snapmaker/profileFacts";
+import { makeronlineProfileFacts } from "./makeronline/profileFacts";
+import { crealitycloudProfileFacts } from "./crealitycloud/profileFacts";
+import { nexprintProfileFacts } from "./nexprint/profileFacts";
 import type { GrabImportOptions } from "./makeronline/grabImports";
 import type { ImportCookies } from "../services/importResolvers";
+import type { ProviderProfileFactsById } from "../services/printProfileFacts";
 
 /** A provider's ids for the starter categories, by their path ("Parent/Child"). */
 export type StarterCategories = Readonly<Record<string, readonly (number | string)[]>>;
@@ -173,6 +179,10 @@ export type ProviderBackend = {
   ): Promise<{ title: string | null; urls: string[] }>;
   /** A job of its own that imports a model's print profiles as one model, where they don't import the shared way. */
   profilesJob?(jobId: string, userId: string, body: ProfilesImportJobBody): Promise<void>;
+  /** Each of a model's print profiles as the provider describes it in public, by the id its plates are tagged with: what
+   *  the model page shows of them (services/printProfileService.ts). `profileIds` are the ones wanted, for a provider
+   *  that reads each profile apart. Null when the provider doesn't know the model. */
+  profileFacts?(userId: string, externalId: string, profileIds: string[]): Promise<ProviderProfileFactsById | null>;
   /** Remembers its sign-in turned down, for a provider whose imports don't themselves. */
   markRejected?(userId: string): Promise<void>;
   stopTexts?: StopTexts;
@@ -247,6 +257,7 @@ export const PROVIDERS = {
     browse: makerworldBrowse,
     trending: makerworldTrending,
     details: makerworldDetails,
+    profileFacts: makerworldProfileFacts,
     profileUrls: listMakerworldProfileUrls,
     // Loaded when it runs: the import runner it shares reaches this registry.
     profilesJob: async (jobId, userId, body) =>
@@ -312,6 +323,7 @@ export const PROVIDERS = {
     browse: snapmakerBrowse,
     trending: snapmakerTrending,
     details: snapmakerDetails,
+    profileFacts: snapmakerProfileFacts,
   },
   makeronline: {
     starterCategories: makeronlineCategories,
@@ -329,6 +341,7 @@ export const PROVIDERS = {
     browse: makeronlineBrowse,
     trending: makeronlineTrending,
     details: makeronlineDetails,
+    profileFacts: makeronlineProfileFacts,
   },
   crealitycloud: {
     starterCategories: crealitycloudCategories,
@@ -340,6 +353,7 @@ export const PROVIDERS = {
     browse: crealitycloudBrowse,
     trending: crealitycloudTrending,
     details: crealitycloudDetails,
+    profileFacts: crealitycloudProfileFacts,
     keptId: crealitycloudKeptId,
   },
   nexprint: {
@@ -352,6 +366,7 @@ export const PROVIDERS = {
     browse: nexprintBrowse,
     trending: nexprintTrending,
     details: nexprintDetails,
+    profileFacts: nexprintProfileFacts,
   },
   thangs: {
     starterCategories: thangsCategories,

@@ -13,6 +13,7 @@ import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import { collectionDisplayName } from "../../utils/collectionDisplay";
 import ModelCard from "../ModelsPage/ModelCard";
@@ -52,14 +53,15 @@ export default function CollectionDetailPage({
   const { collectionId } = useParams<{ collectionId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation(["models", "common"]);
-  const [collection, setCollection] = useState<Collection | null>(null);
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning, restored } = useRememberedList<
+    Print,
+    Collection | null
+  >({ loadingAtFirst: true, alongside: (): Collection | null => collection });
+  const [collection, setCollection] = useState<Collection | null>(restored ?? null);
   const [syncOpen, setSyncOpen] = useState(false);
   const [notFound, setNotFound] = useState(false);
-  const [items, setItems] = useState<Print[]>([]);
-  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(items.length);
   const finishedVersion = useFinishedVersion();
   const isBackgroundReload = useBackgroundReload(finishedVersion);
   // A page on its way when the list reloads belongs to the old list, and is dropped.
@@ -139,7 +141,10 @@ export default function CollectionDetailPage({
     if (!collectionId) return;
     let cancelled = false;
     listRun.current += 1;
-    const background = isBackgroundReload();
+    // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
+    const kept = returning();
+    if (kept !== null) setOffset(kept);
+    const background = isBackgroundReload() || kept !== null;
     if (!background) {
       setLoading(true);
       setNotFound(false);
@@ -153,7 +158,7 @@ export default function CollectionDetailPage({
             generative: generative || undefined,
             hide_providers: hiddenProviders,
             order_by: sortMode,
-            limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
+            limit: background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
             offset: 0,
           }),
         ]);

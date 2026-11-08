@@ -107,6 +107,7 @@ import { importingQuietly } from "../utils/quietImport";
 import { Prisma } from "@prisma/client";
 import type { Author, Plate, PreviewImage, Print } from "@prisma/client";
 import { assertUrlProviderEnabled } from "./providerSettingsService";
+import { scheduleProfileFill } from "./printProfileService";
 
 /** createPrint's options for an import, which checks the description itself once it's complete: importPrintFromUrl. */
 const IMPORTED = { describe: false };
@@ -708,20 +709,31 @@ function requestedProfileOf(provider: string, url: string): string | null {
 /** `state` refines already_imported for a MakerWorld URL naming a profile: "profile_missing"
  *  when every plate is a different profile, "profile_unknown" when some plates predate profile
  *  tracking. already_imported stays for older extension versions. `gaps` is what "Fetch
- *  missing details" could fill on the library's model. */
+ *  missing details" could fill on the library's model. `imported_profile_ids` are the source's
+ *  print profile ids the library's model has a file of, so Grab can tell which of a page's
+ *  profiles are missing without asking about each one; files from before profiles were tracked,
+ *  or added by hand, aren't in it. */
 export type ImportStatus = {
   recognized: boolean;
   already_imported: boolean;
   print_id: string | null;
   state: "not_imported" | "imported" | "profile_missing" | "profile_unknown";
   gaps: SourceGap[];
+  imported_profile_ids: string[];
 };
 
 /** Never fetches the provider's page, so it's cheap enough for the extension to call on every
  * page load. */
 export async function checkImportStatus(userId: string, url: string): Promise<ImportStatus> {
   const source = identifySourceModel(url);
-  if (!source) return { recognized: false, already_imported: false, print_id: null, state: "not_imported", gaps: [] };
+  const notImported: Omit<ImportStatus, "recognized"> = {
+    already_imported: false,
+    print_id: null,
+    state: "not_imported",
+    gaps: [],
+    imported_profile_ids: [],
+  };
+  if (!source) return { recognized: false, ...notImported };
   const include = {
     plates: { select: { sourceInstanceId: true } },
     previewImages: { select: { generated: true } },
@@ -741,16 +753,18 @@ export async function checkImportStatus(userId: string, url: string): Promise<Im
       });
     }
   }
-  if (!print) return { recognized: true, already_imported: false, print_id: null, state: "not_imported", gaps: [] };
+  if (!print) return { recognized: true, ...notImported };
   const gaps = openSourceGaps(print, print.previewImages);
+  const profileIds = [...new Set(print.plates.flatMap((plate) => plate.sourceInstanceId ?? []))];
+  const held = { print_id: print.id, gaps, imported_profile_ids: profileIds };
   // Without a profile in the URL, any imported profile counts; asking MakerWorld on every page
   // view isn't worth it.
   const requestedInstanceId = requestedProfileOf(source.provider, url);
-  if (requestedInstanceId && !print.plates.some((plate) => plate.sourceInstanceId === requestedInstanceId)) {
+  if (requestedInstanceId && !profileIds.includes(requestedInstanceId)) {
     const state = print.plates.some((plate) => plate.sourceInstanceId == null) ? "profile_unknown" : "profile_missing";
-    return { recognized: true, already_imported: false, print_id: print.id, state, gaps };
+    return { recognized: true, already_imported: false, state, ...held };
   }
-  return { recognized: true, already_imported: true, print_id: print.id, state: "imported", gaps };
+  return { recognized: true, already_imported: true, state: "imported", ...held };
 }
 
 /** Inverse of identifySourceModel, for the "Open in {Provider}" link. */
@@ -866,6 +880,7 @@ async function addProfilePlate(
         if ((await plateContentSha256(plate)) !== downloadedSha) continue;
         try {
           await prisma.plate.update({ where: { id: plate.id }, data: { sourceInstanceId: instanceId } });
+          scheduleProfileFill(existing.print.id);
         } catch (err) {
           // Race guard: a concurrent import of this same profile won.
           if (!isUniqueConstraintError(err)) throw err;

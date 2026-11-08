@@ -808,8 +808,11 @@ describe("upgrading to the import queue", () => {
     });
 
     it("reads a link's status the same, in line or not", async () => {
+      // Held, or the worker can import the link before the read and it reads as imported.
+      holdImportWorker();
       const id = designId();
-      await post(alice, "/import?queue=1", { url: modelUrl(id) });
+      const waiting = await post(alice, "/import?queue=1", { url: modelUrl(id) });
+      expect(await statusOf(waiting.body.job_id)).toBe("QUEUED");
       const { body } = await get(alice, `/import/status?url=${encodeURIComponent(modelUrl(id))}`);
       expect(body).toEqual({
         recognized: true,
@@ -817,6 +820,7 @@ describe("upgrading to the import queue", () => {
         print_id: null,
         state: "not_imported",
         gaps: [],
+        imported_profile_ids: [],
       });
     });
 

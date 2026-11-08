@@ -5,143 +5,60 @@
   <img src=".github/assets/thingport-ascii-light.gif" alt="Thingport" width="320">
 </picture>
 
-<h3>Your personal 3D model library.</h3>
+<h3>Keep every model that matters.</h3>
 
 <p>
-Collect, organize, preview, and manage your 3D printing models<br>
-from the places where you discover them.
+A self-hosted library that imports, organises, designs, and never loses your favourites 3d print models.
 </p>
 
 <p>
-  <a href="https://thingport.net/"><b>Website</b></a> ·
-  <a href="https://thingport.net/docs/">Docs</a> ·
-  <a href="https://thingport.net/features/">Features</a> ·
-  <a href="https://thingport.net/blog/">Blog</a>
-</p>
-
-<p>
-  <a href="https://thingport.net/"><img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/web-pages.yml/badge.svg" alt="Website build"></a>
-  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/frontend-image.yml/badge.svg" alt="Frontend">
-  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml/badge.svg" alt="Backend">
-  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml/badge.svg" alt="Slicer Bridge">
-  <img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/extension-release.yml/badge.svg" alt="Thingport Grab">
-  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml"><img src="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml/badge.svg" alt="Regression pack"></a>
+  <a href="https://thingport.net/"><img src="https://img.shields.io/badge/Thingport.net-008a00?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSI%2BPHBhdGggZD0iTTM1LjM4MiAxMS4zMDFRNDAgOC42MzUgNDQuNjE4IDExLjMwMUw2Mi41NDUgMjEuNjUxUTY3LjE2MyAyNC4zMTcgNjcuMTYzIDI5LjY1TDY3LjE2MyA1MC4zNVE2Ny4xNjMgNTUuNjgyIDYyLjU0NSA1OC4zNDlMNDQuNjE4IDY4LjY5OVE0MCA3MS4zNjUgMzUuMzgyIDY4LjY5OUwxNy40NTUgNTguMzQ5UTEyLjgzNyA1NS42ODMgMTIuODM3IDUwLjM1TDEyLjgzNyAyOS42NVExMi44MzcgMjQuMzE4IDE3LjQ1NSAyMS42NTFaIiBzdHJva2U9IiNGRkZGRkYiIHN0cm9rZS13aWR0aD0iNS4yNyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8%2BPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTQyLjI2NCAzNy4yODVRNDAgMzguNTkyIDM3LjczNiAzNy4yODVMMjcuMjg2IDMxLjI1MlEyNS4wMjIgMjkuOTQ1IDI3LjI4NiAyOC42MzdMMzcuNzM2IDIyLjYwNFE0MCAyMS4yOTcgNDIuMjY0IDIyLjYwNEw1Mi43MTQgMjguNjM3UTU0Ljk3OCAyOS45NDQgNTIuNzE0IDMxLjI1MloiLz48cGF0aCBmaWxsPSIjRkZGRkZGIiBkPSJNMzYuNTE3IDM5LjM5N1EzOC43ODEgNDAuNzA0IDM4Ljc4MSA0My4zMThMMzguNzgxIDU1LjM4NVEzOC43ODEgNTcuOTk5IDM2LjUxNyA1Ni42OTJMMjYuMDY3IDUwLjY1OVEyMy44MDMgNDkuMzUyIDIzLjgwMyA0Ni43MzdMMjMuODAzIDM0LjY3MVEyMy44MDMgMzIuMDU2IDI2LjA2NyAzMy4zNjNaIi8%2BPHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTQxLjIxOSA0My4zMThRNDEuMjE5IDQwLjcwNCA0My40ODMgMzkuMzk3TDUzLjkzMyAzMy4zNjNRNTYuMTk3IDMyLjA1NiA1Ni4xOTcgMzQuNjcxTDU2LjE5NyA0Ni43MzdRNTYuMTk3IDQ5LjM1MiA1My45MzMgNTAuNjU5TDQzLjQ4MyA1Ni42OTJRNDEuMjE5IDU3Ljk5OSA0MS4yMTkgNTUuMzg1WiIvPjwvc3ZnPg%3D%3D" alt="Thingport.net"></a>
+  <a href="https://thingport.net/docs/"><img src="https://img.shields.io/badge/Docs-1e2746" alt="Docs"></a>
+  <a href="https://thingport.net/features/"><img src="https://img.shields.io/badge/Features-1e2746" alt="Features"></a>
+  <a href="https://thingport.net/blog/"><img src="https://img.shields.io/badge/Blog-1e2746" alt="Blog"></a>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/chip-divider-dark.svg"><img src="docs/assets/readme/chip-divider-light.svg" width="13" height="20" alt=""></picture>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/web-pages.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fweb-pages.json" alt="Website: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/frontend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Ffrontend-image.json" alt="Frontend: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/backend-image.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fbackend-image.json" alt="Backend: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/bridge-release.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fbridge-release.json" alt="Bridge: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/extension-release.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fextension-release.json" alt="Extension: latest build"></a>
+  <a href="https://github.com/TautvydasDerzinskas/Thingport/actions/workflows/regression.yml"><img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FTautvydasDerzinskas%2FThingport%2Frefs%2Fheads%2Fci%2Fstatus-badges%2Fregression.json" alt="Regression: latest build"></a>
 </p>
 
 </div>
 
 ## About
 
-To put it simply, if you're into 3D printing, you probably look for models across multiple platforms, with **MakerWorld, Printables, Thingiverse, and MyMiniFactory** being some of the most popular ones. And, if you're anything like me, you've probably built up quite a collection of bookmarked models across these sites.
+To put it simply, if you're into 3D printing, you probably hunt for models across MakerWorld, Printables, Thingiverse, MyMiniFactory and a bunch of other sites. And if you're anything like me, you've ended up with a scattered collection of bookmarks and downloads that lives everywhere and nowhere.
 
-But there's a problem.
+Then models disappear. Authors update them and the version you loved is gone. Or the internet just decides to take a day off.
 
-Sometimes, authors remove their models, and when you come back looking for something you bookmarked months ago, it's simply gone. Other times, authors update their models, and you discover that you actually preferred the older version.
+Thingport is a self-hosted 3D model library that pulls everything into one place you actually own. It imports from a long list of providers, keeps your collections in sync, and makes sure new bookmarks land in your library automatically.
 
-And sometimes... the internet goes down. 🙃
+Beyond that, it’s a proper workshop: AI that can improve descriptions and categorize models, a built-in CAD studio that can generate parts from a single prompt (or let you design by hand), print-quality checks, OpenSCAD support, and a growing set of tools. You can also share models with your household or connect different Thingport instances.
 
-Wouldn't it be nice to have your entire collection available locally, even when you're offline?
+Your collection stays yours — offline, organised, and ready whenever you need it.
 
-That's exactly what **Thingport** is here to solve.
+## Demo
 
-**Thingport is a self-hosted 3D model library designed to make importing and syncing models between your own library and external providers as seamless as possible.**
-
-You can sync collections from supported providers directly to your Thingport instance. And with collection syncing enabled, new models you bookmark on external sites can be automatically imported into your personal library.
-
-No more worrying about losing access to your favourite models. Your library stays yours.
-
-## Screenshots
-
-Have in mind that these screenshots follow your GitHub theme (matches it). Thingport has a light and a dark theme, or follows your system's.
-
-<table>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/01_dashboard.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/01_dashboard.png"><img src="frontend/src/assets/screenshots/light/01_dashboard.png" width="100%" alt="Dashboard"></picture></a><br><sub><b>Dashboard</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/02_dashboard_customize.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/02_dashboard_customize.png"><img src="frontend/src/assets/screenshots/light/02_dashboard_customize.png" width="100%" alt="Dashboard in edit mode, Customize dashboard dialog on Panels"></picture></a><br><sub><b>Customize Dashboard</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/03_dashboard_configuration.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/03_dashboard_configuration.png"><img src="frontend/src/assets/screenshots/light/03_dashboard_configuration.png" width="100%" alt="Configuration dialog, Providers section"></picture></a><br><sub><b>Configuration — Providers</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/04_models.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/04_models.png"><img src="frontend/src/assets/screenshots/light/04_models.png" width="100%" alt="Models"></picture></a><br><sub><b>Models</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/05_models_download.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/05_models_download.png"><img src="frontend/src/assets/screenshots/light/05_models_download.png" width="100%" alt="Three selected models and the download dialog"></picture></a><br><sub><b>Download Models</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/06_model_details.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/06_model_details.png"><img src="frontend/src/assets/screenshots/light/06_model_details.png" width="100%" alt="Model details"></picture></a><br><sub><b>Model Details</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/07_model_3d_preview.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/07_model_3d_preview.png"><img src="frontend/src/assets/screenshots/light/07_model_3d_preview.png" width="100%" alt="3D preview of a model's plates"></picture></a><br><sub><b>3D Preview</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/08_model_print_quality.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/08_model_print_quality.png"><img src="frontend/src/assets/screenshots/light/08_model_print_quality.png" width="100%" alt="Print quality dialog listing a model's problems"></picture></a><br><sub><b>Print Quality Checks</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/09_collections.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/09_collections.png"><img src="frontend/src/assets/screenshots/light/09_collections.png" width="100%" alt="Collections"></picture></a><br><sub><b>Collections</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/10_collections_merge.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/10_collections_merge.png"><img src="frontend/src/assets/screenshots/light/10_collections_merge.png" width="100%" alt="Merge dialog for three selected collections"></picture></a><br><sub><b>Merge Collections</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/11_tags.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/11_tags.png"><img src="frontend/src/assets/screenshots/light/11_tags.png" width="100%" alt="Tags"></picture></a><br><sub><b>Tags</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/12_tags_select.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/12_tags_select.png"><img src="frontend/src/assets/screenshots/light/12_tags_select.png" width="100%" alt="Tags in selection mode"></picture></a><br><sub><b>Select Tags</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/13_downloads.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/13_downloads.png"><img src="frontend/src/assets/screenshots/light/13_downloads.png" width="100%" alt="Downloads"></picture></a><br><sub><b>Downloads</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/14_profile.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/14_profile.png"><img src="frontend/src/assets/screenshots/light/14_profile.png" width="100%" alt="Profile with activity heatmap"></picture></a><br><sub><b>Profile &amp; Activity</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/15_profile_configuration.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/15_profile_configuration.png"><img src="frontend/src/assets/screenshots/light/15_profile_configuration.png" width="100%" alt="Configuration dialog, Appearance section"></picture></a><br><sub><b>Configuration</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/16_admin_overview.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/16_admin_overview.png"><img src="frontend/src/assets/screenshots/light/16_admin_overview.png" width="100%" alt="Administration overview with System Health"></picture></a><br><sub><b>Administration</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/17_admin_providers.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/17_admin_providers.png"><img src="frontend/src/assets/screenshots/light/17_admin_providers.png" width="100%" alt="Administration, Providers page with on/off switches"></picture></a><br><sub><b>Administration — Providers</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/18_admin_storage.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/18_admin_storage.png"><img src="frontend/src/assets/screenshots/light/18_admin_storage.png" width="100%" alt="Administration, Storage page"></picture></a><br><sub><b>Administration — Storage</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/19_admin_dashboard.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/19_admin_dashboard.png"><img src="frontend/src/assets/screenshots/light/19_admin_dashboard.png" width="100%" alt="Administration, Dashboard page with custom widget switches"></picture></a><br><sub><b>Administration — Dashboard</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/20_admin_ai.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/20_admin_ai.png"><img src="frontend/src/assets/screenshots/light/20_admin_ai.png" width="100%" alt="Administration, AI page with models and features"></picture></a><br><sub><b>Administration — AI</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/dark/21_admin_captcha_search.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/light/21_admin_captcha_search.png"><img src="frontend/src/assets/screenshots/dark/21_admin_captcha_search.png" width="100%" alt="Search opened over the Captcha administration page"></picture></a><br><sub><b>Search</b> — in the other theme</sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/31_tools.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/31_tools.png"><img src="frontend/src/assets/screenshots/light/31_tools.png" width="100%" alt="Tools page, with the tools on shelves by what they do"></picture></a><br><sub><b>Tools</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/32_tool_window.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/32_tool_window.png"><img src="frontend/src/assets/screenshots/light/32_tool_window.png" width="100%" alt="The QR code generator tool open in its window"></picture></a><br><sub><b>Tools — QR Code Generator</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/35_model_customize.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/35_model_customize.png"><img src="frontend/src/assets/screenshots/light/35_model_customize.png" width="100%" alt="Customizer with a model's OpenSCAD parameters and the model it generated"></picture></a><br><sub><b>Customize a Model</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/43_explore_everywhere.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/43_explore_everywhere.png"><img src="frontend/src/assets/screenshots/light/43_explore_everywhere.png" width="100%" alt="Explore with people, models and collections from this instance and a connected one"></picture></a><br><sub><b>Explore — Everywhere</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/44_partner_model.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/44_partner_model.png"><img src="frontend/src/assets/screenshots/light/44_partner_model.png" width="100%" alt="A partner's model with its description and collections, Copy to my library and Download file"></picture></a><br><sub><b>A Partner's Model</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/46_chat_partner.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/46_chat_partner.png"><img src="frontend/src/assets/screenshots/light/46_chat_partner.png" width="100%" alt="A chat room with people from this instance and a connected one"></picture></a><br><sub><b>Chats Across Instances</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/48_connect_link.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/48_connect_link.png"><img src="frontend/src/assets/screenshots/light/48_connect_link.png" width="100%" alt="Connect to an instance from home, with Keep a link open on"></picture></a><br><sub><b>Connect From Home</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/49_request_link.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/49_request_link.png"><img src="frontend/src/assets/screenshots/light/49_request_link.png" width="100%" alt="A request to connect arriving through a link, with the key to compare"></picture></a><br><sub><b>Answer a Request</b></sub></td>
-    <td width="33%"><a href="frontend/src/assets/screenshots/light/47_admin_partners.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/47_admin_partners.png"><img src="frontend/src/assets/screenshots/light/47_admin_partners.png" width="100%" alt="Partners in Administration, Social, with a home instance connected through its link"></picture></a><br><sub><b>Administration — Partners</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="extension/docs/screenshots/collection-printables.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/collection-printables-dark.jpg"><img src="extension/docs/screenshots/collection-printables.jpg" width="100%" alt="Thingport Grab importing a Printables collection"></picture></a><br><sub><b>Thingport Grab — Collections</b></sub></td>
-    <td width="33%"><a href="extension/docs/screenshots/panel-printables.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/panel-printables-dark.jpg"><img src="extension/docs/screenshots/panel-printables.jpg" width="100%" alt="Thingport Grab on Printables"></picture></a><br><sub><b>Thingport Grab — Printables</b></sub></td>
-    <td width="33%"><a href="extension/docs/screenshots/panel-thingiverse.jpg" target="_blank"><img src="extension/docs/screenshots/panel-thingiverse.jpg" width="100%" alt="Thingport Grab on Thingiverse"></a><br><sub><b>Thingport Grab — Thingiverse</b></sub></td>
-  </tr>
-  <tr>
-    <td width="33%"><a href="extension/docs/screenshots/panel-makerworld.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/panel-makerworld-dark.jpg"><img src="extension/docs/screenshots/panel-makerworld.jpg" width="100%" alt="Thingport Grab on MakerWorld"></picture></a><br><sub><b>Thingport Grab — MakerWorld</b></sub></td>
-    <td width="33%"><a href="extension/docs/screenshots/collection-makerworld.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/collection-makerworld-dark.jpg"><img src="extension/docs/screenshots/collection-makerworld.jpg" width="100%" alt="Thingport Grab syncing a MakerWorld collection"></picture></a><br><sub><b>Thingport Grab — Sync a Collection</b></sub></td>
-    <td width="33%"><a href="extension/docs/screenshots/panel-crealitycloud.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/panel-crealitycloud-dark.jpg"><img src="extension/docs/screenshots/panel-crealitycloud.jpg" width="100%" alt="Thingport Grab on Creality Cloud"></picture></a><br><sub><b>Thingport Grab — Creality Cloud</b></sub></td>
-  </tr>
-</table>
-
-<table>
-  <tr>
-    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/popup-setup-dark.png"><img src="extension/docs/screenshots/popup-setup.png" width="260" alt="Thingport Grab popup before an instance is added, with Pair with Thingport"></picture><br><sub><b>Thingport Grab — Setup</b></sub></td>
-    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="extension/docs/screenshots/popup-connected-dark.png"><img src="extension/docs/screenshots/popup-connected.png" width="260" alt="Thingport Grab popup connected to an instance, with the sites it runs on"></picture><br><sub><b>Thingport Grab — Connected</b></sub></td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=8g-JoWckL2Y"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/demo-video-dark.webp"><img src="docs/assets/readme/demo-video-light.webp" width="400" alt="Watch the demo video on YouTube"></picture></a>
+  <a href="docs/SCREENSHOTS.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/screenshots-dark.webp"><img src="docs/assets/readme/screenshots-light.webp" width="400" alt="Screenshots of the app, page by page, in light and dark"></picture></a>
+</p>
 
 ## Installation
 
-> Step-by-step guides for Docker Compose, Unraid, TrueNAS SCALE and CasaOS are also on the
-> **[Thingport website](https://thingport.net/docs/)**.
+<p align="center">
+  <a href="docs/install/unraid/README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/install-unraid-dark.webp"><img src="docs/assets/readme/install-unraid-light.webp" width="263" alt="Install on Unraid"></picture></a>
+  <a href="docs/install/truenas/README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/install-truenas-dark.webp"><img src="docs/assets/readme/install-truenas-light.webp" width="263" alt="Install on TrueNAS SCALE"></picture></a>
+  <a href="docs/install/casaos/README.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/install-casaos-dark.webp"><img src="docs/assets/readme/install-casaos-light.webp" width="263" alt="Install on CasaOS"></picture></a>
+</p>
+
+These guides, and the one for Docker Compose below, are also on the **[Thingport website](https://thingport.net/docs/)**.
 
 ### Docker Compose
 
 Runs entirely from the pre-built images on GHCR -- no local build, no git clone needed. Works on any Docker host, including a NAS (Synology, QNAP, Unraid, etc).
-
-> **Unraid users:** see [docs/install/unraid/README.md](docs/install/unraid/README.md) for an Unraid-flavored compose
-> file (appdata paths, Docker tab icons/WebUI) and Compose plugin setup steps.
->
-> **TrueNAS SCALE users:** see [docs/install/truenas/README.md](docs/install/truenas/README.md) for a TrueNAS-flavored
-> compose file (dataset-backed appdata paths) and both the Custom App (YAML) and SSH setup
-> steps.
->
-> **CasaOS users:** see [docs/install/casaos/README.md](docs/install/casaos/README.md) for a CasaOS-flavored compose
-> file (`/DATA/AppData` appdata paths) and both the customized-app and SSH setup steps.
 
 Create a folder for Thingport and add these two files to it:
 
@@ -313,79 +230,36 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 
 ## Features
 
-- **[Import from 18 sites](docs/features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD and Meshy
-- **[Your own import queue, in one line that survives a restart](docs/features/importing.md#the-import-queue)**
-- **[Import bookmarklet](docs/guides/bookmarklet.md)**
-- **[Synced collections](docs/guides/synced-collections.md)**
-- **[Bring your existing library](docs/guides/existing-library.md)**
-- **[Consume folder](docs/guides/consume-folder.md)**
-- **[3D previews](docs/features/3d-previews.md)**
-- **[Multicolour models in their own colours](docs/features/3d-previews.md)**
-- **[Print quality checks](docs/features/print-quality.md)**
-- **[Studio: design parts with an AI, or by hand](docs/guides/studio.md)**
-- **[AI categorization and descriptions, on a local model or Claude](docs/guides/ai.md)**
-- **[Organize, search and bulk-edit](docs/features/organize-and-search.md)**
-- **[Dashboard](docs/features/dashboard.md)**
-- **[Profile and activity](docs/features/profile-and-activity.md)**
-- **[Author pages](docs/features/authors.md)**
-- **[Open in your slicer](docs/features/slicers.md)**
-- **[Normalized MakerWorld 3MFs](docs/features/normalized-3mf.md)**
-- **[Everything to print it](docs/features/supporting-files.md)**
-- **[Customize models that came with their OpenSCAD script](docs/features/supporting-files.md#models-you-can-generate-again)**
-- **[Download as ZIP](docs/features/downloads.md)**
-- **[Plain files on your disk](docs/features/storage.md)**
-- **[Repair models whose files are gone](docs/features/storage.md#when-the-files-are-gone)**
-- **[Multi-user](docs/features/multi-user.md)**
-- **[Social: public collections and models, Explore, profiles and chats](docs/features/social.md)**
-- **[Connected instances: pair with other Thingports, even from a home network](docs/features/connected-instances.md)**
-- **[Single sign-on](docs/guides/single-sign-on.md)**
-- **[Administration](docs/features/administration.md)**
-- **[System Health](docs/guides/system-health.md)**
-- **[API token](docs/guides/api-token.md)**
-- **[Connect an AI assistant (MCP)](docs/guides/mcp.md)**
-- **[Custom dashboard widgets](docs/guides/custom-widgets.md)**
-- **[Tools: planners, generators, calculators and a 3MF normalizer](docs/guides/tools.md)**
-- **[Make your own tools, or have an AI write them](docs/guides/tools.md#have-an-ai-write-one)**
-- **[Light and dark themes, accent colours, in English, Spanish, French and Lithuanian](docs/features/appearance.md)**
-- **[Self-hosted](#installation)**
+- **[A library that keeps everything](docs/features/organize-and-search.md)**: models, files, collections, tags and authors, with 3D previews, search and bulk editing
+- **[Imports from 18 sites](docs/features/importing.md)**: MakerWorld, Printables, Thingiverse, MyMiniFactory and 14 more, with [synced collections](docs/guides/synced-collections.md)
+- **[AI that tidies up](docs/guides/ai.md)**: better descriptions and categories, on a local model or Claude
+- **[Studio, a CAD of its own](docs/guides/studio.md)**: describe a part in one prompt and the AI builds it, or design it by hand
+- **[Print quality checks](docs/features/print-quality.md)**: problems found before you slice
+- **[Tools](docs/guides/tools.md) and [OpenSCAD](docs/features/supporting-files.md#models-you-can-generate-again)**: planners, generators and calculators, and models that come with an OpenSCAD script, customized in the library
+- **[Share it](docs/features/multi-user.md)**: with your household, or with [other Thingport instances](docs/features/connected-instances.md) you connect to
+
+**[More features…](docs/FEATURES.md)**
 
 ## Companion Apps
 
-Thingport ships two small companion apps, each downloadable from the in-app **Downloads** page or GitHub Releases:
-
-- **[Thingport Bridge](bridge/README.md)** — a lightweight desktop helper that makes "Open in {Slicer}" work for slicers (Bambu Studio, PrusaSlicer, Cura, Anycubic Slicer Next) whose own URL-protocol handlers won't accept a link from a self-hosted domain.
-- **[Thingport Grab](extension/README.md)** — a browser extension for Chrome, Edge and Firefox that imports models from all 18 sites straight from their own pages, without leaving the site (see the screenshots above), and hands Thingport your sign-in on the sites that need one as you use them. **Pair with Thingport** connects it to your instance: Thingport opens in a tab to approve the browser, and no password is saved in the extension. Even without a Thingport instance, it adds a "Download normalized" button to MakerWorld model pages that converts Bambu Studio projects into 3MFs other slicers open with their colours and settings. Get it from the [Chrome Web Store](https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee), [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/thingport-grab/) or [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol).
-
-## Provider Setup
-
-MakerWorld needs each user's session cookie, Printables works with no setup, and Thingiverse needs an App Token an admin sets once for the whole instance. Most of the others need a sign-in or key of their own, usually handed over by [Thingport Grab](extension/README.md); OwlCAD needs none at all, and eufyMake, MakerOnline and Makerables only for your likes or saved projects. MakerOnline's files come only through Grab, and so do OwlCAD's CAD projects. Printables, Thingiverse and MyMiniFactory work best with FlareSolverr, and CGTrader needs Grab or FlareSolverr to get its downloads past AWS's bot check. Connect them under **Configuration → Providers** (from the user menu): right-click a provider to connect it, or choose **About** for what it needs. All 18 are on by default; admins can turn any of them off for the whole instance under **Administration → Providers**. See **[docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md)** for a comparison of them all, and a setup page for each.
-
-## Connect with other Thingports
-
-Your library stays yours, but you don't have to keep it to yourself. Thingport instances can connect with each other:
-pair yours with a friend's, your makerspace's or the one at work, and the models their people share show up on your
-**Explore**, ready to download, open in your slicer or copy to your library. You can write to each other too, directly
-or in rooms. Admins approve every connection after comparing keys, and nothing private ever leaves an instance.
-
-**Your instance doesn't need to be on the internet.** A Thingport at home, behind its router, with no port forwarding,
-domain or certificate, can connect with one that is: it keeps a link open to it, and everything the other instance
-needs from yours comes down that link. It works both ways, as well as between two instances that reach each other.
-
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/connected-instances-link-dark.svg">
-    <img src="docs/assets/connected-instances-link-light.svg" alt="A home instance behind its router keeps a link open to an instance on the internet; requests travel down the link and answers come back up it" width="720">
-  </picture>
+  <a href="bridge/README.md"><picture><source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="docs/assets/readme/bridge-compact-dark.webp"><source media="(max-width: 600px)" srcset="docs/assets/readme/bridge-compact-light.webp"><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/bridge-dark.webp"><img src="docs/assets/readme/bridge-light.webp" width="810" alt="Thingport Bridge: makes Open in slicer work from a self-hosted instance, for Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next"></picture></a>
 </p>
 
-<table>
-  <tr>
-    <td width="50%"><a href="frontend/src/assets/screenshots/light/43_explore_everywhere.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/43_explore_everywhere.png"><img src="frontend/src/assets/screenshots/light/43_explore_everywhere.png" width="100%" alt="Explore with people, models and collections from this instance and a connected one"></picture></a><br><sub><b>One Explore</b> for your instance and its partners</sub></td>
-    <td width="50%"><a href="frontend/src/assets/screenshots/light/47_admin_partners.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/screenshots/dark/47_admin_partners.png"><img src="frontend/src/assets/screenshots/light/47_admin_partners.png" width="100%" alt="Partners in Administration, Social, with a home instance connected through its link"></picture></a><br><sub><b>Partners</b>, a home instance among them</sub></td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/nmblahmglpbplmfcggghdgohohlaeiee"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/grab-chrome-dark.webp"><img src="docs/assets/readme/grab-chrome-light.webp" width="263" alt="Thingport Grab for Chrome, on the Chrome Web Store"></picture></a>
+  <a href="https://addons.mozilla.org/firefox/addon/thingport-grab/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/grab-firefox-dark.webp"><img src="docs/assets/readme/grab-firefox-light.webp" width="263" alt="Thingport Grab for Firefox, on Firefox Add-ons"></picture></a>
+  <a href="https://microsoftedge.microsoft.com/addons/detail/kahfidpmojfocohinlmglnfoaimocbol"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/grab-edge-dark.webp"><img src="docs/assets/readme/grab-edge-light.webp" width="263" alt="Thingport Grab for Edge, on Microsoft Edge Add-ons"></picture></a>
+</p>
 
-Read more in **[connected instances](docs/features/connected-instances.md)** and **[social features](docs/features/social.md)**.
+<p align="center"><a href="extension/README.md">Find out more about Thingport Grab…</a></p>
+
+## Guides
+
+<p align="center">
+  <a href="docs/PROVIDER_SETUP.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/provider-setup-dark.webp"><img src="docs/assets/readme/provider-setup-light.webp" width="400" alt="Provider setup: what each of the 18 sites needs, side by side"></picture></a>
+  <a href="docs/features/connected-instances.md"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme/connected-instances-dark.webp"><img src="docs/assets/readme/connected-instances-light.webp" width="400" alt="Connect with other Thingport instances"></picture></a>
+</p>
 
 ## Contributing
 

@@ -1,0 +1,77 @@
+name: Status badges
+
+# Writes the README's status chips: one shields.io endpoint file per workflow, its short name and a tick or a cross for
+# the run on the default branch that finished last. GitHub's own badges can't be given a short name or a tick, hence
+# this. The files live on the `ci/status-badges` branch, one commit replaced each time, so nothing piles up. Every run
+# writes all of them, so whichever workflow finished, and a first run after merging, leave them current.
+on:
+  workflow_run:
+    workflows: [Website, Frontend image, Backend image, Bridge release, Extension checks, Regression pack]
+    types: [completed]
+    branches: [develop]
+  push:
+    branches: [develop]
+    paths: [".github/workflows/status-badges.yml"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: status-badges
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write a chip per workflow
+        # Bash with pipefail: a request that fails fails the job, which leaves the chips as they were.
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/badges"
+          cd "$RUNNER_TEMP/badges"
+          # Thingport's colours (frontend/src/theme.ts, web/src/styles): navy labels, the button green, a deep red.
+          # The run that finished last, by when it was last updated, which for a finished run is its end: runs come
+          # newest-started first, two can overlap (a push and a pull request), and a re-run of an old one finishes
+          # late, so every finished run is read, not just the first page. Only this repository's: a fork's branch can
+          # be called the same as the default one. Two finishing in the same second: a failure wins, then any other that
+          # didn't succeed.
+          chip() {
+            conclusion=$(gh api --paginate "repos/$REPO/actions/workflows/$1.yml/runs?branch=$BRANCH&status=completed&per_page=100" \
+              --jq ".workflow_runs[] | select(.head_repository.full_name == \"$REPO\")
+                | [.updated_at, (if .conclusion == \"success\" then 0
+                    elif .conclusion == \"failure\" or .conclusion == \"timed_out\" or .conclusion == \"startup_failure\" then 2
+                    else 1 end), .conclusion] | @tsv" |
+              sort | tail -n 1 | cut -f 3)
+            case "$conclusion" in
+              success) message="✓" color="#008a00" ;;
+              failure | timed_out | startup_failure) message="✗" color="#c62828" ;;
+              *) message="–" color="#858585" ;;
+            esac
+            printf '{"schemaVersion":1,"label":"%s","message":"%s","labelColor":"#1e2746","color":"%s","cacheSeconds":300}\n' \
+              "$2" "$message" "$color" > "$1.json"
+            echo "$2: ${conclusion:-none}"
+          }
+          chip web-pages Website
+          chip frontend-image Frontend
+          chip backend-image Backend
+          chip bridge-release Bridge
+          chip extension-release Extension
+          chip regression Regression
+      - name: Replace the status-badges branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$RUNNER_TEMP/badges"
+          git init -q -b ci/status-badges
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "ci: publish the README's status chips"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" ci/status-badges

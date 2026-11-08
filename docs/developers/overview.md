@@ -15,7 +15,7 @@ These pages are for writing them. How people install and use them is in the guid
 | [SDK reference](sdk-reference.md)             | Every member of `thingport`, for widgets and tools, generated from the SDK    |
 | [Recipes](recipes.md)                         | Complete examples: Thingport's API, a printer on the LAN, editing, OpenSCAD   |
 | [Build with an AI assistant](ai-assistant.md) | Describing a widget or a tool to Claude or another assistant, which saves it  |
-| [Publishing](publishing.md)                   | Sharing one with every Thingport through the repository                       |
+| [Publishing](publishing.md)                   | Sharing one with every Thingport instance through the repository              |
 
 ## Widget or tool?
 
@@ -63,7 +63,7 @@ in place of the script.
 
 There's no build step and nothing to install: the script is the file. It can `import()` a module from a CDN, but the
 libraries Thingport carries (`thingport.library()`: Three.js, opentype.js, Manifold, fonts, OpenSCAD) are better:
-your Thingport serves them, so they work without the internet, and every widget and tool shares one copy.
+your Thingport instance serves them, so they work without the internet, and every widget and tool shares one copy.
 
 ## What it can reach
 

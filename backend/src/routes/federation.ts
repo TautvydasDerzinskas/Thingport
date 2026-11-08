@@ -72,7 +72,7 @@ router.post(
   "/federation/check",
   asyncHandler(async (_req, res) => {
     const reachability = await runReachabilityCheck();
-    res.json({ reachability, canTurnOn: canTurnOn(reachability.kind) });
+    res.json({ reachability, canTurnOn: canTurnOn(reachability) });
   }),
 );
 
@@ -84,10 +84,17 @@ router.patch(
       if (!(await getSocialSettings()).enabled) {
         throw new HttpError(409, "Turn social features on first", "social_off");
       }
-      // Checked again here, not taken from the dialog: the address may have changed since.
+      // Checked again here, not taken from the dialog: the address may have changed since. Not being reachable
+      // doesn't stop it: this instance keeps a link open to each instance it connects to instead.
       const reachability = await runReachabilityCheck();
-      if (!canTurnOn(reachability.kind)) {
-        throw new HttpError(422, "Other instances couldn't reach this one at its Public URL", "unreachable");
+      if (!canTurnOn(reachability)) {
+        throw reachability.kind === "not_set"
+          ? new HttpError(409, "Set this instance's Public URL first: partners know it by that", "no_public_url")
+          : new HttpError(
+              422,
+              "This instance's Public URL is this machine or a reserved range, which other instances never connect to",
+              "reserved_address",
+            );
       }
       await getInstanceKeys();
       await updateFederationSettings({ enabled: true });

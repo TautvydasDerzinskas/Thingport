@@ -272,7 +272,10 @@ describe("MakerWorld print profiles", () => {
   });
 
   it("reports import status per profile when the URL names one", async () => {
-    expect((await checkImportStatus(userId, `${pageUrl}#profileId-200`)).state).toBe("not_imported");
+    expect(await checkImportStatus(userId, `${pageUrl}#profileId-200`)).toMatchObject({
+      state: "not_imported",
+      imported_profile_ids: [],
+    });
 
     mockMakerworldFetch();
     await importProfile(`${pageUrl}#profileId-200`, "200");
@@ -284,10 +287,20 @@ describe("MakerWorld print profiles", () => {
     expect((await checkImportStatus(userId, pageUrl)).state).toBe("imported");
   });
 
+  it("says which profiles the model has, whichever the URL names, so Grab can offer the rest", async () => {
+    mockMakerworldFetch();
+    await importProfile(`${pageUrl}#profileId-100`, "100");
+    await importProfile(`${pageUrl}#profileId-200`, "200");
+
+    for (const url of [pageUrl, `${pageUrl}#profileId-100`, `${pageUrl}#profileId-300`]) {
+      expect((await checkImportStatus(userId, url)).imported_profile_ids.toSorted()).toEqual(["100", "200"]);
+    }
+  });
+
   it("reports a profile as unknown while the print has plates from before profiles were tracked", async () => {
     await createLegacyPrint("solid anything endsolid");
     const status = await checkImportStatus(userId, `${pageUrl}#profileId-300`);
-    expect(status).toMatchObject({ already_imported: false, state: "profile_unknown" });
+    expect(status).toMatchObject({ already_imported: false, state: "profile_unknown", imported_profile_ids: [] });
     expect((await checkImportStatus(userId, pageUrl)).state).toBe("imported");
   });
 

@@ -16,6 +16,7 @@ import {
 import { offerNormalizedDownload, unmountNormalizedDownload } from "../providers/makerworld/normalizedDownload";
 import { mountJobOverlay, mountPausedJobOverlay } from "./overlays";
 import { loadPanel } from "./panels";
+import { loadMissingProfiles } from "./profiles";
 import { captureProviderAccount } from "./providerAccount";
 import { providerEnabled } from "./providerSettings";
 import { CONTENT_MODULES } from "../providers/content";
@@ -162,20 +163,26 @@ async function init(): Promise<void> {
   }
 
   let library: LibraryState | null = null;
+  // Of the page's print profiles, how many the library's model hasn't got, when the page's own is on it.
+  let missingProfiles = 0;
   if (classification.kind === "single") {
     try {
       const status = await api<ImportStatus>("GET", `/import/status?url=${encodeURIComponent(url)}`);
       if (isStale()) return;
       const gaps = status.gaps ?? [];
+      const heldProfiles = status.imported_profile_ids ?? null;
       if (status.already_imported) {
-        // Nothing to import, so the bubble only shows while there are details to fill in.
-        if (!gaps.length || !status.print_id) {
+        const missing = status.print_id ? await loadMissingProfiles(classification.provider, url, heldProfiles) : null;
+        if (isStale()) return;
+        missingProfiles = missing?.all.length ?? 0;
+        // Nothing to import, so the bubble only shows while there are profiles to add or details to fill in.
+        if ((!gaps.length && !missingProfiles) || !status.print_id) {
           reportTabIconState(false);
           return;
         }
-        library = { state: "imported", printId: status.print_id, gaps };
+        library = { state: "imported", printId: status.print_id, gaps, heldProfiles };
       } else if (status.state === "profile_missing" || status.state === "profile_unknown") {
-        library = { state: status.state, printId: status.print_id ?? null, gaps };
+        library = { state: status.state, printId: status.print_id ?? null, gaps, heldProfiles };
       }
     } catch {
       // Show the icon anyway; the panel surfaces the real error.
@@ -197,9 +204,11 @@ async function init(): Promise<void> {
     variant: library ? "in-library" : undefined,
     label: !library
       ? "Import to Thingport"
-      : library.state === "imported"
-        ? "Fetch this model's missing details into Thingport"
-        : "Add this print profile to Thingport",
+      : missingProfiles
+        ? `Add the ${missingProfiles} missing print profile${missingProfiles === 1 ? "" : "s"} to Thingport`
+        : library.state === "imported"
+          ? "Fetch this model's missing details into Thingport"
+          : "Add this print profile to Thingport",
     onClick: togglePanel,
   });
   reportTabIconState(true);

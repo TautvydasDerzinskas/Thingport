@@ -90,7 +90,7 @@ export const DOCS = [
     group: "Companion apps",
     title: "Thingport Grab browser extension",
     nav: "Thingport Grab",
-    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport, and no password is saved.`,
+    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport instance, and no password is saved.`,
   },
   {
     slug: "grab/privacy",
@@ -443,7 +443,7 @@ export const DOCS = [
     title: "Build with an AI assistant",
     nav: "With an AI assistant",
     description:
-      "Describe a widget or a tool to Claude or another assistant over MCP, which writes it and saves it to your Thingport.",
+      "Describe a widget or a tool to Claude or another assistant over MCP, which writes it and saves it to your Thingport instance.",
   },
   {
     slug: "developers/publishing",
@@ -451,7 +451,7 @@ export const DOCS = [
     group: "Build for Thingport",
     title: "Publishing widgets and tools",
     nav: "Publishing",
-    description: "Share a widget or a tool with every Thingport through a pull request to the repository.",
+    description: "Share a widget or a tool with every Thingport instance through a pull request to the repository.",
   },
   {
     slug: "contributing",

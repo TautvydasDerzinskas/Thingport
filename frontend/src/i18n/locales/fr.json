@@ -215,7 +215,7 @@
         "copied": "Copié",
         "failed": "Une erreur s’est produite avec votre jeton d’API. Veuillez réessayer.",
         "mcp": {
-          "adminOff": "Un administrateur a désactivé MCP sur ce Thingport.",
+          "adminOff": "Un administrateur a désactivé MCP sur cette instance Thingport.",
           "adminReadOnly": "Un administrateur n'autorise que les outils de lecture.",
           "copyCommand": "Copier la commande",
           "heading": "MCP",
@@ -1208,7 +1208,7 @@
         "noExport": "Le script n'a pas de fonction export default.",
         "failed": "{{name}} s'est arrêté sur une erreur",
         "removed": "Ce widget a été retiré.",
-        "off": "Les widgets personnalisés sont désactivés sur ce Thingport.",
+        "off": "Les widgets personnalisés sont désactivés sur cette instance Thingport.",
         "title": "Widgets personnalisés",
         "tabs": {
           "mine": "Les miens",
@@ -1237,7 +1237,7 @@
         "installed": "{{name}} installé",
         "isInstalled": "Installé",
         "retry": "Réessayer",
-        "communityError": "Impossible de charger les widgets de la communauté. Vérifiez que ce Thingport peut joindre GitHub.",
+        "communityError": "Impossible de charger les widgets de la communauté. Vérifiez que cette instance Thingport peut joindre GitHub.",
         "communityEmpty": "Pas encore de widgets de la communauté. Soyez le premier : voir Créer et partager.",
         "reaches_one": "Joint {{count}} hôte",
         "reaches_other": "Joint {{count}} hôtes",
@@ -1333,7 +1333,7 @@
           "publish1": "Téléchargez votre widget depuis Les miens (⋮, puis Télécharger pour publier).",
           "publish2": "Forkez le dépôt Thingport et décompressez-le dans le dossier <folder>community-widgets</folder>.",
           "publish3": "Ajoutez le nom de son dossier à community-widgets/index.json et décrivez-le dans son README.md.",
-          "publish4": "Ouvrez une pull request. Une fois fusionnée, tout Thingport pourra l’installer.",
+          "publish4": "Ouvrez une pull request. Une fois fusionnée, toute instance Thingport pourra l’installer.",
           "guide": "Lire le guide complet"
         },
         "ai": {
@@ -2571,35 +2571,48 @@
             "unreachable": "Injoignable",
             "localHelp": "Seules les instances de votre réseau ou VPN peuvent joindre celle-ci. Vous pouvez quand même vous connecter à celles d'internet : la vôtre garde un lien ouvert vers elles.",
             "publicHelp": "Les instances d'internet peuvent la joindre si votre routeur ou proxy les laisse passer. Un partenaire qui la joint le confirme.",
-            "unreachableHelp": "Les autres instances ne peuvent pas la joindre à son URL publique. Vérifiez à nouveau une fois corrigé."
+            "unreachableHelp": "Les autres instances ne peuvent pas la joindre à son URL publique. Vérifiez à nouveau une fois corrigé.",
+            "linksOnly": "Liens uniquement",
+            "linksOnlyHelp": "Les autres instances ne peuvent pas la joindre à son URL publique : elle garde donc un lien ouvert vers chacune de celles auxquelles elle se connecte. Vérifiez à nouveau une fois corrigé."
           },
           "check": {
             "intro": "D'abord, si d'autres instances Thingport pourraient joindre celle-ci.",
             "checking": "Vérification…",
             "failed": "Impossible de vérifier.",
-            "notReachableNow": "Les autres instances n'ont pas pu joindre celle-ci à son URL publique. Corrigez l'adresse, puis vérifiez à nouveau.",
             "urlSet": "L'URL publique est définie",
             "urlNotSet": "Il n'y a pas d'URL publique",
             "leadsHere": "Elle ramène à cette instance",
             "leadsHereDetail": "Réponse avec le secret de cette instance",
             "leadsElsewhere": "Elle ne mène pas à cette instance",
             "leadsElsewhereDetail": "Autre chose répond à cette adresse",
+            "leadsElsewhereAnswered": "Autre chose répond à cette adresse : {{answer}}",
             "noLoopback": "Pas de réponse depuis ici",
             "noLoopbackDetail": "Certains routeurs ne joignent pas leur propre adresse publique",
-            "noAnswer": "Pas de réponse",
-            "noAnswerDetail": "Rien n'a répondu en 8 secondes",
+            "failure": {
+              "reserved": "C'est cette machine ou une plage réservée",
+              "notFound": "Son nom ne se résout pas ici",
+              "notFoundDetail": "Cette instance ne trouve pas {{host}}",
+              "timeout": "Pas de réponse",
+              "timeoutDetail": "Rien n'a répondu en 8 secondes",
+              "refused": "La connexion est refusée",
+              "refusedDetail": "Rien n'accepte de connexions sur {{host}}",
+              "certificate": "Son certificat n'est pas reconnu",
+              "redirect": "Elle répond par une redirection",
+              "failed": "Impossible de la joindre"
+            },
             "addressLocal": "Son adresse est sur votre réseau local",
             "addressPublic": "Son adresse est publique",
-            "addressSkipped": "Adresse non vérifiée",
             "localTitle": "Réseau local uniquement",
             "localText": "Les instances de votre réseau ou VPN peuvent se connecter à celle-ci. Celles d'internet ne peuvent pas la joindre, mais vous pouvez quand même vous y connecter : la vôtre garde un lien ouvert.",
             "publicTitle": "Joignable, pas encore confirmée",
             "publicText": "Les instances d'internet devraient la joindre, si votre routeur ou proxy les laisse passer. La première connexion le confirme.",
             "unverifiedTitle": "Publique, mais elle ne s'est pas répondu",
             "unverifiedText": "Les instances d'internet peuvent quand même la joindre. La première connexion le dira.",
+            "linksOnlyTitle": "Liens uniquement",
+            "linksOnlyText": "Les autres instances ne peuvent pas joindre celle-ci à son URL publique. Elle peut quand même se connecter à celles qu'elle joint, en gardant un lien ouvert vers chacune.",
             "unreachableTitle": "Injoignable",
             "notSetText": "Définissez d'abord l'URL publique de cette instance : c'est là que les autres la joignent.",
-            "unreachableText": "Les autres instances ne pourraient pas la joindre non plus. Vérifiez l'URL publique, ou le proxy devant Thingport.",
+            "reservedText": "Son URL publique est cette machine ou une plage réservée, à laquelle les autres instances ne se connectent jamais : pour chacune, localhost la désigne elle-même. Indiquez l'adresse qu'elle a sur votre réseau.",
             "publicUrlButton": "URL publique",
             "youApprove": "Vous approuvez chaque instance avant qu'elle se connecte, et pouvez en mettre une en pause ou la bloquer à tout moment.",
             "helpApprove": "Les demandes des autres instances attendent ici un administrateur, comme celles de vos utilisateurs pour joindre quelqu'un ailleurs.",
@@ -2619,6 +2632,10 @@
             "matches": "Les clés correspondent",
             "linkSuggestedTitle": "{{name}} ne peut pas joindre votre instance",
             "linkSuggestedText": "La vôtre n'est que sur votre réseau : elle garde donc un lien ouvert vers {{name}}. Tout fonctionne dans les deux sens tant qu'elle tourne.",
+            "linkUnreachableTitle": "{{name}} ne peut pas joindre votre instance",
+            "linkUnreachableText": "Rien ne joint la vôtre à son URL publique : elle garde donc un lien ouvert vers {{name}}. Tout fonctionne dans les deux sens tant qu'elle tourne.",
+            "linkUnconfirmedTitle": "{{name}} ne joindra peut-être pas votre instance",
+            "linkUnconfirmedText": "Rien n'a encore joint la vôtre depuis internet : elle garde donc un lien ouvert vers {{name}}, par précaution. Tout fonctionne dans les deux sens tant qu'elle tourne.",
             "linkOnTitle": "Un lien ouvert vers {{name}}",
             "linkOnText": "Pour quand {{name}} ne peut pas joindre votre instance : la vôtre se connecte à elle, et tout fonctionne dans les deux sens tant qu'elle tourne.",
             "linkOffTitle": "{{name}} joint votre instance directement",
@@ -2634,6 +2651,8 @@
           },
           "errors": {
             "invalid_address": "Ce n'est pas l'adresse d'une instance.",
+            "no_public_url": "Définissez d'abord l'URL publique de cette instance : c'est par elle que les autres la connaissent.",
+            "reserved_address": "L'URL publique de cette instance est cette machine ou une plage réservée. Indiquez l'adresse qu'elle a sur votre réseau.",
             "same_instance": "C'est cette instance.",
             "unreachable": "Cette instance n'a pas répondu. L'adresse est-elle juste, et cette instance peut-elle la joindre ? Si elle est sur le réseau domestique de quelqu'un, demandez à son administrateur de se connecter à la vôtre.",
             "not_thingport": "Ce n'est pas une instance Thingport.",
@@ -2911,6 +2930,15 @@
         "failed": "Impossible d’enregistrer le choix pour les cartes des modèles.",
         "help": "Ce que les cartes des modèles affichent en premier. Images : les images fournies avec le modèle, ou un rendu 3D s’il n’en a pas. Rendus 3D : un rendu de chaque modèle dans votre couleur de rendu, ou ses images si le fichier ne peut pas être dessiné."
       },
+      "printProfiles": {
+        "heading": "Profils d’impression",
+        "help": "Comment s’affichent les profils d’impression des modèles importés avec : en liste, dans un sélecteur ou en vignettes, avec le temps d’impression, le filament et les plateaux de chacun. Désactivé les affiche comme de simples fichiers.",
+        "off": "Désactivé",
+        "list": "Liste",
+        "picker": "Sélecteur",
+        "tiles": "Vignettes",
+        "failed": "Impossible d’enregistrer l’affichage des profils d’impression."
+      },
       "hoverSlideshow": {
         "heading": "Diaporama au survol",
         "failed": "Impossible d’enregistrer le choix pour le diaporama au survol.",
@@ -2942,7 +2970,7 @@
       "connectTitle": "Connecter {{name}}",
       "disconnectTitle": "Déconnecter {{name}} ?",
       "disconnectMessage": "Votre clé {{name}} est supprimée, et les importations depuis {{name}} cessent de fonctionner jusqu’à ce que vous la reconnectiez.",
-      "disconnectMessageShared": "Le jeton {{name}} est supprimé pour tous les utilisateurs de ce Thingport, et les importations depuis {{name}} cessent de fonctionner jusqu’à sa reconnexion.",
+      "disconnectMessageShared": "Le jeton {{name}} est supprimé pour tous les utilisateurs de cette instance Thingport, et les importations depuis {{name}} cessent de fonctionner jusqu’à sa reconnexion.",
       "failed": "Échec de l’enregistrement. Réessayez.",
       "comingSoon": "Bientôt disponible"
     },
@@ -3086,7 +3114,10 @@
       "empty": "Pas encore de notes pour cette version.",
       "openGithub": "Ouvrir sur GitHub",
       "zoom": "Agrandir la capture",
-      "highlight": "À la une"
+      "highlight": "À la une",
+      "earlier": "Versions précédentes",
+      "backToLatest": "Revenir à la plus récente",
+      "latest": "La plus récente"
     },
     "codeBlock": {
       "copy": "Copier",
@@ -3179,7 +3210,7 @@
         "emptyAdmin": "Pas encore d'outils. Installez-en un depuis le dépôt.",
         "emptyCreate": "Pas encore d'outils. Créez le vôtre, ou demandez à un administrateur d'en installer.",
         "install": "Installer des outils",
-        "noAccess": "Les outils ne vous sont pas accessibles sur ce Thingport.",
+        "noAccess": "Les outils ne vous sont pas accessibles sur cette instance Thingport.",
         "dropHere": "Déposez un outil ici",
         "layout": "Afficher en",
         "layoutFlat": "Une grille",
@@ -4967,6 +4998,40 @@
       "internalPlatesDivider": "{{count}} plateaux dans ce fichier",
       "internalPlateObjectCount_one": "{{count}} objet",
       "internalPlateObjectCount_other": "{{count}} objets",
+      "profiles": {
+        "label_one": "Profil d’impression · {{count}}",
+        "label_other": "Profils d’impression · {{count}}",
+        "labelOne": "Profil d’impression",
+        "help": "Réglages de ce modèle prêts à imprimer, chacun avec son imprimante, ses paramètres, ses plateaux et son filament. Ouvrir et Télécharger utilisent celui choisi.",
+        "position": "{{n}} sur {{count}}",
+        "designer": "Créateur",
+        "community": "Communauté",
+        "fromDesigner": "Du créateur",
+        "communityGroup": "Communauté",
+        "otherFiles": "Autres fichiers",
+        "otherFile": "Autre fichier",
+        "byCreator": "par {{name}}",
+        "plates_one": "{{count}} plateau",
+        "plates_other": "{{count}} plateaux",
+        "platesLabel": "Plateaux",
+        "platesInProfile_one": "{{count}} plateau dans ce profil",
+        "platesInProfile_other": "{{count}} plateaux dans ce profil",
+        "time": "Temps d’impression",
+        "filament": "Filament",
+        "minutes": "{{m}} min",
+        "hours": "{{h}} h",
+        "hoursMinutes": "{{h}} h {{m}} min",
+        "nozzle": "buse de {{mm}} mm",
+        "layers": "couches de {{mm}} mm",
+        "infill": "{{value}} de remplissage",
+        "walls_one": "{{count}} paroi",
+        "walls_other": "{{count}} parois",
+        "supports": "supports",
+        "showMore": "Afficher {{count}} de plus",
+        "showFewer": "Afficher moins",
+        "pickAria": "Profil d’impression : {{name}}",
+        "previewPlate": "Voir {{plate}} en 3D"
+      },
       "previewToolbar": {
         "label": "Options d’aperçu",
         "top": "Dessus",
@@ -5453,7 +5518,7 @@
         "notFound": "Collection introuvable."
       },
       "sync": {
-        "badgeOff": "{{provider}} est désactivé sur ce Thingport : rien ne se synchronise tant qu’un administrateur ne le réactive pas",
+        "badgeOff": "{{provider}} est désactivé sur cette instance Thingport : rien ne se synchronise tant qu’un administrateur ne le réactive pas",
         "menuProviderOff": "{{provider}} est désactivé",
         "badge": "Synchronisée avec une collection {{provider}}",
         "menu": "Configuration de la synchronisation",
@@ -6041,10 +6106,10 @@
           "Copiez le jeton d’application affiché et collez-le ci-dessous."
         ],
         "placeholder": "Collez le jeton d’application",
-        "shared": "Ce jeton est partagé par tous les utilisateurs de ce Thingport."
+        "shared": "Ce jeton est partagé par tous les utilisateurs de cette instance Thingport."
       },
       "status": {
-        "adminOnly": "Seul un administrateur de ce Thingport peut effectuer cette configuration.",
+        "adminOnly": "Seul un administrateur de cette instance Thingport peut effectuer cette configuration.",
         "disabledReason": "Thingiverse : l’administrateur n’a pas encore configuré de clé d’API"
       },
       "about": {
@@ -6058,7 +6123,7 @@
         ]
       },
       "admin": {
-        "description": "Importations, collections et modèles aimés, via le jeton d’application de ce Thingport.",
+        "description": "Importations, collections et modèles aimés, via le jeton d’application de cette instance Thingport.",
         "keyStatus": {
           "set": "Jeton d’application configuré",
           "missing": "Aucun jeton d’application : les importations Thingiverse ne fonctionneront pas tant que vous n’en aurez pas configuré un"
@@ -6080,7 +6145,7 @@
         }
       },
       "sync": {
-        "notConnected": "Thingiverse n’est pas encore connecté sur ce Thingport. Un administrateur peut le connecter dans Configuration > Fournisseurs.",
+        "notConnected": "Thingiverse n’est pas encore connecté sur cette instance Thingport. Un administrateur peut le connecter dans Configuration > Fournisseurs.",
         "usernameHint": "Thingport affiche vos collections publiques Thingiverse. Cette information n’est demandée qu’une fois.",
         "usernamePlaceholder": "Nom d’utilisateur ou lien du profil",
         "showing": "Affichage des collections publiques de @{{user}}.",
@@ -6112,7 +6177,7 @@
         ]
       },
       "admin": {
-        "description": "Modèles et collections publiques, via la clé d’API de ce Thingport ; modèles achetés, via le compte MyMiniFactory de chaque utilisateur.",
+        "description": "Modèles et collections publiques, via la clé d’API de cette instance Thingport ; modèles achetés, via le compte MyMiniFactory de chaque utilisateur.",
         "keyStatus": {
           "set": "Clé d’API configurée",
           "missing": "Aucune clé d’API : les importations MyMiniFactory ne fonctionneront pas tant que vous n’en aurez pas configuré une"
@@ -6134,7 +6199,7 @@
         }
       },
       "sync": {
-        "notConnected": "MyMiniFactory n’est pas encore connecté sur ce Thingport. Un administrateur peut le connecter dans Configuration > Fournisseurs.",
+        "notConnected": "MyMiniFactory n’est pas encore connecté sur cette instance Thingport. Un administrateur peut le connecter dans Configuration > Fournisseurs.",
         "usernameHint": "Thingport affiche vos collections publiques MyMiniFactory. Cette information n’est demandée qu’une fois.",
         "usernamePlaceholder": "Nom d’utilisateur ou lien du profil",
         "showing": "Affichage des collections publiques de @{{user}}.",

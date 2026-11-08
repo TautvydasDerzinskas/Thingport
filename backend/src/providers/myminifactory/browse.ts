@@ -13,7 +13,7 @@ import {
 
 async function requireKey(): Promise<string> {
   const key = await getMyminifactoryApiKey();
-  if (!key) throw new HttpError(409, "MyMiniFactory isn't connected on this Thingport yet");
+  if (!key) throw new HttpError(409, "MyMiniFactory isn't connected on this Thingport instance yet");
   return key;
 }
 
