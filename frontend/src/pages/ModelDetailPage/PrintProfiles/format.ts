@@ -35,8 +35,18 @@ export function profileFormat(t: TFunction, language: string): ProfileFormat {
     },
     grams(grams) {
       if (grams == null || grams <= 0) return null;
-      if (grams >= 1000) return `${number(grams / 1000, 2, true)} kg`;
-      return `${number(grams, grams < 10 ? 1 : 0)} g`;
+      const value = grams >= 1000 ? grams / 1000 : grams;
+      const digits = grams >= 1000 ? 2 : grams < 10 ? 1 : 0;
+      if (/^(ru|uk|be)(-|$)/i.test(language)) {
+        return new Intl.NumberFormat(language, {
+          style: "unit",
+          unit: grams >= 1000 ? "kilogram" : "gram",
+          unitDisplay: "short",
+          maximumFractionDigits: digits,
+          minimumFractionDigits: grams >= 1000 ? digits : 0,
+        }).format(value);
+      }
+      return `${number(value, digits, grams >= 1000)} ${grams >= 1000 ? "kg" : "g"}`;
     },
     number,
   };

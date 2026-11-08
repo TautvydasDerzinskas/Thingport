@@ -515,6 +515,7 @@
       "myModels": "My models"
     },
     "notifications": {
+      "importedNamed": "Imported: {{name}}",
       "label": "Notifications",
       "empty": "No notifications yet.",
       "viewSource": "View source",
@@ -882,19 +883,29 @@
     "dashboard": {
       "loadError": "Failed to load your dashboard.",
       "seeMore": "See more",
-      "viewCount": "{{count}} views",
-      "printCount": "{{count}} prints",
+      "viewCount_one": "{{count}} view",
+      "viewCount_other": "{{count}} views",
+      "printCount_one": "{{count}} print",
+      "printCount_other": "{{count}} prints",
       "collectionCount": {
-        "label": "Collections"
+        "label": "Collections",
+        "count_one": "Collection",
+        "count_other": "Collections"
       },
       "modelCount": {
-        "label": "Models"
+        "label": "Models",
+        "count_one": "Model",
+        "count_other": "Models"
       },
       "authorCount": {
-        "label": "Unique authors"
+        "label": "Unique authors",
+        "count_one": "Unique author",
+        "count_other": "Unique authors"
       },
       "categoryCount": {
-        "label": "Categories & folders"
+        "label": "Categories & folders",
+        "count_one": "Category or folder",
+        "count_other": "Categories or folders"
       },
       "topViewed": {
         "title": "Top Viewed Models",
@@ -907,12 +918,14 @@
       "topAuthors": {
         "title": "Top Authors",
         "empty": "No authors yet — import a model to see your top authors here.",
-        "modelCount": "{{count}} models"
+        "modelCount_one": "{{count}} model",
+        "modelCount_other": "{{count}} models"
       },
       "topProviders": {
         "title": "Top Providers",
         "empty": "No models yet.",
-        "modelCount": "{{count}} models"
+        "modelCount_one": "{{count}} model",
+        "modelCount_other": "{{count}} models"
       },
       "recentlyAdded": {
         "title": "Recently Added",
