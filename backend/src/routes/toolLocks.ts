@@ -17,17 +17,19 @@ const ids = (value: unknown): string[] =>
 export const toolLocks = asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
   if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return next();
   const body = (req.body ?? {}) as Record<string, unknown>;
+  // As the routes match it: Express takes `/collection/x/` for `/collection/x`, so a trailing slash mustn't get past.
+  const path = req.path.length > 1 ? req.path.replace(/\/+$/, "") : req.path;
 
-  const print = /^\/print\/([^/]+)(?:\/(.+))?$/.exec(req.path);
+  const print = /^\/print\/([^/]+)(?:\/(.+))?$/.exec(path);
   if (print && !PRINT_ALLOWED.some((allowed) => allowed.test(print[2] ?? ""))) await assertNotToolModels([print[1]]);
-  if (req.path === "/prints/tags") await assertNotToolModels(ids(body.print_ids));
+  if (path === "/prints/tags") await assertNotToolModels(ids(body.print_ids));
 
   // The collection itself and what's in it; a bookmark of it is the user's own.
-  const collection = /^\/collection\/([^/]+)(?:\/(items(?:\/.*)?))?$/.exec(req.path);
+  const collection = /^\/collection\/([^/]+)(?:\/(items(?:\/.*)?))?$/.exec(path);
   if (collection && (collection[2] || req.method === "PATCH" || req.method === "DELETE"))
     await assertNotToolCollections([collection[1]]);
-  if (req.path === "/collections/delete") await assertNotToolCollections(ids(body.ids));
-  if (req.path === "/collections/merge")
+  if (path === "/collections/delete") await assertNotToolCollections(ids(body.ids));
+  if (path === "/collections/merge")
     await assertNotToolCollections([
       ...ids(body.ids),
       ...(typeof body.primary_id === "string" ? [body.primary_id] : []),

@@ -366,6 +366,12 @@ describe("installing", () => {
       ).status,
     ).toBe(403);
     expect((await request(app).delete(`/api/collection/${collection.id}/items/${print.id}`).set(as)).status).toBe(403);
+    // A trailing slash reaches the same routes, so it's refused the same.
+    expect((await request(app).delete(`/api/print/${print.id}/`).set(as)).status).toBe(403);
+    expect(
+      (await request(app).patch(`/api/collection/${collection.id}/`).set(as).send({ name: "Mine", tags: [] })).status,
+    ).toBe(403);
+    expect((await request(app).delete(`/api/collection/${collection.id}/`).set(as)).status).toBe(403);
     // Not offered as somewhere to put a model.
     const pickers = await request(app).get(`/api/print/${print.id}/collections`).set(as);
     expect(pickers.body.some((c: { id: string }) => c.id === collection.id)).toBe(false);

@@ -303,6 +303,36 @@ describe("a collection shared with picked people", () => {
     }
   });
 
+  it("writes a visibility asked for over a change it waited for", async () => {
+    await sharing({ visibility: "private" });
+    // Another change holds the row, making it shared; a save asking for private waits for it, then writes private
+    // rather than comparing with what it read before and finding nothing to change.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let locked!: () => void;
+    const lockTaken = new Promise<void>((resolve) => (locked = resolve));
+    const other = prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${collectionId} FOR UPDATE`;
+        await tx.collection.update({ where: { id: collectionId }, data: { visibility: "SHARED" } });
+        locked();
+        await held;
+      },
+      { timeout: 20_000 },
+    );
+    await lockTaken;
+    const save = request(app)
+      .patch(`/api/collection/${collectionId}`)
+      .set(auth(alex))
+      .send({ name: `Desk organisers ${RUN}`, visibility: "private" })
+      .then((res) => res);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    release();
+    await other;
+    expect((await save).body.visibility).toBe("private");
+    expect((await prisma.collection.findUniqueOrThrow({ where: { id: collectionId } })).visibility).toBe("PRIVATE");
+  });
+
   it("finds people to share with by name, never by part of an email", async () => {
     const found = await request(app).get(`/api/social/people?q=Bea`).set(auth(alex));
     expect(found.body.people.map((person: { id: string }) => person.id)).toContain(bea.id);

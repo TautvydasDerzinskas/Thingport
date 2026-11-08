@@ -83,6 +83,8 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   });
   const [loadingShared, setLoadingShared] = useState(false);
   const sharedAsk = useRef(0);
+  // Explore being loaded (a scope picked, or pages started again): what comes of it is what's shown next.
+  const loadingOverview = useRef(false);
   const showToast = useToast();
   // With connected instances on, someone on another instance can be asked for, here.
   const federation = useSocialStatus()?.federation === true;
@@ -107,14 +109,18 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
 
   useEffect(() => {
     const asked = ++latest.current;
+    loadingOverview.current = true;
     sharedAsk.current += 1;
     setLoadingShared(false);
     socialApi.explore(scope).then(
       (value) => {
-        if (asked === latest.current) accept(value);
+        if (asked !== latest.current) return;
+        loadingOverview.current = false;
+        accept(value);
       },
       (err) => {
         if (asked !== latest.current) return;
+        loadingOverview.current = false;
         if (err instanceof UnauthorizedError) onUnauthorized?.();
         else setFailed(true);
       },
@@ -266,11 +272,18 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
       const page = await socialApi.sharedWithYou({ limit: SHARED_MORE, offset: sharedWithYou.length });
       if (asked !== sharedAsk.current) return;
       const known = new Set(sharedWithYou.map((collection) => collection.id));
-      // Something shared since Explore loaded moved the ranking under its pages: start again from the top.
+      // Something shared since Explore loaded moved the ranking under its pages: start again from the top, unless
+      // Explore is being loaded already (another scope picked), which starts them again itself.
       if (page.items.some((collection) => known.has(collection.id))) {
+        if (loadingOverview.current) return;
         const again = ++latest.current;
-        const value = await socialApi.explore(scope);
-        if (again === latest.current) accept(value);
+        loadingOverview.current = true;
+        try {
+          const value = await socialApi.explore(scope);
+          if (again === latest.current) accept(value);
+        } finally {
+          if (again === latest.current) loadingOverview.current = false;
+        }
         return;
       }
       // The total as it is now: one unshared meanwhile leaves no button asking for it again.

@@ -241,27 +241,31 @@ router.patch(
       throw new HttpError(400, "This collection can't be edited");
     }
     const body = parseBody(collectionSchema, req.body);
-    const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!collection) throw new HttpError(404, "Collection not found");
-    await assertCollectionNameAvailable(req.userId!, body.name, collection.id);
-    const renamed = body.name !== collection.name;
-    // Written only when asked for: a save of its name alone mustn't put back the visibility read a moment ago over a
-    // change made meanwhile.
-    const visibility = visibilityAsked(body, collection.visibility);
-    const visibilityChange = visibility !== collection.visibility ? { visibility } : {};
-    if (collection.toolId && visibilityChange.visibility) {
-      throw new HttpError(403, `"${collection.name}" belongs to a tool and can't be changed`, "TOOL_OWNED");
-    }
-    const updated = await prisma.collection.update({
-      where: { id: collection.id },
-      data: {
-        name: body.name,
-        nameNormalized: normalizeCollectionName(body.name),
-        description: body.description?.trim() || null,
-        tags: normalizeTags(body.tags),
-        ...visibilityChange,
-      },
+    await assertCollectionNameAvailable(req.userId!, body.name, req.params.id);
+    // Visibility is written only when it's asked for, so a save of the name alone can't put back what was read over a
+    // change made meanwhile; and what it's compared with is read under the lock /sharing changes it under.
+    const asked = body.visibility !== undefined || body.is_public !== undefined;
+    const { collection, updated } = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${req.params.id} FOR UPDATE`;
+      const found = await tx.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
+      if (!found) throw new HttpError(404, "Collection not found");
+      // A tool's, whatever way the request came: the tool keeps it as it brought it.
+      if (found.toolId) {
+        throw new HttpError(403, `"${found.name}" belongs to a tool and can't be changed`, "TOOL_OWNED");
+      }
+      const saved = await tx.collection.update({
+        where: { id: found.id },
+        data: {
+          name: body.name,
+          nameNormalized: normalizeCollectionName(body.name),
+          description: body.description?.trim() || null,
+          tags: normalizeTags(body.tags),
+          ...(asked ? { visibility: visibilityAsked(body, found.visibility) } : {}),
+        },
+      });
+      return { collection: found, updated: saved };
     });
+    const renamed = body.name !== collection.name;
     await tellGained(collection, updated);
     if (renamed) await relocatePrintsForToken("collection", await collectionPrintIds(updated.id));
     const [itemCount, covers, bookmarked, sync] = await Promise.all([
