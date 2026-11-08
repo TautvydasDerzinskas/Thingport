@@ -88,6 +88,8 @@ export default function Model3DPreviewModal({
   const [platesRead, setPlatesRead] = useState(false);
   const [internalThumbnails, setInternalThumbnails] = useState<Record<number, string | null>>({});
   const [selectedInternalPlateId, setSelectedInternalPlateId] = useState<number | null>(initialPlateIndex ?? null);
+  // Counts the files read, so the pictures of one read before another was picked aren't shown for the next.
+  const thumbnailRead = useRef(0);
 
   // Lives here so it survives the viewer remounting per file.
   const viewerRef = useRef<ModelViewerHandle>(null);
@@ -155,14 +157,16 @@ export default function Model3DPreviewModal({
       current != null && plates.some((plate) => plate.index === current) ? current : (plates[0]?.index ?? null),
     );
     setInternalThumbnails({});
+    const read = ++thumbnailRead.current;
     Promise.all(plates.map(async (plate) => [plate.index, await getThumbnail(plate.index)] as const)).then((pairs) => {
-      setInternalThumbnails(Object.fromEntries(pairs));
+      if (read === thumbnailRead.current) setInternalThumbnails(Object.fromEntries(pairs));
     });
   };
 
   const selectPlate = (plateId: string) => {
     // The viewer won't remount for the same file, so its plates wouldn't be re-reported.
     if (plateId === activePlate?.id) return;
+    thumbnailRead.current++;
     setActivePlateId(plateId);
     // The next file answers for itself; until it does, the palette shouldn't stay disabled on the strength
     // of the last one.

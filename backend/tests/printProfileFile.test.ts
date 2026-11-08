@@ -121,6 +121,9 @@ describe("a print profile's 3MF", () => {
             '<filament type="ASA" color="#FF0000" used_m="0.00" used_g="0.00"/>',
         ) +
         plate(2, '<filament type="PLA" color="#FFFFFF" used_m="1.2"/>') +
+        // A length that makes no sense, and none of a filament used with no density to weigh it by.
+        plate(3, '<filament type="PLA" color="#FFFFFF" used_m="-1"/>') +
+        plate(4, '<filament type="PLA" color="#FFFFFF" used_m="2.5" used_g="0.00"/>') +
         "</config>",
     );
     const file = path.join(dir, "lengths.3mf");
@@ -128,7 +131,9 @@ describe("a print profile's 3MF", () => {
     const facts = await readProfileFile(file);
     expect(facts!.plates[0]).toMatchObject({ filaments: [{ type: "PLA", grams: 10 }] });
     expect(facts!.plates[0]).not.toHaveProperty("filamentsComplete");
-    expect(facts!.plates[1]).toMatchObject({ filaments: [], filamentsComplete: false });
+    for (const unsure of facts!.plates.slice(1)) {
+      expect(unsure).toMatchObject({ filaments: [], filamentsComplete: false });
+    }
   });
 
   it("reads past an entry whose compressed data is corrupt, without calling it a disk failure", async () => {

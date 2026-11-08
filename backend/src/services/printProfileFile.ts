@@ -179,19 +179,18 @@ function readSlices(xml: string): PlateSlice[] {
     const meta = metadataOf(block);
     const index = plateIndex(meta.get("index"));
     if (index === null) continue;
-    // A filament the slice used none of ("0.00" grams, or no grams but "0.00" metres) is left out; one without a
-    // weight it could read makes the list incomplete, so the provider's stands instead.
+    // A filament the slice used none of ("0.00" grams and no length past that, or no grams and "0.00" metres) is left
+    // out. One it can't say the weight of -- none it could read, or none for a length it did use, as a filament
+    // profile without a density gives -- makes the list incomplete, so the provider's stands instead.
     let filamentsComplete = true;
     const filaments = startTags(block, "filament").flatMap((tag) => {
       const attrs = attributes(tag);
       const used = amountOf(attrs.used_g);
-      if (!Number.isFinite(used)) {
-        const metres = amountOf(attrs.used_m);
-        if (!(Number.isFinite(metres) && metres <= 0)) filamentsComplete = false;
-        return [];
-      }
-      if (used <= 0) return [];
-      return [{ type: text(attrs.type), color: hexColor(attrs.color), grams: rounded(used, 2) }];
+      if (used > 0) return [{ type: text(attrs.type), color: hexColor(attrs.color), grams: rounded(used, 2) }];
+      const metres = amountOf(attrs.used_m);
+      const unused = used === 0 ? !(metres > 0) : Number.isNaN(used) && metres === 0;
+      if (!unused) filamentsComplete = false;
+      return [];
     });
     plates.push({
       index,
