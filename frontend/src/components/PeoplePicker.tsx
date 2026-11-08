@@ -12,20 +12,26 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import SearchIcon from "@mui/icons-material/Search";
-import { chatsApi, type ChatPerson } from "../../api/chats";
-import { UnauthorizedError } from "../../api/client";
-import { useDebouncedValue } from "../../hooks/useDebouncedValue";
-import HelpTip from "../HelpTip";
-import InstanceChip from "../InstanceChip";
-import { ListRowSkeletons } from "../ListSkeleton";
-import UserAvatar from "../UserAvatar";
-import { PersonAvatar } from "./ChatAvatar";
+import type { RemoteRef } from "../api/chats";
+import { UnauthorizedError } from "../api/client";
+import type { UserCard } from "../api/social";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import HelpTip from "./HelpTip";
+import InstanceChip from "./InstanceChip";
+import { ListRowSkeletons } from "./ListSkeleton";
+import UserAvatar from "./UserAvatar";
+import { PersonAvatar } from "./chats/ChatAvatar";
 
-type Props = {
+/** Someone the picker lists: here (`remote` unset), or on a partner instance, whose `id` is theirs here. */
+export type PickerPerson = UserCard & { online?: boolean; remote?: RemoteRef | null };
+
+type Props<P extends PickerPerson> = {
+  /** Finds people for what's typed: a chat's search, or sharing's. */
+  search: (query: string) => Promise<P[]>;
   /** Picks one, as starting a chat does; or with `selected`, ticks any number. */
-  onPick?: (person: ChatPerson) => void;
-  selected?: ChatPerson[];
-  onSelectedChange?: (people: ChatPerson[]) => void;
+  onPick?: (person: P) => void;
+  selected?: P[];
+  onSelectedChange?: (people: P[]) => void;
   /** Left out of the list, e.g. the admin making a room, who is in it anyway. */
   excludeIds?: string[];
   autoFocus?: boolean;
@@ -39,7 +45,8 @@ const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", c
 
 /** The instance's other users, found by any part of their name or their whole email; then, while connected instances
  *  are on, people on partner instances, each with theirs. */
-export default function PeoplePicker({
+export default function PeoplePicker<P extends PickerPerson>({
+  search,
   onPick,
   selected,
   onSelectedChange,
@@ -47,11 +54,11 @@ export default function PeoplePicker({
   autoFocus,
   onUnauthorized,
   height = 280,
-}: Props) {
+}: Props<P>) {
   const { t } = useTranslation("app");
   const [query, setQuery] = React.useState("");
   const debounced = useDebouncedValue(query.trim(), 250);
-  const [people, setPeople] = React.useState<ChatPerson[] | null>(null);
+  const [people, setPeople] = React.useState<P[] | null>(null);
   const [failed, setFailed] = React.useState(false);
   const multi = Boolean(selected);
   const selectedIds = new Set(selected?.map((person) => person.id));
@@ -60,7 +67,7 @@ export default function PeoplePicker({
   React.useEffect(() => {
     let current = true;
     setFailed(false);
-    chatsApi.people(debounced).then(
+    search(debounced).then(
       (found) => {
         if (current) setPeople(found);
       },
@@ -73,9 +80,9 @@ export default function PeoplePicker({
     return () => {
       current = false;
     };
-  }, [debounced, onUnauthorized]);
+  }, [debounced, onUnauthorized, search]);
 
-  const toggle = (person: ChatPerson) => {
+  const toggle = (person: P) => {
     if (!selected || !onSelectedChange) {
       onPick?.(person);
       return;

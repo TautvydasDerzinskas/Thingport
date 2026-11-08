@@ -13,7 +13,12 @@ import CallMergeIcon from "@mui/icons-material/CallMerge";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import { UnauthorizedError } from "../../api/client";
-import { type Collection, type CollectionInput, collectionsApi } from "../../api/collections";
+import {
+  type Collection,
+  type CollectionInput,
+  type CollectionSharingPatch,
+  collectionsApi,
+} from "../../api/collections";
 import { type PreviewMode } from "../../api/settings";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
@@ -116,8 +121,9 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
   const count = selected.length;
   const allBookmarked = count > 0 && selected.every((c) => c.bookmarked);
 
-  const createCollection = async (input: CollectionInput) => {
-    await collectionsApi.create(input);
+  const createCollection = async (input: CollectionInput, sharing: CollectionSharingPatch | null) => {
+    const created = await collectionsApi.create(input);
+    if (sharing) await collectionsApi.updateSharing(created.id, sharing);
     await load();
     // Making one is asking to see it, so the filters don't leave it hidden.
     if (hiddenTypes.includes("user")) changeHiddenTypes(hiddenTypes.filter((type) => type !== "user"));

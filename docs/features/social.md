@@ -1,7 +1,8 @@
 # Social features
 
 Thingport starts as a private library for each person on it. Social features let them share some of it: public
-collections and models, found by everyone on **Explore**, profiles to show them on, and chats to talk about them. With
+collections and models, found by everyone on **Explore**, collections shared with only the people picked, profiles to
+show them on, and chats to talk about them. With
 [connected instances](connected-instances.md), all of it reaches the people on partner instances too.
 
 <picture>
@@ -14,12 +15,20 @@ chats with the switch under them. Until then, every library is private and nothi
 
 ## Share what you choose
 
-- **A collection can be public.** Its form offers **Private** or **Public**, and new collections start private. A
-  public collection shows its models to everyone on the instance.
+- **A collection can be shared or public.** Its form offers **Private**, **Shared** or **Public**, and new
+  collections start private. A public collection shows its models to everyone on the instance. A shared one shows them
+  only to the people you pick there, by any part of their name or their whole email: they see it as they would a
+  public one, and nobody else sees it, on Explore or anywhere. **Share…** in a collection's ⋮ menu opens the form on
+  who sees it.
+- **Who it's shared with is yours to change.** Add or take people off at any time; someone taken off loses it at once.
+  Making it private or public keeps the list, so making it shared again shares it with the same people. A shared
+  collection shows who on its cover and beside its name, to you; the people it's shared with don't see who else is on
+  the list. At most 100 people a collection.
 - **So can your own models**: the ones under **My models**, with the lock beside **Edit profile** there. Models you
   collected from someone else aren't listed as yours.
-- **Everything else stays yours.** Only public collections, the models in them, and public models can be seen by
-  anyone else. Others see your display name and avatar, never your email.
+- **Everything else stays yours.** Only public collections, shared ones (by the people they're shared with), the
+  models in them, and public models can be seen by anyone else. Others see your display name and avatar, never your
+  email.
 
 ## Explore
 
@@ -29,6 +38,8 @@ gathers what everyone shares:
 - **People who share**, with how many collections and models each one shares. A card opens their profile.
 - **New models**, the newest ones shared, and **recently updated collections**.
 - **Most copied**, the models people here copy most.
+- **Shared with you**, at the top: collections someone shared with you, the latest first. You're told with a
+  notification when one is shared with you.
 
 Your own shares aren't listed, since they're not news to you. With [connected instances](connected-instances.md),
 partners' people, collections and models show up too, each marked with the instance it's on, and **Everywhere**,

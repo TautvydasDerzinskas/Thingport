@@ -163,7 +163,11 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
         avatarStyle: true,
       },
     }),
-    prisma.collection.groupBy({ by: ["userId"], where: { userId: { in: userIds }, isPublic: true }, _count: true }),
+    prisma.collection.groupBy({
+      by: ["userId"],
+      where: { userId: { in: userIds }, visibility: "PUBLIC" },
+      _count: true,
+    }),
     sharedModelCounts(userIds),
   ]);
   const byId = new Map(users.map((user) => [user.id, user]));
@@ -500,7 +504,7 @@ function idsPage(runtime: Runtime, collectionId: string, offset: number, printId
  *  (`thingport:models`, a collection whose `next` pages through the rest). */
 export async function collectionsPage(userId: string, page = 0): Promise<unknown> {
   const runtime = await getRuntime();
-  const total = Math.min(await prisma.collection.count({ where: { userId, isPublic: true } }), COLLECTIONS_LIMIT);
+  const total = Math.min(await prisma.collection.count({ where: { userId, visibility: "PUBLIC" } }), COLLECTIONS_LIMIT);
   const offset = page * COLLECTIONS_PAGE;
   const take = Math.max(0, Math.min(COLLECTIONS_PAGE, total - offset));
   // The latest changed first, by the same measure as `updated` below: renamed, made public, or something filed in it.
@@ -508,7 +512,7 @@ export async function collectionsPage(userId: string, page = 0): Promise<unknown
     ? await prisma.$queryRaw<{ id: string }[]>`
         SELECT c.id FROM "Collection" c
         LEFT JOIN "CollectionItem" i ON i."collectionId" = c.id
-        WHERE c."isPublic" AND c."userId" = ${userId}
+        WHERE c."visibility" = 'PUBLIC' AND c."userId" = ${userId}
         GROUP BY c.id
         ORDER BY GREATEST(c."updatedAt", COALESCE(MAX(i."createdAt"), c."updatedAt")) DESC, c.id
         LIMIT ${take} OFFSET ${offset}`
@@ -589,7 +593,7 @@ export function fitCollection<T>(
 export async function collectionModelsPage(collectionId: string, offset: number): Promise<unknown | null> {
   const runtime = await getRuntime();
   const collection = await prisma.collection.findFirst({
-    where: { id: collectionId, isPublic: true },
+    where: { id: collectionId, visibility: "PUBLIC" },
     select: { id: true, _count: { select: { items: true } } },
   });
   if (!collection) return null;

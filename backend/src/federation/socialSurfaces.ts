@@ -2,10 +2,10 @@
  *  instance's own, so a new route in routes/social.ts or routes/chats.ts must be listed here, and
  *  tests/federationSurfaces.test.ts fails until it is. See docs/FEDERATION_DEVELOPMENT.md.
  *  - `federates`: works across instances now; `how` says what goes over ActivityPub.
- *  - `planned`: will, in the phase named; `how` is the plan.
+ *  - `planned`: will, in the change `when` names; `how` is the plan.
  *  - `local`: never crosses, with why: an admin's settings, or a person's own state about something. */
 export type FederationPlan =
-  { kind: "federates"; how: string } | { kind: "planned"; phase: 6; how: string } | { kind: "local"; why: string };
+  { kind: "federates"; how: string } | { kind: "planned"; when: string; how: string } | { kind: "local"; why: string };
 
 export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   // routes/social.ts
@@ -67,6 +67,26 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   "GET /explore/elsewhere/media/:token": {
     kind: "federates",
     how: "A partner's picture, fetched signed through this instance and kept; a viewer's browser never reaches it",
+  },
+  "GET /explore/shared": {
+    kind: "planned",
+    when: "shared collections, partners' people",
+    how: "Collections partners' people shared with the viewer, kept from the Create of a thingport:Collection addressed to them",
+  },
+  "GET /social/people": {
+    kind: "planned",
+    when: "shared collections, partners' people",
+    how: "Partners' people from the index of their directories after this instance's, and one by exact handle, looked up there",
+  },
+  "GET /collection/:id/sharing": {
+    kind: "planned",
+    when: "shared collections, partners' people",
+    how: "Partners' people on a collection's list, shown with their instance",
+  },
+  "PATCH /collection/:id/sharing": {
+    kind: "planned",
+    when: "shared collections, partners' people",
+    how: "Create, Update or Delete of the thingport:Collection to each partner with people on its list, addressed to them",
   },
   "POST /print/:id/copy": {
     kind: "federates",

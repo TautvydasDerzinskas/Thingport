@@ -2139,7 +2139,8 @@
           "federation_disconnected": "Instancia desconectada",
           "federation_blocked": "Instancia bloqueada",
           "federation_unblocked": "Instancia desbloqueada",
-          "federation_user_requested": "Pidió llegar a alguien de otra instancia"
+          "federation_user_requested": "Pidió llegar a alguien de otra instancia",
+          "collection_sharing_changed": "Uso compartido de colección cambiado"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -5477,7 +5478,9 @@
         "itemCount_one": "{{count}} modelo",
         "itemCount_other": "{{count}} modelos",
         "ownerAndCount_one": "{{name}} · {{count}} modelo",
-        "ownerAndCount_other": "{{name}} · {{count}} modelos"
+        "ownerAndCount_other": "{{name}} · {{count}} modelos",
+        "sharedWith": "Compartida con {{names}}",
+        "changeSharing": "Compartida con {{who}}: cambiar quién la ve"
       },
       "form": {
         "createTitle": "Nueva colección",
@@ -5489,16 +5492,30 @@
         "create": "Crear",
         "saveFailed": "No se pudo guardar la colección. Inténtalo de nuevo.",
         "visibilityLabel": "Visibilidad",
-        "visibilityHelp": "Las colecciones públicas aparecen en Explorar: los demás usuarios de la instancia pueden abrir, descargar y copiar sus modelos. Las privadas son solo tuyas.",
+        "visibilityHelp": "Las colecciones privadas son solo tuyas. Las compartidas las ven las personas que elijas y las públicas, todo el mundo, en Explorar. Quien ve una puede abrir, descargar y copiar sus modelos.",
         "private": "Privada",
-        "public": "Pública"
+        "public": "Pública",
+        "shared": "Compartida",
+        "sharedCount_one": "{{count}} persona puede verla",
+        "sharedCount_other": "{{count}} personas pueden verla",
+        "sharedNobody": "Nadie todavía: solo tú puedes verla",
+        "sharedElsewhere_one": "{{count}} en una instancia conectada",
+        "sharedElsewhere_other": "{{count}} en instancias conectadas",
+        "sharedHelp": "La ven como verían una colección pública: pueden abrir, descargar y copiar sus modelos, y reciben un aviso cuando la compartes con ellos. Con quién más está compartida solo lo sabes tú.",
+        "keptPeople_one": "{{names}} sigue en la lista: elige Compartida para volver a compartirla.",
+        "keptPeople_other": "{{names}} siguen en la lista: elige Compartida para volver a compartirla.",
+        "andMore_one": "{{count}} más",
+        "andMore_other": "{{count}} más",
+        "peopleFailed": "No se pudo cargar con quién está compartida."
       },
       "detail": {
         "title": "{{name}}",
         "subtitle": "Colección",
         "empty": "Aún no hay modelos en esta colección.",
         "confirmDelete": "¿Eliminar «{{name}}»? Los modelos que contiene no se eliminan.",
-        "deleteFailed": "No se pudo eliminar la colección."
+        "deleteFailed": "No se pudo eliminar la colección.",
+        "sharedWith_one": "Compartida con {{count}}",
+        "sharedWith_other": "Compartida con {{count}}"
       },
       "errors": {
         "loadFailed": "No se pudieron cargar las colecciones.",
@@ -5607,7 +5624,8 @@
         "openToolUnknown": "Abrir la herramienta",
         "cantSelect": "La colección de una herramienta no se puede combinar ni eliminar"
       },
-      "publicHint": "Pública: se muestra a los demás en Explorar"
+      "publicHint": "Pública: se muestra a los demás en Explorar",
+      "share": "Compartir…"
     },
     "tags": {
       "pageTitle": "Etiquetas",
@@ -6024,7 +6042,11 @@
         "label": "Mostrar",
         "all": "Todo",
         "here": "Esta instancia"
-      }
+      },
+      "sharedWithYou": "Compartidas contigo",
+      "sharedWithYouHelp": "Colecciones que sus dueños compartieron contigo y con unas pocas personas más. Nadie más las ve en Explorar.",
+      "showMore_one": "Mostrar {{count}} más",
+      "showMore_other": "Mostrar {{count}} más"
     }
   },
   "providers": {

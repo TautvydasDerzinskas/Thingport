@@ -14,7 +14,7 @@ import { chatsApi, type Chat, type ChatPerson } from "../../api/chats";
 import { UnauthorizedError } from "../../api/client";
 import Segmented from "../controls/Segmented";
 import HelpTip from "../HelpTip";
-import PeoplePicker from "./PeoplePicker";
+import PeoplePicker from "../PeoplePicker";
 
 const NAME_MAX = 80;
 const DESCRIPTION_MAX = 300;
@@ -136,6 +136,7 @@ export default function RoomDialog({ room, viewerId, onClose, onSaved, onUnautho
                 {t("chats.roomMembers", { count: members.length })}
               </Typography>
               <PeoplePicker
+                search={chatsApi.people}
                 selected={members}
                 onSelectedChange={setMembers}
                 excludeIds={[viewerId]}

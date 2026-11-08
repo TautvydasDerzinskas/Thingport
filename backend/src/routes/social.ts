@@ -4,6 +4,7 @@ import { requireAdmin, requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
+import { prisma } from "../db";
 import { createLog } from "../services/auditLog";
 import { copyPrintToLibrary } from "../services/modelCopyService";
 import { printOutById } from "../services/printLoader";
@@ -15,6 +16,8 @@ import {
   exploreUserCollections,
   exploreUserModels,
   PERSON_COLLECTIONS_PAGE,
+  SHARED_WITH_YOU_PAGE,
+  sharedWithYou,
   socialStatus,
 } from "../services/socialService";
 import { sendRemoteMedia } from "../federation/media";
@@ -32,6 +35,8 @@ import { sendRemoteZip, streamRemoteFile } from "../federation/remoteFiles";
 import { syncStale } from "../federation/remoteIndex";
 import { isFederationLive } from "../federation/settings";
 import { parseSortMode, splitList } from "../services/printQuery";
+import { MAX_SHARES, sharingOf, updateSharing } from "../services/collectionSharing";
+import { searchPeople } from "../services/chatService";
 
 const router = Router();
 
@@ -234,6 +239,66 @@ router.get(
     const page = await exploreUserCollections(req.userId!, req.params.id, limit, offset);
     if (!page) throw new HttpError(404, "User not found");
     sendPage(res, page.collections, offset, page.total);
+  }),
+);
+
+// Collections their owners shared with the viewer, past the first page Explore came with.
+router.get(
+  "/explore/shared",
+  asyncHandler(async (req, res) => {
+    await assertSocialOn();
+    const { limit, offset } = pageQuery(req.query, SHARED_WITH_YOU_PAGE);
+    const page = await sharedWithYou(req.userId!, limit, offset);
+    sendPage(res, page.collections, offset, page.total);
+  }),
+);
+
+// People to share a collection with: the instance's other users, by any part of their name or their whole email, as
+// a new chat finds them. Never their emails.
+router.get(
+  "/social/people",
+  asyncHandler(async (req, res) => {
+    await assertSocialOn();
+    const q = typeof req.query.q === "string" ? req.query.q : "";
+    res.json({ people: await searchPeople({ id: req.userId!, isAdmin: false }, q, { elsewhere: false }) });
+  }),
+);
+
+// Who the viewer's own collection is shared with, and whether it is: the whole list, kept while it's private or
+// public too.
+router.get(
+  "/collection/:id/sharing",
+  asyncHandler(async (req, res) => {
+    res.json(await sharingOf(req.userId!, req.params.id));
+  }),
+);
+
+const sharingSchema = z.object({
+  visibility: z.enum(["private", "shared", "public"]).optional(),
+  add_user_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
+  remove_user_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
+});
+
+// Changes it: its visibility, people added to the list and taken off it (the rest stay). Those who can see it now
+// and couldn't are notified. Refused while social features are off.
+router.patch(
+  "/collection/:id/sharing",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(sharingSchema, req.body);
+    const sharing = await updateSharing(req.userId!, req.params.id, body);
+    res.json(sharing);
+    const collection = await prisma.collection.findUnique({ where: { id: req.params.id }, select: { name: true } });
+    void createLog({
+      userId: req.userId!,
+      action: "collection_sharing_changed",
+      targetId: req.params.id,
+      details: {
+        name: collection?.name ?? null,
+        visibility: sharing.visibility,
+        ...(body.add_user_ids?.length ? { added: body.add_user_ids.length } : {}),
+        ...(body.remove_user_ids?.length ? { removed: body.remove_user_ids.length } : {}),
+      },
+    });
   }),
 );
 

@@ -20,7 +20,9 @@ import ModelCard from "../ModelsPage/ModelCard";
 import SortTabs from "../ModelsPage/SortTabs";
 import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
 import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
-import CollectionActionsMenu from "./CollectionActionsMenu";
+import CollectionActionsMenu, { type CollectionActionsHandle } from "./CollectionActionsMenu";
+import SharedWithChip from "./SharedWithChip";
+import { useSocialStatus } from "../../hooks/useSocialStatus";
 import CollectionBookmarkButton from "./CollectionBookmarkButton";
 import CollectionSyncDialog from "./CollectionSyncDialog";
 import SharedCollectionActions from "./SharedCollectionActions";
@@ -89,6 +91,11 @@ export default function CollectionDetailPage({
   // Another user's public collection: theirs to change. Its models can be opened, downloaded and filed into the
   // user's own collections, which copies them.
   const owner = collection?.owner ?? null;
+  const menuRef = useRef<CollectionActionsHandle>(null);
+  const socialOn = useSocialStatus()?.enabled === true;
+  // Who sees the user's own shared one, beside its menu.
+  const sharedWith =
+    socialOn && collection && !owner && collection.visibility === "shared" ? (collection.shared_with ?? null) : null;
   const ownCollectionId =
     collection && !collection.system_key && !collection.tool_id && !owner ? collection.id : undefined;
 
@@ -106,6 +113,9 @@ export default function CollectionDetailPage({
         <SharedCollectionActions collection={collection} owner={owner} onUnauthorized={onUnauthorized} />
       ) : collection && !collection.system_key ? (
         <Stack direction="row" alignItems="center" spacing={0.5}>
+          {sharedWith && !collection.tool_id && (
+            <SharedWithChip sharedWith={sharedWith} onClick={() => menuRef.current?.openShare()} />
+          )}
           <CollectionBookmarkButton
             collectionId={collection.id}
             bookmarked={collection.bookmarked}
@@ -116,6 +126,7 @@ export default function CollectionDetailPage({
           {/* A tool's collection can be bookmarked, nothing more. */}
           {!collection.tool_id && (
             <CollectionActionsMenu
+              ref={menuRef}
               collection={collection}
               onUpdated={setCollection}
               onUnauthorized={onUnauthorized}

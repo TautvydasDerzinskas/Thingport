@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -10,46 +10,108 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
-import type { Collection, CollectionInput } from "../../api/collections";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import type { Theme } from "@mui/material/styles";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
+import {
+  collectionsApi,
+  type Collection,
+  type CollectionInput,
+  type CollectionSharingPatch,
+  type CollectionVisibility,
+  type SharePerson,
+} from "../../api/collections";
+import { socialApi } from "../../api/social";
 import TagInput from "../../components/TagInput";
 import Segmented from "../../components/controls/Segmented";
 import HelpTip from "../../components/HelpTip";
+import PeoplePicker from "../../components/PeoplePicker";
+import { ListRowSkeletons } from "../../components/ListSkeleton";
 import { useSocialStatus } from "../../hooks/useSocialStatus";
-
-type Visibility = "private" | "public";
+import SharedAvatars from "../../components/SharedAvatars";
+import { peopleNames } from "../../utils/peopleNames";
 
 type Props = {
   collection?: Collection | null;
+  /** Opened to share it, from Share…: on who sees it, and a private one shared until saved otherwise. */
+  share?: boolean;
   onClose: () => void;
-  onSubmit: (input: CollectionInput) => Promise<void>;
+  /** `sharing` is who sees it, when that changed: applied once the collection is saved. */
+  onSubmit: (input: CollectionInput, sharing: CollectionSharingPatch | null) => Promise<void>;
 };
 
+const iconSx = { fontSize: 16 } as const;
+
+/** The visibility a collection has, from an older server too, which says only whether it's public. */
+export const visibilityOf = (collection?: Collection | null): CollectionVisibility =>
+  collection?.visibility ?? (collection?.is_public ? "public" : "private");
+
 /** Edit mode is create mode prefilled from `collection`. */
-export default function CollectionFormModal({ collection, onClose, onSubmit }: Props) {
-  const { t } = useTranslation(["models", "common"]);
+export default function CollectionFormModal({ collection, share = false, onClose, onSubmit }: Props) {
+  const { t, i18n } = useTranslation(["models", "common"]);
   const [name, setName] = useState(collection?.name || "");
   const [description, setDescription] = useState(collection?.description || "");
   const [tags, setTags] = useState<string[]>(collection?.tags || []);
   // Private until its owner says otherwise. Offered only while social features are on: off, nobody else sees it anyway.
   const social = useSocialStatus();
-  const [visibility, setVisibility] = useState<Visibility>(collection?.is_public ? "public" : "private");
+  // On a phone the three choices fit one row without their icons.
+  const narrow = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
+  const [visibility, setVisibility] = useState<CollectionVisibility>(() =>
+    share && visibilityOf(collection) === "private" ? "shared" : visibilityOf(collection),
+  );
+  // Who it's shared with, as saved (kept while it's private or public too) and as picked here.
+  const [savedPeople, setSavedPeople] = useState<SharePerson[] | null>(collection ? null : []);
+  const [people, setPeople] = useState<SharePerson[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isEdit = Boolean(collection);
   const trimmedName = name.trim();
+  const collectionId = collection?.id;
+
+  useEffect(() => {
+    if (!collectionId || !social?.enabled) return;
+    let current = true;
+    collectionsApi.sharing(collectionId).then(
+      (sharing) => {
+        if (!current) return;
+        setSavedPeople(sharing.people);
+        setPeople(sharing.people);
+      },
+      () => {
+        if (!current) return;
+        setSavedPeople([]);
+        setError(t("models:collections.form.peopleFailed"));
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [collectionId, social?.enabled, t]);
+
+  const sharingPatch = (): CollectionSharingPatch | null => {
+    if (!social?.enabled) return null;
+    const saved = new Set((savedPeople ?? []).map((person) => person.id));
+    const picked = new Set(people.map((person) => person.id));
+    const add = people.filter((person) => !saved.has(person.id)).map((person) => person.id);
+    const remove = (savedPeople ?? []).filter((person) => !picked.has(person.id)).map((person) => person.id);
+    const changed = visibility !== visibilityOf(collection);
+    if (!changed && !add.length && !remove.length) return null;
+    return {
+      ...(changed ? { visibility } : {}),
+      ...(add.length ? { add_user_ids: add } : {}),
+      ...(remove.length ? { remove_user_ids: remove } : {}),
+    };
+  };
 
   const handleSubmit = async () => {
     if (!trimmedName || saving) return;
     setSaving(true);
     setError(null);
     try {
-      await onSubmit({
-        name: trimmedName,
-        description: description.trim() || null,
-        tags,
-        ...(social?.enabled ? { is_public: visibility === "public" } : {}),
-      });
+      await onSubmit({ name: trimmedName, description: description.trim() || null, tags }, sharingPatch());
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("models:collections.form.saveFailed"));
@@ -57,6 +119,18 @@ export default function CollectionFormModal({ collection, onClose, onSubmit }: P
       setSaving(false);
     }
   };
+
+  const names = useMemo(
+    () =>
+      peopleNames(
+        people.map((person) => person.display_name),
+        people.length,
+        t,
+        i18n.language,
+      ),
+    [people, t, i18n.language],
+  );
+  const elsewhere = people.filter((person) => person.remote).length;
 
   return (
     <Dialog open onClose={saving ? undefined : onClose} fullWidth maxWidth="sm">
@@ -73,7 +147,7 @@ export default function CollectionFormModal({ collection, onClose, onSubmit }: P
             disabled={saving}
             fullWidth
             // oxlint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
+            autoFocus={!share}
             required
           />
           <TextField
@@ -96,21 +170,84 @@ export default function CollectionFormModal({ collection, onClose, onSubmit }: P
             />
           </Stack>
           {social?.enabled && (
-            <Stack spacing={0.5} alignItems="flex-start">
-              <Typography variant="body2" color="text.secondary">
-                {t("models:collections.form.visibilityLabel")}
-                <HelpTip text={t("models:collections.form.visibilityHelp")} />
-              </Typography>
-              <Segmented
-                value={visibility}
-                onChange={setVisibility}
-                label={t("models:collections.form.visibilityLabel")}
-                disabled={saving}
-                options={[
-                  { value: "private", label: t("models:collections.form.private") },
-                  { value: "public", label: t("models:collections.form.public") },
-                ]}
-              />
+            <Stack spacing={1}>
+              <Stack spacing={0.5} alignItems="flex-start">
+                <Typography variant="body2" color="text.secondary">
+                  {t("models:collections.form.visibilityLabel")}
+                  <HelpTip text={t("models:collections.form.visibilityHelp")} />
+                </Typography>
+                <Segmented
+                  value={visibility}
+                  onChange={setVisibility}
+                  label={t("models:collections.form.visibilityLabel")}
+                  disabled={saving}
+                  options={[
+                    {
+                      value: "private",
+                      label: t("models:collections.form.private"),
+                      startIcon: narrow ? undefined : <LockOutlinedIcon sx={iconSx} />,
+                    },
+                    {
+                      value: "shared",
+                      label: t("models:collections.form.shared"),
+                      startIcon: narrow ? undefined : <GroupOutlinedIcon sx={iconSx} />,
+                    },
+                    {
+                      value: "public",
+                      label: t("models:collections.form.public"),
+                      startIcon: narrow ? undefined : <PublicOutlinedIcon sx={iconSx} />,
+                    },
+                  ]}
+                />
+              </Stack>
+              {visibility === "shared" ? (
+                <Stack
+                  spacing={1}
+                  sx={{
+                    animation: "collection-sharing-in 200ms ease-out",
+                    "@keyframes collection-sharing-in": {
+                      from: { opacity: 0, transform: "translateY(-6px)" },
+                      to: { opacity: 1, transform: "none" },
+                    },
+                    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                  }}
+                >
+                  {savedPeople === null ? (
+                    <ListRowSkeletons count={4} lead="circle" leadSize={32} />
+                  ) : (
+                    <PeoplePicker
+                      search={socialApi.people}
+                      selected={people}
+                      onSelectedChange={setPeople}
+                      // Opened from Share…: finding someone is the first thing to do.
+                      // oxlint-disable-next-line jsx-a11y/no-autofocus
+                      autoFocus={share}
+                      height={220}
+                    />
+                  )}
+                  <Typography variant="caption" color="text.secondary" component="div">
+                    {people.length
+                      ? t("models:collections.form.sharedCount", { count: people.length })
+                      : t("models:collections.form.sharedNobody")}
+                    {elsewhere > 0 && ` · ${t("models:collections.form.sharedElsewhere", { count: elsewhere })}`}
+                    <HelpTip text={t("models:collections.form.sharedHelp")} />
+                  </Typography>
+                </Stack>
+              ) : (
+                people.length > 0 && (
+                  <Stack
+                    direction="row"
+                    spacing={1.25}
+                    alignItems="center"
+                    sx={{ px: 1.5, py: 1, border: 1, borderStyle: "dashed", borderColor: "divider", borderRadius: 2 }}
+                  >
+                    <SharedAvatars people={people.slice(0, 3)} size={22} dim />
+                    <Typography variant="caption" color="text.secondary">
+                      {t("models:collections.form.keptPeople", { names, count: people.length })}
+                    </Typography>
+                  </Stack>
+                )
+              )}
             </Stack>
           )}
         </Stack>

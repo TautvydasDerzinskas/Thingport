@@ -152,6 +152,7 @@ model User {
   providerConnections      ProviderConnection[]
   sessions                 Session[]
   chatMemberships          ChatMember[]
+  collectionShares         CollectionShare[]
   chatMessages             ChatMessage[]
   chatsCreated             Chat[]               @relation("ChatCreatedBy")
   peerRequests             PeerRequest[]
@@ -303,9 +304,11 @@ model Collection {
   // Set on the collection a tool keeps its models in: fixed, listed last, and gone with the tool.
   toolId         String?
   tool           Tool?                    @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  // Shown to the instance's other users, on Explore, while an admin has social features on (services/socialService.ts):
-  // its models can then be opened, downloaded and copied by them. Private unless its owner says otherwise.
-  isPublic       Boolean                  @default(false)
+  // Who besides its owner sees it, while an admin has social features on (services/socialService.ts): nobody, the
+  // people in `shares`, or everyone (on Explore). Those who see it can open, download and copy its models.
+  visibility     CollectionVisibility     @default(PRIVATE)
+  // Who it's shared with. Kept while it's private or public too, so sharing it again needs no picking.
+  shares         CollectionShare[]
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
   // Generated column (name A, tags B, description C); see Print.searchVector.
@@ -314,7 +317,31 @@ model Collection {
   @@unique([userId, nameNormalized])
   @@index([tags], type: Gin)
   @@index([toolId])
-  @@index([isPublic])
+  @@index([visibility])
+}
+
+enum CollectionVisibility {
+  PRIVATE
+  SHARED
+  PUBLIC
+}
+
+/// One person a collection is shared with: someone here (`userId`) or on a partner instance (`remotePersonId`),
+/// never both. They see it while it's SHARED, as they would a public one.
+model CollectionShare {
+  id             String        @id @default(cuid())
+  collectionId   String
+  collection     Collection    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  remotePersonId String?
+  remotePerson   RemotePerson? @relation(fields: [remotePersonId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+
+  @@unique([collectionId, userId])
+  @@unique([collectionId, remotePersonId])
+  @@index([userId])
+  @@index([remotePersonId])
 }
 
 /// Keeps a collection in step with one on a provider: models added there later are imported into
@@ -1197,33 +1224,34 @@ model Peer {
 /// A partner's person who shares something, as its directory last said: what Explore here shows of them. Read again
 /// on every sync; gone with the partner.
 model RemotePerson {
-  id              String             @id @default(cuid())
-  peerId          String
-  peer            Peer               @relation(fields: [peerId], references: [id], onDelete: Cascade)
+  id               String             @id @default(cuid())
+  peerId           String
+  peer             Peer               @relation(fields: [peerId], references: [id], onDelete: Cascade)
   /// Their Person actor's id, on the partner's origin.
-  apId            String             @unique
-  username        String?
-  displayName     String
-  bio             String?
-  links           String[]
+  apId             String             @unique
+  username         String?
+  displayName      String
+  bio              String?
+  links            String[]
   /// Pictures, at the partner: fetched through this instance (federation/media.ts), never by a viewer's browser.
-  avatarUrl       String?
-  coverUrl        String?
-  coverPreset     String?
-  coverPositionY  Int                @default(50)
-  modelCount      Int                @default(0)
-  collectionCount Int                @default(0)
+  avatarUrl        String?
+  coverUrl         String?
+  coverPreset      String?
+  coverPositionY   Int                @default(50)
+  modelCount       Int                @default(0)
+  collectionCount  Int                @default(0)
   /// When they last shared something there: how Explore orders people.
-  sharedAt        DateTime?
-  joinedAt        DateTime?
-  syncedAt        DateTime           @default(now())
+  sharedAt         DateTime?
+  joinedAt         DateTime?
+  syncedAt         DateTime           @default(now())
   /// In its instance's directory: shown on Explore. Someone known only from a chat (they share nothing there, or no
   /// longer do) is kept unlisted while a chat still names them.
-  listed          Boolean            @default(true)
-  models          RemoteModel[]
-  collections     RemoteCollection[]
-  chats           ChatRemoteMember[]
-  messages        ChatMessage[]
+  listed           Boolean            @default(true)
+  models           RemoteModel[]
+  collections      RemoteCollection[]
+  chats            ChatRemoteMember[]
+  collectionShares CollectionShare[]
+  messages         ChatMessage[]
 
   @@index([peerId])
   @@index([sharedAt])

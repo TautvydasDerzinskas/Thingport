@@ -6,6 +6,7 @@ import type {
   CollectionSync,
   Author,
   Collection,
+  CollectionVisibility,
   Category,
   CategorySiteId,
   ImportJob,
@@ -477,10 +478,24 @@ export type CollectionOut = {
   sync: CollectionSyncOut | null;
   /** Set on the collection of a tool's models: fixed, and gone when the tool is uninstalled. */
   tool_id: string | null;
-  /** Shown to the instance's other users while social features are on. */
+  /** Shown to the instance's other users while social features are on: `visibility` is "public". Kept for older
+   *  clients, which know no other. */
   is_public: boolean;
-  /** Set on another user's public collection: whose it is. Null on the viewer's own. */
+  /** Who besides its owner sees it while social features are on: nobody, the people it's shared with, or everyone. */
+  visibility: CollectionVisibilityOut;
+  /** On the owner's own shared collection: how many it's shared with, and the first few of them. Null otherwise; who
+   *  else it's shared with is the owner's to know. */
+  shared_with: { count: number; people: SharePersonOut[] } | null;
+  /** Set on another user's collection: whose it is. Null on the viewer's own. */
   owner: UserCardOut | null;
+};
+
+export type CollectionVisibilityOut = "private" | "shared" | "public";
+
+/** Someone a collection is shared with: a person here (`remote` null), or one on a partner instance. */
+export type SharePersonOut = UserCardOut & {
+  /** As a chat's person is: their handle, their instance, and their page on Explore while they share something. */
+  remote: { handle: string | null; instance: { name: string; origin: string }; profile_id: string | null } | null;
 };
 
 export type SyncProfileScope = "url" | "designer" | "all";
@@ -540,10 +555,15 @@ export function toCollectionOut(
     bookmarked,
     sync: sync ? toCollectionSyncOut(sync) : null,
     tool_id: collection.toolId ?? null,
-    is_public: collection.isPublic,
+    is_public: collection.visibility === "PUBLIC",
+    visibility: visibilityOut(collection.visibility),
+    shared_with: null,
     owner: null,
   };
 }
+
+export const visibilityOut = (visibility: CollectionVisibility): CollectionVisibilityOut =>
+  visibility === "PUBLIC" ? "public" : visibility === "SHARED" ? "shared" : "private";
 
 /** `name` is an untranslated fallback; the frontend translates via `system_key`. */
 export function toSystemCollectionOut(
@@ -566,6 +586,8 @@ export function toSystemCollectionOut(
     sync: null,
     tool_id: null,
     is_public: false,
+    visibility: "private",
+    shared_with: null,
     owner: null,
   };
 }

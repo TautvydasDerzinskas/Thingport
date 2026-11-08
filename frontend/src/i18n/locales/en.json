@@ -2107,7 +2107,8 @@
           "federation_disconnected": "Disconnected an instance",
           "federation_blocked": "Blocked an instance",
           "federation_unblocked": "Unblocked an instance",
-          "federation_user_requested": "Asked to reach someone elsewhere"
+          "federation_user_requested": "Asked to reach someone elsewhere",
+          "collection_sharing_changed": "Collection sharing changed"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -5417,7 +5418,9 @@
         "itemCount_one": "{{count}} model",
         "itemCount_other": "{{count}} models",
         "ownerAndCount_one": "{{name}} · {{count}} model",
-        "ownerAndCount_other": "{{name}} · {{count}} models"
+        "ownerAndCount_other": "{{name}} · {{count}} models",
+        "sharedWith": "Shared with {{names}}",
+        "changeSharing": "Shared with {{who}}: change who sees it"
       },
       "form": {
         "createTitle": "New Collection",
@@ -5429,16 +5432,30 @@
         "create": "Create",
         "saveFailed": "Failed to save the collection. Please try again.",
         "visibilityLabel": "Visibility",
-        "visibilityHelp": "Public collections show on Explore: the instance's other users can open, download and copy their models. Private ones are yours alone.",
+        "visibilityHelp": "Private collections are yours alone. Shared ones are seen by the people you pick, public ones by everyone, on Explore. Whoever sees one can open, download and copy its models.",
         "private": "Private",
-        "public": "Public"
+        "public": "Public",
+        "shared": "Shared",
+        "sharedCount_one": "{{count}} person can see it",
+        "sharedCount_other": "{{count}} people can see it",
+        "sharedNobody": "Nobody yet: only you can see it",
+        "sharedElsewhere_one": "{{count}} on a connected instance",
+        "sharedElsewhere_other": "{{count}} on connected instances",
+        "sharedHelp": "They see it as they would a public collection: they can open, download and copy its models, and are told when you share it with them. Who else it's shared with is yours to know.",
+        "keptPeople_one": "{{names}} stays on the list: pick Shared to share it again.",
+        "keptPeople_other": "{{names}} stay on the list: pick Shared to share it again.",
+        "andMore_one": "{{count}} more",
+        "andMore_other": "{{count}} more",
+        "peopleFailed": "Couldn't load who it's shared with."
       },
       "detail": {
         "title": "{{name}}",
         "subtitle": "Collection",
         "empty": "No models in this collection yet.",
         "confirmDelete": "Delete \"{{name}}\"? Models in it are not deleted.",
-        "deleteFailed": "Failed to delete the collection."
+        "deleteFailed": "Failed to delete the collection.",
+        "sharedWith_one": "Shared with {{count}}",
+        "sharedWith_other": "Shared with {{count}}"
       },
       "errors": {
         "loadFailed": "Unable to load collections.",
@@ -5547,7 +5564,8 @@
         "openToolUnknown": "Open the tool",
         "cantSelect": "A tool's collection can't be merged or deleted"
       },
-      "publicHint": "Public: shown to others on Explore"
+      "publicHint": "Public: shown to others on Explore",
+      "share": "Share…"
     },
     "tags": {
       "pageTitle": "Tags",
@@ -5961,7 +5979,11 @@
         "label": "Show",
         "all": "Everywhere",
         "here": "This instance"
-      }
+      },
+      "sharedWithYou": "Shared with you",
+      "sharedWithYouHelp": "Collections their owners shared with you and a few others. Nobody else sees them on Explore.",
+      "showMore_one": "Show {{count}} more",
+      "showMore_other": "Show {{count}} more"
     }
   },
   "providers": {

@@ -29,7 +29,8 @@ import {
 import { printOutsByIds } from "../services/printLoader";
 import { relocatePrintsForToken } from "../services/printService";
 import { createLog } from "../services/auditLog";
-import { toCollectionOut, type PrintOut } from "../dto";
+import { toCollectionOut, visibilityOut, type PrintOut } from "../dto";
+import { tellGained, visibilityAsked, withSharedWith } from "../services/collectionSharing";
 import { syncToolModelsSoon } from "../services/toolsService";
 import { collectionOutsFor, libraryCopyIds, readableCollection, readablePrintWhere } from "../services/socialService";
 import { copyPrintToLibrary } from "../services/modelCopyService";
@@ -41,7 +42,10 @@ const collectionSchema = z.object({
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).nullable().optional(),
   tags: z.array(z.string()).default([]),
-  // Left as it is when not sent. Kept while social features are off, and only shown to others while they're on.
+  // Who besides its owner sees it: nobody, the people it's shared with (changed at /collections/:id/sharing), or
+  // everyone. Left as it is when not sent. Kept while social features are off, and only shown to others while they're
+  // on. `is_public` is how older clients ask; `visibility` wins when both are sent.
+  visibility: z.enum(["private", "shared", "public"]).optional(),
   is_public: z.boolean().optional(),
 });
 
@@ -115,15 +119,18 @@ router.get(
     const printOuts = await printOutsByIds(req.userId!, coverPrintIds);
     res.json([
       ...systemCollections,
-      ...collections.map((c) =>
-        toCollectionOut(
-          c,
-          c._count.items,
-          c.items.map((i) => printOuts.get(i.printId)).filter((p): p is PrintOut => Boolean(p)),
-          bookmarkedIds.has(c.id),
-          c.sync,
+      ...(await withSharedWith(
+        req.userId!,
+        collections.map((c) =>
+          toCollectionOut(
+            c,
+            c._count.items,
+            c.items.map((i) => printOuts.get(i.printId)).filter((p): p is PrintOut => Boolean(p)),
+            bookmarkedIds.has(c.id),
+            c.sync,
+          ),
         ),
-      ),
+      )),
     ]);
   }),
 );
@@ -132,7 +139,7 @@ router.post(
   "/collections",
   asyncHandler(async (req, res) => {
     const body = parseBody(collectionSchema, req.body);
-    const collection = await createCollection(req.userId!, { ...body, isPublic: body.is_public });
+    const collection = await createCollection(req.userId!, { ...body, visibility: visibilityAsked(body, "PRIVATE") });
     res.json(toCollectionOut(collection, 0, [], false));
   }),
 );
@@ -204,7 +211,7 @@ router.get(
       include: { _count: { select: { items: true } }, sync: true },
     });
     if (!collection) {
-      // Another user's public one, while social features are on.
+      // Another user's public one, or one shared with the viewer, while social features are on.
       const shared = await readableCollection(req.userId!, req.params.id);
       if (!shared) throw new HttpError(404, "Collection not found");
       res.json((await collectionOutsFor(req.userId!, [shared]))[0]);
@@ -215,7 +222,7 @@ router.get(
         where: { userId: req.userId, type: "COLLECTION", collectionId: collection.id },
       }),
     );
-    res.json(
+    const [out] = await withSharedWith(req.userId!, [
       toCollectionOut(
         collection,
         collection._count.items,
@@ -223,7 +230,8 @@ router.get(
         bookmarked,
         collection.sync,
       ),
-    );
+    ]);
+    res.json(out);
   }),
 );
 
@@ -245,9 +253,10 @@ router.patch(
         nameNormalized: normalizeCollectionName(body.name),
         description: body.description?.trim() || null,
         tags: normalizeTags(body.tags),
-        isPublic: body.is_public ?? collection.isPublic,
+        visibility: visibilityAsked(body, collection.visibility),
       },
     });
+    await tellGained(collection, updated);
     if (renamed) await relocatePrintsForToken("collection", await collectionPrintIds(updated.id));
     const [itemCount, covers, bookmarked, sync] = await Promise.all([
       prisma.collectionItem.count({ where: { collectionId: updated.id } }),
@@ -255,14 +264,17 @@ router.patch(
       prisma.bookmark.findFirst({ where: { userId: req.userId, type: "COLLECTION", collectionId: updated.id } }),
       prisma.collectionSync.findUnique({ where: { collectionId: updated.id } }),
     ]);
-    res.json(toCollectionOut(updated, itemCount, covers, Boolean(bookmarked), sync));
+    const [out] = await withSharedWith(req.userId!, [
+      toCollectionOut(updated, itemCount, covers, Boolean(bookmarked), sync),
+    ]);
+    res.json(out);
     void createLog({
       userId: req.userId!,
       action: "collection_edited",
       targetId: updated.id,
       details: {
         name: updated.name,
-        ...(updated.isPublic !== collection.isPublic ? { is_public: updated.isPublic } : {}),
+        ...(updated.visibility !== collection.visibility ? { visibility: visibilityOut(updated.visibility) } : {}),
       },
     });
   }),

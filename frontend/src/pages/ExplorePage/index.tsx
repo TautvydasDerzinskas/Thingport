@@ -8,12 +8,14 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import CollectionsIcon from "@mui/icons-material/Collections";
 import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
+import FolderSharedOutlinedIcon from "@mui/icons-material/FolderSharedOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutlined";
 import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import type { AuthUser } from "../../api/auth";
+import type { Collection } from "../../api/collections";
 import { UnauthorizedError } from "../../api/client";
 import type { Print } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
@@ -46,6 +48,8 @@ const peopleGridSx = {
 const PEOPLE = 48;
 const RECENT_MODELS = 12;
 const RECENT_COLLECTIONS = 8;
+// Collections shared with the user, a click of Show more at a time past the first page Explore came with.
+const SHARED_MORE = 24;
 
 type Entry = { at: string | null | undefined; node: ReactNode };
 
@@ -70,6 +74,9 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   const [instances, setInstances] = useState<InstanceRef[]>([]);
   const latest = useRef(0);
   const [elsewhereOpen, setElsewhereOpen] = useState(false);
+  // Shared with the user past the first page, as Show more loaded them.
+  const [moreShared, setMoreShared] = useState<Collection[]>([]);
+  const [loadingShared, setLoadingShared] = useState(false);
   // With connected instances on, someone on another instance can be asked for, here.
   const federation = useSocialStatus()?.federation === true;
 
@@ -80,6 +87,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
         if (asked !== latest.current) return;
         setFailed(false);
         setOverview(value);
+        setMoreShared([]);
         setInstances(value.instances ?? []);
         // A partner no longer there: back to everything.
         if (scope !== "all" && scope !== "here" && !(value.instances ?? []).some((item) => item.id === scope)) {
@@ -176,6 +184,18 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     );
   }
 
+  const collectionCard = (collection: Collection) => (
+    <CollectionCard
+      key={collection.id}
+      collection={collection}
+      theme={theme}
+      previewMode={previewMode}
+      // Another user's: nothing on the card changes it.
+      onUpdated={() => undefined}
+      onDeleted={() => undefined}
+      onUnauthorized={onUnauthorized}
+    />
+  );
   const sharedAt = overview.shared_at;
   const elsewhere = overview.elsewhere;
   const people = newestFirst(
@@ -208,18 +228,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     [
       ...overview.recent_collections.map((collection) => ({
         at: sharedAt?.collections[collection.id],
-        node: (
-          <CollectionCard
-            key={collection.id}
-            collection={collection}
-            theme={theme}
-            previewMode={previewMode}
-            // Another user's: nothing on the card changes it.
-            onUpdated={() => undefined}
-            onDeleted={() => undefined}
-            onUnauthorized={onUnauthorized}
-          />
-        ),
+        node: collectionCard(collection),
       })),
       ...(elsewhere?.recent_collections ?? []).map((collection) => ({
         at: collection.updated_at,
@@ -229,7 +238,22 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     RECENT_COLLECTIONS,
   );
 
-  if (!people.length) {
+  const sharedWithYou = [...(overview.shared_with_you ?? []), ...moreShared];
+  const sharedTotal = overview.shared_with_you_total ?? sharedWithYou.length;
+  const showMoreShared = async () => {
+    setLoadingShared(true);
+    try {
+      const page = await socialApi.sharedWithYou({ limit: SHARED_MORE, offset: sharedWithYou.length });
+      const known = new Set(sharedWithYou.map((collection) => collection.id));
+      setMoreShared((prev) => [...prev, ...page.items.filter((collection) => !known.has(collection.id))]);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+    } finally {
+      setLoadingShared(false);
+    }
+  };
+
+  if (!people.length && !sharedWithYou.length) {
     return (
       <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
         {filter}
@@ -255,15 +279,37 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   return (
     <Stack spacing={4} sx={{ maxWidth: "1920px", mx: "auto" }}>
       {filter}
-      <ExploreSection
-        title={t("models:explore.people")}
-        help={t("models:explore.peopleHelp")}
-        icon={<GroupOutlinedIcon fontSize="small" />}
-        order={order++}
-        action={elsewhereButton}
-      >
-        <Box sx={peopleGridSx}>{people}</Box>
-      </ExploreSection>
+      {sharedWithYou.length > 0 && (
+        <ExploreSection
+          title={t("models:explore.sharedWithYou")}
+          help={t("models:explore.sharedWithYouHelp")}
+          icon={<FolderSharedOutlinedIcon fontSize="small" />}
+          order={order++}
+          // With nobody sharing on Explore, asking for someone elsewhere starts here.
+          action={!people.length ? elsewhereButton : undefined}
+        >
+          <Box sx={cardGridSx(6)}>{sharedWithYou.map(collectionCard)}</Box>
+          {sharedWithYou.length < sharedTotal && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Button size="small" variant="outlined" onClick={showMoreShared} disabled={loadingShared}>
+                {t("models:explore.showMore", { count: sharedTotal - sharedWithYou.length })}
+              </Button>
+            </Box>
+          )}
+        </ExploreSection>
+      )}
+
+      {people.length > 0 && (
+        <ExploreSection
+          title={t("models:explore.people")}
+          help={t("models:explore.peopleHelp")}
+          icon={<GroupOutlinedIcon fontSize="small" />}
+          order={order++}
+          action={elsewhereButton}
+        >
+          <Box sx={peopleGridSx}>{people}</Box>
+        </ExploreSection>
+      )}
 
       {recentModels.length > 0 && (
         <ExploreSection

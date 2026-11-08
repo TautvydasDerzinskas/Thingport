@@ -330,7 +330,7 @@ describe("a model imported with print profiles", () => {
           userId: owner.id,
           name: `Shared ${stamp}`,
           nameNormalized: `shared ${stamp}`,
-          isPublic: true,
+          visibility: "PUBLIC",
           items: { create: { printId: print.id } },
         },
       });

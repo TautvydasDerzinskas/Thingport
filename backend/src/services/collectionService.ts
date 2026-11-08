@@ -6,7 +6,7 @@ import { moveCollectionBookmark } from "./bookmarkService";
 import { toSystemCollectionOut, type CollectionOut, type SystemCollectionKey } from "../dto";
 import { normalizeTags } from "../utils/tagNormalization";
 import { createLog } from "./auditLog";
-import type { Collection, Prisma } from "@prisma/client";
+import type { Collection, CollectionVisibility, Prisma } from "@prisma/client";
 
 export function normalizeCollectionName(name: string): string {
   return name.trim().toLowerCase();
@@ -67,7 +67,7 @@ export async function addPrintsToCollection(collectionId: string, printIds: stri
 /** A new, empty collection. Shared by POST /collections and the MCP create_collection tool. */
 export async function createCollection(
   userId: string,
-  input: { name: string; description?: string | null; tags?: string[]; isPublic?: boolean },
+  input: { name: string; description?: string | null; tags?: string[]; visibility?: CollectionVisibility },
 ): Promise<Collection> {
   await assertCollectionNameAvailable(userId, input.name);
   const collection = await prisma.collection.create({
@@ -77,7 +77,7 @@ export async function createCollection(
       nameNormalized: normalizeCollectionName(input.name),
       description: input.description?.trim() || null,
       tags: normalizeTags(input.tags ?? []),
-      isPublic: input.isPublic ?? false,
+      visibility: input.visibility ?? "PRIVATE",
     },
   });
   void createLog({ userId, action: "collection_created", targetId: collection.id, details: { name: collection.name } });

@@ -2177,7 +2177,8 @@
           "federation_disconnected": "Atjungtas serveris",
           "federation_blocked": "Užblokuotas serveris",
           "federation_unblocked": "Atblokuotas serveris",
-          "federation_user_requested": "Paprašyta pasiekti ką nors kitur"
+          "federation_user_requested": "Paprašyta pasiekti ką nors kitur",
+          "collection_sharing_changed": "Pakeistas kolekcijos bendrinimas"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -5601,7 +5602,9 @@
         "itemCount_other": "{{count}} modelių",
         "ownerAndCount_one": "{{name}} · {{count}} modelis",
         "ownerAndCount_few": "{{name}} · {{count}} modeliai",
-        "ownerAndCount_other": "{{name}} · {{count}} modelių"
+        "ownerAndCount_other": "{{name}} · {{count}} modelių",
+        "sharedWith": "Bendrinama su: {{names}}",
+        "changeSharing": "Bendrinama su: {{who}}. Keisti, kas mato"
       },
       "form": {
         "createTitle": "Nauja kolekcija",
@@ -5613,16 +5616,35 @@
         "create": "Sukurti",
         "saveFailed": "Nepavyko išsaugoti kolekcijos. Bandykite dar kartą.",
         "visibilityLabel": "Matomumas",
-        "visibilityHelp": "Viešos kolekcijos rodomos skiltyje Naršyti: kiti šio serverio naudotojai gali atidaryti, atsisiųsti ir kopijuoti jų modelius. Privačios matomos tik jums.",
+        "visibilityHelp": "Privačios kolekcijos matomos tik jums. Bendrinamas mato jūsų pasirinkti žmonės, viešas – visi, skiltyje Naršyti. Kas mato kolekciją, gali atidaryti, atsisiųsti ir kopijuoti jos modelius.",
         "private": "Privati",
-        "public": "Vieša"
+        "public": "Vieša",
+        "shared": "Bendrinama",
+        "sharedCount_one": "{{count}} žmogus gali ją matyti",
+        "sharedCount_few": "{{count}} žmonės gali ją matyti",
+        "sharedCount_other": "{{count}} žmonių gali ją matyti",
+        "sharedNobody": "Kol kas niekas: matote tik jūs",
+        "sharedElsewhere_one": "{{count}} sujungtame serveryje",
+        "sharedElsewhere_few": "{{count}} sujungtuose serveriuose",
+        "sharedElsewhere_other": "{{count}} sujungtuose serveriuose",
+        "sharedHelp": "Jie mato ją kaip viešą kolekciją: gali atidaryti, atsisiųsti ir kopijuoti jos modelius, ir gauna pranešimą, kai su jais pasidalinate. Su kuo dar ji bendrinama, žinote tik jūs.",
+        "keptPeople_one": "{{names}} lieka sąraše: pasirinkite Bendrinama, kad vėl pasidalintumėte.",
+        "keptPeople_few": "{{names}} lieka sąraše: pasirinkite Bendrinama, kad vėl pasidalintumėte.",
+        "keptPeople_other": "{{names}} lieka sąraše: pasirinkite Bendrinama, kad vėl pasidalintumėte.",
+        "andMore_one": "dar {{count}}",
+        "andMore_few": "dar {{count}}",
+        "andMore_other": "dar {{count}}",
+        "peopleFailed": "Nepavyko įkelti, su kuo ji bendrinama."
       },
       "detail": {
         "title": "{{name}}",
         "subtitle": "Kolekcija",
         "empty": "Šioje kolekcijoje kol kas nėra modelių.",
         "confirmDelete": "Ištrinti „{{name}}“? Joje esantys modeliai nebus ištrinti.",
-        "deleteFailed": "Nepavyko ištrinti kolekcijos."
+        "deleteFailed": "Nepavyko ištrinti kolekcijos.",
+        "sharedWith_one": "Bendrinama: {{count}}",
+        "sharedWith_few": "Bendrinama: {{count}}",
+        "sharedWith_other": "Bendrinama: {{count}}"
       },
       "errors": {
         "loadFailed": "Nepavyko įkelti kolekcijų.",
@@ -5757,7 +5779,8 @@
         "openToolUnknown": "Atidaryti įrankį",
         "cantSelect": "Įrankio kolekcijos negalima sujungti ar ištrinti"
       },
-      "publicHint": "Vieša: rodoma kitiems skiltyje Naršyti"
+      "publicHint": "Vieša: rodoma kitiems skiltyje Naršyti",
+      "share": "Bendrinti…"
     },
     "tags": {
       "pageTitle": "Žymos",
@@ -6255,7 +6278,12 @@
         "label": "Rodyti",
         "all": "Visur",
         "here": "Šiame serveryje"
-      }
+      },
+      "sharedWithYou": "Bendrinama su jumis",
+      "sharedWithYouHelp": "Kolekcijos, kuriomis savininkai pasidalino su jumis ir keliais kitais. Kiti jų skiltyje Naršyti nemato.",
+      "showMore_one": "Rodyti dar {{count}}",
+      "showMore_few": "Rodyti dar {{count}}",
+      "showMore_other": "Rodyti dar {{count}}"
     }
   },
   "providers": {

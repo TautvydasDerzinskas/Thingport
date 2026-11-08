@@ -1,6 +1,6 @@
 import { appendTokenToUrl, authHeaders } from "../utils/auth";
 import { apiBase, assertOkWithMessage, readErrorMessage, UnauthorizedError } from "./client";
-import type { Collection } from "./collections";
+import type { Collection, SharePerson } from "./collections";
 import { FederationError } from "./federation";
 import type { ListPrintsResult, Print, PrintSortMode } from "./prints";
 import type { ProfileCoverValue } from "../constants/profileCovers";
@@ -79,6 +79,9 @@ export type ExploreOverview = {
   recent_models: Print[];
   recent_collections: Collection[];
   most_collected: { model: Print; copies: number }[];
+  /** Collections their owners shared with the user, the latest first: the first page, the rest from `sharedWithYou`. */
+  shared_with_you?: Collection[];
+  shared_with_you_total?: number;
   /** When each of the above was last shared, by id: what orders partners' beside them. */
   shared_at?: { people: Record<string, string>; models: Record<string, string>; collections: Record<string, string> };
   /** What partners share, while connected instances are on. */
@@ -349,6 +352,20 @@ export const socialApi = {
   },
 
   /** A page of a user's public collections past the first, which came with their page; null for none any more. */
+  /** Collections their owners shared with the user, past the first page Explore came with. */
+  sharedWithYou: async (params: { limit: number; offset: number }): Promise<{ items: Collection[]; total: number }> => {
+    const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
+    const res = await fetch(`${apiBase()}/explore/shared?${qs}`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    await assertOkWithMessage(res, "Failed to load the collections");
+    return { items: await res.json(), total: Number(res.headers.get("X-Total-Count") ?? 0) };
+  },
+
+  /** People to share a collection with: by any part of their name, or their whole email. */
+  people: async (query: string): Promise<SharePerson[]> =>
+    (await getJson<{ people: SharePerson[] }>(`/social/people?q=${encodeURIComponent(query)}`, "Failed to find people"))
+      .people,
+
   userCollections: async (
     userId: string,
     params: { limit: number; offset: number },
