@@ -820,6 +820,7 @@ describe("upgrading to the import queue", () => {
         print_id: null,
         state: "not_imported",
         gaps: [],
+        imported_profile_ids: [],
       });
     });
 

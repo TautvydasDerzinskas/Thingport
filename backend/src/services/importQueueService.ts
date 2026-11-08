@@ -471,6 +471,15 @@ export async function queueLink(userId: string, url: string, options: QueuedLink
     let itemId: string;
     if (existing) {
       itemId = existing.id;
+      // Asked for again with another print profile scope, such as every missing one after just the page's own: that
+      // one stands, as Grab's panel only says the link is already waiting. Its other choices stay as first sent.
+      const stored = (existing.payload ?? {}) as Prisma.JsonObject;
+      if (options.scope && stored.scope !== options.scope) {
+        await prisma.importJobItem.update({
+          where: { id: existing.id },
+          data: { payload: { ...stored, scope: options.scope } },
+        });
+      }
     } else {
       const payload: Prisma.InputJsonValue = {
         collection_id: options.collection_id ?? null,
