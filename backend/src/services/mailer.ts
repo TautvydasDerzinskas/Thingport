@@ -46,7 +46,7 @@ export async function sendInvitationEmail(
   await sendMail({
     to,
     subject: "You're invited to Thingport",
-    text: `${inviterName} invited you to create an account on their Thingport, a library for 3D-printing models.\n\nCreate your account here:\n${link}\n\nThe link works for ${expiresInDays} days, for this email address only.`,
-    html: `<p>${escapeHtml(inviterName)} invited you to create an account on their Thingport, a library for 3D-printing models.</p><p><a href="${link}">Create your account</a></p><p>Or open this link: ${link}</p><p>The link works for ${expiresInDays} days, for this email address only.</p>`,
+    text: `${inviterName} invited you to create an account on their Thingport instance, a library for 3D-printing models.\n\nCreate your account here:\n${link}\n\nThe link works for ${expiresInDays} days, for this email address only.`,
+    html: `<p>${escapeHtml(inviterName)} invited you to create an account on their Thingport instance, a library for 3D-printing models.</p><p><a href="${link}">Create your account</a></p><p>Or open this link: ${link}</p><p>The link works for ${expiresInDays} days, for this email address only.</p>`,
   });
 }

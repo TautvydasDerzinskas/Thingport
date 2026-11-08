@@ -215,7 +215,7 @@
         "copied": "Copiado",
         "failed": "Algo ha salido mal con tu token de API. Inténtalo de nuevo.",
         "mcp": {
-          "adminOff": "Un administrador ha desactivado MCP en este Thingport.",
+          "adminOff": "Un administrador ha desactivado MCP en esta instancia de Thingport.",
           "adminReadOnly": "Un administrador solo permite las herramientas de lectura.",
           "copyCommand": "Copiar comando",
           "heading": "MCP",
@@ -1208,7 +1208,7 @@
         "noExport": "El script no tiene una función export default.",
         "failed": "{{name}} se detuvo con un error",
         "removed": "Este widget se eliminó.",
-        "off": "Los widgets personalizados están desactivados en este Thingport.",
+        "off": "Los widgets personalizados están desactivados en esta instancia de Thingport.",
         "title": "Widgets personalizados",
         "tabs": {
           "mine": "Míos",
@@ -1237,7 +1237,7 @@
         "installed": "{{name}} instalado",
         "isInstalled": "Instalado",
         "retry": "Reintentar",
-        "communityError": "No se pudieron cargar los widgets de la comunidad. Comprueba que este Thingport puede acceder a GitHub.",
+        "communityError": "No se pudieron cargar los widgets de la comunidad. Comprueba que esta instancia de Thingport puede acceder a GitHub.",
         "communityEmpty": "Aún no hay widgets de la comunidad. Sé el primero: mira Crear y compartir.",
         "reaches_one": "Accede a {{count}} host",
         "reaches_other": "Accede a {{count}} hosts",
@@ -1333,7 +1333,7 @@
           "publish1": "Descarga tu widget desde Míos (⋮ y luego Descargar para publicar).",
           "publish2": "Haz un fork del repositorio de Thingport y descomprímelo en la carpeta <folder>community-widgets</folder>.",
           "publish3": "Añade el nombre de su carpeta a community-widgets/index.json y explica qué hace en su README.md.",
-          "publish4": "Abre un pull request. Cuando se fusione, cualquier Thingport podrá instalarlo.",
+          "publish4": "Abre un pull request. Cuando se fusione, cualquier instancia de Thingport podrá instalarlo.",
           "guide": "Leer la guía completa"
         },
         "ai": {
@@ -2948,7 +2948,7 @@
       "connectTitle": "Conectar {{name}}",
       "disconnectTitle": "¿Desconectar {{name}}?",
       "disconnectMessage": "Se elimina tu clave de {{name}} y las importaciones desde {{name}} dejan de funcionar hasta que vuelvas a conectarlo.",
-      "disconnectMessageShared": "El token de {{name}} se elimina para todos en este Thingport, y las importaciones desde {{name}} dejan de funcionar hasta que se vuelva a conectar.",
+      "disconnectMessageShared": "El token de {{name}} se elimina para todos en esta instancia de Thingport, y las importaciones desde {{name}} dejan de funcionar hasta que se vuelva a conectar.",
       "failed": "No se pudo guardar. Inténtalo de nuevo.",
       "comingSoon": "Próximamente"
     },
@@ -3188,7 +3188,7 @@
         "emptyAdmin": "Aún no hay herramientas. Instala alguna desde el repositorio.",
         "emptyCreate": "Aún no hay herramientas. Crea la tuya o pide a un administrador que instale alguna.",
         "install": "Instalar herramientas",
-        "noAccess": "Las herramientas no están disponibles para ti en este Thingport.",
+        "noAccess": "Las herramientas no están disponibles para ti en esta instancia de Thingport.",
         "dropHere": "Suelta una herramienta aquí",
         "layout": "Mostrar como",
         "layoutFlat": "Una cuadrícula",
@@ -5462,7 +5462,7 @@
         "notFound": "Colección no encontrada."
       },
       "sync": {
-        "badgeOff": "{{provider}} está desactivado en este Thingport, así que no se sincroniza nada hasta que un administrador lo vuelva a activar",
+        "badgeOff": "{{provider}} está desactivado en esta instancia de Thingport, así que no se sincroniza nada hasta que un administrador lo vuelva a activar",
         "menuProviderOff": "{{provider}} está desactivado",
         "badge": "Sincronizada con una colección de {{provider}}",
         "menu": "Configuración de sincronización",
@@ -6050,10 +6050,10 @@
           "Copia el token de aplicación que aparece y pégalo abajo."
         ],
         "placeholder": "Pega el token de aplicación",
-        "shared": "Este token lo comparten todos los usuarios de este Thingport."
+        "shared": "Este token lo comparten todos los usuarios de esta instancia de Thingport."
       },
       "status": {
-        "adminOnly": "Solo un administrador de este Thingport puede configurar esto.",
+        "adminOnly": "Solo un administrador de esta instancia de Thingport puede configurar esto.",
         "disabledReason": "Thingiverse: el administrador aún no ha configurado una clave de API"
       },
       "about": {
@@ -6067,7 +6067,7 @@
         ]
       },
       "admin": {
-        "description": "Importaciones, colecciones y modelos que te gustan, mediante el token de aplicación de este Thingport.",
+        "description": "Importaciones, colecciones y modelos que te gustan, mediante el token de aplicación de esta instancia de Thingport.",
         "keyStatus": {
           "set": "Token de aplicación configurado",
           "missing": "Sin token de aplicación: las importaciones de Thingiverse no funcionarán hasta que se configure uno"
@@ -6089,7 +6089,7 @@
         }
       },
       "sync": {
-        "notConnected": "Thingiverse aún no está conectado en este Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
+        "notConnected": "Thingiverse aún no está conectado en esta instancia de Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
         "usernameHint": "Thingport muestra tus colecciones públicas de Thingiverse. Solo hace falta pedirlo una vez.",
         "usernamePlaceholder": "Nombre de usuario o enlace del perfil",
         "showing": "Mostrando las colecciones públicas de @{{user}}.",
@@ -6121,7 +6121,7 @@
         ]
       },
       "admin": {
-        "description": "Modelos y colecciones públicas, mediante la clave de API de este Thingport; los modelos comprados, mediante la cuenta de MyMiniFactory de cada usuario.",
+        "description": "Modelos y colecciones públicas, mediante la clave de API de esta instancia de Thingport; los modelos comprados, mediante la cuenta de MyMiniFactory de cada usuario.",
         "keyStatus": {
           "set": "Clave de API configurada",
           "missing": "Sin clave de API: las importaciones de MyMiniFactory no funcionarán hasta que se configure una"
@@ -6143,7 +6143,7 @@
         }
       },
       "sync": {
-        "notConnected": "MyMiniFactory aún no está conectado en este Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
+        "notConnected": "MyMiniFactory aún no está conectado en esta instancia de Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
         "usernameHint": "Thingport muestra tus colecciones públicas de MyMiniFactory. Solo hace falta pedirlo una vez.",
         "usernamePlaceholder": "Nombre de usuario o enlace del perfil",
         "showing": "Mostrando las colecciones públicas de @{{user}}.",

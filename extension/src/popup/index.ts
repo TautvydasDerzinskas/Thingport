@@ -138,7 +138,8 @@ function hideCredentials(): void {
 
 const PAIR_NOTE =
   "Opens Thingport in a tab to approve this browser. Nothing is saved here but the connection it hands back.";
-const PAIR_UNSUPPORTED = "This Thingport is too old to pair with -- connect it with your email and password instead.";
+const PAIR_UNSUPPORTED =
+  "This Thingport instance is too old to pair with -- connect it with your email and password instead.";
 
 // Asked of each instance typed in. Pairing leads, so the button follows the address alone and only an instance
 // that answers and says it can't pair takes it away -- one that simply doesn't answer may still be fine, and

@@ -360,7 +360,7 @@
           "writeConfirmTitle": "Leisti asistentui naudoti „{{tool}}“?",
           "writeConfirmMessage": "Šis įrankis keičia jūsų biblioteką. Su šiuo raktu prijungtas asistentas galės jį naudoti kiekvieną kartą jūsų neklausdamas. Jis niekada netrina modelių.",
           "writeConfirm": "Įjungti",
-          "adminOff": "Administratorius šiame Thingport išjungė MCP.",
+          "adminOff": "Administratorius šiame Thingport serveryje išjungė MCP.",
           "adminReadOnly": "Administratorius leidžia tik skaitančius įrankius.",
           "copyCommand": "Kopijuoti komandą",
           "reads": "Skaito biblioteką",
@@ -1216,7 +1216,7 @@
         "noExport": "Skripte nėra export default funkcijos.",
         "failed": "{{name}} sustojo dėl klaidos",
         "removed": "Šis valdiklis pašalintas.",
-        "off": "Šiame Thingport pasirinktiniai valdikliai išjungti.",
+        "off": "Šiame Thingport serveryje pasirinktiniai valdikliai išjungti.",
         "title": "Pasirinktiniai valdikliai",
         "tabs": {
           "mine": "Mano",
@@ -1245,7 +1245,7 @@
         "installed": "„{{name}}“ įdiegtas",
         "isInstalled": "Įdiegtas",
         "retry": "Bandyti dar kartą",
-        "communityError": "Nepavyko įkelti bendruomenės valdiklių. Patikrinkite, ar šis Thingport pasiekia GitHub.",
+        "communityError": "Nepavyko įkelti bendruomenės valdiklių. Patikrinkite, ar šis Thingport serveris pasiekia GitHub.",
         "communityEmpty": "Bendruomenės valdiklių dar nėra. Būkite pirmas: žr. „Kurti ir dalintis“.",
         "reaches_one": "Pasiekia {{count}} serverį",
         "reaches_other": "Pasiekia {{count}} serverių",
@@ -1343,7 +1343,7 @@
           "publish1": "Atsisiųskite valdiklį skiltyje „Mano“ (⋮, tada „Atsisiųsti publikavimui“).",
           "publish2": "Sukurkite Thingport saugyklos kopiją (fork) ir išskleiskite jį į aplanką <folder>community-widgets</folder>.",
           "publish3": "Įrašykite aplanko pavadinimą į community-widgets/index.json ir aprašykite valdiklį README.md faile.",
-          "publish4": "Atidarykite pull request. Kai jis bus priimtas, kiekvienas Thingport galės jį įdiegti.",
+          "publish4": "Atidarykite pull request. Kai jis bus priimtas, kiekvienas Thingport serveris galės jį įdiegti.",
           "guide": "Skaityti visą vadovą"
         },
         "ai": {
@@ -3031,7 +3031,7 @@
       "connectTitle": "Prijungti {{name}}",
       "disconnectTitle": "Atjungti {{name}}?",
       "disconnectMessage": "Jūsų {{name}} raktas bus pašalintas, o importavimas iš {{name}} neveiks, kol vėl prijungsite.",
-      "disconnectMessageShared": "{{name}} raktas bus pašalintas visiems šio Thingport naudotojams, o importavimas iš {{name}} neveiks, kol jis vėl bus prijungtas.",
+      "disconnectMessageShared": "{{name}} raktas bus pašalintas visiems šio Thingport serverio naudotojams, o importavimas iš {{name}} neveiks, kol jis vėl bus prijungtas.",
       "failed": "Nepavyko išsaugoti -- bandykite dar kartą.",
       "comingSoon": "Jau netrukus"
     },
@@ -3271,7 +3271,7 @@
         "emptyAdmin": "Kol kas nėra įrankių. Įdiekite kurį nors iš saugyklos.",
         "emptyCreate": "Kol kas nėra įrankių. Susikurkite savo arba paprašykite administratoriaus įdiegti.",
         "install": "Įdiegti įrankius",
-        "noAccess": "Šiame Thingport įrankiai jums neprieinami.",
+        "noAccess": "Šiame Thingport serveryje įrankiai jums neprieinami.",
         "dropHere": "Numesk įrankį čia",
         "layout": "Rodyti kaip",
         "layoutFlat": "Vieną tinklelį",
@@ -5582,7 +5582,7 @@
         "notFound": "Kolekcija nerasta."
       },
       "sync": {
-        "badgeOff": "{{provider}} šiame Thingport išjungtas, todėl niekas nesinchronizuojama, kol administratorius jo vėl neįjungs",
+        "badgeOff": "{{provider}} šiame Thingport serveryje išjungtas, todėl niekas nesinchronizuojama, kol administratorius jo vėl neįjungs",
         "menuProviderOff": "{{provider}} išjungtas",
         "badge": "Sinchronizuojama su {{provider}} kolekcija",
         "menu": "Sinchronizavimo konfigūracija",
@@ -6277,10 +6277,10 @@
           "Nukopijuokite rodomą App Token ir įklijuokite jį žemiau."
         ],
         "placeholder": "Įklijuokite App Token",
-        "shared": "Šis raktas bendras visiems šio Thingport naudotojams."
+        "shared": "Šis raktas bendras visiems šio Thingport serverio naudotojams."
       },
       "status": {
-        "adminOnly": "Tai nustatyti gali tik šio Thingport administratorius.",
+        "adminOnly": "Tai nustatyti gali tik šio Thingport serverio administratorius.",
         "disabledReason": "Thingiverse: administratorius dar nesukonfigūravo API rakto"
       },
       "about": {
@@ -6294,7 +6294,7 @@
         ]
       },
       "admin": {
-        "description": "Importai, kolekcijos ir patikę modeliai, naudojant šio Thingport programėlės raktą.",
+        "description": "Importai, kolekcijos ir patikę modeliai, naudojant šio Thingport serverio programėlės raktą.",
         "keyStatus": {
           "set": "Programėlės raktas nustatytas",
           "missing": "Nėra programėlės rakto: Thingiverse importai neveiks, kol jo nenustatysite"
@@ -6316,7 +6316,7 @@
         }
       },
       "sync": {
-        "notConnected": "Thingiverse šiame Thingport dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
+        "notConnected": "Thingiverse šiame Thingport serveryje dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
         "usernameHint": "Thingport parodys jūsų viešas Thingiverse kolekcijas. Paklausiama tik kartą.",
         "usernamePlaceholder": "Vartotojo vardas arba profilio nuoroda",
         "showing": "Rodomos viešos @{{user}} kolekcijos.",
@@ -6348,7 +6348,7 @@
         ]
       },
       "admin": {
-        "description": "Modeliai ir viešos kolekcijos, naudojant šio Thingport API raktą; nusipirkti modeliai – per kiekvieno naudotojo MyMiniFactory paskyrą.",
+        "description": "Modeliai ir viešos kolekcijos, naudojant šio Thingport serverio API raktą; nusipirkti modeliai – per kiekvieno naudotojo MyMiniFactory paskyrą.",
         "keyStatus": {
           "set": "API raktas nustatytas",
           "missing": "Nėra API rakto: MyMiniFactory importai neveiks, kol jo nenustatysite"
@@ -6370,7 +6370,7 @@
         }
       },
       "sync": {
-        "notConnected": "MyMiniFactory šiame Thingport dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
+        "notConnected": "MyMiniFactory šiame Thingport serveryje dar neprijungtas. Administratorius gali jį prijungti per Konfigūracija > Tiekėjai.",
         "usernameHint": "Thingport parodys jūsų viešas MyMiniFactory kolekcijas. Paklausiama tik kartą.",
         "usernamePlaceholder": "Vartotojo vardas arba profilio nuoroda",
         "showing": "Rodomos viešos @{{user}} kolekcijos.",

@@ -357,7 +357,7 @@
           "writeConfirmTitle": "Let the assistant use “{{tool}}”?",
           "writeConfirmMessage": "This tool changes your library. An assistant connected with this token will be able to use it without asking you each time. Nothing it does deletes models.",
           "writeConfirm": "Turn on",
-          "adminOff": "An admin has turned MCP off on this Thingport.",
+          "adminOff": "An admin has turned MCP off on this Thingport instance.",
           "adminReadOnly": "An admin allows only the tools that read.",
           "copyCommand": "Copy command",
           "reads": "Reads your library",
@@ -1182,7 +1182,7 @@
         "noExport": "The script has no export default function.",
         "failed": "{{name}} stopped with an error",
         "removed": "This widget was removed.",
-        "off": "Custom widgets are turned off on this Thingport.",
+        "off": "Custom widgets are turned off on this Thingport instance.",
         "title": "Custom widgets",
         "tabs": {
           "mine": "Mine",
@@ -1211,7 +1211,7 @@
         "installed": "Installed {{name}}",
         "isInstalled": "Installed",
         "retry": "Try again",
-        "communityError": "Couldn't load the community widgets. Check that this Thingport can reach GitHub.",
+        "communityError": "Couldn't load the community widgets. Check that this Thingport instance can reach GitHub.",
         "communityEmpty": "No community widgets yet. Be the first: see Build & share.",
         "reaches_one": "Reaches {{count}} host",
         "reaches_other": "Reaches {{count}} hosts",
@@ -1306,7 +1306,7 @@
           "publish1": "Download your widget from Mine (⋮, then Download for publishing).",
           "publish2": "Fork the Thingport repository and unzip it into the <folder>community-widgets</folder> folder.",
           "publish3": "Add its folder name to community-widgets/index.json, and say what it does in its README.md.",
-          "publish4": "Open a pull request. Once it’s merged, every Thingport can install it.",
+          "publish4": "Open a pull request. Once it’s merged, every Thingport instance can install it.",
           "guide": "Read the full guide"
         },
         "ai": {
@@ -2906,7 +2906,7 @@
       "connectTitle": "Connect {{name}}",
       "disconnectTitle": "Disconnect {{name}}?",
       "disconnectMessage": "Your {{name}} key is removed, and imports from {{name}} stop working until you connect it again.",
-      "disconnectMessageShared": "The {{name}} token is removed for everyone on this Thingport, and imports from {{name}} stop working until it's connected again.",
+      "disconnectMessageShared": "The {{name}} token is removed for everyone on this Thingport instance, and imports from {{name}} stop working until it's connected again.",
       "failed": "Failed to save -- try again.",
       "comingSoon": "Coming soon"
     },
@@ -3146,7 +3146,7 @@
         "emptyAdmin": "No tools yet. Install one from the repository.",
         "emptyCreate": "No tools yet. Make your own, or ask an admin to install some.",
         "install": "Install tools",
-        "noAccess": "Tools aren't available to you on this Thingport.",
+        "noAccess": "Tools aren't available to you on this Thingport instance.",
         "dropHere": "Drop a tool here",
         "layout": "Show as",
         "layoutFlat": "One grid",
@@ -5402,7 +5402,7 @@
         "notFound": "Collection not found."
       },
       "sync": {
-        "badgeOff": "{{provider}} is turned off on this Thingport, so nothing syncs until an admin turns it back on",
+        "badgeOff": "{{provider}} is turned off on this Thingport instance, so nothing syncs until an admin turns it back on",
         "menuProviderOff": "{{provider}} is turned off",
         "badge": "Synced with a {{provider}} collection",
         "menu": "Sync configuration",
@@ -5987,10 +5987,10 @@
           "Copy the App Token it shows and paste it below."
         ],
         "placeholder": "Paste the App Token",
-        "shared": "This token is shared by everyone on this Thingport."
+        "shared": "This token is shared by everyone on this Thingport instance."
       },
       "status": {
-        "adminOnly": "Only an admin of this Thingport can set this up.",
+        "adminOnly": "Only an admin of this Thingport instance can set this up.",
         "disabledReason": "Thingiverse: the admin hasn't configured an API key yet"
       },
       "about": {
@@ -6004,7 +6004,7 @@
         ]
       },
       "admin": {
-        "description": "Imports, collections and liked models, through this Thingport's App Token.",
+        "description": "Imports, collections and liked models, through this Thingport instance's App Token.",
         "keyStatus": {
           "set": "App Token set",
           "missing": "No App Token: Thingiverse imports won't work until one is set"
@@ -6026,7 +6026,7 @@
         }
       },
       "sync": {
-        "notConnected": "Thingiverse isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "notConnected": "Thingiverse isn't connected on this Thingport instance yet. An admin can connect it in Configuration > Providers.",
         "usernameHint": "Thingport lists your public Thingiverse collections. It only needs asking once.",
         "usernamePlaceholder": "Username or profile link",
         "showing": "Showing @{{user}}'s public collections.",
@@ -6058,7 +6058,7 @@
         ]
       },
       "admin": {
-        "description": "Models and public collections, through this Thingport's API key; bought models through each user's own MyMiniFactory account.",
+        "description": "Models and public collections, through this Thingport instance's API key; bought models through each user's own MyMiniFactory account.",
         "keyStatus": {
           "set": "API key set",
           "missing": "No API key: MyMiniFactory imports won't work until one is set"
@@ -6080,7 +6080,7 @@
         }
       },
       "sync": {
-        "notConnected": "MyMiniFactory isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "notConnected": "MyMiniFactory isn't connected on this Thingport instance yet. An admin can connect it in Configuration > Providers.",
         "usernameHint": "Thingport lists your public MyMiniFactory collections. It only needs asking once.",
         "usernamePlaceholder": "Username or profile link",
         "showing": "Showing @{{user}}'s public collections.",

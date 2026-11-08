@@ -451,7 +451,7 @@ async function notifyManualOutcome(before: SyncWithCollection, outcome: SyncOutc
     },
     disabled: {
       title: `Couldn't sync "${name}"`,
-      body: `${provider} is turned off on this Thingport, so its collections don't sync. An admin can turn it back on in Administration > Providers.`,
+      body: `${provider} is turned off on this Thingport instance, so its collections don't sync. An admin can turn it back on in Administration > Providers.`,
     },
     gone: {
       title: `Couldn't find "${name}" on ${provider}`,

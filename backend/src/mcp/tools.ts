@@ -1308,7 +1308,7 @@ const listToolsTool: McpToolDefinition = {
       note: access.canCreate
         ? undefined
         : access.canUse
-          ? "Users' own tools are off on this Thingport: an admin turns them on under Administration > Tools."
+          ? "Users' own tools are off on this Thingport instance: an admin turns them on under Administration > Tools."
           : "Tools aren't available to this user: an admin turns them on under Administration > Tools.",
       tools: tools.map((tool) => ({
         id: tool.id,

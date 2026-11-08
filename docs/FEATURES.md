@@ -26,7 +26,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Repair models whose files are gone](features/storage.md#when-the-files-are-gone)**
 - **[Multi-user](features/multi-user.md)**
 - **[Social: public collections and models, Explore, profiles and chats](features/social.md)**
-- **[Connected instances: pair with other Thingports, even from a home network](features/connected-instances.md)**
+- **[Connected instances: pair with other Thingport instances, even from a home network](features/connected-instances.md)**
 - **[Single sign-on](guides/single-sign-on.md)**
 - **[Administration](features/administration.md)**
 - **[System Health](guides/system-health.md)**

@@ -90,9 +90,9 @@ in a browser with Grab, it imports them there and files them into the synced col
 
 Printables shows these to you alone, so Thingport can't read them on its own. With Thingport Grab installed in a browser
 where you're signed in to Printables, Grab reads them while you're on Printables, at most once an hour, and sends them to
-your Thingport. They then show up in **Browse** too, your likes as **Liked models**, and sync like any other collection,
-except that new models come in after your next visit to Printables rather than on a schedule. Sync one before Grab has
-read it, and its models come in on that next visit.
+your Thingport instance. They then show up in **Browse** too, your likes as **Liked models**, and sync like any other
+collection, except that new models come in after your next visit to Printables rather than on a schedule. Sync one
+before Grab has read it, and its models come in on that next visit.
 
 ## Turn sync on with Thingport Grab
 

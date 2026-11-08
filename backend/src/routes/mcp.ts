@@ -39,7 +39,7 @@ router.post(
     }
     const access = await getMcpAccess();
     if (access === "off") {
-      jsonRpcError(res, 403, "An admin has turned MCP off on this Thingport");
+      jsonRpcError(res, 403, "An admin has turned MCP off on this Thingport instance");
       return;
     }
     const offered = new Set(mcpToolsFor(access).map((tool) => tool.name));

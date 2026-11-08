@@ -52,8 +52,8 @@ Your router sees only an answer to something your instance asked for, so it lets
   <img src="../assets/connected-instances-link-light.svg" alt="A home instance behind its router keeps a link open to an instance on the internet. The instance on the internet can't reach the home one directly, so its requests travel down the link, and the answers come back up it." width="100%">
 </picture>
 
-- **No port forwarding, domain or certificate.** A Thingport on a Raspberry Pi, a NAS or an old laptop at home is
-  enough. Only the instance on the internet needs an address others can reach.
+- **No port forwarding, domain or certificate.** A Thingport instance on a Raspberry Pi, a NAS or an old laptop at home
+  is enough. Only the instance on the internet needs an address others can reach.
 - **The same as two instances that reach each other.** Explore, pictures, downloads, copies and chats work both ways:
   the partner's people browse your shared models, download their files and write to your people, all through the link.
 - **One switch.** When you connect to an instance on the internet from one that's on your network only, or from one
