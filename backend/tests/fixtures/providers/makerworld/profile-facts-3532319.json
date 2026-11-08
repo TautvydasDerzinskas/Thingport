@@ -1,0 +1,223 @@
+{
+  "id": 3532319,
+  "title": "Christmas Tree Ornament Train to Hogwarts",
+  "designCreator": {
+    "uid": 140291614,
+    "name": "Hesic"
+  },
+  "instances": [
+    {
+      "id": 4038925,
+      "title": "0.2mm layer, 2 walls, 15% infill",
+      "summary": "",
+      "prediction": 2415,
+      "weight": 10,
+      "instanceFilaments": [
+        {
+          "type": "PLA",
+          "color": "#F7F3F0",
+          "usedM": "3.11",
+          "usedG": "10"
+        }
+      ],
+      "instanceCreator": {
+        "uid": 140291614,
+        "name": "Hesic"
+      },
+      "extention": {
+        "modelInfo": {
+          "compatibility": {
+            "devModelName": "N1",
+            "devProductName": "A1 mini",
+            "nozzleDiameter": 0.4
+          },
+          "projectSettings": {
+            "layerHeight": "0.2",
+            "wallLoops": "2",
+            "sparseInfillDensity": "15%"
+          },
+          "plates": [
+            {
+              "index": 1,
+              "name": "",
+              "prediction": 2415,
+              "weight": 10,
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#F7F3F0",
+                  "usedM": "3.11",
+                  "usedG": "10"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 4061809,
+      "title": "Better Quality + Less fillament use",
+      "summary": "<p>0.16mm layer</p><p>2 walls</p><p>6% infill</p>",
+      "prediction": 3071,
+      "weight": 9,
+      "instanceFilaments": [
+        {
+          "type": "PLA",
+          "color": "#F7F3F0",
+          "usedM": "2.89",
+          "usedG": "9"
+        }
+      ],
+      "instanceCreator": {
+        "uid": 723380605,
+        "name": "zelenaomeba"
+      },
+      "extention": {
+        "modelInfo": {
+          "compatibility": {
+            "devModelName": "N2S",
+            "devProductName": "A1",
+            "nozzleDiameter": 0.4
+          },
+          "projectSettings": {
+            "layerHeight": "0.16",
+            "wallLoops": "2",
+            "sparseInfillDensity": "6%"
+          },
+          "plates": [
+            {
+              "index": 1,
+              "name": "",
+              "prediction": 3071,
+              "weight": 9,
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#F7F3F0",
+                  "usedM": "2.89",
+                  "usedG": "9"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 4073923,
+      "title": "Colored Frame - 0.16mm layer, 2 walls, 15% infill",
+      "summary": "",
+      "prediction": 3962,
+      "weight": 12,
+      "instanceFilaments": [
+        {
+          "type": "PLA",
+          "color": "#F7F3F0",
+          "usedM": "3.24",
+          "usedG": "10"
+        },
+        {
+          "type": "PLA",
+          "color": "#000000",
+          "usedM": "0.48",
+          "usedG": "2"
+        }
+      ],
+      "instanceCreator": {
+        "uid": 3160267855,
+        "name": "dnstuff"
+      },
+      "extention": {
+        "modelInfo": {
+          "compatibility": {
+            "devModelName": "N2S",
+            "devProductName": "A1",
+            "nozzleDiameter": 0.4
+          },
+          "projectSettings": {
+            "layerHeight": "0.16",
+            "wallLoops": "2",
+            "sparseInfillDensity": "15%"
+          },
+          "plates": [
+            {
+              "index": 1,
+              "name": "",
+              "prediction": 3962,
+              "weight": 12,
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#F7F3F0",
+                  "usedM": "3.24",
+                  "usedG": "10"
+                },
+                {
+                  "id": "2",
+                  "type": "PLA",
+                  "color": "#000000",
+                  "usedM": "0.48",
+                  "usedG": "2"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 4074554,
+      "title": "0.24mm layer, 2 walls, 7% infill",
+      "summary": "",
+      "prediction": 2029,
+      "weight": 10,
+      "instanceFilaments": [
+        {
+          "type": "PLA",
+          "color": "#F7F3F0",
+          "usedM": "3.11",
+          "usedG": "10"
+        }
+      ],
+      "instanceCreator": {
+        "uid": 939420403,
+        "name": "AKOR"
+      },
+      "extention": {
+        "modelInfo": {
+          "compatibility": {
+            "devModelName": "C12",
+            "devProductName": "P1S",
+            "nozzleDiameter": 0.4
+          },
+          "projectSettings": {
+            "layerHeight": "0.24",
+            "wallLoops": "2",
+            "sparseInfillDensity": "7%"
+          },
+          "plates": [
+            {
+              "index": 1,
+              "name": "",
+              "prediction": 2029,
+              "weight": 10,
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#F7F3F0",
+                  "usedM": "3.11",
+                  "usedG": "10"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

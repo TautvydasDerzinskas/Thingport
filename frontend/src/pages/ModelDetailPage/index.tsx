@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -36,6 +36,9 @@ import Skeleton from "@mui/material/Skeleton";
 import { useQualityCheck } from "./QualityCheck/useQualityCheck";
 import QualityScanOverlay from "./QualityCheck/QualityScanOverlay";
 import QualityBadge from "./QualityCheck/QualityBadge";
+import { usePrintProfilesView } from "../../hooks/usePrintProfilesView";
+import { usePrintProfiles } from "./PrintProfiles/usePrintProfiles";
+import { profileEntries } from "./PrintProfiles/entries";
 
 type Props = {
   theme: ResolvedTheme;
@@ -56,6 +59,20 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const [renderUnavailable, setRenderUnavailable] = useState(false);
   const onRenderUnavailable = useCallback(() => setRenderUnavailable(true), []);
   const [previewOpen, setPreviewOpen] = useState(false);
+  // Where the 3D preview opens: the profile picked beside it, or one of its plates picked in the side panel.
+  const [previewStart, setPreviewStart] = useState<{ plateId: string | null; plateIndex: number | null }>({
+    plateId: null,
+    plateIndex: null,
+  });
+  // The file the side panel's actions apply to; kept here so the 3D preview opens on the same profile.
+  const [selectedFileKey, setSelectedFileKey] = useState<string | null>(null);
+  const [profilesView] = usePrintProfilesView();
+  const { profiles, filling: profilesFilling } = usePrintProfiles(print, onUnauthorized);
+  const entries = useMemo(
+    () => (print ? profileEntries(print.plates, profiles, profilesFilling) : []),
+    [print, profiles, profilesFilling],
+  );
+  const profilesOn = entries.length > 0 && Boolean(profilesView) && profilesView !== "off";
   const { quality, outcome } = useQualityCheck(printId ?? "", onUnauthorized);
   // The header's menu stays across models, so an answer for the one before (a copy finishing, say) can arrive here
   // after another has opened: it's dropped rather than shown as this one.
@@ -98,6 +115,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
         if (cancelled) return;
         setPrint(data);
         setActiveImageIndex(0);
+        setSelectedFileKey(null);
         setRenderUnavailable(false);
       } catch (err) {
         if (cancelled) return;
@@ -200,6 +218,11 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     !showRender &&
     Boolean(firstPlate) &&
     MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
+
+  const openPreview = (plateId: string | null, plateIndex: number | null = null) => {
+    setPreviewStart({ plateId, plateIndex });
+    setPreviewOpen(true);
+  };
 
   const goPrevImage = () => setActiveImageIndex((i) => (i - 1 + images.length) % images.length);
   const goNextImage = () => setActiveImageIndex((i) => (i + 1) % images.length);
@@ -323,7 +346,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                   variant="contained"
                   size="small"
                   startIcon={<ViewInArIcon fontSize="small" />}
-                  onClick={() => setPreviewOpen(true)}
+                  onClick={() => openPreview(selectedFileKey ?? (profilesOn ? entries[0].key : null))}
                   sx={{
                     bgcolor: "rgba(0, 0, 0, 0.65)",
                     color: "#fff",
@@ -464,11 +487,25 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
             onUnauthorized={onUnauthorized}
             onUpdated={updatePrint}
             viewer={viewer}
+            profileEntries={entries}
+            profilesView={profilesView}
+            selectedKey={selectedFileKey}
+            onSelectKey={setSelectedFileKey}
+            onPreviewPlate={(key, plateIndex) => openPreview(key, plateIndex)}
           />
         </Box>
       </Box>
 
-      {previewOpen && <Model3DPreviewModal print={print} onClose={() => setPreviewOpen(false)} />}
+      {previewOpen && (
+        <Model3DPreviewModal
+          print={print}
+          onClose={() => setPreviewOpen(false)}
+          profileEntries={profilesOn ? entries : null}
+          profilesView={profilesView}
+          initialPlateId={previewStart.plateId}
+          initialPlateIndex={previewStart.plateIndex}
+        />
+      )}
     </Box>
   );
 }

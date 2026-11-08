@@ -19,10 +19,13 @@ Make Thingport look the way you like, under **Configuration → Appearance**, fr
 - **Model cards:** what cards show first. **Images** shows the pictures a model came with, or a 3D render where it has
   none. **3D renders** shows a render of every model in your render colour, for a uniform grid, falling back to its
   pictures where a file can't be drawn.
+- **Print profiles:** how a model [imported with print profiles](importing.md#what-comes-with-a-model) shows them on
+  its page: a **Picker** like the file picker, with the picked profile's numbers below it; a **List** of every profile
+  at once; or **Tiles** of their pictures. **Off** shows them as plain files.
 - **Hover slideshow:** cards cycle through a model's pictures while the pointer rests on them.
 
-**Reset to defaults**, at the top of the section, puts the theme, colours, model cards, hover slideshow and author
-preview back as they came. Your language stays as it is.
+**Reset to defaults**, at the top of the section, puts the theme, colours, model cards, print profiles, hover slideshow
+and author preview back as they came. Your language stays as it is.
 
 The theme and colours are saved to your account, so they follow you to other devices. The language is remembered by
 each browser. You can also switch theme or language from search: type <kbd>!</kbd> for the commands.

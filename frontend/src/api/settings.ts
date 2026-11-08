@@ -127,6 +127,9 @@ export type DashboardLayout = "left" | "top" | "right" | "bottom" | "topTwo" | "
 /** What model pictures lead with, on cards, dashboard lists and tag tiles: the model's own pictures, or our render
  *  tinted with the render colour. */
 export type CardPreview = "images" | "renders";
+/** How a model page shows the print profiles a model was imported with; "off" shows them as plain files. */
+export type PrintProfilesView = "off" | "list" | "picker" | "tiles";
+export const DEFAULT_PRINT_PROFILES_VIEW: PrintProfilesView = "picker";
 /** Where Studio's assistant shows its conversation: in the bar under the view, or in a panel beside it. */
 /** Only the widgets the user has switched; the rest follow their default. */
 export type DashboardWidgetChoices = Partial<Record<DashboardWidgetId, boolean>>;
@@ -796,6 +799,23 @@ export const settingsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the model card preview setting"));
+    return res.json();
+  },
+
+  getPrintProfilesView: async (): Promise<{ view: PrintProfilesView }> => {
+    const res = await fetch(`${apiBase()}/settings/print-profiles-view`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the print profiles setting");
+    return res.json();
+  },
+
+  updatePrintProfilesView: async (view: PrintProfilesView): Promise<{ view: PrintProfilesView }> => {
+    const res = await fetch(`${apiBase()}/settings/print-profiles-view`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ view }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the print profiles setting"));
     return res.json();
   },
 

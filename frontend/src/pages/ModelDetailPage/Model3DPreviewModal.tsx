@@ -30,7 +30,11 @@ import PreviewToolbar from "./PreviewToolbar";
 import type { RenderColor } from "../../constants/settingsOptions";
 import { useRenderColor } from "../../hooks/useAccentColor";
 import { renderSwatch } from "../../theme";
+import type { PrintProfilesView } from "../../api/settings";
 import { fileRowText } from "./fileRowText";
+import type { ProfileEntry } from "./PrintProfiles/entries";
+import PreviewProfilePanel, { type PreviewPlateRow } from "./PrintProfiles/PreviewProfilePanel";
+import type { ModelFile } from "./useOpenInSlicer";
 
 // Light mode keeps a product-shot style grey; dark mode uses the page background so it doesn't glare.
 const LIGHT_PREVIEW_BG = "#e7e7ea";
@@ -46,16 +50,35 @@ const overlayButtonSx = {
 type Props = {
   print: Print;
   onClose: () => void;
+  /** A model with print profiles, shown as profiles: the panel lists them and the open one's plates. */
+  profileEntries?: ProfileEntry[] | null;
+  profilesView?: PrintProfilesView | null;
+  /** The file, and the build plate in it, to open on; the first of each when left out. */
+  initialPlateId?: string | null;
+  initialPlateIndex?: number | null;
 };
 
 /** The plate list is always shown, even for one plate, so the layout doesn't jump. */
-export default function Model3DPreviewModal({ print, onClose }: Props) {
+export default function Model3DPreviewModal({
+  print,
+  onClose,
+  profileEntries,
+  profilesView,
+  initialPlateId,
+  initialPlateIndex,
+}: Props) {
   const { t } = useTranslation(["models", "library", "common"]);
   const muiTheme = useTheme();
   const themeMode = muiTheme.palette.mode;
   const previewBg = themeMode === "dark" ? muiTheme.thingport.pageBackground : LIGHT_PREVIEW_BG;
   const sortedPlates = useMemo(() => print.plates.toSorted((a, b) => a.position - b.position), [print.plates]);
-  const [activePlateId, setActivePlateId] = useState<string | null>(sortedPlates[0]?.id ?? null);
+  const profileMode = Boolean(profileEntries?.length) && Boolean(profilesView) && profilesView !== "off";
+  const [activePlateId, setActivePlateId] = useState<string | null>(
+    (initialPlateId && sortedPlates.some((p) => p.id === initialPlateId) ? initialPlateId : null) ??
+      (profileMode ? profileEntries![0].key : null) ??
+      sortedPlates[0]?.id ??
+      null,
+  );
   const activePlate = sortedPlates.find((p) => p.id === activePlateId) || sortedPlates[0];
   const ext = activePlate ? extOf(activePlate.filename) : "";
   const is3d = Boolean(activePlate) && MODEL_EXTS.has(ext);
@@ -63,7 +86,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
   // Plates inside the active .3mf, reset when the file changes.
   const [internalPlates, setInternalPlates] = useState<PlateSummary[]>([]);
   const [internalThumbnails, setInternalThumbnails] = useState<Record<number, string | null>>({});
-  const [selectedInternalPlateId, setSelectedInternalPlateId] = useState<number | null>(null);
+  const [selectedInternalPlateId, setSelectedInternalPlateId] = useState<number | null>(initialPlateIndex ?? null);
 
   // Lives here so it survives the viewer remounting per file.
   const viewerRef = useRef<ModelViewerHandle>(null);
@@ -86,9 +109,48 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
   // A lone multi-plate file doesn't need its own row above its plates.
   const showFileRows = sortedPlates.length > 1 || internalPlates.length === 0;
 
+  // With profiles: the model's other files, and the open file's plates, named and timed by its profile where known.
+  const profileOtherFiles = useMemo<ModelFile[]>(
+    () =>
+      profileMode
+        ? sortedPlates
+            .filter((plate) => !profileEntries!.some((entry) => entry.key === plate.id))
+            .map((plate, index) => ({
+              key: plate.id,
+              url: plate.url,
+              filename: plate.filename,
+              launchFilename: plate.filename,
+              index,
+              plate,
+            }))
+        : [],
+    [profileMode, profileEntries, sortedPlates],
+  );
+  const activeProfile = profileEntries?.find((entry) => entry.key === activePlate?.id)?.profile ?? null;
+  const plateRows = useMemo<PreviewPlateRow[]>(() => {
+    const facts = activeProfile?.plates ?? [];
+    const indexes = facts.length ? facts.map((plate) => plate.index) : internalPlates.map((plate) => plate.index);
+    return indexes.map((index) => {
+      const known = facts.find((plate) => plate.index === index);
+      const seen = internalPlates.find((plate) => plate.index === index);
+      return {
+        index,
+        name: known?.name ?? seen?.name ?? null,
+        seconds: known?.seconds ?? null,
+        grams: known?.grams ?? null,
+        filaments: known?.filaments ?? [],
+        objects: known?.objects ?? seen?.objectCount ?? null,
+        thumb: known?.thumb_url ?? internalThumbnails[index] ?? null,
+      };
+    });
+  }, [activeProfile, internalPlates, internalThumbnails]);
+
   const handlePlatesDetected = (plates: PlateSummary[], getThumbnail: (index: number) => Promise<string | null>) => {
     setInternalPlates(plates);
-    setSelectedInternalPlateId(plates[0]?.index ?? null);
+    // A plate asked for before the file was read stays picked.
+    setSelectedInternalPlateId((current) =>
+      current != null && plates.some((plate) => plate.index === current) ? current : (plates[0]?.index ?? null),
+    );
     setInternalThumbnails({});
     Promise.all(plates.map(async (plate) => [plate.index, await getThumbnail(plate.index)] as const)).then((pairs) => {
       setInternalThumbnails(Object.fromEntries(pairs));
@@ -131,7 +193,7 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
             top: 16,
             left: 16,
             zIndex: 2,
-            width: 240,
+            width: profileMode ? 288 : 240,
             maxHeight: "calc(100% - 32px)",
             overflow: "auto",
             p: 1,
@@ -139,84 +201,99 @@ export default function Model3DPreviewModal({ print, onClose }: Props) {
             ...(themeMode === "dark" && { "& .MuiListItemText-primary": { color: "#FFFFFF" } }),
           }}
         >
-          {showFileRows && (
-            <List disablePadding>
-              {sortedPlates.map((plate, idx) => (
-                // Named by file: "plate" is kept for the build plates inside a 3MF.
-                <ListItemButton
-                  key={plate.id}
-                  selected={plate.id === activePlate?.id}
-                  onClick={() => selectPlate(plate.id)}
-                  title={plate.filename}
-                  sx={{ borderRadius: 1, mb: 0.5 }}
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
-                    <PlateThumbnail plate={plate} />
-                  </ListItemIcon>
-                  <ListItemText
-                    {...fileRowText(t, plate.filename, idx)}
-                    primaryTypographyProps={{ variant: "body2", noWrap: true }}
-                    secondaryTypographyProps={{ variant: "caption", noWrap: true }}
-                  />
-                </ListItemButton>
-              ))}
-            </List>
-          )}
-
-          {internalPlates.length > 0 && (
+          {profileMode ? (
+            <PreviewProfilePanel
+              variant={profilesView === "list" ? "outline" : "picker"}
+              entries={profileEntries!}
+              otherFiles={profileOtherFiles}
+              activeKey={activePlate?.id ?? null}
+              onSelectFile={selectPlate}
+              plates={plateRows}
+              selectedPlate={selectedInternalPlateId}
+              onSelectPlate={setSelectedInternalPlateId}
+            />
+          ) : (
             <>
               {showFileRows && (
-                <Divider sx={{ my: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    {t("models:detail.internalPlatesDivider", { count: internalPlates.length })}
-                  </Typography>
-                </Divider>
+                <List disablePadding>
+                  {sortedPlates.map((plate, idx) => (
+                    // Named by file: "plate" is kept for the build plates inside a 3MF.
+                    <ListItemButton
+                      key={plate.id}
+                      selected={plate.id === activePlate?.id}
+                      onClick={() => selectPlate(plate.id)}
+                      title={plate.filename}
+                      sx={{ borderRadius: 1, mb: 0.5 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <PlateThumbnail plate={plate} />
+                      </ListItemIcon>
+                      <ListItemText
+                        {...fileRowText(t, plate.filename, idx)}
+                        primaryTypographyProps={{ variant: "body2", noWrap: true }}
+                        secondaryTypographyProps={{ variant: "caption", noWrap: true }}
+                      />
+                    </ListItemButton>
+                  ))}
+                </List>
               )}
-              <List disablePadding>
-                {internalPlates.map((plate) => (
-                  <ListItemButton
-                    key={plate.index}
-                    selected={plate.index === selectedInternalPlateId}
-                    onClick={() => setSelectedInternalPlateId(plate.index)}
-                    sx={{ borderRadius: 1, mb: 0.5 }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      {internalThumbnails[plate.index] ? (
-                        <Box
-                          component="img"
-                          src={internalThumbnails[plate.index] ?? undefined}
-                          alt=""
-                          sx={{ width: 32, height: 32, borderRadius: 0.75, objectFit: "cover" }}
+
+              {internalPlates.length > 0 && (
+                <>
+                  {showFileRows && (
+                    <Divider sx={{ my: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {t("models:detail.internalPlatesDivider", { count: internalPlates.length })}
+                      </Typography>
+                    </Divider>
+                  )}
+                  <List disablePadding>
+                    {internalPlates.map((plate) => (
+                      <ListItemButton
+                        key={plate.index}
+                        selected={plate.index === selectedInternalPlateId}
+                        onClick={() => setSelectedInternalPlateId(plate.index)}
+                        sx={{ borderRadius: 1, mb: 0.5 }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                          {internalThumbnails[plate.index] ? (
+                            <Box
+                              component="img"
+                              src={internalThumbnails[plate.index] ?? undefined}
+                              alt=""
+                              sx={{ width: 32, height: 32, borderRadius: 0.75, objectFit: "cover" }}
+                            />
+                          ) : (
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 0.75,
+                                bgcolor: "action.hover",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <LayersIcon fontSize="small" color="disabled" />
+                            </Box>
+                          )}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            plate.name
+                              ? t("models:detail.plateLabel", { n: plate.index }) + ` — ${plate.name}`
+                              : t("models:detail.plateLabel", { n: plate.index })
+                          }
+                          secondary={t("models:detail.internalPlateObjectCount", { count: plate.objectCount })}
+                          primaryTypographyProps={{ variant: "body2", noWrap: true }}
+                          secondaryTypographyProps={{ variant: "caption" }}
                         />
-                      ) : (
-                        <Box
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 0.75,
-                            bgcolor: "action.hover",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <LayersIcon fontSize="small" color="disabled" />
-                        </Box>
-                      )}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        plate.name
-                          ? t("models:detail.plateLabel", { n: plate.index }) + ` — ${plate.name}`
-                          : t("models:detail.plateLabel", { n: plate.index })
-                      }
-                      secondary={t("models:detail.internalPlateObjectCount", { count: plate.objectCount })}
-                      primaryTypographyProps={{ variant: "body2", noWrap: true }}
-                      secondaryTypographyProps={{ variant: "caption" }}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </>
+              )}
             </>
           )}
         </Paper>

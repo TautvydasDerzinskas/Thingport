@@ -1,0 +1,47 @@
+{
+  "groupItem": {
+    "id": "69f7fc42f76f419e084b93dd",
+    "urlAlias": "teenage-mutant-ninja-turtles-leonardo",
+    "userInfo": {
+      "userId": 8393427552,
+      "nickName": "混世模玩"
+    }
+  },
+  "profiles": [
+    {
+      "id": "6aa7a8755c667a7fc8ae580b",
+      "secondName": "0.2mm layer, 2 walls, 15% infill",
+      "name": "忍者神龟李奥纳多teenage mutant ninja turtles Leanordo",
+      "desc": "",
+      "isAuth": false,
+      "printerName": "K2 Pro",
+      "layerHeight": "0.2",
+      "sparseInfillDensity": "15%",
+      "wallLoops": "2",
+      "nozzleDiameter": ["0.4"],
+      "printTime": 0,
+      "filamentWeight": 0,
+      "colorFilament": [],
+      "plateCount": 1,
+      "userInfo": {
+        "userId": 2018163532,
+        "nickName": "Terryfolds"
+      }
+    }
+  ],
+  "details": {
+    "6aa7a8755c667a7fc8ae580b": {
+      "id": "6aa7a8755c667a7fc8ae580b",
+      "plateList": [
+        {
+          "index": 1,
+          "name": "plate_1",
+          "printTime": 0,
+          "filamentWeight": 0,
+          "colorFilament": null,
+          "success": false
+        }
+      ]
+    }
+  }
+}

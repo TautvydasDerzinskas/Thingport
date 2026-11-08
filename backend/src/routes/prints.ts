@@ -35,6 +35,7 @@ import {
   type PrintFilters,
 } from "../services/printQuery";
 import { printQuality, startPrintQualityCheck } from "../services/modelQualityService";
+import { printProfilesOut, profileFillRunning, startProfileFill } from "../services/printProfileService";
 import { readableCollection, readablePrintOutById, readablePrintWhere, withOwners } from "../services/socialService";
 
 const router = Router();
@@ -224,6 +225,40 @@ router.post(
     const quality = await startPrintQualityCheck(req.userId!, req.params.id);
     if (!quality) throw new HttpError(404, "Print not found");
     res.json(quality);
+  }),
+);
+
+// Print profiles: the model page reads them, starts reading what an older import never kept, and polls.
+async function readableProfiles(userId: string, printId: string) {
+  const print = await prisma.print.findFirst({
+    where: { id: printId, AND: [await readablePrintWhere(userId)] },
+    select: { id: true, userId: true, sourceProvider: true },
+  });
+  if (!print) throw new HttpError(404, "Print not found");
+  const plates = await prisma.plate.findMany({
+    where: { printId, sourceInstanceId: { not: null } },
+    select: { id: true, sourceInstanceId: true, profile: true, updatedAt: true },
+  });
+  return { print, plates };
+}
+
+router.get(
+  "/print/:id/profiles",
+  asyncHandler(async (req, res) => {
+    const { print, plates } = await readableProfiles(req.userId!, req.params.id);
+    res.json(await printProfilesOut(print, plates));
+  }),
+);
+
+// The owner's only: someone else's shared model shows what its owner's library has kept.
+router.post(
+  "/print/:id/profiles/fill",
+  asyncHandler(async (req, res) => {
+    const { print, plates } = await readableProfiles(req.userId!, req.params.id);
+    if (print.userId !== req.userId) throw new HttpError(404, "Print not found");
+    const before = await printProfilesOut(print, plates);
+    if (before.pending) startProfileFill(print.id);
+    res.json({ ...before, filling: profileFillRunning(print.id) });
   }),
 );
 

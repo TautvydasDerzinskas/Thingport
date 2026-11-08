@@ -95,10 +95,12 @@ async function restorePlates(printId: string, previous: Plate[]): Promise<void> 
   for (const plate of half) await deletePlateFiles(plate);
   await prisma.plate.deleteMany({ where: { printId } });
   await prisma.plate.createMany({
-    // The printability check is nullable Json, which Prisma writes with a null of its own (providers/connections).
+    // The printability check and the profile are nullable Json, which Prisma writes with a null of its own
+    // (providers/connections).
     data: previous.map((plate) => ({
       ...plate,
       qualityCheck: plate.qualityCheck === null ? Prisma.DbNull : (plate.qualityCheck as Prisma.InputJsonValue),
+      profile: plate.profile === null ? Prisma.DbNull : (plate.profile as Prisma.InputJsonValue),
     })),
   });
 }

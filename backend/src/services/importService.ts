@@ -107,6 +107,7 @@ import { importingQuietly } from "../utils/quietImport";
 import { Prisma } from "@prisma/client";
 import type { Author, Plate, PreviewImage, Print } from "@prisma/client";
 import { assertUrlProviderEnabled } from "./providerSettingsService";
+import { scheduleProfileFill } from "./printProfileService";
 
 /** createPrint's options for an import, which checks the description itself once it's complete: importPrintFromUrl. */
 const IMPORTED = { describe: false };
@@ -879,6 +880,7 @@ async function addProfilePlate(
         if ((await plateContentSha256(plate)) !== downloadedSha) continue;
         try {
           await prisma.plate.update({ where: { id: plate.id }, data: { sourceInstanceId: instanceId } });
+          scheduleProfileFill(existing.print.id);
         } catch (err) {
           // Race guard: a concurrent import of this same profile won.
           if (!isUniqueConstraintError(err)) throw err;

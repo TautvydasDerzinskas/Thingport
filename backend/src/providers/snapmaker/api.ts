@@ -185,12 +185,19 @@ export function snapmakerMetaFromDetail(detail: Record<string, unknown>): Snapma
   };
 }
 
-/** Null for a model that doesn't exist or isn't public. */
-export async function resolveSnapmakerModel(modelId: string): Promise<SnapmakerModelResolution | null> {
+/** The model's public details as the site answers them, profiles included. Null for a model that doesn't exist or
+ *  isn't public. */
+export async function fetchSnapmakerDetail(modelId: string): Promise<Record<string, unknown> | null> {
   const { code, data } = await fetchApi(`/model/detail/${encodeURIComponent(modelId)}`, null);
   if (code === CODE_NOT_FOUND) return null;
   if (code !== CODE_OK || !isRecord(data)) throw new Error(`Couldn't read this Snapmaker model (code ${code})`);
-  return snapmakerMetaFromDetail(data);
+  return data;
+}
+
+/** Null for a model that doesn't exist or isn't public. */
+export async function resolveSnapmakerModel(modelId: string): Promise<SnapmakerModelResolution | null> {
+  const detail = await fetchSnapmakerDetail(modelId);
+  return detail ? snapmakerMetaFromDetail(detail) : null;
 }
 
 export type SnapmakerFile = { name: string; url: string };

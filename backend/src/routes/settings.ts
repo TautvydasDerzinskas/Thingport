@@ -123,6 +123,7 @@ import {
 import { type AuthSlot, MANIFESTS, type ProviderId } from "../providers/index.generated";
 import { PROVIDERS as PROVIDER_BACKENDS } from "../providers/registry";
 import { CARD_PREVIEWS, getCardPreview, setCardPreview } from "../services/cardPreviewService";
+import { getPrintProfilesView, PRINT_PROFILES_VIEWS, setPrintProfilesView } from "../services/printProfilesViewService";
 import { createLog } from "../services/auditLog";
 import { testFlaresolverr } from "../services/flaresolverr";
 import { QUALITY_CHECK_KEYS, type QualityCheckKey } from "../services/meshQuality";
@@ -916,6 +917,22 @@ router.patch(
   asyncHandler(async (req, res) => {
     const body = parseBody(cardPreviewSchema, req.body);
     res.json({ preview: await setCardPreview(req.userId!, body.preview) });
+  }),
+);
+
+router.get(
+  "/settings/print-profiles-view",
+  asyncHandler(async (req, res) => {
+    res.json({ view: await getPrintProfilesView(req.userId!) });
+  }),
+);
+
+const printProfilesViewSchema = z.object({ view: z.enum(PRINT_PROFILES_VIEWS) });
+router.patch(
+  "/settings/print-profiles-view",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(printProfilesViewSchema, req.body);
+    res.json({ view: await setPrintProfilesView(req.userId!, body.view) });
   }),
 );
 
