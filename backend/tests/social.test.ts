@@ -563,6 +563,19 @@ describe("a copy's category", () => {
     expect(copy.categoryId).toBe(theirs);
   });
 
+  it("is found however deep it is", async () => {
+    const deep = async (account: Account) => {
+      let parentId = await starter(account, "3D Printer", "Test Models");
+      for (let depth = 1; depth <= 25; depth++) {
+        const data = { userId: account.id, name: `Depth ${depth}`, kind: "category", parentId };
+        parentId = (await prisma.category.create({ data })).id;
+      }
+      return parentId;
+    };
+    const mine = await deep(viewer);
+    expect((await copyOf(viewer, await sortedModel(await deep(owner)))).categoryId).toBe(mine);
+  });
+
   it("is never one of the owner's own folders, however it's named", async () => {
     const folder = await prisma.category.create({ data: { userId: owner.id, name: "Test Models", kind: "folder" } });
     expect((await copyOf(viewer, await sortedModel(folder.id))).categoryId).toBeNull();

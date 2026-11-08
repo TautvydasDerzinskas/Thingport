@@ -276,6 +276,7 @@ const modelSchema = z.object({
             .optional()
             .catch(undefined),
           "thingport:thumb": z.string().optional().catch(undefined),
+          "thingport:thumbGenerated": flag,
         })
         .passthrough(),
     )
@@ -289,17 +290,15 @@ const modelSchema = z.object({
   "thingport:author": providerAuthor,
   "thingport:category": z
     .object({
-      path: z.array(z.string().trim().min(1).max(200)).min(1).max(20),
+      path: z.array(z.string().trim().min(1).max(200)).min(1).max(100),
       siteIds: listOf(z.object({ provider: z.string().max(40), siteId: z.string().min(1).max(200) }), 200),
     })
     .optional()
     .catch(undefined),
   "thingport:generatorScriptWithheld": flag,
   "thingport:unfillableGaps": strings(SOURCE_GAPS.length, 40),
-  "thingport:descriptionImages": listOf(
-    z.object({ id: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/), url: z.string() }),
-    50,
-  ),
+  // Ids as Thingport makes them, all a description's images are found by (DESCRIPTION_IMAGE): any other stays a link.
+  "thingport:descriptionImages": listOf(z.object({ id: z.string().regex(/^[a-z0-9]{1,64}$/), url: z.string() }), 50),
 });
 
 /** RemoteModel.details: what a copy needs to be the same model, as its partner said it. */
@@ -325,6 +324,8 @@ export type RemoteFileDetails = {
   profileId?: string;
   profile?: { version: number; facts: ProviderProfileFacts };
   thumb?: string;
+  /** `thumb` is the partner's render, which a copy takes only where its instance won't make its own. */
+  thumbGenerated?: boolean;
 };
 
 const collectionSchema = z.object({
@@ -516,6 +517,8 @@ async function readModelIds(
 /** A model as it's kept (RemoteModel), from what its partner said of it. */
 export function remoteModelData(model: Model, own: (url: string | undefined) => url is string) {
   const pictures = model.image.filter((image) => own(image.url)).slice(0, 20);
+  const thumbOf = (file: NonNullable<Model["attachment"]>[number]) =>
+    file["thingport:kind"] === "plate" && own(file["thingport:thumb"]) ? file["thingport:thumb"] : undefined;
   return {
     title: model.name || "Untitled",
     description: markdownOf(model.source, 20_000),
@@ -530,7 +533,8 @@ export function remoteModelData(model: Model, own: (url: string | undefined) => 
       role: file["thingport:kind"] === "file" ? file["thingport:role"] : undefined,
       profileId: file["thingport:kind"] === "plate" ? file["thingport:profileId"] : undefined,
       profile: file["thingport:kind"] === "plate" ? file["thingport:profile"] : undefined,
-      thumb: file["thingport:kind"] === "plate" && own(file["thingport:thumb"]) ? file["thingport:thumb"] : undefined,
+      thumb: thumbOf(file),
+      thumbGenerated: thumbOf(file) && file["thingport:thumbGenerated"] === true ? true : undefined,
     })) as Prisma.InputJsonValue,
     details: (detailsOf(model, pictures, own) as Prisma.InputJsonValue | null) ?? Prisma.DbNull,
     sharedAt: model.published,
@@ -538,14 +542,30 @@ export function remoteModelData(model: Model, own: (url: string | undefined) => 
   };
 }
 
+/** Whether `model`'s partner is new enough to say what a copy needs: it marks each file plate or file, and says the
+ *  rest of what it has of one without files. */
+const saysMore = (model: Model) =>
+  Boolean(
+    model.attachment?.some((file) => file["thingport:kind"]) ||
+    model.image.some((image) => image.generated || image.plate) ||
+    model["thingport:tags"].length ||
+    model["thingport:creator"] ||
+    model["thingport:importedFrom"] ||
+    model["thingport:author"] ||
+    model["thingport:category"] ||
+    model["thingport:generatorScriptWithheld"] ||
+    model["thingport:unfillableGaps"].length ||
+    model["thingport:descriptionImages"].length,
+  );
+
 /** What a copy of `model` needs, from what its partner said: anything to fetch only on the partner's own origin. Null
- *  from a partner too old to say, which marks each file plate or file. */
+ *  from a partner too old to say. */
 function detailsOf(
   model: Model,
   pictures: Model["image"],
   own: (url: string | undefined) => url is string,
 ): RemoteModelDetails | null {
-  if (!model.attachment?.some((file) => file["thingport:kind"])) return null;
+  if (!saysMore(model)) return null;
   const category = model["thingport:category"];
   return {
     tags: model["thingport:tags"],

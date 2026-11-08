@@ -317,16 +317,17 @@ export async function resetDefaultCategories(userId: string): Promise<void> {
  *  sort into it (CategorySiteId). Only a starter category ("category") has one: a folder is its owner's own sorting. */
 export type CategoryRef = { path: string[]; siteIds: { provider: string; siteId: string }[] };
 
-// Deeper than any tree the app makes: one deeper is taken for a loop.
-const MAX_CATEGORY_DEPTH = 20;
-
 type RefRow = { id: string; name: string; kind: string; parentId: string | null };
 
+/** Its names from the top, however deep (validateParentCategory refuses only a loop); none for one in a loop
+ *  already. */
 function refPath(row: RefRow, byId: ReadonlyMap<string, RefRow>): string[] | null {
   if (row.kind !== "category") return null;
   const names: string[] = [];
+  const seen = new Set<string>();
   for (let at: RefRow | undefined = row; at; at = at.parentId ? byId.get(at.parentId) : undefined) {
-    if (names.length === MAX_CATEGORY_DEPTH) return null;
+    if (seen.has(at.id)) return null;
+    seen.add(at.id);
     names.unshift(at.name);
   }
   return names;

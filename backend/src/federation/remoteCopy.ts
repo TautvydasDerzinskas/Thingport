@@ -8,11 +8,15 @@ import { createLog } from "../services/auditLog";
 import { buildAuthorId } from "../services/authorService";
 import { matchingCategoryId } from "../services/categoryService";
 import { DESCRIPTION_IMAGE, DESCRIPTION_IMAGE_REF, saveDescriptionImage } from "../services/descriptionImageService";
+import { canRenderModelImage } from "../services/modelPreviewCache";
+import { plateAssetHome } from "../services/modelAssets";
+import { isPreparedPrintFilename } from "../services/preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "../services/previewImageService";
 import { createPrint, discardPrint, isGeneratorScript, type NewPlateInput } from "../services/printCreation";
 import { saveFileFromTemp } from "../services/printFileService";
 import { PROFILE_PROVIDER_VERSION } from "../services/printProfileService";
-import { plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
+import { plateThumbExists, plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
+import { getPreviewMode } from "../services/settingsService";
 import { HttpError, mimeFromContentType, sanitizeFilename } from "../utils/fileUtils";
 import { activeRemoteModel, fetchRemoteFile, filesOf, type RemoteFile, type RemoteModelRow } from "./remoteFiles";
 import type { RemoteModelDetails } from "./remoteIndex";
@@ -288,10 +292,15 @@ async function makeCopy(
   }
   const printId = created.print.id;
 
-  // Supporting files and the prepared print: what the model is, so a copy without them would be a different one.
+  // Supporting files and the prepared print: what the model is, so a copy without them would be a different one. A
+  // model has one prepared print, so any more a partner lists are kept beside it rather than each taking its place.
   try {
+    let prepared = false;
     for (const { file, path: tempPath } of supporting) {
-      await saveFileFromTemp(userId, printId, tempPath, file.name, file.mediaType, { role: file.role });
+      const said = file.role ?? (isPreparedPrintFilename(sanitizeFilename(file.name)) ? "PREPARED" : "SUPPORTING");
+      const role: typeof said = said === "PREPARED" && prepared ? "SUPPORTING" : said;
+      prepared ||= role === "PREPARED";
+      await saveFileFromTemp(userId, printId, tempPath, file.name, file.mediaType, { role });
     }
   } catch (err) {
     await discardPrint(printId);
@@ -310,15 +319,18 @@ async function makeCopy(
 }
 
 /** Which files are the copy's plates and which are kept beside them: as the partner says, or for one too old to say,
- *  as an upload sorts them (createUploadedModel), every file a plate when none is a 3D file. */
+ *  the 3D files plates and a sliced print beside them its prepared print, as files added to a model are
+ *  (addUploadedFiles); every file a plate when none is a 3D file. */
 function splitFiles(fetched: Fetched[]): { plates: Fetched[]; supporting: Fetched[] } {
   const said = fetched.filter(({ file }) => file.kind !== "file");
   if (fetched.some(({ file }) => file.kind) && said.length) {
     return { plates: said, supporting: fetched.filter(({ file }) => file.kind === "file") };
   }
   const renderable = fetched.filter(({ file }) => RENDERABLE_MODEL_EXTS.has(path.extname(file.name).toLowerCase()));
-  if (!renderable.length) return { plates: fetched, supporting: [] };
-  return { plates: renderable, supporting: fetched.filter((item) => !renderable.includes(item)) };
+  const geometry = renderable.filter(({ file }) => !isPreparedPrintFilename(file.name));
+  const plates = geometry.length ? geometry : renderable;
+  if (!plates.length) return { plates: fetched, supporting: [] };
+  return { plates, supporting: fetched.filter((item) => !plates.includes(item)) };
 }
 
 /** A plate's print profile as the partner's site described it, kept as this instance's provider reader would keep it
@@ -333,13 +345,22 @@ function copiedProfile(profile: RemoteFile["profile"]): Prisma.JsonValue | null 
   ) as Prisma.JsonValue;
 }
 
-/** Each plate's picture where the partner has a real one (not its render) and the copy has only its own render. */
+/** Each plate's picture where the partner has a real one (not its render) and the copy has only its own render, or
+ *  the partner's render where the copy has no picture and won't render one (Model Previews), as one made before is. */
 async function copyPlateThumbs(model: RemoteModelRow, plates: Fetched[], made: { id: string }[]): Promise<void> {
+  const rendering = (await getPreviewMode()) === "automatic";
   for (const [index, { file }] of plates.entries()) {
     const plate = made[index];
-    if (!plate || !file.thumb || !(await plateThumbReplaceable(plate.id))) continue;
+    if (!plate || !file.thumb) continue;
+    const wanted = file.thumbGenerated
+      ? !(rendering && canRenderModelImage(sanitizeFilename(file.name))) &&
+        !plateThumbExists(plate.id, await plateAssetHome(plate.id))
+      : await plateThumbReplaceable(plate.id);
+    if (!wanted) continue;
     const picture = await fetchPicture(model, file.thumb).catch(() => null);
-    if (picture) await saveThumbFromBytes(plate.id, picture);
+    if (!picture || !(await saveThumbFromBytes(plate.id, picture))) continue;
+    // Still a render, which a picture added later takes the place of.
+    if (file.thumbGenerated) await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: true } });
   }
 }
 
@@ -379,8 +400,9 @@ async function copyDescriptionImages(
   const renamed = new Map<string, string>();
   for (const image of details?.descriptionImages ?? []) {
     const picture = await fetchPicture(model, image.url).catch(() => null);
-    // Where it came from before the partner isn't known here, so nothing points back past it.
-    const saved = picture && (await saveDescriptionImage(printId, picture, null));
+    // Where it came from before the partner isn't known here, so nothing points back past it. One that isn't saved is
+    // left out, not the ones before it.
+    const saved = picture && (await saveDescriptionImage(printId, picture, null).catch(() => null));
     if (saved) renamed.set(image.id, saved.id);
   }
   if (!renamed.size) return;

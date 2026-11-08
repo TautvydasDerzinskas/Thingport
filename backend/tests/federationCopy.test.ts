@@ -7,11 +7,18 @@ import request from "supertest";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../src/db";
 import { originOf } from "../src/federation/addresses";
 import { invalidateAllowlist } from "../src/federation/allowlist";
-import { fitModel, MODEL_MAX_BYTES, modelsPage, sendMedia, sendSharedFile } from "../src/federation/publish";
+import {
+  fitModel,
+  MODEL_MAX_BYTES,
+  modelsPage,
+  PAGE_BYTES,
+  sendMedia,
+  sendSharedFile,
+} from "../src/federation/publish";
 import { remoteCopyStatus, startRemoteCopy } from "../src/federation/remoteCopy";
 import { remoteModel } from "../src/federation/remoteExplore";
 import { readModels, remoteModelData } from "../src/federation/remoteIndex";
@@ -22,17 +29,32 @@ import { saveDescriptionImage } from "../src/services/descriptionImageService";
 import { addPreviewImage } from "../src/services/previewImageService";
 import { createPrint } from "../src/services/printCreation";
 import { saveFileFromTemp } from "../src/services/printFileService";
-import { saveThumbFromBytes } from "../src/services/printService";
-import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
+import { plateThumbExists, saveThumbFromBytes } from "../src/services/printService";
+import { getPreviewMode, getSocialSettings, setPreviewMode, setSocialSettings } from "../src/services/settingsService";
 import { profileProject } from "./helpers/profileProject";
 
 // A partner's model copied the whole way: published by this instance as a partner sees it, read as a partner reads it,
 // and copied, its files and pictures fetched from this process's own partner routes, which skip the signature check.
-const { ORIGIN, partner } = vi.hoisted(() => ({ ORIGIN: "http://192.0.2.62:8000", partner: { base: "" } }));
+const { ORIGIN, partner, saves } = vi.hoisted(() => ({
+  ORIGIN: "http://192.0.2.62:8000",
+  partner: { base: "" },
+  // The description images saved from now on, the one at `failAt` failing.
+  saves: { count: 0, failAt: -1 },
+}));
 vi.mock("../src/federation/fetch", async (original) => ({
   ...(await original<typeof import("../src/federation/fetch")>()),
   federationFetch: (url: string, init?: RequestInit) => fetch(url.replace(ORIGIN, partner.base), init),
 }));
+vi.mock("../src/services/descriptionImageService", async (original) => {
+  const actual = await original<typeof import("../src/services/descriptionImageService")>();
+  return {
+    ...actual,
+    saveDescriptionImage: (...args: Parameters<typeof actual.saveDescriptionImage>) => {
+      if (saves.count++ === saves.failAt) return Promise.reject(new Error("disk full"));
+      return actual.saveDescriptionImage(...args);
+    },
+  };
+});
 
 const app = createApp();
 const stamp = Date.now();
@@ -90,6 +112,33 @@ async function copied(account: Account, remoteId: string): Promise<string> {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   throw new Error("The copy didn't finish");
+}
+
+/** `printId`, shared by `account`, as the partner's index has it. */
+async function indexed(account: Account, printId: string): Promise<string> {
+  const page = await modelsPage(account.id);
+  const { models } = await readModels(
+    async () => JSON.parse(JSON.stringify(page)),
+    `${ORIGIN}/api/ap/actors/${account.id}/models`,
+    own,
+  );
+  const model = models.find((item) => item.id === `${ORIGIN}/api/ap/models/${printId}`)!;
+  return (
+    await prisma.remoteModel.create({ data: { peerId, personId, apId: model.id, ...remoteModelData(model, own) } })
+  ).id;
+}
+
+/** A model of `account`'s, shared, with one plate. */
+async function sharedModel(account: Account, title: string, filename: string): Promise<string> {
+  const { print } = await createPrint(
+    account.id,
+    { title: `${title} ${stamp}` },
+    title,
+    [{ filename, tempFilePath: tmpFile(filename, `solid ${title} endsolid`) }],
+    { describe: false, classify: false },
+  );
+  await share(account, print.id);
+  return print.id;
 }
 
 const FACTS = {
@@ -342,6 +391,103 @@ describe("a partner's model, copied", () => {
     expect(copy.files.map((file) => file.filename)).toEqual(["notes.txt"]);
   });
 
+  it("keeps a sliced print as its prepared print, and only one, whatever the partner lists", async () => {
+    const printId = await sharedModel(owner, "Sliced", "sliced.stl");
+    const tempPath = tmpFile("sliced.gcode.3mf", "sliced");
+    await saveFileFromTemp(owner.id, printId, tempPath, "sliced.gcode.3mf", null, { role: "PREPARED" });
+    const page = (await modelsPage(owner.id)) as {
+      orderedItems: { id: string; attachment: Record<string, unknown>[] }[];
+    };
+    const [stl, sliced] = page.orderedItems.find((item) => item.id.endsWith(printId))!.attachment;
+    const entry = (file: Record<string, unknown>, more: Record<string, unknown> = {}) => ({
+      name: file.name,
+      size: file["thingport:size"],
+      mediaType: null,
+      url: file.url,
+      ...more,
+    });
+    const copyOf = async (name: string, files: Record<string, unknown>[]) => {
+      const row = await prisma.remoteModel.create({
+        data: {
+          peerId,
+          personId,
+          apId: `${ORIGIN}/api/ap/models/${name}-${stamp}`,
+          title: name,
+          images: [],
+          files: files as Prisma.InputJsonValue,
+        },
+      });
+      return prisma.print.findUniqueOrThrow({
+        where: { id: await copied(await register(name), row.id) },
+        include: { plates: true, files: { orderBy: { filename: "asc" } } },
+      });
+    };
+
+    // From a partner too old to mark them: the 3D file a plate, the sliced one beside it its prepared print.
+    const old = await copyOf("Olds", [entry(stl), entry(sliced)]);
+    expect(old.plates.map((plate) => plate.filename)).toEqual(["sliced.stl"]);
+    expect(old.files.map((file) => [file.filename, file.role])).toEqual([["sliced.gcode.3mf", "PREPARED"]]);
+    expect(old.preparedFileId).toBe(old.files[0].id);
+
+    // Two said to be: the first is, and the other is kept beside it rather than in its place.
+    const twice = await copyOf("Twice", [
+      entry(stl, { kind: "plate" }),
+      entry(sliced, { kind: "file", role: "PREPARED" }),
+      entry({ ...sliced, name: "again.gcode.3mf" }, { kind: "file", role: "PREPARED" }),
+    ]);
+    expect(twice.files.map((file) => [file.filename, file.role])).toEqual([
+      ["again.gcode.3mf", "SUPPORTING"],
+      ["sliced.gcode.3mf", "PREPARED"],
+    ]);
+    expect(twice.preparedFileId).toBe(twice.files[1].id);
+  });
+
+  it("takes the partner's render as a plate's picture only where this instance won't render one", async () => {
+    const printId = await sharedModel(owner, "Rendered", "rendered.stl");
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId } });
+    await saveThumbFromBytes(plate.id, await picture(0, 0, 90));
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: true } });
+    const remote = await indexed(owner, printId);
+    const mode = await getPreviewMode();
+    try {
+      await setPreviewMode("disabled");
+      const copy = await prisma.print.findUniqueOrThrow({
+        where: { id: await copied(await register("Norender"), remote) },
+        include: { plates: true },
+      });
+      expect(plateThumbExists(copy.plates[0].id, copy.assetsPath)).toBe(true);
+      // Still a render: a picture added later takes its place.
+      expect(copy.plates[0].thumbGenerated).toBe(true);
+    } finally {
+      await setPreviewMode(mode);
+    }
+  });
+
+  it("keeps the description's images that were saved when another isn't", async () => {
+    const printId = await sharedModel(owner, "Illustrated", "illustrated.stl");
+    const [first, second] = [
+      (await saveDescriptionImage(printId, await picture(1, 2, 3), null))!,
+      (await saveDescriptionImage(printId, await picture(3, 2, 1), null))!,
+    ];
+    await prisma.print.update({
+      where: { id: printId },
+      data: { notes: `![a](/description-image/${first.id}) ![b](/description-image/${second.id})` },
+    });
+    const remote = await indexed(owner, printId);
+    saves.count = 0;
+    saves.failAt = 1;
+    try {
+      const copy = await prisma.print.findUniqueOrThrow({
+        where: { id: await copied(await register("Halfway"), remote) },
+        include: { descriptionImages: true },
+      });
+      expect(copy.descriptionImages).toHaveLength(1);
+      expect(copy.notes).toBe(`![a](/description-image/${copy.descriptionImages[0].id}) `);
+    } finally {
+      saves.failAt = -1;
+    }
+  });
+
   it("serves a description's image only while its model is shared", async () => {
     const image = await prisma.descriptionImage.findFirstOrThrow({ where: { printId: sourceId } });
     const shared = await fetch(`${partner.base}/api/ap/media/description/${image.id}`);
@@ -383,7 +529,12 @@ describe("what a partner says a copy needs", () => {
       "thingport:author": { provider: "nowhere", externalId: "1" },
       "thingport:category": { path: [] },
       "thingport:unfillableGaps": ["author", "everything"],
-      "thingport:descriptionImages": [{ id: "abc", url: `${elsewhere}/d.png` }],
+      "thingport:descriptionImages": [
+        { id: "abc", url: `${elsewhere}/d.png` },
+        // Not an id Thingport makes, which its description would never be found by.
+        { id: "Step_A-1", url: `${ORIGIN}/api/ap/media/description/s` },
+        { id: "c1x9", url: `${ORIGIN}/api/ap/media/description/c` },
+      ],
     };
     const { models } = await readModels(
       async () => ({ orderedItems: [doc] }),
@@ -400,7 +551,7 @@ describe("what a partner says a copy needs", () => {
       category: null,
       generatorScriptWithheld: false,
       unfillableGaps: ["author"],
-      descriptionImages: [],
+      descriptionImages: [{ id: "c1x9", url: `${ORIGIN}/api/ap/media/description/c` }],
       renders: [],
       platePictures: [],
     });
@@ -413,6 +564,28 @@ describe("what a partner says a copy needs", () => {
     ]);
   });
 
+  it("is kept of a model without files, from a partner that says it", async () => {
+    const bare = (more: Record<string, unknown>) => ({
+      id: `${ORIGIN}/api/ap/models/bare`,
+      type: "thingport:Model",
+      name: "Bare",
+      attributedTo: `${ORIGIN}/api/ap/actors/bare`,
+      ...more,
+    });
+    const read = async (doc: unknown) =>
+      remoteModelData(
+        (await readModels(async () => ({ orderedItems: [doc] }), `${ORIGIN}/api/ap/actors/bare/models`, own)).models[0],
+        own,
+      ).details;
+    const site = { provider: "makerworld", externalId: "42" };
+    expect(await read(bare({ "thingport:tags": ["bins"], "thingport:importedFrom": site }))).toMatchObject({
+      tags: ["bins"],
+      importedFrom: site,
+    });
+    // One that says nothing more is read as from a partner too old to.
+    expect(await read(bare({}))).toBe(Prisma.DbNull);
+  });
+
   it("leaves a model's print profiles out rather than make it too big for a page", () => {
     const big = { facts: { description: "x".repeat(MODEL_MAX_BYTES) } };
     const doc = fitModel({ id: "m", attachment: [{ name: "a.3mf", "thingport:profile": big }] });
@@ -421,5 +594,53 @@ describe("what a partner says a copy needs", () => {
       id: "m",
       attachment: [{ name: "a.3mf", "thingport:profile": { facts: {} } }],
     });
+    // Too big without them too: its category, description's images and plates' pictures go next.
+    const extras = {
+      "thingport:tags": ["bins"],
+      "thingport:category": { path: ["x".repeat(MODEL_MAX_BYTES)], siteIds: [] },
+      "thingport:descriptionImages": [{ id: "a", url: "u" }],
+    };
+    const plate = { name: "a.3mf", "thingport:profile": big, "thingport:thumb": "t", "thingport:thumbGenerated": true };
+    expect(fitModel({ id: "m", ...extras, attachment: [plate] })).toEqual({
+      id: "m",
+      "thingport:tags": ["bins"],
+      attachment: [{ name: "a.3mf" }],
+    });
+  });
+
+  it("fits a page whatever its owner wrote in it", async () => {
+    const big = await register("Wordy");
+    const long = "ü".repeat(50_000);
+    const category = await prisma.category.create({ data: { userId: big.id, name: long, kind: "category" } });
+    const printId = await sharedModel(big, "Wordy", "wordy.stl");
+    await prisma.print.update({
+      where: { id: printId },
+      data: {
+        title: long,
+        notes: long,
+        categoryId: category.id,
+        tags: Array.from({ length: 60 }, (_, i) => `${i}${long}`),
+      },
+    });
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId } });
+    await prisma.plate.update({
+      where: { id: plate.id },
+      data: {
+        filename: `${long}.stl`,
+        mime: `model/${long}`,
+        profile: { provider: { ...FACTS, title: "x".repeat(MODEL_MAX_BYTES) } },
+      },
+    });
+    const page = (await modelsPage(big.id)) as { orderedItems: Record<string, unknown>[] };
+    expect(Buffer.byteLength(JSON.stringify(page))).toBeLessThanOrEqual(PAGE_BYTES);
+    const [doc] = page.orderedItems;
+    expect(Buffer.byteLength(JSON.stringify(doc))).toBeLessThanOrEqual(MODEL_MAX_BYTES);
+    // A category a partner wouldn't keep isn't sent; the rest is cut to what it keeps.
+    expect(doc["thingport:category"]).toBeUndefined();
+    expect((doc["thingport:tags"] as string[]).every((tag) => tag.length <= 100)).toBe(true);
+    const [file] = doc.attachment as { name: string; mediaType: string; url: string }[];
+    expect([file.name.length, file.mediaType.length]).toEqual([255, 120]);
+    expect(file).not.toHaveProperty("thingport:profile");
+    expect(file.url.endsWith(`/${encodeURIComponent(file.name)}`)).toBe(true);
   });
 });

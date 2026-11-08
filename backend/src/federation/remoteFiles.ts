@@ -55,6 +55,7 @@ export function filesOf(model: Pick<RemoteModel, "files">, origin: string): Remo
     profileId: typeof file.profileId === "string" ? file.profileId : undefined,
     profile: isProfile(file.profile) ? file.profile : undefined,
     thumb: own(file.thumb) ? file.thumb : undefined,
+    thumbGenerated: own(file.thumb) && file.thumbGenerated === true ? true : undefined,
   }));
 }
 

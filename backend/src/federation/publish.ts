@@ -40,9 +40,14 @@ const NAME_MAX = 120;
 const MODEL_NAME_MAX = 300;
 const MODEL_DESCRIPTION_MAX = 20_000;
 const MODEL_FILES_MAX = 100;
+const FILE_NAME_MAX = 255;
+const MEDIA_TYPE_MAX = 120;
 const MODEL_IMAGES_MAX = 20;
 const MODEL_TAGS_MAX = 50;
+const TAG_MAX = 100;
 const MODEL_DESCRIPTION_IMAGES_MAX = 50;
+const CATEGORY_PATH_MAX = 100;
+const CATEGORY_NAME_MAX = 200;
 const CATEGORY_SITE_IDS_MAX = 200;
 // Of one model, so a page holds a few at least whatever their print profiles say.
 export const MODEL_MAX_BYTES = 256 * 1024;
@@ -316,14 +321,18 @@ function modelDoc(
       const version = mtime(descriptionImagePath(image, print.assetsPath));
       return version === null ? [] : [{ id: image.id, url: mediaUrl(runtime, "description", image.id, version) }];
     });
-  const document = (kind: "plate" | "file", file: { id: string; filename: string; mime: string; size: number }) => ({
-    type: "Document",
-    name: file.filename,
-    mediaType: file.mime,
-    url: `${runtime.origin}${AP_PREFIX}/files/${kind}/${file.id}/${encodeURIComponent(file.filename)}`,
-    "thingport:size": file.size,
-    "thingport:kind": kind,
-  });
+  const document = (kind: "plate" | "file", file: { id: string; filename: string; mime: string; size: number }) => {
+    // No half of a character left at the end, which encodeURIComponent refuses. The address's name is only a slicer's.
+    const name = file.filename.slice(0, FILE_NAME_MAX).replace(/[\uD800-\uDBFF]$/, "");
+    return {
+      type: "Document",
+      name,
+      mediaType: file.mime.slice(0, MEDIA_TYPE_MAX),
+      url: `${runtime.origin}${AP_PREFIX}/files/${kind}/${file.id}/${encodeURIComponent(name)}`,
+      "thingport:size": file.size,
+      "thingport:kind": kind,
+    };
+  };
   // Each file where a partner fetches it, signed: to download, open in a slicer or copy.
   const attachment = [
     ...print.plates.map((plate) => {
@@ -335,13 +344,21 @@ function modelDoc(
         "thingport:profile": provider
           ? { version: storedProfile(plate.profile)?.providerVersion ?? 0, facts: provider }
           : undefined,
-        // A picture that isn't our own render: a copy makes its own renders.
-        "thingport:thumb": plate.thumbGenerated ? undefined : (thumbOf(plate) ?? undefined),
+        // A render is marked: a copy makes its own where its instance renders.
+        "thingport:thumb": thumbOf(plate) ?? undefined,
+        "thingport:thumbGenerated": plate.thumbGenerated || undefined,
       };
     }),
     ...print.files.map((file) => ({ ...document("file", file), "thingport:role": file.role })),
   ].slice(0, MODEL_FILES_MAX);
   const ref = print.categoryId ? refs.get(print.categoryId) : undefined;
+  // Only one a partner keeps: names of any length and depth are allowed here, not there.
+  const category =
+    ref &&
+    ref.path.length <= CATEGORY_PATH_MAX &&
+    ref.path.every((name) => name.trim() && name.trim().length <= CATEGORY_NAME_MAX)
+      ? { path: ref.path, siteIds: ref.siteIds.slice(0, CATEGORY_SITE_IDS_MAX) }
+      : undefined;
   return fitModel({
     id: `${runtime.origin}${AP_PREFIX}/models/${print.id}`,
     type: "thingport:Model",
@@ -352,30 +369,35 @@ function modelDoc(
     attachment,
     published: (sharedAt.get(print.id) ?? print.createdAt).toISOString(),
     updated: print.updatedAt.toISOString(),
-    "thingport:tags": print.tags.length ? print.tags.slice(0, MODEL_TAGS_MAX) : undefined,
+    "thingport:tags": print.tags.length
+      ? print.tags.slice(0, MODEL_TAGS_MAX).map((tag) => tag.slice(0, TAG_MAX))
+      : undefined,
     "thingport:creator": print.creator?.trim().slice(0, NAME_MAX) || undefined,
     "thingport:importedFrom":
       print.sourceProvider && print.sourceExternalId
         ? { provider: print.sourceProvider, externalId: print.sourceExternalId }
         : undefined,
     "thingport:author": print.author ?? undefined,
-    "thingport:category": ref ? { path: ref.path, siteIds: ref.siteIds.slice(0, CATEGORY_SITE_IDS_MAX) } : undefined,
+    "thingport:category": category,
     "thingport:generatorScriptWithheld": print.generatorScriptWithheld || undefined,
     "thingport:unfillableGaps": print.unfillableGaps.length ? print.unfillableGaps : undefined,
     "thingport:descriptionImages": descriptionImages.length ? descriptionImages : undefined,
   });
 }
 
-/** A model as published, its print profiles' facts left out should they make it too big for a page: a copy asks their
- *  site for them instead. */
+/** A model as published, held to MODEL_MAX_BYTES should what a copy needs make it too big: its print profiles' facts
+ *  go first (a copy asks their site instead), then its category, description's images and plates' pictures (a copy
+ *  goes without). What's left is cut to what a partner keeps, which a page holds whatever it is. */
 export function fitModel<T extends { attachment: Record<string, unknown>[] }>(doc: T): T {
   if (bytes(doc) <= MODEL_MAX_BYTES) return doc;
+  const without = (terms: string[]) => (value: Record<string, unknown>) =>
+    Object.fromEntries(Object.entries(value).filter(([key]) => !terms.includes(key)));
+  const lean = { ...doc, attachment: doc.attachment.map(without(["thingport:profile"])) };
+  if (bytes(lean) <= MODEL_MAX_BYTES) return lean;
   return {
-    ...doc,
-    attachment: doc.attachment.map((file) =>
-      Object.fromEntries(Object.entries(file).filter(([key]) => key !== "thingport:profile")),
-    ),
-  };
+    ...without(["thingport:category", "thingport:descriptionImages"])(lean),
+    attachment: lean.attachment.map(without(["thingport:thumb", "thingport:thumbGenerated"])),
+  } as T;
 }
 
 /** Where a page of someone's models goes on from: after the model added at `at` with id `id`, in their order. */

@@ -111,8 +111,9 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   and its providers' ids; never a folder, which is its owner's own), `generatorScriptWithheld`, `unfillableGaps` and
   `descriptionImages`; on each picture `generated` (a render) or `plate` (a plate's thumbnail standing in for none); on
   each file `kind` (plate or file), a file's `role`, and a plate's `profileId`, `profile` (what its site said, with
-  the reader's version) and `thumb` (a picture that isn't a render). A model past 256 KB leaves its profiles' facts out
-  (`fitModel`), and a copy asks their site instead.
+  the reader's version), `thumb` and `thumbGenerated` (the thumb is a render, which a copy takes only where its
+  instance won't render one). A model past 256 KB leaves its profiles' facts out (`fitModel`), and a copy asks their
+  site instead; still past it, its category, description's images and plates' thumbs.
 - **Keeping the copy** (`remoteIndex.ts`): `RemotePerson`, `RemoteModel`, `RemoteCollection`, read on connecting, by
   **Check connection**, every 15 minutes (the delivery worker's tick), and when Explore is opened and it's two minutes
   old. Everything a partner says is checked: ids and pictures on its own origin, text cut to size, and a listing without
