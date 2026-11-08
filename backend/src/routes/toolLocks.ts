@@ -11,6 +11,16 @@ import { assertNotToolCollections, assertNotToolModels } from "../services/tools
 // copier's own model, which leaves this one as it was.
 const PRINT_ALLOWED = [/^favorite$/, /^download$/, /^quality$/, /^plate\/[^/]+\/normalize$/, /^copy$/];
 
+/** A path's id as the route's parameter gets it: decoded, as Express decodes parameters, so `%61` can't stand for
+ *  `a` past the lock. Null for an encoding Express refuses, which never reaches a route. */
+function param(raw: string): string | null {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+}
+
 const ids = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];
 
@@ -21,13 +31,17 @@ export const toolLocks = asyncHandler(async (req: Request, _res: Response, next:
   const path = req.path.length > 1 ? req.path.replace(/\/+$/, "") : req.path;
 
   const print = /^\/print\/([^/]+)(?:\/(.+))?$/.exec(path);
-  if (print && !PRINT_ALLOWED.some((allowed) => allowed.test(print[2] ?? ""))) await assertNotToolModels([print[1]]);
+  const printId = print ? param(print[1]) : null;
+  if (print && printId && !PRINT_ALLOWED.some((allowed) => allowed.test(print[2] ?? ""))) {
+    await assertNotToolModels([printId]);
+  }
   if (path === "/prints/tags") await assertNotToolModels(ids(body.print_ids));
 
   // The collection itself and what's in it; a bookmark of it is the user's own.
   const collection = /^\/collection\/([^/]+)(?:\/(items(?:\/.*)?))?$/.exec(path);
-  if (collection && (collection[2] || req.method === "PATCH" || req.method === "DELETE"))
-    await assertNotToolCollections([collection[1]]);
+  const collectionId = collection ? param(collection[1]) : null;
+  if (collection && collectionId && (collection[2] || req.method === "PATCH" || req.method === "DELETE"))
+    await assertNotToolCollections([collectionId]);
   if (path === "/collections/delete") await assertNotToolCollections(ids(body.ids));
   if (path === "/collections/merge")
     await assertNotToolCollections([

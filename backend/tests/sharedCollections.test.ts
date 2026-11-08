@@ -326,7 +326,15 @@ describe("a collection shared with picked people", () => {
       .set(auth(alex))
       .send({ name: `Desk organisers ${RUN}`, visibility: "private" })
       .then((res) => res);
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Released only once the save is waiting on the row, so it's the race being tested, whatever the machine's pace.
+    for (let tries = 0; ; tries++) {
+      const [{ waiting }] = await prisma.$queryRaw<{ waiting: number }[]>`
+        SELECT COUNT(*)::int AS waiting FROM pg_stat_activity
+        WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%FOR UPDATE%'`;
+      if (waiting > 0) break;
+      if (tries > 200) throw new Error("the save never waited on the row");
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
     release();
     await other;
     expect((await save).body.visibility).toBe("private");
