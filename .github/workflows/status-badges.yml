@@ -27,6 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Write a chip per workflow
+        # Bash with pipefail: a request that fails fails the job, which leaves the chips as they were.
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -38,11 +40,12 @@ jobs:
           # The run that finished last, by when it was last updated, which for a finished run is its end: runs come
           # newest-started first, two can overlap (a push and a pull request), and a re-run of an old one finishes
           # late, so every finished run is read, not just the first page. Only this repository's: a fork's branch can
-          # be called the same as the default one.
+          # be called the same as the default one. Two finishing in the same second: one that didn't succeed wins.
           chip() {
             conclusion=$(gh api --paginate "repos/$REPO/actions/workflows/$1.yml/runs?branch=$BRANCH&status=completed&per_page=100" \
-              --jq ".workflow_runs[] | select(.head_repository.full_name == \"$REPO\") | [.updated_at, .conclusion] | @tsv" |
-              sort | tail -n 1 | cut -f 2)
+              --jq ".workflow_runs[] | select(.head_repository.full_name == \"$REPO\")
+                | [.updated_at, (if .conclusion == \"success\" then 0 else 1 end), .conclusion] | @tsv" |
+              sort | tail -n 1 | cut -f 3)
             case "$conclusion" in
               success) message="✓" color="#008a00" ;;
               failure | timed_out | startup_failure) message="✗" color="#c62828" ;;
