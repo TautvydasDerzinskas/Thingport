@@ -45,7 +45,10 @@ async function peopleOf(collectionIds: string[], db: Db = prisma): Promise<Map<s
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     select: { collectionId: true, userId: true },
   });
-  const cards = await userCards(rows.flatMap((row) => (row.userId ? [row.userId] : [])));
+  const cards = await userCards(
+    rows.flatMap((row) => (row.userId ? [row.userId] : [])),
+    db,
+  );
   for (const row of rows) {
     const card = row.userId ? cards.get(row.userId) : undefined;
     if (!card) continue;
@@ -131,9 +134,11 @@ async function gainedBy(before: Collection, after: Collection, added: string[]):
   return rows.flatMap((row) => (row.userId ? [row.userId] : []));
 }
 
-/** Tells each person who can see `after` now and couldn't before. Never fails the change that led to it. */
+/** Tells each person who can see `after` now and couldn't before. Nobody while social features are off: they can't
+ *  open it then, and are told once they can, when it's next shared with them. Never fails the change that led to it. */
 export async function tellGained(before: Collection, after: Collection, added: string[] = []): Promise<void> {
   try {
+    if (!(await getSocialSettings()).enabled) return;
     const userIds = (await gainedBy(before, after, added)).filter((id) => id !== after.userId);
     if (!userIds.length) return;
     const owner = await prisma.user.findUnique({ where: { id: after.userId }, select: { displayName: true } });

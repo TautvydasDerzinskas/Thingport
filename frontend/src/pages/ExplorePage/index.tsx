@@ -21,6 +21,7 @@ import type { Print } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import { socialApi, type ExploreOverview, type ExploreScope, type InstanceRef } from "../../api/social";
 import Segmented from "../../components/controls/Segmented";
+import { useToast } from "../../components/ToastProvider";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
@@ -74,20 +75,28 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   const [instances, setInstances] = useState<InstanceRef[]>([]);
   const latest = useRef(0);
   const [elsewhereOpen, setElsewhereOpen] = useState(false);
-  // Shared with the user past the first page, as Show more loaded them.
-  const [moreShared, setMoreShared] = useState<Collection[]>([]);
+  // Shared with the user past the first page, as Show more loaded them, and how many there are as it last said. A page
+  // asked for before Explore was loaded again (another scope) is dropped when it comes.
+  const [moreShared, setMoreShared] = useState<{ items: Collection[]; total: number | null }>({
+    items: [],
+    total: null,
+  });
   const [loadingShared, setLoadingShared] = useState(false);
+  const sharedAsk = useRef(0);
+  const showToast = useToast();
   // With connected instances on, someone on another instance can be asked for, here.
   const federation = useSocialStatus()?.federation === true;
 
   useEffect(() => {
     const asked = ++latest.current;
+    sharedAsk.current += 1;
+    setLoadingShared(false);
     socialApi.explore(scope).then(
       (value) => {
         if (asked !== latest.current) return;
         setFailed(false);
         setOverview(value);
-        setMoreShared([]);
+        setMoreShared({ items: [], total: null });
         setInstances(value.instances ?? []);
         // A partner no longer there: back to everything.
         if (scope !== "all" && scope !== "here" && !(value.instances ?? []).some((item) => item.id === scope)) {
@@ -238,18 +247,26 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     RECENT_COLLECTIONS,
   );
 
-  const sharedWithYou = [...(overview.shared_with_you ?? []), ...moreShared];
-  const sharedTotal = overview.shared_with_you_total ?? sharedWithYou.length;
+  const sharedWithYou = [...(overview.shared_with_you ?? []), ...moreShared.items];
+  const sharedTotal = moreShared.total ?? overview.shared_with_you_total ?? sharedWithYou.length;
   const showMoreShared = async () => {
+    const asked = ++sharedAsk.current;
     setLoadingShared(true);
     try {
       const page = await socialApi.sharedWithYou({ limit: SHARED_MORE, offset: sharedWithYou.length });
+      if (asked !== sharedAsk.current) return;
       const known = new Set(sharedWithYou.map((collection) => collection.id));
-      setMoreShared((prev) => [...prev, ...page.items.filter((collection) => !known.has(collection.id))]);
+      // The total as it is now: one unshared meanwhile leaves no button asking for it again.
+      setMoreShared((prev) => ({
+        items: [...prev.items, ...page.items.filter((collection) => !known.has(collection.id))],
+        total: page.total,
+      }));
     } catch (err) {
+      if (asked !== sharedAsk.current) return;
       if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else showToast({ message: t("models:explore.sharedFailed"), severity: "error" });
     } finally {
-      setLoadingShared(false);
+      if (asked === sharedAsk.current) setLoadingShared(false);
     }
   };
 

@@ -61,9 +61,13 @@ export default function CollectionFormModal({ collection, share = false, onClose
   const [visibility, setVisibility] = useState<CollectionVisibility>(() =>
     share && visibilityOf(collection) === "private" ? "shared" : visibilityOf(collection),
   );
-  // Who it's shared with, as saved (kept while it's private or public too) and as picked here.
+  // Who it's shared with, as saved (kept while it's private or public too) and as picked here. Until the saved list is
+  // here, who sees it can't be changed: making it shared would share it with people the owner wasn't shown.
   const [savedPeople, setSavedPeople] = useState<SharePerson[] | null>(collection ? null : []);
   const [people, setPeople] = useState<SharePerson[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const sharingReady = savedPeople !== null;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,6 +78,7 @@ export default function CollectionFormModal({ collection, share = false, onClose
   useEffect(() => {
     if (!collectionId || !social?.enabled) return;
     let current = true;
+    setLoadFailed(false);
     collectionsApi.sharing(collectionId).then(
       (sharing) => {
         if (!current) return;
@@ -82,17 +87,20 @@ export default function CollectionFormModal({ collection, share = false, onClose
       },
       () => {
         if (!current) return;
-        setSavedPeople([]);
-        setError(t("models:collections.form.peopleFailed"));
+        setLoadFailed(true);
+        // Back to how it is: nothing about who sees it changes until the list loads.
+        setVisibility(visibilityOf(collection));
       },
     );
     return () => {
       current = false;
     };
-  }, [collectionId, social?.enabled, t]);
+    // `collection` only seeds the visibility put back; a new one is a new form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionId, social?.enabled, attempt]);
 
   const sharingPatch = (): CollectionSharingPatch | null => {
-    if (!social?.enabled) return null;
+    if (!social?.enabled || !sharingReady) return null;
     const saved = new Set((savedPeople ?? []).map((person) => person.id));
     const picked = new Set(people.map((person) => person.id));
     const add = people.filter((person) => !saved.has(person.id)).map((person) => person.id);
@@ -180,7 +188,7 @@ export default function CollectionFormModal({ collection, share = false, onClose
                   value={visibility}
                   onChange={setVisibility}
                   label={t("models:collections.form.visibilityLabel")}
-                  disabled={saving}
+                  disabled={saving || !sharingReady}
                   options={[
                     {
                       value: "private",
@@ -200,7 +208,18 @@ export default function CollectionFormModal({ collection, share = false, onClose
                   ]}
                 />
               </Stack>
-              {visibility === "shared" ? (
+              {loadFailed ? (
+                <Alert
+                  severity="warning"
+                  action={
+                    <Button color="inherit" size="small" onClick={() => setAttempt((n) => n + 1)}>
+                      {t("common:retry")}
+                    </Button>
+                  }
+                >
+                  {t("models:collections.form.peopleFailed")}
+                </Alert>
+              ) : visibility === "shared" ? (
                 <Stack
                   spacing={1}
                   sx={{

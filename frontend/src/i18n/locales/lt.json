@@ -5634,7 +5634,8 @@
         "andMore_one": "dar {{count}}",
         "andMore_few": "dar {{count}}",
         "andMore_other": "dar {{count}}",
-        "peopleFailed": "Nepavyko įkelti, su kuo ji bendrinama."
+        "peopleFailed": "Nepavyko įkelti, su kuo ji bendrinama, todėl kas ją mato, keisti negalima, kol tai neįsikels.",
+        "createdNotShared": "„{{name}}“ sukurta, bet nepavyko ja pasidalinti. Bandykite dar kartą per jos meniu „Bendrinti…“."
       },
       "detail": {
         "title": "{{name}}",
@@ -6283,7 +6284,8 @@
       "sharedWithYouHelp": "Kolekcijos, kuriomis savininkai pasidalino su jumis ir keliais kitais. Kiti jų skiltyje Naršyti nemato.",
       "showMore_one": "Rodyti dar {{count}}",
       "showMore_few": "Rodyti dar {{count}}",
-      "showMore_other": "Rodyti dar {{count}}"
+      "showMore_other": "Rodyti dar {{count}}",
+      "sharedFailed": "Nepavyko įkelti daugiau to, kas bendrinama su jumis. Bandykite dar kartą."
     }
   },
   "providers": {

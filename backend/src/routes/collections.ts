@@ -167,11 +167,10 @@ router.post(
       prisma.bookmark.findFirst({ where: { userId: req.userId, type: "COLLECTION", collectionId: primary.id } }),
       prisma.collectionSync.findUnique({ where: { collectionId: primary.id } }),
     ]);
-    res.json({
-      collection: toCollectionOut(primary, itemCount, covers, Boolean(bookmarked), sync),
-      merged_ids: merged.map((c) => c.id),
-      added,
-    });
+    const [collection] = await withSharedWith(req.userId!, [
+      toCollectionOut(primary, itemCount, covers, Boolean(bookmarked), sync),
+    ]);
+    res.json({ collection, merged_ids: merged.map((c) => c.id), added });
     void createLog({
       userId: req.userId!,
       action: "collections_merged",

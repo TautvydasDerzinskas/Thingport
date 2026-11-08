@@ -5506,7 +5506,8 @@
         "keptPeople_other": "{{names}} siguen en la lista: elige Compartida para volver a compartirla.",
         "andMore_one": "{{count}} más",
         "andMore_other": "{{count}} más",
-        "peopleFailed": "No se pudo cargar con quién está compartida."
+        "peopleFailed": "No se pudo cargar con quién está compartida, así que no se puede cambiar quién la ve hasta que se cargue.",
+        "createdNotShared": "Se creó «{{name}}», pero no se pudo compartir. Compartir… en su menú lo vuelve a intentar."
       },
       "detail": {
         "title": "{{name}}",
@@ -6046,7 +6047,8 @@
       "sharedWithYou": "Compartidas contigo",
       "sharedWithYouHelp": "Colecciones que sus dueños compartieron contigo y con unas pocas personas más. Nadie más las ve en Explorar.",
       "showMore_one": "Mostrar {{count}} más",
-      "showMore_other": "Mostrar {{count}} más"
+      "showMore_other": "Mostrar {{count}} más",
+      "sharedFailed": "No se pudo cargar más de lo compartido contigo. Inténtalo de nuevo."
     }
   },
   "providers": {

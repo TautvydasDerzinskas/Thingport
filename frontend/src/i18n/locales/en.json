@@ -5446,7 +5446,8 @@
         "keptPeople_other": "{{names}} stay on the list: pick Shared to share it again.",
         "andMore_one": "{{count}} more",
         "andMore_other": "{{count}} more",
-        "peopleFailed": "Couldn't load who it's shared with."
+        "peopleFailed": "Couldn't load who it's shared with, so who sees it can't be changed until it does.",
+        "createdNotShared": "“{{name}}” was made, but couldn't be shared. Share… in its menu tries again."
       },
       "detail": {
         "title": "{{name}}",
@@ -5983,7 +5984,8 @@
       "sharedWithYou": "Shared with you",
       "sharedWithYouHelp": "Collections their owners shared with you and a few others. Nobody else sees them on Explore.",
       "showMore_one": "Show {{count}} more",
-      "showMore_other": "Show {{count}} more"
+      "showMore_other": "Show {{count}} more",
+      "sharedFailed": "Couldn't load more of what's shared with you. Try again."
     }
   },
   "providers": {

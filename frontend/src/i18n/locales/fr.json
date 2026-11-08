@@ -5519,7 +5519,8 @@
         "keptPeople_other": "{{names}} restent dans la liste : choisissez Partagée pour la partager à nouveau.",
         "andMore_one": "{{count}} autre",
         "andMore_other": "{{count}} autres",
-        "peopleFailed": "Impossible de charger les personnes avec qui elle est partagée."
+        "peopleFailed": "Impossible de charger les personnes avec qui elle est partagée : qui la voit ne peut pas changer tant que ce n'est pas chargé.",
+        "createdNotShared": "« {{name}} » a été créée, mais n'a pas pu être partagée. Partager… dans son menu réessaie."
       },
       "detail": {
         "title": "{{name}}",
@@ -6059,7 +6060,8 @@
       "sharedWithYou": "Partagées avec vous",
       "sharedWithYouHelp": "Les collections que leurs propriétaires ont partagées avec vous et quelques autres. Personne d'autre ne les voit dans Explorer.",
       "showMore_one": "Afficher {{count}} de plus",
-      "showMore_other": "Afficher {{count}} de plus"
+      "showMore_other": "Afficher {{count}} de plus",
+      "sharedFailed": "Impossible de charger plus de ce qui est partagé avec vous. Réessayez."
     }
   },
   "providers": {

@@ -113,9 +113,27 @@ describe("a collection shared with picked people", () => {
       collectionId,
     );
 
-    const page = await request(app).get("/api/explore/shared?limit=1").set(auth(bea));
-    expect(page.status).toBe(200);
-    expect(page.headers["x-total-count"]).toBe(String(theirs.body.shared_with_you_total));
+    // Page by page, each one once: a second one shared with her, and a page of one at a time.
+    const second = (
+      await request(app)
+        .post("/api/collections")
+        .set(auth(carl))
+        .send({ name: `Kitchen hooks ${RUN}` })
+    ).body.id as string;
+    await request(app)
+      .patch(`/api/collection/${second}/sharing`)
+      .set(auth(carl))
+      .send({ visibility: "shared", add_user_ids: [bea.id] });
+    const pages = await Promise.all(
+      [0, 1].map((offset) => request(app).get(`/api/explore/shared?limit=1&offset=${offset}`).set(auth(bea))),
+    );
+    for (const page of pages) {
+      expect(page.status).toBe(200);
+      expect(page.body).toHaveLength(1);
+      expect(page.headers["x-total-count"]).toBe("2");
+    }
+    expect(pages.map((page) => page.body[0].id).toSorted()).toEqual([collectionId, second].toSorted());
+    await request(app).delete(`/api/collection/${second}`).set(auth(carl));
 
     const others = await request(app).get("/api/explore?scope=here").set(auth(carl));
     expect(others.body.shared_with_you.map((collection: { id: string }) => collection.id)).not.toContain(collectionId);
@@ -177,6 +195,16 @@ describe("a collection shared with picked people", () => {
   it("is nobody's but its owner's while social features are off", async () => {
     await setSocialSettings({ enabled: false });
     try {
+      // Made private and shared again while they're off: nobody on its list is told of what they can't open.
+      const told = await sharedNotes(carl);
+      const save = (visibility: string) =>
+        request(app)
+          .patch(`/api/collection/${collectionId}`)
+          .set(auth(alex))
+          .send({ name: `Desk organisers ${RUN}`, visibility });
+      expect((await save("private")).body.visibility).toBe("private");
+      expect((await save("shared")).body.visibility).toBe("shared");
+      expect(await sharedNotes(carl)).toBe(told);
       expect(await canOpen(carl)).toBe(false);
       expect(await canRead(carl)).toBe(false);
       const refused = await sharing({ add_user_ids: [bea.id] });
@@ -186,6 +214,21 @@ describe("a collection shared with picked people", () => {
       await setSocialSettings({ enabled: true });
     }
     expect(await canOpen(carl)).toBe(true);
+  });
+
+  it("says who it's shared with when another collection is merged into it", async () => {
+    const extra = (
+      await request(app)
+        .post("/api/collections")
+        .set(auth(alex))
+        .send({ name: `Spare trays ${RUN}` })
+    ).body.id as string;
+    const merged = await request(app)
+      .post("/api/collections/merge")
+      .set(auth(alex))
+      .send({ primary_id: collectionId, ids: [extra] });
+    expect(merged.status).toBe(200);
+    expect(merged.body.collection).toMatchObject({ visibility: "shared", shared_with: { count: 1 } });
   });
 
   it("finds people to share with by name, never by part of an email", async () => {

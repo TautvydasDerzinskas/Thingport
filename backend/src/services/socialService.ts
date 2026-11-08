@@ -207,11 +207,15 @@ export async function readableCollection(userId: string, collectionId: string): 
   return share ? collection : null;
 }
 
-/** How each user is shown to the others: their name and their avatar -- never their email. */
-export async function userCards(userIds: string[]): Promise<Map<string, UserCardOut>> {
+/** How each user is shown to the others: their name and their avatar -- never their email. Read with `db`, a
+ *  transaction's client inside one. */
+export async function userCards(
+  userIds: string[],
+  db: Pick<Prisma.TransactionClient, "user"> = prisma,
+): Promise<Map<string, UserCardOut>> {
   const unique = [...new Set(userIds)];
   if (!unique.length) return new Map();
-  const users = await prisma.user.findMany({
+  const users = await db.user.findMany({
     where: { id: { in: unique } },
     select: { id: true, displayName: true, email: true, avatarUrl: true, avatarStyle: true },
   });

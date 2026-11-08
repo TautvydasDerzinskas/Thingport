@@ -170,7 +170,7 @@ export const collectionsApi = {
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(patch),
     });
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to change who it's shared with"));
+    await assertOkWithMessage(res, "Failed to change who it's shared with");
     return res.json();
   },
 

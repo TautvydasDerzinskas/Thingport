@@ -2,8 +2,9 @@
 
 Thingport starts as a private library for each person on it. Social features let them share some of it: public
 collections and models, found by everyone on **Explore**, collections shared with only the people picked, profiles to
-show them on, and chats to talk about them. With
-[connected instances](connected-instances.md), all of it reaches the people on partner instances too.
+show them on, and chats to talk about them. With [connected instances](connected-instances.md), public collections and
+models, profiles and chats reach the people on partner instances too; a collection is shared with people on this
+instance only.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/42_explore.png">

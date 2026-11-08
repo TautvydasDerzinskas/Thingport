@@ -123,7 +123,18 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
 
   const createCollection = async (input: CollectionInput, sharing: CollectionSharingPatch | null) => {
     const created = await collectionsApi.create(input);
-    if (sharing) await collectionsApi.updateSharing(created.id, sharing);
+    // Made, whatever becomes of who sees it: a failure there is said, and the form closes rather than offering to make
+    // it again under a name it now has. Share… in its menu tries again.
+    if (sharing) {
+      await collectionsApi.updateSharing(created.id, sharing).catch((err: unknown) => {
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else
+          showToast({
+            message: t("models:collections.form.createdNotShared", { name: created.name }),
+            severity: "error",
+          });
+      });
+    }
     await load();
     // Making one is asking to see it, so the filters don't leave it hidden.
     if (hiddenTypes.includes("user")) changeHiddenTypes(hiddenTypes.filter((type) => type !== "user"));
