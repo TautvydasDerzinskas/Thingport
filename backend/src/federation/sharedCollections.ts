@@ -2,8 +2,7 @@ import crypto from "node:crypto";
 import type { Peer, Prisma, RemotePerson } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
-import { createNotification } from "../services/notificationService";
-import { getPublicUrl, getSocialSettings } from "../services/settingsService";
+import { getPublicUrl, getSocialSettings, holdSocialSettings } from "../services/settingsService";
 import { originOf } from "./addresses";
 import { here, localUserId, personOn, RetryLater, type Here } from "./chats";
 import { enqueueActivity, kickDelivery } from "./delivery";
@@ -24,6 +23,8 @@ import { AP_PREFIX, getRuntime } from "./runtime";
 const AS = "https://www.w3.org/ns/activitystreams";
 
 type Db = Prisma.TransactionClient | typeof prisma;
+
+const SOCIAL_OFF = "Social features are off here for now";
 
 const collectionUrl = (at: Pick<Here, "origin">, id: string) => `${at.origin}${AP_PREFIX}/collections/${id}`;
 
@@ -190,7 +191,7 @@ export async function sharedCollectionFrom(actorId: URL, objectId: string): Prom
   const peer = await activePeer(actorId);
   if (!peer || originOf(objectId) !== peer.origin) return;
   // Kept at the partner and tried again until they're back on: nothing's lost meanwhile.
-  if (!(await getSocialSettings()).enabled) throw new RetryLater("Social features are off here for now");
+  if (!(await getSocialSettings()).enabled) throw new RetryLater(SOCIAL_OFF);
   await readShared(peer, objectId);
 }
 
@@ -244,11 +245,13 @@ export async function refreshShared(peerId: string): Promise<void> {
     await prisma.peer.update({ where: { id: peer.id }, data: { syncError: message.slice(0, 500) } }).catch(() => {});
   }
   for (const apId of new Set([...rows.map((row) => row.apId), ...listed.urls])) {
-    // Turned off meanwhile: the rest wait too.
-    if (!(await getSocialSettings()).enabled) return;
-    await readShared(peer, apId).catch((err: unknown) => {
+    try {
+      await readShared(peer, apId);
+    } catch (err) {
+      // Social features turned off meanwhile: the rest wait too.
+      if (err instanceof RetryLater) return;
       console.warn(`[federation] Couldn't read a collection shared from ${peer.origin}:`, (err as Error).message);
-    });
+    }
   }
 }
 
@@ -292,6 +295,8 @@ function readShared(peer: Peer, apId: string): Promise<void> {
 }
 
 async function readSharedNow(peer: Peer, apId: string): Promise<void> {
+  // Turned off while it waited its turn: not asked for until they're on again.
+  if (!(await getSocialSettings()).enabled) throw new RetryLater(SOCIAL_OFF);
   const runtime = await getRuntime();
   const own = (url: string | undefined): url is string => Boolean(url) && originOf(url!) === peer.origin;
   const read = async (url: string) => (await runtime.signedLoader(url)).document;
@@ -320,20 +325,21 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
   // Nowhere of its own to read its models from: they're not known, not gone, so those it had stay.
   const models = own(items) ? await readModels(read, items, own) : { models: [], all: false };
   const theirs = models.models.filter((model) => model.attributedTo === doc.attributedTo.id);
-  // Turned off while it was read: nothing of it is kept, so nobody's its viewer without being told. Read again once
-  // they're on, by the Update tried again or the refresh after the next read of the index.
-  if (!(await getSocialSettings()).enabled) throw new RetryLater("Social features are off here for now");
 
-  const added = await prisma
+  await prisma
     .$transaction(
       async (tx) => {
+        // Held until it's kept and whoever's new is told: turning them off waits for it, and once they're off nothing
+        // of it is kept, so nobody's its viewer without being told. Read again once they're on, by the Update tried
+        // again or the refresh after the next read of the index.
+        if (!(await holdSocialSettings(tx)).enabled) throw new RetryLater(SOCIAL_OFF);
         const kept = await tx.remoteCollection.findUnique({
           where: { apId },
           select: { id: true, peerId: true, modelApIds: true, fetchedAt: true, viewers: { select: { userId: true } } },
         });
-        if (kept && kept.peerId !== peer.id) return null;
+        if (kept && kept.peerId !== peer.id) return;
         // Asked for since by its partner's index, public there by then: that's newer, and stays.
-        if (kept?.fetchedAt && kept.fetchedAt > readAt) return null;
+        if (kept?.fetchedAt && kept.fetchedAt > readAt) return;
         // Its owner too only if all of this is kept (the check below).
         const owner = await personOn(
           peer,
@@ -345,7 +351,7 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
           },
           tx,
         );
-        if (!owner) return null;
+        if (!owner) return;
         for (const model of theirs) {
           const data = { peerId: peer.id, personId: owner.id, ...remoteModelData(model, own), syncedAt: readAt };
           // One shared openly there stays as its index has it, details too: these may be newer than what's open there
@@ -390,17 +396,21 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
           data: viewers.map((userId) => ({ collectionId: saved.id, userId })),
           skipDuplicates: true,
         });
+        await tell(
+          tx,
+          viewers.filter((userId) => !had.has(userId)),
+          owner,
+          data.name,
+          saved.id,
+        );
         await holdPartner(tx, peer.id);
-        return { id: saved.id, name: data.name, owner, viewers: viewers.filter((userId) => !had.has(userId)) };
       },
       { timeout: WRITE_TIMEOUT_MS, maxWait: 10_000 },
     )
     .catch((err: unknown) => {
-      if (err instanceof Superseded) return null;
-      throw err;
+      if (!(err instanceof Superseded)) throw err;
     });
   await pruneLimitedModels(peer.id);
-  if (added?.viewers.length) await tell(added.viewers, added.owner, added.name, added.id);
 }
 
 /** Throws unless `peerId` is still an ACTIVE partner, and keeps it one until `tx` is done: a block waits for it, then
@@ -412,17 +422,24 @@ async function holdPartner(tx: Prisma.TransactionClient, peerId: string): Promis
   if (!still.length) throw new Error("No longer connected");
 }
 
-async function tell(userIds: string[], owner: RemotePerson, name: string, collectionId: string): Promise<void> {
+/** Notifies `userIds` of it, in the transaction that keeps them as its viewers. */
+async function tell(
+  tx: Prisma.TransactionClient,
+  userIds: string[],
+  owner: RemotePerson,
+  name: string,
+  collectionId: string,
+): Promise<void> {
+  if (!userIds.length) return;
   const title = `${owner.displayName} shared “${name}” with you`;
-  await Promise.all(
-    userIds.map((userId) =>
-      createNotification(userId, {
-        type: "share",
-        title,
-        internalPath: `/explore/elsewhere/collections/${collectionId}`,
-      }).catch(() => {}),
-    ),
-  );
+  await tx.notification.createMany({
+    data: userIds.map((userId) => ({
+      userId,
+      type: "share" as const,
+      title,
+      internalPath: `/explore/elsewhere/collections/${collectionId}`,
+    })),
+  });
 }
 
 async function forget(peerId: string, apId: string): Promise<void> {

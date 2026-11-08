@@ -238,7 +238,9 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   the index or as shared, and the later of two reads is what's kept, whichever finishes last; on a tie, the read as
   shared. A read writes nothing, its owner included, once the partner is blocked: it holds the partner's row
   (`FOR SHARE`, last) until it's written, so a block waits for it and then forgets it all. Nothing is read or kept while
-  social features are off here, one turned off mid-read included, so whoever's added is told once it's read again.
+  social features are off here: each read checks as its turn comes, and holds the setting (`FOR SHARE`) while it's
+  kept and whoever's new is told, in one transaction, so turning them off waits for it, and one that finds them off
+  keeps nothing and is read again once they're on.
   Deleting an account locks its collections first, so a change to who sees one waits and its `Delete` is queued.
 - **Pictures.** The proxy serves a partner's picture only while something kept here names it: a person's avatar or
   cover, or a model's picture (`RemoteModel.images`, indexed). One only of models kept for shared collections goes

@@ -945,6 +945,87 @@ describe("a partner's person sharing a collection with people here", () => {
     }
   });
 
+  it("asks for nothing that waited its turn while social features were turned off", async () => {
+    docs.set("c21", doc("c21", [actor(bea.id)]));
+    const failed = (err: Error) => err;
+    const held = hold("c21");
+    const first = sharedCollectionFrom(actorOf(PARTNER), apId("c21")).then(() => null, failed);
+    try {
+      await held.reached;
+      askedFor.length = 0;
+      let checked!: () => void;
+      const socialChecked = new Promise<void>((resolve) => (checked = resolve));
+      const findUnique = prisma.setting.findUnique.bind(prisma.setting);
+      const looked = vi.spyOn(prisma.setting, "findUnique").mockImplementation((async (...args: [never]) => {
+        const row = await findUnique(...args);
+        checked();
+        return row;
+      }) as never);
+      const second = sharedCollectionFrom(actorOf(PARTNER), apId("c21")).then(() => null, failed);
+      try {
+        // Told of it again while they're on, so it waits its turn behind the read under way.
+        await socialChecked;
+        await new Promise((resolve) => setImmediate(resolve));
+      } finally {
+        looked.mockRestore();
+      }
+      await setSocialSettings({ enabled: false });
+      held.open();
+      expect((await first)?.message).toBe("Social features are off here for now");
+      expect((await second)?.message).toBe("Social features are off here for now");
+      expect(askedFor).toEqual([]);
+      expect(await prisma.remoteCollection.count({ where: { apId: apId("c21") } })).toBe(0);
+    } finally {
+      held.open();
+      await setSocialSettings({ enabled: true });
+    }
+  });
+
+  it("waits for social features being turned off as it's kept, then keeps nothing and tells nobody", async () => {
+    docs.set("c22", doc("c22", [actor(bea.id)]));
+    const told = () => prisma.notification.count({ where: { userId: bea.id, type: "share" } });
+    const before = await told();
+    // An admin turning them off, under way as it's read: their row's held until that's done.
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let changed!: () => void;
+    const changing = new Promise<void>((resolve) => (changed = resolve));
+    const turningOff = prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`UPDATE "Setting" SET value = value || '{"enabled": false}'::jsonb WHERE key = 'social'`;
+        changed();
+        await released;
+      },
+      { timeout: 20_000 },
+    );
+    try {
+      await changing;
+      const reading = sharedCollectionFrom(actorOf(PARTNER), apId("c22")).then(
+        () => null,
+        (err: Error) => err,
+      );
+      // Let go only once the read waits on the setting, so it's the race being tested whatever the machine's pace.
+      await vi.waitFor(
+        async () => {
+          const [{ waiting }] = await prisma.$queryRaw<{ waiting: number }[]>`
+            SELECT COUNT(*)::int AS waiting FROM pg_stat_activity
+            WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%"Setting"%FOR SHARE%'`;
+          expect(waiting).toBeGreaterThan(0);
+        },
+        { timeout: 10_000, interval: 25 },
+      );
+      release();
+      await turningOff;
+      expect((await reading)?.message).toBe("Social features are off here for now");
+      expect(await prisma.remoteCollection.count({ where: { apId: apId("c22") } })).toBe(0);
+      expect(await told()).toBe(before);
+    } finally {
+      release();
+      await turningOff.catch(() => {});
+      await setSocialSettings({ enabled: true });
+    }
+  });
+
   it("stops reading, and keeps nothing, once social features are turned off during a refresh", async () => {
     const ids = [apId("c19"), apId("c20")];
     docs.set("c19", doc("c19", [actor(bea.id)]));

@@ -105,13 +105,24 @@ export async function setToolsAccess(patch: Partial<ToolsAccess>): Promise<Tools
 export type SocialSettings = { enabled: boolean; chats: boolean };
 const SOCIAL_KEY = "social";
 
-export async function getSocialSettings(): Promise<SocialSettings> {
-  const row = await prisma.setting.findUnique({ where: { key: SOCIAL_KEY } });
-  const value = (row?.value ?? {}) as Partial<SocialSettings>;
+function socialSettingsOf(stored: unknown): SocialSettings {
+  const value = (stored ?? {}) as Partial<SocialSettings>;
   return {
     enabled: typeof value.enabled === "boolean" ? value.enabled : false,
     chats: typeof value.chats === "boolean" ? value.chats : false,
   };
+}
+
+export async function getSocialSettings(): Promise<SocialSettings> {
+  const row = await prisma.setting.findUnique({ where: { key: SOCIAL_KEY } });
+  return socialSettingsOf(row?.value);
+}
+
+/** The same, read in `tx` and held until it's done: a change to them waits for it. */
+export async function holdSocialSettings(tx: Prisma.TransactionClient): Promise<SocialSettings> {
+  const rows = await tx.$queryRaw<{ value: Prisma.JsonValue }[]>`
+    SELECT value FROM "Setting" WHERE key = ${SOCIAL_KEY} FOR SHARE`;
+  return socialSettingsOf(rows[0]?.value);
 }
 
 /** Changes only what's given, merged into what's stored in one statement: two changes at once, one to each
