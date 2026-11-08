@@ -21,10 +21,15 @@ import cgtraderCategories from "./cgtrader/categories.json";
 import grabcadCategories from "./grabcad/categories.json";
 import owlcadCategories from "./owlcad/categories.json";
 import meshyCategories from "./meshy/categories.json";
+import pixup3dCategories from "./pixup3d/categories.json";
 import { meshyImport, meshyTrending, meshyLists, meshyDetails } from "./meshy";
 import { meshyConnection } from "./meshy/connection";
 import { meshySync } from "./meshy/sync";
 import { meshyBrowse } from "./meshy/browse";
+import { pixup3dImport, pixup3dTrending, pixup3dLists, pixup3dDetails } from "./pixup3d";
+import { pixup3dConnection } from "./pixup3d/connection";
+import { pixup3dSync } from "./pixup3d/sync";
+import { pixup3dBrowse } from "./pixup3d/browse";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -504,6 +509,18 @@ export const PROVIDERS = {
     browse: meshyBrowse,
     trending: meshyTrending,
     details: meshyDetails,
+  },
+  pixup3d: {
+    starterCategories: pixup3dCategories,
+    connection: { default: pixup3dConnection },
+    // Only its files are read with the sign-in; its models, and anyone's wishlist and public collections, without one.
+    authStopText: grabSignInStop("pixup3d"),
+    sourcedImport: pixup3dImport,
+    lists: pixup3dLists,
+    sync: pixup3dSync,
+    browse: pixup3dBrowse,
+    trending: pixup3dTrending,
+    details: pixup3dDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

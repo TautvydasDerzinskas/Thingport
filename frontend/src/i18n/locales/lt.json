@@ -6881,6 +6881,43 @@
       "sync": {
         "notConnected": "Šiuo metu OwlCAD nepasiekiamas."
       }
+    },
+    "pixup3d": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite pixup3d.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai jis ten pasikeis.",
+          "Arba rankiniu būdu: prisijunkite prie pixup3d.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → pixup3d.com nukopijuokite _phrozen_session reikšmę ir įklijuokite ją žemiau. Tiks ir prisijungus siųstos pixup3d.com užklausos Cookie antraštė."
+        ],
+        "placeholder": "_phrozen_session slapukas arba prisijungus siųstos užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "PIXUP failus duoda tik prisijungusiems nariams, net nemokamų modelių. Prijunkite paskyrą, kad galėtumėte importuoti savo modelius; bet kieno norų sąrašai ir kolekcijos skaitomi ir be jos.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite pixup3d.com su Thingport Grab arba vėl prijunkite PIXUP skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "PIXUP: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Phrozen modelių parduotuvė: figūrėlės, biustai ir stalo žaidimų miniatiūros, daug jų su atramomis dervos spausdinimui, nemokami ir mokami.",
+        "signIn": "Jūsų pačių prisijungimas, jums priklausančių modelių failams; bet kieno norų sąrašai ir kolekcijos skaitomi ir be jo.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės pixup3d.com, ir pažymi mokamus modelius, kurių nepirkote.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį PIXUP ir atverkite pixup3d.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungusio pixup3d.com skirtuko _phrozen_session slapuką ir įklijuokite jį skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai, norų sąrašai ir kolekcijos. Sąrašai skaitomi be prisijungimo; failams reikia paties naudotojo prisijungimo. Nemokamas modelis pirmiausia įdedamas į jo PIXUP biblioteką 0 $ užsakymu; mokamas importuojamas tik nupirktas."
+      },
+      "sync": {
+        "notConnected": "Prijunkite PIXUP skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte savo norų sąrašą ir kolekcijas."
+      },
+      "blocked": {
+        "paid": {
+          "title": "Mokamas modelis",
+          "hint": "Pirmiausia nusipirkite jį PIXUP. Kai jis bus jūsų bibliotekoje, Thingport jį importuos."
+        }
+      }
     }
   }
 }

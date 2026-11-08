@@ -1,0 +1,102 @@
+{
+  "is_authenticated": false,
+  "query_id": "00000000000000000000000000000000",
+  "data": [
+    {
+      "id": 9031,
+      "url": "https://pixup3d.com/posts/9031",
+      "path": "/posts/9031",
+      "creator": {
+        "id": 26634,
+        "username": "bjqs0314turchi172646563604",
+        "display_name": "Medieval dog",
+        "brand_name": "Medieval Dog",
+        "is_admin_user": false,
+        "post_count": 6,
+        "avatar_url": "https://file.pixup3d.com/uploads/profile/avatar/26634/x1_Firefly_Highly_simplified_medieval_totem_dog__black_and_white_logo_29016.jpg",
+        "public_path": "/p/bjqs0314turchi172646563604",
+        "created_at": "2024-09-16T13:47:16+08:00",
+        "read_pv_disclaimer": null
+      },
+      "title": "XenoBuster: Synthetic Xenomorph Hunter | Mechanical Alien",
+      "adv_post": true,
+      "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/153208/webp_x1_%E7%95%B0%E5%BD%A2-1.webp",
+      "state": "published",
+      "price": "22.0",
+      "original_price": "35.0",
+      "phrozen_verified": false,
+      "visible": true,
+      "views_count": 14915,
+      "likes_count": 57,
+      "downloads_count": 715,
+      "created_at": "2026-06-26T13:29:03+08:00",
+      "updated_at": "2026-09-21T00:00:00+08:00"
+    },
+    {
+      "id": 8695,
+      "url": "https://pixup3d.com/posts/8695",
+      "path": "/posts/8695",
+      "creator": {
+        "id": 3228,
+        "username": "ETmodelstudio",
+        "display_name": "ET_modelstudio",
+        "brand_name": "ETmodelstudio",
+        "is_admin_user": false,
+        "post_count": 13,
+        "avatar_url": "https://file.pixup3d.com/uploads/profile/avatar/3228/x1_BDDB27FB-66D3-40D9-9F04-C50E90CA2E2B.png",
+        "public_path": "/p/ETmodelstudio",
+        "created_at": "2023-04-26T18:35:23+08:00",
+        "read_pv_disclaimer": true
+      },
+      "title": "K&G UNION",
+      "adv_post": false,
+      "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/150357/webp_x1_%E9%87%91%E5%90%89GIF.webp",
+      "state": "published",
+      "price": "20.99",
+      "original_price": "0.0",
+      "phrozen_verified": false,
+      "visible": true,
+      "views_count": 2076,
+      "likes_count": 2,
+      "downloads_count": 6,
+      "created_at": "2026-05-22T09:16:01+08:00",
+      "updated_at": "2026-09-08T18:50:15+08:00"
+    },
+    {
+      "id": 8927,
+      "url": "https://pixup3d.com/posts/8927",
+      "path": "/posts/8927",
+      "creator": {
+        "id": 62118,
+        "username": "madworks",
+        "display_name": null,
+        "brand_name": "MADWORKS",
+        "is_admin_user": false,
+        "post_count": 2,
+        "avatar_url": "https://file.pixup3d.com/uploads/profile/avatar/62118/x1_355901707_649356210555115_2372264697075083917_n.jpg",
+        "public_path": "/p/madworks",
+        "created_at": "2026-06-09T21:52:19+08:00",
+        "read_pv_disclaimer": null
+      },
+      "title": "RX-78-2 Gundam Daruma",
+      "adv_post": true,
+      "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/151544/webp_x1_ViewCapture20260611_181859.webp",
+      "state": "published",
+      "price": "0.0",
+      "original_price": "0.0",
+      "phrozen_verified": false,
+      "visible": true,
+      "views_count": 2571,
+      "likes_count": 10,
+      "downloads_count": 172,
+      "created_at": "2026-06-11T18:21:04+08:00",
+      "updated_at": "2026-09-08T18:50:26+08:00"
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 1,
+    "per_page": 24,
+    "total_count": 3
+  }
+}

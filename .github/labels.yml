@@ -102,4 +102,7 @@
 - name: "provider: Meshy"
   color: "c5f955"
   description: "About Meshy, from the bug form's Provider answer"
+- name: "provider: PIXUP"
+  color: "dc4b2d"
+  description: "About PIXUP, from the bug form's Provider answer"
 # /providers:labels

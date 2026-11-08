@@ -6663,6 +6663,43 @@
       "sync": {
         "notConnected": "OwlCAD est injoignable pour le moment."
       }
+    },
+    "pixup3d": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir pixup3d.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que la vôtre y change.",
+          "Ou manuellement : connectez-vous à pixup3d.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → pixup3d.com, copiez la valeur de _phrozen_session et collez-la ci-dessous. L’en-tête Cookie d’une requête à pixup3d.com faite en étant connecté convient aussi."
+        ],
+        "placeholder": "Le cookie _phrozen_session, ou l’en-tête Cookie d’une requête faite en étant connecté"
+      },
+      "status": {
+        "notConnected": "PIXUP ne remet ses fichiers qu’aux membres connectés, même ceux de ses modèles gratuits. Reliez votre compte pour importer les vôtres ; la liste de souhaits et les collections de chacun se lisent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à pixup3d.com avec Thingport Grab, ou reconnectez PIXUP dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "PIXUP : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "La boutique de modèles de Phrozen : figurines, bustes et miniatures de jeux de plateau, souvent avec supports pour l’impression résine, gratuits ou payants.",
+        "signIn": "Votre propre connexion, pour les fichiers des modèles que vous possédez ; la liste de souhaits et les collections de chacun se lisent sans elle.",
+        "grab": "Envoie votre connexion lorsque vous visitez pixup3d.com, et signale les modèles payants que vous n’avez pas achetés.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur PIXUP et ouvrez pixup3d.com en étant connecté.",
+          "Manuellement : copiez le cookie _phrozen_session d’un onglet pixup3d.com connecté et collez-le dans Configuration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles, les listes de souhaits et les collections. Les listes se lisent sans connexion ; les fichiers demandent celle de l’utilisateur. Un modèle gratuit est d’abord ajouté à sa bibliothèque PIXUP par une commande à 0 $ ; un modèle payant ne s’importe qu’une fois acheté."
+      },
+      "sync": {
+        "notConnected": "Connectez PIXUP dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir ici votre liste de souhaits et vos collections."
+      },
+      "blocked": {
+        "paid": {
+          "title": "Modèle payant",
+          "hint": "Achetez-le d’abord sur PIXUP. Une fois dans votre bibliothèque, Thingport l’importe."
+        }
+      }
     }
   }
 }

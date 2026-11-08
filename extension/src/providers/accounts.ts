@@ -9,6 +9,7 @@ import { syncMakeronline } from "./makeronline/content";
 import { syncOwlcad } from "./owlcad/content";
 import { captureMyminifactoryAccount } from "./myminifactory/account";
 import { pinshapeSignedIn } from "./pinshape/content";
+import { pixup3dSignedIn } from "./pixup3d/content";
 import { toymakr3dSignedIn } from "./toymakr3d/content";
 import { syncPrintables } from "./printables/content";
 import { captureThingiverseAccount } from "./thingiverse/account";
@@ -57,6 +58,11 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   // Its sign-in downloads the files and reads the user's generations; Thingport renews it itself, so it's sent once it
   // changes.
   meshy: syncSession,
+  // Its sign-in downloads the files and tells which models the user owns; the site issues it anew with every page, so
+  // it's sent on each visit, and only from a signed-in page.
+  pixup3d: (id) => {
+    if (pixup3dSignedIn()) syncSession(id);
+  },
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,
