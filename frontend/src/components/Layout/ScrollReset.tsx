@@ -3,12 +3,14 @@ import { useLocation, useNavigationType } from "react-router-dom";
 import { scrollRestoreHeld } from "../../hooks/useScrollRestoreHold";
 
 // How long a page reached by back or forward may go without growing before its place is given up on. Counted from
-// the last time it grew, as a page can fill in a step at a time. A grid still loading its list holds it open for as
-// long as that takes (useScrollRestoreHold); the reader scrolling ends it sooner.
+// the last time it grew, as a page can fill in a step at a time. A grid still loading its list holds it open
+// (useScrollRestoreHold), up to HELD_AT_MOST_MS; the reader scrolling ends it sooner.
 const WAIT_FOR_GROWTH_MS = 8000;
-// The longest a place is followed at all, for a page whose height never settles (something animating, say), unless a
-// grid is still loading.
+// The longest a place is followed at all, for a page whose height never settles (something animating, say).
 const RESTORE_AT_MOST_MS = 20000;
+// The longest while a grid is still loading: a slow server's list gets there, one that never answers doesn't keep the
+// restore going.
+const HELD_AT_MOST_MS = 60000;
 // Keys that scroll the page, outside a field being typed in. With the wheel and a moving touch, the reader scrolling for
 // themselves; Tab or a click doesn't end a restore, and a drag of the scrollbar shows as the page moving.
 const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
@@ -58,7 +60,8 @@ function scrollBackTo(place: Place, done: () => void): () => void {
     const at = performance.now();
     const held = scrollRestoreHeld();
     if (held) grewAt = at;
-    if (at - grewAt > WAIT_FOR_GROWTH_MS || (!held && at - startedAt > RESTORE_AT_MOST_MS)) return stop();
+    if (at - grewAt > WAIT_FOR_GROWTH_MS || at - startedAt > (held ? HELD_AT_MOST_MS : RESTORE_AT_MOST_MS))
+      return stop();
     frame = requestAnimationFrame(step);
   };
   const onKey = (event: KeyboardEvent) => {

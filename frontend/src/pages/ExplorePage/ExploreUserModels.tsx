@@ -30,6 +30,9 @@ type Props = {
   /** Their models went private, or social features off, since the page was read: the page reads itself again. Until
    *  it shows otherwise, this offers to try again. */
   onGone: () => void;
+  /** Goes up each time the page has read itself. Models that went missing are read again then, as the page still
+   *  showing this means they're public again. */
+  pageRead: number;
 };
 
 /** A user's own models on their Explore page, once they made them public: their My models, as the others see it. */
@@ -41,6 +44,7 @@ export default function ExploreUserModels({
   viewer,
   onUnauthorized,
   onGone,
+  pageRead,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
@@ -58,10 +62,24 @@ export default function ExploreUserModels({
     setFailed(true);
     if (err instanceof SocialOffError) onGone();
   };
+  // Models gone missing, to read again once the page has read itself; once only, so a page and a list that disagree
+  // leave it to the retry button rather than asking each other again and again.
+  const missing = useRef(false);
+  const readAgainAfterPage = useRef(false);
+  const retriedOnce = useRef(false);
   const gone = () => {
     setFailed(true);
+    if (!retriedOnce.current) missing.current = true;
     onGone();
   };
+  useEffect(() => {
+    if (!missing.current) return;
+    missing.current = false;
+    retriedOnce.current = true;
+    readAgainAfterPage.current = true;
+    setFailed(false);
+    setAttempt((n) => n + 1);
+  }, [pageRead]);
 
   // A list put back on the way back, read again quietly, so a model copied to the library meanwhile says so. Failing,
   // the list stays as it was and says it couldn't be read, with a retry. Social features switched off meanwhile, or the
@@ -93,6 +111,7 @@ export default function ExploreUserModels({
       return;
     }
     if (mine !== run.current) return;
+    retriedOnce.current = false;
     setRefreshFailed(false);
     setItems(fresh);
     setHasMore(more);
@@ -104,7 +123,9 @@ export default function ExploreUserModels({
       run.current += 1;
     };
     setRefreshFailed(false);
-    const kept = failed ? null : returning();
+    // Read afresh after models went missing: what was kept of them is gone with them.
+    const kept = failed || readAgainAfterPage.current ? null : returning();
+    readAgainAfterPage.current = false;
     if (kept !== null) {
       void refresh(kept, mine);
       return dropLate;
@@ -121,6 +142,7 @@ export default function ExploreUserModels({
         if (mine !== run.current) return;
         setLoading(false);
         if (!page) return gone();
+        retriedOnce.current = false;
         setItems(page.items);
         setHasMore(page.hasMore);
       },
