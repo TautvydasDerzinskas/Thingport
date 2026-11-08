@@ -9,11 +9,12 @@ export const PLATE_PNG = Buffer.from(
 );
 
 /** A print profile's project as Bambu Studio writes one: two plates, the first named, and when `sliced`, the first's
- *  slice (or both plates' with "all", or only both plates' times with "times"). */
+ *  slice (or both plates' with "all", only both plates' times with "times", or both plates' with a filament missing its
+ *  weight on the first with "incomplete"). */
 export async function profileProject(
   dir: string,
   name: string,
-  sliced: "none" | "first" | "all" | "times" = "first",
+  sliced: "none" | "first" | "all" | "times" | "incomplete" = "first",
   { printer = "Bambu Lab X1 Carbon" }: { printer?: string } = {},
 ) {
   const zip = new JSZip();
@@ -63,16 +64,23 @@ export async function profileProject(
       ? ""
       : sliced === "times"
         ? timesOnly(1, 3600) + timesOnly(2, 1800)
-        : plateSlice(
-            1,
-            3600,
-            12.5,
-            '<filament id="1" type="PLA" color="#FFFFFFFF" used_m="4.2" used_g="10.25"/>' +
-              '<filament id="2" type="PETG" color="#000000" used_m="0.7" used_g="2.25"/>',
-          ) +
-          (sliced === "all"
-            ? plateSlice(2, 1800, 5, '<filament id="1" type="PLA" color="#FFFFFF" used_m="1.6" used_g="5"/>')
-            : "");
+        : sliced === "incomplete"
+          ? plateSlice(
+              1,
+              3600,
+              12.5,
+              '<filament id="1" type="PLA" color="#FFFFFF" used_g="10.25"/><filament id="2" type="PETG" color="#000000"/>',
+            ) + plateSlice(2, 1800, 5, '<filament id="1" type="PLA" color="#FFFFFF" used_m="1.6" used_g="5"/>')
+          : plateSlice(
+              1,
+              3600,
+              12.5,
+              '<filament id="1" type="PLA" color="#FFFFFFFF" used_m="4.2" used_g="10.25"/>' +
+                '<filament id="2" type="PETG" color="#000000" used_m="0.7" used_g="2.25"/>',
+            ) +
+            (sliced === "all"
+              ? plateSlice(2, 1800, 5, '<filament id="1" type="PLA" color="#FFFFFF" used_m="1.6" used_g="5"/>')
+              : "");
   zip.file(
     "Metadata/slice_info.config",
     `<?xml version="1.0" encoding="UTF-8"?><config><header><header_item key="X-BBL-Client-Type" value="slicer"/></header>${slices}</config>`,

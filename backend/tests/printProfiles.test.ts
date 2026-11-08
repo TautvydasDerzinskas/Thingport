@@ -1,3 +1,4 @@
+import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -39,7 +40,7 @@ const SITE_FACTS: ProviderProfileFactsById = {
   },
 };
 
-async function profileModel(label: string, sliced: "none" | "first" | "all" | "times") {
+async function profileModel(label: string, sliced: "none" | "first" | "all" | "times" | "incomplete") {
   const project = await profileProject(dir, `${label}.3mf`, sliced);
   const stl = tempFile(dir, "solid raw\nendsolid\n");
   const { print, plates } = await createPrint(
@@ -236,15 +237,35 @@ describe("a model imported with print profiles", () => {
     vi.spyOn(PROVIDERS.makerworld, "profileFacts").mockResolvedValue(SITE_FACTS);
     const { print, profilePlate } = await profileModel("unreadable", "none");
     const target = resolvePlateFilePath(profilePlate)!;
-    await fs.chmod(target, 0o000);
-    try {
-      const body = await fill(print.id);
-      expect(body.profiles[profilePlate.id].printer).toBe("Bambu Lab A1 mini");
-      expect(body.pending).toBe(true);
-    } finally {
-      await fs.chmod(target, 0o644);
-    }
+    // The first time the profile's file is opened, the disk fails it.
+    const realOpen = fsSync.open;
+    let failed = false;
+    vi.spyOn(fsSync, "open").mockImplementation(((file: fsSync.PathLike, ...rest: unknown[]) => {
+      if (!failed && String(file) === target) {
+        failed = true;
+        const done = rest.at(-1) as (err: NodeJS.ErrnoException) => void;
+        done(Object.assign(new Error(`EIO: i/o error, open '${target}'`), { code: "EIO" }));
+        return;
+      }
+      return (realOpen as (...args: unknown[]) => void)(file, ...rest);
+    }) as typeof fsSync.open);
+    const body = await fill(print.id);
+    expect(failed).toBe(true);
+    expect(body.profiles[profilePlate.id].printer).toBe("Bambu Lab A1 mini");
+    expect(body.pending).toBe(true);
     expect((await fill(print.id)).profiles[profilePlate.id].printer).toBe("Bambu Lab X1 Carbon");
+  });
+
+  it("uses the provider's filaments when the file's list has one without a weight", async () => {
+    vi.spyOn(PROVIDERS.makerworld, "profileFacts").mockResolvedValue(SITE_FACTS);
+    const { print, profilePlate } = await profileModel("incomplete", "incomplete");
+    const profile = (await fill(print.id)).profiles[profilePlate.id];
+    // The file's times and weights are whole, so they stand; its filament list isn't.
+    expect(profile).toMatchObject({ seconds: 5400, grams: 17.5 });
+    expect(profile.filaments).toEqual([{ type: "PLA", color: "#FFFFFF", grams: 40 }]);
+    // Per plate, a whole list stands; the other keeps what it has, as the site gives that plate none.
+    expect(profile.plates[0].filaments).toEqual([{ type: "PLA", color: "#FFFFFF", grams: 10.25 }]);
+    expect(profile.plates[1].filaments).toEqual([{ type: "PLA", color: "#FFFFFF", grams: 5 }]);
   });
 
   it("keeps what a provider could read in part, and asks it again later", async () => {
@@ -260,6 +281,20 @@ describe("a model imported with print profiles", () => {
     expect(row.profile).toMatchObject({ provider: { title: "Half read" }, providerTriedAt: expect.any(String) });
     expect(row.profile).not.toHaveProperty("providerVersion");
     expect(read).toHaveBeenCalledTimes(1);
+
+    // A day later it's asked again, and a whole answer is kept for good.
+    const stored = row.profile as Record<string, unknown>;
+    const dayAgo = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
+    await prisma.plate.update({
+      where: { id: profilePlate.id },
+      data: { profile: { ...stored, providerTriedAt: dayAgo } },
+    });
+    read.mockResolvedValue({ "111": { title: "Whole", seconds: 900 } });
+    const later = await fill(print.id);
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(later.profiles[profilePlate.id]).toMatchObject({ title: "Whole", seconds: 900 });
+    const after = await prisma.plate.findUniqueOrThrow({ where: { id: profilePlate.id } });
+    expect(after.profile).toMatchObject({ providerVersion: 1, providerTriedAt: null });
   });
 
   it("reads a profile added while a fill was running, in another pass", async () => {

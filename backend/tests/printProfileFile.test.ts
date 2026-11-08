@@ -98,6 +98,32 @@ describe("a print profile's 3MF", () => {
     ]);
   });
 
+  it("leaves out an unused filament, and marks a list with one it can't weigh as incomplete", async () => {
+    const facts = await readProfileFile(await profileProject(dir, "incomplete.3mf", "incomplete"));
+    expect(facts!.plates[0]).toMatchObject({
+      filaments: [{ type: "PLA", color: "#FFFFFF", grams: 10.25 }],
+      filamentsComplete: false,
+    });
+    expect(facts!.plates[1]).not.toHaveProperty("filamentsComplete");
+  });
+
+  it("reads past an entry whose compressed data is corrupt, without calling it a disk failure", async () => {
+    const zip = new JSZip();
+    zip.file("Metadata/project_settings.config", JSON.stringify({ printer_model: "x".repeat(4000) }));
+    zip.file("Metadata/model_settings.config", '<config><plate><metadata key="plater_id" value="1"/></plate></config>');
+    const bytes = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+    // Garble the middle of the settings entry's compressed bytes, past its local header.
+    const name = Buffer.from("Metadata/project_settings.config");
+    const header = bytes.indexOf(name) - 30;
+    const data = header + 30 + bytes.readUInt16LE(header + 26) + bytes.readUInt16LE(header + 28);
+    const size = bytes.readUInt32LE(header + 18);
+    for (let i = data + 2; i < data + size - 2; i++) bytes[i] ^= 0xa5;
+    const file = path.join(dir, "corrupt.3mf");
+    await fs.writeFile(file, bytes);
+    const facts = await readProfileFile(file);
+    expect(facts).toMatchObject({ printer: null, plates: [{ index: 1 }] });
+  });
+
   it("adds up the same filament across plates", () => {
     expect(
       projectFilaments([

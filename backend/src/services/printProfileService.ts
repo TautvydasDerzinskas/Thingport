@@ -84,6 +84,11 @@ function sumOf(values: (number | null | undefined)[]): number | null {
   );
 }
 
+/** A sliced plate whose filament list is whole: none missing a weight, so it can stand for the plate. */
+function hasAllFilaments(plate: ProfileFilePlate | undefined): boolean {
+  return Boolean(plate?.filaments.length) && plate!.filamentsComplete !== false;
+}
+
 function thumbUrl(plate: Pick<Plate, "id" | "updatedAt">, index: number): string {
   return `/plate/${plate.id}/profile-plate/${index}.png?v=${plate.updatedAt.getTime()}`;
 }
@@ -110,7 +115,7 @@ export function profileOut(plate: ProfilePlate): PrintProfileOut | null {
       name: base.name ?? site?.name ?? null,
       seconds: sliced?.seconds ?? site?.seconds ?? null,
       grams: sliced?.grams ?? site?.grams ?? null,
-      filaments: sliced?.filaments.length ? sliced.filaments : (site?.filaments ?? []),
+      filaments: hasAllFilaments(sliced) ? sliced!.filaments : (site?.filaments ?? sliced?.filaments ?? []),
       objects: base.objects,
       thumb_url: base.thumb ? thumbUrl(plate, base.index) : null,
     };
@@ -122,8 +127,7 @@ export function profileOut(plate: ProfilePlate): PrintProfileOut | null {
     filePlates.length && filePlates.every((p) => pick(p) != null) ? sumOf(filePlates.map(pick)) : null;
   const seconds = fileTotal((p) => p.seconds) ?? provider?.seconds ?? null;
   const grams = fileTotal((p) => p.grams) ?? provider?.grams ?? null;
-  const fileFilaments =
-    filePlates.length && filePlates.every((p) => p.filaments.length) ? projectFilaments(filePlates) : [];
+  const fileFilaments = filePlates.length && filePlates.every(hasAllFilaments) ? projectFilaments(filePlates) : [];
   const filaments = fileFilaments.length ? fileFilaments : (provider?.filaments ?? []);
   return {
     title: provider?.title ?? null,

@@ -19,6 +19,8 @@ export type ProfileFilePlate = {
   seconds: number | null;
   grams: number | null;
   filaments: ProfileFilament[];
+  /** False when the slice listed a filament without a usable weight, so the list can't stand for the plate. */
+  filamentsComplete?: boolean;
 };
 
 export type ProfileFileFacts = {
@@ -161,7 +163,13 @@ function readLayout(xml: string): PlateLayout[] {
   return plates;
 }
 
-type PlateSlice = { index: number; seconds: number | null; grams: number | null; filaments: ProfileFilament[] };
+type PlateSlice = {
+  index: number;
+  seconds: number | null;
+  grams: number | null;
+  filaments: ProfileFilament[];
+  filamentsComplete: boolean;
+};
 
 function readSlices(xml: string): PlateSlice[] {
   const plates: PlateSlice[] = [];
@@ -169,24 +177,36 @@ function readSlices(xml: string): PlateSlice[] {
     const meta = metadataOf(block);
     const index = plateIndex(meta.get("index"));
     if (index === null) continue;
-    const filaments = startTags(block, "filament").map((tag) => {
+    // A filament the slice used none of ("0.00") is left out; one without a weight it could read makes the list
+    // incomplete, so the provider's stands instead.
+    let filamentsComplete = true;
+    const filaments = startTags(block, "filament").flatMap((tag) => {
       const attrs = attributes(tag);
-      return { type: text(attrs.type), color: hexColor(attrs.color), grams: rounded(attrs.used_g, 2) };
+      const used = attrs.used_g?.trim() ? Number(attrs.used_g) : NaN;
+      if (!Number.isFinite(used)) {
+        filamentsComplete = false;
+        return [];
+      }
+      if (used <= 0) return [];
+      return [{ type: text(attrs.type), color: hexColor(attrs.color), grams: rounded(used, 2) }];
     });
     plates.push({
       index,
       seconds: rounded(meta.get("prediction")),
       grams: rounded(meta.get("weight"), 2),
-      filaments: filaments.filter((filament) => filament.grams !== null),
+      filaments,
+      filamentsComplete,
     });
   }
   return plates;
 }
 
-/** A failure of the disk rather than of the file (it has an errno code; a zip that isn't one doesn't): worth trying
- *  again later, so it's thrown rather than read as a file that says nothing. */
+/** A failure of the disk rather than of the file -- an errno code, "EACCES" or "EIO" -- worth trying again later, so it's
+ *  thrown rather than read as a file that says nothing. A zip that isn't one has no code, and corrupt compressed data
+ *  zlib's own ("Z_DATA_ERROR"): both the file's fault, which no retry mends. */
 function isIoError(err: unknown): boolean {
-  return typeof (err as NodeJS.ErrnoException | null)?.code === "string";
+  const code = (err as NodeJS.ErrnoException | null)?.code;
+  return typeof code === "string" && /^E[A-Z]+$/.test(code);
 }
 
 async function readText(filePath: string, entry: string, limit: number): Promise<string | null> {
@@ -253,6 +273,7 @@ export async function readProfileFile(filePath: string): Promise<ProfileFileFact
         seconds: slice?.seconds ?? null,
         grams: slice?.grams ?? null,
         filaments: slice?.filaments ?? [],
+        ...(slice && !slice.filamentsComplete && { filamentsComplete: false }),
       };
     });
 
