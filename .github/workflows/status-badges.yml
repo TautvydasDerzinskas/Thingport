@@ -40,11 +40,14 @@ jobs:
           # The run that finished last, by when it was last updated, which for a finished run is its end: runs come
           # newest-started first, two can overlap (a push and a pull request), and a re-run of an old one finishes
           # late, so every finished run is read, not just the first page. Only this repository's: a fork's branch can
-          # be called the same as the default one. Two finishing in the same second: one that didn't succeed wins.
+          # be called the same as the default one. Two finishing in the same second: a failure wins, then any other that
+          # didn't succeed.
           chip() {
             conclusion=$(gh api --paginate "repos/$REPO/actions/workflows/$1.yml/runs?branch=$BRANCH&status=completed&per_page=100" \
               --jq ".workflow_runs[] | select(.head_repository.full_name == \"$REPO\")
-                | [.updated_at, (if .conclusion == \"success\" then 0 else 1 end), .conclusion] | @tsv" |
+                | [.updated_at, (if .conclusion == \"success\" then 0
+                    elif .conclusion == \"failure\" or .conclusion == \"timed_out\" or .conclusion == \"startup_failure\" then 2
+                    else 1 end), .conclusion] | @tsv" |
               sort | tail -n 1 | cut -f 3)
             case "$conclusion" in
               success) message="✓" color="#008a00" ;;
