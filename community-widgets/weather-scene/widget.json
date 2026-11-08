@@ -198,7 +198,7 @@
     }
   ],
   "hosts": ["api.open-meteo.com", "geocoding-api.open-meteo.com"],
-  "locales": ["en", "lt", "es", "fr"],
+  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be"],
   "screenshots": [
     {
       "file": "screenshots/day.webp",

@@ -55,7 +55,7 @@ const START = {
 };
 
 export default async function mount(thingport) {
-  const { root, theme, models, storage, ui, download, collections, t, labels } = thingport;
+  const { root, theme, models, storage, ui, download, collections, t, labels, language } = thingport;
   const shell = root.querySelector(".skp");
   const $ = (id) => root.querySelector(`#skp-${id}`);
 
@@ -148,7 +148,7 @@ export default async function mount(thingport) {
   const printer = () => getPrinter(form.printerId, { x: clean(form.bedX, 256), y: clean(form.bedY, 256) });
   const system = () => getMountSystem(form.mountId);
   const strategy = () => getStrategy(form.strategyId);
-  const context = () => ({ printer: printer(), system: system(), wallMm: form.wallMm, strategy: strategy(), t });
+  const context = () => ({ printer: printer(), system: system(), wallMm: form.wallMm, strategy: strategy(), t, language });
 
   function replan() {
     planError = null;

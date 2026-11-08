@@ -10,7 +10,7 @@
   },
   "hosts": [],
   "category": "planners",
-  "locales": ["en", "lt", "es", "fr"],
+  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be"],
   "screenshots": [
     {
       "file": "screenshots/wall.webp",

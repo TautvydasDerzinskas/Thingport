@@ -26,7 +26,7 @@ import {
 } from "./catalogue.js";
 import { PlanError, STRATEGIES, getStrategy, mirrorFlags, planWall, splitAxis } from "./solver.js";
 import { countNodes, hardwareFor, hardwareMarkers } from "./mounting.js";
-import { describePlan, partListText, printOrder, toBuy } from "./printlist.js";
+import { describePlan, partListText, plural, printOrder, toBuy } from "./printlist.js";
 import { partFiles } from "./parts3mf.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -47,6 +47,18 @@ const context = (over = {}) => ({
   strategy: getStrategy("balanced"),
   t,
   ...over,
+});
+
+test("East Slavic counts use their one, few and many forms", () => {
+  for (const code of ["ru", "uk", "be"]) {
+    const words = JSON.parse(fs.readFileSync(path.join(here, "..", "locales", `${code}.json`), "utf8"));
+    const translate = (key) => words[key] ?? key;
+    for (const [count, form] of [[1, "one"], [2, "few"], [5, "many"], [21, "one"], [22, "few"], [25, "many"]]) {
+      for (const noun of ["board", "part"]) {
+        assert.equal(plural(translate, count, `list.${noun}.one`, `list.${noun}.many`, code), `${count} ${words[`list.${noun}.${form}`]}`);
+      }
+    }
+  }
 });
 
 /* ------------------------------------------------------------ catalogue */
