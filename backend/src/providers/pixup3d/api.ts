@@ -480,8 +480,8 @@ async function cartToken(session: Pixup3dSession): Promise<string> {
 
 /** Free variants the user doesn't own yet, put in their library as the site's own Download button does it: into the
  *  cart and through a $0 checkout. The checkout takes the whole cart, so it isn't placed while anything in the cart
- *  costs money (Pixup3dCartError), or while the cart can't be read. What was put in for it comes out again whenever
- *  the checkout isn't made; what was there before is left as it was. Throws unless all of them are owned after it. */
+ *  costs money (Pixup3dCartError), or while the cart can't be read. Throws unless all of them are owned after it, and
+ *  what was put in for it comes out again then; what was there before is left as it was. */
 export async function placePixup3dFreeOrder(variantIds: string[], session: Pixup3dSession): Promise<void> {
   const before = await fetchCart(session);
   if (costsMoney(before)) throw new Pixup3dCartError();
@@ -516,6 +516,15 @@ export async function placePixup3dFreeOrder(variantIds: string[], session: Pixup
       throw new Error(`PIXUP asked for payment instead of taking the free order (sent to ${after.hostname})`);
     }
     if (checkout.status >= 400) throw new Error(`PIXUP didn't take the free order (HTTP ${checkout.status})`);
+    // Checked in here too: a checkout sent back to one of its own pages may not have been taken. One that was took
+    // the cart with it, which leaves nothing for taking out again to touch.
+    for (const id of variantIds) {
+      if (!(await fetchPixup3dVariantState(id, session)).purchased) {
+        throw new Error(
+          "PIXUP was sent the free order, but the model isn't in your library yet. Try again in a minute.",
+        );
+      }
+    }
   } catch (err) {
     for (const id of added) {
       await api(`/cart/variants/${encodeURIComponent(id)}`, { session, method: "DELETE", csrf: token }).catch(
@@ -523,11 +532,6 @@ export async function placePixup3dFreeOrder(variantIds: string[], session: Pixup
       );
     }
     throw err;
-  }
-  for (const id of variantIds) {
-    if (!(await fetchPixup3dVariantState(id, session)).purchased) {
-      throw new Error("PIXUP took the free order, but the model isn't in your library yet. Try again in a minute.");
-    }
   }
 }
 

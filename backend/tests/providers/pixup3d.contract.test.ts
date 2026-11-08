@@ -360,6 +360,14 @@ describe("PIXUP specifics", () => {
     );
     // What it put in comes out again, so the cart is as it was.
     expect(state.cart).toEqual([]);
+
+    // As it does when PIXUP sends the checkout back to one of its own pages without taking the order.
+    const back = freshState({ owned: new Set(), checkoutTo: "https://pixup3d.com/en/cart" });
+    ctx.install(handlerFor("ok", back));
+    await expect(placePixup3dFreeOrder([STL_VARIANT], { session: SESSION })).rejects.toThrow(
+      /isn't in your library yet/,
+    );
+    expect(back.cart).toEqual([]);
   });
 
   it("doesn't check out a cart holding a paid model, and takes back nothing it didn't put in", async () => {
