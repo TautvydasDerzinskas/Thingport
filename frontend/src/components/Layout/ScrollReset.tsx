@@ -7,8 +7,16 @@ import { useLocation, useNavigationType } from "react-router-dom";
 const WAIT_FOR_GROWTH_MS = 8000;
 // The longest a place is followed at all, for a page whose height never settles (something animating, say).
 const RESTORE_AT_MOST_MS = 20000;
-// Any of these means the reader has started scrolling for themselves.
-const READER_INPUT = ["wheel", "touchmove", "keydown", "pointerdown"] as const;
+// Keys that scroll the page, outside a field being typed in. With the wheel and a moving touch, the reader scrolling for
+// themselves; Tab or a click doesn't end a restore, and a drag of the scrollbar shows as the page moving.
+const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
+
+function scrollsThePage(event: KeyboardEvent): boolean {
+  const target = event.target;
+  const typing =
+    target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+  return !typing && SCROLL_KEYS.has(event.key);
+}
 
 // Each history entry's place, by its key. Outside the component, which signing out unmounts with the router: back to
 // an entry from before still finds its place.
@@ -25,8 +33,8 @@ function scrollBackTo(top: number, done: () => void): () => void {
   let grewAt = startedAt;
   const step = () => {
     const now = document.documentElement.scrollHeight;
-    // Moved while the page stayed the same size: that's the reader, dragging the scrollbar say, which sends none of
-    // READER_INPUT. A change of size can move it too, as the browser keeps what's on screen in place.
+    // Moved while the page stayed the same size: that's the reader, dragging the scrollbar say, which sends no wheel,
+    // touch or key. A change of size can move it too, as the browser keeps what's on screen in place.
     if (now === height && Math.abs(window.scrollY - seenAt) > 2) return stop();
     if (now !== height) {
       height = now;
@@ -39,12 +47,22 @@ function scrollBackTo(top: number, done: () => void): () => void {
     if (at - grewAt > WAIT_FOR_GROWTH_MS || at - startedAt > RESTORE_AT_MOST_MS) return stop();
     frame = requestAnimationFrame(step);
   };
+  const onKey = (event: KeyboardEvent) => {
+    if (scrollsThePage(event)) stop();
+  };
+  let stopped = false;
   function stop() {
+    if (stopped) return;
+    stopped = true;
     cancelAnimationFrame(frame);
-    for (const type of READER_INPUT) window.removeEventListener(type, stop);
+    window.removeEventListener("wheel", stop);
+    window.removeEventListener("touchmove", stop);
+    window.removeEventListener("keydown", onKey);
     done();
   }
-  for (const type of READER_INPUT) window.addEventListener(type, stop, { passive: true });
+  window.addEventListener("wheel", stop, { passive: true });
+  window.addEventListener("touchmove", stop, { passive: true });
+  window.addEventListener("keydown", onKey);
   step();
   return stop;
 }
@@ -64,6 +82,8 @@ export default function ScrollReset() {
   // While the window isn't where the reader put it, nothing is kept: from back or forward until the entry is shown
   // (the browser's own restoring scrolls the old page meanwhile), and while a place is being scrolled back to.
   const settling = useRef(false);
+  // Ends the restore still under way, if there is one.
+  const stopRestore = useRef<(() => void) | null>(null);
 
   // Layout, not passive: signing out unmounts this while App scrolls to the top, and a listener still there when that
   // scroll arrives would keep the top as the place of the entry being left.
@@ -75,8 +95,10 @@ export default function ScrollReset() {
       // Between two entries the router doesn't tell apart (in-page #anchors the browser added, which carry no state),
       // its key stays the same, so nothing would end the settling: those aren't a move between entries here either.
       // The key is the router's own: the entry's state.key, or "default" without one.
+      // A restore still under way stops, though: it was for where the reader was, and they've moved within the page.
       const to = (window.history.state as { key?: string } | null)?.key ?? "default";
       if (to !== currentKey.current) settling.current = true;
+      else stopRestore.current?.();
     };
     window.addEventListener("scroll", keep, { passive: true });
     window.addEventListener("popstate", traverse);
@@ -100,9 +122,12 @@ export default function ScrollReset() {
         return;
       }
       settling.current = true;
-      return scrollBackTo(place, () => {
+      const stop = scrollBackTo(place, () => {
         settling.current = false;
+        stopRestore.current = null;
       });
+      stopRestore.current = stop;
+      return stop;
     }
     settling.current = false;
     if (newPage) window.scrollTo(0, 0);

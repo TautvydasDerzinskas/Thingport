@@ -63,40 +63,45 @@ export default function ExploreUserModels({
     onGone();
   };
 
+  // A list put back on the way back, read again quietly, so a model copied to the library meanwhile says so. Failing,
+  // the list stays as it was and says it couldn't be read, with a retry; social features switched off meanwhile send
+  // the page to read itself again, as for a first load.
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const refresh = async (count: number, mine: number) => {
+    const fresh: Print[] = [];
+    let more = false;
+    try {
+      for (let offset = 0; offset < count; offset += MOST_AT_ONCE) {
+        const limit = Math.min(MOST_AT_ONCE, count - offset);
+        const page = await socialApi.userModels(userId, { order_by: sortMode, limit, offset });
+        if (mine !== run.current) return;
+        if (!page) return gone();
+        fresh.push(...page.items);
+        more = page.hasMore;
+        if (!more) break;
+      }
+    } catch (err) {
+      if (mine !== run.current) return;
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else if (err instanceof SocialOffError) gone();
+      else setRefreshFailed(true);
+      return;
+    }
+    if (mine !== run.current) return;
+    setRefreshFailed(false);
+    setItems(fresh);
+    setHasMore(more);
+  };
+
   useEffect(() => {
     const mine = ++run.current;
     const dropLate = () => {
       run.current += 1;
     };
-    // Back to this list puts it back as it was left, then reads it again quietly, so a model copied to the library
-    // meanwhile says so; failing, the list stays as it was.
+    setRefreshFailed(false);
     const kept = failed ? null : returning();
     if (kept !== null) {
-      void (async () => {
-        const fresh: Print[] = [];
-        let more = false;
-        try {
-          for (let offset = 0; offset < kept; offset += MOST_AT_ONCE) {
-            const limit = Math.min(MOST_AT_ONCE, kept - offset);
-            const page = await socialApi.userModels(userId, { order_by: sortMode, limit, offset });
-            if (mine !== run.current) return;
-            if (!page) return gone();
-            fresh.push(...page.items);
-            more = page.hasMore;
-            if (!more) break;
-          }
-        } catch (err) {
-          // Social features switched off meanwhile: the page reads itself again, as for a first load. Anything else
-          // leaves the list as it was.
-          if (mine !== run.current) return;
-          if (err instanceof UnauthorizedError) onUnauthorized?.();
-          else if (err instanceof SocialOffError) gone();
-          return;
-        }
-        if (mine !== run.current) return;
-        setItems(fresh);
-        setHasMore(more);
-      })();
+      void refresh(kept, mine);
       return dropLate;
     }
     // Another sort's or person's list isn't this one's: nothing of it stays to be paged on from. A page of it still on
@@ -186,10 +191,17 @@ export default function ExploreUserModels({
         ))}
         {loadingMore && <CardSkeletons count={5} />}
       </Box>
-      {failed ? (
+      {failed || refreshFailed ? (
         <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ color: "text.secondary" }}>
           <Typography variant="body2">{t("models:explore.modelsLoadFailed")}</Typography>
-          <Button size="small" onClick={() => setFailed(false)}>
+          <Button
+            size="small"
+            onClick={() => {
+              if (failed) return setFailed(false);
+              setRefreshFailed(false);
+              void refresh(items.length, run.current);
+            }}
+          >
             {t("common:retry")}
           </Button>
         </Stack>
