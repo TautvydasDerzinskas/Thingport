@@ -649,7 +649,8 @@ describe("LICENSE.txt", () => {
     await syncLicenseFile(printId);
     expect(read((await licenseFiles(printId))[0].storagePath)).toContain("\nby Mara\n");
 
+    // Rewritten by the time the import goes on.
     await upsertAuthorFromImport({ ...info, name: "Mara Voss" });
-    await until(async () => read((await licenseFiles(printId))[0].storagePath).includes("\nby Mara Voss\n"));
+    expect(read((await licenseFiles(printId))[0].storagePath)).toContain("\nby Mara Voss\n");
   });
 });

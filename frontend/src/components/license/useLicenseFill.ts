@@ -26,6 +26,9 @@ export function useLicenseFill(
   // in development) asks again only for one not answered yet, and only for the model it was asked for.
   const [asked, setAsked] = useState<{ printId: string; n: number } | null>(null);
   const answered = useRef(0);
+  // The retry request on its way: an effect run again while it is (the page's model updated, say) waits for the same
+  // one, rather than ask the site again.
+  const inFlight = useRef<{ n: number; request: Promise<PrintLicense> } | null>(null);
   const callbacks = useRef({ onRead, onUnauthorized });
   useEffect(() => {
     callbacks.current = { onRead, onUnauthorized };
@@ -79,12 +82,15 @@ export function useLicenseFill(
     setFillingId(printId);
     (async () => {
       try {
+        if (retrying && inFlight.current?.n !== retryN) {
+          inFlight.current = { n: retryN, request: printsApi.fillLicense(printId, { retry: true }) };
+        }
         settle(
-          retrying
-            ? await printsApi.fillLicense(printId, { retry: true })
+          await (retrying
+            ? inFlight.current!.request
             : startPending
-              ? await printsApi.fillLicense(printId)
-              : await printsApi.getLicense(printId),
+              ? printsApi.fillLicense(printId)
+              : printsApi.getLicense(printId)),
         );
       } catch (err) {
         fail(err);

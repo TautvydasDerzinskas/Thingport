@@ -50,13 +50,14 @@ export async function upsertAuthorFromImport(info: ImportedAuthorInfo | null): P
     console.error("Couldn't link earlier imports to their author", err);
     return 0;
   });
-  // LICENSE.txt names the author: their models' files follow a new name, and models just linked to them.
+  // LICENSE.txt names the author: their models' files follow a new name, and models just linked to them, before the
+  // import goes on. A name rarely changes, so this is rarely more than a few small files.
   const renamed = before && (before.name !== author.name || before.handle !== author.handle);
   if (renamed || linked > 0) {
-    const authorId = author.id;
-    void import("./licenseFile")
-      .then(({ syncAuthorLicenseFiles }) => syncAuthorLicenseFiles(authorId))
-      .catch((err) => console.error("Couldn't rewrite the author's LICENSE.txt files", err));
+    const { syncAuthorLicenseFiles } = await import("./licenseFile");
+    await syncAuthorLicenseFiles(author.id).catch((err) =>
+      console.error("Couldn't rewrite the author's LICENSE.txt files", err),
+    );
   }
   return author;
 }
