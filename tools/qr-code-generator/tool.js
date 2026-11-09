@@ -3406,16 +3406,39 @@ const escapeHtml = (text) =>
     (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character],
   );
 
-/** A count's word in the user's language: `t()` picks the plural form, and an older Thingport, whose `t()` has none,
- *  gets the `.other` one rather than the key. */
-export const countWord = (t, key, count) => {
+/** A count's word in the user's language: `t()` picks the plural form, and on an older Thingport, whose `t()` has none,
+ *  the form is picked here instead, as `Intl.PluralRules` names it, then `.other`. */
+export const countWord = (t, key, count, language = "en") => {
   const word = t(key, { count });
-  return word === key ? t(`${key}.other`) : word;
+  if (word !== key) return word;
+  let form;
+  try {
+    form = new Intl.PluralRules(language).select(count);
+  } catch {
+    // A code Intl doesn't know counts as English does.
+    form = new Intl.PluralRules("en").select(count);
+  }
+  const chosen = t(`${key}.${form}`);
+  return chosen === `${key}.${form}` ? t(`${key}.other`) : chosen;
 };
 
 export default async function mount(thingport) {
-  const { root, theme, t, labels, size, onResize, storage, models, collections, ui, download, library, tool } =
-    thingport;
+  const {
+    root,
+    theme,
+    t,
+    labels,
+    size,
+    onResize,
+    storage,
+    models,
+    collections,
+    ui,
+    download,
+    library,
+    tool,
+    language,
+  } = thingport;
   const shell = root.querySelector("#qrg-shell");
   const $ = (id) => root.querySelector(`#qrg-${id}`);
 
@@ -3603,7 +3626,7 @@ export default async function mount(thingport) {
     $("dims").innerHTML = `<b>${width.toFixed(1)} × ${height.toFixed(1)} × ${thickness.toFixed(1)}</b> mm`;
     $("code").innerHTML = `<b>v${current.code.version}</b> · ${current.code.level} · ${cell.toFixed(2)} mm`;
     const count = current.filaments.length;
-    $("filaments").innerHTML = `<b>${count}</b> ${countWord(t, "bar.filaments", count)}`;
+    $("filaments").innerHTML = `<b>${count}</b> ${countWord(t, "bar.filaments", count, language)}`;
   }
 
   /** What the chosen part is, and anything worth saying, over the picture. */

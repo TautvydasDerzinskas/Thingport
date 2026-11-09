@@ -778,9 +778,10 @@ export interface SdkBase {
    * to English key by key, and a key with no words anywhere comes back as itself, so the gap shows.
    *
    * A number as `count` picks the plural form: the label has a key per form, `<key>.one`, `.two`, `.few`, `.many` and
-   * `.other`, and each language gives the ones its own rules use (English `one` and `other`, Russian `one`, `few` and
-   * `many`), with `.other` standing in for a form it hasn't. Thingport before this returns the key itself, so a script
-   * that must run on one asks for `<key>.other` when it gets the key back.
+   * `.other`, and each language gives the ones its own rules use (English `one` and `other`, Russian `one`, `few`,
+   * `many` and `other`, the last for fractions such as 1.5), with `.other` standing in for a form it hasn't. Thingport
+   * before this returns the key itself: a script that must run on one picks the form there, as `Intl.PluralRules` names
+   * it, and asks for `<key>.<form>`, then `<key>.other`.
    *
    * @group Words
    * @param key The label's key.

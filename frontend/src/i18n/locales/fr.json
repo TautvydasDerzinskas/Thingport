@@ -100,7 +100,8 @@
       "explore": "Explorer",
       "chats": "Discussions",
       "chatsUnread_one": "Discussions, {{count}} message non lu",
-      "chatsUnread_other": "Discussions, {{count}} messages non lus"
+      "chatsUnread_other": "Discussions, {{count}} messages non lus",
+      "chatsUnread_many": "Discussions, {{count}} messages non lus"
     },
     "uploadBar": {
       "uploading": "Téléversement…",
@@ -116,7 +117,8 @@
       "uploadedMultiple": "{{count}} modèles téléversés",
       "makeronlineWaiting": "En attente de Thingport Grab : ouvrez makeronline.com avec l’extension, et le modèle sera importé",
       "makeronlineListWaiting_one": "{{count}} modèle attend Thingport Grab : ouvrez makeronline.com avec l’extension, et il sera importé",
-      "makeronlineListWaiting_other": "{{count}} modèles attendent Thingport Grab : ouvrez makeronline.com avec l’extension, et ils seront importés"
+      "makeronlineListWaiting_other": "{{count}} modèles attendent Thingport Grab : ouvrez makeronline.com avec l’extension, et ils seront importés",
+      "makeronlineListWaiting_many": "{{count}} modèles attendent Thingport Grab : ouvrez makeronline.com avec l’extension, et ils seront importés"
     },
     "zipImport": {
       "title": "Importer une archive ZIP",
@@ -557,7 +559,10 @@
         "importRunFrom_one": "{{done}} sur {{count}} modèle importé depuis {{site}}",
         "importRunFrom_many": "{{done}} sur {{count}} de modèles importés depuis {{site}}",
         "importRunFrom_other": "{{done}} sur {{count}} modèles importés depuis {{site}}"
-      }
+      },
+      "minutesAgo_many": "il y a {{count}} minutes",
+      "hoursAgo_many": "il y a {{count}} heures",
+      "daysAgo_many": "il y a {{count}} jours"
     },
     "search": {
       "placeholder": "Rechercher des modèles, collections, étiquettes…",
@@ -609,7 +614,8 @@
       "keepTyping": "Continuez de saisir pour rechercher des modèles, collections et étiquettes, ou tapez ! pour afficher les commandes.",
       "noCommand": "Aucune commande de ce nom. Tapez ! seul pour toutes les afficher.",
       "builtInCollection": "Collection intégrée",
-      "sectionPages": "Pages"
+      "sectionPages": "Pages",
+      "modelCount_many": "{{count}} modèles"
     },
     "aiRunProgress": {
       "starting": "Lancement de la catégorisation par IA…",
@@ -1017,7 +1023,8 @@
       "activityHeatmap": {
         "title": "Activité",
         "total_one": "{{count}} activité",
-        "total_other": "{{count}} activités"
+        "total_other": "{{count}} activités",
+        "total_many": "{{count}} activités"
       },
       "widgets": {
         "title": "Personnaliser le tableau de bord",
@@ -1352,7 +1359,8 @@
             "label": "Donnez-lui un libellé",
             "number": "Pas un nombre",
             "options": "Au moins deux options, chacune avec un libellé et une valeur différente"
-          }
+          },
+          "settingsCount_many": "Réglages ({{count}})"
         },
         "share": {
           "aiTitle": "Le créer avec une IA",
@@ -1479,7 +1487,8 @@
         "subtitle": "Espace disque occupé par les fichiers de Thingport : modèles, leurs images et aperçus.",
         "summary_one": "{{total}} sur le disque au total : {{models}} occupés par {{count}} modèle, {{pictures}} par les images et aperçus",
         "summary_other": "{{total}} sur le disque au total : {{models}} occupés par {{count}} modèles, {{pictures}} par les images et aperçus",
-        "totalHint": "Tout ce qui se trouve dans le dossier de stockage de Thingport : fichiers de modèles ({{models}}), images et aperçus (miniatures, images de galerie et de description, aperçus 3D, images des étiquettes : {{pictures}}) et autres fichiers générés (copies prêtes pour le slicer et paquets de téléchargement : {{other}}). Mesuré au plus toutes les quelques minutes."
+        "totalHint": "Tout ce qui se trouve dans le dossier de stockage de Thingport : fichiers de modèles ({{models}}), images et aperçus (miniatures, images de galerie et de description, aperçus 3D, images des étiquettes : {{pictures}}) et autres fichiers générés (copies prêtes pour le slicer et paquets de téléchargement : {{other}}). Mesuré au plus toutes les quelques minutes.",
+        "summary_many": "{{total}} sur le disque au total : {{models}} occupés par {{count}} modèles, {{pictures}} par les images et aperçus"
       },
       "website": {
         "link": "Site web et documentation de Thingport",
@@ -1697,7 +1706,10 @@
         "outOfPlace_one": "{{count}} fichier sur {{models}} se trouve encore dans une structure antérieure.",
         "outOfPlace_other": "{{count}} fichiers sur {{models}} se trouvent encore dans une structure antérieure.",
         "moveThem": "Les déplacer",
-        "pathLabel": "Chemin"
+        "pathLabel": "Chemin",
+        "moveConfirmMessage_many": "L’enregistrement déplace en arrière-plan {{count}} fichiers sur {{models}} vers cette structure. Les liens vers les modèles continueront de fonctionner, mais les sauvegardes et les dossiers partagés verront les fichiers déplacés comme de nouveaux fichiers.",
+        "modelCount_many": "{{count}} modèles",
+        "outOfPlace_many": "{{count}} fichiers sur {{models}} se trouvent encore dans une structure antérieure."
       },
       "fileReuse": {
         "heading": "Fichiers identiques",
@@ -1729,7 +1741,8 @@
           "confirmTitle": "Vérifier les fichiers existants ?",
           "confirmMessage": "Thingport va parcourir tous les fichiers stockés et remplacer les fichiers identiques par des clones. Cela s'exécute en arrière-plan et peut prendre du temps sur une grande bibliothèque.",
           "confirmAction": "Vérifier",
-          "failed": "Impossible de lancer la vérification. Veuillez réessayer."
+          "failed": "Impossible de lancer la vérification. Veuillez réessayer.",
+          "result_many": "{{count}} fichiers clonés, jusqu'à {{size}} libérés"
         }
       },
       "consume": {
@@ -1767,7 +1780,8 @@
           "close": "Fermer",
           "sent_one": "Invitation envoyée à {{email}}. Le lien est valable {{count}} jour.",
           "sent_other": "Invitation envoyée à {{email}}. Le lien est valable {{count}} jours.",
-          "failed": "Échec de l’envoi de l’invitation"
+          "failed": "Échec de l’envoi de l’invitation",
+          "sent_many": "Invitation envoyée à {{email}}. Le lien est valable {{count}} jours."
         }
       },
       "previews": {
@@ -1849,7 +1863,8 @@
           "effortClaudeHint": "Combien Claude réfléchit avant de répondre. Moins, c’est plus rapide et moins cher, et ces tâches demandent rarement plus que Faible.",
           "effortClaudeDefault": "Valeur par défaut du modèle (ne rien envoyer)",
           "vision": "Voit les images",
-          "visionHelp": "Si ce modèle accepte des images dans une demande. L’assistant de Studio ne propose de joindre des images qu’à une IA qui les accepte. Une nouvelle IA commence selon ce que suggère le nom de son modèle (Claude, GPT-4o et suivants, Gemini, Qwen-VL, LLaVA, Gemma 3…) : changez-le pour qu’il corresponde au modèle."
+          "visionHelp": "Si ce modèle accepte des images dans une demande. L’assistant de Studio ne propose de joindre des images qu’à une IA qui les accepte. Une nouvelle IA commence selon ce que suggère le nom de son modèle (Claude, GPT-4o et suivants, Gemini, Qwen-VL, LLaVA, Gemma 3…) : changez-le pour qu’il corresponde au modèle.",
+          "modelsAvailable_many": "{{count}} modèles disponibles chez ce fournisseur. Vous pouvez aussi saisir n’importe quel nom."
         }
       },
       "aiFeatures": {
@@ -1928,7 +1943,9 @@
         "original": "Original",
         "suggested": "Suggérée",
         "current": "Actuelle",
-        "empty": "Aucune description."
+        "empty": "Aucune description.",
+        "acceptDone_many": "{{count}} descriptions mises à jour.",
+        "rejectDone_many": "{{count}} suggestions refusées."
       },
       "session": {
         "heading": "Sessions",
@@ -1949,7 +1966,12 @@
           "weeks_one": "{{count}} semaine",
           "weeks_other": "{{count}} semaines",
           "months_one": "{{count}} mois",
-          "months_other": "{{count}} mois"
+          "months_other": "{{count}} mois",
+          "minutes_many": "{{count}} minutes",
+          "hours_many": "{{count}} heures",
+          "days_many": "{{count}} jours",
+          "weeks_many": "{{count}} semaines",
+          "months_many": "{{count}} mois"
         },
         "save": "Enregistrer",
         "saving": "Enregistrement…",
@@ -2101,7 +2123,9 @@
         "signInPassword": "Mot de passe",
         "signInProviderOff": "{{name}} est désactivé, donc cela ne fonctionne pas pour le moment.",
         "signInNone": "Aucun moyen de connexion",
-        "signInNoneHint": "Aucun mot de passe et aucun fournisseur d’authentification unique actif : cette personne ne peut pas se connecter."
+        "signInNoneHint": "Aucun mot de passe et aucun fournisseur d’authentification unique actif : cette personne ne peut pas se connecter.",
+        "deleteWarning_many": "Cela supprime le compte, ses {{count}} modèles avec tous leurs fichiers, ainsi que ses collections, catégories et favoris. Cette action est irréversible.",
+        "deleted_many": "{{email}} supprimé, avec {{count}} modèles"
       },
       "logs": {
         "heading": "Journaux",
@@ -2205,7 +2229,9 @@
         "federationOn": "Activées",
         "federationOff": "Désactivées",
         "chatsOn": "Discussions activées",
-        "chatsOff": "Discussions désactivées"
+        "chatsOff": "Discussions désactivées",
+        "tagDeleted_many": "{{name}} — retirée de {{count}} modèles",
+        "userDeleted_many": "{{email}} — avec {{count}} modèles"
       },
       "rendering": {
         "heading": "Rendu",
@@ -2302,7 +2328,8 @@
         "locationHint": {
           "source": "Conservé à l’endroit où il a été récupéré, en dehors du dossier de stockage",
           "missing": "Ni dans le stockage, ni à l’endroit où il a été récupéré"
-        }
+        },
+        "folderSummary_many": "{{count}} fichiers · {{size}}"
       },
       "signIn": {
         "heading": "Méthodes de connexion",
@@ -2374,7 +2401,10 @@
           "save": "Enregistrer",
           "saving": "Enregistrement…",
           "failed": "Impossible d’enregistrer le fournisseur."
-        }
+        },
+        "userCount_many": "{{count}} personnes se sont connectées avec ce moyen",
+        "disableMessage_many": "{{count}} personnes se sont connectées avec {{name}}. Celles qui n’ont pas défini de mot de passe ne pourront pas se connecter tant que ce moyen ne sera pas réactivé.",
+        "deleteUsedMessage_many": "{{count}} personnes se sont connectées avec {{name}}. Leurs comptes sont conservés, mais celles qui n’ont pas de mot de passe ne pourront pas se connecter. Rajouter le fournisseur ne les reconnectera pas automatiquement."
       },
       "publicUrl": {
         "heading": "URL publique",
@@ -2934,8 +2964,20 @@
         "showLess": "Afficher moins",
         "unknownModel": "Modèles issus d’une tâche d’importation",
         "fromDay": "Du {{date}}",
-        "emptyUntil": "Aucune activité ce mois-ci jusqu’à ce jour."
-      }
+        "emptyUntil": "Aucune activité ce mois-ci jusqu’à ce jour.",
+        "import_many": "{{count}} modèles importés",
+        "upload_many": "{{count}} modèles téléversés",
+        "download_many": "{{count}} modèles téléchargés",
+        "slicer_many": "{{count}} modèles ouverts dans un slicer",
+        "delete_many": "{{count}} modèles supprimés",
+        "times_many": "{{count}} fois",
+        "count_many": "{{count}}×",
+        "showMore_many": "Afficher {{count}} de plus"
+      },
+      "totalLastYear_many": "{{count}} activités au cours de la dernière année",
+      "totalInYear_many": "{{count}} activités en {{year}}",
+      "dayTotal_many": "{{count}} activités le {{date}}",
+      "dayLabel_many": "{{count}} activités le {{date}}"
     },
     "appearance": {
       "title": "Apparence",
@@ -3438,7 +3480,8 @@
       "badJson": "Ce n'est pas encore du JSON valide, donc ce ne sera pas enregistré.",
       "badShape": "Les libellés sont un objet plat de clés vers du texte, comme { \"save\": \"Enregistrer\" }.",
       "removeTitle": "Retirer les libellés en {{name}} ?",
-      "removeBody": "Le fichier et ses mots disparaissent. Les autres langues restent."
+      "removeBody": "Le fichier et ses mots disparaissent. Les autres langues restent.",
+      "untranslated_many": "{{count}} libellés n'ont encore aucun texte dans cette langue."
     },
     "missingFiles": {
       "title": "Certains modèles ont perdu leurs fichiers",
@@ -3472,12 +3515,15 @@
           "detail_other": "Retélécharge les fichiers de {{count}} modèles depuis les sites dont ils viennent. Noms, étiquettes, collections et favoris restent inchangés.",
           "grabOnly_one": "Seul Thingport Grab peut récupérer les fichiers de ce modèle. Il attendra son prochain passage sur le site.",
           "grabOnly_other": "Seul Thingport Grab peut récupérer ces fichiers. {{count}} modèles attendront son prochain passage sur les sites dont ils viennent.",
-          "none": "Aucun de ces modèles n'a de site d'où récupérer les fichiers."
+          "none": "Aucun de ces modèles n'a de site d'où récupérer les fichiers.",
+          "detail_many": "Retélécharge les fichiers de {{count}} modèles depuis les sites dont ils viennent. Noms, étiquettes, collections et favoris restent inchangés.",
+          "grabOnly_many": "Seul Thingport Grab peut récupérer ces fichiers. {{count}} modèles attendront son prochain passage sur les sites dont ils viennent."
         },
         "delete": {
           "title": "Supprimer ces modèles",
           "detail_one": "Retire définitivement 1 modèle de la bibliothèque, avec ses informations, ses étiquettes et ses entrées de collection.",
-          "detail_other": "Retire définitivement {{count}} modèles de la bibliothèque, avec leurs informations, leurs étiquettes et leurs entrées de collection."
+          "detail_other": "Retire définitivement {{count}} modèles de la bibliothèque, avec leurs informations, leurs étiquettes et leurs entrées de collection.",
+          "detail_many": "Retire définitivement {{count}} modèles de la bibliothèque, avec leurs informations, leurs étiquettes et leurs entrées de collection."
         }
       },
       "confirm": {
@@ -3492,16 +3538,25 @@
           "grabTitle": "Laisser faire Thingport Grab ?",
           "grabMessage_one": "Thingport ne peut pas récupérer les fichiers de ce modèle lui-même — seul Thingport Grab le peut, sur les pages du site. Le modèle attendra le prochain passage de Grab, et les fichiers qu'il rapportera prendront la place de ceux qui manquent.",
           "grabMessage_other": "Thingport ne peut pas récupérer ces fichiers lui-même — seul Thingport Grab le peut, sur les pages des sites. Les {{count}} modèles attendront le prochain passage de Grab, et les fichiers qu'il rapportera prendront la place de ceux qui manquent.",
-          "grabConfirm": "Attendre Grab"
+          "grabConfirm": "Attendre Grab",
+          "title_many": "Récupérer les fichiers de {{count}} modèles ?",
+          "message_many": "Thingport télécharge les fichiers de chaque modèle depuis le site dont il vient, un par un. Rien d'autre ne change, et tout modèle dont le site est injoignable reste exactement tel qu'il est.",
+          "queued_many": "{{count}} modèles de plus attendront que Thingport Grab passe sur les sites dont viennent leurs fichiers.",
+          "grabMessage_many": "Thingport ne peut pas récupérer ces fichiers lui-même — seul Thingport Grab le peut, sur les pages des sites. Les {{count}} modèles attendront le prochain passage de Grab, et les fichiers qu'il rapportera prendront la place de ceux qui manquent."
         },
         "delete": {
           "title_one": "Supprimer 1 modèle ?",
           "title_other": "Supprimer {{count}} modèles ?",
           "message_one": "Cette action est irréversible. Le modèle, ses informations, ses étiquettes et ses entrées de collection sont supprimés définitivement. Seul le modèle sans fichiers est touché.",
           "message_other": "Cette action est irréversible. Les {{count}} modèles, leurs informations, leurs étiquettes et leurs entrées de collection sont supprimés définitivement. Seuls les modèles sans fichiers sont touchés.",
-          "confirm": "Supprimer les modèles"
+          "confirm": "Supprimer les modèles",
+          "title_many": "Supprimer {{count}} modèles ?",
+          "message_many": "Cette action est irréversible. Les {{count}} modèles, leurs informations, leurs étiquettes et leurs entrées de collection sont supprimés définitivement. Seuls les modèles sans fichiers sont touchés."
         }
-      }
+      },
+      "lead_many": "{{count}} modèles de votre bibliothèque n'ont plus aucun fichier sur le disque — ni les fichiers des modèles, ni les images. Ils ne peuvent pas être ouverts, imprimés ni téléchargés avant le retour des fichiers.",
+      "allWellDetail_many": "{{count}} modèles vérifiés.",
+      "manyWarning_many": "{{count}} modèles d'un coup, c'est beaucoup : les sites peuvent demander à Thingport de ralentir ou d'attendre, cela peut donc prendre du temps. L'opération tourne en arrière-plan et vous pouvez l'arrêter à tout moment."
     },
     "modelRepairProgress": {
       "stop": "Arrêter la réparation",
@@ -4337,7 +4392,10 @@
       "instances_many": "{{count}} instances",
       "instances_other": "{{count}} instances",
       "hostedOn": "Hébergé sur {{name}}",
-      "sentModel": "📎 {{name}}"
+      "sentModel": "📎 {{name}}",
+      "publicRoomMembers_many": "Salon public · {{count}} membres",
+      "privateRoomMembers_many": "Salon privé · {{count}} membres",
+      "sentModels_many": "📎 {{count}} modèles"
     },
     "modelPicker": {
       "search": "Rechercher dans votre bibliothèque",
@@ -4345,7 +4403,8 @@
       "limit_other": "Jusqu'à {{count}}",
       "noMatch": "Aucun modèle ne correspond.",
       "emptyLibrary": "Votre bibliothèque n'a pas encore de modèles.",
-      "loadFailed": "Impossible de charger vos modèles."
+      "loadFailed": "Impossible de charger vos modèles.",
+      "limit_many": "Jusqu'à {{count}}"
     }
   },
   "common": {
@@ -4410,7 +4469,8 @@
       "groupUngrouped": "Non attribué",
       "groupUntitled": "Sans titre",
       "groupOther": "Autres",
-      "allItems": "Tous les éléments"
+      "allItems": "Tous les éléments",
+      "groupItemCount_many": "{{count}} éléments"
     },
     "dropOverlay": {
       "uploading": "Téléversement vers {{target}}...",
@@ -4969,7 +5029,9 @@
       "linkedWithSuggestion": "Lié à {{provider}}. Catégorie suggérée : {{category}}.",
       "failed": "Impossible de lier ce modèle. Veuillez réessayer.",
       "alreadyLinked": "Déjà lié à un fournisseur",
-      "selectOne": "Sélectionnez un modèle pour le lier"
+      "selectOne": "Sélectionnez un modèle pour le lier",
+      "pictures_many": "{{count}} images",
+      "tags_many": "{{count}} étiquettes"
     },
     "aiCategorization": {
       "suggestionPending": "Acceptez ou refusez d’abord la suggestion",
@@ -5072,7 +5134,11 @@
         "showMore": "Afficher {{count}} de plus",
         "showFewer": "Afficher moins",
         "pickAria": "Profil d’impression : {{name}}",
-        "previewPlate": "Voir {{plate}} en 3D"
+        "previewPlate": "Voir {{plate}} en 3D",
+        "label_many": "Profils d’impression · {{count}}",
+        "plates_many": "{{count}} plateaux",
+        "platesInProfile_many": "{{count}} plateaux dans ce profil",
+        "walls_many": "{{count}} parois"
       },
       "previewToolbar": {
         "label": "Options d’aperçu",
@@ -5179,22 +5245,26 @@
           "missingParts": {
             "title_one": "{{count}} pièce manquante",
             "title_other": "{{count}} pièces manquantes",
-            "desc": "Le modèle fait référence à des fichiers de pièces absents : des parties manqueront."
+            "desc": "Le modèle fait référence à des fichiers de pièces absents : des parties manqueront.",
+            "title_many": "{{count}} pièces manquantes"
           },
           "openEdges": {
             "title": "Trous dans la surface",
             "desc_one": "{{count}} arête ouverte : la surface n’est pas fermée, le slicer doit donc deviner ce qui se trouve à l’intérieur.",
-            "desc_other": "{{count}} arêtes ouvertes : la surface n’est pas fermée, le slicer doit donc deviner ce qui se trouve à l’intérieur."
+            "desc_other": "{{count}} arêtes ouvertes : la surface n’est pas fermée, le slicer doit donc deviner ce qui se trouve à l’intérieur.",
+            "desc_many": "{{count}} arêtes ouvertes : la surface n’est pas fermée, le slicer doit donc deviner ce qui se trouve à l’intérieur."
           },
           "nonManifoldEdges": {
             "title": "Arêtes non manifold",
             "desc_one": "{{count}} arête est partagée par plus de deux faces, ce que les slicers peuvent mal interpréter.",
-            "desc_other": "{{count}} arêtes sont partagées par plus de deux faces, ce que les slicers peuvent mal interpréter."
+            "desc_other": "{{count}} arêtes sont partagées par plus de deux faces, ce que les slicers peuvent mal interpréter.",
+            "desc_many": "{{count}} arêtes sont partagées par plus de deux faces, ce que les slicers peuvent mal interpréter."
           },
           "flippedFaces": {
             "title": "Faces inversées",
             "desc_one": "{{count}} arête sépare des faces orientées en sens opposés : certaines parties peuvent être creuses ou manquer.",
-            "desc_other": "{{count}} arêtes séparent des faces orientées en sens opposés : certaines parties peuvent être creuses ou manquer."
+            "desc_other": "{{count}} arêtes séparent des faces orientées en sens opposés : certaines parties peuvent être creuses ou manquer.",
+            "desc_many": "{{count}} arêtes séparent des faces orientées en sens opposés : certaines parties peuvent être creuses ou manquer."
           },
           "insideOut": {
             "title": "À l’envers",
@@ -5203,7 +5273,8 @@
           "fragments": {
             "title_one": "{{count}} fragment isolé",
             "title_other": "{{count}} fragments isolés",
-            "desc": "De minuscules morceaux flottent à l’écart du modèle. Ils s’impriment en amas ou pas du tout."
+            "desc": "De minuscules morceaux flottent à l’écart du modèle. Ils s’impriment en amas ou pas du tout.",
+            "title_many": "{{count}} fragments isolés"
           },
           "tooSmall": {
             "title": "Très petit",
@@ -5223,7 +5294,9 @@
           "minor": "Mineur",
           "minorHint": "Les slicers s’en accommodent généralement, ou cela se corrige vite dans l’un d’eux."
         },
-        "manageSettings": "Gérer le contrôle de qualité"
+        "manageSettings": "Gérer le contrôle de qualité",
+        "triangles_many": "{{formatted}} triangles",
+        "bodies_many": "{{count}} corps"
       },
       "fileSelectLabel": "Fichiers ({{count}})",
       "fileSelectAria": "Fichier : {{file}}. En choisir un autre",
@@ -5235,7 +5308,8 @@
       "toolOwnedHint": "Il ne peut être ni modifié ni supprimé",
       "customize": "Personnaliser…",
       "scriptWithheld": "Script non partagé",
-      "scriptWithheldHint": "Ce modèle a été créé à partir d'un script, mais son auteur a choisi de ne pas le partager : il n'y a donc rien à personnaliser ici. Lui seul peut changer cela."
+      "scriptWithheldHint": "Ce modèle a été créé à partir d'un script, mais son auteur a choisi de ne pas le partager : il n'y a donc rien à personnaliser ici. Lui seul peut changer cela.",
+      "internalPlateObjectCount_many": "{{count}} objets"
     },
     "customizer": {
       "title": "Personnalisation de {{model}}",
@@ -5418,7 +5492,9 @@
         "modelCount_other": "{{count}} modèles importés depuis {{provider}}",
         "selfModelCount_one": "{{count}} modèle téléversé",
         "selfModelCount_other": "{{count}} modèles téléversés",
-        "loadFailed": "Impossible de charger cet auteur."
+        "loadFailed": "Impossible de charger cet auteur.",
+        "modelCount_many": "{{count}} modèles importés depuis {{provider}}",
+        "selfModelCount_many": "{{count}} modèles téléversés"
       },
       "username": {
         "label": "Nom d'utilisateur",
@@ -5534,7 +5610,9 @@
         "ownerAndCount_one": "{{name}} · {{count}} modèle",
         "ownerAndCount_other": "{{name}} · {{count}} modèles",
         "sharedWith": "Partagée avec {{names}}",
-        "changeSharing": "Partagée avec {{who}} : changer qui la voit"
+        "changeSharing": "Partagée avec {{who}} : changer qui la voit",
+        "itemCount_many": "{{count}} modèles",
+        "ownerAndCount_many": "{{name}} · {{count}} modèles"
       },
       "form": {
         "createTitle": "Nouvelle collection",
@@ -5562,7 +5640,11 @@
         "andMore_other": "{{count}} autres",
         "peopleFailed": "Impossible de charger les personnes avec qui elle est partagée : qui la voit ne peut pas changer tant que ce n'est pas chargé.",
         "createdNotShared": "« {{name}} » a été créée, mais n'a pas pu être partagée. Partager… dans son menu réessaie.",
-        "findPeopleHelp": "Une partie d'un nom trouve quelqu'un ici ou sur une instance connectée ; un e-mail ne trouve quelqu'un d'ici que saisi en entier, et n'est jamais affiché. Quelqu'un d'ailleurs que vous ne trouvez pas : saisissez son identifiant complet, comme nom@son-instance."
+        "findPeopleHelp": "Une partie d'un nom trouve quelqu'un ici ou sur une instance connectée ; un e-mail ne trouve quelqu'un d'ici que saisi en entier, et n'est jamais affiché. Quelqu'un d'ailleurs que vous ne trouvez pas : saisissez son identifiant complet, comme nom@son-instance.",
+        "sharedCount_many": "{{count}} personnes peuvent la voir",
+        "sharedElsewhere_many": "{{count}} sur des instances connectées",
+        "keptPeople_many": "{{names}} restent dans la liste : choisissez Partagée pour la partager à nouveau.",
+        "andMore_many": "{{count}} autres"
       },
       "detail": {
         "title": "{{name}}",
@@ -5571,7 +5653,8 @@
         "confirmDelete": "Supprimer « {{name}} » ? Les modèles qu’elle contient ne seront pas supprimés.",
         "deleteFailed": "Échec de la suppression de la collection.",
         "sharedWith_one": "Partagée avec {{count}}",
-        "sharedWith_other": "Partagée avec {{count}}"
+        "sharedWith_other": "Partagée avec {{count}}",
+        "sharedWith_many": "Partagée avec {{count}}"
       },
       "errors": {
         "loadFailed": "Impossible de charger les collections.",
@@ -5650,8 +5733,15 @@
           "startNothing": "Synchroniser",
           "makerworldHelp": "MakerWorld limite rapidement les importations en masse ; les modèles de cette collection ne sont donc pas importés pour le moment. Ceux déjà présents dans votre bibliothèque sont ajoutés à « {{name}} ».",
           "forget": "Oublier",
-          "forgetTitle": "Oublier votre compte {{provider}} ?"
-        }
+          "forgetTitle": "Oublier votre compte {{provider}} ?",
+          "models_many": "{{count}} modèles",
+          "things_many": "{{count}} modèles",
+          "objects_many": "{{count}} objets",
+          "confirmImport_many": "Importera dès maintenant ses {{count}} modèles, puis les nouveaux au fur et à mesure de leur ajout."
+        },
+        "intro_many": "Les modèles ajoutés à la collection {{provider}} sont importés ici toutes les {{count}} heures.",
+        "intervalOption_many": "{{count}} Heures",
+        "introLikes_many": "Les modèles aimés par @{{user}} sur {{provider}} sont importés ici toutes les {{count}} heures."
       },
       "sortByModels": "Plus de modèles",
       "selection": {
@@ -5669,7 +5759,13 @@
         "deleted_one": "{{count}} collection supprimée",
         "deleted_other": "{{count}} collections supprimées",
         "merged_one": "{{count}} collection fusionnée dans « {{name}} »",
-        "merged_other": "{{count}} collections fusionnées dans « {{name}} »"
+        "merged_other": "{{count}} collections fusionnées dans « {{name}} »",
+        "bookmarked_many": "{{count}} collections ajoutées aux favoris",
+        "unbookmarked_many": "{{count}} collections retirées des favoris",
+        "deleteTitle_many": "Supprimer {{count}} collections ?",
+        "deleteMessage_many": "Leurs modèles sont conservés. Action irréversible.",
+        "deleted_many": "{{count}} collections supprimées",
+        "merged_many": "{{count}} collections fusionnées dans « {{name}} »"
       },
       "tool": {
         "badge": "Appartient à l'outil {{tool}} : elle ne peut être ni modifiée ni supprimée, et disparaît à sa désinstallation",
@@ -5724,8 +5820,16 @@
         "deleted_one": "{{count}} étiquette supprimée",
         "deleted_other": "{{count}} étiquettes supprimées",
         "merged_one": "{{count}} étiquette fusionnée dans « {{name}} »",
-        "merged_other": "{{count}} étiquettes fusionnées dans « {{name}} »"
-      }
+        "merged_other": "{{count}} étiquettes fusionnées dans « {{name}} »",
+        "bookmarked_many": "{{count}} étiquettes ajoutées aux favoris",
+        "unbookmarked_many": "{{count}} étiquettes retirées des favoris",
+        "deleteTitle_many": "Supprimer {{count}} étiquettes ?",
+        "deleteMessage_many": "Elles sont retirées de tous les modèles qui les ont. Les modèles sont conservés.",
+        "deleteConfirm_many": "Supprimer les étiquettes",
+        "deleted_many": "{{count}} étiquettes supprimées",
+        "merged_many": "{{count}} étiquettes fusionnées dans « {{name}} »"
+      },
+      "deleted_many": "Étiquette « {{name}} » retirée de {{count}} modèles"
     },
     "downloadZip": {
       "loading": "Calcul…",
@@ -5736,7 +5840,9 @@
       "summaryFailed": "Impossible de calculer la taille du téléchargement. Veuillez réessayer.",
       "empty": "Aucun fichier de modèle téléchargeable trouvé.",
       "downloading": "Téléchargement…",
-      "failed": "Impossible de télécharger l’archive ZIP. Veuillez réessayer."
+      "failed": "Impossible de télécharger l’archive ZIP. Veuillez réessayer.",
+      "summary_many": "{{count}} modèles (~{{size}})",
+      "summaryNoSize_many": "{{count}} modèles"
     },
     "errors": {
       "loadFailed": "Impossible de charger les modèles.",
@@ -5773,7 +5879,11 @@
         "modelCount_other": "{{count}} modèles",
         "noop": "Vos catégories correspondent déjà aux valeurs par défaut.",
         "foldersKept": "Les dossiers ne sont pas modifiés.",
-        "previewFailed": "Impossible de déterminer ce qu'une réinitialisation changerait."
+        "previewFailed": "Impossible de déterminer ce qu'une réinitialisation changerait.",
+        "modelsUncategorized_many": "{{count}} modèles perdront leur catégorie.",
+        "modelsMoved_many": "{{count}} modèles vont dans la catégorie parente conservée la plus proche.",
+        "modelsRenamed_many": "{{count}} modèles déplacés sont renommés pour éviter un doublon de nom.",
+        "modelCount_many": "{{count}} modèles"
       },
       "manager": {
         "title": "Gérer les catégories",
@@ -5850,7 +5960,11 @@
       "partlyFailed_one": "{{count}} modèle n'a pas pu être modifié.",
       "partlyFailed_other": "{{count}} modèles n'ont pas pu être modifiés.",
       "failed": "Impossible d'attribuer la catégorie. Veuillez réessayer.",
-      "loadFailed": "Impossible de charger vos catégories. Veuillez réessayer."
+      "loadFailed": "Impossible de charger vos catégories. Veuillez réessayer.",
+      "title_many": "Attribuer une catégorie à {{count}} modèles",
+      "replaces_many": "{{count}} modèles sélectionnés ont déjà une catégorie, qui sera remplacée.",
+      "done_many": "« {{name}} » attribuée à {{count}} modèles.",
+      "partlyFailed_many": "{{count}} modèles n'ont pas pu être modifiés."
     },
     "selection": {
       "skipped_one": "{{count}} modèle sélectionné est exclu : il a été importé ou appartient à un outil.",
@@ -5921,7 +6035,27 @@
       "notFiled_one": "{{count}} modèle n'a pas pu être ajouté : il n'est plus partagé",
       "notFiled_other": "{{count}} modèles n'ont pas pu être ajoutés : ils ne sont plus partagés",
       "notFiledNames_one": "Impossible d'ajouter {{names}} : il n'est plus partagé",
-      "notFiledNames_other": "Impossible d'ajouter {{names}} : ils ne sont plus partagés"
+      "notFiledNames_other": "Impossible d'ajouter {{names}} : ils ne sont plus partagés",
+      "count_many": "{{count}} sélectionnés",
+      "skipped_many": "{{count}} modèles sélectionnés sont exclus : ils ont été importés ou appartiennent à un outil.",
+      "downloadTitle_many": "Télécharger {{count}} modèles",
+      "favorited_many": "{{count}} modèles ajoutés aux Favoris",
+      "unfavorited_many": "{{count}} modèles retirés des Favoris",
+      "confirmDelete_many": "Supprimer {{count}} modèles ? Cette action est irréversible.",
+      "deleted_many": "{{count}} modèles supprimés",
+      "deletePartlyFailed_many": "{{count}} modèles n’ont pas pu être supprimés",
+      "confirmManual_many": "{{count}} des modèles sélectionnés ont une catégorie que vous avez choisie vous-même. Laisser l’IA les recatégoriser aussi ?",
+      "categorizeQueued_many": "Catégorisation de {{count}} modèles avec l’IA. La progression s’affiche en bas de la page.",
+      "improveQueued_many": "Amélioration de {{count}} descriptions avec l’IA. La progression s’affiche en bas de la page.",
+      "confirmRemoveFromCollection_many": "Retirer {{count}} modèles de cette collection ? Les modèles eux-mêmes sont conservés.",
+      "removedFromCollection_many": "{{count}} modèles retirés de la collection",
+      "editTagsTitle_many": "Étiquettes de {{count}} modèles",
+      "tagsUpdated_many": "Étiquettes de {{count}} modèles mises à jour",
+      "editCollectionsTitle_many": "Collections de {{count}} modèles",
+      "collectionsUpdated_many": "{{count}} collections mises à jour",
+      "tagsPartlyUpdated_many": "Étiquettes de {{count}} modèles mises à jour, mais les autres ont échoué. Veuillez réessayer.",
+      "notFiled_many": "{{count}} modèles n'ont pas pu être ajoutés : ils ne sont plus partagés",
+      "notFiledNames_many": "Impossible d'ajouter {{names}} : ils ne sont plus partagés"
     },
     "merge": {
       "action": "Fusionner",
@@ -5951,7 +6085,10 @@
         "othersGo_other": "{{names}} sont supprimées. Pas leurs modèles : ils passent dans « {{name}} ».",
         "keepsOwn": "« {{name}} » garde son nom, sa description, ses étiquettes et sa synchronisation.",
         "syncStops_one": "{{names}} est synchronisée avec une collection d'un fournisseur, et cette synchronisation s'arrête. Conservez-la plutôt pour continuer à synchroniser.",
-        "syncStops_other": "{{names}} sont synchronisées avec des collections de fournisseurs, et ces synchronisations s'arrêtent. Conservez-en une pour continuer à la synchroniser."
+        "syncStops_other": "{{names}} sont synchronisées avec des collections de fournisseurs, et ces synchronisations s'arrêtent. Conservez-en une pour continuer à la synchroniser.",
+        "title_many": "Fusionner {{count}} collections",
+        "othersGo_many": "{{names}} sont supprimées. Pas leurs modèles : ils passent dans « {{name}} ».",
+        "syncStops_many": "{{names}} sont synchronisées avec des collections de fournisseurs, et ces synchronisations s'arrêtent. Conservez-en une pour continuer à la synchroniser."
       },
       "tags": {
         "title_one": "Fusionner {{count}} étiquette",
@@ -5960,7 +6097,9 @@
         "goes": "Retirée",
         "othersGo_one": "{{names}} est retirée. Ses modèles reçoivent « {{name}} » à la place.",
         "othersGo_other": "{{names}} sont retirées. Leurs modèles reçoivent « {{name}} » à la place.",
-        "keepsOwn": "Les modèles qui ont déjà « {{name}} » ne changent pas."
+        "keepsOwn": "Les modèles qui ont déjà « {{name}} » ne changent pas.",
+        "title_many": "Fusionner {{count}} étiquettes",
+        "othersGo_many": "{{names}} sont retirées. Leurs modèles reçoivent « {{name}} » à la place."
       },
       "models": {
         "action": "Fusionner les modèles",
@@ -5980,8 +6119,17 @@
         "fileUnit_one": "fichier",
         "fileUnit_other": "fichiers",
         "merged_one": "{{count}} modèle fusionné dans « {{name}} ».",
-        "merged_other": "{{count}} modèles fusionnés dans « {{name}} »."
-      }
+        "merged_other": "{{count}} modèles fusionnés dans « {{name}} ».",
+        "title_many": "Fusionner {{count}} modèles",
+        "othersGo_many": "{{names}} sont supprimés. Leurs fichiers, images et descriptions sont déplacés vers « {{name}} ».",
+        "fileCount_many": "{{count}} fichiers",
+        "pictureCount_many": "{{count}} images",
+        "fileUnit_many": "fichiers",
+        "merged_many": "{{count}} modèles fusionnés dans « {{name}} »."
+      },
+      "modelUnit_many": "modèles",
+      "new_many": "nouveaux",
+      "andMore_many": "{{count}} autres"
     },
     "filters": {
       "title": "Filtres",
@@ -6103,7 +6251,11 @@
       "sharedWithYouHelp": "Les collections que leurs propriétaires ont partagées avec vous et quelques autres. Personne d'autre ne les voit dans Explorer.",
       "showMore_one": "Afficher {{count}} de plus",
       "showMore_other": "Afficher {{count}} de plus",
-      "sharedFailed": "Impossible de charger plus de ce qui est partagé avec vous. Réessayez."
+      "sharedFailed": "Impossible de charger plus de ce qui est partagé avec vous. Réessayez.",
+      "copies_many": "Collectionné par {{count}} personnes",
+      "collectionCount_many": "{{count}} collections",
+      "modelCount_many": "{{count}} modèles",
+      "showMore_many": "Afficher {{count}} de plus"
     }
   },
   "providers": {

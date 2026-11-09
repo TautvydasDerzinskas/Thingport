@@ -46,11 +46,30 @@ export type CategoryResetPreview = {
 /** Whether a reset would change nothing. */
 export const resetIsNoop = (p: CategoryResetPreview) => !p.added.length && !p.restored.length && !p.removed.length;
 
+// The list lookups that only read it share: dropped after a failure and after any change made through categoriesApi.
+let shared: Promise<Category[]> | null = null;
+// Ids it was fetched again for, so another person's category, never in the list, doesn't refetch it every time.
+const missed = new Set<string>();
+
 export const categoriesApi = {
   list: async (): Promise<Category[]> => {
     const res = await fetch(`${apiBase()}/categories`, { headers: authHeaders() });
     assertOk(res, "Failed to list categories");
     return res.json();
+  },
+
+  /** The list for a lookup that only reads it, such as a model's category name in the reader's language: fetched once
+   *  and shared. A category `id` it hasn't got, made since by an import or elsewhere, has it fetched again once. */
+  listShared: async (id?: string | null): Promise<Category[]> => {
+    const load = () =>
+      (shared = categoriesApi.list().catch((error: unknown) => {
+        shared = null;
+        throw error;
+      }));
+    const categories = await (shared ?? load());
+    if (!id || missed.has(id) || categories.some((category) => category.id === id)) return categories;
+    missed.add(id);
+    return load();
   },
 
   /** `kind` only applies at the top level; a subcategory takes its parent's. The server defaults to folder. */
@@ -61,6 +80,7 @@ export const categoriesApi = {
       body: JSON.stringify({ name, tags, parent_id, kind }),
     });
     assertOk(res, "Create category failed");
+    shared = null;
     return res.json();
   },
 
@@ -71,12 +91,14 @@ export const categoriesApi = {
       body: JSON.stringify({ name, tags, parent_id }),
     });
     assertOk(res, "Update category failed");
+    shared = null;
     return res.json();
   },
 
   delete: async (id: string) => {
     const res = await fetch(`${apiBase()}/category/${id}`, { method: "DELETE", headers: authHeaders() });
     assertOk(res, "Delete category failed");
+    shared = null;
     return res.json();
   },
 
@@ -95,6 +117,7 @@ export const categoriesApi = {
       // Keep the backend's specific message (e.g. naming a typo).
       throw new Error(await readErrorMessage(res, "Update category details failed"));
     }
+    shared = null;
     return res.json();
   },
 
@@ -106,6 +129,7 @@ export const categoriesApi = {
       body: JSON.stringify({ category_ids: categoryIds }),
     });
     assertOk(res, "Reorder categories failed");
+    shared = null;
     return res.json();
   },
 
@@ -118,6 +142,7 @@ export const categoriesApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Move category failed"));
+    shared = null;
     return res.json();
   },
 
@@ -134,6 +159,7 @@ export const categoriesApi = {
     const res = await fetch(`${apiBase()}/categories/reset-defaults`, { method: "POST", headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Reset categories failed");
+    shared = null;
     return res.json();
   },
 

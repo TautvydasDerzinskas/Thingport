@@ -55,7 +55,7 @@ const START = {
 };
 
 export default async function mount(thingport) {
-  const { root, theme, models, storage, ui, download, collections, t, labels } = thingport;
+  const { root, theme, models, storage, ui, download, collections, t, labels, language } = thingport;
   const shell = root.querySelector(".skp");
   const $ = (id) => root.querySelector(`#skp-${id}`);
 
@@ -138,7 +138,11 @@ export default async function mount(thingport) {
     clearTimeout(formTimer);
     formTimer = setTimeout(() => storage.set("form", form).catch(() => {}), 600);
   };
-  const keepProjects = () => storage.set("projects", projects.slice(0, PROJECT_LIMIT)).catch(() => {});
+  // One write at a time, each of the list as it is when its turn comes: a background stats write that started first
+  // can't land after a deletion and bring the project back.
+  let writing = Promise.resolve();
+  const keepProjects = () =>
+    (writing = writing.then(() => storage.set("projects", projects.slice(0, PROJECT_LIMIT)).catch(() => {})));
 
   /** The model this tool brought under that key, once Thingport has fetched it. */
   const broughtModel = (key) => brought.find((entry) => entry.key === key) ?? null;
@@ -154,6 +158,7 @@ export default async function mount(thingport) {
     wallMm: form.wallMm,
     strategy: strategy(),
     t,
+    language,
   });
 
   /** What the solver takes from a form: the open one, or a saved project's. */
@@ -416,7 +421,7 @@ export default async function mount(thingport) {
 
     into.innerHTML = `
       <ol class="skp-steps">${steps.map(stepRow).join("")}</ol>
-      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(plural(t, plan.boards.length, "list.boardWord"))}</b></div>
+      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(plural(t, plan.boards.length, "list.boardWord", language))}</b></div>
       ${
         buy.length
           ? `<h3 class="skp-sub">${escapeHtml(t("plan.buy"))}</h3><ul class="skp-buy">${buy
@@ -445,7 +450,7 @@ export default async function mount(thingport) {
     status.textContent = `${t("plan.covered", { width: Math.round(plan.coveredWidthMm), height: Math.round(plan.coveredHeightMm) })}${left}`;
     const summary = $("summary");
     summary.hidden = false;
-    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(countWord(t, "list.boardWord", plan.boards.length))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
+    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(countWord(t, "list.boardWord", plan.boards.length, language))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
   }
 
   function update() {
@@ -504,7 +509,7 @@ export default async function mount(thingport) {
   function projectSummary(project) {
     const { stats } = project;
     if (!stats) return project.summary ?? "";
-    return `${plural(t, stats.boards, "list.boardWord")}, ${stats.widthMm} × ${stats.heightMm} mm`;
+    return `${plural(t, stats.boards, "list.boardWord", language)}, ${stats.widthMm} × ${stats.heightMm} mm`;
   }
 
   // A project saved before the numbers were kept has only English words: its plan is solved again in the background,

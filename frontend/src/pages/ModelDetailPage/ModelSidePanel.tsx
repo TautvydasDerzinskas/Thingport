@@ -123,7 +123,7 @@ export default function ModelSidePanel({
   useEffect(() => {
     if (!print.category_id || !translating) return;
     let active = true;
-    void categoriesApi.list().then(
+    void categoriesApi.listShared(print.category_id).then(
       (categories) => {
         if (active) setCategory(categories.find((item) => item.id === print.category_id) ?? null);
       },

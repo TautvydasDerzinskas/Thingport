@@ -70,6 +70,10 @@ test("counts take each language's own plural forms, 21 included", () => {
     countWord((key) => WORDS[key] ?? key, "list.boardWord", 3),
     "boards",
   );
+  // There the tool picks the form: two boards in Lithuanian are "lentos", not the other form's "lentų".
+  const older = (key) => LOCALES.lt[key] ?? WORDS[key] ?? key;
+  assert.equal(plural(older, 2, "list.boardWord", "lt"), "2 lentos");
+  assert.equal(plural(older, 10, "list.boardWord", "lt"), "10 lentų");
 });
 
 test("every language has the plural forms its counts need, and no stray ones", () => {

@@ -45,24 +45,43 @@ export const SUPPORTED_LANGUAGES: Language[] = Object.keys(LOCALES)
   );
 
 const PLURAL = /_(zero|one|two|few|many|other)$/;
+// Whole numbers up to 999 and the powers of ten, as `npm run i18n:check` counts: Spanish and French take `many` only
+// for 1,000,000 and the like, and a fraction-only form (Lithuanian `many`) isn't asked for.
+const SAMPLES = [...Array.from({ length: 1000 }, (_, n) => n), ...Array.from({ length: 10 }, (_, k) => 10 ** (k + 3))];
 
-function keysOf(node: unknown, prefix = "", into = new Set<string>()): Set<string> {
+function leaves(node: unknown, prefix = "", into = new Set<string>()): Set<string> {
   if (node && typeof node === "object")
-    for (const [key, value] of Object.entries(node)) keysOf(value, prefix ? `${prefix}.${key}` : key, into);
-  // Plural forms differ between languages, so a key counts once whichever forms it has.
-  else into.add(prefix.replace(PLURAL, ""));
+    for (const [key, value] of Object.entries(node)) leaves(value, prefix ? `${prefix}.${key}` : key, into);
+  else into.add(prefix);
   return into;
 }
 
-const ENGLISH_KEYS = keysOf(LOCALES[FALLBACK_LANGUAGE]);
+function pluralForms(code: string): string[] {
+  const rules = new Intl.PluralRules(code);
+  return [...new Set(SAMPLES.map((n) => rules.select(n)))];
+}
 
-/** How much of English a language has translated, 0 to 100, rounded down so only a complete one says 100. */
-export function translatedPercent(code: string): number {
-  if (!LOCALES[code]) return 0;
-  const own = keysOf(LOCALES[code]);
+/**
+ * How much of `english` a language's `own` messages translate, 0 to 100, rounded down so only a complete one says 100.
+ * A counted word is there once it has every form the language's whole numbers take; a plain English key some
+ * languages count (they give it plural forms instead) is there with either.
+ */
+export function completeness(english: unknown, own: unknown, code: string): number {
+  const englishKeys = leaves(english);
+  const plurals = new Set([...englishKeys].filter((key) => PLURAL.test(key)).map((key) => key.replace(PLURAL, "")));
+  const plain = [...englishKeys].filter((key) => !PLURAL.test(key));
+  const ownKeys = leaves(own);
+  const ownPlurals = new Set([...ownKeys].filter((key) => PLURAL.test(key)).map((key) => key.replace(PLURAL, "")));
+  const forms = pluralForms(code);
   let found = 0;
-  for (const key of ENGLISH_KEYS) if (own.has(key)) found++;
-  return Math.floor((found / ENGLISH_KEYS.size) * 100);
+  for (const key of plain) if (ownKeys.has(key) || ownPlurals.has(key)) found++;
+  for (const base of plurals) if (forms.every((form) => ownKeys.has(`${base}_${form}`))) found++;
+  return Math.floor((found / (plain.length + plurals.size)) * 100);
+}
+
+/** How much of English a supported language has translated, 0 to 100. */
+export function translatedPercent(code: string): number {
+  return LOCALES[code] ? completeness(LOCALES[FALLBACK_LANGUAGE], LOCALES[code], code) : 0;
 }
 
 /** The flag file for a language code ("pt-BR" tries "pt-br", then "pt"), or null for one without a flag. */

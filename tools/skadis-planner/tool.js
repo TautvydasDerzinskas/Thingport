@@ -585,14 +585,23 @@ export function hardwareMarkers(plan, system) {
 // always say the same thing.
 
 
-/** A count's word in the user's language: `t()` picks the plural form, and an older Thingport, whose `t()` has none,
- *  gets the `.other` one rather than the key. */
-export const countWord = (t, key, count) => {
+/** A count's word in the user's language: `t()` picks the plural form, and on an older Thingport, whose `t()` has none,
+ *  the form is picked here instead, as `Intl.PluralRules` names it, then `.other`. */
+export const countWord = (t, key, count, language = "en") => {
   const word = t(key, { count });
-  return word === key ? t(`${key}.other`) : word;
+  if (word !== key) return word;
+  let form;
+  try {
+    form = new Intl.PluralRules(language).select(count);
+  } catch {
+    // A code Intl doesn't know counts as English does.
+    form = new Intl.PluralRules("en").select(count);
+  }
+  const chosen = t(`${key}.${form}`);
+  return chosen === `${key}.${form}` ? t(`${key}.other`) : chosen;
 };
 /** "1 board" / "4 boards", in the language's own plural forms. */
-export const plural = (t, count, key) => `${count} ${countWord(t, key, count)}`;
+export const plural = (t, count, key, language) => `${count} ${countWord(t, key, count, language)}`;
 const mm = (value) => `${Math.round(value)} mm`;
 /** "820 × 860 mm": the unit once, at the end, as a size is written. */
 const size = (a, b) => `${Math.round(a)} × ${Math.round(b)} mm`;
@@ -664,7 +673,7 @@ export const planTitle = (plan, t) => t("list.planTitle", { size: size(plan.widt
  * and the distance from the wall.
  */
 export function partListText(plan, context) {
-  const { printer, system, wallMm, strategy, t } = context;
+  const { printer, system, wallMm, strategy, t, language } = context;
   const steps = printOrder(plan, system, wallMm, t);
   const buy = toBuy(plan, system);
   const out = [];
@@ -690,7 +699,7 @@ export function partListText(plan, context) {
   );
   field(
     "list.boards",
-    `${plural(t, plan.boards.length, "list.boardWord")}, ` +
+    `${plural(t, plan.boards.length, "list.boardWord", language)}, ` +
       t("list.acrossDown", { across: plan.columns.length, down: plan.rows.length }),
   );
   field("list.printer", t("list.printerValue", { printer: t(printer.name), x: printer.x, y: printer.y }));
@@ -715,6 +724,7 @@ export function partListText(plan, context) {
         t,
         steps.reduce((total, step) => total + step.count, 0),
         "list.partWord",
+        language,
       ),
     })}`,
   );
@@ -746,12 +756,12 @@ export function partListText(plan, context) {
 
 /** The same thing, shortened for a model's description, which sits above a page rather than in a file. */
 export function describePlan(plan, context) {
-  const { printer, system, wallMm, strategy, t } = context;
+  const { printer, system, wallMm, strategy, t, language } = context;
   const steps = printOrder(plan, system, wallMm, t);
   const out = [];
   out.push(
     t("describe.summary", {
-      boards: plural(t, plan.boards.length, "list.boardWord"),
+      boards: plural(t, plan.boards.length, "list.boardWord", language),
       size: size(plan.widthMm, plan.heightMm),
       across: plan.columns.length,
       down: plan.rows.length,
@@ -1204,7 +1214,7 @@ const START = {
 };
 
 export default async function mount(thingport) {
-  const { root, theme, models, storage, ui, download, collections, t, labels } = thingport;
+  const { root, theme, models, storage, ui, download, collections, t, labels, language } = thingport;
   const shell = root.querySelector(".skp");
   const $ = (id) => root.querySelector(`#skp-${id}`);
 
@@ -1287,7 +1297,11 @@ export default async function mount(thingport) {
     clearTimeout(formTimer);
     formTimer = setTimeout(() => storage.set("form", form).catch(() => {}), 600);
   };
-  const keepProjects = () => storage.set("projects", projects.slice(0, PROJECT_LIMIT)).catch(() => {});
+  // One write at a time, each of the list as it is when its turn comes: a background stats write that started first
+  // can't land after a deletion and bring the project back.
+  let writing = Promise.resolve();
+  const keepProjects = () =>
+    (writing = writing.then(() => storage.set("projects", projects.slice(0, PROJECT_LIMIT)).catch(() => {})));
 
   /** The model this tool brought under that key, once Thingport has fetched it. */
   const broughtModel = (key) => brought.find((entry) => entry.key === key) ?? null;
@@ -1303,6 +1317,7 @@ export default async function mount(thingport) {
     wallMm: form.wallMm,
     strategy: strategy(),
     t,
+    language,
   });
 
   /** What the solver takes from a form: the open one, or a saved project's. */
@@ -1565,7 +1580,7 @@ export default async function mount(thingport) {
 
     into.innerHTML = `
       <ol class="skp-steps">${steps.map(stepRow).join("")}</ol>
-      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(plural(t, plan.boards.length, "list.boardWord"))}</b></div>
+      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(plural(t, plan.boards.length, "list.boardWord", language))}</b></div>
       ${
         buy.length
           ? `<h3 class="skp-sub">${escapeHtml(t("plan.buy"))}</h3><ul class="skp-buy">${buy
@@ -1594,7 +1609,7 @@ export default async function mount(thingport) {
     status.textContent = `${t("plan.covered", { width: Math.round(plan.coveredWidthMm), height: Math.round(plan.coveredHeightMm) })}${left}`;
     const summary = $("summary");
     summary.hidden = false;
-    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(countWord(t, "list.boardWord", plan.boards.length))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
+    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(countWord(t, "list.boardWord", plan.boards.length, language))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
   }
 
   function update() {
@@ -1653,7 +1668,7 @@ export default async function mount(thingport) {
   function projectSummary(project) {
     const { stats } = project;
     if (!stats) return project.summary ?? "";
-    return `${plural(t, stats.boards, "list.boardWord")}, ${stats.widthMm} × ${stats.heightMm} mm`;
+    return `${plural(t, stats.boards, "list.boardWord", language)}, ${stats.widthMm} × ${stats.heightMm} mm`;
   }
 
   // A project saved before the numbers were kept has only English words: its plan is solved again in the background,

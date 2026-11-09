@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LANGUAGE_FLAGS } from "./languageFlags";
 import {
+  completeness,
   languageFlagUrl,
   LOCALES,
   matchLanguage,
@@ -24,6 +25,19 @@ describe("language flags", () => {
     expect(languageFlagUrl("pt-BR")).toBe("/flags/BR.svg");
     expect(languageFlagUrl("lt-LT")).toBe("/flags/LT.svg");
     expect(languageFlagUrl("eo")).toBeNull();
+  });
+});
+
+describe("completeness", () => {
+  it("counts a counted word only once it has every form the language's whole numbers take", () => {
+    const english = { app: { title: "Title", models_one: "{{count}} model", models_other: "{{count}} models" } };
+    const spanish = { app: { title: "Título", models_one: "{{count}} modelo", models_other: "{{count}} modelos" } };
+    // Spanish says 1,000,000 with its many form.
+    expect(completeness(english, spanish, "es")).toBe(50);
+    expect(completeness(english, { app: { ...spanish.app, models_many: "{{count}} de modelos" } }, "es")).toBe(100);
+    // Lithuanian's many is for fractions only, so it isn't asked for.
+    const lithuanian = { app: { title: "Pavadinimas", models_one: "a", models_few: "b", models_other: "c" } };
+    expect(completeness(english, lithuanian, "lt")).toBe(100);
   });
 });
 

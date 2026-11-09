@@ -881,7 +881,7 @@ function moonMask(age) {
 }
 
 export default function mount(thingport) {
-  const { root, settings, theme, t } = thingport;
+  const { root, settings, theme, t, language } = thingport;
   const q = (c) => root.querySelector(c);
   const wx = q(".wx");
   const layer = {
@@ -902,15 +902,23 @@ export default function mount(thingport) {
   };
   const text = { temp: q(".wx-temp"), desc: q(".wx-desc"), place: q(".wx-place"), extra: q(".wx-extra") };
   const imperial = settings.units === "imperial";
-  /** The speed unit in the reader's language, in the form the number takes ("5 миль/год"). A Thingport instance whose
-   *  t() has no plural forms gets the .other one, and labels older than this script get the forecast's own unit. */
+  /** The speed unit in the reader's language, in the form the number takes ("5 миль/год"). On a Thingport instance
+   *  whose t() has no plural forms the form is picked here, then .other; labels older than this script get the
+   *  forecast's own unit. */
   const windUnit = (speed) => {
     const key = imperial ? "unit.mph" : "unit.kmh";
-    for (const [asked, word] of [
-      [key, t(key, { count: speed })],
-      [`${key}.other`, t(`${key}.other`)],
-    ])
-      if (word !== asked) return word;
+    const word = t(key, { count: speed });
+    if (word !== key) return word;
+    let form = "other";
+    try {
+      form = new Intl.PluralRules(language).select(speed);
+    } catch {
+      // A code Intl doesn't know: .other below.
+    }
+    for (const asked of [`${key}.${form}`, `${key}.other`]) {
+      const found = t(asked);
+      if (found !== asked) return found;
+    }
     return data?.current_units?.wind_speed_10m ?? (imperial ? "mph" : "km/h");
   };
   const shuffled = settings.landscape === "random";

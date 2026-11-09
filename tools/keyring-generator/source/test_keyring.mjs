@@ -453,6 +453,12 @@ await test("part counts take each language's own plural forms, 21 included", () 
     countWord((key) => STRINGS.en[key] ?? key, "bar.pieces", 3),
     "pieces",
   );
+  // There the tool picks the form: two pieces in Lithuanian are "dalys", not the other form's "dalių".
+  const older = (key) => STRINGS.lt[key] ?? STRINGS.en[key] ?? key;
+  assert.deepEqual(
+    [1, 2, 10, 21].map((count) => countWord(older, "bar.pieces", count, "lt")),
+    ["dalis", "dalys", "dalių", "dalis"],
+  );
 });
 
 // ---- the words ---------------------------------------------------------------------------------------------------

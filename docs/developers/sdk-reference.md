@@ -244,7 +244,7 @@ thingport.t(key: string, vars?: Record<string, unknown>): string
 
 The script's own words, from its `locales/<code>.json` labels, in the user's language. A missing word falls back to English key by key, and a key with no words anywhere comes back as itself, so the gap shows.
 
-A number as `count` picks the plural form: the label has a key per form, `<key>.one`, `.two`, `.few`, `.many` and `.other`, and each language gives the ones its own rules use (English `one` and `other`, Russian `one`, `few` and `many`), with `.other` standing in for a form it hasn't. Thingport before this returns the key itself, so a script that must run on one asks for `<key>.other` when it gets the key back.
+A number as `count` picks the plural form: the label has a key per form, `<key>.one`, `.two`, `.few`, `.many` and `.other`, and each language gives the ones its own rules use (English `one` and `other`, Russian `one`, `few`, `many` and `other`, the last for fractions such as 1.5), with `.other` standing in for a form it hasn't. Thingport before this returns the key itself: a script that must run on one picks the form there, as `Intl.PluralRules` names it, and asks for `<key>.<form>`, then `<key>.other`.
 
 | Parameter | What it is                                                                     |
 | --------- | ------------------------------------------------------------------------------ |

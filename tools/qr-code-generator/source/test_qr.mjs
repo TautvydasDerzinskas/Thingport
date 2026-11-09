@@ -70,6 +70,13 @@ same(
   "filaments",
   "a t() without plurals",
 );
+// There the tool picks the form: two filaments in Lithuanian are "siūlai", not the other form's "siūlų".
+const older = (key) => LOCALES.lt[key] ?? LOCALES.en[key] ?? key;
+same(
+  [1, 2, 10].map((count) => countWord(older, "bar.filaments", count, "lt")).join(" "),
+  "siūlas siūlai siūlų",
+  "Lithuanian filament counts on a t() without plurals",
+);
 
 // ---- the symbol ------------------------------------------------------------------------------------------------
 
