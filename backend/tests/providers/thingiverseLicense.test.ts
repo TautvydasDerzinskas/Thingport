@@ -128,7 +128,7 @@ describe("Thingiverse licences", () => {
           });
         }
         if (url === "https://www.thingiverse.com/thing:9002") {
-          // A Product without a licence first, then the page cut off before the one with it.
+          // Cut off after a Product without a licence: one with it could have come further on.
           const first = `<script type="application/ld+json">${JSON.stringify({ "@type": "Product", name: "x" })}</script>`;
           return new Response(`<html><head>${first}</head><body>${"x".repeat(IMPORT_HTML_MAX_BYTES)}</body></html>`, {
             headers: { "content-type": "text/html" },

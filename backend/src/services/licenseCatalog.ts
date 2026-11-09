@@ -362,9 +362,11 @@ export function licenseIdFromText(raw: string | null | undefined): string | null
   if (/standard digital file/.test(text)) return "sdfl";
   if (/\bcc0\b|cc zero|public domain dedication/.test(text)) return "CC0-1.0";
   if (/creative commons|\bcc[\s-]?by\b/.test(text)) {
-    // One at a version the catalogue doesn't have is no licence it knows, rather than the same one at 4.0.
-    if (/\b(?:1\.0|2\.0|2\.5)\b/.test(text) && !/\b(?:3|4)\.0\b/.test(text)) return null;
-    const version = /\b3\.0\b/.test(text) ? "3.0" : "4.0";
+    // The version is the first one it names, the licence's own: at one the catalogue doesn't have, it's no licence
+    // Thingport knows, rather than the same one at 4.0.
+    const named = text.match(/\b([1-4]\.[05])\b/)?.[1];
+    if (named && named !== "3.0" && named !== "4.0") return null;
+    const version = named === "3.0" ? "3.0" : "4.0";
     const parts = ["by"];
     if (/non[\s-]?commercial|\bnc\b/.test(text)) parts.push("nc");
     if (/no[\s-]?deriv|\bnd\b/.test(text)) parts.push("nd");

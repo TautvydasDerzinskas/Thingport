@@ -127,7 +127,10 @@ describe("the licence catalogue", () => {
     // At a version the catalogue doesn't have: none it knows, not the same one at 4.0.
     expect(licenseIdFromText("CC BY-SA 2.0")).toBeNull();
     expect(licenseIdFromText("Creative Commons Attribution 2.5 Generic")).toBeNull();
+    // The version is the licence's own, the first it names.
     expect(licenseIdFromText("CC BY 4.0, adapted from a 2.0 original")).toBe("CC-BY-4.0");
+    expect(licenseIdFromText("CC BY 2.0, adapted from a 4.0 original")).toBeNull();
+    expect(licenseIdFromText("CC BY-NC 3.0, since 4.0 came out")).toBe("CC-BY-NC-3.0");
     expect(licenseIdFromText("My own terms")).toBeNull();
   });
 
