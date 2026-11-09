@@ -81,6 +81,7 @@ describe("Creality Cloud licences", () => {
     for (const license of [undefined, null, "", 4]) expect(crealitycloudLicenseFrom({ license })).toBeNull();
     // One not mapped: read off its name if it can be, else kept as one Thingport doesn't know.
     expect(crealitycloudLicenseFrom({ license: "CC BY 3.0" })).toEqual({ id: "CC-BY-3.0", raw: "CC BY 3.0" });
+    expect(crealitycloudLicenseFrom({ license: "CC BY 2.0" })).toEqual({ id: null, raw: "CC BY 2.0" });
     expect(crealitycloudLicenseFrom({ license: "CXY-PRO" })).toEqual({ id: null, raw: "CXY-PRO" });
     expect(crealitycloudLicenseFrom({ license: " cc  by-nc " })?.id).toBe("CC-BY-NC-4.0");
   });

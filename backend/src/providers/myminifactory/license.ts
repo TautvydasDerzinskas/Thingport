@@ -11,6 +11,8 @@ import {
 
 type Flags = Map<string, boolean>;
 
+const CC_NAME = /^(?:CC[\s_-]*)?BY(?:[\s_-]+(?:NC|ND|SA))*(?![A-Za-z])|creative commons/i;
+
 function flagsOf(value: unknown): Flags {
   const flags: Flags = new Map();
   if (!Array.isArray(value)) return flags;
@@ -66,6 +68,8 @@ export function myminifactoryLicenseFrom(
     return { id: "all-rights-reserved", raw, label: name };
   const cc = name ? ccId(name) : null;
   if (cc) return { id: cc, raw };
+  // A Creative Commons licence the catalogue doesn't have, at an older version: kept by its name, allowing nothing.
+  if (name && !/myminifactory/i.test(name) && CC_NAME.test(name)) return { id: null, raw, label: name };
   const credit = flags.has("mention") ? flags.get("mention")! : /\bcredit\b/i.test(name ?? "");
   return {
     id: "myminifactory",

@@ -41,7 +41,8 @@ export async function readThingiverseLicense(
   }
   const { buffer, truncated } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
   const license = thingiverseLicenseFromPage(buffer.toString("utf-8"));
-  if (license === undefined && truncated) throw new Error("Thingiverse's page was cut off before its licence");
+  // Cut off, a page may hold the licence past where it was read: anything short of one is a read that failed.
+  if (!license && truncated) throw new Error("Thingiverse's page was cut off before its licence");
   // A page without the Thing's data, answered 200, is a Thing it doesn't have, or a page that changed: read again later.
   return license;
 }

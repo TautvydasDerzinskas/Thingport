@@ -79,6 +79,12 @@ describe("MyMiniFactory licences", () => {
     expect(myminifactoryLicenseFrom({ license: "BY-NC 3.0", licenses: [] })?.id).toBe("CC-BY-NC-3.0");
     expect(myminifactoryLicenseFrom({ license: "BY-NC 4.0", licenses: [] })?.id).toBe("CC-BY-NC-4.0");
     expect(myminifactoryLicenseFrom({ license: "BY-NC", licenses: [] })?.id).toBe("CC-BY-NC-4.0");
+    // A version the catalogue doesn't have is kept by its name, not taken for 4.0.
+    expect(myminifactoryLicenseFrom({ license: "CC BY-SA 2.0", licenses: [] })).toEqual({
+      id: null,
+      raw: "CC BY-SA 2.0",
+      label: "CC BY-SA 2.0",
+    });
   });
 
   it("puts a paid object under the store's licence, and official content under all rights reserved", () => {

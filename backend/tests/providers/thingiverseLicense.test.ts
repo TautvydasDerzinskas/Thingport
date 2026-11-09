@@ -127,6 +127,13 @@ describe("Thingiverse licences", () => {
             headers: { "content-type": "text/html" },
           });
         }
+        if (url === "https://www.thingiverse.com/thing:9002") {
+          // A Product without a licence first, then the page cut off before the one with it.
+          const first = `<script type="application/ld+json">${JSON.stringify({ "@type": "Product", name: "x" })}</script>`;
+          return new Response(`<html><head>${first}</head><body>${"x".repeat(IMPORT_HTML_MAX_BYTES)}</body></html>`, {
+            headers: { "content-type": "text/html" },
+          });
+        }
         if (url === "https://www.thingiverse.com/thing:9001") {
           return new Response(`<html><body>${"x".repeat(IMPORT_HTML_MAX_BYTES + 1024)}</body></html>`, {
             headers: { "content-type": "text/html" },
@@ -149,6 +156,7 @@ describe("Thingiverse licences", () => {
     expect(await readThingiverseLicense("user-1", "9000", { notes: null })).toBeUndefined();
     // One cut off before its data is a read that failed.
     await expect(readThingiverseLicense("user-1", "9001", { notes: null })).rejects.toThrow(/cut off/);
+    await expect(readThingiverseLicense("user-1", "9002", { notes: null })).rejects.toThrow(/cut off/);
     await expect(readThingiverseLicense("user-1", "1015238", { notes: null })).rejects.toThrow(/Cloudflare/);
   });
 });

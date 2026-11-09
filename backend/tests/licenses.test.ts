@@ -124,6 +124,10 @@ describe("the licence catalogue", () => {
     expect(licenseIdFromText("Standard_Digital_File_License.txt")).toBe("sdfl");
     expect(licenseIdFromText("MIT License.txt")).toBe("MIT");
     expect(licenseIdFromText("Creative Commons")).toBeNull();
+    // At a version the catalogue doesn't have: none it knows, not the same one at 4.0.
+    expect(licenseIdFromText("CC BY-SA 2.0")).toBeNull();
+    expect(licenseIdFromText("Creative Commons Attribution 2.5 Generic")).toBeNull();
+    expect(licenseIdFromText("CC BY 4.0, adapted from a 2.0 original")).toBe("CC-BY-4.0");
     expect(licenseIdFromText("My own terms")).toBeNull();
   });
 
