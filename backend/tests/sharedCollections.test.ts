@@ -329,6 +329,58 @@ describe("a collection shared with picked people", () => {
     }
   });
 
+  it("is made shared all the same when someone on its list is deleted as it's saved", async () => {
+    const dana = await register("Dana");
+    const listed = (
+      await request(app)
+        .post("/api/collections")
+        .set(auth(alex))
+        .send({ name: `Listed ${RUN}` })
+    ).body.id as string;
+    const patch = (body: Record<string, unknown>) =>
+      request(app).patch(`/api/collection/${listed}/sharing`).set(auth(alex)).send(body);
+    // On its list while it's private, so making it shared tells them.
+    expect((await patch({ add_user_ids: [dana.id, carl.id] })).status).toBe(200);
+    // Dana's account being deleted as it's made shared.
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let changed!: () => void;
+    const changing = new Promise<void>((resolve) => (changed = resolve));
+    let holder = 0;
+    const deleting = prisma
+      .$transaction(
+        async (tx) => {
+          holder = await sessionOf(tx);
+          await tx.user.delete({ where: { id: dana.id } });
+          changed();
+          await released;
+        },
+        { timeout: 20_000 },
+      )
+      .catch(() => {});
+    try {
+      await changing;
+      const saving = patch({ visibility: "shared" }).then((res) => res);
+      try {
+        await blockedBy(holder);
+      } finally {
+        release();
+        await deleting;
+      }
+      const res = await saving;
+      expect(res.status).toBe(200);
+      expect(res.body.visibility).toBe("shared");
+      expect(
+        await prisma.notification.count({
+          where: { userId: carl.id, type: "share", internalPath: `/explore/collections/${listed}` },
+        }),
+      ).toBe(1);
+    } finally {
+      release();
+      await request(app).delete(`/api/collection/${listed}`).set(auth(alex));
+    }
+  });
+
   it("is refused, with nobody told, when social features are turned off as it's shared", async () => {
     const quiet = (
       await request(app)

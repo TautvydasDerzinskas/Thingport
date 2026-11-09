@@ -624,10 +624,11 @@ async function store(
   });
 }
 
-/** Holds `peerId`'s kept collections and models for `tx`: shared while a read of a collection as shared keeps one
- *  (several may at once), alone while the index is written or what no collection holds any more is pruned, or a
- *  collection is let go of. So each sees what the others wrote: a model another collection is being given meanwhile
- *  isn't taken, nor a collection being let go of brought back. Taken first, before any row. */
+/** Holds `peerId`'s kept collections and models for `tx`: shared while a read of a collection as shared keeps one, or
+ *  one is let go of (several may at once, each of a different collection, one at a time apiece); alone while the
+ *  index is written or what no collection holds any more is pruned. So those see what the others wrote: a model
+ *  another collection is being given meanwhile isn't taken, nor a collection or model let go of brought back. Taken
+ *  first, before any row. */
 export async function holdRemoteModels(tx: Prisma.TransactionClient, peerId: string, alone = false): Promise<void> {
   if (alone) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('remote-models'), hashtext(${peerId}))`;
   else await tx.$executeRaw`SELECT pg_advisory_xact_lock_shared(hashtext('remote-models'), hashtext(${peerId}))`;
@@ -641,6 +642,13 @@ async function storeIn(
   askedFrom: Date,
 ): Promise<void> {
   await holdRemoteModels(tx, peer.id, true);
+  // What's been let go of, and as of when (sharedCollections.ts): fixed while this holds the lock.
+  const goneAt = new Map(
+    (await tx.remoteGone.findMany({ where: { peerId: peer.id }, select: { apId: true, at: true } })).map((row) => [
+      row.apId,
+      row.at,
+    ]),
+  );
   // Every row written now is marked with it: what's left unmarked is what the partner no longer shares, found without
   // listing what it does (a big partner's ids would pass what one query may take).
   const readAt = new Date();
@@ -695,6 +703,9 @@ async function storeIn(
           data: modelData,
         });
       if (!(await write()).count) {
+        // Let go of since this was asked for, kept only for a collection shared with people here: not brought back.
+        const gone = goneAt.get(model.id);
+        if (gone && gone >= model.fetchedAt) continue;
         const made = await tx.remoteModel.createMany({
           data: { apId: model.id, ...modelData },
           skipDuplicates: true,
@@ -735,8 +746,8 @@ async function storeIn(
         });
       if (!(await write()).count) {
         // Withdrawn by its owner's instance since this was asked for, once shared with people here: not brought back.
-        const gone = await tx.remoteCollectionGone.findUnique({ where: { apId: collection.id } });
-        if (gone && gone.at >= collection.fetchedAt) continue;
+        const gone = goneAt.get(collection.id);
+        if (gone && gone >= collection.fetchedAt) continue;
         await tx.remoteCollection.createMany({
           data: { apId: collection.id, ...collectionData, modelApIds },
           skipDuplicates: true,
@@ -747,7 +758,7 @@ async function storeIn(
     }
   }
   // Withdrawn before this read began: no read still to come was asked for before that.
-  await tx.remoteCollectionGone.deleteMany({ where: { peerId: peer.id, at: { lt: askedFrom } } });
+  await tx.remoteGone.deleteMany({ where: { peerId: peer.id, at: { lt: askedFrom } } });
   // One that was shared with some people here and is public there now is for everyone: nobody's its viewer.
   await tx.remoteCollectionViewer.deleteMany({ where: { collection: { peerId: peer.id, limited: false } } });
   // Whatever it no longer shares goes, except what was sent to people here rather than listed: a collection shared

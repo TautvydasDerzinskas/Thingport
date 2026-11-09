@@ -100,7 +100,8 @@ async function mediaServed(kind: string, id: string, peer: { id: string }): Prom
 // The stand-in for the owner's instance: what it answers for its collections, people and models.
 const docs = new Map<string, unknown>();
 const people = new Map<string, unknown>();
-// Answers held until a test lets them go (`hold`), by a collection's id, "directory", "ruta-models" or "ruta-collections"; what /api/ap/shared
+// Answers held until a test lets them go (`hold`), by a collection's id (`<id>/items` for its models), "directory",
+// "ruta-models" or "ruta-collections"; what /api/ap/shared
 // lists, on its first page and its second, or that it fails; Rūta's public collections; how often a person was asked,
 // and which collections were.
 const gates = new Map<string, { reached: () => void; open: Promise<void> }>();
@@ -171,21 +172,23 @@ beforeAll(async () => {
       res.status(404).json({ error: "Not found" });
       return;
     }
-    res.json({
-      next: req.params.id === "partial" ? `${PARTNER}/api/ap/collections/partial/items?after=1` : undefined,
-      type: "OrderedCollectionPage",
-      // "c26b" holds c26a's models, as said of them later.
-      orderedItems: [1, 2].map((n) => ({
-        id: `${PARTNER}/api/ap/models/${req.params.id === "c26b" ? "c26a" : req.params.id}-m${n}`,
-        type: "thingport:Model",
-        name: req.params.id === "c26b" ? `Later hook ${n}` : `Hook ${n}`,
-        // What's said of c17's only to those it's shared with.
-        source: req.params.id === "c17" ? { content: "Only shared" } : undefined,
-        attributedTo: `${PARTNER}/api/ap/actors/ruta`,
-        image: [],
-        attachment: [],
-      })),
-    });
+    afterGate(`${req.params.id}/items`, () =>
+      res.json({
+        next: req.params.id === "partial" ? `${PARTNER}/api/ap/collections/partial/items?after=1` : undefined,
+        type: "OrderedCollectionPage",
+        // "c26b" holds c26a's models, as said of them later.
+        orderedItems: [1, 2].map((n) => ({
+          id: `${PARTNER}/api/ap/models/${req.params.id === "c26b" ? "c26a" : req.params.id}-m${n}`,
+          type: "thingport:Model",
+          name: req.params.id === "c26b" ? `Later hook ${n}` : `Hook ${n}`,
+          // What's said of c17's only to those it's shared with.
+          source: req.params.id === "c17" ? { content: "Only shared" } : undefined,
+          attributedTo: `${PARTNER}/api/ap/actors/ruta`,
+          image: [],
+          attachment: [],
+        })),
+      }),
+    );
   });
   // It shares nothing openly unless a test lists someone: what it shared with people here is all there is.
   stand.get("/api/ap/directory", (_req, res) => {
@@ -737,6 +740,32 @@ describe("a partner's person sharing a collection with people here", () => {
     expect((await request(app).get("/api/explore/elsewhere/shared").set(auth(carl))).body).toEqual([]);
   });
 
+  it("reaches what partners' people shared past Explore's first 48", async () => {
+    const many = Array.from({ length: 49 }, (_, n) => apId(`many-${n}`));
+    const rows = await prisma.remoteCollection.createManyAndReturn({
+      data: many.map((url) => ({ apId: url, peerId: partnerId, personId: rutaId, name: "Many", limited: true })),
+    });
+    try {
+      await prisma.remoteCollectionViewer.createMany({
+        data: rows.map((row) => ({ collectionId: row.id, userId: bea.id })),
+      });
+      const overview = await request(app).get("/api/explore").set(auth(bea));
+      const total = overview.body.elsewhere.shared_with_you_total as number;
+      expect(total).toBeGreaterThan(48);
+      expect(overview.body.elsewhere.shared_with_you).toHaveLength(48);
+      const rest = await request(app).get("/api/explore/elsewhere/shared?limit=24&offset=48").set(auth(bea));
+      expect(rest.headers["x-total-count"]).toBe(String(total));
+      expect(rest.body).toHaveLength(Math.min(24, total - 48));
+      const first = new Set(overview.body.elsewhere.shared_with_you.map((item: { id: string }) => item.id));
+      for (const item of rest.body) {
+        expect(first.has(item.id)).toBe(false);
+        expect(Date.parse(item.shared_at)).toBeGreaterThan(0);
+      }
+    } finally {
+      await prisma.remoteCollection.deleteMany({ where: { apId: { in: many } } });
+    }
+  });
+
   it("opens, with its models and files, for them alone", async () => {
     expect(await remoteCollection(keptId, 30, 0, bea.id)).toMatchObject({ total: 2 });
     expect(await remoteCollection(keptId, 30, 0, carl.id)).toBeNull();
@@ -1243,7 +1272,8 @@ describe("a partner's person sharing a collection with people here", () => {
   it("leaves a model as a read of another collection holding it wrote it, asked for in the same millisecond but later", async () => {
     docs.set("c26a", doc("c26a", [actor(bea.id)]));
     docs.set("c26b", doc("c26b", [actor(bea.id)]));
-    const held = hold("c26a");
+    // Its models' page, which is what they're timed by.
+    const held = hold("c26a/items");
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date());
     try {
@@ -1486,6 +1516,84 @@ describe("a partner's person sharing a collection with people here", () => {
       openCollections.length = 0;
     }
     expect(await prisma.remoteCollection.count({ where: { apId: apId("c33") } })).toBe(0);
+  });
+
+  /** Rūta in the directory with her models, `model` among them, shared openly there as the index asks. */
+  async function sharesOpenly(model: string): Promise<void> {
+    const ruta = await prisma.remotePerson.findUniqueOrThrow({ where: { id: rutaId } });
+    directoryPeople.push({
+      id: ruta.apId,
+      type: "Person",
+      name: "Ruta",
+      preferredUsername: "ruta",
+      "thingport:models": `${PARTNER}/api/ap/actors/ruta/models`,
+    });
+    openModels.push({
+      id: model,
+      type: "thingport:Model",
+      name: "Hook 1",
+      attributedTo: ruta.apId,
+      image: [],
+      attachment: [],
+    });
+  }
+
+  it("keeps a model shared only whose page was asked for after the index's, though its collection was asked for before", async () => {
+    const model = `${PARTNER}/api/ap/models/c36-m1`;
+    await sharesOpenly(model);
+    docs.set("c36", doc("c36", [actor(bea.id)]));
+    const asked = hold("c36");
+    const models = hold("ruta-models");
+    try {
+      // Its collection asked for first; then the index asks for her models; then its models' page is asked for.
+      const reading = sharedCollectionFrom(actorOf(PARTNER), apId("c36"));
+      await asked.reached;
+      const syncing = syncPeer(partnerId);
+      await models.reached;
+      asked.open();
+      await reading;
+      models.open();
+      await syncing;
+    } finally {
+      asked.open();
+      models.open();
+      directoryPeople.length = 0;
+      openModels.length = 0;
+    }
+    const kept = await prisma.remoteModel.findUniqueOrThrow({ where: { apId: model } });
+    expect(kept.limited).toBe(true);
+    expect(await remoteModel(kept.id, carl.id)).toBeNull();
+  });
+
+  it("isn't brought back as public by a read of the index asked for before the collection holding it went", async () => {
+    const model = `${PARTNER}/api/ap/models/c37-m1`;
+    await sharesOpenly(model);
+    const models = hold("ruta-models");
+    try {
+      // The index asks for her models; the model's then read as shared, and its collection let go of, before that's
+      // stored.
+      const syncing = syncPeer(partnerId);
+      await models.reached;
+      docs.set("c37", doc("c37", [actor(bea.id)]));
+      await sharedCollectionFrom(actorOf(PARTNER), apId("c37"));
+      expect(await sharedCollectionGoneFrom(actorOf(PARTNER), apId("c37"))).toBe(true);
+      expect(await prisma.remoteModel.count({ where: { apId: model } })).toBe(0);
+      models.open();
+      await syncing;
+    } finally {
+      models.open();
+      directoryPeople.length = 0;
+      openModels.length = 0;
+    }
+    expect(await prisma.remoteModel.count({ where: { apId: model } })).toBe(0);
+  });
+
+  it("isn't let go of, nor noted gone, on another partner's Delete of it", async () => {
+    docs.set("c38", doc("c38", [actor(bea.id)]));
+    await sharedCollectionFrom(actorOf(PARTNER), apId("c38"));
+    expect(await sharedCollectionGoneFrom(actorOf(OTHER), apId("c38"))).toBe(false);
+    expect(await prisma.remoteGone.count({ where: { apId: apId("c38") } })).toBe(0);
+    expect(await prisma.remoteCollection.count({ where: { apId: apId("c38") } })).toBe(1);
   });
 
   // Last: it forgets everything of the partner's.

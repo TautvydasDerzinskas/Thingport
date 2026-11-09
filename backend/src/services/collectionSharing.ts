@@ -217,8 +217,7 @@ async function gainedBy(
 
 /** Tells each person who can see `after` now and couldn't before, in `tx`, the change's own transaction, holding the
  *  social setting until it's kept: so they're told exactly when it's kept, and turning social features off waits for
- *  it. Nobody while they're off, when they can't open it, and false then. Everyone told has a row the change holds
- *  (their place on its list), so telling them can't fail it. */
+ *  it. Nobody while they're off, when they can't open it, and false then. */
 export async function tellGained(
   tx: Prisma.TransactionClient,
   before: Collection,
@@ -226,7 +225,12 @@ export async function tellGained(
   added: string[] = [],
 ): Promise<boolean> {
   if (!(await holdSocialSettings(tx)).enabled) return false;
-  const userIds = (await gainedBy(tx, before, after, added)).filter((id) => id !== after.userId);
+  const gained = (await gainedBy(tx, before, after, added)).filter((id) => id !== after.userId);
+  if (!gained.length) return true;
+  // Held from going until it's kept: one whose account is deleted meanwhile is left out, not the change failed.
+  const userIds = (
+    await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "User" WHERE id = ANY(${gained}::text[]) FOR KEY SHARE`
+  ).map((user) => user.id);
   if (!userIds.length) return true;
   const owner = await tx.user.findUnique({ where: { id: after.userId }, select: { displayName: true } });
   const title = `${owner?.displayName ?? "Someone"} shared “${after.name}” with you`;

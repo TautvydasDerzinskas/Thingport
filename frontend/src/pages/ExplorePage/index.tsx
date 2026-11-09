@@ -316,11 +316,15 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
       if (asked !== sharedAsk.current) return;
       const known = new Set(sharedWithYou.map((collection) => collection.id));
       const knownElsewhere = new Set(sharedElsewhere.map((collection) => collection.id));
-      // Something shared since Explore loaded moved the ranking under its pages: start again from the top, unless
-      // Explore is being loaded already (another scope picked), which starts them again itself.
+      // Something shared since Explore loaded moved the ranking under its pages, or something unshared did (a page
+      // from an offset past it would skip one): start again from the top, unless Explore is being loaded already
+      // (another scope picked), which starts them again itself.
+      const fewer = (total: number | null, before: number) => total !== null && total < before;
       if (
         page.items.some((collection) => known.has(collection.id)) ||
-        remote.items.some((collection) => knownElsewhere.has(collection.id))
+        remote.items.some((collection) => knownElsewhere.has(collection.id)) ||
+        fewer(page.total, sharedTotal) ||
+        fewer(remote.total, elsewhereTotal)
       ) {
         if (loadingOverview.current) return;
         const again = ++latest.current;
@@ -333,7 +337,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
         }
         return;
       }
-      // The total as it is now: one unshared meanwhile leaves no button asking for it again.
+      // The totals as they are now.
       if (page.total !== null) setMoreShared((prev) => ({ items: [...prev.items, ...page.items], total: page.total }));
       if (remote.total !== null) {
         setMoreElsewhere((prev) => ({ items: [...prev.items, ...remote.items], total: remote.total }));
