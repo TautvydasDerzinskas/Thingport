@@ -30,6 +30,11 @@ Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next won't open a link from 
 [Thingport Bridge](../../bridge/README.md) is a small helper app for Windows, macOS and Linux that takes the link from
 Thingport and opens the file in the slicer. Download it from Thingport's **Downloads** page.
 
+For Creality Print, the normal action uses its native URL handler. If it fails to import a model
+from your self-hosted HTTPS address, use the arrow next to **Open in Creality Print** and choose
+**Open in Creality Print (Thingport Bridge)**. This downloads the file locally before opening it.
+Install Bridge first. The native action remains available for users without Bridge.
+
 ## Models generated in colour
 
 A model generated in colour from its script, in the [customizer](supporting-files.md#models-you-can-generate-again)
