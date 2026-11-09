@@ -1,6 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"log"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,10 +44,48 @@ func TestRedactURLHidesTokenPathValue(t *testing.T) {
 	}
 }
 
+func TestRedactURLHidesAllSignedPathTokens(t *testing.T) {
+	redacted := redactURL("https://thingport.example/api/t/first-jwt/api/t/second-jwt/file/model.stl?token=query-jwt")
+	for _, secret := range []string{"first-jwt", "second-jwt", "query-jwt"} {
+		if strings.Contains(redacted, secret) {
+			t.Fatalf("redacted URL still includes a credential %q: %s", secret, redacted)
+		}
+	}
+	if strings.Count(redacted, "/api/t/REDACTED/") != 2 {
+		t.Fatalf("expected both signed path segments to be redacted: %s", redacted)
+	}
+}
+
 func TestDownloadFileDoesNotExposeTokenInError(t *testing.T) {
 	err := downloadFile("https://%zz/api/t/secret-jwt/model.stl", filepath.Join(t.TempDir(), "model.stl"))
 	if err == nil || strings.Contains(err.Error(), "secret-jwt") {
 		t.Fatalf("downloadFile error included session token: %v", err)
+	}
+}
+
+func TestDownloadTLSErrorDoesNotLeakSignedURL(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	const token = "secret-jwt-for-a-valid-url"
+	downloadURL := server.URL + "/api/t/" + token + "/file/model.stl"
+	var logs bytes.Buffer
+	oldLog := log.Writer()
+	log.SetOutput(&logs)
+	defer log.SetOutput(oldLog)
+
+	protocolURL := "thingport://open?url=" + url.QueryEscape(downloadURL) + "&slicer=crealityprintlink&filename=model.stl"
+	err := handleProtocol(protocolURL, Config{DownloadDir: t.TempDir()})
+	if err == nil {
+		t.Fatal("expected TLS verification failure")
+	}
+	if !strings.Contains(err.Error(), "TLS") {
+		t.Fatalf("expected a safe TLS failure category, got %v", err)
+	}
+	if strings.Contains(err.Error(), token) || strings.Contains(logs.String(), token) {
+		t.Fatalf("signed URL credential leaked in error or log: error=%v logs=%q", err, logs.String())
 	}
 }
 
