@@ -27,6 +27,8 @@ The filter button at the top of the Models page, after the sort order, narrows t
 - **Sources** has a chip for every site your library has models from, with its logo and how many, and **Thingport** for
   the ones you added yourself. Click a chip to hide that site's models, and again to bring them back; **All sites**
   shows every one again.
+- **Licence allows** lists only the models whose [licence](licenses.md#filter-by-what-it-allows) allows what's
+  switched on: **Can be shared**, **Commercial use**, **Remixing**, and **Only with a licence**.
 
 A badge on the button counts the filters in use. Filters are kept in the page's address, so a filtered list can be
 bookmarked. What's kept is the sites you hid, so models from a site new to your library still show.

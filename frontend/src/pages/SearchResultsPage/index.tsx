@@ -58,7 +58,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       : "relevance";
 
   const filters = useModelFilters();
-  const { generative, hiddenProviders } = filters;
+  const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
 
   const setSortMode = (mode: PrintSortMode) => {
@@ -106,6 +106,8 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
           q: query,
           generative: generative || undefined,
           hide_providers: hiddenProviders,
+          license_allows: licenseAllows,
+          licensed: licensed || undefined,
           order_by: sortMode,
           limit: quiet ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
           offset: 0,
@@ -125,7 +127,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, sortMode, generative, hiddenProviders, finishedVersion]);
+  }, [query, sortMode, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !query) return;
@@ -136,6 +138,8 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
         q: query,
         generative: generative || undefined,
         hide_providers: hiddenProviders,
+        license_allows: licenseAllows,
+        licensed: licensed || undefined,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,

@@ -13,7 +13,9 @@ export async function upsertAuthorFromImport(info: ImportedAuthorInfo | null): P
   if (!info) return null;
   const id = buildAuthorId(info.provider, info.externalId);
   let author: Author;
+  let before: Pick<Author, "name" | "handle"> | null = null;
   try {
+    before = await prisma.author.findUnique({ where: { id }, select: { name: true, handle: true } });
     author = await prisma.author.upsert({
       where: { id },
       create: {
@@ -44,9 +46,19 @@ export async function upsertAuthorFromImport(info: ImportedAuthorInfo | null): P
   } catch {
     return null;
   }
-  await linkUnattributedPrints(author.id).catch((err) =>
-    console.error("Couldn't link earlier imports to their author", err),
-  );
+  const linked = await linkUnattributedPrints(author.id).catch((err) => {
+    console.error("Couldn't link earlier imports to their author", err);
+    return 0;
+  });
+  // LICENSE.txt names the author: their models' files follow a new name, and models just linked to them, before the
+  // import goes on. A name rarely changes, so this is rarely more than a few small files.
+  const renamed = before && (before.name !== author.name || before.handle !== author.handle);
+  if (renamed || linked > 0) {
+    const { syncAuthorLicenseFiles } = await import("./licenseFile");
+    await syncAuthorLicenseFiles(author.id).catch((err) =>
+      console.error("Couldn't rewrite the author's LICENSE.txt files", err),
+    );
+  }
   return author;
 }
 

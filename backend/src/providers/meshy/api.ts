@@ -5,6 +5,7 @@ import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/im
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import { mapWithConcurrency, sleep } from "../../utils/concurrency";
+import { meshyPostLicense, meshyTaskLicense } from "./license";
 import manifest from "./manifest.generated";
 import {
   meshyCollectionUrl,
@@ -338,6 +339,7 @@ export async function resolveMeshyPost(postId: string): Promise<MeshyModelResolu
         ? post.categories.flatMap((name) => (asText(name) ? [categorySlug(asText(name)!)] : []))
         : [],
       categorySite: PROVIDER,
+      license: meshyPostLicense(models),
     },
   };
 }
@@ -402,6 +404,8 @@ export async function resolveMeshyTask(
       author,
       siteCategoryIds: [],
       categorySite: PROVIDER,
+      // Left unread where the task has no such field at all, rather than taken as none.
+      ...("license" in task ? { license: meshyTaskLicense(task.license) } : {}),
     },
   };
 }

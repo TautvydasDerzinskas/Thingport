@@ -35,6 +35,7 @@ import { enqueueAiDescription } from "./aiDescriptionService";
 import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
 import { authorIdByName } from "./authorService";
+import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -77,6 +78,9 @@ export type PrintMetaInput = {
   originalId?: string | null;
   /** A copy of a partner instance's model: where it came from (federation/remoteCopy.ts). */
   remoteSource?: Prisma.InputJsonValue | null;
+  /** Its licence's columns (services/licenseService.ts): what an import read, or what a copy carries over. Absent on an
+   *  import that didn't look, whose licence is then read once it has settled. */
+  licenseColumns?: Partial<Pick<Prisma.PrintUncheckedCreateInput, "license" | "licenseAllows" | "licenseReadAt">>;
 };
 
 /** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
@@ -313,6 +317,7 @@ export async function createPrint(
       copiedFromId: meta.copiedFromId ?? null,
       originalId: meta.originalId ?? null,
       remoteSource: meta.remoteSource ?? undefined,
+      ...meta.licenseColumns,
     },
   });
   // Chosen now, though nothing is in it yet, so a null assetsPath only ever means a model from before (see
@@ -343,6 +348,9 @@ export async function createPrint(
     }
 
     await keepGeneratorScripts(userId, print.id, sourceInputs);
+    // Once the files are in place, so LICENSE.txt lands in the folder they chose.
+    if (meta.licenseColumns?.licenseReadAt) await afterLicenseChange(print.id);
+    else if (print.sourceProvider) scheduleLicenseFill(print.id);
 
     // Background classification is intentionally detached: importing a model must not wait for,
     // or fail because of, a third-party AI provider.

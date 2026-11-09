@@ -1692,6 +1692,16 @@
           "failed": "Impossible de lancer la vérification. Veuillez réessayer."
         }
       },
+      "licenseFiles": {
+        "heading": "Fichiers de licence",
+        "subtitle": "Garder la licence de chaque modèle à côté de ses fichiers.",
+        "label": "Écrire LICENSE.txt à côté des fichiers du modèle",
+        "help": "Pour chaque modèle sous licence, Thingport garde un LICENSE.txt dans son dossier : qui l'a créé, d'où il vient, sa licence et ce qu'elle permet, et une ligne d'attribution. Il est réécrit quand la licence change, et suit le modèle quand il est déplacé ou supprimé. Désactiver l'option les supprime ; les téléchargements ZIP en contiennent un dans tous les cas.",
+        "on": "Le dossier de chaque modèle sous licence contient son LICENSE.txt.",
+        "off": "Aucun LICENSE.txt n'est écrit ; les téléchargements ZIP en contiennent toujours un.",
+        "failed": "Impossible d'enregistrer le réglage LICENSE.txt. Réessayez.",
+        "loadFailed": "Impossible de charger le réglage LICENSE.txt."
+      },
       "consume": {
         "heading": "Dossier d’importation automatique",
         "subtitle": "Importe tout ce qui est déposé dans un dossier surveillé : fichiers, structures de dossiers et archives ZIP.",
@@ -2120,6 +2130,7 @@
           "api_token_mcp_tools_changed": "A modifié les outils MCP de son jeton d'API",
           "api_token_rest_scopes_changed": "A modifié les autorisations de son jeton d'API",
           "file_reuse_changed": "A modifié le stockage des fichiers identiques",
+          "license_files_changed": "A modifié l'écriture des fichiers LICENSE.txt",
           "file_reuse_backfill_started": "A commencé à vérifier les fichiers stockés au contenu identique",
           "custom_widgets_changed": "A modifié les widgets personnalisés autorisés",
           "tool_installed": "Outil installé",
@@ -2164,6 +2175,8 @@
         "socialOff": "Désactivées",
         "federationOn": "Activées",
         "federationOff": "Désactivées",
+        "licenseFilesOn": "Activés",
+        "licenseFilesOff": "Désactivés",
         "chatsOn": "Discussions activées",
         "chatsOff": "Discussions désactivées"
       },
@@ -2250,6 +2263,7 @@
         "kind": {
           "plate": "Fichier du modèle",
           "file": "Fichier annexe",
+          "license": "Licence",
           "image": "Image",
           "description": "Image de la description",
           "thumb": "Miniature",
@@ -5951,7 +5965,65 @@
       "noSources": "Rien d'importé pour l'instant, il n'y a donc aucun site parmi lesquels choisir.",
       "noneSelected": "Aucun site n'est activé, il n'y a donc rien à afficher.",
       "noMatch": "Aucun modèle ici ne correspond aux filtres.",
-      "clear": "Effacer les filtres"
+      "clear": "Effacer les filtres",
+      "licenseAllows": "La licence permet",
+      "allowsShare": "Peut être partagé",
+      "allowsShareHint": "Uniquement les modèles dont la licence permet de transmettre les fichiers à d'autres, sans modification. Les licences d'usage personnel des sites ne le permettent généralement pas.",
+      "allowsCommercial": "Usage commercial",
+      "allowsCommercialHint": "Uniquement les modèles dont la licence permet un usage commercial, vente d'impressions comprise.",
+      "allowsRemix": "Remix",
+      "allowsRemixHint": "Uniquement les modèles dont la licence permet de les modifier.",
+      "licensed": "Uniquement avec une licence",
+      "licensedHint": "Exclure les modèles dont la source n'indique pas la licence."
+    },
+    "license": {
+      "title": "Licence",
+      "notStated": "Non indiquée par {{site}}",
+      "reading": "Lecture de la licence",
+      "readFailed": "Impossible de lire la licence sur {{site}}",
+      "retry": "Réessayer",
+      "details": "{{license}} : détails de la licence",
+      "summary": {
+        "credit": "Attribution",
+        "nonCommercial": "Non commercial",
+        "noRemix": "Pas de remix",
+        "shareAlike": "Partage à l'identique",
+        "noSharing": "Pas de partage des fichiers",
+        "personalUse": "Usage personnel uniquement",
+        "nothingGiven": "Aucun droit accordé",
+        "noConditions": "Aucune condition",
+        "seeTerms": "Voir ses conditions"
+      },
+      "deed": {
+        "share": "Partager les fichiers",
+        "remix": "Remixer",
+        "commercial": "Usage commercial",
+        "credit": "Citer l'auteur",
+        "sameLicense": "Remix sous la même licence"
+      },
+      "can": {
+        "yes": "Autorisé",
+        "no": "Non autorisé",
+        "must": "Obligatoire"
+      },
+      "unknown": "Thingport ne connaît pas cette licence : ses conditions indiquent ce qui est autorisé.",
+      "siteAdds": "{{site}} ajoute",
+      "terms": "Conditions",
+      "asListed": "Selon {{site}}",
+      "pickedByOwner": "Choisie par son propriétaire",
+      "fullLicense": "Licence complète",
+      "copyCredit": "Copier l'attribution",
+      "copied": "Attribution copiée",
+      "change": "Modifier",
+      "creditBy": "par {{creator}}",
+      "creditUnder": "est sous licence {{license}}.",
+      "fromSource": "Selon {{site}}",
+      "none": "Aucune",
+      "groups": {
+        "cc": "Creative Commons",
+        "open": "Open source",
+        "reserved": "Autre"
+      }
     },
     "shared": {
       "sharedBy": "Partagé par {{name}}",

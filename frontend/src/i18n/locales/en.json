@@ -1662,6 +1662,16 @@
           "failed": "Couldn't start the check. Please try again."
         }
       },
+      "licenseFiles": {
+        "heading": "Licence files",
+        "subtitle": "Keep each model's licence beside its files.",
+        "label": "Write LICENSE.txt beside model files",
+        "help": "For every model with a licence, Thingport keeps a LICENSE.txt in its folder: who made it, where it's from, its licence and what that allows, and a line to credit it with. It's rewritten when the licence changes, and moves and goes with the model. Turning this off removes them; zip downloads include one either way.",
+        "on": "Each licensed model's folder has its LICENSE.txt.",
+        "off": "No LICENSE.txt is written; zip downloads still include one.",
+        "failed": "Couldn't save the LICENSE.txt setting. Please try again.",
+        "loadFailed": "Couldn't load the LICENSE.txt setting."
+      },
       "consume": {
         "heading": "Consume Folder",
         "subtitle": "Import anything dropped into a watched folder: files, folder structures and ZIPs.",
@@ -2088,6 +2098,7 @@
           "tags_merged": "Tags merged",
           "mcp_access_changed": "Changed the MCP access",
           "file_reuse_changed": "Changed how identical files are stored",
+          "license_files_changed": "Changed whether LICENSE.txt files are written",
           "file_reuse_backfill_started": "Started checking stored files for identical content",
           "custom_widgets_changed": "Changed which custom widgets are allowed",
           "tool_installed": "Tool installed",
@@ -2131,6 +2142,8 @@
         "socialOff": "Turned off",
         "federationOn": "Turned on",
         "federationOff": "Turned off",
+        "licenseFilesOn": "Turned on",
+        "licenseFilesOff": "Turned off",
         "chatsOn": "Chats turned on",
         "chatsOff": "Chats turned off"
       },
@@ -2217,6 +2230,7 @@
         "kind": {
           "plate": "Model file",
           "file": "Supporting file",
+          "license": "Licence",
           "image": "Image",
           "description": "Description image",
           "thumb": "Thumbnail",
@@ -5876,7 +5890,65 @@
       "noSources": "Nothing imported yet, so there are no sites to choose between.",
       "noneSelected": "No sites are turned on, so there is nothing to list.",
       "noMatch": "No models here match the filters.",
-      "clear": "Clear filters"
+      "clear": "Clear filters",
+      "licenseAllows": "Licence allows",
+      "allowsShare": "Can be shared",
+      "allowsShareHint": "Only models whose licence lets you pass the files on to others, unchanged. Sites' own personal-use licences usually don't.",
+      "allowsCommercial": "Commercial use",
+      "allowsCommercialHint": "Only models whose licence lets you use them commercially, selling prints included.",
+      "allowsRemix": "Remixing",
+      "allowsRemixHint": "Only models whose licence lets you change them.",
+      "licensed": "Only with a licence",
+      "licensedHint": "Leave out models whose source doesn't say what licence they have."
+    },
+    "license": {
+      "title": "Licence",
+      "notStated": "Not stated by {{site}}",
+      "reading": "Reading the licence",
+      "readFailed": "Couldn't read the licence from {{site}}",
+      "retry": "Retry",
+      "details": "{{license}}: licence details",
+      "summary": {
+        "credit": "Credit",
+        "nonCommercial": "Non-commercial",
+        "noRemix": "No remixing",
+        "shareAlike": "Share alike",
+        "noSharing": "No sharing the files",
+        "personalUse": "Personal use only",
+        "nothingGiven": "No rights given",
+        "noConditions": "No conditions",
+        "seeTerms": "See its terms"
+      },
+      "deed": {
+        "share": "Share the files",
+        "remix": "Remix",
+        "commercial": "Commercial use",
+        "credit": "Credit the creator",
+        "sameLicense": "Remixes under the same licence"
+      },
+      "can": {
+        "yes": "Allowed",
+        "no": "Not allowed",
+        "must": "Required"
+      },
+      "unknown": "Thingport doesn't know this licence: its terms say what's allowed.",
+      "siteAdds": "{{site}} adds",
+      "terms": "Terms",
+      "asListed": "As {{site}} lists it",
+      "pickedByOwner": "Picked by its owner",
+      "fullLicense": "Full licence",
+      "copyCredit": "Copy credit line",
+      "copied": "Credit line copied",
+      "change": "Change",
+      "creditBy": "by {{creator}}",
+      "creditUnder": "is licensed under {{license}}.",
+      "fromSource": "As {{site}} lists it",
+      "none": "None",
+      "groups": {
+        "cc": "Creative Commons",
+        "open": "Open source",
+        "reserved": "Other"
+      }
     },
     "shared": {
       "sharedBy": "Shared by {{name}}",

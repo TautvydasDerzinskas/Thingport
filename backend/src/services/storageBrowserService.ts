@@ -21,8 +21,9 @@ export type StorageFolder = {
   pictures: boolean;
 };
 export type StorageFileLocation = "managed" | "source" | "missing";
-/** "plate" is a model file; "file" a supporting or prepared one; the rest are pictures. */
-export type StorageFileKind = "plate" | "file" | AssetKind;
+/** "plate" is a model file; "file" a supporting or prepared one; "license" the LICENSE.txt Thingport writes; the rest are
+ *  pictures. */
+export type StorageFileKind = "plate" | "file" | "license" | AssetKind;
 export type StorageFile = {
   name: string;
   path: string;
@@ -98,7 +99,7 @@ async function entriesUnder(folder: string): Promise<{ entries: Entry[]; picture
     }),
     prisma.printFile.findMany({
       where: below ? { storagePath: below } : undefined,
-      select: { storagePath: true, size: true, print: MODEL_SELECT },
+      select: { storagePath: true, size: true, role: true, print: MODEL_SELECT },
     }),
     prisma.print.findMany({
       where: below ? { OR: [{ assetsPath: below }, { assetsPath: { in: enclosing } }] } : { assetsPath: { not: null } },
@@ -118,7 +119,7 @@ async function entriesUnder(folder: string): Promise<{ entries: Entry[]; picture
     ...files.map((file) => ({
       path: toSlash(file.storagePath),
       size: Number(file.size),
-      kind: "file" as const,
+      kind: file.role === "LICENSE" ? ("license" as const) : ("file" as const),
       plateId: null,
       print: file.print,
       location: (): StorageFileLocation => (exists(file.storagePath) ? "managed" : "missing"),

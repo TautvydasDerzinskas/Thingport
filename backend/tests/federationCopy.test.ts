@@ -27,6 +27,7 @@ import { clearFederationSettingsCache, updateFederationSettings } from "../src/f
 import { buildAuthorId } from "../src/services/authorService";
 import { saveDescriptionImage } from "../src/services/descriptionImageService";
 import { addPreviewImage } from "../src/services/previewImageService";
+import { licenseData } from "../src/services/licenseService";
 import { createPrint } from "../src/services/printCreation";
 import { saveFileFromTemp } from "../src/services/printFileService";
 import { plateThumbExists, saveThumbFromBytes } from "../src/services/printService";
@@ -208,6 +209,8 @@ beforeAll(async () => {
       generatorScriptWithheld: true,
       categoryId: await starter(owner, "3D Printer", "Test Models"),
       categorySource: "MANUAL",
+      // Read from MakerWorld, which stated none.
+      licenseColumns: licenseData(null, "provider", "makerworld"),
     },
     "bin",
     [{ filename: "bin.3mf", tempFilePath: await profileProject(dir, "bin.3mf", "all"), sourceInstanceId: "111" }],
@@ -278,6 +281,7 @@ describe("a partner's model, copied", () => {
       "thingport:category": { path: ["3D Printer", "Test Models"], siteIds: expect.any(Array) },
       "thingport:generatorScriptWithheld": true,
       "thingport:unfillableGaps": ["description"],
+      "thingport:license": { none: true },
       "thingport:descriptionImages": [{ url: expect.stringMatching(`^${ORIGIN}/api/ap/media/description/`) }],
       attachment: [
         expect.objectContaining({
@@ -314,6 +318,9 @@ describe("a partner's model, copied", () => {
       categoryId: await starter(viewer, "3D Printer", "Test Models"),
       categorySource: "RULE",
       remoteSource: expect.objectContaining({ apId: published.id, ownerName: "Rūta" }),
+      // Read, as by its partner: not read from MakerWorld again.
+      license: null,
+      licenseReadAt: expect.any(Date),
     });
     expect(copy.plates).toEqual([
       expect.objectContaining({
@@ -584,6 +591,13 @@ describe("what a partner says a copy needs", () => {
     });
     // One that says nothing more is read as from a partner too old to.
     expect(await read(bare({}))).toBe(Prisma.DbNull);
+    // A licence keeps the site it was read from; a site that stated none says so.
+    const license = { id: "CC-BY-4.0", raw: "BY", source: "provider", provider: "makerworld" };
+    expect(await read(bare({ "thingport:license": license }))).toMatchObject({
+      license: { id: "CC-BY-4.0", source: "provider", provider: "makerworld" },
+    });
+    expect(await read(bare({ "thingport:license": { none: true } }))).toMatchObject({ license: null });
+    expect(await read(bare({ "thingport:license": { none: false } }))).toBe(Prisma.DbNull);
   });
 
   it("leaves a model's print profiles out rather than make it too big for a page", () => {

@@ -15,6 +15,7 @@ import {
   thangsCollectionUrl,
   thangsModelUrl,
 } from "./urls.generated";
+import { thangsLicenseFrom } from "./license";
 import manifest from "./manifest.generated";
 export {
   isThangsLikesUrl,
@@ -324,12 +325,29 @@ export function thangsMetaFromModel(model: Record<string, unknown>): ThangsModel
   };
 }
 
+/** The text of a model's licence file, as its page shows it (a PDF's too): null where Thangs has none for it. */
+export async function fetchThangsLicenseText(modelId: string): Promise<string | null> {
+  const { status, data } = await fetchApi(`/v2/models/${encodeURIComponent(modelId)}/license`);
+  if (status === 404) return null;
+  if (status !== 200 || !isRecord(data)) throw failure("this model's licence", status, data);
+  return typeof data.licenseText === "string" ? data.licenseText : null;
+}
+
 /** By its id. Null for a model that doesn't exist or isn't public: Thangs answers both with a 403. */
 export async function resolveThangsModel(modelId: string): Promise<ThangsModelResolution | null> {
   const { status, data } = await fetchApi(`/models/v2/${encodeURIComponent(modelId)}?likes=false`);
   if (status === 403 || status === 404) return null;
   if (status !== 200 || !isRecord(data)) throw failure("this model", status, data);
-  return thangsMetaFromModel(data);
+  const resolved = thangsMetaFromModel(data);
+  if (!resolved || !("license" in data)) return resolved;
+  const path = typeof data.license === "string" && data.license.trim() ? data.license : null;
+  try {
+    const license = thangsLicenseFrom(path, path ? await fetchThangsLicenseText(resolved.modelId) : null);
+    if (license !== undefined) resolved.meta.license = license;
+  } catch {
+    // Blocked or down: left out rather than kept without its text, so it's read again later.
+  }
+  return resolved;
 }
 
 export type ThangsFile = { name: string; url: string };

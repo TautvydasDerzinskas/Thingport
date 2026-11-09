@@ -11,6 +11,7 @@ import {
   parseNexprintModelUrl,
 } from "./urls.generated";
 import manifest from "./manifest.generated";
+import { nexprintLicenseFrom } from "./license";
 export { nexprintCollectionUrl, nexprintModelUrl, parseNexprintCollectionUrl, parseNexprintModelUrl };
 
 // NexPrint (Elegoo's model site) has no public API, so this is the one its own pages call, under /gateway: answers are
@@ -213,6 +214,7 @@ export function nexprintMetaFromDetail(data: Record<string, unknown>): NexprintM
     meta.siteCategoryIds = categoryIds;
     meta.categorySite = PROVIDER;
   }
+  meta.license = nexprintLicenseFrom(data);
   const authorId = id(data.authorId);
   const profiles = records(data.settingInfoList).flatMap((setting): NexprintProfile[] => {
     const profileId = outId(setting.settingOutId, "G");

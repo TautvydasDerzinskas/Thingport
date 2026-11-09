@@ -1,3 +1,4 @@
+import { storedLicense } from "../services/licenseService";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -45,6 +46,8 @@ const MEDIA_TYPE_MAX = 120;
 const MODEL_IMAGES_MAX = 20;
 const MODEL_TAGS_MAX = 50;
 const TAG_MAX = 100;
+const LICENSE_TEXT_MAX = 500;
+const LICENSE_TERMS_MAX = 20_000;
 const MODEL_DESCRIPTION_IMAGES_MAX = 50;
 const CATEGORY_PATH_MAX = 100;
 const CATEGORY_NAME_MAX = 200;
@@ -277,8 +280,14 @@ const MODEL_SELECT = {
     },
   },
   previewImages: { orderBy: { position: "asc" }, select: { id: true, generated: true } },
-  files: { select: { id: true, filename: true, mime: true, size: true, role: true } },
+  // A partner's copy writes its own LICENSE.txt from the licence.
+  files: {
+    where: { role: { not: "LICENSE" } },
+    select: { id: true, filename: true, mime: true, size: true, role: true },
+  },
   descriptionImages: { select: { id: true, mime: true } },
+  license: true,
+  licenseReadAt: true,
 } satisfies Prisma.PrintSelect;
 type PublishedPrint = Prisma.PrintGetPayload<{ select: typeof MODEL_SELECT }>;
 
@@ -384,9 +393,28 @@ function modelDoc(
     "thingport:author": print.author ?? undefined,
     "thingport:category": category,
     "thingport:generatorScriptWithheld": print.generatorScriptWithheld || undefined,
+    "thingport:license": licenseTerm(print),
     "thingport:unfillableGaps": print.unfillableGaps.length ? print.unfillableGaps : undefined,
     "thingport:descriptionImages": descriptionImages.length ? descriptionImages : undefined,
   });
+}
+
+/** The model's licence as partners keep it: what its source listed or its owner picked. */
+function licenseTerm(print: Pick<PublishedPrint, "license" | "licenseReadAt" | "sourceProvider">) {
+  const license = storedLicense(print.license);
+  // Read from its site, which stated none: said too, so a copy doesn't read it again and its page says "not stated".
+  if (!license) return print.licenseReadAt && print.sourceProvider ? { none: true as const } : undefined;
+  return {
+    id: license.id ?? undefined,
+    raw: license.raw.slice(0, LICENSE_TEXT_MAX),
+    label: license.label?.slice(0, LICENSE_TEXT_MAX) || undefined,
+    url: license.url?.slice(0, LICENSE_TEXT_MAX) || undefined,
+    terms: license.terms?.slice(0, LICENSE_TERMS_MAX) || undefined,
+    allows: license.allows,
+    requires: license.requires,
+    source: license.source,
+    provider: license.provider ?? undefined,
+  };
 }
 
 /** `name` no longer than `max`, cut before its extension (`.gcode.3mf` whole), which says what the file is, and with

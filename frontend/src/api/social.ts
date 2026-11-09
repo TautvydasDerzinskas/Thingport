@@ -1,3 +1,4 @@
+import type { License } from "./prints";
 import { appendTokenToUrl, authHeaders } from "../utils/auth";
 import { apiBase, assertOkWithMessage, readErrorMessage, UnauthorizedError } from "./client";
 import { sharePeopleIn, type Collection, type SharePerson } from "./collections";
@@ -123,6 +124,11 @@ export type RemoteModel = RemoteModelCard & {
   collections: { id: string; name: string }[];
   /** The viewer's own copy of it, once they made one. */
   library_copy_id: string | null;
+  /** As its owner's library has it; absent from an older instance, or a partner too old to say. */
+  license?: License | null;
+  creator?: string | null;
+  source_provider?: string | null;
+  source_url?: string | null;
 };
 
 /** Copying a partner's model into the viewer's library, file by file, in the background. */

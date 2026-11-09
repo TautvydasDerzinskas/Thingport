@@ -74,7 +74,10 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
   const plates = source.plates.map((plate) => ({ plate, from: resolvePlateFilePath(plate) }));
   const missing = [
     ...plates.flatMap(({ plate, from }) => (from ? [] : [plate.filename])),
-    ...source.files.flatMap((file) => (fsSync.existsSync(managedPrintFilePath(file)) ? [] : [file.filename])),
+    // Not its LICENSE.txt, which the copy writes for itself.
+    ...source.files.flatMap((file) =>
+      file.role === "LICENSE" || fsSync.existsSync(managedPrintFilePath(file)) ? [] : [file.filename],
+    ),
   ];
   if (missing.length) {
     throw new HttpError(
@@ -106,6 +109,12 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
         originalId: source.originalId ?? source.id,
         // A copy of a partner's model says so too, and stands for it as the copier's own.
         remoteSource: (source.remoteSource as Prisma.InputJsonValue | null) ?? undefined,
+        // As its owner had it, picked or read: the copier can pick another.
+        licenseColumns: {
+          license: (source.license as Prisma.InputJsonValue | null) ?? Prisma.DbNull,
+          licenseAllows: source.licenseAllows,
+          licenseReadAt: source.licenseReadAt,
+        },
       },
       source.name,
       plates.flatMap(({ plate, from }) =>
@@ -135,7 +144,12 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
 
   // Supporting files and the prepared print: what the model is, so a copy without them would be a different one.
   try {
-    await copyFiles(userId, print.id, source.files);
+    // Its LICENSE.txt is written from the licence the copy carries, not copied.
+    await copyFiles(
+      userId,
+      print.id,
+      source.files.flatMap((file) => (file.role === "LICENSE" ? [] : [{ ...file, role: file.role }])),
+    );
   } catch (err) {
     await discardPrint(print.id);
     throw err;
@@ -161,7 +175,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
 async function copyFiles(
   userId: string,
   printId: string,
-  files: Pick<PrintFile, "storagePath" | "filename" | "mime" | "role">[],
+  files: (Pick<PrintFile, "storagePath" | "filename" | "mime"> & { role: "SUPPORTING" | "PREPARED" })[],
 ) {
   if (!files.length) return;
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "thingport-copy-"));

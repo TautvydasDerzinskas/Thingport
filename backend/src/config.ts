@@ -147,6 +147,11 @@ export const IMPORT_DOWNLOAD_RETRY_DELAY_MS = envInt("IMPORT_DOWNLOAD_RETRY_DELA
 // How long after an import adds a print profile its facts are read (services/printProfileService.ts), so a model's
 // profiles coming in one by one are read together. Negative leaves it to the model page, as the tests do.
 export const PROFILE_FILL_AFTER_IMPORT_MS = envInt("PROFILE_FILL_AFTER_IMPORT_MS", 4000);
+// How long one model's licence read may take: reads run one at a time, so a site that never finishes answering would
+// otherwise hold up every other model's.
+const licenseReadTimeoutMs = envInt("LICENSE_READ_TIMEOUT_MS", 3 * 60_000);
+// None or a negative one would give every read up at once.
+export const LICENSE_READ_TIMEOUT_MS = licenseReadTimeoutMs > 0 ? licenseReadTimeoutMs : 3 * 60_000;
 // MakerWorld's CAPTCHA trips on bursts, so in collection imports this delay precedes every
 // MakerWorld request (listing pages, each resolution step, each image), not just each model.
 // MakerWorld's pacing against its CAPTCHA, here with the other settings an admin can set by environment variable.

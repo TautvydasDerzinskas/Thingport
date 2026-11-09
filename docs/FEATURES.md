@@ -20,6 +20,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Open in your slicer](features/slicers.md)**
 - **[Normalized MakerWorld 3MFs](features/normalized-3mf.md)**
 - **[Everything to print it](features/supporting-files.md)**
+- **[Licences: what each model lets you do, filters by it, and LICENSE.txt beside the files](features/licenses.md)**
 - **[Customize models that came with their OpenSCAD script](features/supporting-files.md#models-you-can-generate-again)**
 - **[Download as ZIP](features/downloads.md)**
 - **[Plain files on your disk](features/storage.md)**

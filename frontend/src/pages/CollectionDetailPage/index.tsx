@@ -75,7 +75,7 @@ export default function CollectionDetailPage({
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
 
   const filters = useModelFilters();
-  const { generative, hiddenProviders } = filters;
+  const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
 
   const setSortMode = (mode: PrintSortMode) => {
@@ -168,6 +168,8 @@ export default function CollectionDetailPage({
             collection_id: collectionId,
             generative: generative || undefined,
             hide_providers: hiddenProviders,
+            license_allows: licenseAllows,
+            licensed: licensed || undefined,
             order_by: sortMode,
             limit: background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
             offset: 0,
@@ -190,7 +192,7 @@ export default function CollectionDetailPage({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionId, sortMode, generative, hiddenProviders, finishedVersion]);
+  }, [collectionId, sortMode, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !collectionId) return;
@@ -201,6 +203,8 @@ export default function CollectionDetailPage({
         collection_id: collectionId,
         generative: generative || undefined,
         hide_providers: hiddenProviders,
+        license_allows: licenseAllows,
+        licensed: licensed || undefined,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,

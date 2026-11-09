@@ -13,6 +13,7 @@ export type LogAction =
   | "mcp_access_changed"
   | "file_reuse_changed"
   | "file_reuse_backfill_started"
+  | "license_files_changed"
   | "custom_widgets_changed"
   | "tool_installed"
   | "tool_uninstalled"

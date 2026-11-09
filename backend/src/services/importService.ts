@@ -85,6 +85,7 @@ export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLi
 export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
 import { extractZipEntryToFile, listZipEntries } from "../utils/zipReader";
 import { enqueueAiDescription } from "./aiDescriptionService";
+import { importedLicenseData } from "./licenseService";
 import { upsertAuthorFromImport } from "./authorService";
 import {
   addPlatesToPrint,
@@ -1167,6 +1168,7 @@ async function createSourcedPrint(
       sourceProvider: source.provider,
       sourceExternalId: source.externalId,
       generatorScriptWithheld: meta.parametricSource?.withheld === true,
+      licenseColumns: importedLicenseData(source.provider, meta.license),
     };
     let created: { print: Print; plates: Plate[] };
     try {
@@ -1437,6 +1439,7 @@ async function importLinkedFile(
     sourceProvider: source?.provider ?? null,
     sourceExternalId: source?.externalId ?? null,
     generatorScriptWithheld: meta.parametricSource?.withheld === true,
+    licenseColumns: importedLicenseData(source?.provider, meta.license),
   };
 
   try {

@@ -725,6 +725,18 @@ describe("the tools that write", () => {
     expect(await prisma.print.findUniqueOrThrow({ where: { id } })).toMatchObject({ categoryId: null, tags: [] });
   });
 
+  it("edit_model picks a licence, logged as the same edit on the model page is", async () => {
+    const id = await upload(writer.session, "licensed.stl");
+    const result = await callTool(writer.token, "edit_model", { model_id: id, license: "CC-BY-4.0" });
+    expect(result.data.changed).toEqual(["license"]);
+    expect((await prisma.print.findUniqueOrThrow({ where: { id } })).license).toMatchObject({
+      id: "CC-BY-4.0",
+      source: "user",
+    });
+    const logs = await logsWhen({ userId: writer.userId, action: "model_edited", targetId: id }, (count) => count > 0);
+    expect(logs.map((log) => (log.details as { field?: string }).field)).toEqual(["license"]);
+  });
+
   it("edit_model moves and renames in one go, to a name taken only where the model was", async () => {
     await upload(writer.session, "clip.stl");
     const id = await upload(writer.session, "clip-v2.stl");

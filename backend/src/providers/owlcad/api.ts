@@ -13,6 +13,7 @@ import { z } from "zod";
 import { HttpError } from "../../utils/fileUtils";
 import type { ImportedPageMetadata } from "../../services/importResolvers";
 import type { ResolvedModel } from "../types";
+import { owlcadLicense } from "./license";
 import manifest from "./manifest.generated";
 import { owlcadModelUrl } from "./urls.generated";
 
@@ -152,6 +153,7 @@ export function owlcadMetadata(item: OwlcadGalleryItem): Partial<ImportedPageMet
     description: item.description?.trim() || null,
     tags: (item.tags ?? []).map((tag) => tag.trim()).filter(Boolean),
     previewImageUrl: item.thumbnailUrl || null,
+    license: owlcadLicense(item),
   };
   // Its categories have no ids: a doc carries the label, which is what the mapping is keyed by.
   if (item.category) {

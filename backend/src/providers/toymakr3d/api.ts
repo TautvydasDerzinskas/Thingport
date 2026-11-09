@@ -15,6 +15,7 @@ import {
   urls,
 } from "./urls.generated";
 import manifest from "./manifest.generated";
+import { toymakr3dLicenseIn } from "./license";
 export { isToymakr3dLikesUrl, parseToymakr3dModelUrl, TOYMAKR3D_LIKES_KEY, TOYMAKR3D_LIKES_URL, toymakr3dModelUrl };
 
 // Toymakr3D is a Laravel shop with no API of its own: its pages are rendered on the server, and the few calls they
@@ -242,6 +243,7 @@ export function toymakr3dModelFromPage(
       .map((el) => clean($(el).text())),
   );
   if (tags.length) meta.tags = tags;
+  meta.license = toymakr3dLicenseIn($);
 
   // The gallery in the order its carousel has them, by the biggest size its page links. Its pictures only: a model's
   // carousel can hold a YouTube video too, which is no picture of it.
@@ -294,15 +296,22 @@ export function toymakr3dModelFromPage(
   };
 }
 
-/** A model by its id. Null for one the site hasn't got, or doesn't show. */
-export async function resolveToymakr3dModel(modelId: string): Promise<Toymakr3dModelResolution | null> {
+/** A model's page by its id; null for one the site hasn't got. */
+export async function fetchToymakr3dModelPage(modelId: string): Promise<string | null> {
   // Its pages live at `/product/<id>-<name>`, and send a link with any other name to the right one.
   const res = await getFollowingSiteRedirect(`/product/${modelId}-`);
   if (res.status === 404) return null;
   if (res.status !== 200) throw failure("this model", res);
+  return res.body;
+}
+
+/** A model by its id. Null for one the site hasn't got, or doesn't show. */
+export async function resolveToymakr3dModel(modelId: string): Promise<Toymakr3dModelResolution | null> {
+  const html = await fetchToymakr3dModelPage(modelId);
+  if (html === null) return null;
   // Its own page doesn't say which categories it's in, so they come from its categories' listings.
   const categories = await categoriesOfModel(modelId);
-  return toymakr3dModelFromPage(res.body, modelId, categories);
+  return toymakr3dModelFromPage(html, modelId, categories);
 }
 
 /** The signed CloudFront link its download page redirects a signed-in user to: one zip of the model's files, free

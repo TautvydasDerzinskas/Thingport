@@ -263,6 +263,11 @@ async function pathTaken(relative: string, owner: PathOwner = {}): Promise<boole
   return fsSync.existsSync(path.join(STORAGE, relative));
 }
 
+/** Whether the file `printFileId` could move to `relative`: no other file, row or folder has it. */
+export async function printFilePathFree(relative: string, printFileId: string): Promise<boolean> {
+  return !(await pathTaken(relative, { printFileId }));
+}
+
 /** `relative`, unless another file has it: a template that doesn't tell two models apart (one saved before the
  *  rules), or names that only differ in characters a path can't hold. The file then goes in a folder named
  *  after its model's ID, beside where it would have been. */

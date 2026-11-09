@@ -63,7 +63,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
 
   const filters = useModelFilters();
-  const { generative, hiddenProviders } = filters;
+  const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
 
   const setSortMode = (mode: PrintSortMode) => {
@@ -124,6 +124,8 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
           tags: [tag],
           generative: generative || undefined,
           hide_providers: hiddenProviders,
+          license_allows: licenseAllows,
+          licensed: licensed || undefined,
           order_by: sortMode,
           limit: background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
           offset: 0,
@@ -143,7 +145,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tag, sortMode, generative, hiddenProviders, finishedVersion]);
+  }, [tag, sortMode, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
 
   useEffect(() => {
     if (!tag) return;
@@ -192,6 +194,8 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
         tags: [tag],
         generative: generative || undefined,
         hide_providers: hiddenProviders,
+        license_allows: licenseAllows,
+        licensed: licensed || undefined,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,
