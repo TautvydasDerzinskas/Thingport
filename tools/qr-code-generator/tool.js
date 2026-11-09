@@ -3406,9 +3406,28 @@ const escapeHtml = (text) =>
     (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character],
   );
 
+export const pluralLabel = (t, language, count, one, few, many) => {
+  const category = ["ru", "uk", "be"].includes(language) ? new Intl.PluralRules(language).select(count) : null;
+  return t(category === "one" || (!category && count === 1) ? one : category === "few" ? few : many);
+};
+
 export default async function mount(thingport) {
-  const { root, theme, t, labels, size, onResize, storage, models, collections, ui, download, library, tool } =
-    thingport;
+  const {
+    root,
+    theme,
+    t,
+    labels,
+    size,
+    onResize,
+    storage,
+    models,
+    collections,
+    ui,
+    download,
+    library,
+    tool,
+    language,
+  } = thingport;
   const shell = root.querySelector("#qrg-shell");
   const $ = (id) => root.querySelector(`#qrg-${id}`);
 
@@ -3596,7 +3615,8 @@ export default async function mount(thingport) {
     $("dims").innerHTML = `<b>${width.toFixed(1)} × ${height.toFixed(1)} × ${thickness.toFixed(1)}</b> mm`;
     $("code").innerHTML = `<b>v${current.code.version}</b> · ${current.code.level} · ${cell.toFixed(2)} mm`;
     const count = current.filaments.length;
-    $("filaments").innerHTML = `<b>${count}</b> ${count === 1 ? t("bar.filament") : t("bar.filaments")}`;
+    $("filaments").innerHTML =
+      `<b>${count}</b> ${pluralLabel(t, language, count, "bar.filament", "bar.filaments", "bar.filamentsMany")}`;
   }
 
   /** What the chosen part is, and anything worth saying, over the picture. */

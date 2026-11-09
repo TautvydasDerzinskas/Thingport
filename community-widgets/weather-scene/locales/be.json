@@ -36,6 +36,8 @@
   "settings.units": "Адзінкі вымярэння",
   "settings.metric": "°C, км/г",
   "settings.imperial": "°F, міль/г",
+  "unit.kmh": "км/г",
+  "unit.mph": "міль/г",
   "settings.refresh": "Абнаўленне",
   "settings.every15": "15 хв",
   "settings.every30": "30 хв",

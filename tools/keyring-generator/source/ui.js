@@ -51,8 +51,14 @@ const escapeHtml = (text) =>
     (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character],
   );
 
+export const pluralLabel = (t, language, count, one, few, many) => {
+  const category = ["ru", "uk", "be"].includes(language) ? new Intl.PluralRules(language).select(count) : null;
+  return t(category === "one" || (!category && count === 1) ? one : category === "few" ? few : many);
+};
+
 export default async function mount(thingport) {
-  const { root, theme, t, size, onResize, storage, models, collections, ui, download, library, tool } = thingport;
+  const { root, theme, t, size, onResize, storage, models, collections, ui, download, library, tool, language } =
+    thingport;
   const shell = root.querySelector("#krg-shell");
   const $ = (id) => root.querySelector(`#krg-${id}`);
 
@@ -242,7 +248,8 @@ export default async function mount(thingport) {
     const [width, height, depth] = result.size;
     $("dims").innerHTML = `<b>${width.toFixed(1)} × ${height.toFixed(1)} × ${depth.toFixed(1)}</b> mm`;
     const count = result.models.length;
-    $("parts").innerHTML = `<b>${count}</b> ${count === 1 ? t("bar.piece") : t("bar.pieces")}`;
+    $("parts").innerHTML =
+      `<b>${count}</b> ${pluralLabel(t, language, count, "bar.piece", "bar.piecesFew", "bar.pieces")}`;
     showReadout();
   }
 

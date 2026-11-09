@@ -15,7 +15,7 @@ import {
 } from "./catalogue.js";
 import { PlanError, STRATEGIES, getStrategy, planWall } from "./solver.js";
 import { hardwareMarkers } from "./mounting.js";
-import { describePlan, partListText, planTitle, printOrder, toBuy } from "./printlist.js";
+import { describePlan, partListText, planTitle, pluralKey, printOrder, toBuy } from "./printlist.js";
 import { partFiles } from "./parts3mf.js";
 import { drawMeasurements, drawPlan, fit, planImage } from "./plan2d.js";
 
@@ -148,7 +148,14 @@ export default async function mount(thingport) {
   const printer = () => getPrinter(form.printerId, { x: clean(form.bedX, 256), y: clean(form.bedY, 256) });
   const system = () => getMountSystem(form.mountId);
   const strategy = () => getStrategy(form.strategyId);
-  const context = () => ({ printer: printer(), system: system(), wallMm: form.wallMm, strategy: strategy(), t, language });
+  const context = () => ({
+    printer: printer(),
+    system: system(),
+    wallMm: form.wallMm,
+    strategy: strategy(),
+    t,
+    language,
+  });
 
   function replan() {
     planError = null;
@@ -436,7 +443,7 @@ export default async function mount(thingport) {
     status.textContent = `${t("plan.covered", { width: Math.round(plan.coveredWidthMm), height: Math.round(plan.coveredHeightMm) })}${left}`;
     const summary = $("summary");
     summary.hidden = false;
-    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(t("plan.boardsWord"))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
+    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(t(pluralKey(plan.boards.length, "list.board.one", "list.board.many", language)))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
   }
 
   function update() {
@@ -485,6 +492,22 @@ export default async function mount(thingport) {
 
   /* ---- projects ---- */
 
+  function projectSummary(project) {
+    const saved = { ...START, ...project.form };
+    try {
+      const savedPlan = planWall({
+        widthMm: clean(saved.widthMm, 0),
+        heightMm: clean(saved.heightMm, 0),
+        printer: getPrinter(saved.printerId, { x: clean(saved.bedX, 256), y: clean(saved.bedY, 256) }),
+        strategyId: saved.strategyId,
+        maxGapMm: clean(saved.maxGapMm, 40),
+      });
+      return `${t("plan.boardsCount", { boards: savedPlan.boards.length })}, ${Math.round(savedPlan.widthMm)} × ${Math.round(savedPlan.heightMm)} mm`;
+    } catch {
+      return project.summary ?? "";
+    }
+  }
+
   function renderProjects() {
     const list = $("projects-list");
     if (!projects.length) {
@@ -494,7 +517,7 @@ export default async function mount(thingport) {
     list.replaceChildren(
       ...projects.map((project) => {
         const row = document.createElement("li");
-        row.innerHTML = `<div><b>${escapeHtml(project.name)}</b><div class="skp-dim">${escapeHtml(project.summary)} · ${escapeHtml(project.at.slice(0, 10))}</div></div><div class="skp-row-actions"></div>`;
+        row.innerHTML = `<div><b>${escapeHtml(project.name)}</b><div class="skp-dim">${escapeHtml(projectSummary(project))} · ${escapeHtml(project.at.slice(0, 10))}</div></div><div class="skp-row-actions"></div>`;
         const actions = row.querySelector(".skp-row-actions");
         const button = (label, html, run, danger) => {
           const element = document.createElement("button");
@@ -553,7 +576,6 @@ export default async function mount(thingport) {
       id: `${Date.now()}`,
       name,
       at: new Date().toISOString(),
-      summary: `${plan.boards.length} boards, ${Math.round(plan.widthMm)} × ${Math.round(plan.heightMm)} mm`,
       form: { ...form },
     });
     projects = projects.slice(0, PROJECT_LIMIT);

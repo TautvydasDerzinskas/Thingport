@@ -22,7 +22,10 @@ const BE_SHORT_DATE = {
 export function shortDate(language: string, now: Date) {
   // Chromium's ICU omits Belarusian, so its Intl formatter silently falls back to English.
   if (language === "be" && !Intl.DateTimeFormat.supportedLocalesOf([language]).length) {
-    return { weekday: BE_SHORT_DATE.weekdays[now.getDay()], day: `${now.getDate()} ${BE_SHORT_DATE.months[now.getMonth()]}` };
+    return {
+      weekday: BE_SHORT_DATE.weekdays[now.getDay()],
+      day: `${now.getDate()} ${BE_SHORT_DATE.months[now.getMonth()]}`,
+    };
   }
   return {
     weekday: new Intl.DateTimeFormat(language, { weekday: "short" }).format(now),

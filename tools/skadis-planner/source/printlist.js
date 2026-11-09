@@ -8,11 +8,15 @@ import { BOARD_DESIGN, MOUNT_DESIGNS, boardKey, boardSource, keyForItem, needsMi
 import { hardwareFor } from "./mounting.js";
 
 /** East Slavic counts need a separate form for 2–4 and the right form for 21, 22 and so on. */
-export const plural = (t, count, one, many, language = "en") => {
+export const pluralKey = (count, one, many, language = "en") => {
   const category = ["ru", "uk", "be"].includes(language) ? new Intl.PluralRules(language).select(count) : null;
-  const key = category === "few" ? one.replace(/\.one$/, ".few") : (category ? category === "one" : count === 1) ? one : many;
-  return `${count} ${t(key)}`;
+  return category === "few"
+    ? one.replace(/\.one$/, ".few")
+    : (category ? category === "one" : count === 1)
+      ? one
+      : many;
 };
+export const plural = (t, count, one, many, language = "en") => `${count} ${t(pluralKey(count, one, many, language))}`;
 const mm = (value) => `${Math.round(value)} mm`;
 /** "820 × 860 mm": the unit once, at the end, as a size is written. */
 const size = (a, b) => `${Math.round(a)} × ${Math.round(b)} mm`;

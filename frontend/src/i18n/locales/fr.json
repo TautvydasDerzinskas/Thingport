@@ -905,16 +905,28 @@
       "viewCount": "{{count}} vues",
       "printCount": "{{count}} impressions",
       "collectionCount": {
-        "label": "Collections"
+        "label": "Collections",
+        "count_one": "Collection",
+        "count_many": "Collections",
+        "count_other": "Collections"
       },
       "modelCount": {
-        "label": "Modèles"
+        "label": "Modèles",
+        "count_one": "Modèle",
+        "count_many": "Modèles",
+        "count_other": "Modèles"
       },
       "authorCount": {
-        "label": "Auteurs uniques"
+        "label": "Auteurs uniques",
+        "count_one": "Auteur unique",
+        "count_many": "Auteurs uniques",
+        "count_other": "Auteurs uniques"
       },
       "categoryCount": {
-        "label": "Catégories et dossiers"
+        "label": "Catégories et dossiers",
+        "count_one": "Catégories et dossiers",
+        "count_many": "Catégories et dossiers",
+        "count_other": "Catégories et dossiers"
       },
       "topViewed": {
         "title": "Modèles les plus consultés",

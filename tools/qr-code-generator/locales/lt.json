@@ -11,6 +11,7 @@
   "bar.save": "Įrašyti į Thingport",
   "bar.filament": "siūlas",
   "bar.filaments": "siūlai",
+  "bar.filamentsMany": "siūlų",
   "bar.slot": "{n} siūlas",
   "bar.openProject": "Atverti įrašytą dizainą…",
   "bar.openProjectNote": "Šio įrankio įrašytas .qrproject.json",

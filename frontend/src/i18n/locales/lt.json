@@ -912,16 +912,28 @@
       "viewCount": "{{count}} peržiūrų",
       "printCount": "{{count}} spausdinimų",
       "collectionCount": {
-        "label": "Kolekcijos"
+        "label": "Kolekcijos",
+        "count_one": "Kolekcija",
+        "count_few": "Kolekcijos",
+        "count_other": "Kolekcijų"
       },
       "modelCount": {
-        "label": "Modeliai"
+        "label": "Modeliai",
+        "count_one": "Modelis",
+        "count_few": "Modeliai",
+        "count_other": "Modelių"
       },
       "authorCount": {
-        "label": "Unikalūs autoriai"
+        "label": "Unikalūs autoriai",
+        "count_one": "Unikalus autorius",
+        "count_few": "Unikalūs autoriai",
+        "count_other": "Unikalių autorių"
       },
       "categoryCount": {
-        "label": "Kategorijos ir aplankai"
+        "label": "Kategorijos ir aplankai",
+        "count_one": "Kategorijos ir aplankai",
+        "count_few": "Kategorijos ir aplankai",
+        "count_other": "Kategorijų ir aplankų"
       },
       "topViewed": {
         "title": "Dažniausiai žiūrimi modeliai",

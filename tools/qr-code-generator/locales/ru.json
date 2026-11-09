@@ -11,6 +11,7 @@
   "bar.save": "Сохранить в Thingport",
   "bar.filament": "филамент",
   "bar.filaments": "филамента",
+  "bar.filamentsMany": "филаментов",
   "bar.slot": "Филамент {n}",
   "bar.openProject": "Открыть сохранённый проект…",
   "bar.openProjectNote": "Файл .qrproject.json, созданный этим инструментом",

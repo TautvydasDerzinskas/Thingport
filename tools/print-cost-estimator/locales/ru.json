@@ -3,7 +3,7 @@
   "bar.library": "Из библиотеки",
   "bar.saved": "Сохранённые",
   "bar.setup": "Настройки",
-  "batch.parts": "{parts} деталей",
+  "batch.parts": "Деталей: {parts}",
   "batch.toPrint": ", {units} к печати",
   "common.nothingToShow": "Пока нечего показать.",
   "common.unnamed": "Без названия",

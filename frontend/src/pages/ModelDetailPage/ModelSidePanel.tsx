@@ -128,11 +128,14 @@ export default function ModelSidePanel({
         if (active) setCategory(null);
       },
     );
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [print.category_id]);
-  const categoryName = category && category.id === print.category_id && category.name === print.category_name
-    ? translateCategoryDisplay(category, i18n).name
-    : print.category_name;
+  const categoryName =
+    category && category.id === print.category_id && category.name === print.category_name
+      ? translateCategoryDisplay(category, i18n).name
+      : print.category_name;
   const navigate = useNavigate();
   const showToast = useToast();
   const [suggestionBusy, setSuggestionBusy] = useState(false);

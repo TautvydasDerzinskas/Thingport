@@ -586,11 +586,15 @@ export function hardwareMarkers(plan, system) {
 
 
 /** East Slavic counts need a separate form for 2–4 and the right form for 21, 22 and so on. */
-export const plural = (t, count, one, many, language = "en") => {
+export const pluralKey = (count, one, many, language = "en") => {
   const category = ["ru", "uk", "be"].includes(language) ? new Intl.PluralRules(language).select(count) : null;
-  const key = category === "few" ? one.replace(/\.one$/, ".few") : (category ? category === "one" : count === 1) ? one : many;
-  return `${count} ${t(key)}`;
+  return category === "few"
+    ? one.replace(/\.one$/, ".few")
+    : (category ? category === "one" : count === 1)
+      ? one
+      : many;
 };
+export const plural = (t, count, one, many, language = "en") => `${count} ${t(pluralKey(count, one, many, language))}`;
 const mm = (value) => `${Math.round(value)} mm`;
 /** "820 × 860 mm": the unit once, at the end, as a size is written. */
 const size = (a, b) => `${Math.round(a)} × ${Math.round(b)} mm`;
@@ -923,10 +927,10 @@ function part3mf({ name, description, x, y, z }) {
   ]);
 }
 
-/** A file name that survives any file system: no slashes, no doubled spaces, and the order kept at the front. */
+/** A file name that survives any file system without throwing away localized part names. */
 const fileName = (step, label) =>
   `${String(step).padStart(2, "0")} ${label}`
-    .replace(/[^A-Za-z0-9 ()×x+-]/g, " ")
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 70);
@@ -1297,7 +1301,14 @@ export default async function mount(thingport) {
   const printer = () => getPrinter(form.printerId, { x: clean(form.bedX, 256), y: clean(form.bedY, 256) });
   const system = () => getMountSystem(form.mountId);
   const strategy = () => getStrategy(form.strategyId);
-  const context = () => ({ printer: printer(), system: system(), wallMm: form.wallMm, strategy: strategy(), t, language });
+  const context = () => ({
+    printer: printer(),
+    system: system(),
+    wallMm: form.wallMm,
+    strategy: strategy(),
+    t,
+    language,
+  });
 
   function replan() {
     planError = null;
@@ -1585,7 +1596,7 @@ export default async function mount(thingport) {
     status.textContent = `${t("plan.covered", { width: Math.round(plan.coveredWidthMm), height: Math.round(plan.coveredHeightMm) })}${left}`;
     const summary = $("summary");
     summary.hidden = false;
-    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(t("plan.boardsWord"))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
+    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(t(pluralKey(plan.boards.length, "list.board.one", "list.board.many", language)))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
   }
 
   function update() {
@@ -1634,6 +1645,22 @@ export default async function mount(thingport) {
 
   /* ---- projects ---- */
 
+  function projectSummary(project) {
+    const saved = { ...START, ...project.form };
+    try {
+      const savedPlan = planWall({
+        widthMm: clean(saved.widthMm, 0),
+        heightMm: clean(saved.heightMm, 0),
+        printer: getPrinter(saved.printerId, { x: clean(saved.bedX, 256), y: clean(saved.bedY, 256) }),
+        strategyId: saved.strategyId,
+        maxGapMm: clean(saved.maxGapMm, 40),
+      });
+      return `${t("plan.boardsCount", { boards: savedPlan.boards.length })}, ${Math.round(savedPlan.widthMm)} × ${Math.round(savedPlan.heightMm)} mm`;
+    } catch {
+      return project.summary ?? "";
+    }
+  }
+
   function renderProjects() {
     const list = $("projects-list");
     if (!projects.length) {
@@ -1643,7 +1670,7 @@ export default async function mount(thingport) {
     list.replaceChildren(
       ...projects.map((project) => {
         const row = document.createElement("li");
-        row.innerHTML = `<div><b>${escapeHtml(project.name)}</b><div class="skp-dim">${escapeHtml(project.summary)} · ${escapeHtml(project.at.slice(0, 10))}</div></div><div class="skp-row-actions"></div>`;
+        row.innerHTML = `<div><b>${escapeHtml(project.name)}</b><div class="skp-dim">${escapeHtml(projectSummary(project))} · ${escapeHtml(project.at.slice(0, 10))}</div></div><div class="skp-row-actions"></div>`;
         const actions = row.querySelector(".skp-row-actions");
         const button = (label, html, run, danger) => {
           const element = document.createElement("button");
@@ -1702,7 +1729,6 @@ export default async function mount(thingport) {
       id: `${Date.now()}`,
       name,
       at: new Date().toISOString(),
-      summary: `${plan.boards.length} boards, ${Math.round(plan.widthMm)} × ${Math.round(plan.heightMm)} mm`,
       form: { ...form },
     });
     projects = projects.slice(0, PROJECT_LIMIT);

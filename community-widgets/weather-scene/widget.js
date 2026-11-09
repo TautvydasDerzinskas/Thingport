@@ -1170,7 +1170,7 @@ export default function mount(thingport) {
     if (settings.details) {
       for (const line of [
         t("extra.feels", { temp: deg(cur.apparent_temperature) }),
-        t("extra.wind", { speed: Math.round(cur.wind_speed_10m), unit: data.current_units.wind_speed_10m }),
+        t("extra.wind", { speed: Math.round(cur.wind_speed_10m), unit: t(imperial ? "unit.mph" : "unit.kmh") }),
         t("extra.humidity", { percent: cur.relative_humidity_2m }),
       ]) {
         const div = document.createElement("div");

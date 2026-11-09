@@ -26,7 +26,7 @@ import {
 } from "./catalogue.js";
 import { PlanError, STRATEGIES, getStrategy, mirrorFlags, planWall, splitAxis } from "./solver.js";
 import { countNodes, hardwareFor, hardwareMarkers } from "./mounting.js";
-import { describePlan, partListText, plural, printOrder, toBuy } from "./printlist.js";
+import { describePlan, partListText, plural, pluralKey, printOrder, toBuy } from "./printlist.js";
 import { partFiles } from "./parts3mf.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -53,11 +53,44 @@ test("East Slavic counts use their one, few and many forms", () => {
   for (const code of ["ru", "uk", "be"]) {
     const words = JSON.parse(fs.readFileSync(path.join(here, "..", "locales", `${code}.json`), "utf8"));
     const translate = (key) => words[key] ?? key;
-    for (const [count, form] of [[1, "one"], [2, "few"], [5, "many"], [21, "one"], [22, "few"], [25, "many"]]) {
+    for (const [count, form] of [
+      [1, "one"],
+      [2, "few"],
+      [5, "many"],
+      [21, "one"],
+      [22, "few"],
+      [25, "many"],
+    ]) {
       for (const noun of ["board", "part"]) {
-        assert.equal(plural(translate, count, `list.${noun}.one`, `list.${noun}.many`, code), `${count} ${words[`list.${noun}.${form}`]}`);
+        assert.equal(
+          plural(translate, count, `list.${noun}.one`, `list.${noun}.many`, code),
+          `${count} ${words[`list.${noun}.${form}`]}`,
+        );
       }
     }
+  }
+});
+
+test("English has the few keys the shared count formatter asks for", () => {
+  assert.equal(plural(t, 2, "list.board.one", "list.board.many", "en"), "2 boards");
+  assert.equal(plural(t, 2, "list.part.one", "list.part.many", "en"), "2 parts");
+  assert.equal(pluralKey(2, "list.board.one", "list.board.many", "en"), "list.board.many");
+});
+
+test("East Slavic language reaches downloaded and saved-plan text", () => {
+  const plan = planWall({ widthMm: 480, heightMm: 240, printer: a1 });
+  assert.equal(plan.boards.length, 2);
+  for (const code of ["ru", "uk", "be"]) {
+    const words = JSON.parse(fs.readFileSync(path.join(here, "..", "locales", `${code}.json`), "utf8"));
+    const translate = (key, vars) => {
+      const text = words[key] ?? key;
+      return vars ? text.replace(/\{(\w+)\}/g, (whole, name) => (name in vars ? String(vars[name]) : whole)) : text;
+    };
+    const output = [
+      partListText(plan, context({ t: translate, language: code })),
+      describePlan(plan, context({ t: translate, language: code })),
+    ].join("\n");
+    assert.ok(output.includes(`2 ${words["list.board.few"]}`), `${code} output lost its few form`);
   }
 });
 
@@ -436,6 +469,17 @@ test("every part of the plan saves as its own 3MF a reader can open", () => {
     assert.ok(model.includes(`<metadata name="Title">`));
     assert.equal(files[index].name.startsWith(String(steps[index].step).padStart(2, "0")), true);
   }
+});
+
+test("localized part names stay in their plate filenames", () => {
+  const words = JSON.parse(fs.readFileSync(path.join(here, "..", "locales", "ru.json"), "utf8"));
+  const translate = (key, vars) => {
+    const text = words[key] ?? key;
+    return vars ? text.replace(/\{(\w+)\}/g, (whole, name) => (name in vars ? String(vars[name]) : whole)) : text;
+  };
+  const plan = planWall({ widthMm: 820, heightMm: 860, printer: a1 });
+  const files = partFiles(printOrder(plan, getMountSystem("wall-mounts"), 10, translate), { wallMm: 10 });
+  assert.match(files.find((file) => file.name.includes("Панель")).name, /Панель/);
 });
 
 test("a board plate is the board's true size, and says which file it stands for", () => {

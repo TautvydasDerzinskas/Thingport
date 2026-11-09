@@ -21,6 +21,14 @@ for (const key of read("en")) {
   else plain.push(key);
 }
 const plainSet = new Set(plain);
+// English has a single string for these lookups, but every caller supplies count.
+const pluralOnly = new Set([
+  "app.studio.prompt.limit",
+  "models.aiCategorization.acceptDone",
+  "models.aiCategorization.rejectDone",
+  "models.customizer.pick.body",
+  "models.selection.count",
+]);
 
 const only = process.argv[2];
 const codes = readdirSync(dir)
@@ -40,7 +48,9 @@ for (const code of codes) {
     localeLeaves.filter((key) => PLURAL.test(key)).map((key) => key.replace(PLURAL, "")),
   );
   const en = new Set([
-    ...plain.flatMap((key) => (localizedPlurals.has(key) ? forms.map((form) => `${key}_${form}`) : [key])),
+    ...plain.flatMap((key) =>
+      pluralOnly.has(key) && localizedPlurals.has(key) ? forms.map((form) => `${key}_${form}`) : [key],
+    ),
     ...[...plurals].flatMap((base) => forms.map((form) => `${base}_${form}`)),
   ]);
   // Extra plural forms a translator added (Lithuanian `_many`) aren't stale, just unused by this locale's whole numbers.

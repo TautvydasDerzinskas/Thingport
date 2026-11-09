@@ -3,6 +3,7 @@
   "bar.more": "Plus",
   "bar.piece": "pièce",
   "bar.pieces": "pièces",
+  "bar.piecesFew": "pièces",
   "bar.piecesHint": "En combien de pièces séparées il sort",
   "bar.redo": "Rétablir",
   "bar.redoHint": "Rétablir (Ctrl+Maj+Z)",

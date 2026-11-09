@@ -30,6 +30,7 @@ import { edgeSizes } from "./finishing.js";
 import { creasedGeometry } from "./meshNormals.js";
 import { obj, stl, threeMf } from "./files.js";
 import { DEFAULTS } from "./engine.js";
+import { pluralLabel } from "./ui.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(here, "../../..");
@@ -410,6 +411,20 @@ const STRINGS = Object.fromEntries(
     .filter((name) => name.endsWith(".json"))
     .map((name) => [name.slice(0, -".json".length), JSON.parse(fs.readFileSync(path.join(localeDir, name), "utf8"))]),
 );
+
+await test("East Slavic part counts use all three forms", () => {
+  for (const code of ["ru", "uk", "be"])
+    for (const [count, key] of [
+      [1, "bar.piece"],
+      [2, "bar.piecesFew"],
+      [5, "bar.pieces"],
+      [21, "bar.piece"],
+    ])
+      assert.equal(
+        pluralLabel((word) => STRINGS[code][word], code, count, "bar.piece", "bar.piecesFew", "bar.pieces"),
+        STRINGS[code][key],
+      );
+});
 
 // ---- the words ---------------------------------------------------------------------------------------------------
 

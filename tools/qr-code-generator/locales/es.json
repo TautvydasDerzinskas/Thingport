@@ -11,6 +11,7 @@
   "bar.save": "Guardar en Thingport",
   "bar.filament": "filamento",
   "bar.filaments": "filamentos",
+  "bar.filamentsMany": "filamentos",
   "bar.slot": "Filamento {n}",
   "bar.openProject": "Abrir un diseño guardado…",
   "bar.openProjectNote": "Un .qrproject.json escrito por esta herramienta",

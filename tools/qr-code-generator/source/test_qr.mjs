@@ -34,6 +34,7 @@ import { DEFAULTS, QUIET, TAB_SIDES, planFor, plateOutline } from "./layout.js";
 import { triangulate } from "./mesh.js";
 import { BODIES, EYE_CENTRES, EYE_FRAMES, RELIEFS } from "./shapes.js";
 import { buildModel } from "./model.js";
+import { pluralLabel } from "./ui.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const tool = path.resolve(here, "..");
@@ -48,6 +49,20 @@ const ok = (condition, what) => {
   }
 };
 const same = (got, want, what) => ok(got === want, `${what}: got ${got}, wanted ${want}`);
+
+const russian = JSON.parse(fs.readFileSync(path.join(tool, "locales/ru.json"), "utf8"));
+for (const [count, key] of [
+  [1, "bar.filament"],
+  [2, "bar.filaments"],
+  [5, "bar.filamentsMany"],
+  [21, "bar.filament"],
+]) {
+  same(
+    pluralLabel((word) => russian[word], "ru", count, "bar.filament", "bar.filaments", "bar.filamentsMany"),
+    russian[key],
+    `Russian ${count} filaments`,
+  );
+}
 
 // ---- the symbol ------------------------------------------------------------------------------------------------
 
@@ -442,6 +457,7 @@ for (const body of ["dot", "roundBars", "bevel"]) {
 
 const english = JSON.parse(fs.readFileSync(path.join(tool, "locales/en.json"), "utf8"));
 const asked = new Set();
+for (const key of ["bar.filament", "bar.filaments", "bar.filamentsMany"]) asked.add(key);
 for (const file of fs.readdirSync(here).filter((name) => name.endsWith(".js"))) {
   const text = fs.readFileSync(path.join(here, file), "utf8");
   for (const [, key] of text.matchAll(/\bt\(\s*["`]([^"`$]+)["`]/g)) asked.add(key);
