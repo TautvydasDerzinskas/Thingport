@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -238,6 +241,7 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
+// downloadFile fetches a remote model without exposing signed download credentials in errors.
 func downloadFile(downloadURL, targetPath string) error {
 	client := &http.Client{Timeout: 5 * time.Minute}
 	req, err := http.NewRequest(http.MethodGet, downloadURL, nil)
@@ -248,8 +252,8 @@ func downloadFile(downloadURL, targetPath string) error {
 	res, err := client.Do(req)
 	if err != nil {
 		// url.Error contains the complete URL, including an embedded session token.
-		// Avoid including raw error strings in logs until they are comprehensively sanitized.
-		return errors.New("download request failed (check network, TLS and proxy access)")
+		// Never return or log the raw error; classify it without leaking its URL.
+		return safeDownloadError(err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
@@ -264,6 +268,29 @@ func downloadFile(downloadURL, targetPath string) error {
 		return fmt.Errorf("save file: %w", err)
 	}
 	return nil
+}
+
+// safeDownloadError keeps useful connection diagnostics without disclosing bearer credentials.
+func safeDownloadError(err error) error {
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return errors.New("download request failed: DNS resolution error")
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return errors.New("download request failed: connection timed out")
+	}
+	var tlsErr *tls.CertificateVerificationError
+	var unknownCA x509.UnknownAuthorityError
+	var invalidCert x509.CertificateInvalidError
+	var wrongHost x509.HostnameError
+	var tlsRecord tls.RecordHeaderError
+	if errors.As(err, &tlsErr) || errors.As(err, &unknownCA) ||
+		errors.As(err, &invalidCert) || errors.As(err, &wrongHost) ||
+		errors.As(err, &tlsRecord) {
+		return errors.New("download request failed: TLS certificate or handshake error")
+	}
+	return errors.New("download request failed: connection error")
 }
 
 func resolveSlicerCommand(id string, cfg Config) (string, []string) {
@@ -420,7 +447,7 @@ func launchCommand(cmd string, args []string, filePath string) error {
 func openWithDefault(filePath string) error {
 	switch runtime.GOOS {
 	case "windows":
-		return exec.Command("cmd", "/c", "start", "", filePath).Start()
+		return openWithDefaultWindows(filePath)
 	case "linux":
 		return exec.Command("xdg-open", filePath).Start()
 	case "darwin":
@@ -430,6 +457,7 @@ func openWithDefault(filePath string) error {
 	}
 }
 
+// redactURL scrubs every embedded /api/t/<credential>/ path and the token query parameter.
 func redactURL(raw string) string {
 	parsed, err := url.Parse(raw)
 	if err != nil {
@@ -437,13 +465,17 @@ func redactURL(raw string) string {
 	}
 	// A /api/t/<JWT>/ segment is a signed session credential, like ?token=.
 	segments := strings.Split(parsed.Path, "/")
-	for i := 0; i+2 < len(segments); i++ {
-		if segments[i] == "api" && segments[i+1] == "t" && segments[i+2] != "" {
+	original := append([]string(nil), segments...)
+	changed := false
+	for i := 0; i+2 < len(original); i++ {
+		if original[i] == "api" && original[i+1] == "t" && original[i+2] != "" {
 			segments[i+2] = "REDACTED"
-			parsed.Path = strings.Join(segments, "/")
-			parsed.RawPath = ""
-			break
+			changed = true
 		}
+	}
+	if changed {
+		parsed.Path = strings.Join(segments, "/")
+		parsed.RawPath = ""
 	}
 	q := parsed.Query()
 	if q.Has("token") {
