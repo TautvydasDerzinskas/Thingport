@@ -235,8 +235,9 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   here for longer than delivery keeps trying) still turns up; a list that can't be read is the partner's `syncError`.
   Reads and deletions of one collection run one at a time, from fetching to writing, so an older read can't put back
   someone a newer one took off. Each kept collection notes when it was asked for (`RemoteCollection.fetchedAt`), by
-  the index or as shared, and the later of two reads is what's kept, whichever finishes last; on a tie, the read as
-  shared. Each model kept for one notes it too (`syncedAt`), and no two reads as shared are given the same time. A
+  the index or as shared, and the later of two reads is what's kept, whichever finishes last. Each model kept for one
+  notes it too (`syncedAt`). Both kinds of read take their times from one clock (`askedAt` in `remoteIndex.ts`) that
+  never gives two the same, so the later is always told apart; a tie, were there one, goes to the read as shared. A
   read writes nothing, its owner included, once the partner is blocked: it holds the partner's row
   (`FOR SHARE`, last) until it's written, so a block waits for it and then forgets it all. Nothing is read or kept while
   social features are off here: each read checks as its turn comes, and holds the setting (`FOR SHARE`) while it's

@@ -8,7 +8,7 @@ import { here, localUserId, personOn, RetryLater, type Here } from "./chats";
 import { enqueueActivity, kickDelivery } from "./delivery";
 import { FederationFetchError } from "./fetch";
 import { sharedAudience } from "./publish";
-import { readModels, remoteModelData } from "./remoteIndex";
+import { askedAt, readModels, remoteModelData } from "./remoteIndex";
 import { AP_PREFIX, getRuntime } from "./runtime";
 
 /** Collections shared with partners' people (docs/FEDERATION_DEVELOPMENT.md, "Shared collections"). What partners
@@ -295,14 +295,6 @@ class Superseded extends Error {}
  *  go once it's no longer shared with anyone here (or isn't there). One read of a collection at a time. */
 function readShared(peer: Peer, apId: string): Promise<void> {
   return oneAtATime(apId, () => readSharedNow(peer, apId));
-}
-
-// When each read is asked for, a millisecond past the last one's if need be: two never share a time, so whichever was
-// asked for later is told apart from the other, a model both hold included.
-let lastAsked = 0;
-function askedAt(): Date {
-  lastAsked = Math.max(Date.now(), lastAsked + 1);
-  return new Date(lastAsked);
 }
 
 async function readSharedNow(peer: Peer, apId: string): Promise<void> {

@@ -461,6 +461,14 @@ export async function readModels(
   return { models, all: true };
 }
 
+let lastAsked = 0;
+/** When a read of a collection is asked for, by the index or as shared (sharedCollections.ts): a millisecond past the
+ *  last one's if need be, so no two share a time, and both kinds keep to one clock to be told apart by. */
+export function askedAt(): Date {
+  lastAsked = Math.max(Date.now(), lastAsked + 1);
+  return new Date(lastAsked);
+}
+
 /** A person's public collections, page by page, each with its models' ids. `all` is false unless every page was read,
  *  as with their models: those not read stay as they were. */
 export async function readCollections(
@@ -475,7 +483,7 @@ export async function readCollections(
       return { collections, all: false };
     }
     let body: z.infer<typeof pageSchema>;
-    const fetchedAt = new Date();
+    const fetchedAt = askedAt();
     try {
       body = pageSchema.parse(await read(url));
     } catch (err) {

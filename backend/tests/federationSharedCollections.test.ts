@@ -1184,6 +1184,28 @@ describe("a partner's person sharing a collection with people here", () => {
     ).toMatchObject({ title: "Later hook 1" });
   });
 
+  it("is public again by a read of the index after a run of reads as shared got ahead of the clock", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date());
+    try {
+      // Read as shared twice in the same millisecond: the second is given the next one.
+      docs.set("c27", doc("c27", [actor(bea.id)]));
+      await sharedCollectionFrom(actorOf(PARTNER), apId("c27"));
+      await sharedCollectionFrom(actorOf(PARTNER), apId("c27"));
+      // Then public there, and read by the index while the clock still says the same.
+      docs.delete("c27");
+      await listedOpenly("c27");
+      await syncPeer(partnerId);
+    } finally {
+      vi.useRealTimers();
+      directoryPeople.length = 0;
+      openCollections.length = 0;
+    }
+    expect(
+      await prisma.remoteCollection.findUnique({ where: { apId: apId("c27") }, include: { viewers: true } }),
+    ).toMatchObject({ limited: false, viewers: [] });
+  });
+
   it("keeps a public collection the index read again in the same millisecond", async () => {
     const at = new Date();
     const open = await prisma.remoteCollection.create({
@@ -1214,26 +1236,17 @@ describe("a partner's person sharing a collection with people here", () => {
     });
   });
 
-  it("stays shared when the index asked for it in the same millisecond as it was read as shared", async () => {
-    docs.set("c18", doc("c18", [actor(bea.id)]));
-    await sharedCollectionFrom(actorOf(PARTNER), apId("c18"));
-    const { fetchedAt } = await prisma.remoteCollection.findUniqueOrThrow({ where: { apId: apId("c18") } });
+  it("stays shared when the index asked for it first in the same millisecond, and finished after", async () => {
     await listedOpenly("c18");
-    // Listed as shared too, and held as the refresh after the index's read asks for it: what's looked at then is what
-    // the index wrote.
-    listedShared.push(apId("c18"));
-    const held = hold("c18");
+    const held = hold("ruta-collections");
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(fetchedAt!);
+    vi.setSystemTime(new Date());
     try {
+      // The index asks while it's public there; it's shared with Bea alone, and read so, before that's answered.
       const syncing = syncPeer(partnerId);
       await held.reached;
-      const kept = await prisma.remoteCollection.findUniqueOrThrow({
-        where: { apId: apId("c18") },
-        include: { viewers: true },
-      });
-      expect(kept.limited).toBe(true);
-      expect(kept.viewers.map((viewer) => viewer.userId)).toEqual([bea.id]);
+      docs.set("c18", doc("c18", [actor(bea.id)]));
+      await sharedCollectionFrom(actorOf(PARTNER), apId("c18"));
       held.open();
       await syncing;
     } finally {
@@ -1241,8 +1254,13 @@ describe("a partner's person sharing a collection with people here", () => {
       held.open();
       directoryPeople.length = 0;
       openCollections.length = 0;
-      listedShared.splice(listedShared.indexOf(apId("c18")), 1);
     }
+    const kept = await prisma.remoteCollection.findUniqueOrThrow({
+      where: { apId: apId("c18") },
+      include: { viewers: true },
+    });
+    expect(kept.limited).toBe(true);
+    expect(kept.viewers.map((viewer) => viewer.userId)).toEqual([bea.id]);
   });
 
   // Last: it forgets everything of the partner's.
