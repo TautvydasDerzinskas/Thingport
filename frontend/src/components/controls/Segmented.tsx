@@ -8,8 +8,9 @@ const chosenBg = (theme: Theme) => (theme.palette.mode === "dark" ? "rgba(255, 2
 
 type Props<T extends string> = {
   value: T;
-  /** With an `icon`, the option shows only it; its label is then the tooltip and the accessible name. */
-  options: { value: T; label: string; icon?: ReactNode }[];
+  /** With an `icon`, the option shows only it; its label is then the tooltip and the accessible name. A `startIcon`
+   *  goes before the label instead. */
+  options: { value: T; label: string; icon?: ReactNode; startIcon?: ReactNode }[];
   onChange: (value: T) => void;
   label: string;
   disabled?: boolean;
@@ -64,8 +65,9 @@ export default function Segmented<T extends string>({
               opacity: disabled && !chosen ? 0.6 : 1,
               px: iconOnly ? 1 : 1.75,
               py: iconOnly ? 0.75 : 0.625,
-              display: iconOnly ? "inline-flex" : undefined,
+              display: iconOnly || option.startIcon ? "inline-flex" : undefined,
               alignItems: "center",
+              gap: option.startIcon ? 0.75 : undefined,
               borderRadius: "7px",
               font: "inherit",
               fontSize: "0.8rem",
@@ -86,7 +88,12 @@ export default function Segmented<T extends string>({
               "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 1 },
             }}
           >
-            {option.icon ?? option.label}
+            {option.icon ?? (
+              <>
+                {option.startIcon}
+                {option.label}
+              </>
+            )}
           </Box>
         );
         return iconOnly ? (

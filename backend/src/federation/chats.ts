@@ -60,15 +60,15 @@ async function deletedBefore(apId: string, origins: (string | null)[]): Promise<
 }
 
 /** Where this instance is, and its actor: all that addressing and queuing something takes. */
-type Here = Pick<Runtime, "origin" | "actorUrl">;
+export type Here = Pick<Runtime, "origin" | "actorUrl">;
 
-const personUrl = (at: Here, userId: string) => `${at.origin}${AP_PREFIX}/actors/${userId}`;
+export const personUrl = (at: Here, userId: string) => `${at.origin}${AP_PREFIX}/actors/${userId}`;
 const messageUrl = (at: Here, id: string) => `${at.origin}${AP_PREFIX}/messages/${id}`;
 export const roomUrl = (at: Here, chatId: string) => `${at.origin}${AP_PREFIX}/rooms/${chatId}`;
 const modelUrl = (at: Here, printId: string) => `${at.origin}${AP_PREFIX}/models/${printId}`;
 
 /** The id of one of this instance's people, from their actor's address here; null for anything else. */
-function localUserId(runtime: Runtime, url: string): string | null {
+export function localUserId(runtime: Pick<Runtime, "origin">, url: string): string | null {
   const prefix = `${runtime.origin}${AP_PREFIX}/actors/`;
   const id = url.startsWith(prefix) ? url.slice(prefix.length) : "";
   return /^[a-z0-9]{10,40}$/i.test(id) && id !== "instance" ? id : null;
@@ -81,15 +81,16 @@ function localRoomId(runtime: Runtime, url: string): string | null {
   return /^[a-z0-9]{10,40}$/i.test(id) ? id : null;
 }
 
-async function live(): Promise<Runtime | null> {
+export async function live(): Promise<Runtime | null> {
   return (await isFederationLive()) ? getRuntime() : null;
 }
 
 /** Here as the runtime has it, without loading it: a chat change made while connected instances are off (a message
  *  deleted, someone joining or leaving, a room changed or deleted) is queued for partners all the same, and sent once
  *  they're on again. */
-async function here(): Promise<Here> {
-  const publicUrl = await getPublicUrl();
+export async function here(db?: Pick<Prisma.TransactionClient, "setting">): Promise<Here> {
+  // In the caller's transaction when it has one: it needn't wait for another connection while holding its own.
+  const publicUrl = await getPublicUrl(db);
   // What partners know this instance by: without it nothing can be addressed to them, so the change isn't made (its
   // transaction undone) and can be made again once it's set.
   if (!publicUrl) {
@@ -139,7 +140,7 @@ export function kick(): void {
 }
 
 /** One of this instance's people, as a Note names them. */
-async function localPerson(runtime: Runtime, userId: string, db: Db = prisma): Promise<Record<string, unknown>> {
+export async function localPerson(runtime: Here, userId: string, db: Db = prisma): Promise<Record<string, unknown>> {
   const user = await db.user.findUnique({ where: { id: userId }, select: { displayName: true, username: true } });
   const icon = await avatarIcon(runtime, userId);
   return {
@@ -373,15 +374,20 @@ async function senderPeer(actorId: URL): Promise<Peer | null> {
 }
 
 /** Someone on `peer`, as a message or room names them: who the index has, or kept from now on as the message said,
- *  unlisted (they may share nothing there). Only someone on that partner's own origin. */
-export async function personOn(peer: Peer, person: IncomingPerson): Promise<RemotePerson | null> {
+ *  unlisted (they may share nothing there). Only someone on that partner's own origin. In `db`'s transaction, if given:
+ *  nothing it writes is kept unless that is. */
+export async function personOn(
+  peer: Peer,
+  person: IncomingPerson,
+  db: Db | typeof prisma = prisma,
+): Promise<RemotePerson | null> {
   if (originOf(person.id) !== peer.origin) return null;
   const card = cardOf(person);
-  const found = await prisma.remotePerson.findUnique({ where: { apId: person.id } });
+  const found = await db.remotePerson.findUnique({ where: { apId: person.id } });
   if (found) {
     if (found.peerId !== peer.id) return null;
     if (found.listed) return found;
-    return prisma.remotePerson.update({
+    return db.remotePerson.update({
       where: { id: found.id },
       data: {
         displayName: card.name,
@@ -390,21 +396,20 @@ export async function personOn(peer: Peer, person: IncomingPerson): Promise<Remo
       },
     });
   }
-  try {
-    return await prisma.remotePerson.create({
-      data: {
-        peerId: peer.id,
-        apId: person.id,
-        displayName: card.name,
-        username: card.handle?.split("@")[0] ?? null,
-        avatarUrl: person.icon && originOf(person.icon) === peer.origin ? person.icon : null,
-        listed: false,
-      },
-    });
-  } catch {
-    // Kept by a message that came at the same moment.
-    return prisma.remotePerson.findUnique({ where: { apId: person.id } });
-  }
+  // Or kept by a message that came at the same moment: skipped, not failed, which would undo a transaction it's in.
+  await db.remotePerson.createMany({
+    data: {
+      peerId: peer.id,
+      apId: person.id,
+      displayName: card.name,
+      username: card.handle?.split("@")[0] ?? null,
+      avatarUrl: person.icon && originOf(person.icon) === peer.origin ? person.icon : null,
+      listed: false,
+    },
+    skipDuplicates: true,
+  });
+  const kept = await db.remotePerson.findUnique({ where: { apId: person.id } });
+  return kept?.peerId === peer.id ? kept : null;
 }
 
 export type Arrival = {

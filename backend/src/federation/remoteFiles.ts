@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { canSeeRemoteModel } from "./sharedCollections";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import os from "node:os";
@@ -30,12 +31,14 @@ export type RemoteModelRow = RemoteModel & { peer: Peer; person: RemotePerson };
 // However long a big file takes; the connection's own idle limit still ends one that stalls.
 const TRANSFER_MS = 30 * 60 * 1000;
 
-export async function activeRemoteModel(id: string): Promise<RemoteModelRow> {
+/** A partner's model `viewerId` may open: one shared openly there, or in a collection shared with them. 404 for any
+ *  other. */
+export async function activeRemoteModel(id: string, viewerId: string): Promise<RemoteModelRow> {
   const model = await prisma.remoteModel.findFirst({
     where: { id, peer: { status: "ACTIVE" } },
     include: { peer: true, person: true },
   });
-  if (!model) throw new HttpError(404, "Not found");
+  if (!model || !(await canSeeRemoteModel(model, viewerId))) throw new HttpError(404, "Not found");
   return model;
 }
 
@@ -107,7 +110,7 @@ export async function streamRemoteFile(
   modelId: string,
   key: string,
 ): Promise<void> {
-  const model = await activeRemoteModel(modelId);
+  const model = await activeRemoteModel(modelId, req.userId!);
   const file = filesOf(model, model.peer.origin).find((item) => item.url && fileKey(item.url) === key);
   if (!file?.url) throw new HttpError(404, "Not found");
   const viewer = untilGone(req, res);
@@ -165,7 +168,7 @@ export async function sendRemoteZip(
   modelId: string,
   userId: string,
 ): Promise<void> {
-  const model = await activeRemoteModel(modelId);
+  const model = await activeRemoteModel(modelId, userId);
   const files = filesOf(model, model.peer.origin);
   if (!files.some((file) => file.url)) throw new HttpError(404, "No files available for download");
   const known = files.reduce((sum, file) => sum + (file.url ? (file.size ?? 0) : 0), 0);

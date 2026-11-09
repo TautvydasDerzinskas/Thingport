@@ -32,6 +32,9 @@ const MAX_COLLECTION_MODELS = 2000;
 const MAX_ID_PAGES = 10;
 // Writing what was read, in one transaction: however many rows a big partner has.
 const STORE_TIMEOUT_MS = 5 * 60 * 1000;
+/** For a transaction that takes a partner's lock (`holdRemoteModels`): long enough to wait out a store holding it, and
+ *  then do its own writes. */
+export const HOLD_TIMEOUT_MS = 2 * STORE_TIMEOUT_MS;
 
 const running = new Map<string, Promise<void>>();
 // The part of a sync that writes: what forgetting a partner waits for, so it isn't written back after.
@@ -64,6 +67,15 @@ export async function syncStale(maxAgeMs = SYNC_EVERY_MS): Promise<void> {
  *  writing later finds the partner gone or no longer ACTIVE, and writes nothing (`store`). */
 export async function forgetPeerContent(peerId: string): Promise<void> {
   await storing.get(peerId)?.catch(() => {});
+  // What was noted gone of it, too: nothing of a blocked partner's is kept. After any write of its kept collections
+  // under way (which, finding it blocked, keeps nothing more).
+  await prisma.$transaction(
+    async (tx) => {
+      await holdRemoteModels(tx, peerId);
+      await tx.remoteGone.deleteMany({ where: { peerId } });
+    },
+    { timeout: HOLD_TIMEOUT_MS, maxWait: 10_000 },
+  );
   await forgetMedia(peerId);
   // Rooms hosted here go on without its people, their other partners told; the copies of its rooms go. Direct messages
   // with its people stay, as they said.
@@ -365,11 +377,14 @@ type Model = z.infer<typeof modelSchema>;
 type Collection = z.infer<typeof collectionSchema>;
 /** A collection as read, with its models' ids; `allIds` is false when a page of them couldn't be read, so the ones
  *  kept from before stay. */
-type ReadCollection = Collection & { modelIds: string[]; allIds: boolean };
+/** `fetchedAt`: when the page it came on was asked for. */
+type ReadCollection = Collection & { modelIds: string[]; allIds: boolean; fetchedAt: Date };
+/** A model as read, with when the page it came on was asked for. */
+type ReadModel = Model & { fetchedAt: Date };
 
 type Shared = {
   person: Person;
-  models: Model[];
+  models: ReadModel[];
   allModels: boolean;
   collections: ReadCollection[];
   allCollections: boolean;
@@ -383,6 +398,8 @@ async function sync(peerId: string): Promise<void> {
     const own = (url: string | undefined): url is string => Boolean(url) && originOf(url!) === peer.origin;
     const read = async (url: string) => (await runtime.signedLoader(url)).document;
 
+    // Before anything of this read is asked for: what was withdrawn before then can't come back by it (storeIn).
+    const askedFrom = askedAt();
     // The directory comes a page at a time, as a page has to fit what a fetch takes.
     const listed: Person[] = [];
     let url: string | undefined = `${peer.origin}${AP_PREFIX}/directory`;
@@ -410,7 +427,7 @@ async function sync(peerId: string): Promise<void> {
         allCollections: collections.all,
       });
     }
-    const written = store(peer, people, own);
+    const written = store(peer, people, own, askedFrom);
     storing.set(peer.id, written);
     try {
       await written;
@@ -422,6 +439,12 @@ async function sync(peerId: string): Promise<void> {
     console.warn(`[federation] Couldn't read what ${peer.origin} shares:`, message);
     await prisma.peer.update({ where: { id: peer.id }, data: { syncError: message.slice(0, 500) } }).catch(() => {});
   }
+  // Then what its people shared with people here: renamed, added to, or no longer shared. Whether or not what it shares
+  // openly could be read: these are asked for on their own, and one whose Update never got here is found only so.
+  const { refreshShared } = await import("./sharedCollections");
+  await refreshShared(peer.id).catch((err: unknown) => {
+    console.warn(`[federation] Couldn't read again what ${peer.origin}'s people shared here:`, (err as Error).message);
+  });
   // A read that failed still tidies the pictures, by what's kept from the last one that didn't.
   await pruneMedia(peer.id).catch(() => {});
 }
@@ -432,12 +455,13 @@ export async function readModels(
   read: (url: string) => Promise<unknown>,
   first: string,
   own: (url: string | undefined) => url is string,
-): Promise<{ models: Model[]; all: boolean }> {
-  const models: Model[] = [];
+): Promise<{ models: ReadModel[]; all: boolean }> {
+  const models: ReadModel[] = [];
   let url: string | undefined = first;
   for (let page = 0; url; page++) {
     if (!own(url) || page === MAX_MODEL_PAGES || models.length >= MAX_MODELS) return { models, all: false };
     let body: z.infer<typeof pageSchema>;
+    const fetchedAt = askedAt();
     try {
       body = pageSchema.parse(await read(url));
     } catch (err) {
@@ -450,11 +474,19 @@ export async function readModels(
       if (!parsed.success || !own(parsed.data.id)) continue;
       // One past the cap: the rest aren't read, so those kept from before stay.
       if (models.length >= MAX_MODELS) return { models, all: false };
-      models.push(parsed.data);
+      models.push({ ...parsed.data, fetchedAt });
     }
     url = body.next;
   }
   return { models, all: true };
+}
+
+let lastAsked = 0;
+/** When a read of a collection is asked for, by the index or as shared (sharedCollections.ts): a millisecond past the
+ *  last one's if need be, so no two share a time, and both kinds keep to one clock to be told apart by. */
+export function askedAt(): Date {
+  lastAsked = Math.max(Date.now(), lastAsked + 1);
+  return new Date(lastAsked);
 }
 
 /** A person's public collections, page by page, each with its models' ids. `all` is false unless every page was read,
@@ -471,6 +503,7 @@ export async function readCollections(
       return { collections, all: false };
     }
     let body: z.infer<typeof pageSchema>;
+    const fetchedAt = askedAt();
     try {
       body = pageSchema.parse(await read(url));
     } catch (err) {
@@ -482,7 +515,8 @@ export async function readCollections(
       if (!parsed.success || !own(parsed.data.id)) continue;
       // One past the cap: not read, so the rest kept from before stay.
       if (collections.length >= MAX_COLLECTIONS) return { collections, all: false };
-      collections.push({ ...parsed.data, ...(await readModelIds(read, parsed.data["thingport:models"]?.first, own)) });
+      const ids = await readModelIds(read, parsed.data["thingport:models"]?.first, own);
+      collections.push({ ...parsed.data, ...ids, fetchedAt });
     }
     url = body.next;
   }
@@ -587,10 +621,48 @@ const webLink = (href: string) => /^https?:\/\//i.test(href) && href.length <= 5
 const markdownOf = (value: { content?: string } | undefined, max: number) =>
   value?.content?.trim() ? value.content.trim().slice(0, max) : null;
 
-/** The index for one partner, made to match what it just said: kept rows keep their ids, so links to them stay. */
-async function store(peer: Peer, people: Shared[], own: (url: string | undefined) => url is string): Promise<void> {
+/** The index for one partner, made to match what it just said: kept rows keep their ids, so links to them stay.
+ *  `askedFrom`: when the read of it began. */
+async function store(
+  peer: Peer,
+  people: Shared[],
+  own: (url: string | undefined) => url is string,
+  askedFrom: Date,
+): Promise<void> {
   // All of it or none: a write that fails leaves the last complete read as it was.
-  await prisma.$transaction((tx) => storeIn(tx, peer, people, own), { timeout: STORE_TIMEOUT_MS, maxWait: 10_000 });
+  await prisma.$transaction((tx) => storeIn(tx, peer, people, own, askedFrom), {
+    timeout: STORE_TIMEOUT_MS,
+    maxWait: 10_000,
+  });
+}
+
+/** Holds `peerId`'s kept collections and models for `tx`, alone: each write of them (a read of a collection as shared
+ *  kept, one let go of, the index written, the partner blocked) waits for the one before, so it sees what that wrote,
+ *  and what one drops is pruned within it. So a model another collection is being given isn't taken, and nothing let go
+ *  of is brought back. Taken first, before any row. */
+export async function holdRemoteModels(tx: Prisma.TransactionClient, peerId: string): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('remote-models'), hashtext(${peerId}))`;
+}
+
+/** The models kept only for collections shared with people here that no such collection holds any more, in `tx`
+ *  (which holds the partner's lock): of `candidates` when given (those a read or a let-go dropped), else all of the
+ *  partner's. Each is noted gone as of now, so a read of the index asked for before can't bring it back as public. */
+export async function pruneIn(tx: Prisma.TransactionClient, peerId: string, candidates?: string[]): Promise<void> {
+  if (candidates && !candidates.length) return;
+  const only = candidates ? Prisma.sql`AND m."apId" = ANY(${candidates}::text[])` : Prisma.empty;
+  await tx.$executeRaw`
+    WITH gone AS (
+      DELETE FROM "RemoteModel" m
+      WHERE m."peerId" = ${peerId} AND m.limited ${only}
+        AND NOT EXISTS (
+          SELECT 1 FROM "RemoteCollection" c
+          WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
+        )
+      RETURNING m."apId"
+    )
+    INSERT INTO "RemoteGone" ("apId", "peerId", "at")
+    SELECT "apId", ${peerId}, ${askedAt()} FROM gone
+    ON CONFLICT ("apId") DO UPDATE SET "at" = GREATEST("RemoteGone"."at", EXCLUDED."at")`;
 }
 
 async function storeIn(
@@ -598,7 +670,16 @@ async function storeIn(
   peer: Peer,
   people: Shared[],
   own: (url: string | undefined) => url is string,
+  askedFrom: Date,
 ): Promise<void> {
+  await holdRemoteModels(tx, peer.id);
+  // What's been let go of, and as of when (sharedCollections.ts): fixed while this holds the lock.
+  const goneAt = new Map(
+    (await tx.remoteGone.findMany({ where: { peerId: peer.id }, select: { apId: true, at: true } })).map((row) => [
+      row.apId,
+      row.at,
+    ]),
+  );
   // Every row written now is marked with it: what's left unmarked is what the partner no longer shares, found without
   // listing what it does (a big partner's ids would pass what one query may take).
   const readAt = new Date();
@@ -636,13 +717,34 @@ async function storeIn(
     if (!allCollections) partlyCollections.push(saved.id);
     for (const model of models) {
       if (model.attributedTo !== person.id) continue;
-      const modelData = { peerId: peer.id, personId: saved.id, ...remoteModelData(model, own), syncedAt: readAt };
-      await tx.remoteModel.upsert({
-        where: { apId: model.id },
-        create: { apId: model.id, ...modelData },
-        update: modelData,
-        select: { id: true },
-      });
+      // Shared openly there: on Explore, whatever collection shared with people here also holds it.
+      const modelData = {
+        peerId: peer.id,
+        personId: saved.id,
+        ...remoteModelData(model, own),
+        syncedAt: readAt,
+        limited: false,
+      };
+      // Let go of since this was asked for, kept only for a collection shared with people here: not made public again,
+      // whether or not a read as shared has kept it since.
+      const gone = goneAt.get(model.id);
+      if (gone && gone >= model.fetchedAt) continue;
+      // Unless it was read since this was asked for, for a collection shared with some people here, and isn't known to
+      // be open as of then: it stays theirs alone until a later read of this says otherwise (its files are fetched for
+      // anyone here meanwhile, as they're shared with someone here).
+      const write = () =>
+        tx.remoteModel.updateMany({
+          where: { apId: model.id, OR: [{ limited: false }, { syncedAt: { lt: model.fetchedAt } }] },
+          data: modelData,
+        });
+      if (!(await write()).count) {
+        const made = await tx.remoteModel.createMany({
+          data: { apId: model.id, ...modelData },
+          skipDuplicates: true,
+        });
+        // Made meanwhile, by a read of a collection holding it: written over unless that was asked for after this.
+        if (!made.count) await write();
+      }
     }
     for (const collection of collections) {
       if (collection.attributedTo !== person.id) continue;
@@ -653,26 +755,83 @@ async function storeIn(
         description: markdownOf(collection.source, 5000),
         updatedAt: collection.updated,
         syncedAt: readAt,
+        fetchedAt: collection.fetchedAt,
+        // Public there now: for everyone here, not only the people it was once shared with.
+        limited: false,
       };
       const modelApIds = collection.modelIds;
-      await tx.remoteCollection.upsert({
-        where: { apId: collection.id },
-        create: { apId: collection.id, ...collectionData, modelApIds },
-        // Its models read only in part: those it had stay.
-        update: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
-        select: { id: true },
-      });
+      // Withdrawn by its owner's instance since this was asked for, once shared with people here: not made public again.
+      const gone = goneAt.get(collection.id);
+      if (gone && gone >= collection.fetchedAt) continue;
+      // Unless it was asked for since, as shared with some people here (sharedCollections.ts): that's newer than this,
+      // so it stays theirs alone, as it does when both were asked for in the same millisecond (one public then is
+      // written, so it's not pruned as stale). Checked as it's written, so a read of it finishing meanwhile counts too.
+      const write = () =>
+        tx.remoteCollection.updateMany({
+          where: {
+            apId: collection.id,
+            OR: [
+              { fetchedAt: null },
+              { fetchedAt: { lt: collection.fetchedAt } },
+              { fetchedAt: collection.fetchedAt, limited: false },
+            ],
+          },
+          // Its models read only in part: those it had stay.
+          data: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
+        });
+      if (!(await write()).count) {
+        await tx.remoteCollection.createMany({
+          data: { apId: collection.id, ...collectionData, modelApIds },
+          skipDuplicates: true,
+        });
+        // Made meanwhile by a read of it as shared, asked for earlier than this: this is kept instead.
+        await write();
+      }
     }
   }
-  // Whatever it no longer shares goes.
+  // Withdrawn before this read began: no read still to come was asked for before that.
+  await tx.remoteGone.deleteMany({ where: { peerId: peer.id, at: { lt: askedFrom } } });
+  // One that was shared with some people here and is public there now is for everyone: nobody's its viewer.
+  await tx.remoteCollectionViewer.deleteMany({ where: { collection: { peerId: peer.id, limited: false } } });
+  // Whatever it no longer shares goes, except what was sent to people here rather than listed: a collection shared
+  // with them goes when its owner's instance says so (sharedCollections.ts), and a model no longer shared openly but
+  // still in one stays for them.
   const stale = { peerId: peer.id, syncedAt: { lt: readAt } };
-  await tx.remoteCollection.deleteMany({ where: { ...stale, personId: { notIn: partlyCollections } } });
-  await tx.remoteModel.deleteMany({ where: { ...stale, personId: { notIn: partly } } });
-  // Someone no longer listed whom a chat still names is kept for it, off Explore.
-  const inChats = { OR: [{ chats: { some: {} } }, { messages: { some: {} } }] } satisfies Prisma.RemotePersonWhereInput;
+  await tx.remoteCollection.deleteMany({ where: { ...stale, limited: false, personId: { notIn: partlyCollections } } });
+  // Someone whose models were read only in part keeps the rest as they were: one not read may still be shared openly.
+  const readInPart = partly.length ? Prisma.sql`AND m."personId" NOT IN (${Prisma.join(partly)})` : Prisma.empty;
+  await tx.$executeRaw`
+    UPDATE "RemoteModel" m SET limited = true
+    WHERE m."peerId" = ${peer.id} AND m."syncedAt" < ${readAt} AND NOT m.limited ${readInPart}
+      AND EXISTS (
+        SELECT 1 FROM "RemoteCollection" c
+        WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
+      )`;
+  await tx.remoteModel.deleteMany({ where: { ...stale, limited: false, personId: { notIn: partly } } });
+  // And any kept only for a collection shared with people here that's now public, or for none: the one look across all
+  // of them, once a read of the index.
+  await pruneIn(tx, peer.id);
+  // Someone no longer listed whom a chat, a collection shared with people here, or a collection here shared with them
+  // still names is kept for it, off Explore.
+  const named = {
+    OR: [
+      { chats: { some: {} } },
+      { messages: { some: {} } },
+      { collections: { some: { limited: true } } },
+      { collectionShares: { some: {} } },
+    ],
+  } satisfies Prisma.RemotePersonWhereInput;
   // Their cover goes with it, so the picture kept of it is pruned: it's not theirs to show any more.
-  await tx.remotePerson.updateMany({ where: { ...stale, ...inChats }, data: { listed: false, coverUrl: null } });
-  await tx.remotePerson.deleteMany({ where: { ...stale, chats: { none: {} }, messages: { none: {} } } });
+  await tx.remotePerson.updateMany({ where: { ...stale, ...named }, data: { listed: false, coverUrl: null } });
+  await tx.remotePerson.deleteMany({
+    where: {
+      ...stale,
+      chats: { none: {} },
+      messages: { none: {} },
+      collections: { none: { limited: true } },
+      collectionShares: { none: {} },
+    },
+  });
   // Someone this instance's people had direct messages with, back after a disconnect: in those chats again.
   await tx.$executeRaw`
     INSERT INTO "ChatRemoteMember" ("chatId", "personId")

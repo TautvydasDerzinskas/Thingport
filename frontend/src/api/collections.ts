@@ -1,6 +1,7 @@
-import { authHeaders } from "../utils/auth";
+import { appendTokenToUrl, authHeaders } from "../utils/auth";
 import { apiBase, assertOk, assertOkWithMessage, readErrorMessage } from "./client";
 import { BULK_LIMIT, type Print } from "./prints";
+import type { RemoteRef } from "./chats";
 import type { UserCard } from "./social";
 
 export type SystemCollectionKey = "favorites" | "history";
@@ -47,8 +48,34 @@ export type Collection = {
   tool_id: string | null;
   /** Shown to the instance's other users while an admin has social features on. */
   is_public?: boolean;
-  /** Set on another user's public collection: whose it is. Null on the viewer's own. */
+  /** Who besides its owner sees it while social features are on. */
+  visibility?: CollectionVisibility;
+  /** On the user's own shared collection: how many it's shared with, and the first few. */
+  shared_with?: { count: number; people: SharePerson[] } | null;
+  /** Set on another user's collection: whose it is. Null on the viewer's own. */
   owner?: UserCard | null;
+};
+
+/** Nobody but its owner, the people it's shared with, or everyone (on Explore). */
+export type CollectionVisibility = "private" | "shared" | "public";
+
+/** Someone a collection is shared with: here, or on a partner instance (`remote`). Never their email. */
+export type SharePerson = UserCard & { remote?: RemoteRef | null };
+
+/** Who the user's collection is shared with: the whole list, kept while it's private or public too. */
+export type CollectionSharing = {
+  visibility: CollectionVisibility;
+  people: SharePerson[];
+  max_people: number;
+};
+
+export type CollectionSharingPatch = {
+  visibility?: CollectionVisibility;
+  add_user_ids?: string[];
+  remove_user_ids?: string[];
+  /** People on connected instances, by their id here. */
+  add_remote_person_ids?: string[];
+  remove_remote_person_ids?: string[];
 };
 
 export type CollectionInput = {
@@ -56,7 +83,7 @@ export type CollectionInput = {
   description?: string | null;
   tags?: string[];
   /** Left as it is when not given. */
-  is_public?: boolean;
+  visibility?: CollectionVisibility;
 };
 
 export type CollectionMembership = {
@@ -79,6 +106,34 @@ export type CollectionMergeResult = {
   added: number;
 };
 
+// Someone elsewhere's picture comes through this instance at an address relative to the API: an <img> sends no header,
+// so the session goes in the address, as for partners' pictures on Explore.
+const sharePersonIn = (person: SharePerson): SharePerson =>
+  person.remote && person.avatar_url
+    ? { ...person, avatar_url: appendTokenToUrl(`${apiBase()}${person.avatar_url}`) }
+    : person;
+const sharingIn = (sharing: CollectionSharing): CollectionSharing => ({
+  ...sharing,
+  people: sharing.people.map(sharePersonIn),
+});
+const collectionIn = (collection: Collection): Collection =>
+  collection.shared_with
+    ? {
+        ...collection,
+        shared_with: { ...collection.shared_with, people: collection.shared_with.people.map(sharePersonIn) },
+      }
+    : collection;
+export const sharePeopleIn = (people: SharePerson[]): SharePerson[] => people.map(sharePersonIn);
+
+/** `collection` as its sharing now has it: what a card shows of who sees it. */
+export const withSharing = (collection: Collection, sharing: CollectionSharing): Collection => ({
+  ...collection,
+  visibility: sharing.visibility,
+  is_public: sharing.visibility === "public",
+  shared_with:
+    sharing.visibility === "shared" ? { count: sharing.people.length, people: sharing.people.slice(0, 3) } : null,
+});
+
 const postJson = (path: string, body: unknown) =>
   fetch(`${apiBase()}${path}`, {
     method: "POST",
@@ -90,13 +145,13 @@ export const collectionsApi = {
   list: async (): Promise<Collection[]> => {
     const res = await fetch(`${apiBase()}/collections`, { headers: authHeaders() });
     assertOk(res, "Failed to list collections");
-    return res.json();
+    return ((await res.json()) as Collection[]).map(collectionIn);
   },
 
   get: async (id: string): Promise<Collection> => {
     const res = await fetch(`${apiBase()}/collection/${id}`, { headers: authHeaders() });
     assertOk(res, "Failed to load collection");
-    return res.json();
+    return collectionIn(await res.json());
   },
 
   create: async (input: CollectionInput): Promise<Collection> => {
@@ -116,12 +171,30 @@ export const collectionsApi = {
       body: JSON.stringify(input),
     });
     if (!res.ok) throw new Error(await readErrorMessage(res, "Update collection failed"));
-    return res.json();
+    return collectionIn(await res.json());
   },
 
   delete: async (id: string): Promise<void> => {
     const res = await fetch(`${apiBase()}/collection/${id}`, { method: "DELETE", headers: authHeaders() });
     assertOk(res, "Delete collection failed");
+  },
+
+  sharing: async (id: string): Promise<CollectionSharing> => {
+    const res = await fetch(`${apiBase()}/collection/${id}/sharing`, { headers: authHeaders() });
+    await assertOkWithMessage(res, "Failed to load who it's shared with");
+    return sharingIn(await res.json());
+  },
+
+  /** Its visibility, and people added to its list or taken off it; the others stay. */
+  updateSharing: async (id: string, patch: CollectionSharingPatch): Promise<CollectionSharing> => {
+    const res = await fetch(`${apiBase()}/collection/${id}/sharing`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(patch),
+    });
+    // No fallback of its own: the form says it in the reader's language when the server gave no reason.
+    await assertOkWithMessage(res, "");
+    return sharingIn(await res.json());
   },
 
   /** How many models a merge of these would hold: the same whichever is kept. */
@@ -135,7 +208,8 @@ export const collectionsApi = {
   merge: async (primaryId: string, ids: string[]): Promise<CollectionMergeResult> => {
     const res = await postJson("/collections/merge", { primary_id: primaryId, ids });
     await assertOkWithMessage(res, "Merge failed");
-    return res.json();
+    const result = (await res.json()) as CollectionMergeResult;
+    return { ...result, collection: collectionIn(result.collection) };
   },
 
   /** Their models are untouched. */

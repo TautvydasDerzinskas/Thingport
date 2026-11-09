@@ -10,6 +10,7 @@ import { deletePrint } from "../src/services/printEditService";
 import { setToolsAccess } from "../src/services/settingsService";
 import { parseToolManifest } from "../src/services/toolFormat";
 import { setToolsRepoForTest, syncToolModels, toolFetchSettled, toolsSource } from "../src/services/toolsService";
+import { toolLocks } from "../src/routes/toolLocks";
 
 const app = createApp();
 const stamp = Date.now();
@@ -366,6 +367,42 @@ describe("installing", () => {
       ).status,
     ).toBe(403);
     expect((await request(app).delete(`/api/collection/${collection.id}/items/${print.id}`).set(as)).status).toBe(403);
+    // A trailing slash reaches the same routes, so it's refused the same.
+    expect((await request(app).delete(`/api/print/${print.id}/`).set(as)).status).toBe(403);
+    expect(
+      (await request(app).patch(`/api/collection/${collection.id}/`).set(as).send({ name: "Mine", tags: [] })).status,
+    ).toBe(403);
+    expect((await request(app).delete(`/api/collection/${collection.id}/`).set(as)).status).toBe(403);
+    // The lock itself, as the routes behind it may refuse on their own: a trailing slash, or an id written with a
+    // percent-encoded letter (decoded for the route), gets past it nowhere.
+    const lockedBy = (method: string, lockPath: string, body: unknown = {}) =>
+      new Promise<number | null>((resolve) => {
+        toolLocks(
+          { method, path: lockPath, body } as never,
+          {} as never,
+          ((err?: { status?: number }) => resolve(err ? (err.status ?? 500) : null)) as never,
+        );
+      });
+    const encoded = (id: string) => `%${id.charCodeAt(0).toString(16)}${id.slice(1)}`;
+    expect(await lockedBy("POST", "/prints/tags/", { print_ids: [print.id] })).toBe(403);
+    expect(await lockedBy("POST", "/collections/delete/", { ids: [collection.id] })).toBe(403);
+    expect(await lockedBy("POST", "/collections/merge/", { primary_id: collection.id, ids: [] })).toBe(403);
+    expect(await lockedBy("DELETE", `/collection/${encoded(collection.id)}`)).toBe(403);
+    expect(await lockedBy("DELETE", `/print/${encoded(print.id)}`)).toBe(403);
+    // Nor a path in other letter case, which the routes take the same.
+    expect(await lockedBy("DELETE", `/Collection/${collection.id}`)).toBe(403);
+    expect(await lockedBy("DELETE", `/PRINT/${print.id}`)).toBe(403);
+    expect(await lockedBy("POST", "/Collections/Delete", { ids: [collection.id] })).toBe(403);
+    expect(await lockedBy("POST", "/Prints/Tags", { print_ids: [print.id] })).toBe(403);
+    expect((await request(app).delete(`/api/Collection/${collection.id}`).set(as)).status).toBe(403);
+    expect(
+      (
+        await request(app)
+          .delete(`/api/collection/${encoded(collection.id)}`)
+          .set(as)
+      ).status,
+    ).toBe(403);
+    expect(await lockedBy("POST", `/print/${print.id}/favorite`)).toBeNull();
     // Not offered as somewhere to put a model.
     const pickers = await request(app).get(`/api/print/${print.id}/collections`).set(as);
     expect(pickers.body.some((c: { id: string }) => c.id === collection.id)).toBe(false);

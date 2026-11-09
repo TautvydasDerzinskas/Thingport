@@ -1,6 +1,6 @@
 import { appendTokenToUrl, authHeaders } from "../utils/auth";
 import { apiBase, assertOkWithMessage, readErrorMessage, UnauthorizedError } from "./client";
-import type { Collection } from "./collections";
+import { sharePeopleIn, type Collection, type SharePerson } from "./collections";
 import { FederationError } from "./federation";
 import type { ListPrintsResult, Print, PrintSortMode } from "./prints";
 import type { ProfileCoverValue } from "../constants/profileCovers";
@@ -79,12 +79,25 @@ export type ExploreOverview = {
   recent_models: Print[];
   recent_collections: Collection[];
   most_collected: { model: Print; copies: number }[];
+  /** Collections their owners shared with the user, the latest first: the first page, the rest from `sharedWithYou`. */
+  shared_with_you?: Collection[];
+  shared_with_you_total?: number;
   /** When each of the above was last shared, by id: what orders partners' beside them. */
   shared_at?: { people: Record<string, string>; models: Record<string, string>; collections: Record<string, string> };
-  /** What partners share, while connected instances are on. */
-  elsewhere?: { people: RemotePerson[]; recent_models: RemoteModelCard[]; recent_collections: RemoteCollectionCard[] };
+  /** What partners share, while connected instances are on, and what their people shared with the user (with when). */
+  elsewhere?: {
+    people: RemotePerson[];
+    recent_models: RemoteModelCard[];
+    recent_collections: RemoteCollectionCard[];
+    shared_with_you?: (RemoteCollectionCard & { shared_at: string })[];
+    /** How many there are: the rest from `elsewhere.shared`. */
+    shared_with_you_total?: number;
+  };
   instances?: InstanceRef[];
 };
+
+/** A collection a partner's person shared with the user, with when. */
+export type RemoteSharedCard = RemoteCollectionCard & { shared_at: string };
 
 /** Explore narrowed: everything, this instance's own, or one partner's (its id). */
 export type ExploreScope = "all" | "here" | string;
@@ -163,7 +176,7 @@ const modelPictures = <T extends RemoteModelCard>(model: T): T => ({
   ...withOwner(model),
   thumb_url: picture(model.thumb_url),
 });
-const collectionPictures = (collection: RemoteCollectionCard): RemoteCollectionCard => ({
+const collectionPictures = <T extends RemoteCollectionCard>(collection: T): T => ({
   ...withOwner(collection),
   cover_urls: collection.cover_urls.flatMap((url) => picture(url) ?? []),
 });
@@ -233,6 +246,8 @@ export const socialApi = {
             people: elsewhere.people.map(personPictures),
             recent_models: elsewhere.recent_models.map(modelPictures),
             recent_collections: elsewhere.recent_collections.map(collectionPictures),
+            shared_with_you: (elsewhere.shared_with_you ?? []).map(collectionPictures),
+            shared_with_you_total: elsewhere.shared_with_you_total,
           },
         }
       : overview;
@@ -240,6 +255,19 @@ export const socialApi = {
 
   /** What partners' people share, read-only: null for something no longer there (or connected instances off). */
   elsewhere: {
+    /** What partners' people (one partner's, for its id) shared with the user, past the first page Explore came with. */
+    shared: async (params: {
+      scope: ExploreScope;
+      limit: number;
+      offset: number;
+    }): Promise<{ items: RemoteSharedCard[]; total: number }> => {
+      const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
+      if (params.scope !== "all") qs.set("scope", params.scope);
+      const res = await fetch(`${apiBase()}/explore/elsewhere/shared?${qs}`, { headers: authHeaders() });
+      await assertOkWithMessage(res, "Failed to load the collections");
+      const items = (await res.json()) as RemoteSharedCard[];
+      return { items: items.map(collectionPictures), total: Number(res.headers.get("X-Total-Count") ?? 0) };
+    },
     person: async (id: string): Promise<RemotePersonPage | null> => {
       const page = await getOrNull<RemotePersonPage>(`/explore/elsewhere/person/${encodeURIComponent(id)}`);
       return (
@@ -349,6 +377,30 @@ export const socialApi = {
   },
 
   /** A page of a user's public collections past the first, which came with their page; null for none any more. */
+  /** Collections their owners shared with the user, past the first page Explore came with, each with when it was last
+   *  shared or added to (older servers leave that out). */
+  sharedWithYou: async (params: {
+    limit: number;
+    offset: number;
+  }): Promise<{ items: (Collection & { shared_at?: string | null })[]; total: number }> => {
+    const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
+    const res = await fetch(`${apiBase()}/explore/shared?${qs}`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    await assertOkWithMessage(res, "Failed to load the collections");
+    return { items: await res.json(), total: Number(res.headers.get("X-Total-Count") ?? 0) };
+  },
+
+  /** People to share a collection with: by any part of their name, or their whole email. */
+  people: async (query: string): Promise<SharePerson[]> =>
+    sharePeopleIn(
+      (
+        await getJson<{ people: SharePerson[] }>(
+          `/social/people?q=${encodeURIComponent(query)}`,
+          "Failed to find people",
+        )
+      ).people,
+    ),
+
   userCollections: async (
     userId: string,
     params: { limit: number; offset: number },

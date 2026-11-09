@@ -14,8 +14,12 @@ import {
   modelsPage,
   parseModelsCursor,
   person,
+  collectionsSharedWith,
+  personNamed,
   sendMedia,
   sendSharedFile,
+  sharedCollectionDoc,
+  sharedCollectionItems,
   signingPartner,
 } from "./publish";
 import { getRuntime, INSTANCE } from "./runtime";
@@ -171,11 +175,58 @@ router.get(
     else res.status(404).json({ error: "Not found" });
   }),
 );
+// The collections shared with people on the partner asking, each, and its models (sharedCollections.ts).
+router.get(
+  "/shared",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    const after = req.query.after;
+    if (after !== undefined && (typeof after !== "string" || !/^[a-z0-9_-]{1,40}$/i.test(after))) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    activityJson(res, await collectionsSharedWith(res.locals.peer, after ?? null));
+  }),
+);
+router.get(
+  "/collections/:id",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    const body = await sharedCollectionDoc(req.params.id, res.locals.peer);
+    if (body) activityJson(res, body);
+    else res.status(404).json({ error: "Not found" });
+  }),
+);
+router.get(
+  "/collections/:id/items",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    const after = typeof req.query.after === "string" ? parseModelsCursor(req.query.after) : null;
+    const body =
+      req.query.after === undefined || after
+        ? await sharedCollectionItems(req.params.id, res.locals.peer, after)
+        : null;
+    if (body) activityJson(res, body);
+    else res.status(404).json({ error: "Not found" });
+  }),
+);
+// Someone here by their exact username, for a partner's person sharing a collection with them.
+router.get(
+  "/people/:username",
+  partnerOnly,
+  asyncHandler(async (req, res) => {
+    const body = /^[a-z0-9_.-]{1,40}$/i.test(req.params.username)
+      ? await personNamed(req.params.username, res.locals.peer)
+      : null;
+    if (body) activityJson(res, body);
+    else res.status(404).json({ error: "Not found" });
+  }),
+);
 router.get(
   ["/files/:kind/:id", "/files/:kind/:id/:name"],
   partnerOnly,
   asyncHandler(async (req, res) => {
-    await sendSharedFile(res, req.params.kind, req.params.id);
+    await sendSharedFile(res, req.params.kind, req.params.id, res.locals.peer);
   }),
 );
 router.get(

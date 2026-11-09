@@ -105,13 +105,24 @@ export async function setToolsAccess(patch: Partial<ToolsAccess>): Promise<Tools
 export type SocialSettings = { enabled: boolean; chats: boolean };
 const SOCIAL_KEY = "social";
 
-export async function getSocialSettings(): Promise<SocialSettings> {
-  const row = await prisma.setting.findUnique({ where: { key: SOCIAL_KEY } });
-  const value = (row?.value ?? {}) as Partial<SocialSettings>;
+function socialSettingsOf(stored: unknown): SocialSettings {
+  const value = (stored ?? {}) as Partial<SocialSettings>;
   return {
     enabled: typeof value.enabled === "boolean" ? value.enabled : false,
     chats: typeof value.chats === "boolean" ? value.chats : false,
   };
+}
+
+export async function getSocialSettings(): Promise<SocialSettings> {
+  const row = await prisma.setting.findUnique({ where: { key: SOCIAL_KEY } });
+  return socialSettingsOf(row?.value);
+}
+
+/** The same, read in `tx` and held until it's done: a change to them waits for it. */
+export async function holdSocialSettings(tx: Prisma.TransactionClient): Promise<SocialSettings> {
+  const rows = await tx.$queryRaw<{ value: Prisma.JsonValue }[]>`
+    SELECT value FROM "Setting" WHERE key = ${SOCIAL_KEY} FOR SHARE`;
+  return socialSettingsOf(rows[0]?.value);
 }
 
 /** Changes only what's given, merged into what's stored in one statement: two changes at once, one to each
@@ -386,8 +397,9 @@ export function normalizePublicUrl(value: string | null | undefined): string | n
 
 // Seeded from PUBLIC_URL at startup; after that the row wins, so an admin's change sticks across restarts.
 // "" when there's none: links in emails then can't be absolute, and single sign-on can't work.
-export async function getPublicUrl(): Promise<string> {
-  const row = await prisma.setting.findUnique({ where: { key: PUBLIC_URL_KEY } });
+// `db`: the caller's transaction, when it's read in one.
+export async function getPublicUrl(db: Pick<Prisma.TransactionClient, "setting"> = prisma): Promise<string> {
+  const row = await db.setting.findUnique({ where: { key: PUBLIC_URL_KEY } });
   if (row) return typeof row.value === "string" ? (normalizePublicUrl(row.value) ?? "") : "";
   return normalizePublicUrl(PUBLIC_URL) ?? "";
 }

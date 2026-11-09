@@ -8,7 +8,7 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { PROVIDERS } from "../src/providers/registry";
 import { addPlatesToPrint, createPrint, resolvePlateFilePath } from "../src/services/printCreation";
-import { startProfileFill } from "../src/services/printProfileService";
+import { profileFillRunning, startProfileFill } from "../src/services/printProfileService";
 import { setSocialSettings } from "../src/services/settingsService";
 import type { ProviderProfileFactsById } from "../src/services/printProfileFacts";
 import { register, tempFile } from "./helpers/fileReuse";
@@ -321,6 +321,35 @@ describe("a model imported with print profiles", () => {
     expect(read).toHaveBeenCalledTimes(2);
   });
 
+  it("never says a fill is done with what it read before the fill finished", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    vi.spyOn(PROVIDERS.makerworld, "profileFacts").mockImplementation(async () => {
+      await gate;
+      return SITE_FACTS;
+    });
+    const { print, profilePlate } = await profileModel("racing", "first");
+    const started = await request(app).post(`/api/print/${print.id}/profiles/fill`).set(auth(owner.token));
+    expect(started.body.filling).toBe(true);
+    // The model page asks how it's going while the fill waits on the site: its plates are read, and only then does the
+    // fill finish, before the answer is made from them. Its file was read by then, but nothing is stored yet.
+    const findMany = prisma.plate.findMany.bind(prisma.plate);
+    vi.spyOn(prisma.plate, "findMany").mockImplementation((async (args: Parameters<typeof findMany>[0]) => {
+      const rows = await findMany(args);
+      if (args?.where?.printId === print.id) {
+        release();
+        while (profileFillRunning(print.id)) await sleep(10);
+      }
+      return rows;
+    }) as unknown as typeof prisma.plate.findMany);
+    const res = await request(app).get(`/api/print/${print.id}/profiles`).set(auth(owner.token));
+    // What it read is from before the fill finished: it says the fill is still going, so the page asks again.
+    expect(res.body.profiles[profilePlate.id].title).toBeNull();
+    expect(res.body.filling).toBe(true);
+    vi.mocked(prisma.plate.findMany).mockRestore();
+    expect((await settled(print.id)).profiles[profilePlate.id].title).toBe("0.16mm, multi-colour");
+  });
+
   it("shows a shared model's profiles and pictures to its viewers, who can't start reading them", async () => {
     const { print, profilePlate } = await profileModel("shared", "none");
     await setSocialSettings({ enabled: true });
@@ -330,7 +359,7 @@ describe("a model imported with print profiles", () => {
           userId: owner.id,
           name: `Shared ${stamp}`,
           nameNormalized: `shared ${stamp}`,
-          isPublic: true,
+          visibility: "PUBLIC",
           items: { create: { printId: print.id } },
         },
       });

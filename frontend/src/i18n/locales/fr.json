@@ -2139,7 +2139,8 @@
           "federation_disconnected": "Instance déconnectée",
           "federation_blocked": "Instance bloquée",
           "federation_unblocked": "Instance débloquée",
-          "federation_user_requested": "A demandé à joindre quelqu'un d'ailleurs"
+          "federation_user_requested": "A demandé à joindre quelqu'un d'ailleurs",
+          "collection_sharing_changed": "Partage de collection modifié"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -5490,7 +5491,9 @@
         "itemCount_one": "{{count}} modèle",
         "itemCount_other": "{{count}} modèles",
         "ownerAndCount_one": "{{name}} · {{count}} modèle",
-        "ownerAndCount_other": "{{name}} · {{count}} modèles"
+        "ownerAndCount_other": "{{name}} · {{count}} modèles",
+        "sharedWith": "Partagée avec {{names}}",
+        "changeSharing": "Partagée avec {{who}} : changer qui la voit"
       },
       "form": {
         "createTitle": "Nouvelle collection",
@@ -5502,16 +5505,32 @@
         "create": "Créer",
         "saveFailed": "Impossible d’enregistrer la collection. Veuillez réessayer.",
         "visibilityLabel": "Visibilité",
-        "visibilityHelp": "Les collections publiques apparaissent dans Explorer : les autres utilisateurs de l'instance peuvent ouvrir, télécharger et copier leurs modèles. Les privées ne sont qu'à vous.",
+        "visibilityHelp": "Les collections privées ne sont qu'à vous. Les partagées sont vues par les personnes que vous choisissez, ici ou sur des instances connectées, les publiques par tout le monde, dans Explorer. Qui en voit une peut ouvrir, télécharger et copier ses modèles.",
         "private": "Privée",
-        "public": "Publique"
+        "public": "Publique",
+        "shared": "Partagée",
+        "sharedCount_one": "{{count}} personne peut la voir",
+        "sharedCount_other": "{{count}} personnes peuvent la voir",
+        "sharedNobody": "Personne pour l'instant : vous seul la voyez",
+        "sharedElsewhere_one": "{{count}} sur une instance connectée",
+        "sharedElsewhere_other": "{{count}} sur des instances connectées",
+        "sharedHelp": "Ces personnes la voient comme une collection publique : elles peuvent ouvrir, télécharger et copier ses modèles, et sont prévenues quand vous la partagez avec elles. Vous seul savez avec qui d'autre elle est partagée. Une personne sur une instance connectée la voit par sa propre instance, qui ne la montre qu'à elle ; les administrateurs de cette instance pourraient la voir aussi.",
+        "keptPeople_one": "{{names}} reste dans la liste : choisissez Partagée pour la partager à nouveau.",
+        "keptPeople_other": "{{names}} restent dans la liste : choisissez Partagée pour la partager à nouveau.",
+        "andMore_one": "{{count}} autre",
+        "andMore_other": "{{count}} autres",
+        "peopleFailed": "Impossible de charger les personnes avec qui elle est partagée : qui la voit ne peut pas changer tant que ce n'est pas chargé.",
+        "createdNotShared": "« {{name}} » a été créée, mais n'a pas pu être partagée. Partager… dans son menu réessaie.",
+        "findPeopleHelp": "Une partie d'un nom trouve quelqu'un ici ou sur une instance connectée ; un e-mail ne trouve quelqu'un d'ici que saisi en entier, et n'est jamais affiché. Quelqu'un d'ailleurs que vous ne trouvez pas : saisissez son identifiant complet, comme nom@son-instance."
       },
       "detail": {
         "title": "{{name}}",
         "subtitle": "Collection",
         "empty": "Aucun modèle dans cette collection pour le moment.",
         "confirmDelete": "Supprimer « {{name}} » ? Les modèles qu’elle contient ne seront pas supprimés.",
-        "deleteFailed": "Échec de la suppression de la collection."
+        "deleteFailed": "Échec de la suppression de la collection.",
+        "sharedWith_one": "Partagée avec {{count}}",
+        "sharedWith_other": "Partagée avec {{count}}"
       },
       "errors": {
         "loadFailed": "Impossible de charger les collections.",
@@ -5620,7 +5639,8 @@
         "openToolUnknown": "Ouvrir l'outil",
         "cantSelect": "La collection d'un outil ne peut être ni fusionnée ni supprimée"
       },
-      "publicHint": "Publique : visible des autres dans Explorer"
+      "publicHint": "Publique : visible des autres dans Explorer",
+      "share": "Partager…"
     },
     "tags": {
       "pageTitle": "Étiquettes",
@@ -6037,7 +6057,12 @@
         "label": "Afficher",
         "all": "Partout",
         "here": "Cette instance"
-      }
+      },
+      "sharedWithYou": "Partagées avec vous",
+      "sharedWithYouHelp": "Les collections que leurs propriétaires ont partagées avec vous et quelques autres. Personne d'autre ne les voit dans Explorer.",
+      "showMore_one": "Afficher {{count}} de plus",
+      "showMore_other": "Afficher {{count}} de plus",
+      "sharedFailed": "Impossible de charger plus de ce qui est partagé avec vous. Réessayez."
     }
   },
   "providers": {
