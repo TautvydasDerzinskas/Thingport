@@ -23,7 +23,7 @@ import { PLATE_PNG } from "./helpers/profileProject";
 import { blockedBy, sessionOf } from "./helpers/locks";
 import { remoteCollection, remoteModel } from "../src/federation/remoteExplore";
 import { activeRemoteModel } from "../src/federation/remoteFiles";
-import { forgetPeerContent, holdRemoteModels, syncPeer } from "../src/federation/remoteIndex";
+import { askedAt, forgetPeerContent, holdRemoteModels, syncPeer } from "../src/federation/remoteIndex";
 import { resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
 import {
@@ -1667,7 +1667,8 @@ describe("a partner's person sharing a collection with people here", () => {
       const syncing = syncPeer(partnerId);
       await models.reached;
       const asked = new Date(Date.now() - 60_000);
-      await prisma.remoteGone.create({ data: { apId: model, peerId: partnerId, at: new Date() } });
+      // By the clock reads are timed by, which may run a little ahead of the wall's.
+      await prisma.remoteGone.create({ data: { apId: model, peerId: partnerId, at: askedAt() } });
       await prisma.remoteModel.create({
         data: { apId: model, peerId: partnerId, personId: rutaId, title: "Kept again", limited: true, syncedAt: asked },
       });
@@ -1698,8 +1699,9 @@ describe("a partner's person sharing a collection with people here", () => {
   });
 
   it("clears what was noted gone of a partner blocked during a long write of its kept collections", async () => {
-    await prisma.remoteGone.create({ data: { apId: apId("noted-late"), peerId: partnerId, at: new Date() } });
-    // A write holding the partner's lock for longer than a transaction's usual five seconds.
+    await prisma.remoteGone.create({ data: { apId: apId("noted-early"), peerId: partnerId, at: new Date() } });
+    // A write holding the partner's lock for longer than a transaction's usual five seconds, noting something gone as
+    // it ends: after the cleanup began waiting, so that goes too.
     let release!: () => void;
     const released = new Promise<void>((resolve) => (release = resolve));
     let holding!: () => void;
@@ -1712,6 +1714,7 @@ describe("a partner's person sharing a collection with people here", () => {
           await holdRemoteModels(tx, partnerId);
           holding();
           await released;
+          await tx.remoteGone.create({ data: { apId: apId("noted-late"), peerId: partnerId, at: new Date() } });
         },
         { timeout: 20_000 },
       )
@@ -1731,6 +1734,7 @@ describe("a partner's person sharing a collection with people here", () => {
       release();
       await held;
     }
+    expect(await held).toBeNull();
     expect(await forgetting).toBeNull();
     expect(await prisma.remoteGone.count({ where: { peerId: partnerId } })).toBe(0);
   }, 20_000);
