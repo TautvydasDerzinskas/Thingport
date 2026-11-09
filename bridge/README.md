@@ -229,7 +229,11 @@ After install, paste this into your browser's address bar (replace the URL):
   `/api/t/<token>/` paths. Older versions may have logged them; delete old logs
   and revoke exposed sessions before sharing diagnostics.
 - The bridge downloads files into the user cache directory unless configured otherwise.
-- If a slicer isn't found, the file opens with the OS default app instead.
+- If a slicer isn't found, the file opens with the OS default app instead. On Windows,
+  only supported model and slicer file extensions are allowed for default-open
+  (`.stl`, `.3mf`, `.step`, `.stp`, `.obj`, `.glb`, `.gltf`, `.f3d`,
+  `.lbrn`, `.lbrn2`, `.gcode`, `.bgcode`). This prevents protocol links from
+  running downloaded executables through Windows file associations.
 - On macOS, the installed app keeps running in the background (no Dock icon) so repeat opens
   don't pay the app-launch cost every time -- this mirrors how macOS delivers custom URL schemes
   to already-registered apps via Apple Events rather than a fresh process per open, unlike
