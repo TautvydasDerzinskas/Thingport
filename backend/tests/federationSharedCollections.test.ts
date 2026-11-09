@@ -181,10 +181,11 @@ beforeAll(async () => {
     res.json({
       next: req.params.id === "partial" ? `${PARTNER}/api/ap/collections/partial/items?after=1` : undefined,
       type: "OrderedCollectionPage",
+      // "c26b" holds c26a's models, as said of them later.
       orderedItems: [1, 2].map((n) => ({
-        id: `${PARTNER}/api/ap/models/${req.params.id}-m${n}`,
+        id: `${PARTNER}/api/ap/models/${req.params.id === "c26b" ? "c26a" : req.params.id}-m${n}`,
         type: "thingport:Model",
-        name: `Hook ${n}`,
+        name: req.params.id === "c26b" ? `Later hook ${n}` : `Hook ${n}`,
         // What's said of c17's only to those it's shared with.
         source: req.params.id === "c17" ? { content: "Only shared" } : undefined,
         attributedTo: `${PARTNER}/api/ap/actors/ruta`,
@@ -1159,6 +1160,28 @@ describe("a partner's person sharing a collection with people here", () => {
     expect(
       await prisma.remoteModel.findUniqueOrThrow({ where: { apId: `${PARTNER}/api/ap/models/c24-m2` } }),
     ).toMatchObject({ title: "Hook 2" });
+  });
+
+  it("leaves a model as a read of another collection holding it wrote it, asked for in the same millisecond but later", async () => {
+    docs.set("c26a", doc("c26a", [actor(bea.id)]));
+    docs.set("c26b", doc("c26b", [actor(bea.id)]));
+    const held = hold("c26a");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date());
+    try {
+      // Asked for first, answered last.
+      const first = sharedCollectionFrom(actorOf(PARTNER), apId("c26a"));
+      await held.reached;
+      await sharedCollectionFrom(actorOf(PARTNER), apId("c26b"));
+      held.open();
+      await first;
+    } finally {
+      vi.useRealTimers();
+      held.open();
+    }
+    expect(
+      await prisma.remoteModel.findUniqueOrThrow({ where: { apId: `${PARTNER}/api/ap/models/c26a-m1` } }),
+    ).toMatchObject({ title: "Later hook 1" });
   });
 
   it("keeps a public collection the index read again in the same millisecond", async () => {

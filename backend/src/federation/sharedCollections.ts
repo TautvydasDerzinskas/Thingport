@@ -297,6 +297,14 @@ function readShared(peer: Peer, apId: string): Promise<void> {
   return oneAtATime(apId, () => readSharedNow(peer, apId));
 }
 
+// When each read is asked for, a millisecond past the last one's if need be: two never share a time, so whichever was
+// asked for later is told apart from the other, a model both hold included.
+let lastAsked = 0;
+function askedAt(): Date {
+  lastAsked = Math.max(Date.now(), lastAsked + 1);
+  return new Date(lastAsked);
+}
+
 async function readSharedNow(peer: Peer, apId: string): Promise<void> {
   // Turned off while it waited its turn: not asked for until they're on again.
   if (!(await getSocialSettings()).enabled) throw new RetryLater(SOCIAL_OFF);
@@ -304,8 +312,8 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
   const own = (url: string | undefined): url is string => Boolean(url) && originOf(url!) === peer.origin;
   const read = async (url: string) => (await runtime.signedLoader(url)).document;
   // As of when it's asked for: a read of the partner's index asked for before this doesn't write over it
-  // (remoteIndex.ts).
-  const readAt = new Date();
+  // (remoteIndex.ts), nor does a read of another collection asked for before it.
+  const readAt = askedAt();
   let doc: z.infer<typeof collectionDoc>;
   try {
     doc = collectionDoc.parse(await read(apId));

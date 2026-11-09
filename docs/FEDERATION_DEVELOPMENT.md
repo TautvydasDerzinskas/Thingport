@@ -236,7 +236,8 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   Reads and deletions of one collection run one at a time, from fetching to writing, so an older read can't put back
   someone a newer one took off. Each kept collection notes when it was asked for (`RemoteCollection.fetchedAt`), by
   the index or as shared, and the later of two reads is what's kept, whichever finishes last; on a tie, the read as
-  shared. A read writes nothing, its owner included, once the partner is blocked: it holds the partner's row
+  shared. Each model kept for one notes it too (`syncedAt`), and no two reads as shared are given the same time. A
+  read writes nothing, its owner included, once the partner is blocked: it holds the partner's row
   (`FOR SHARE`, last) until it's written, so a block waits for it and then forgets it all. Nothing is read or kept while
   social features are off here: each read checks as its turn comes, and holds the setting (`FOR SHARE`) while it's
   kept and whoever's new is told, in one transaction, so turning them off waits for it, and one that finds them off
