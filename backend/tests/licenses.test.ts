@@ -516,15 +516,22 @@ describe("an older import's licence", () => {
         data: { sourceProvider: "makerables", sourceExternalId: externalId, licenseReadAt: null },
       });
     }
+    let answerLate!: (value: Awaited<ReturnType<typeof PROVIDERS.makerables.details.read>>) => void;
     const reader = vi
       .spyOn(PROVIDERS.makerables.details, "read")
-      .mockReturnValueOnce(new Promise(() => undefined))
+      .mockReturnValueOnce(new Promise((resolve) => (answerLate = resolve)))
       .mockResolvedValue({ ...emptyImportedPageMetadata(), license: { id: "CC-BY-4.0", raw: "cc_by" } });
     try {
       await request(app).post(`/api/print/${hung}/license/fill`).set(auth());
       await request(app).post(`/api/print/${next}/license/fill`).set(auth());
       expect(await settled(next)).toMatchObject({ license: { id: "CC-BY-4.0" } });
       // Failed, so its page offers to try again.
+      expect(await settled(hung)).toMatchObject({ license: null, failed: true });
+
+      // Its answer, when it comes after all, is dropped: it stays failed, not "not stated".
+      answerLate({ ...emptyImportedPageMetadata(), license: null });
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      expect((await prisma.print.findUniqueOrThrow({ where: { id: hung } })).licenseReadAt).toBeNull();
       expect(await settled(hung)).toMatchObject({ license: null, failed: true });
     } finally {
       reader.mockRestore();

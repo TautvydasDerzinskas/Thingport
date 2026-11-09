@@ -174,7 +174,11 @@ async function readSourceLicense(
   return meta.license;
 }
 
-async function fillLicense(printId: string): Promise<void> {
+/** One read of a model's licence. `late` once it has been given up on: what it finds after that is dropped, as its
+ *  model has moved on, counted as failed or read again. */
+type Attempt = { late: boolean };
+
+async function fillLicense(printId: string, attempt: Attempt = { late: false }): Promise<void> {
   const print = await prisma.print.findUnique({
     where: { id: printId },
     select: {
@@ -190,17 +194,19 @@ async function fillLicense(printId: string): Promise<void> {
   if (!print || !licensePending(print)) return;
   // An admin turned its site off: it's left alone, as by every other background job.
   if (!(await isProviderEnabled(print.sourceProvider!))) {
-    markTried(print.id, true);
+    if (!attempt.late) markTried(print.id, true);
     return;
   }
   let license: ProviderLicense | null | undefined;
   try {
     license = await readSourceLicense(print.userId, print.sourceProvider!, print.sourceExternalId!, print.notes);
   } catch (err) {
+    if (attempt.late) return;
     markTried(print.id, true);
     log.warn("couldn't read the model's licence", { print: print.id, provider: print.sourceProvider, err });
     return;
   }
+  if (attempt.late) return;
   if (license === undefined) {
     markTried(print.id, false);
     return;
@@ -233,7 +239,7 @@ export function startLicenseFill(printId: string): void {
     .then(async () => {
       waiting.delete(printId);
       running.add(printId);
-      await withinTime(fillLicense(printId), LICENSE_READ_TIMEOUT_MS);
+      await withinTime((attempt) => fillLicense(printId, attempt), LICENSE_READ_TIMEOUT_MS);
     })
     .catch((err) => {
       // Failed before it could say so: its page offers to try again, rather than read it as none stated.
@@ -249,14 +255,18 @@ export function startLicenseFill(printId: string): void {
     });
 }
 
-/** `work`, or a failure once `ms` have passed; what it does after that is left to finish on its own. */
-function withinTime<T>(work: Promise<T>, ms: number): Promise<T> {
+/** `work`, or a failure once `ms` have passed. It's told it's late then, and left to finish on its own. */
+function withinTime(work: (attempt: Attempt) => Promise<void>, ms: number): Promise<void> {
+  const attempt: Attempt = { late: false };
   let timer: NodeJS.Timeout | undefined;
   const late = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`no answer after ${ms} ms`)), ms);
+    timer = setTimeout(() => {
+      attempt.late = true;
+      reject(new Error(`no answer after ${ms} ms`));
+    }, ms);
     timer.unref?.();
   });
-  return Promise.race([work, late]).finally(() => clearTimeout(timer));
+  return Promise.race([work(attempt), late]).finally(() => clearTimeout(timer));
 }
 
 export function licenseFillRunning(printId: string): boolean {
