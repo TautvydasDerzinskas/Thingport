@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PIXUP | High-Quality 3D Models From Top Designers</title>
+  </head>
+  <body>
+    <div id="profile_page_collection"></div>
+    <!-- prettier-ignore -->
+    <script>
+document.addEventListener('DOMContentLoaded', (events) => {
+  const component = new PublicProfileDesignerCollectionComponent({
+    container: '#profile_page_collection',
+    props: {
+      scope: 'collections',
+      view: 'show',
+      collection: {"id":5,"title":"NPCs","is_public":true,"post_ids":[4598,4597,4599,4595,4600,4596],"profile_id":24159,"discarded_at":null,"created_at":"2025-02-03T22:39:18.360+08:00","updated_at":"2025-02-03T22:39:18.360+08:00"}
+    }
+  });
+  component.init();
+})
+</script>
+  </body>
+</html>

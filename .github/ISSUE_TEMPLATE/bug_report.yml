@@ -47,6 +47,7 @@ body:
         - CGTrader
         - GrabCAD
         - Meshy
+        - PIXUP
         # /providers:bug-form
   - type: input
     id: backend_version

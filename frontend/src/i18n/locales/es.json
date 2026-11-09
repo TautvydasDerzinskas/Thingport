@@ -6650,6 +6650,43 @@
       "sync": {
         "notConnected": "Ahora mismo no se puede acceder a OwlCAD."
       }
+    },
+    "pixup3d": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir pixup3d.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que el tuyo cambie allí.",
+          "O manualmente: inicia sesión en pixup3d.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En Application (Chrome, Edge) o Storage (Firefox) → Cookies → pixup3d.com, copia el valor de _phrozen_session y pégalo abajo. También sirve la cabecera Cookie de una petición a pixup3d.com con la sesión iniciada."
+        ],
+        "placeholder": "La cookie _phrozen_session, o la cabecera Cookie de una petición con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "PIXUP solo entrega sus archivos a miembros con sesión iniciada, incluso los de sus modelos gratuitos. Conecta tu cuenta para importar los tuyos; la lista de deseos y las colecciones de cualquiera se leen sin ella.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en pixup3d.com con Thingport Grab o vuelve a conectar PIXUP en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "PIXUP: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "La tienda de modelos de Phrozen: figuras, bustos y miniaturas de juegos de mesa, muchas con soportes para impresión en resina, gratuitas y de pago.",
+        "signIn": "Tu propio inicio de sesión, para los archivos de los modelos que tienes; la lista de deseos y las colecciones de cualquiera se leen sin él.",
+        "grab": "Envía tu inicio de sesión cuando visitas pixup3d.com y marca los modelos de pago que no has comprado.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en PIXUP y abre pixup3d.com con la sesión iniciada.",
+          "Manualmente: copia la cookie _phrozen_session de una pestaña de pixup3d.com con la sesión iniciada y pégala en Configuración → Proveedores."
+        ]
+      },
+      "admin": {
+        "description": "Modelos, listas de deseos y colecciones. Las listas se leen sin iniciar sesión; los archivos necesitan la del propio usuario. Un modelo gratuito se añade antes a su biblioteca de PIXUP con un pedido de 0 $; uno de pago solo se importa una vez comprado."
+      },
+      "sync": {
+        "notConnected": "Conecta PIXUP en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tu lista de deseos y tus colecciones."
+      },
+      "blocked": {
+        "paid": {
+          "title": "Modelo de pago",
+          "hint": "Cómpralo antes en PIXUP. Cuando esté en tu biblioteca, Thingport lo importa."
+        }
+      }
     }
   }
 }

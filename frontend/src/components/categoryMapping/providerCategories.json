@@ -10585,5 +10585,137 @@
       "name": "Weapons & Military",
       "parent": null
     }
+  ],
+  "pixup3d": [
+    {
+      "id": "17",
+      "name": "Characters & Creatures",
+      "parent": null
+    },
+    {
+      "id": "79",
+      "name": "Historical Realistic",
+      "parent": "17"
+    },
+    {
+      "id": "11",
+      "name": "Fan Art",
+      "parent": "17"
+    },
+    {
+      "id": "7",
+      "name": "Historical Fiction",
+      "parent": "17"
+    },
+    {
+      "id": "48",
+      "name": "Animal",
+      "parent": "17"
+    },
+    {
+      "id": "8",
+      "name": "Sci-Fi",
+      "parent": "17"
+    },
+    {
+      "id": "9",
+      "name": "Dark Fantasy",
+      "parent": "17"
+    },
+    {
+      "id": "18",
+      "name": "Props & Terrains",
+      "parent": "17"
+    },
+    {
+      "id": "45",
+      "name": "Vehicles & Machines",
+      "parent": "17"
+    },
+    {
+      "id": "16",
+      "name": "Fantasy",
+      "parent": "17"
+    },
+    {
+      "id": "19",
+      "name": "Tabletop",
+      "parent": null
+    },
+    {
+      "id": "35",
+      "name": "Tabletop Characters & Creatures",
+      "parent": "19"
+    },
+    {
+      "id": "36",
+      "name": "Tabletop Vehicles & Machines",
+      "parent": "19"
+    },
+    {
+      "id": "37",
+      "name": "Tabletop Props & Terrains",
+      "parent": "19"
+    },
+    {
+      "id": "40",
+      "name": "Toys & Games",
+      "parent": null
+    },
+    {
+      "id": "41",
+      "name": "Action Figures",
+      "parent": "40"
+    },
+    {
+      "id": "49",
+      "name": "Puzzles & Brain-teasers",
+      "parent": "40"
+    },
+    {
+      "id": "50",
+      "name": "Board Games",
+      "parent": "40"
+    },
+    {
+      "id": "26",
+      "name": "Cosplay Accessories",
+      "parent": null
+    },
+    {
+      "id": "23",
+      "name": "Tools & Gadgets",
+      "parent": null
+    },
+    {
+      "id": "42",
+      "name": "Household",
+      "parent": null
+    },
+    {
+      "id": "38",
+      "name": "Jewelry",
+      "parent": null
+    },
+    {
+      "id": "39",
+      "name": "Rings",
+      "parent": "38"
+    },
+    {
+      "id": "55",
+      "name": "Necklace",
+      "parent": "38"
+    },
+    {
+      "id": "64",
+      "name": "Bracelets",
+      "parent": "38"
+    },
+    {
+      "id": "4",
+      "name": "Education",
+      "parent": null
+    }
   ]
 }

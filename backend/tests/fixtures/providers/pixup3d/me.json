@@ -1,0 +1,12 @@
+{
+  "id": 1,
+  "email": "maker.one@example.com",
+  "username": "MakerOne",
+  "display_name": "Maker One",
+  "brand_name": null,
+  "is_admin_user": false,
+  "post_count": 0,
+  "avatar_url": "/packs/static/images/avatar_icons/default_avatar_5BDBC6-035cc7490ea14b1c84fd.png",
+  "public_path": "/p/MakerOne",
+  "created_at": "2026-11-09T02:45:57+08:00"
+}

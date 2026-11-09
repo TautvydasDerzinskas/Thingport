@@ -6587,6 +6587,43 @@
       "sync": {
         "notConnected": "OwlCAD can't be reached right now."
       }
+    },
+    "pixup3d": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open pixup3d.com while signed in. It connects your account, and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at pixup3d.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → pixup3d.com, copy the value of _phrozen_session and paste it below. The Cookie header of a signed-in pixup3d.com request works too."
+        ],
+        "placeholder": "The _phrozen_session cookie, or a signed-in request's Cookie header"
+      },
+      "status": {
+        "notConnected": "PIXUP gives its files to signed-in members only, its free models included. Connect your account to import the ones you own; anyone's wishlist and collections read without it.",
+        "expired": "Sign-in expired. Sign in on pixup3d.com with Thingport Grab, or connect PIXUP again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "PIXUP: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Phrozen's model marketplace: figures, busts and tabletop miniatures, many pre-supported for resin printing, free and paid.",
+        "signIn": "Your own sign-in, for the files of the models you own; anyone's wishlist and collections read without it.",
+        "grab": "Sends your sign-in as you visit pixup3d.com, and marks the paid models you haven't bought.",
+        "setup": [
+          "Install Thingport Grab, enable it on PIXUP and open pixup3d.com signed in.",
+          "By hand: copy the _phrozen_session cookie of a signed-in pixup3d.com tab and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, wishlists and collections. Lists read without a sign-in; the files need each user's own. A free model is put in their PIXUP library with a $0 order first; a paid one only imports once bought."
+      },
+      "sync": {
+        "notConnected": "Connect PIXUP in Configuration > Providers, or visit it with Thingport Grab, to see your wishlist and collections here."
+      },
+      "blocked": {
+        "paid": {
+          "title": "Paid model",
+          "hint": "Buy it on PIXUP first. Once it's in your library, Thingport imports it."
+        }
+      }
     }
   }
 }

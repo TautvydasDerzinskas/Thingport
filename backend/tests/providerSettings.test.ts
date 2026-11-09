@@ -46,6 +46,7 @@ afterAll(async () => {
     "cgtrader",
     "grabcad",
     "meshy",
+    "pixup3d",
   ] as const)
     await setProviderEnabled(provider, true);
 });
@@ -73,6 +74,7 @@ describe("turning providers off", () => {
       cgtrader: true,
       grabcad: true,
       meshy: true,
+      pixup3d: true,
     });
 
     expect(
@@ -103,6 +105,7 @@ describe("turning providers off", () => {
       cgtrader: true,
       grabcad: true,
       meshy: true,
+      pixup3d: true,
     });
   });
 

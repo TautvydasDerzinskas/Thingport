@@ -24,6 +24,7 @@ describe("provider filters", () => {
       "cults3d",
       "toymakr3d",
       "cgtrader",
+      "pixup3d",
     ]);
   });
 
