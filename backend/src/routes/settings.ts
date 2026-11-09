@@ -1,5 +1,6 @@
 import type { AiConnection, AiProviderKind, ReasoningEffort } from "@prisma/client";
 import { currentStorageMove, startStorageMove, type StorageMoveRun } from "../services/storageMoveService";
+import { syncAllLicenseFiles } from "../services/licenseFile";
 import {
   currentFileReuseBackfill,
   startFileReuseBackfill,
@@ -55,6 +56,8 @@ import {
   setMcpAccess,
   MCP_ACCESS_LEVELS,
   getFileReuse,
+  getLicenseFiles,
+  setLicenseFiles,
   setFileReuse,
   FILE_REUSE_MODES,
 } from "../services/settingsService";
@@ -405,6 +408,32 @@ router.post(
     void createLog({ userId: req.userId!, action: "file_reuse_changed", details: { mode } });
     if (started)
       void createLog({ userId: req.userId!, action: "file_reuse_backfill_started", details: { by: "switch" } });
+  }),
+);
+
+// Whether a LICENSE.txt is written beside each licensed model's files. Changing it writes or removes them all, in the
+// background: local files only, nothing is asked of any site.
+router.get(
+  "/settings/license-files",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ enabled: await getLicenseFiles() });
+  }),
+);
+
+const licenseFilesSchema = z.object({ enabled: z.boolean() });
+router.post(
+  "/settings/license-files",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { enabled } = parseBody(licenseFilesSchema, req.body);
+    const previous = await getLicenseFiles();
+    await setLicenseFiles(enabled);
+    if (previous !== enabled) {
+      void syncAllLicenseFiles();
+      void createLog({ userId: req.userId!, action: "license_files_changed", details: { enabled } });
+    }
+    res.json({ enabled });
   }),
 );
 

@@ -1692,6 +1692,16 @@
           "failed": "No se pudo iniciar la comprobación. Inténtalo de nuevo."
         }
       },
+      "licenseFiles": {
+        "heading": "Archivos de licencia",
+        "subtitle": "Guardar la licencia de cada modelo junto a sus archivos.",
+        "label": "Escribir LICENSE.txt junto a los archivos del modelo",
+        "help": "Para cada modelo con licencia, Thingport guarda un LICENSE.txt en su carpeta: quién lo creó, de dónde viene, su licencia y lo que permite, y una línea de atribución. Se reescribe cuando cambia la licencia y se mueve y se elimina con el modelo. Al desactivarlo se eliminan; las descargas ZIP lo incluyen de todos modos.",
+        "on": "La carpeta de cada modelo con licencia tiene su LICENSE.txt.",
+        "off": "No se escribe ningún LICENSE.txt; las descargas ZIP lo siguen incluyendo.",
+        "failed": "No se pudo guardar el ajuste de LICENSE.txt. Inténtalo de nuevo.",
+        "loadFailed": "No se pudo cargar el ajuste de LICENSE.txt."
+      },
       "consume": {
         "heading": "Carpeta de importación automática",
         "subtitle": "Importa todo lo que se coloque en una carpeta vigilada: archivos, estructuras de carpetas y ZIP.",
@@ -2120,6 +2130,7 @@
           "api_token_mcp_tools_changed": "Cambió las herramientas MCP de su token de API",
           "api_token_rest_scopes_changed": "Cambió los permisos de su token de API",
           "file_reuse_changed": "Cambió cómo se guardan los archivos idénticos",
+          "license_files_changed": "Cambió si se escriben archivos LICENSE.txt",
           "file_reuse_backfill_started": "Empezó a comprobar si hay archivos guardados con contenido idéntico",
           "custom_widgets_changed": "Cambió qué widgets personalizados se permiten",
           "tool_installed": "Herramienta instalada",
@@ -2250,6 +2261,7 @@
         "kind": {
           "plate": "Archivo del modelo",
           "file": "Archivo adjunto",
+          "license": "Licencia",
           "image": "Imagen",
           "description": "Imagen de la descripción",
           "thumb": "Miniatura",
@@ -5938,7 +5950,62 @@
       "noSources": "Aún no has importado nada, así que no hay sitios entre los que elegir.",
       "noneSelected": "No hay ningún sitio activado, así que no hay nada que mostrar.",
       "noMatch": "Ningún modelo de aquí coincide con los filtros.",
-      "clear": "Quitar filtros"
+      "clear": "Quitar filtros",
+      "licenseAllows": "La licencia permite",
+      "allowsShare": "Se puede compartir",
+      "allowsShareHint": "Solo modelos cuya licencia permite pasar los archivos a otros, sin cambios. Las licencias de uso personal de los sitios no suelen permitirlo.",
+      "allowsCommercial": "Uso comercial",
+      "allowsCommercialHint": "Solo modelos cuya licencia permite usarlos comercialmente, incluida la venta de impresiones.",
+      "allowsRemix": "Remezclas",
+      "allowsRemixHint": "Solo modelos cuya licencia permite modificarlos.",
+      "licensed": "Solo con licencia",
+      "licensedHint": "Omitir los modelos cuyo origen no indica su licencia."
+    },
+    "license": {
+      "title": "Licencia",
+      "notStated": "{{site}} no indica la licencia",
+      "reading": "Leyendo la licencia",
+      "details": "{{license}}: detalles de la licencia",
+      "summary": {
+        "credit": "Atribución",
+        "nonCommercial": "No comercial",
+        "noRemix": "Sin remezclas",
+        "shareAlike": "Compartir igual",
+        "noSharing": "Sin compartir los archivos",
+        "personalUse": "Solo uso personal",
+        "noConditions": "Sin condiciones",
+        "seeTerms": "Consulta sus condiciones"
+      },
+      "deed": {
+        "share": "Compartir los archivos",
+        "remix": "Remezclar",
+        "commercial": "Uso comercial",
+        "credit": "Citar al autor",
+        "sameLicense": "Remezclas con la misma licencia"
+      },
+      "can": {
+        "yes": "Permitido",
+        "no": "No permitido",
+        "must": "Obligatorio"
+      },
+      "unknown": "Thingport no conoce esta licencia: sus condiciones indican qué está permitido.",
+      "siteAdds": "{{site}} añade",
+      "terms": "Condiciones",
+      "asListed": "Según {{site}}",
+      "pickedByOwner": "Elegida por su propietario",
+      "fullLicense": "Licencia completa",
+      "copyCredit": "Copiar la atribución",
+      "copied": "Atribución copiada",
+      "change": "Cambiar",
+      "creditBy": "de {{creator}}",
+      "creditUnder": "tiene la licencia {{license}}.",
+      "fromSource": "Según {{site}}",
+      "none": "Ninguna",
+      "groups": {
+        "cc": "Creative Commons",
+        "open": "Código abierto",
+        "reserved": "Otra"
+      }
     },
     "shared": {
       "sharedBy": "Compartido por {{name}}",

@@ -1,3 +1,4 @@
+import { LICENSE_ACTIONS, type ProviderLicense } from "../services/licenseCatalog";
 import { Prisma, type Peer } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
@@ -308,6 +309,28 @@ const modelSchema = z.object({
     .optional()
     .catch(undefined),
   "thingport:generatorScriptWithheld": flag,
+  "thingport:license": z
+    .object({
+      id: z.string().max(100).optional().catch(undefined),
+      raw: z.string().max(500),
+      label: z.string().max(500).optional().catch(undefined),
+      url: z
+        .string()
+        .max(500)
+        .regex(/^https?:\/\//)
+        .optional()
+        .catch(undefined),
+      terms: z.string().max(20_000).optional().catch(undefined),
+      allows: z.array(z.enum(LICENSE_ACTIONS)).max(LICENSE_ACTIONS.length).optional().catch(undefined),
+      requires: z
+        .object({ credit: z.boolean().optional(), sameLicense: z.boolean().optional() })
+        .optional()
+        .catch(undefined),
+      source: z.enum(["provider", "user"]).catch("provider"),
+      provider: z.string().max(40).optional().catch(undefined),
+    })
+    .optional()
+    .catch(undefined),
   "thingport:unfillableGaps": strings(SOURCE_GAPS.length, 40),
   // Ids as Thingport makes them, all a description's images are found by (DESCRIPTION_IMAGE): any other stays a link.
   "thingport:descriptionImages": listOf(z.object({ id: z.string().regex(/^[a-z0-9]{1,64}$/), url: z.string() }), 50),
@@ -321,6 +344,8 @@ export type RemoteModelDetails = {
   author: { provider: string; externalId: string } | null;
   category: CategoryRef | null;
   generatorScriptWithheld: boolean;
+  /** Its licence, as its owner's library had it. Absent from a partner too old to say. */
+  license?: (ProviderLicense & { source: "provider" | "user" }) | null;
   unfillableGaps: SourceGap[];
   /** Its description's images by their ids there (`/description-image/<id>`), and where each is fetched. */
   descriptionImages: { id: string; url: string }[];
@@ -588,9 +613,24 @@ const saysMore = (model: Model) =>
     model["thingport:author"] ||
     model["thingport:category"] ||
     model["thingport:generatorScriptWithheld"] ||
+    model["thingport:license"] ||
     model["thingport:unfillableGaps"].length ||
     model["thingport:descriptionImages"].length,
   );
+
+function licenseOfTerm(term: Model["thingport:license"]): RemoteModelDetails["license"] {
+  if (!term) return null;
+  return {
+    id: term.id ?? null,
+    raw: term.raw,
+    label: term.label ?? null,
+    url: term.url ?? null,
+    terms: term.terms ?? null,
+    ...(term.allows ? { allows: term.allows } : {}),
+    ...(term.requires ? { requires: term.requires } : {}),
+    source: term.source,
+  };
+}
 
 /** What a copy of `model` needs, from what its partner said: anything to fetch only on the partner's own origin. Null
  *  from a partner too old to say. */
@@ -608,6 +648,8 @@ function detailsOf(
     author: model["thingport:author"],
     category: category ? { path: category.path, siteIds: category.siteIds } : null,
     generatorScriptWithheld: model["thingport:generatorScriptWithheld"] === true,
+    // Only from a partner that says, so an older one's model is read from its source like any older import.
+    ...(model["thingport:license"] ? { license: licenseOfTerm(model["thingport:license"]) } : {}),
     unfillableGaps: model["thingport:unfillableGaps"].filter((gap): gap is SourceGap =>
       (SOURCE_GAPS as readonly string[]).includes(gap),
     ),

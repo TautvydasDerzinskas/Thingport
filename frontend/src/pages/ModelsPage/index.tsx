@@ -88,7 +88,7 @@ export default function ModelsPage({
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
 
   const filters = useModelFilters();
-  const { generative, hiddenProviders } = filters;
+  const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   // Bumped when a model is removed from the list here, so the site it came from loses its chip once it holds nothing.
   const [sourcesVersion, setSourcesVersion] = useState(0);
   const refreshSources = useCallback(() => setSourcesVersion((version) => version + 1), []);
@@ -220,6 +220,8 @@ export default function ModelsPage({
             category_id: categoryIdFilter,
             generative: generative || undefined,
             hide_providers: hiddenProviders,
+            license_allows: licenseAllows,
+            licensed: licensed || undefined,
             order_by: sortMode,
             limit: background ? keepLoaded(PAGE_SIZE, kept ?? items.length) : PAGE_SIZE,
             offset: 0,
@@ -236,7 +238,7 @@ export default function ModelsPage({
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode, generative, hiddenProviders]);
+  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode, generative, hiddenProviders, licenseAllows, licensed]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -248,6 +250,8 @@ export default function ModelsPage({
         category_id: categoryIdFilter,
         generative: generative || undefined,
         hide_providers: hiddenProviders,
+        license_allows: licenseAllows,
+        licensed: licensed || undefined,
         order_by: sortMode,
         limit: PAGE_SIZE,
         // What's on screen, so models that left the list here don't make the next page skip any.

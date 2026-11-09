@@ -72,7 +72,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
   const showToast = useToast();
   const isSelf = authorId === SELF_AUTHOR_ID;
   const filters = useModelFilters();
-  const { generative, hiddenProviders } = filters;
+  const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
   const finishedVersion = useFinishedVersion();
   const isBackgroundReload = useBackgroundReload(finishedVersion);
@@ -157,6 +157,8 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
               author_id: SELF_AUTHOR_ID,
               generative: generative || undefined,
               hide_providers: hiddenProviders,
+              license_allows: licenseAllows,
+              licensed: licensed || undefined,
               order_by: sortMode,
               limit,
               offset: 0,
@@ -177,6 +179,8 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
             author_id: authorId,
             generative: generative || undefined,
             hide_providers: hiddenProviders,
+            license_allows: licenseAllows,
+            licensed: licensed || undefined,
             order_by: sortMode,
             limit,
             offset: 0,
@@ -201,7 +205,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authorId, isSelf, generative, hiddenProviders, sortMode, finishedVersion]);
+  }, [authorId, isSelf, generative, hiddenProviders, licenseAllows, licensed, sortMode, finishedVersion]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !authorId) return;
@@ -212,6 +216,8 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
         author_id: isSelf ? SELF_AUTHOR_ID : authorId,
         generative: generative || undefined,
         hide_providers: hiddenProviders,
+        license_allows: licenseAllows,
+        licensed: licensed || undefined,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,

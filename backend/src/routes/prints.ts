@@ -30,12 +30,20 @@ import {
   listPrints,
   listPrintSources,
   listTagsOf,
+  licenseAllowsFromQuery,
   parseSortMode,
   splitList,
   type PrintFilters,
 } from "../services/printQuery";
 import { printQuality, startPrintQualityCheck } from "../services/modelQualityService";
 import { printProfilesOut, profileFillRunning, startProfileFill } from "../services/printProfileService";
+import { licenseById, PICKABLE_LICENSE_IDS } from "../services/licenseCatalog";
+import {
+  licenseFillRunning,
+  printLicenseState,
+  startLicenseFill,
+  type PrintLicenseState,
+} from "../services/licenseService";
 import { readableCollection, readablePrintOutById, readablePrintWhere, withOwners } from "../services/socialService";
 
 const router = Router();
@@ -52,6 +60,8 @@ function printFiltersFromQuery(req: Request): PrintFilters {
     tags: splitList(req.query.tags),
     generative: req.query.generative === "1" || req.query.generative === "true",
     excludeProviders: splitList(req.query.hide_providers),
+    licenseAllows: licenseAllowsFromQuery(splitList(req.query.license_allows)),
+    licensed: req.query.licensed === "1" || req.query.licensed === "true",
   };
 }
 
@@ -262,6 +272,69 @@ router.post(
     const before = await printProfilesOut(print, plates, filling);
     if (before.pending) startProfileFill(print.id);
     res.json({ ...before, filling: filling || profileFillRunning(print.id) });
+  }),
+);
+
+// The licences an owner can pick for a model in Edit model.
+router.get(
+  "/licenses",
+  asyncHandler(async (_req, res) => {
+    res.json(
+      PICKABLE_LICENSE_IDS.map((id) => {
+        const license = licenseById(id)!;
+        return {
+          id: license.id,
+          short: license.short,
+          name: license.name,
+          url: license.url,
+          family: license.family,
+          marks: license.marks,
+          allows: license.allows,
+          requires: { credit: license.requires.credit, same_license: license.requires.sameLicense },
+        };
+      }),
+    );
+  }),
+);
+
+async function readableLicense(userId: string, printId: string) {
+  const print = await prisma.print.findFirst({
+    where: { id: printId, AND: [await readablePrintWhere(userId)] },
+    select: {
+      id: true,
+      userId: true,
+      license: true,
+      licenseReadAt: true,
+      sourceProvider: true,
+      sourceExternalId: true,
+    },
+  });
+  if (!print) throw new HttpError(404, "Print not found");
+  return print;
+}
+
+const licenseStateOut = (state: PrintLicenseState) => ({
+  license: state.license,
+  pending: state.pending,
+  filling: state.filling,
+});
+
+router.get(
+  "/print/:id/license",
+  asyncHandler(async (req, res) => {
+    res.json(licenseStateOut(printLicenseState(await readableLicense(req.userId!, req.params.id))));
+  }),
+);
+
+// The owner's only, as with print profiles: someone else's shared model shows what its owner's library kept.
+router.post(
+  "/print/:id/license/fill",
+  asyncHandler(async (req, res) => {
+    const print = await readableLicense(req.userId!, req.params.id);
+    if (print.userId !== req.userId) throw new HttpError(404, "Print not found");
+    const before = printLicenseState(print);
+    if (before.pending) startLicenseFill(print.id);
+    res.json(licenseStateOut({ ...before, filling: licenseFillRunning(print.id) }));
   }),
 );
 
@@ -484,6 +557,8 @@ const metaSchema = z.object({
   title: z.string().optional(),
   notes: z.string().optional(),
   creator: z.string().optional(),
+  // A licence id (GET /licenses), "source" for what its source lists, or null for none on a model with no source.
+  license: z.string().max(100).nullable().optional(),
 });
 router.post(
   "/print/:id/meta",
@@ -493,6 +568,7 @@ router.post(
       name: body.name !== undefined ? body.name : body.title,
       notes: body.notes,
       creator: body.creator,
+      license: body.license,
     });
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),

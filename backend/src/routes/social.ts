@@ -36,7 +36,7 @@ import { remoteCopyStatus, startRemoteCopy } from "../federation/remoteCopy";
 import { sendRemoteZip, streamRemoteFile } from "../federation/remoteFiles";
 import { syncStale } from "../federation/remoteIndex";
 import { isFederationLive } from "../federation/settings";
-import { parseSortMode, splitList } from "../services/printQuery";
+import { licenseAllowsFromQuery, parseSortMode, splitList } from "../services/printQuery";
 import { MAX_SHARES, remoteShareOut, sharingOf, updateSharing } from "../services/collectionSharing";
 import { personByHandle } from "../federation/sharedCollections";
 import { searchPeople } from "../services/chatService";
@@ -362,6 +362,8 @@ router.get(
       {
         generative: req.query.generative === "1" || req.query.generative === "true",
         excludeProviders: splitList(req.query.hide_providers),
+        licenseAllows: licenseAllowsFromQuery(splitList(req.query.license_allows)),
+        licensed: req.query.licensed === "1" || req.query.licensed === "true",
       },
       { sort: parseSortMode(req.query.orderBy), limit, offset },
     );

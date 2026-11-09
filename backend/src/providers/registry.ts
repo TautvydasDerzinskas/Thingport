@@ -149,6 +149,7 @@ import { nexprintProfileFacts } from "./nexprint/profileFacts";
 import type { GrabImportOptions } from "./makeronline/grabImports";
 import type { ImportCookies } from "../services/importResolvers";
 import type { ProviderProfileFactsById } from "../services/printProfileFacts";
+import type { ProviderLicense } from "../services/licenseCatalog";
 
 /** A provider's ids for the starter categories, by their path ("Parent/Child"). */
 export type StarterCategories = Readonly<Record<string, readonly (number | string)[]>>;
@@ -188,6 +189,11 @@ export type ProviderBackend = {
    *  the model page shows of them (services/printProfileService.ts). `profileIds` are the ones wanted, for a provider
    *  that reads each profile apart. Null when the provider doesn't know the model. */
   profileFacts?(userId: string, externalId: string, profileIds: string[]): Promise<ProviderProfileFactsById | null>;
+  /** The model's licence, read for an older import when its owner opens it (services/licenseService.ts): null when the site
+   *  says none. Where it's absent, `details.read`'s `license` is used; a provider gives this where that's heavier than it
+   *  needs to be, or needs no request at all (`stored` is what the model keeps of its import). Throws when the site
+   *  can't be read now. */
+  license?(userId: string, externalId: string, stored: { notes: string | null }): Promise<ProviderLicense | null>;
   /** Remembers its sign-in turned down, for a provider whose imports don't themselves. */
   markRejected?(userId: string): Promise<void>;
   stopTexts?: StopTexts;

@@ -5,6 +5,7 @@ import { remoteOriginOut } from "../federation/remoteExplore";
 import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCategorizationService";
 import { aiDescriptionOut } from "./aiDescriptionService";
 import { printProfilesOut, profileFillRunning } from "./printProfileService";
+import { licenseFillRunning, licensePending } from "./licenseService";
 import type { Author, Category, Plate, PreviewImage, Prisma, Print, PrintFile } from "@prisma/client";
 
 export type FullPrint = {
@@ -68,7 +69,13 @@ export async function printOutById(
         profiles_filling: profiles.filling,
       }
     : {};
-  return { ...out, ...withProfiles, copied_from_remote: await remoteOriginOut(full.print.remoteSource) };
+  return {
+    ...out,
+    ...withProfiles,
+    license_pending: licensePending(full.print),
+    license_filling: licenseFillRunning(full.print.id),
+    copied_from_remote: await remoteOriginOut(full.print.remoteSource),
+  };
 }
 
 function groupByPrintId<T extends { printId: string }>(rows: T[]): Map<string, T[]> {

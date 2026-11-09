@@ -1712,6 +1712,16 @@
           "failed": "Nepavyko pradėti tikrinimo. Bandykite dar kartą."
         }
       },
+      "licenseFiles": {
+        "heading": "Licencijų failai",
+        "subtitle": "Laikyti kiekvieno modelio licenciją šalia jo failų.",
+        "label": "Rašyti LICENSE.txt šalia modelio failų",
+        "help": "Kiekvienam modeliui su licencija Thingport laiko LICENSE.txt jo aplanke: kas jį sukūrė, iš kur jis, jo licencija ir ką ji leidžia, bei autorystės eilutė. Failas perrašomas pasikeitus licencijai, keliauja ir ištrinamas kartu su modeliu. Išjungus šie failai pašalinami; ZIP atsisiuntimuose jis būna bet kuriuo atveju.",
+        "on": "Kiekvieno licencijuoto modelio aplanke yra jo LICENSE.txt.",
+        "off": "LICENSE.txt nerašomas; ZIP atsisiuntimuose jis vis tiek būna.",
+        "failed": "Nepavyko išsaugoti LICENSE.txt nustatymo. Bandykite dar kartą.",
+        "loadFailed": "Nepavyko įkelti LICENSE.txt nustatymo."
+      },
       "consume": {
         "heading": "Importavimo aplankas",
         "subtitle": "Importuokite viską, kas įdedama į stebimą aplanką: failus, aplankų struktūras ir ZIP archyvus.",
@@ -2158,6 +2168,7 @@
           "tags_merged": "Žymos sujungtos",
           "mcp_access_changed": "Pakeitė MCP prieigą",
           "file_reuse_changed": "Pakeitė, kaip saugomi vienodi failai",
+          "license_files_changed": "Pakeitė, ar rašomi LICENSE.txt failai",
           "file_reuse_backfill_started": "Pradėjo tikrinti išsaugotus failus dėl vienodo turinio",
           "custom_widgets_changed": "Pakeista, kurie pasirinktiniai valdikliai leidžiami",
           "tool_installed": "Įrankis įdiegtas",
@@ -2295,6 +2306,7 @@
         "kind": {
           "plate": "Modelio failas",
           "file": "Papildomas failas",
+          "license": "Licencija",
           "image": "Paveikslėlis",
           "description": "Aprašymo paveikslėlis",
           "thumb": "Miniatiūra",
@@ -6170,7 +6182,62 @@
       "noSources": "Dar nieko neimportuota, tad nėra iš ko rinktis.",
       "noneSelected": "Neįjungta nė viena svetainė, tad nėra ko rodyti.",
       "noMatch": "Nė vienas čia esantis modelis neatitinka filtrų.",
-      "clear": "Išvalyti filtrus"
+      "clear": "Išvalyti filtrus",
+      "licenseAllows": "Licencija leidžia",
+      "allowsShare": "Galima dalintis",
+      "allowsShareHint": "Tik modeliai, kurių licencija leidžia perduoti failus kitiems nepakeistus. Svetainių asmeninio naudojimo licencijos to dažniausiai neleidžia.",
+      "allowsCommercial": "Komercinis naudojimas",
+      "allowsCommercialHint": "Tik modeliai, kurių licencija leidžia juos naudoti komerciškai, įskaitant spaudinių pardavimą.",
+      "allowsRemix": "Perdirbimas",
+      "allowsRemixHint": "Tik modeliai, kurių licencija leidžia juos keisti.",
+      "licensed": "Tik su licencija",
+      "licensedHint": "Praleisti modelius, kurių šaltinis nenurodo licencijos."
+    },
+    "license": {
+      "title": "Licencija",
+      "notStated": "{{site}} licencijos nenurodo",
+      "reading": "Skaitoma licencija",
+      "details": "{{license}}: licencijos informacija",
+      "summary": {
+        "credit": "Nurodyti autorių",
+        "nonCommercial": "Nekomercinis",
+        "noRemix": "Be perdirbimo",
+        "shareAlike": "Ta pačia licencija",
+        "noSharing": "Failais dalintis negalima",
+        "personalUse": "Tik asmeniniam naudojimui",
+        "noConditions": "Be sąlygų",
+        "seeTerms": "Žr. jos sąlygas"
+      },
+      "deed": {
+        "share": "Dalintis failais",
+        "remix": "Perdirbti",
+        "commercial": "Komercinis naudojimas",
+        "credit": "Nurodyti autorių",
+        "sameLicense": "Perdirbiniai ta pačia licencija"
+      },
+      "can": {
+        "yes": "Leidžiama",
+        "no": "Neleidžiama",
+        "must": "Privaloma"
+      },
+      "unknown": "Thingport šios licencijos nežino: kas leidžiama, nurodo jos sąlygos.",
+      "siteAdds": "{{site}} papildo",
+      "terms": "Sąlygos",
+      "asListed": "Kaip nurodo {{site}}",
+      "pickedByOwner": "Pasirinko savininkas",
+      "fullLicense": "Visa licencija",
+      "copyCredit": "Kopijuoti autorystę",
+      "copied": "Autorystės eilutė nukopijuota",
+      "change": "Keisti",
+      "creditBy": "– {{creator}}",
+      "creditUnder": "licencija: {{license}}.",
+      "fromSource": "Kaip nurodo {{site}}",
+      "none": "Nėra",
+      "groups": {
+        "cc": "Creative Commons",
+        "open": "Atviro kodo",
+        "reserved": "Kita"
+      }
     },
     "shared": {
       "sharedBy": "Dalijasi {{name}}",

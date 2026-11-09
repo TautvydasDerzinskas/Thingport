@@ -37,6 +37,9 @@ With a layout that keeps several models in one folder, such as `{category-or-fol
 pictures folder takes the model's name too: `Cable clip - Images`. Installations from before this layout have their
 pictures and supporting files moved in beside the model files in the background the first time they start.
 
+A model with a [licence](licenses.md#licensetxt) also has a `LICENSE.txt` beside its files, unless an admin turned that
+off under **Administration → Storage → Licence files**.
+
 Change the layout later and existing files are moved to match in the background, with progress shown as they go.
 Renaming a model renames its files too, so the folders stay readable. **Browse files** shows where each model's files
 are now.

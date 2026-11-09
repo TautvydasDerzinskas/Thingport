@@ -51,6 +51,7 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
 - The photo gallery, the formatted description, tags and, where the site gives one, its category, which Thingport maps
   to your own [categories](organize-and-search.md).
 - The author, where the site names one, with their avatar and profile, linked to an [author page](authors.md).
+- Its [licence](licenses.md), as the site lists it, with any terms the site or creator added.
 
 If a detail couldn't be fetched at the time, such as the author, **Fetch missing details** on the model page tries
 again.
@@ -61,7 +62,7 @@ A model you uploaded yourself can be linked to its page on any of the 18 sites, 
 **Link to a provider** in the model page's **⋮** menu, or on the Models page with the Folders view on, in a card's **⋮**
 menu or, with exactly one model selected, the selection toolbar. Paste the model's link, check the preview, and link it.
 
-- **What it brings:** the page's pictures, description, tags and author, and the provider's badge and link. The
+- **What it brings:** the page's pictures, description, tags, author and licence, and the provider's badge and link. The
   pictures go ahead of your own, so its cover becomes the model's, and your own stay. Tags are added to yours. The
   description and author replace what's there, where the site has them, and that can't be undone. A title you set stays.
 - **What it leaves alone:** your files. Nothing is downloaded, so the page's other files and print profiles don't come.

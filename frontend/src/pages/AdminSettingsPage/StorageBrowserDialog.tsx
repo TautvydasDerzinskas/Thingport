@@ -21,6 +21,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import FolderIcon from "@mui/icons-material/Folder";
+import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -39,6 +40,7 @@ type Props = {
 const KIND_ICONS: Record<StorageFileKind, typeof InsertDriveFileOutlinedIcon> = {
   plate: ViewInArOutlinedIcon,
   file: InsertDriveFileOutlinedIcon,
+  license: GavelOutlinedIcon,
   image: ImageOutlinedIcon,
   description: ImageOutlinedIcon,
   thumb: ImageOutlinedIcon,

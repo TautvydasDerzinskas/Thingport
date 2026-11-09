@@ -8,6 +8,7 @@ import { HttpError } from "../utils/fileUtils";
 import { writeZip, type ZipEntryDescriptor } from "../utils/zipWriter";
 import { resolvePlateFilePath } from "./printCreation";
 import { managedPrintFilePath } from "./printFileService";
+import { LICENSE_FILENAME, licenseFileText } from "./licenseFile";
 import { readableCollection, readablePrintWhere } from "./socialService";
 import type { Category, Plate, Print, Prisma } from "@prisma/client";
 
@@ -64,7 +65,8 @@ export async function estimateDownloadSize(prints: PrintWithPlatesAndCategory[])
 }
 
 /**
- * `{category-or-folder}/{print.name}/{plate.filename}`, with supporting files under `.../supporting/`.
+ * `{category-or-folder}/{print.name}/{plate.filename}`, with supporting files under `.../supporting/` and the model's
+ * LICENSE.txt beside its plates.
  * `flatten` drops the category folder, for downloads that span categories.
  */
 export async function buildZipEntries(
@@ -92,6 +94,15 @@ export async function buildZipEntries(
       const filePath = resolvePlateFilePath(plate);
       if (filePath) entries.push({ arcname: `${prefix}/${plate.filename}`, filePath });
     }
+    // Made now rather than read from disk: it's then there whether or not LICENSE.txt files are written beside them.
+    const license = licenseFileText(print);
+    if (license) {
+      entries.push({
+        arcname: `${prefix}/${LICENSE_FILENAME}`,
+        content: Buffer.from(license, "utf8"),
+        mtime: print.licenseReadAt ?? undefined,
+      });
+    }
     for (const file of supportingByPrint.get(print.id) ?? []) {
       const filePath = managedPrintFilePath(file);
       if (fs.existsSync(filePath)) {
@@ -109,7 +120,7 @@ export async function sendPrintsZip(
   opts: { flatten?: boolean } = {},
 ): Promise<void> {
   const entries = await buildZipEntries(prints, opts);
-  if (!entries.length) throw new HttpError(404, "No files available for download");
+  if (!entries.some((entry) => "filePath" in entry)) throw new HttpError(404, "No files available for download");
 
   const tmpPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}.zip`);
   await writeZip(tmpPath, entries);

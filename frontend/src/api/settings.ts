@@ -448,6 +448,25 @@ export const settingsApi = {
     return res.json();
   },
 
+  getLicenseFiles: async (): Promise<{ enabled: boolean }> => {
+    const res = await fetch(`${apiBase()}/settings/license-files`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the LICENSE.txt setting");
+    return res.json();
+  },
+
+  /** Turning it on or off writes or removes every model's LICENSE.txt in the background. */
+  updateLicenseFiles: async (enabled: boolean): Promise<{ enabled: boolean }> => {
+    const res = await fetch(`${apiBase()}/settings/license-files`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ enabled }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the LICENSE.txt setting"));
+    return res.json();
+  },
+
   getFileReuse: async (): Promise<FileReuseSettings> => {
     const res = await fetch(`${apiBase()}/settings/file-reuse`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();

@@ -32,6 +32,7 @@ import {
 } from "./services/modelPreviewCache";
 import { buildImportSourceUrl } from "./services/importService";
 import { openSourceGaps, type SourceGap } from "./services/sourceGaps";
+import { licenseOut, type LicenseOut } from "./services/licenseService";
 import { profileOut, type PublicProfileOut } from "./services/publicProfileService";
 import { avatarOut, type AvatarOut } from "./services/avatarService";
 import { parseQueuedLinkOptions, SYNC_RESUME_MARKS } from "./services/importJobRunner";
@@ -197,6 +198,8 @@ export type PrintOut = {
   /** The source had a script for this model but its creator chose not to share it, so there is none to open.
    *  Without it, that is indistinguishable from a model that never had one. */
   generator_script_withheld: boolean;
+  /** Its licence: what its source lists, or what its owner picked (services/licenseService.ts). Null when nothing says. */
+  license: LicenseOut | null;
   /** All plates plus supporting and prepared files; gallery images aren't counted. */
   total_size: number;
   prepared_print: PreparedPrintOut | null;
@@ -223,6 +226,10 @@ export type PrintOut = {
    *  model page starts that (POST /print/:id/profiles/fill); and one is already waiting or running. */
   profiles_pending?: boolean;
   profiles_filling?: boolean;
+  /** On the detail fetch: the source hasn't been read for its licence yet, so its owner's model page starts that
+   *  (POST /print/:id/license/fill); and one is already waiting or running. */
+  license_pending?: boolean;
+  license_filling?: boolean;
 };
 
 export type RemoteOriginOut = {
@@ -444,6 +451,7 @@ export function toPrintOut(
     supporting_file_count: supportingCount,
     generator_scripts: generatorScripts,
     generator_script_withheld: print.generatorScriptWithheld,
+    license: licenseOut(print),
     total_size: totalSize,
     prepared_print: prepared,
     slicer_url: slicerUrl,
