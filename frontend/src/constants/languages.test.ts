@@ -38,13 +38,17 @@ describe("completeness", () => {
     // Lithuanian's many is for fractions only, so it isn't asked for.
     const lithuanian = { app: { title: "Pavadinimas", models_one: "a", models_few: "b", models_other: "c" } };
     expect(completeness(english, lithuanian, "lt")).toBe(100);
+    expect(completeness({}, spanish, "es")).toBe(100);
   });
 });
 
 describe("translatedPercent", () => {
-  it("is 100 for English and counts a plural key once, whatever forms a language gives it", () => {
+  it("is 100 for English, between 1 and 100 for a translated language, and 0 for one there isn't", () => {
     expect(translatedPercent("en")).toBe(100);
-    for (const { code } of SUPPORTED_LANGUAGES) expect(translatedPercent(code)).toBeLessThanOrEqual(100);
+    for (const { code } of SUPPORTED_LANGUAGES) {
+      expect(translatedPercent(code)).toBeGreaterThan(0);
+      expect(translatedPercent(code)).toBeLessThanOrEqual(100);
+    }
     expect(translatedPercent("xx")).toBe(0);
   });
 });

@@ -49,4 +49,34 @@ describe("categoriesApi.listShared", () => {
     served = [[category("a")]];
     expect((await categoriesApi.listShared("a")).map((c) => c.id)).toEqual(["a"]);
   });
+
+  it("doesn't keep a list that was on its way when a category changed", async () => {
+    await categoriesApi.update("x", "X", []);
+    let release: (value: Response) => void = () => {};
+    const stale = new Promise<Response>((resolve) => (release = resolve));
+    const fetchMock = vi.mocked(fetch);
+    fetchMock.mockImplementationOnce(() => stale);
+    const lookup = categoriesApi.listShared();
+    await categoriesApi.update("a", "Renamed", []);
+    // The answer sent before the rename, which has "a" under its old name.
+    release(new Response(JSON.stringify([category("a")]), { status: 200 }));
+    await lookup;
+    served = [[{ ...category("a"), name: "Renamed" }]];
+    expect((await categoriesApi.listShared("a")).map((c) => c.name)).toEqual(["Renamed"]);
+  });
+
+  it("starts afresh for another account", async () => {
+    const users = new Map<string, string>();
+    const localStorage = { getItem: (key: string) => users.get(key) ?? null, setItem: () => {}, removeItem: () => {} };
+    vi.stubGlobal("window", { localStorage });
+    users.set("thingport_auth_user", JSON.stringify({ id: "b" }));
+    served = [[category("b-own")], [category("b-own")]];
+    await categoriesApi.listShared("someone-elses");
+    await categoriesApi.listShared("someone-elses");
+    expect(fetches).toBe(2);
+    // Signed in as someone else: their list, even for an id the last account had given up on.
+    users.set("thingport_auth_user", JSON.stringify({ id: "a" }));
+    served = [[category("someone-elses")]];
+    expect((await categoriesApi.listShared("someone-elses")).map((c) => c.id)).toEqual(["someone-elses"]);
+  });
 });

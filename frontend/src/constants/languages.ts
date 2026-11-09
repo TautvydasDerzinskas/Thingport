@@ -76,7 +76,9 @@ export function completeness(english: unknown, own: unknown, code: string): numb
   let found = 0;
   for (const key of plain) if (ownKeys.has(key) || ownPlurals.has(key)) found++;
   for (const base of plurals) if (forms.every((form) => ownKeys.has(`${base}_${form}`))) found++;
-  return Math.floor((found / (plain.length + plurals.size)) * 100);
+  const total = plain.length + plurals.size;
+  // Nothing to translate is nothing missing.
+  return total ? Math.floor((found / total) * 100) : 100;
 }
 
 /** How much of English a supported language has translated, 0 to 100. */
