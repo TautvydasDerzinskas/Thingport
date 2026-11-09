@@ -71,6 +71,16 @@ describe("MyMiniFactory licences", () => {
     ]);
   });
 
+  it("keeps the Creative Commons version a name gives, 4.0 when it gives none", () => {
+    expect(myminifactoryLicenseFrom({ license: "CC BY-SA 3.0", licenses: [] })).toEqual({
+      id: "CC-BY-SA-3.0",
+      raw: "CC BY-SA 3.0",
+    });
+    expect(myminifactoryLicenseFrom({ license: "BY-NC 3.0", licenses: [] })?.id).toBe("CC-BY-NC-3.0");
+    expect(myminifactoryLicenseFrom({ license: "BY-NC 4.0", licenses: [] })?.id).toBe("CC-BY-NC-4.0");
+    expect(myminifactoryLicenseFrom({ license: "BY-NC", licenses: [] })?.id).toBe("CC-BY-NC-4.0");
+  });
+
   it("puts a paid object under the store's licence, and official content under all rights reserved", () => {
     expect(
       myminifactoryLicenseFrom({
@@ -85,6 +95,9 @@ describe("MyMiniFactory licences", () => {
       id: "myminifactory-store",
       raw: "store",
     });
+    // On sale with neither field: the store's licence still.
+    expect(myminifactoryLicenseFrom({}, true)).toEqual({ id: "myminifactory-store", raw: "store" });
+    expect(myminifactoryLicenseFrom({})).toBeUndefined();
     expect(myminifactoryLicenseFrom({ license: "Official Content License", licenses: [] })).toEqual({
       id: "all-rights-reserved",
       raw: "Official Content License",

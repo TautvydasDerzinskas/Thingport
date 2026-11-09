@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { IMPORT_HTML_MAX_BYTES } from "../../src/config";
 import { resolveThingiverseThing } from "../../src/providers/thingiverse/api";
 import { thingiverseLicenseFrom, thingiverseLicenseFromPage } from "../../src/providers/thingiverse/license";
 import { readThingiverseLicense } from "../../src/providers/thingiverse/licenseReader";
@@ -126,6 +127,11 @@ describe("Thingiverse licences", () => {
             headers: { "content-type": "text/html" },
           });
         }
+        if (url === "https://www.thingiverse.com/thing:9001") {
+          return new Response(`<html><body>${"x".repeat(IMPORT_HTML_MAX_BYTES + 1024)}</body></html>`, {
+            headers: { "content-type": "text/html" },
+          });
+        }
         if (url === "https://www.thingiverse.com/thing:9000") {
           return new Response(loadFixtureHtml("thingiverse", "license-page-missing"), {
             headers: { "content-type": "text/html" },
@@ -139,7 +145,10 @@ describe("Thingiverse licences", () => {
       raw: "https://www.gnu.org/licenses/gpl-3.0.en.html",
     });
     expect(calls[0]).toBe("https://www.thingiverse.com/thing:1450");
-    expect(await readThingiverseLicense("user-1", "9000", { notes: null })).toBeNull();
+    // A page without the Thing's data can't tell: read again later, rather than kept as none.
+    expect(await readThingiverseLicense("user-1", "9000", { notes: null })).toBeUndefined();
+    // One cut off before its data is a read that failed.
+    await expect(readThingiverseLicense("user-1", "9001", { notes: null })).rejects.toThrow(/cut off/);
     await expect(readThingiverseLicense("user-1", "1015238", { notes: null })).rejects.toThrow(/Cloudflare/);
   });
 });

@@ -15,13 +15,14 @@ const LICENSES: Record<string, string> = {
 };
 
 function code(value: unknown): string | null {
-  if (typeof value === "number" && Number.isInteger(value)) return String(value);
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) return String(value);
   return typeof value === "string" && /^\d+$/.test(value.trim()) ? value.trim() : null;
 }
 
-/** The licence a model's details name; null for none, or a number its pages don't know either. */
+/** The licence a model's details name; null for none (0). A number not mapped yet is kept as one Thingport doesn't
+ *  know, which allows nothing until a mapping names it and the model is read again. */
 export function makeronlineLicenseFrom(detail: Record<string, unknown>): ProviderLicense | null {
   const raw = code(detail.license);
-  const id = raw ? LICENSES[raw] : undefined;
-  return raw && id ? { id, raw } : null;
+  if (!raw || Number(raw) === 0) return null;
+  return { id: LICENSES[raw] ?? null, raw, ...(LICENSES[raw] ? {} : { label: `MakerOnline licence ${raw}` }) };
 }

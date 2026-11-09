@@ -1,6 +1,6 @@
 // A Thangs model's licence. Thangs has no list of licences: a designer uploads a file of their own (a .txt or a .pdf),
 // and the model names it by its path ("<uuid>/Standard Digital File License.txt"). What it is is read off the file's
-// name, then off its text, which Thangs hands out as text (/v2/models/<id>/license).
+// name and its text, which Thangs hands out as text (/v2/models/<id>/license); where both say, they must agree.
 
 import { licenseIdFromText, type ProviderLicense } from "../../services/licenseCatalog";
 import { textOfHtml } from "../../utils/htmlEntities";
@@ -53,6 +53,9 @@ export function thangsLicenseFrom(path: unknown, text: string | null): ProviderL
   const raw = path.trim();
   const label = thangsLicenseFileName(raw);
   const terms = text ? plain(text) : null;
-  const id = idOfName(label) ?? (terms ? idOfName(terms.slice(0, TEXT_NAME_CHARS)) : null);
+  const byName = idOfName(label);
+  const byText = terms ? idOfName(terms.slice(0, TEXT_NAME_CHARS)) : null;
+  // The text is what applies: a licence the file's name gives that its text doesn't bear out isn't vouched for.
+  const id = !terms ? byName : byText && (!byName || byName === byText) ? byText : null;
   return id ? { id, raw, label, terms } : { id: null, raw, label, terms, allows: [] };
 }

@@ -1,4 +1,4 @@
-import { licenseById, type ProviderLicense } from "../../services/licenseCatalog";
+import { licenseById, licenseIdFromText, type ProviderLicense } from "../../services/licenseCatalog";
 
 // Creality Cloud names a model's licence in its details (`license`), as its upload form offers them; "CXY-SL" is its
 // own Standard License, the one the form starts on. Its links put the Creative Commons ones at 4.0.
@@ -19,11 +19,12 @@ function str(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-/** The licence a model's details (`groupItem`) name; null for none, or one its pages don't show either. */
+/** The licence a model's details (`groupItem`) name; null for none. One not mapped yet is kept by its name, as one
+ *  Thingport doesn't know, which allows nothing until a mapping names it and the model is read again. */
 export function crealitycloudLicenseFrom(groupItem: Record<string, unknown>): ProviderLicense | null {
   const raw = str(groupItem.license);
-  const id = raw ? LICENSES[raw.toUpperCase().replace(/\s+/g, " ")] : undefined;
-  if (!raw || !id) return null;
+  if (!raw) return null;
+  const id = LICENSES[raw.toUpperCase().replace(/\s+/g, " ")] ?? licenseIdFromText(raw);
   if (!groupItem.isVip && !groupItem.isExclusive) return { id, raw };
   const allows = licenseById(id)?.allows ?? [];
   return {

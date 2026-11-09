@@ -200,9 +200,13 @@ export type ProviderBackend = {
   profileFacts?(userId: string, externalId: string, profileIds: string[]): Promise<ProviderProfileFactsById | null>;
   /** The model's licence, read for an older import when its owner opens it (services/licenseService.ts): null when the site
    *  says none. Where it's absent, `details.read`'s `license` is used; a provider gives this where that's heavier than it
-   *  needs to be, or needs no request at all (`stored` is what the model keeps of its import). Throws when the site
-   *  can't be read now. */
-  license?(userId: string, externalId: string, stored: { notes: string | null }): Promise<ProviderLicense | null>;
+   *  needs to be, or needs no request at all (`stored` is what the model keeps of its import). Undefined when the site
+   *  answered without saying, so it's read again later; throws when the site can't be read now. */
+  license?(
+    userId: string,
+    externalId: string,
+    stored: { notes: string | null },
+  ): Promise<ProviderLicense | null | undefined>;
   /** Remembers its sign-in turned down, for a provider whose imports don't themselves. */
   markRejected?(userId: string): Promise<void>;
   stopTexts?: StopTexts;

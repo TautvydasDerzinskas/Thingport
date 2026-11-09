@@ -26,8 +26,10 @@ function flagsOf(value: unknown): Flags {
  *  out. */
 function ccId(name: string): string | null {
   if (/myminifactory/i.test(name)) return null;
-  const head = name.match(/^(?:CC[\s_-]*)?BY(?:[\s_-]+(?:NC|ND|SA))*(?![A-Za-z])/)?.[0];
-  const id = (head ? ccLicenseId(head) : null) ?? licenseIdFromText(name);
+  const head = name.match(/^((?:CC[\s_-]*)?BY(?:[\s_-]+(?:NC|ND|SA))*)(?![A-Za-z])(?:[\s_-]*v?(\d\.\d))?/);
+  // At the version it names ("BY-SA 3.0"), 4.0 when it names none.
+  const version = head?.[2] === "3.0" ? "3.0" : head?.[2] && head[2] !== "4.0" ? null : "4.0";
+  const id = (head && version ? ccLicenseId(head[1], version) : null) ?? licenseIdFromText(name);
   return id && (id.startsWith("CC") || id === "public-domain") ? id : null;
 }
 
@@ -51,7 +53,8 @@ export function myminifactoryLicenseFrom(
   object: Record<string, unknown>,
   paid = false,
 ): ProviderLicense | null | undefined {
-  if (!("license" in object) && !("licenses" in object)) return undefined;
+  // On sale, it's under the store's licence whatever the fields say, or whether they're there.
+  if (!paid && !("license" in object) && !("licenses" in object)) return undefined;
   const name = typeof object.license === "string" && object.license.trim() ? object.license.trim() : null;
   const flags = flagsOf(object.licenses);
   const on = [...flags].filter(([, value]) => value).map(([type]) => type);

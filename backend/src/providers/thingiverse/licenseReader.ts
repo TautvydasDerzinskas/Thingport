@@ -11,12 +11,13 @@ import { getThingiverseAccessToken } from "./token";
 import { thingiverseThingUrl } from "./urls.generated";
 
 /** From the API with the instance's App Token, one request; without one, from the Thing's public page, which needs no
- *  token (Chrome's handshake gets it past Cloudflare). Null for a Thing that's gone; a refusal is thrown. */
+ *  token (Chrome's handshake gets it past Cloudflare). Null for a Thing that's gone or names no licence; undefined
+ *  for a page without the Thing's data, which can't tell; a refusal is thrown. */
 export async function readThingiverseLicense(
   _userId: string,
   thingId: string,
   _stored: { notes: string | null },
-): Promise<ProviderLicense | null> {
+): Promise<ProviderLicense | null | undefined> {
   const token = await getThingiverseAccessToken();
   if (token) {
     const thing = await fetchThingiverseThing(thingId, token);
@@ -38,7 +39,9 @@ export async function readThingiverseLicense(
     await res.body?.cancel().catch(() => undefined);
     throw new Error(`Thingiverse answered HTTP ${res.status}`);
   }
-  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
-  // A Thing it doesn't have is a page without the data, answered 200.
-  return thingiverseLicenseFromPage(buffer.toString("utf-8")) ?? null;
+  const { buffer, truncated } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
+  const license = thingiverseLicenseFromPage(buffer.toString("utf-8"));
+  if (license === undefined && truncated) throw new Error("Thingiverse's page was cut off before its licence");
+  // A page without the Thing's data, answered 200, is a Thing it doesn't have, or a page that changed: read again later.
+  return license;
 }

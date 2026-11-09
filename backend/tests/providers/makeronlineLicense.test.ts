@@ -44,10 +44,11 @@ describe("MakerOnline licences", () => {
     expect(makeronlineMetaFromDetail({ id: 1, title: "Bare" }).meta).toHaveProperty("license", null);
   });
 
-  it("gives none for a missing number, or one its pages don't know", () => {
-    for (const license of [undefined, null, 0, 9, "", "abc", 2.5]) {
+  it("gives none for a missing number, and keeps one it doesn't know", () => {
+    for (const license of [undefined, null, 0, -1, "", "abc", 2.5]) {
       expect(makeronlineLicenseFrom({ license })).toBeNull();
     }
+    expect(makeronlineLicenseFrom({ license: 9 })).toEqual({ id: null, raw: "9", label: "MakerOnline licence 9" });
     expect(makeronlineLicenseFrom({ license: "4" })).toEqual({ id: "CC-BY-NC-SA-4.0", raw: "4" });
   });
 });

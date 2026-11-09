@@ -60,17 +60,28 @@ describe("Thangs licences", () => {
     expect(mit?.terms).toMatch(/^MIT License\n\nCopyright \(c\) 2023 A Maker\n\nPermission is hereby granted/);
   });
 
-  it("turns an uploaded web page into its text, the file's name deciding over its title", () => {
+  it("turns an uploaded web page into its text, and vouches for no licence its name and text disagree on", () => {
+    // Named NoDerivs, while the page uploaded is the NonCommercial one's: which applies isn't for Thingport to say.
     const license = thangsLicenseFrom(
       "63edc669-7e29-4703-b665-a1419123f4e7/license-Attribution-NonCommercial-NoDerivs 4.0 International.txt",
       text("license-text-legalcode"),
     );
-    expect(license?.id).toBe("CC-BY-NC-ND-4.0");
+    expect(license).toMatchObject({
+      id: null,
+      label: "license-Attribution-NonCommercial-NoDerivs 4.0 International",
+      allows: [],
+    });
     expect(license?.terms).toMatch(/^Legal Code - Attribution-NonCommercial 4\.0 International/);
     expect(license?.terms).toContain("Section 1 – Definitions.");
     expect(license?.terms).not.toMatch(/<[a-z]|margin: 0/);
     // A page whose name says nothing: its title does.
     expect(thangsLicenseFrom("abc/License.txt", text("license-text-legalcode"))?.id).toBe("CC-BY-NC-4.0");
+  });
+
+  it("vouches for no licence a file is named after when its text doesn't bear it out", () => {
+    const own = thangsLicenseFrom("55640559/MIT License.txt", "Personal use only. Do not share or sell these files.");
+    expect(own).toMatchObject({ id: null, label: "MIT License", allows: [] });
+    expect(own?.terms).toBe("Personal use only. Do not share or sell these files.");
   });
 
   it("allows nothing by one it can't tell, and cuts a long text", () => {
@@ -113,8 +124,9 @@ describe("Thangs licences", () => {
     it("reads the file's text with the model", async () => {
       const calls = stub(() => Response.json(loadFixture("thangs", "license-text-legalcode")));
       const license = (await resolveThangsModel("1648126"))?.meta.license;
+      // Its name and its text disagree (NoDerivs, NonCommercial): kept, allowing nothing.
       expect(license).toMatchObject({
-        id: "CC-BY-NC-ND-4.0",
+        id: null,
         raw: model.license,
         label: "license-Attribution-NonCommercial-NoDerivs 4.0 International",
       });

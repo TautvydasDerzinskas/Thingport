@@ -32,6 +32,10 @@ describe("Cults3D licences", () => {
   });
 
   it("falls back on the SPDX id, then the name", () => {
+    expect(cults3dLicenseFrom({ code: null, name: "GNU GPL", spdxId: null })).toEqual({
+      id: "GPL-3.0",
+      raw: "GNU GPL",
+    });
     expect(cults3dLicenseFrom({ code: null, name: "GNU GPL", spdxId: "GPL-3.0-or-later" })).toEqual({
       id: "GPL-3.0",
       raw: "GPL-3.0-or-later",

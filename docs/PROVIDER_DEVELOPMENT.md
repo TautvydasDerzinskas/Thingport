@@ -252,18 +252,21 @@ a LICENSE.txt can go beside its files (`services/licenseService.ts`, `licenseFil
 - **The mapping** goes in `backend/src/providers/<id>/license.ts`, with the site's table of codes. Sites number their
   licences differently (MakerOnline's 2 is BY-SA, Snapmaker's 2 is BY-NC), so each keeps its own. `ccLicenseId`,
   `licenseIdFromUrl` and `licenseIdFromText` read the usual forms. It returns a `ProviderLicense`: the catalogue id
-  (null for one Thingport doesn't know, shown by its `label` and `terms`), the site's own `raw` value, and only where
-  this model differs from the licence, `allows` or `requires` (MyMiniFactory's per-model permissions, Toymakr3D's terms
-  forbidding sharing what CC BY-NC-ND would allow). A site licence's own wording goes in `terms` when the site sends it
-  with each model (MakerWorld, Printables, Snapmaker); otherwise it's the catalogue's `text`.
+  (null for one Thingport doesn't know, shown by its `label` and `terms`; a code missing from the table is kept that
+  way, allowing nothing, rather than dropped, so a mapping that adds it reads the model again), the site's own `raw`
+  value, and only where this model differs from the licence, `allows` or `requires` (MyMiniFactory's per-model
+  permissions, Toymakr3D's terms forbidding sharing what CC BY-NC-ND would allow). A site licence's own wording goes in
+  `terms` when the site sends it with each model (MakerWorld, Printables, Snapmaker); otherwise it's the catalogue's
+  `text`.
 - **At import**, the metadata builder sets `meta.license` from the response it already read: `null` when the site says
   the model has none, absent when this read didn't look. An absent licence is read once the import settles, as for
   MakerWorld through Grab, whose cut-down design has no licence.
 - **Older imports** are read when their owner opens them, one model at a time. `details.read`'s `license` is used,
-  unless the registry entry gives `license(userId, externalId, stored)`: for a lighter request than `details.read`
-  makes (MakerWorld's anonymous design, a page without the tags call), none at all (PIXUP, GrabCAD and Meshy's
-  community posts have one licence for every model), or what the stored description says (CGTrader's older imports).
-  Throw when the site can't be read now; it's asked again a day later. Respect the site's pacing.
+  unless the registry entry gives `license(userId, externalId, stored)`: for a lighter request than `details.read` makes
+  (MakerWorld's anonymous design, a page without the tags call), none at all (PIXUP, GrabCAD and Meshy's community posts
+  have one licence for every model), or what the stored description says (CGTrader's older imports). Throw when the site
+  can't be read now (it's asked again a day later, or at once when the owner retries); return `undefined` when it
+  answered without saying, such as a page without the model's data. Respect the site's pacing.
 - A licence its owner picked is never replaced by what the site lists.
 
 ### Errors and limits

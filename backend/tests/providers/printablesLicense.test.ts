@@ -70,6 +70,10 @@ describe("Printables licences", () => {
     expect(micro).toMatchObject({ id: "OCL-1.1", raw: "21", label: "Open Community License v1.1 + Micro Business v1" });
     expect(micro?.terms).toContain("Commercial use by small business only");
     expect(printablesLicenseFrom(byId("17"))).toEqual({ id: "OCL-1.1", raw: "17" });
+    // General Attribution asks for credit, which the licence it's added to doesn't.
+    for (const id of ["19", "22", "23"]) {
+      expect(printablesLicenseFrom(byId(id))).toMatchObject({ requires: { credit: true } });
+    }
   });
 
   it("reads one added since by its link or name, and says none for a Club model", () => {

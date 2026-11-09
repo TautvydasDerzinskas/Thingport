@@ -41,11 +41,13 @@ describe("eufyMake licences", () => {
     });
   });
 
-  it("puts the licence in the model's details, and none for 0 or a number its pages don't know", () => {
+  it("puts the licence in the model's details, none for 0, and keeps a number it doesn't know", () => {
     const detail = loadFixture<Detail[]>("eufymake", "license-details").at(-1)!;
     expect(eufymakeMetaFromDetail(detail)!.meta.license).toEqual({ id: "eufymake-private", raw: "8" });
     expect(eufymakeMetaFromDetail({ ...detail, license: 0 })!.meta).toHaveProperty("license", null);
-    for (const license of [undefined, null, 0, "0", 9, "", "x"]) expect(eufymakeLicenseFrom({ license })).toBeNull();
+    for (const license of [undefined, null, 0, "0", -1, "", "x"]) expect(eufymakeLicenseFrom({ license })).toBeNull();
+    // Kept, allowing nothing, so a mapping that names it later reads it again.
+    expect(eufymakeLicenseFrom({ license: 9 })).toEqual({ id: null, raw: "9", label: "eufyMake licence 9" });
   });
 
   it("reads an older import's licence from its public details, spacing the reads out", async () => {

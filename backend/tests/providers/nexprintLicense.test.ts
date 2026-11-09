@@ -43,10 +43,11 @@ describe("NexPrint licences", () => {
     expect(nexprintMetaFromDetail({ ...detail, licenseType: null })!.meta).toHaveProperty("license", null);
   });
 
-  it("gives none for a missing number, or one its pages don't know, though they'd show the Standard one", () => {
-    for (const licenseType of [undefined, null, "", 8, -1, 1.5, "x"]) {
+  it("gives none for a missing number, and keeps one it doesn't know rather than the Standard one its pages show", () => {
+    for (const licenseType of [undefined, null, "", -1, 1.5, "x"]) {
       expect(nexprintLicenseFrom({ licenseType })).toBeNull();
     }
+    expect(nexprintLicenseFrom({ licenseType: 8 })).toEqual({ id: null, raw: "8", label: "NexPrint licence 8" });
     expect(nexprintLicenseFrom({ licenseType: "06" })).toEqual({ id: "CC0-1.0", raw: "6" });
   });
 });
