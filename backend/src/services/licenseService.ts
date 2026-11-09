@@ -3,7 +3,7 @@
 // as print profiles are read. A licence the owner picked is theirs: no read from the source replaces it.
 
 import { Prisma, type Print } from "@prisma/client";
-import { PROFILE_FILL_AFTER_IMPORT_MS } from "../config";
+import { LICENSE_READ_TIMEOUT_MS, PROFILE_FILL_AFTER_IMPORT_MS } from "../config";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { isProviderId, MANIFESTS } from "../providers/index.generated";
@@ -233,7 +233,7 @@ export function startLicenseFill(printId: string): void {
     .then(async () => {
       waiting.delete(printId);
       running.add(printId);
-      await fillLicense(printId);
+      await withinTime(fillLicense(printId), LICENSE_READ_TIMEOUT_MS);
     })
     .catch((err) => {
       // Failed before it could say so: its page offers to try again, rather than read it as none stated.
@@ -247,6 +247,16 @@ export function startLicenseFill(printId: string): void {
         startLicenseFill(printId);
       }
     });
+}
+
+/** `work`, or a failure once `ms` have passed; what it does after that is left to finish on its own. */
+function withinTime<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`no answer after ${ms} ms`)), ms);
+    timer.unref?.();
+  });
+  return Promise.race([work, late]).finally(() => clearTimeout(timer));
 }
 
 export function licenseFillRunning(printId: string): boolean {

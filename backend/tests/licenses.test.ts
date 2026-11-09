@@ -1,7 +1,13 @@
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+// A licence read that never ends gives up quickly here. config.ts reads it on load, so it's hoisted.
+vi.hoisted(() => {
+  process.env.LICENSE_READ_TIMEOUT_MS = "2000";
+});
+
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
@@ -464,9 +470,13 @@ describe("an older import's licence", () => {
         .post("/api/register")
         .send({ displayName: "Other", email: `licenses-other-${stamp}@example.com`, password: "password123" });
       const theirs = { Authorization: `Bearer ${other.body.token}` };
+      const reader = vi.spyOn(PROVIDERS.makerables.details, "read");
       const state = await request(app).get(`/api/print/${printId}/license`).set(theirs);
       expect(state.status).toBe(200);
-      expect(state.body).toMatchObject({ license: null, pending: true });
+      // Only shown: nothing is read for them.
+      expect(state.body).toMatchObject({ license: null, pending: true, filling: false });
+      expect(reader).not.toHaveBeenCalled();
+      reader.mockRestore();
       expect((await request(app).post(`/api/print/${printId}/license/fill`).set(theirs)).status).toBe(404);
     } finally {
       await setSocialSettings(social);
@@ -489,6 +499,33 @@ describe("an older import's licence", () => {
       await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "all-rights-reserved" });
       answer({ ...emptyImportedPageMetadata(), license: { id: "CC-BY-4.0", raw: "cc_by" } });
       expect((await settled(printId)).license).toMatchObject({ id: "all-rights-reserved", source: "user" });
+    } finally {
+      reader.mockRestore();
+    }
+  });
+
+  it("gives up on a read that never ends, so the next model's isn't held up", async () => {
+    const hung = await upload(`Hung ${stamp}`);
+    const next = await upload(`After hung ${stamp}`);
+    for (const [id, externalId] of [
+      [hung, `hung-${stamp}`],
+      [next, `after-hung-${stamp}`],
+    ]) {
+      await prisma.print.update({
+        where: { id },
+        data: { sourceProvider: "makerables", sourceExternalId: externalId, licenseReadAt: null },
+      });
+    }
+    const reader = vi
+      .spyOn(PROVIDERS.makerables.details, "read")
+      .mockReturnValueOnce(new Promise(() => undefined))
+      .mockResolvedValue({ ...emptyImportedPageMetadata(), license: { id: "CC-BY-4.0", raw: "cc_by" } });
+    try {
+      await request(app).post(`/api/print/${hung}/license/fill`).set(auth());
+      await request(app).post(`/api/print/${next}/license/fill`).set(auth());
+      expect(await settled(next)).toMatchObject({ license: { id: "CC-BY-4.0" } });
+      // Failed, so its page offers to try again.
+      expect(await settled(hung)).toMatchObject({ license: null, failed: true });
     } finally {
       reader.mockRestore();
     }
