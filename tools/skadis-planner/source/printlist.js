@@ -7,16 +7,14 @@
 import { BOARD_DESIGN, MOUNT_DESIGNS, boardKey, boardSource, keyForItem, needsMirror } from "./catalogue.js";
 import { hardwareFor } from "./mounting.js";
 
-/** East Slavic counts need a separate form for 2–4 and the right form for 21, 22 and so on. */
-export const pluralKey = (count, one, many, language = "en") => {
-  const category = ["ru", "uk", "be"].includes(language) ? new Intl.PluralRules(language).select(count) : null;
-  return category === "few"
-    ? one.replace(/\.one$/, ".few")
-    : (category ? category === "one" : count === 1)
-      ? one
-      : many;
+/** A count's word in the user's language: `t()` picks the plural form, and an older Thingport, whose `t()` has none,
+ *  gets the `.other` one rather than the key. */
+export const countWord = (t, key, count) => {
+  const word = t(key, { count });
+  return word === key ? t(`${key}.other`) : word;
 };
-export const plural = (t, count, one, many, language = "en") => `${count} ${t(pluralKey(count, one, many, language))}`;
+/** "1 board" / "4 boards", in the language's own plural forms. */
+export const plural = (t, count, key) => `${count} ${countWord(t, key, count)}`;
 const mm = (value) => `${Math.round(value)} mm`;
 /** "820 × 860 mm": the unit once, at the end, as a size is written. */
 const size = (a, b) => `${Math.round(a)} × ${Math.round(b)} mm`;
@@ -88,7 +86,7 @@ export const planTitle = (plan, t) => t("list.planTitle", { size: size(plan.widt
  * and the distance from the wall.
  */
 export function partListText(plan, context) {
-  const { printer, system, wallMm, strategy, t, language } = context;
+  const { printer, system, wallMm, strategy, t } = context;
   const steps = printOrder(plan, system, wallMm, t);
   const buy = toBuy(plan, system);
   const out = [];
@@ -114,7 +112,7 @@ export function partListText(plan, context) {
   );
   field(
     "list.boards",
-    `${plural(t, plan.boards.length, "list.board.one", "list.board.many", language)}, ` +
+    `${plural(t, plan.boards.length, "list.boardWord")}, ` +
       t("list.acrossDown", { across: plan.columns.length, down: plan.rows.length }),
   );
   field("list.printer", t("list.printerValue", { printer: t(printer.name), x: printer.x, y: printer.y }));
@@ -138,9 +136,7 @@ export function partListText(plan, context) {
       parts: plural(
         t,
         steps.reduce((total, step) => total + step.count, 0),
-        "list.part.one",
-        "list.part.many",
-        language,
+        "list.partWord",
       ),
     })}`,
   );
@@ -172,12 +168,12 @@ export function partListText(plan, context) {
 
 /** The same thing, shortened for a model's description, which sits above a page rather than in a file. */
 export function describePlan(plan, context) {
-  const { printer, system, wallMm, strategy, t, language } = context;
+  const { printer, system, wallMm, strategy, t } = context;
   const steps = printOrder(plan, system, wallMm, t);
   const out = [];
   out.push(
     t("describe.summary", {
-      boards: plural(t, plan.boards.length, "list.board.one", "list.board.many", language),
+      boards: plural(t, plan.boards.length, "list.boardWord"),
       size: size(plan.widthMm, plan.heightMm),
       across: plan.columns.length,
       down: plan.rows.length,

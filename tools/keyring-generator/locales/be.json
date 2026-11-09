@@ -1,9 +1,10 @@
 {
   "bar.download": "Спампаваць",
   "bar.more": "Яшчэ",
-  "bar.piece": "дэталь",
-  "bar.pieces": "дэталяў",
-  "bar.piecesFew": "дэталі",
+  "bar.pieces.one": "дэталь",
+  "bar.pieces.few": "дэталі",
+  "bar.pieces.many": "дэталяў",
+  "bar.pieces.other": "дэталі",
   "bar.piecesHint": "Колькасць асобных дэталяў у выніку",
   "bar.redo": "Вярнуць",
   "bar.redoHint": "Вярнуць (Ctrl+Shift+Z)",

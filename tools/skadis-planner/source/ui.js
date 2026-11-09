@@ -15,7 +15,7 @@ import {
 } from "./catalogue.js";
 import { PlanError, STRATEGIES, getStrategy, planWall } from "./solver.js";
 import { hardwareMarkers } from "./mounting.js";
-import { describePlan, partListText, planTitle, pluralKey, printOrder, toBuy } from "./printlist.js";
+import { countWord, describePlan, partListText, planTitle, plural, printOrder, toBuy } from "./printlist.js";
 import { partFiles } from "./parts3mf.js";
 import { drawMeasurements, drawPlan, fit, planImage } from "./plan2d.js";
 
@@ -55,7 +55,7 @@ const START = {
 };
 
 export default async function mount(thingport) {
-  const { root, theme, models, storage, ui, download, collections, t, labels, language } = thingport;
+  const { root, theme, models, storage, ui, download, collections, t, labels } = thingport;
   const shell = root.querySelector(".skp");
   const $ = (id) => root.querySelector(`#skp-${id}`);
 
@@ -154,7 +154,6 @@ export default async function mount(thingport) {
     wallMm: form.wallMm,
     strategy: strategy(),
     t,
-    language,
   });
 
   function replan() {
@@ -414,7 +413,7 @@ export default async function mount(thingport) {
 
     into.innerHTML = `
       <ol class="skp-steps">${steps.map(stepRow).join("")}</ol>
-      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(t("plan.boardsCount", { boards: plan.boards.length }))}</b></div>
+      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(plural(t, plan.boards.length, "list.boardWord"))}</b></div>
       ${
         buy.length
           ? `<h3 class="skp-sub">${escapeHtml(t("plan.buy"))}</h3><ul class="skp-buy">${buy
@@ -443,7 +442,7 @@ export default async function mount(thingport) {
     status.textContent = `${t("plan.covered", { width: Math.round(plan.coveredWidthMm), height: Math.round(plan.coveredHeightMm) })}${left}`;
     const summary = $("summary");
     summary.hidden = false;
-    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(t(pluralKey(plan.boards.length, "list.board.one", "list.board.many", language)))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
+    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(countWord(t, "list.boardWord", plan.boards.length))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
   }
 
   function update() {
@@ -502,7 +501,7 @@ export default async function mount(thingport) {
         strategyId: saved.strategyId,
         maxGapMm: clean(saved.maxGapMm, 40),
       });
-      return `${t("plan.boardsCount", { boards: savedPlan.boards.length })}, ${Math.round(savedPlan.widthMm)} × ${Math.round(savedPlan.heightMm)} mm`;
+      return `${plural(t, savedPlan.boards.length, "list.boardWord")}, ${Math.round(savedPlan.widthMm)} × ${Math.round(savedPlan.heightMm)} mm`;
     } catch {
       return project.summary ?? "";
     }

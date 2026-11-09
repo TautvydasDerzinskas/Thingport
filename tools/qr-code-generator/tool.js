@@ -3406,28 +3406,16 @@ const escapeHtml = (text) =>
     (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character],
   );
 
-export const pluralLabel = (t, language, count, one, few, many) => {
-  const category = ["ru", "uk", "be"].includes(language) ? new Intl.PluralRules(language).select(count) : null;
-  return t(category === "one" || (!category && count === 1) ? one : category === "few" ? few : many);
+/** A count's word in the user's language: `t()` picks the plural form, and an older Thingport, whose `t()` has none,
+ *  gets the `.other` one rather than the key. */
+export const countWord = (t, key, count) => {
+  const word = t(key, { count });
+  return word === key ? t(`${key}.other`) : word;
 };
 
 export default async function mount(thingport) {
-  const {
-    root,
-    theme,
-    t,
-    labels,
-    size,
-    onResize,
-    storage,
-    models,
-    collections,
-    ui,
-    download,
-    library,
-    tool,
-    language,
-  } = thingport;
+  const { root, theme, t, labels, size, onResize, storage, models, collections, ui, download, library, tool } =
+    thingport;
   const shell = root.querySelector("#qrg-shell");
   const $ = (id) => root.querySelector(`#qrg-${id}`);
 
@@ -3615,8 +3603,7 @@ export default async function mount(thingport) {
     $("dims").innerHTML = `<b>${width.toFixed(1)} × ${height.toFixed(1)} × ${thickness.toFixed(1)}</b> mm`;
     $("code").innerHTML = `<b>v${current.code.version}</b> · ${current.code.level} · ${cell.toFixed(2)} mm`;
     const count = current.filaments.length;
-    $("filaments").innerHTML =
-      `<b>${count}</b> ${pluralLabel(t, language, count, "bar.filament", "bar.filaments", "bar.filamentsMany")}`;
+    $("filaments").innerHTML = `<b>${count}</b> ${countWord(t, "bar.filaments", count)}`;
   }
 
   /** What the chosen part is, and anything worth saying, over the picture. */

@@ -782,12 +782,18 @@ export interface SdkBase {
    * The script's own words, from its `locales/<code>.json` labels, in the user's language. A missing word falls back
    * to English key by key, and a key with no words anywhere comes back as itself, so the gap shows.
    *
+   * A number as `count` picks the plural form: the label has a key per form, `<key>.one`, `.two`, `.few`, `.many` and
+   * `.other`, and each language gives the ones its own rules use (English `one` and `other`, Russian `one`, `few` and
+   * `many`), with `.other` standing in for a form it hasn't. Thingport before this returns the key itself, so a script
+   * that must run on one asks for `<key>.other` when it gets the key back.
+   *
    * @group Words
    * @param key The label's key.
-   * @param vars Values for the `{name}` placeholders in it.
+   * @param vars Values for the `{name}` placeholders in it, and `count` to pick a plural form.
    * @returns The sentence.
    * @example
    * t("rings.ring", { n: 2 }); // "Ring 2", or "Žiedas 2" in Lithuanian
+   * t("bar.pieces", { count: 21 }); // "pieces", or "деталь" in Russian, where 21 takes the one form
    */
   t(key: string, vars?: Record<string, unknown>): string;
   /**

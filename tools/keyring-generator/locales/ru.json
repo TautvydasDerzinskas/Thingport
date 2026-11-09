@@ -1,9 +1,10 @@
 {
   "bar.download": "Скачать",
   "bar.more": "Ещё",
-  "bar.piece": "деталь",
-  "bar.pieces": "деталей",
-  "bar.piecesFew": "детали",
+  "bar.pieces.one": "деталь",
+  "bar.pieces.few": "детали",
+  "bar.pieces.many": "деталей",
+  "bar.pieces.other": "детали",
   "bar.piecesHint": "Количество отдельных деталей в результате",
   "bar.redo": "Повторить",
   "bar.redoHint": "Повторить (Ctrl+Shift+Z)",

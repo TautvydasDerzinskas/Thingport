@@ -49,6 +49,20 @@ export type Locale = z.infer<typeof localeSchema>;
 export const localesSchema = z.record(z.string().trim().regex(LANGUAGE, "Not a language code"), localeSchema);
 export type Locales = z.infer<typeof localesSchema>;
 
+const PLURAL_FORM = /^(.+)\.(zero|one|two|few|many|other)$/;
+
+/**
+ * The labels a language has that English hasn't, which nothing can reach, English being the fallback. A plural form
+ * English doesn't use, such as Russian's `bar.pieces.few`, is reached through English's `bar.pieces.other`.
+ */
+export function strayLabels(words: Locale, english: Locale): string[] {
+  return Object.keys(words).filter((key) => {
+    if (key in english) return false;
+    const plural = PLURAL_FORM.exec(key);
+    return !(plural && `${plural[1]}.other` in english);
+  });
+}
+
 export function validateLocale(code: string, raw: unknown): Locale {
   if (!LANGUAGE.test(code)) throw new HttpError(400, `"${code}" isn't a language code`);
   const parsed = localeSchema.safeParse(raw);
