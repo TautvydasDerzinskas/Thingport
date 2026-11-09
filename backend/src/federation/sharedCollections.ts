@@ -426,6 +426,14 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
           await tx.$queryRaw<{ id: string }[]>`
             SELECT id FROM "User" WHERE id = ANY(${users.map((user) => user.id)}::text[]) FOR KEY SHARE`
         ).map((user) => user.id);
+        // Nobody here left to see it, their accounts deleted meanwhile: let go of as one no longer shared with them.
+        if (!viewers.length) {
+          await tx.remoteCollection.deleteMany({ where: { apId, peerId: peer.id, limited: true } });
+          await noteGone(tx, peer.id, apId, readAt);
+          await pruneIn(tx, peer.id);
+          await holdPartner(tx, peer.id);
+          return;
+        }
         const had = new Set(kept?.viewers.map((viewer) => viewer.userId) ?? []);
         await tx.remoteCollectionViewer.deleteMany({ where: { collectionId: saved.id, userId: { notIn: viewers } } });
         await tx.remoteCollectionViewer.createMany({
@@ -439,6 +447,8 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
           data.name,
           saved.id,
         );
+        // Those it no longer holds, with nothing else holding them, in the same go: nothing comes between.
+        await pruneIn(tx, peer.id);
         await holdPartner(tx, peer.id);
       },
       { timeout: WRITE_TIMEOUT_MS, maxWait: 10_000 },
@@ -446,7 +456,6 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
     .catch((err: unknown) => {
       if (!(err instanceof Superseded)) throw err;
     });
-  await pruneLimitedModels(peer.id);
 }
 
 /** Throws unless `peerId` is still an ACTIVE partner, and keeps it one until `tx` is done: a block waits for it, then
@@ -479,41 +488,44 @@ async function tell(
 }
 
 /** Lets go of `apId`, no longer shared with anyone here, as its owner's instance said `at` (when what told it was asked
- *  for): noted, so a read of the index asked for before then can't bring it back as public (remoteIndex.ts). False when
- *  it wasn't one kept here. */
+ *  for), with the models only it held, in one go. False when it wasn't one kept here. Nothing's kept of a partner
+ *  blocked meanwhile: its notes go with the rest (`forgetPeerContent`). */
 async function forget(peerId: string, apId: string, at: Date): Promise<boolean> {
-  const count = await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     await holdRemoteModels(tx, peerId);
     const deleted = await tx.remoteCollection.deleteMany({ where: { apId, peerId, limited: true } });
-    await tx.$executeRaw`
-      INSERT INTO "RemoteGone" ("apId", "peerId", "at") VALUES (${apId}, ${peerId}, ${at})
-      ON CONFLICT ("apId") DO UPDATE SET "at" = GREATEST("RemoteGone"."at", EXCLUDED."at")`;
-    return deleted.count;
+    await noteGone(tx, peerId, apId, at);
+    if (deleted.count) await pruneIn(tx, peerId);
+    await holdPartner(tx, peerId);
+    return deleted.count > 0;
   });
-  if (count) await pruneLimitedModels(peerId);
-  return count > 0;
 }
 
-/** The models kept only for collections shared with people here that no such collection holds any more, each noted
- *  gone as of its last read, so a read of the index asked for before that can't bring it back as public. Waits for any
- *  read being kept meanwhile, so a model it gives another collection is seen as held. */
-export async function pruneLimitedModels(peerId: string): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    await holdRemoteModels(tx, peerId, true);
-    await tx.$executeRaw`
-      WITH gone AS (
-        DELETE FROM "RemoteModel" m
-        WHERE m."peerId" = ${peerId} AND m.limited
-          AND NOT EXISTS (
-            SELECT 1 FROM "RemoteCollection" c
-            WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
-          )
-        RETURNING m."apId", m."syncedAt"
-      )
-      INSERT INTO "RemoteGone" ("apId", "peerId", "at")
-      SELECT "apId", ${peerId}, "syncedAt" FROM gone
-      ON CONFLICT ("apId") DO UPDATE SET "at" = GREATEST("RemoteGone"."at", EXCLUDED."at")`;
-  });
+/** Notes `apId` gone as of `at`, so a read of the index asked for before then can't bring it back as public
+ *  (remoteIndex.ts). */
+async function noteGone(tx: Prisma.TransactionClient, peerId: string, apId: string, at: Date): Promise<void> {
+  await tx.$executeRaw`
+    INSERT INTO "RemoteGone" ("apId", "peerId", "at") VALUES (${apId}, ${peerId}, ${at})
+    ON CONFLICT ("apId") DO UPDATE SET "at" = GREATEST("RemoteGone"."at", EXCLUDED."at")`;
+}
+
+/** The models kept only for collections shared with people here that no such collection holds any more, in `tx`
+ *  (which holds the partner's kept collections and models), each noted gone as of now: a read of the index asked for
+ *  before can't bring it back as public. */
+async function pruneIn(tx: Prisma.TransactionClient, peerId: string): Promise<void> {
+  await tx.$executeRaw`
+    WITH gone AS (
+      DELETE FROM "RemoteModel" m
+      WHERE m."peerId" = ${peerId} AND m.limited
+        AND NOT EXISTS (
+          SELECT 1 FROM "RemoteCollection" c
+          WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
+        )
+      RETURNING m."apId"
+    )
+    INSERT INTO "RemoteGone" ("apId", "peerId", "at")
+    SELECT "apId", ${peerId}, ${askedAt()} FROM gone
+    ON CONFLICT ("apId") DO UPDATE SET "at" = GREATEST("RemoteGone"."at", EXCLUDED."at")`;
 }
 
 /** Whether `userId` may open a partner's model: one shared openly there, or in a collection shared with them. */

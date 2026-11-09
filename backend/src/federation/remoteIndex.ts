@@ -64,6 +64,12 @@ export async function syncStale(maxAgeMs = SYNC_EVERY_MS): Promise<void> {
  *  writing later finds the partner gone or no longer ACTIVE, and writes nothing (`store`). */
 export async function forgetPeerContent(peerId: string): Promise<void> {
   await storing.get(peerId)?.catch(() => {});
+  // What was noted gone of it, too: nothing of a blocked partner's is kept. After any write of its kept collections
+  // under way (which, finding it blocked, keeps nothing more).
+  await prisma.$transaction(async (tx) => {
+    await holdRemoteModels(tx, peerId);
+    await tx.remoteGone.deleteMany({ where: { peerId } });
+  });
   await forgetMedia(peerId);
   // Rooms hosted here go on without its people, their other partners told; the copies of its rooms go. Direct messages
   // with its people stay, as they said.
@@ -624,14 +630,12 @@ async function store(
   });
 }
 
-/** Holds `peerId`'s kept collections and models for `tx`: shared while a read of a collection as shared keeps one, or
- *  one is let go of (several may at once, each of a different collection, one at a time apiece); alone while the
- *  index is written or what no collection holds any more is pruned. So those see what the others wrote: a model
- *  another collection is being given meanwhile isn't taken, nor a collection or model let go of brought back. Taken
- *  first, before any row. */
-export async function holdRemoteModels(tx: Prisma.TransactionClient, peerId: string, alone = false): Promise<void> {
-  if (alone) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('remote-models'), hashtext(${peerId}))`;
-  else await tx.$executeRaw`SELECT pg_advisory_xact_lock_shared(hashtext('remote-models'), hashtext(${peerId}))`;
+/** Holds `peerId`'s kept collections and models for `tx`, alone: each write of them (a read of a collection as shared
+ *  kept, one let go of, the index written, the partner blocked) waits for the one before, so it sees what that wrote,
+ *  and what one drops is pruned within it. So a model another collection is being given isn't taken, and nothing let go
+ *  of is brought back. Taken first, before any row. */
+export async function holdRemoteModels(tx: Prisma.TransactionClient, peerId: string): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('remote-models'), hashtext(${peerId}))`;
 }
 
 async function storeIn(
@@ -641,7 +645,7 @@ async function storeIn(
   own: (url: string | undefined) => url is string,
   askedFrom: Date,
 ): Promise<void> {
-  await holdRemoteModels(tx, peer.id, true);
+  await holdRemoteModels(tx, peer.id);
   // What's been let go of, and as of when (sharedCollections.ts): fixed while this holds the lock.
   const goneAt = new Map(
     (await tx.remoteGone.findMany({ where: { peerId: peer.id }, select: { apId: true, at: true } })).map((row) => [

@@ -357,7 +357,10 @@ describe("a collection shared with picked people", () => {
         },
         { timeout: 20_000 },
       )
-      .catch(() => {});
+      .then(
+        () => null,
+        (err: Error) => err,
+      );
     try {
       await changing;
       const saving = patch({ visibility: "shared" }).then((res) => res);
@@ -368,6 +371,9 @@ describe("a collection shared with picked people", () => {
         await deleting;
       }
       const res = await saving;
+      // Gone for good, not rolled back after the save waited on it.
+      expect(await deleting).toBeNull();
+      expect(await prisma.user.count({ where: { id: dana.id } })).toBe(0);
       expect(res.status).toBe(200);
       expect(res.body.visibility).toBe("shared");
       expect(

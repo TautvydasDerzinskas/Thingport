@@ -242,10 +242,11 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   `remoteIndex.ts`) that never gives two the same, so the later is always told apart; a tie, were there one, goes to
   the read as shared. A model read as shared isn't made public by a read of the index asked for before it. A
   collection let go of (a `Delete`, or a `404`) is noted with when (`RemoteGone`), and so is a model pruned once no
-  collection shared with people here holds it, as of its last read, so a read of the index asked for before then can't
-  bring either back as public; the note goes once a read of the index begun after it is stored. Reads being kept and
-  collections let go of hold the partner's kept collections and models shared, and the index being written or models
-  being pruned hold them alone (`holdRemoteModels`, an advisory lock), so those see what the others wrote. A
+  collection shared with people here holds it, as of then, so a read of the index asked for before then can't bring
+  either back as public; the note goes once a read of the index begun after it is stored. Every write of a partner's
+  kept collections and models (a read kept, a let-go, the index written, a block) holds them alone
+  (`holdRemoteModels`, an advisory lock), and the models a read or a let-go leaves no collection holding are pruned
+  within it, so each sees what the one before wrote and nothing comes between. A
   read writes nothing, its owner included, once the partner is blocked: it holds the partner's row
   (`FOR SHARE`, last) until it's written, so a block waits for it and then forgets it all. Nothing is read or kept while
   social features are off here: each read checks as its turn comes, and holds the setting (`FOR SHARE`) while it's

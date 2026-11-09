@@ -1596,6 +1596,47 @@ describe("a partner's person sharing a collection with people here", () => {
     expect(await prisma.remoteCollection.count({ where: { apId: apId("c38") } })).toBe(1);
   });
 
+  it("isn't brought back as public by a read of the index asked for after its last read as shared, but before it went", async () => {
+    const model = `${PARTNER}/api/ap/models/c40-m1`;
+    await sharesOpenly(model);
+    docs.set("c40", doc("c40", [actor(bea.id)]));
+    await sharedCollectionFrom(actorOf(PARTNER), apId("c40"));
+    const models = hold("ruta-models");
+    try {
+      // Read as shared; then the index asks for her models; then its collection's let go of, before that's stored.
+      const syncing = syncPeer(partnerId);
+      await models.reached;
+      expect(await sharedCollectionGoneFrom(actorOf(PARTNER), apId("c40"))).toBe(true);
+      models.open();
+      await syncing;
+    } finally {
+      models.open();
+      directoryPeople.length = 0;
+      openModels.length = 0;
+    }
+    expect(await prisma.remoteModel.count({ where: { apId: model } })).toBe(0);
+  });
+
+  it("lets go of one whose only person here is deleted as it's read, with its models", async () => {
+    const eve = await register("Eve");
+    docs.set("c39", doc("c39", [actor(eve.id)]));
+    const held = hold("c39/items");
+    try {
+      // Eve's found as it's read; her account's deleted before what it holds is written.
+      const reading = sharedCollectionFrom(actorOf(PARTNER), apId("c39"));
+      await held.reached;
+      await prisma.user.delete({ where: { id: eve.id } });
+      held.open();
+      await reading;
+    } finally {
+      held.open();
+    }
+    expect(await prisma.remoteCollection.count({ where: { apId: apId("c39") } })).toBe(0);
+    expect(await prisma.remoteModel.count({ where: { apId: { startsWith: `${PARTNER}/api/ap/models/c39-` } } })).toBe(
+      0,
+    );
+  });
+
   // Last: it forgets everything of the partner's.
   it("keeps nothing of a read that a block of its partner finished during, its owner neither", async () => {
     const zoe = `${PARTNER}/api/ap/actors/zoe`;
@@ -1608,6 +1649,8 @@ describe("a partner's person sharing a collection with people here", () => {
       () => null,
       (err: Error) => err,
     );
+    // Something of the partner's noted gone, which goes too.
+    await prisma.remoteGone.create({ data: { apId: apId("noted"), peerId: partnerId, at: new Date() } });
     try {
       await held.reached;
       await prisma.peer.update({ where: { id: partnerId }, data: { status: "BLOCKED" } });
@@ -1616,6 +1659,7 @@ describe("a partner's person sharing a collection with people here", () => {
       expect((await reading)?.message).toBe("No longer connected");
       expect(await prisma.remotePerson.count({ where: { apId: zoe } })).toBe(0);
       expect(await prisma.remoteCollection.count({ where: { apId: apId("c13") } })).toBe(0);
+      expect(await prisma.remoteGone.count({ where: { peerId: partnerId } })).toBe(0);
     } finally {
       held.open();
       await prisma.peer.update({ where: { id: partnerId }, data: { status: "ACTIVE" } });
