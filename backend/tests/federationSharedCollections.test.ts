@@ -125,6 +125,22 @@ function hold(key: string): { reached: Promise<void>; open: () => void } {
     },
   };
 }
+/** The database session `tx` runs in. */
+async function sessionOf(tx: Prisma.TransactionClient): Promise<number> {
+  const [{ pid }] = await tx.$queryRaw<{ pid: number }[]>`SELECT pg_backend_pid() AS pid`;
+  return pid;
+}
+/** Until a session waits on a lock session `pid` holds: the race a test set up has reached it, whatever the pace. */
+function blockedBy(pid: number): Promise<void> {
+  return vi.waitFor(
+    async () => {
+      const [{ waiting }] = await prisma.$queryRaw<{ waiting: number }[]>`
+        SELECT COUNT(*)::int AS waiting FROM pg_stat_activity WHERE ${pid}::int = ANY(pg_blocking_pids(pid))`;
+      expect(waiting).toBeGreaterThan(0);
+    },
+    { timeout: 10_000, interval: 25 },
+  );
+}
 /** Sends `answer` once `key`'s gate, if any, is open. */
 function afterGate(key: string, answer: () => void): void {
   const gate = gates.get(key);
@@ -465,9 +481,11 @@ describe("sharing with a partner's people", () => {
     const released = new Promise<void>((resolve) => (release = resolve));
     let changed!: () => void;
     const changing = new Promise<void>((resolve) => (changed = resolve));
+    let holder = 0;
     const held = prisma
       .$transaction(
         async (tx) => {
+          holder = await sessionOf(tx);
           await change(tx);
           changed();
           await released;
@@ -485,17 +503,7 @@ describe("sharing with a partner's people", () => {
         () => null,
         (err: Error) => err,
       );
-      await vi.waitFor(
-        async () => {
-          const [{ waiting }] = await prisma.$queryRaw<{ waiting: number }[]>`
-            SELECT COUNT(*)::int AS waiting FROM pg_stat_activity
-            WHERE datname = current_database() AND wait_event_type = 'Lock'
-              AND (query LIKE '%"Collection"%FOR UPDATE%' OR query LIKE '%"User"%FOR UPDATE%'
-                OR query LIKE '%DELETE FROM "public"."User"%')`;
-          expect(waiting).toBeGreaterThan(0);
-        },
-        { timeout: 10_000, interval: 25 },
-      );
+      await blockedBy(holder);
     } finally {
       release();
       await held;
@@ -1038,8 +1046,10 @@ describe("a partner's person sharing a collection with people here", () => {
     const released = new Promise<void>((resolve) => (release = resolve));
     let changed!: () => void;
     const changing = new Promise<void>((resolve) => (changed = resolve));
+    let holder = 0;
     const turningOff = prisma.$transaction(
       async (tx) => {
+        holder = await sessionOf(tx);
         await tx.$executeRaw`UPDATE "Setting" SET value = value || '{"enabled": false}'::jsonb WHERE key = 'social'`;
         changed();
         await released;
@@ -1053,15 +1063,7 @@ describe("a partner's person sharing a collection with people here", () => {
         (err: Error) => err,
       );
       // Let go only once the read waits on the setting, so it's the race being tested whatever the machine's pace.
-      await vi.waitFor(
-        async () => {
-          const [{ waiting }] = await prisma.$queryRaw<{ waiting: number }[]>`
-            SELECT COUNT(*)::int AS waiting FROM pg_stat_activity
-            WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%"Setting"%FOR SHARE%'`;
-          expect(waiting).toBeGreaterThan(0);
-        },
-        { timeout: 10_000, interval: 25 },
-      );
+      await blockedBy(holder);
       release();
       await turningOff;
       expect((await reading)?.message).toBe("Social features are off here for now");
@@ -1166,7 +1168,7 @@ describe("a partner's person sharing a collection with people here", () => {
         apId: apId("c23"),
         peerId: partnerId,
         personId: rutaId,
-        name: "Hooks",
+        name: "Old hooks",
         limited: false,
         fetchedAt: at,
         syncedAt: new Date(at.getTime() - 60_000),
@@ -1182,7 +1184,11 @@ describe("a partner's person sharing a collection with people here", () => {
       directoryPeople.length = 0;
       openCollections.length = 0;
     }
-    expect(await prisma.remoteCollection.findUnique({ where: { id: open.id } })).toMatchObject({ limited: false });
+    // Written as read, not only kept.
+    expect(await prisma.remoteCollection.findUnique({ where: { id: open.id } })).toMatchObject({
+      limited: false,
+      name: "Hooks",
+    });
   });
 
   it("stays shared when the index asked for it in the same millisecond as it was read as shared", async () => {
