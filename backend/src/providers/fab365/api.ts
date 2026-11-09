@@ -188,12 +188,14 @@ function stillValid(data: Record<string, unknown> | null): boolean {
 
 /** Fab365's own renewal, as the site's pages make it on a 401: the old access token as the Bearer, the refresh token in
  *  the body. It hands back a new pair, which the caller must keep; the refresh token renews only once the access token
- *  has run out, and answers `valid_Token` while it hasn't. Throws Fab365AuthError when the refresh token is turned
- *  down.
+ *  has (nearly) run out, and answers `valid_Token` while it's comfortably valid. Throws Fab365AuthError when the refresh
+ *  token is turned down.
  *
- *  NB: the exact code Fab365 answers a dead refresh token with wasn't seen live (the token under test stayed valid), so
- *  any answer that is neither a new pair nor `valid_Token` is taken for a refusal. A network error throws through as
- *  itself, so an outage isn't read as one. Narrow this once the end-to-end test sees a real expiry. */
+ *  Tested live 2026-11-09: the refresh token is *reusable* (renewing with the same one twice both succeeded), so the
+ *  backend and the browser coexist -- a backend renewal doesn't sign the web session out. The one case not seen is a
+ *  genuinely dead refresh token (ours stayed valid to its own expiry), so any answer that is neither a new pair nor
+ *  `valid_Token` is still taken for a refusal; a network error throws through as itself, so an outage isn't read as one.
+ *  Narrow the refusal check if the exact code for a dead refresh token ever turns up. */
 export async function refreshFab365Session(secret: Fab365Secret): Promise<Fab365Tokens> {
   if (!secret.refreshToken) throw new Fab365AuthError();
   const res = await api("/v3_1/refresh", {
