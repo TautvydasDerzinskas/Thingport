@@ -30,7 +30,6 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import SettingsBrightnessOutlinedIcon from "@mui/icons-material/SettingsBrightnessOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LinkIcon from "@mui/icons-material/Link";
-import TranslateIcon from "@mui/icons-material/Translate";
 import PaletteIcon from "@mui/icons-material/Palette";
 import SettingsIcon from "@mui/icons-material/Settings";
 import HubIcon from "@mui/icons-material/Hub";
@@ -59,6 +58,7 @@ import { type SearchResult, searchApi } from "../../../api/search";
 import { printsApi } from "../../../api/prints";
 import { IMPORT_PROVIDER_INFO } from "../../../constants/importProviders";
 import { SUPPORTED_LANGUAGES } from "../../../constants/languages";
+import LanguageFlag from "../../LanguageFlag";
 import { copyText } from "../../../utils/clipboard";
 import { detectImportProvider } from "../../../utils/importLinkDetection";
 import type { ThemeSelection } from "../../../constants/settingsOptions";
@@ -417,7 +417,7 @@ export default function GlobalSearch({
       // Named in itself, as in the profile's picker, so it's findable from any UI language.
       label: t("app:search.commands.language", { name: label }),
       keywords: ["language", "kalba", ...`${englishName} ${label}`.toLowerCase().split(" ")],
-      icon: <TranslateIcon />,
+      icon: <LanguageFlag code={code} height={12} />,
       run: () => void i18n.changeLanguage(code),
     })),
     {

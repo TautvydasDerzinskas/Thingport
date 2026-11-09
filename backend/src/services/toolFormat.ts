@@ -20,6 +20,7 @@ import {
   SCREENSHOT_MAX_BYTES,
   screenshotSchema,
   SLUG,
+  strayLabels,
   validateCode,
   validateLocale,
   webAddress,
@@ -70,6 +71,7 @@ export const toolLocalesSchema = localesSchema;
 export type ToolLocale = Locale;
 export type ToolLocales = Locales;
 export const validateToolLocale = validateLocale;
+export { strayLabels };
 
 const toolModelSchema = z
   .object({

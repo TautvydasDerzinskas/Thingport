@@ -139,10 +139,13 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
     }
     if (!(await save(ids, on, false))) return;
     showToast({
-      message: t(on ? "adminSettings.providers.turnedOn" : "adminSettings.providers.turnedOff", {
-        count: ids.length,
-        name: MANIFESTS[ids[0]].name,
-      }),
+      // One is named; the plural forms show the count, since in some languages their "one" form also covers 21.
+      message:
+        ids.length === 1
+          ? t(on ? "adminSettings.providers.turnedOnNamed" : "adminSettings.providers.turnedOffNamed", {
+              name: MANIFESTS[ids[0]].name,
+            })
+          : t(on ? "adminSettings.providers.turnedOn" : "adminSettings.providers.turnedOff", { count: ids.length }),
     });
   };
 

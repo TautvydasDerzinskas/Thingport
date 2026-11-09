@@ -92,7 +92,9 @@ function ChatRow({
   // A message that's only models says which.
   const said =
     last && !last.body && last.attachments.length
-      ? t("chats.sentModels", { count: last.attachments.length, name: last.attachments[0].name })
+      ? last.attachments.length === 1
+        ? t("chats.sentModel", { name: last.attachments[0].name })
+        : t("chats.sentModels", { count: last.attachments.length })
       : (last?.body ?? "");
   const preview = !last
     ? chat.kind === "room"

@@ -18,6 +18,7 @@ import {
   widgetsInUse,
 } from "../src/services/customWidgetsService";
 import { setWidgetSources } from "../src/services/settingsService";
+import { strayLabels } from "../src/services/customWidgetFormat";
 import { MCP_TOOLS } from "../src/mcp/tools";
 
 const app = createApp();
@@ -60,6 +61,19 @@ describe("metadata", () => {
     );
     expect(yaml).toMatchObject({ name: "Clock", version: "1.0.0", hosts: [], settings: [{ key: "tz", type: "text" }] });
     expect(parseManifest(METADATA).hosts).toEqual(["api.example.com"]);
+  });
+
+  it("calls a label English hasn't stray, except a plural form of a word English has", () => {
+    const english = { title: "Title", "bar.pieces.one": "piece", "bar.pieces.other": "pieces" };
+    const russian = {
+      title: "Т",
+      "bar.pieces.one": "д",
+      "bar.pieces.few": "д",
+      "bar.pieces.many": "д",
+      old: "x",
+      "title.few": "x",
+    };
+    expect(strayLabels(russian, english)).toEqual(["old", "title.few"]);
   });
 
   it("says what's wrong with bad metadata", () => {

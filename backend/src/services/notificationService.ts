@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import type { NotificationMessage } from "./notificationMessage";
 import { prisma } from "../db";
 
 export const NOTIFICATION_TYPES = [
@@ -42,6 +43,8 @@ export async function createNotification(
   data: {
     type: NotificationType;
     title: string;
+    /** The same title for the app to translate. */
+    message?: NotificationMessage;
     body?: string | null;
     externalUrl?: string | null;
     internalPath?: string | null;
@@ -53,6 +56,7 @@ export async function createNotification(
       userId,
       type: data.type,
       title: data.title,
+      ...(data.message ? { message: data.message } : {}),
       body: data.body ?? null,
       externalUrl: data.externalUrl ?? null,
       internalPath: data.internalPath ?? null,

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
@@ -23,6 +23,9 @@ import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
 import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutlined";
 import CircularProgress from "@mui/material/CircularProgress";
 import type { Print } from "../../api/prints";
+import { categoriesApi, type Category } from "../../api/categories";
+import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
+import { FALLBACK_LANGUAGE, matchLanguage } from "../../constants/languages";
 import { aiCategorizationApi } from "../../api/aiCategorization";
 import { UnauthorizedError } from "../../api/client";
 import { useToast } from "../../components/ToastProvider";
@@ -113,7 +116,29 @@ export default function ModelSidePanel({
   onSelectKey,
   onPreviewPlate,
 }: Props) {
-  const { t } = useTranslation(["models", "common"]);
+  const { t, i18n } = useTranslation(["models", "common"]);
+  const [category, setCategory] = useState<Category | null>(null);
+  // Only a starter category's name has translations, and English needs none, so English skips the request.
+  const translating = matchLanguage(i18n.language) !== FALLBACK_LANGUAGE;
+  useEffect(() => {
+    if (!print.category_id || !translating) return;
+    let active = true;
+    void categoriesApi.listShared(print.category_id).then(
+      (categories) => {
+        if (active) setCategory(categories.find((item) => item.id === print.category_id) ?? null);
+      },
+      () => {
+        if (active) setCategory(null);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [print.category_id, translating]);
+  const categoryName =
+    translating && category && category.id === print.category_id && category.name === print.category_name
+      ? translateCategoryDisplay(category, i18n).name
+      : print.category_name;
   const navigate = useNavigate();
   const showToast = useToast();
   const [suggestionBusy, setSuggestionBusy] = useState(false);
@@ -332,7 +357,7 @@ export default function ModelSidePanel({
             >
               <FolderIcon fontSize="small" />
               <Typography variant="body2" fontWeight={600}>
-                {print.category_name}
+                {categoryName}
               </Typography>
               {print.category_source === "ai" && (
                 <Chip size="small" label={t("models:aiCategorization.byAi")} color="secondary" variant="outlined" />

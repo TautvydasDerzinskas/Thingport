@@ -64,8 +64,9 @@ The [tools](guides/tools.md) in [`tools/`](../tools) and the shared dashboard wi
 [`community-widgets/`](../community-widgets) carry their own words, one file per language in each one's `locales`
 folder. To translate one, copy its `locales/en.json` to your language's code, translate the values, and add the code to
 `locales` in its metadata: a widget's `widget.json`, or a tool's `tool.json` and the `source/tool.base.json` it's built
-from, the same in both. Their placeholders take single braces, such as `{n}`, and there are no plural forms. One
-without your language shows English.
+from, the same in both. Their placeholders take single braces, such as `{n}`. A word that goes with a number has a key
+per plural form, ending in `.one`, `.few`, `.many` or `.other`, such as `bar.pieces.one`: give the ones your language
+uses, as above. One without your language shows English.
 
 ## Keeping up
 

@@ -64,6 +64,30 @@ describe("notifications", () => {
     expect(last.body.next_cursor).toBeNull();
   });
 
+  it("sends the title's message to translate, and none for one written without, or with a broken one", async () => {
+    await prisma.notification.deleteMany({ where: { userId } });
+    const at = Date.now();
+    await prisma.notification.createMany({
+      data: [
+        {
+          userId,
+          type: "import",
+          title: 'Imported "Cube"',
+          message: { key: "imported", values: { name: "Cube" } },
+          createdAt: new Date(at - 2000),
+        },
+        { userId, type: "import", title: "Plain", createdAt: new Date(at - 1000) },
+        { userId, type: "import", title: "Broken", message: { values: [1] }, createdAt: new Date(at) },
+      ],
+    });
+    const res = await request(app).get("/api/notifications").set(auth(token));
+    expect(res.body.items.map((n: { title: string; message: unknown }) => [n.title, n.message])).toEqual([
+      ["Broken", null],
+      ["Plain", null],
+      ['Imported "Cube"', { key: "imported", values: { name: "Cube" } }],
+    ]);
+  });
+
   it("deletes one, but not someone else's, and then all", async () => {
     await prisma.notification.deleteMany({ where: { userId } });
     await seed(3);

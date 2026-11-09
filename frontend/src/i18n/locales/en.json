@@ -443,7 +443,10 @@
       },
       "language": {
         "heading": "Language",
-        "subtitle": "Choose the language used throughout Thingport."
+        "subtitle": "Choose the language used throughout Thingport.",
+        "search": "Search languages",
+        "noMatch": "No language matches",
+        "translated": "{{percent}}% translated"
       },
       "slicer": {
         "failed": "Failed to save -- try again.",
@@ -539,7 +542,19 @@
       "emptyUnread": "You're all caught up.",
       "emptySystem": "No announcements from Thingport.",
       "clearUnreadConfirm": "Delete all unread notifications? This can't be undone.",
-      "clearSystemConfirm": "Delete all system notifications? They won't be sent again. This can't be undone."
+      "clearSystemConfirm": "Delete all system notifications? They won't be sent again. This can't be undone.",
+      "messages": {
+        "importFailed": "Couldn't import a model",
+        "alreadyInLibrary": "“{{name}}” is already in your library",
+        "imported": "Imported “{{name}}”",
+        "profileAdded": "Added another print profile to “{{name}}”",
+        "importedModels_one": "Imported {{count}} model",
+        "importedModels_other": "Imported {{count}} models",
+        "importRun_one": "Imported {{done}} of {{count}} model",
+        "importRun_other": "Imported {{done}} of {{count}} models",
+        "importRunFrom_one": "Imported {{done}} of {{count}} model from {{site}}",
+        "importRunFrom_other": "Imported {{done}} of {{count}} models from {{site}}"
+      }
     },
     "search": {
       "placeholder": "Search models, collections, tags…",
@@ -882,19 +897,29 @@
     "dashboard": {
       "loadError": "Failed to load your dashboard.",
       "seeMore": "See more",
-      "viewCount": "{{count}} views",
-      "printCount": "{{count}} prints",
+      "viewCount_one": "{{count}} view",
+      "viewCount_other": "{{count}} views",
+      "printCount_one": "{{count}} print",
+      "printCount_other": "{{count}} prints",
       "collectionCount": {
-        "label": "Collections"
+        "label": "Collections",
+        "count_one": "Collection",
+        "count_other": "Collections"
       },
       "modelCount": {
-        "label": "Models"
+        "label": "Models",
+        "count_one": "Model",
+        "count_other": "Models"
       },
       "authorCount": {
-        "label": "Unique authors"
+        "label": "Unique authors",
+        "count_one": "Unique author",
+        "count_other": "Unique authors"
       },
       "categoryCount": {
-        "label": "Categories & folders"
+        "label": "Categories & folders",
+        "count_one": "Category or folder",
+        "count_other": "Categories & folders"
       },
       "topViewed": {
         "title": "Top Viewed Models",
@@ -907,12 +932,14 @@
       "topAuthors": {
         "title": "Top Authors",
         "empty": "No authors yet — import a model to see your top authors here.",
-        "modelCount": "{{count}} models"
+        "modelCount_one": "{{count}} model",
+        "modelCount_other": "{{count}} models"
       },
       "topProviders": {
         "title": "Top Providers",
         "empty": "No models yet.",
-        "modelCount": "{{count}} models"
+        "modelCount_one": "{{count}} model",
+        "modelCount_other": "{{count}} models"
       },
       "recentlyAdded": {
         "title": "Recently Added",
@@ -1393,10 +1420,12 @@
         "bulkDisableTitle_one": "Turn {{count}} provider off?",
         "bulkDisableTitle_other": "Turn {{count}} providers off?",
         "bulkDisableMessage": "Nobody can import from {{names}} until they're back on: links, Thingport Grab and the import queue are refused, their collection syncs pause, and background jobs skip them. Models already imported from them stay as they are.",
-        "turnedOn_one": "{{name}} turned on",
+        "turnedOn_one": "{{count}} provider turned on",
         "turnedOn_other": "{{count}} providers turned on",
-        "turnedOff_one": "{{name}} turned off",
-        "turnedOff_other": "{{count}} providers turned off"
+        "turnedOff_one": "{{count}} provider turned off",
+        "turnedOff_other": "{{count}} providers turned off",
+        "turnedOnNamed": "{{name}} turned on",
+        "turnedOffNamed": "{{name}} turned off"
       },
       "storageSettings": {
         "heading": "Storage"
@@ -4218,7 +4247,7 @@
       "modelFrom": "From {{name}}",
       "yourModel": "Your model",
       "openModel": "Open {{name}}",
-      "sentModels_one": "📎 {{name}}",
+      "sentModels_one": "📎 {{count}} model",
       "sentModels_other": "📎 {{count}} models",
       "emojiPicker": {
         "search": "Search emoji",
@@ -4237,7 +4266,8 @@
       },
       "instances_one": "{{count}} instance",
       "instances_other": "{{count}} instances",
-      "hostedOn": "Hosted on {{name}}"
+      "hostedOn": "Hosted on {{name}}",
+      "sentModel": "📎 {{name}}"
     },
     "modelPicker": {
       "search": "Search your library",

@@ -1,8 +1,9 @@
 {
   "bar.download": "Atsisiųsti",
   "bar.more": "Daugiau",
-  "bar.piece": "dalis",
-  "bar.pieces": "dalys",
+  "bar.pieces.one": "dalis",
+  "bar.pieces.few": "dalys",
+  "bar.pieces.other": "dalių",
   "bar.piecesHint": "Iš kiek atskirų dalių jis susideda",
   "bar.redo": "Grąžinti",
   "bar.redoHint": "Grąžinti (Ctrl+Shift+Z)",

@@ -10,7 +10,11 @@
 /** Every language something has, by code: `{ "en": { "save.title": "Save" } }`. */
 export type Locales = Record<string, Record<string, string>>;
 
-/** What a script calls to turn a key into words. `t("rings.ring", { n: 2 })` fills `{n}` in. */
+/**
+ * What a script calls to turn a key into words. `t("rings.ring", { n: 2 })` fills `{n}` in. A number as `count` picks
+ * the language's plural form: `t("bar.pieces", { count: 3 })` reads `bar.pieces.one`, `.two`, `.few`, `.many` or
+ * `.other`, as the language's rules say, and `.other` when the language hasn't the one asked for.
+ */
 export type Translate = (key: string, vars?: Record<string, unknown>) => string;
 
 /** Where a `data-t…` attribute puts its words. Text only: a label is a sentence, never markup. */
@@ -45,6 +49,15 @@ export function applyLabels(root: ParentNode, t: Translate): void {
 
 const FALLBACK = "en";
 
+function pluralRules(language: string): Intl.PluralRules {
+  try {
+    return new Intl.PluralRules(language);
+  } catch {
+    // A code Intl doesn't know, such as a made-up one, counts as English does.
+    return new Intl.PluralRules(FALLBACK);
+  }
+}
+
 /**
  * `t` for one widget or tool in one language. A key with no words anywhere comes back as itself, so a label that
  * was never written shows up on screen rather than leaving a blank.
@@ -53,8 +66,20 @@ export function translator(locales: Locales, language: string): Translate {
   // "pt-BR" takes its "pt" where it has no "pt-BR" of its own.
   const chosen = locales[language] ?? locales[language.split("-")[0]] ?? {};
   const fallback = locales[FALLBACK] ?? {};
+  const rules = pluralRules(language);
+  const englishRules = pluralRules(FALLBACK);
+  // English's forms follow English's rules: a language without the key mustn't get "1 pieces".
+  const plural = (words: Record<string, string>, key: string, form: string) =>
+    words[`${key}.${form}`] ?? words[`${key}.other`];
   return (key, vars) => {
-    const text = chosen[key] ?? fallback[key] ?? key;
+    const count = typeof vars?.count === "number" ? vars.count : null;
+    // The user's own words first, plural or plain, so a translation behind English's plural forms still shows.
+    const text =
+      (count === null ? undefined : plural(chosen, key, rules.select(count))) ??
+      chosen[key] ??
+      (count === null ? undefined : plural(fallback, key, englishRules.select(count))) ??
+      fallback[key] ??
+      key;
     if (!vars) return text;
     return text.replace(/\{(\w+)\}/g, (whole, name: string) =>
       name in vars ? String(vars[name as keyof typeof vars]) : whole,

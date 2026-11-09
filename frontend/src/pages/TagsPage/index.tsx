@@ -27,6 +27,7 @@ import TagFiltersButton from "./TagFiltersButton";
 import TagTile, { TagTileSkeletons } from "./TagTile";
 import VirtualTagGrid from "./VirtualTagGrid";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { oneOrSeveral } from "../../utils/oneOrSeveral";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -223,8 +224,8 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   const removeSelected = async () => {
     const confirmed = await confirm({
       title: t("models:tags.selection.deleteTitle", { count }),
-      message: t("models:tags.selection.deleteMessage", { count }),
-      confirmLabel: t("models:tags.selection.deleteConfirm", { count }),
+      message: t("models:tags.selection.deleteMessage", { count: oneOrSeveral(count) }),
+      confirmLabel: t("models:tags.selection.deleteConfirm", { count: oneOrSeveral(count) }),
       destructive: true,
     });
     if (!confirmed) return;

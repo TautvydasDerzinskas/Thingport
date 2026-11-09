@@ -34,6 +34,8 @@ import { DEFAULTS, QUIET, TAB_SIDES, planFor, plateOutline } from "./layout.js";
 import { triangulate } from "./mesh.js";
 import { BODIES, EYE_CENTRES, EYE_FRAMES, RELIEFS } from "./shapes.js";
 import { buildModel } from "./model.js";
+import { countWord } from "./ui.js";
+import { translator } from "../../../frontend/src/sdk/labels.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const tool = path.resolve(here, "..");
@@ -48,6 +50,33 @@ const ok = (condition, what) => {
   }
 };
 const same = (got, want, what) => ok(got === want, `${what}: got ${got}, wanted ${want}`);
+
+const LOCALES = Object.fromEntries(
+  fs
+    .readdirSync(path.join(tool, "locales"))
+    .map((file) => [
+      file.slice(0, -".json".length),
+      JSON.parse(fs.readFileSync(path.join(tool, "locales", file), "utf8")),
+    ]),
+);
+const filaments = (code, counts) =>
+  counts.map((count) => countWord(translator(LOCALES, code), "bar.filaments", count)).join(" ");
+same(filaments("ru", [1, 2, 5, 21]), "филамент филамента филаментов филамент", "Russian filament counts");
+same(filaments("lt", [1, 2, 10, 21]), "siūlas siūlai siūlų siūlas", "Lithuanian filament counts");
+same(filaments("en", [1, 2]), "filament filaments", "English filament counts");
+// An older Thingport's t() has no plural forms: it still gets a word rather than the key.
+same(
+  countWord((key) => LOCALES.en[key] ?? key, "bar.filaments", 3),
+  "filaments",
+  "a t() without plurals",
+);
+// There the tool picks the form: two filaments in Lithuanian are "siūlai", not the other form's "siūlų".
+const older = (key) => LOCALES.lt[key] ?? LOCALES.en[key] ?? key;
+same(
+  [1, 2, 10].map((count) => countWord(older, "bar.filaments", count, "lt")).join(" "),
+  "siūlas siūlai siūlų",
+  "Lithuanian filament counts on a t() without plurals",
+);
 
 // ---- the symbol ------------------------------------------------------------------------------------------------
 
@@ -442,6 +471,7 @@ for (const body of ["dot", "roundBars", "bevel"]) {
 
 const english = JSON.parse(fs.readFileSync(path.join(tool, "locales/en.json"), "utf8"));
 const asked = new Set();
+for (const form of ["one", "other"]) asked.add(`bar.filaments.${form}`);
 for (const file of fs.readdirSync(here).filter((name) => name.endsWith(".js"))) {
   const text = fs.readFileSync(path.join(here, file), "utf8");
   for (const [, key] of text.matchAll(/\bt\(\s*["`]([^"`$]+)["`]/g)) asked.add(key);
@@ -501,10 +531,16 @@ ok(missing.length === 0, `English has every label the tool asks for (missing: ${
 for (const file of fs.readdirSync(path.join(tool, "locales"))) {
   if (file === "en.json") continue;
   const words = JSON.parse(fs.readFileSync(path.join(tool, "locales", file), "utf8"));
-  const stray = Object.keys(words).filter((key) => !(key in english));
+  // A language's own plural forms, such as Russian's few and many, are its own to have.
+  const plural = (key) => /\.(zero|one|two|few|many|other)$/.test(key) && key.replace(/\.\w+$/, ".other") in english;
+  const stray = Object.keys(words).filter((key) => !(key in english) && !plural(key));
   ok(stray.length === 0, `${file} has no key English hasn't (${stray.join(", ")})`);
   const blank = Object.entries(words).filter(([, value]) => !String(value).trim());
   ok(blank.length === 0, `${file} has no empty labels (${blank.map(([key]) => key).join(", ")})`);
+  const code = file.slice(0, -".json".length);
+  const forms = new Set(Array.from({ length: 201 }, (_, count) => new Intl.PluralRules(code).select(count)));
+  const lacking = [...forms].filter((form) => !words[`bar.filaments.${form}`] && !words["bar.filaments.other"]);
+  ok(lacking.length === 0, `${file} has every plural form its counts need (${lacking.join(", ")})`);
   const untranslated = Object.keys(english).filter((key) => !(key in words));
   if (untranslated.length) console.log(`  ${file}: ${untranslated.length} label(s) fall back to English`);
 }

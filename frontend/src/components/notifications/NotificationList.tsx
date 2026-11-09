@@ -23,6 +23,7 @@ import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import FolderSharedOutlinedIcon from "@mui/icons-material/FolderSharedOutlined";
 import type { Notification, NotificationType } from "../../api/notifications";
 import { isNew } from "./useNotificationFeed";
+import { notificationTitle } from "./notificationTitle";
 
 type Palette = "primary" | "info" | "warning" | "secondary" | "success" | "error";
 
@@ -168,7 +169,7 @@ function NotificationRow({
         </Box>
         <Stack spacing={0.25} sx={{ minWidth: 0, flex: 1 }}>
           <Typography variant="body2" fontWeight={highlighted ? 700 : 500} sx={{ wordBreak: "break-word" }}>
-            {notification.title}
+            {notificationTitle(notification, t)}
           </Typography>
           {notification.body && (
             <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-word" }}>

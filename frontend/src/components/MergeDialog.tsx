@@ -24,6 +24,7 @@ import { UnauthorizedError } from "../api/client";
 import HelpTip from "./HelpTip";
 import RollingNumber from "./RollingNumber";
 import { SectionLabel } from "./Layout/ConfigurationDialog/parts";
+import { oneOrSeveral } from "../utils/oneOrSeveral";
 
 export type MergeItem = {
   key: string;
@@ -248,7 +249,11 @@ export default function MergeDialog({
 
               <Stack component="ul" spacing={0.75} sx={{ listStyle: "none", p: 0, m: 0, mt: 1.25 }}>
                 <Outcome icon={<DeleteOutlineIcon fontSize="small" color="error" />}>
-                  {t(`models:merge.${k}.othersGo`, { names: otherNames, count: others.length, name: primary.name })}
+                  {t(`models:merge.${k}.othersGo`, {
+                    names: otherNames,
+                    count: oneOrSeveral(others.length),
+                    name: primary.name,
+                  })}
                 </Outcome>
                 <Outcome icon={<LockOutlinedIcon fontSize="small" color="action" />}>
                   {t(`models:merge.${k}.keepsOwn`, { name: primary.name })}
@@ -267,7 +272,7 @@ export default function MergeDialog({
             <Alert severity="warning" icon={<SyncDisabledIcon fontSize="inherit" />} sx={{ py: 0.25 }}>
               {t("models:merge.collections.syncStops", {
                 names: list(syncsLost.map((item) => item.name)),
-                count: syncsLost.length,
+                count: oneOrSeveral(syncsLost.length),
               })}
             </Alert>
           )}

@@ -1,8 +1,8 @@
 {
   "bar.download": "Télécharger",
   "bar.more": "Plus",
-  "bar.piece": "pièce",
-  "bar.pieces": "pièces",
+  "bar.pieces.one": "pièce",
+  "bar.pieces.other": "pièces",
   "bar.piecesHint": "En combien de pièces séparées il sort",
   "bar.redo": "Rétablir",
   "bar.redoHint": "Rétablir (Ctrl+Maj+Z)",

@@ -1,8 +1,8 @@
 {
   "bar.download": "Descargar",
   "bar.more": "Más",
-  "bar.piece": "pieza",
-  "bar.pieces": "piezas",
+  "bar.pieces.one": "pieza",
+  "bar.pieces.other": "piezas",
   "bar.piecesHint": "En cuántas piezas sueltas sale",
   "bar.redo": "Rehacer",
   "bar.redoHint": "Rehacer (Ctrl+Mayús+Z)",

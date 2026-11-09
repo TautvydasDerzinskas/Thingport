@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { createKeyedLock } from "../utils/concurrency";
 import { createNotification } from "./notificationService";
@@ -44,6 +45,7 @@ export async function notifySingleImport(
     await createNotification(userId, {
       type: "import",
       title: "Couldn't import a model",
+      message: { key: "importFailed" },
       body: result.error,
       externalUrl: url,
       internalPath: result.internalPath,
@@ -54,6 +56,7 @@ export async function notifySingleImport(
     await createNotification(userId, {
       type: "import",
       title: `"${result.name}" is already in your library`,
+      message: { key: "alreadyInLibrary", values: { name: result.name } },
       externalUrl: url,
       internalPath: `/models/${result.printId}`,
     });
@@ -74,6 +77,10 @@ export async function notifySingleImport(
         where: { id: latest.id },
         data: {
           title: items.length === 1 ? latest.title : `Imported ${items.length} models`,
+          message:
+            items.length === 1
+              ? (latest.message ?? Prisma.DbNull)
+              : { key: "importedModels", values: { count: items.length } },
           body: items.length === 1 ? latest.body : `${nameList(items.map((i) => i.name))}.`,
           externalUrl: items.length === 1 ? latest.externalUrl : null,
           internalPath: items.length === 1 ? latest.internalPath : "/models",
@@ -88,6 +95,7 @@ export async function notifySingleImport(
         result.outcome === "profile_added"
           ? `Added another print profile to "${result.name}"`
           : `Imported "${result.name}"`,
+      message: { key: result.outcome === "profile_added" ? "profileAdded" : "imported", values: { name: result.name } },
       externalUrl: url,
       internalPath: `/models/${result.printId}`,
       group: { key: SINGLE_IMPORT_GROUP, items: [item] },
@@ -171,6 +179,10 @@ export async function notifyImportRun(
   await createNotification(userId, {
     type: "import",
     title: `Imported ${imported} of ${run.total} models${site ? ` from ${MANIFESTS[site].name}` : ""}`,
+    // Counted by the total: "of 21 models" takes the total's plural form, whatever was imported.
+    message: site
+      ? { key: "importRunFrom", values: { done: imported, count: run.total, site: MANIFESTS[site].name } }
+      : { key: "importRun", values: { done: imported, count: run.total } },
     body: parts.join(" ") || null,
     externalUrl: run.sourceUrl,
     internalPath: run.collectionId

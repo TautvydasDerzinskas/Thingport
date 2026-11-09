@@ -12,6 +12,8 @@ export type Notification = {
   id: string;
   type: NotificationType;
   title: string;
+  /** The title as a key under `notifications.messages` and its values; null shows `title`, the English. */
+  message: { key: string; values?: Record<string, string | number> } | null;
   body: string | null;
   external_url: string | null;
   internal_path: string | null;

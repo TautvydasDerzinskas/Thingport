@@ -446,7 +446,10 @@
       },
       "language": {
         "heading": "Kalba",
-        "subtitle": "Pasirinkite kalbą, naudojamą visame Thingport."
+        "subtitle": "Pasirinkite kalbą, naudojamą visame Thingport.",
+        "search": "Ieškoti kalbų",
+        "noMatch": "Tokios kalbos nėra",
+        "translated": "Išversta {{percent}}%"
       },
       "slicer": {
         "failed": "Nepavyko išsaugoti -- bandykite dar kartą.",
@@ -545,7 +548,25 @@
       "emptyUnread": "Viskas perskaityta.",
       "emptySystem": "Thingport pranešimų nėra.",
       "clearUnreadConfirm": "Ištrinti visus neperskaitytus pranešimus? To nebus galima atšaukti.",
-      "clearSystemConfirm": "Ištrinti visus sistemos pranešimus? Jie nebus siunčiami iš naujo. To nebus galima atšaukti."
+      "clearSystemConfirm": "Ištrinti visus sistemos pranešimus? Jie nebus siunčiami iš naujo. To nebus galima atšaukti.",
+      "messages": {
+        "importFailed": "Nepavyko importuoti modelio",
+        "alreadyInLibrary": "„{{name}}“ jau yra jūsų bibliotekoje",
+        "imported": "Importuotas „{{name}}“",
+        "profileAdded": "Prie „{{name}}“ pridėtas dar vienas spausdinimo profilis",
+        "importedModels_one": "Importuotas {{count}} modelis",
+        "importedModels_few": "Importuoti {{count}} modeliai",
+        "importedModels_many": "Importuota {{count}} modelio",
+        "importedModels_other": "Importuota {{count}} modelių",
+        "importRun_one": "Importuota {{done}} iš {{count}} modelio",
+        "importRun_few": "Importuota {{done}} iš {{count}} modelių",
+        "importRun_many": "Importuota {{done}} iš {{count}} modelio",
+        "importRun_other": "Importuota {{done}} iš {{count}} modelių",
+        "importRunFrom_one": "{{site}}: importuota {{done}} iš {{count}} modelio",
+        "importRunFrom_few": "{{site}}: importuota {{done}} iš {{count}} modelių",
+        "importRunFrom_many": "{{site}}: importuota {{done}} iš {{count}} modelio",
+        "importRunFrom_other": "{{site}}: importuota {{done}} iš {{count}} modelių"
+      }
     },
     "search": {
       "placeholder": "Ieškoti modelių, kolekcijų, žymų…",
@@ -909,19 +930,29 @@
     "dashboard": {
       "loadError": "Nepavyko įkelti valdymo skydo.",
       "seeMore": "Rodyti daugiau",
-      "viewCount": "{{count}} peržiūrų",
-      "printCount": "{{count}} spausdinimų",
       "collectionCount": {
-        "label": "Kolekcijos"
+        "label": "Kolekcijos",
+        "count_one": "Kolekcija",
+        "count_few": "Kolekcijos",
+        "count_other": "Kolekcijų"
       },
       "modelCount": {
-        "label": "Modeliai"
+        "label": "Modeliai",
+        "count_one": "Modelis",
+        "count_few": "Modeliai",
+        "count_other": "Modelių"
       },
       "authorCount": {
-        "label": "Unikalūs autoriai"
+        "label": "Unikalūs autoriai",
+        "count_one": "Unikalus autorius",
+        "count_few": "Unikalūs autoriai",
+        "count_other": "Unikalių autorių"
       },
       "categoryCount": {
-        "label": "Kategorijos ir aplankai"
+        "label": "Kategorijos ir aplankai",
+        "count_one": "Kategorija ar aplankas",
+        "count_few": "Kategorijos ir aplankai",
+        "count_other": "Kategorijų ir aplankų"
       },
       "topViewed": {
         "title": "Dažniausiai žiūrimi modeliai",
@@ -934,12 +965,18 @@
       "topAuthors": {
         "title": "Populiariausi autoriai",
         "empty": "Autorių dar nėra — importuokite modelį, kad pamatytumėte populiariausius autorius čia.",
-        "modelCount": "{{count}} modelių"
+        "modelCount_one": "{{count}} modelis",
+        "modelCount_few": "{{count}} modeliai",
+        "modelCount_many": "{{count}} modelio",
+        "modelCount_other": "{{count}} modelių"
       },
       "topProviders": {
         "title": "Populiariausi šaltiniai",
         "empty": "Modelių dar nėra.",
-        "modelCount": "{{count}} modelių"
+        "modelCount_one": "{{count}} modelis",
+        "modelCount_few": "{{count}} modeliai",
+        "modelCount_many": "{{count}} modelio",
+        "modelCount_other": "{{count}} modelių"
       },
       "recentlyAdded": {
         "title": "Naujausiai pridėti",
@@ -1377,7 +1414,15 @@
           "help": "Žodžiai, kuriuos rodo tavo valdiklis — po failą kiekvienai kalbai. Scenarijus jų prašo pagal raktą su t(\"raktas\"), tad jie nesimaišo su logika ir išverčiami jos nekeičiant.",
           "empty": "Tavo valdiklis dar neturi užrašų. Rodomus žodžius laikyk po failą kiekvienai kalbai, o scenarijus jų prašys pagal raktą su t(\"raktas\") — vertėjui niekada nereikės atverti kodo."
         }
-      }
+      },
+      "viewCount_one": "{{count}} peržiūra",
+      "viewCount_few": "{{count}} peržiūros",
+      "viewCount_many": "{{count}} peržiūros",
+      "viewCount_other": "{{count}} peržiūrų",
+      "printCount_one": "{{count}} spausdinimas",
+      "printCount_few": "{{count}} spausdinimai",
+      "printCount_many": "{{count}} spausdinimo",
+      "printCount_other": "{{count}} spausdinimų"
     },
     "adminSettings": {
       "providers": {
@@ -1432,14 +1477,16 @@
         "bulkDisableTitle_many": "Išjungti {{count}} tiekėjo?",
         "bulkDisableTitle_other": "Išjungti {{count}} tiekėjų?",
         "bulkDisableMessage": "Niekas negalės importuoti iš {{names}}, kol jie vėl nebus įjungti: nuorodos, Thingport Grab ir importų eilė bus atmetamos, jų kolekcijų sinchronizacija sustabdyta, o foniniai darbai juos praleis. Jau importuoti modeliai lieka.",
-        "turnedOn_one": "{{name}} įjungtas",
+        "turnedOn_one": "Įjungtas {{count}} tiekėjas",
         "turnedOn_few": "Įjungti {{count}} tiekėjai",
         "turnedOn_many": "Įjungta {{count}} tiekėjo",
         "turnedOn_other": "Įjungta {{count}} tiekėjų",
-        "turnedOff_one": "{{name}} išjungtas",
+        "turnedOff_one": "Išjungtas {{count}} tiekėjas",
         "turnedOff_few": "Išjungti {{count}} tiekėjai",
         "turnedOff_many": "Išjungta {{count}} tiekėjo",
-        "turnedOff_other": "Išjungta {{count}} tiekėjų"
+        "turnedOff_other": "Išjungta {{count}} tiekėjų",
+        "turnedOnNamed": "{{name}} įjungtas",
+        "turnedOffNamed": "{{name}} išjungtas"
       },
       "storageSettings": {
         "heading": "Saugykla"
@@ -1709,7 +1756,8 @@
           "confirmTitle": "Tikrinti esamus failus?",
           "confirmMessage": "Thingport peržiūrės visus išsaugotus failus ir vienodus pakeis klonais. Veikia fone, o didelėje bibliotekoje gali užtrukti.",
           "confirmAction": "Tikrinti",
-          "failed": "Nepavyko pradėti tikrinimo. Bandykite dar kartą."
+          "failed": "Nepavyko pradėti tikrinimo. Bandykite dar kartą.",
+          "result_few": "Sukloniuoti {{count}} failai, atlaisvinta iki {{size}}"
         }
       },
       "licenseFiles": {
@@ -1909,11 +1957,11 @@
         "compare": "Palyginti",
         "accept": "Priimti",
         "reject": "Atmesti",
-        "acceptDone_one": "Aprašymas atnaujintas.",
+        "acceptDone_one": "Atnaujintas {{count}} aprašymas.",
         "acceptDone_few": "Atnaujinti {{count}} aprašymai.",
         "acceptDone_many": "Atnaujinta {{count}} aprašymo.",
         "acceptDone_other": "Atnaujinta {{count}} aprašymų.",
-        "rejectDone_one": "Pasiūlymas atmestas.",
+        "rejectDone_one": "Atmestas {{count}} pasiūlymas.",
         "rejectDone_few": "Atmesti {{count}} pasiūlymai.",
         "rejectDone_many": "Atmesta {{count}} pasiūlymo.",
         "rejectDone_other": "Atmesta {{count}} pasiūlymų.",
@@ -3488,7 +3536,7 @@
     },
     "missingFiles": {
       "title": "Kai kurie modeliai neberanda savo failų",
-      "lead_one": "1 bibliotekos modelis diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jo nebus galima atverti, spausdinti ar atsisiųsti.",
+      "lead_one": "{{count}} bibliotekos modelis diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, atverti, spausdinti ar atsisiųsti nepavyks.",
       "lead_few": "{{count}} bibliotekos modeliai diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jų nebus galima atverti, spausdinti ar atsisiųsti.",
       "lead_other": "{{count}} bibliotekos modelių diske nebeturi nė vieno failo — nei modelio failų, nei paveikslėlių. Kol failai negrįš, jų nebus galima atverti, spausdinti ar atsisiųsti.",
       "leadHelp": "Thingport modelio failus laiko saugyklos kataloge, o duomenų bazėje — tik modelio aprašą. Perkėlus kopiją be to katalogo arba netyčia jį ištrynus, aprašai lieka be failų. Failus iš svetainės, iš kurios modelis atkeliavo, galima atsisiųsti iš naujo: visa kita — pavadinimai, žymos, kolekcijos, mėgstami — lieka kaip buvo.",
@@ -3497,7 +3545,7 @@
       "checkFailed": "Nepavyko peržiūrėti modelių. Bandykite dar kartą, o jei nepavyksta ir toliau — patikrinkite, ar saugyklos katalogas vietoje.",
       "checkFailedStale": "Naujausio patikrinimo atlikti nepavyko, todėl čia matote tai, ką rado paskutinis.",
       "allWell": "Visi modeliai turi savo failus",
-      "allWellDetail_one": "Patikrintas 1 modelis.",
+      "allWellDetail_one": "Patikrintas {{count}} modelis.",
       "allWellDetail_few": "Patikrinti {{count}} modeliai.",
       "allWellDetail_other": "Patikrinta {{count}} modelių.",
       "checkAgain": "Tikrinti dar kartą",
@@ -3509,7 +3557,7 @@
       },
       "fromSites": "Iš kur jie atkeliavo",
       "whatNow": "Ką daryti",
-      "manyWarning_one": "Vienas modelis — greitas darbas.",
+      "manyWarning_one": "{{count}} modelis iš karto — nemažai: svetainės gali paprašyti sulėtinti ar palūkėti, todėl gali užtrukti. Darbas vyksta fone, jį galima bet kada nutraukti.",
       "manyWarning_few": "{{count}} modeliai iš karto — nemažai: svetainės gali paprašyti sulėtinti ar palūkėti, todėl gali užtrukti. Darbas vyksta fone, jį galima bet kada nutraukti.",
       "manyWarning_other": "{{count}} modelių iš karto — nemažai: svetainės gali paprašyti sulėtinti ar palūkėti, todėl gali užtrukti. Darbas vyksta fone, jį galima bet kada nutraukti.",
       "alreadyRunning": "Taisymas jau vyksta.",
@@ -3517,44 +3565,44 @@
       "actions": {
         "reimport": {
           "title": "Atsiųsti trūkstamus failus",
-          "detail_one": "Iš naujo atsiunčia 1 modelio failus iš svetainės, iš kurios jis atkeliavo. Pavadinimas, žymos, kolekcijos ir mėgstamų žymė lieka kaip buvo.",
+          "detail_one": "Iš naujo atsiunčia {{count}} modelio failus iš šaltinio. Pavadinimas, žymos, kolekcijos ir mėgstamų žymė lieka kaip buvo.",
           "detail_few": "Iš naujo atsiunčia {{count}} modelių failus iš svetainių, iš kurių jie atkeliavo. Pavadinimai, žymos, kolekcijos ir mėgstamų žymės lieka kaip buvo.",
           "detail_other": "Iš naujo atsiunčia {{count}} modelių failus iš svetainių, iš kurių jie atkeliavo. Pavadinimai, žymos, kolekcijos ir mėgstamų žymės lieka kaip buvo.",
-          "grabOnly_one": "Šio modelio failus atsiųsti gali tik Thingport Grab. Jis lauks, kol Grab apsilankys svetainėje.",
+          "grabOnly_one": "{{count}} modelio failus atsiųsti gali tik Thingport Grab — kai kitą kartą apsilankys šaltinio svetainėje.",
           "grabOnly_few": "Šiuos failus atsiųsti gali tik Thingport Grab. {{count}} modeliai lauks, kol jis apsilankys svetainėse, iš kurių jie atkeliavo.",
           "grabOnly_other": "Šiuos failus atsiųsti gali tik Thingport Grab. {{count}} modelių lauks, kol jis apsilankys svetainėse, iš kurių jie atkeliavo.",
           "none": "Nė vienas iš šių modelių neturi svetainės, iš kurios būtų galima atsiųsti."
         },
         "delete": {
           "title": "Ištrinti šiuos modelius",
-          "detail_one": "Negrįžtamai pašalina 1 modelį su jo aprašu, žymomis ir įrašais kolekcijose.",
+          "detail_one": "Negrįžtamai pašalina {{count}} modelį su aprašu, žymomis ir įrašais kolekcijose.",
           "detail_few": "Negrįžtamai pašalina {{count}} modelius su jų aprašais, žymomis ir įrašais kolekcijose.",
           "detail_other": "Negrįžtamai pašalina {{count}} modelių su jų aprašais, žymomis ir įrašais kolekcijose."
         }
       },
       "confirm": {
         "reimport": {
-          "title_one": "Atsiųsti 1 modelio failus?",
+          "title_one": "Atsiųsti {{count}} modelio failus?",
           "title_few": "Atsiųsti {{count}} modelių failus?",
           "title_other": "Atsiųsti {{count}} modelių failus?",
-          "message_one": "Thingport atsiųs modelio failus iš svetainės, iš kurios jis atkeliavo. Daugiau nieko nepasikeis, o jei svetainės nepavyks pasiekti, modelis liks lygiai toks, koks yra dabar.",
+          "message_one": "Thingport atsiųs {{count}} modelio failus iš šaltinio. Daugiau nieko nepasikeis, o modelis, kurio svetainės nepavyks pasiekti, liks lygiai toks, koks yra dabar.",
           "message_few": "Thingport po vieną atsiųs kiekvieno modelio failus iš svetainės, iš kurios jis atkeliavo. Daugiau nieko nepasikeis, o modeliai, kurių svetainės nepavyks pasiekti, liks lygiai tokie, kokie yra dabar.",
           "message_other": "Thingport po vieną atsiųs kiekvieno modelio failus iš svetainės, iš kurios jis atkeliavo. Daugiau nieko nepasikeis, o modeliai, kurių svetainės nepavyks pasiekti, liks lygiai tokie, kokie yra dabar.",
-          "queued_one": "Dar 1 modelis lauks, kol Thingport Grab apsilankys svetainėje, iš kurios jo failai.",
+          "queued_one": "Dar {{count}} modelis lauks, kol Thingport Grab apsilankys šaltinio svetainėje.",
           "queued_few": "Dar {{count}} modeliai lauks, kol Thingport Grab apsilankys svetainėse, iš kurių jų failai.",
           "queued_other": "Dar {{count}} modelių lauks, kol Thingport Grab apsilankys svetainėse, iš kurių jų failai.",
           "confirm": "Atsiųsti failus",
           "grabTitle": "Palikti Thingport Grab?",
-          "grabMessage_one": "Thingport pats šio modelio failų atsiųsti negali — tai gali tik Thingport Grab, pačios svetainės puslapiuose. Modelis lauks, kol Grab ten apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
+          "grabMessage_one": "Thingport pats {{count}} modelio failų atsiųsti negali — tai gali tik Thingport Grab, pačios svetainės puslapiuose. {{count}} modelis lauks, kol Grab ten apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
           "grabMessage_few": "Thingport pats šių failų atsiųsti negali — tai gali tik Thingport Grab, pačių svetainių puslapiuose. {{count}} modeliai lauks, kol Grab apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
           "grabMessage_other": "Thingport pats šių failų atsiųsti negali — tai gali tik Thingport Grab, pačių svetainių puslapiuose. {{count}} modelių lauks, kol Grab apsilankys, ir jo atnešti failai užims trūkstamųjų vietą.",
           "grabConfirm": "Palikti Grab"
         },
         "delete": {
-          "title_one": "Ištrinti 1 modelį?",
+          "title_one": "Ištrinti {{count}} modelį?",
           "title_few": "Ištrinti {{count}} modelius?",
           "title_other": "Ištrinti {{count}} modelių?",
-          "message_one": "Veiksmo nebus galima atšaukti. Modelis, jo aprašas, žymos ir įrašai kolekcijose bus pašalinti negrįžtamai. Paliečiamas tik modelis be failų.",
+          "message_one": "Veiksmo nebus galima atšaukti. {{count}} modelis su aprašu, žymomis ir įrašais kolekcijose bus pašalintas negrįžtamai. Paliečiami tik modeliai be failų.",
           "message_few": "Veiksmo nebus galima atšaukti. Visi {{count}} modeliai, jų aprašai, žymos ir įrašai kolekcijose bus pašalinti negrįžtamai. Paliečiami tik modeliai be failų.",
           "message_other": "Veiksmo nebus galima atšaukti. Visi {{count}} modelių, jų aprašai, žymos ir įrašai kolekcijose bus pašalinti negrįžtamai. Paliečiami tik modeliai be failų.",
           "confirm": "Ištrinti modelius"
@@ -4378,7 +4426,7 @@
       "modelFrom": "Nuo {{name}}",
       "yourModel": "Jūsų modelis",
       "openModel": "Atidaryti {{name}}",
-      "sentModels_one": "📎 {{name}}",
+      "sentModels_one": "📎 {{count}} modelis",
       "sentModels_few": "📎 {{count}} modeliai",
       "sentModels_many": "📎 {{count}} modelio",
       "sentModels_other": "📎 {{count}} modelių",
@@ -4401,7 +4449,8 @@
       "instances_few": "{{count}} serveriai",
       "instances_many": "{{count}} serverio",
       "instances_other": "{{count}} serverių",
-      "hostedOn": "Laikomas {{name}}"
+      "hostedOn": "Laikomas {{name}}",
+      "sentModel": "📎 {{name}}"
     },
     "modelPicker": {
       "search": "Ieškoti savo bibliotekoje",
@@ -5638,7 +5687,7 @@
         "sharedCount_few": "{{count}} žmonės gali ją matyti",
         "sharedCount_other": "{{count}} žmonių gali ją matyti",
         "sharedNobody": "Kol kas niekas: matote tik jūs",
-        "sharedElsewhere_one": "{{count}} sujungtame serveryje",
+        "sharedElsewhere_one": "{{count}} sujungtuose serveriuose",
         "sharedElsewhere_few": "{{count}} sujungtuose serveriuose",
         "sharedElsewhere_other": "{{count}} sujungtuose serveriuose",
         "sharedHelp": "Jie mato ją kaip viešą kolekciją: gali atidaryti, atsisiųsti ir kopijuoti jos modelius, ir gauna pranešimą, kai su jais pasidalinate. Su kuo dar ji bendrinama, žinote tik jūs. Žmogus sujungtame serveryje ją mato per savo serverį, kuris rodo ją tik jam; to serverio administratoriai irgi galėtų ją matyti.",

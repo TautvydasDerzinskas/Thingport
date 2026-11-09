@@ -13,6 +13,7 @@ import {
   TOOL_LOCALES_MAX_BYTES,
   TOOL_SCREENSHOT_MAX_BYTES,
   parseToolManifest,
+  strayLabels,
   toolLocaleFile,
   toolModelFiles,
   validateCode,
@@ -87,7 +88,7 @@ for (const slug of slugs) {
       const words = validateToolLocale(code, parsed);
       // English is the fallback, so a key only another language has can never be reached.
       if (english && code !== "en") {
-        const stray = Object.keys(words).filter((key) => !(key in english));
+        const stray = strayLabels(words, english);
         if (stray.length)
           throw new Error(`${file} has ${stray.length} label(s) English hasn't, starting with ${stray[0]}`);
       }
