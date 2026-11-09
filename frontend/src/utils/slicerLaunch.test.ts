@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { slicerLaunchUrl } from "./slicerLaunch";
+import { slicerBridgeLaunchUrl, slicerLaunchUrl } from "./slicerLaunch";
 
 const FILE = "https://things.example/api/t/tok/print/p1/plate/a1/file/Ghost%20light.stl";
 
@@ -13,6 +13,16 @@ describe("slicerLaunchUrl", () => {
   it("sends the slicers that won't take a self-hosted link through the Bridge", () => {
     expect(slicerLaunchUrl("prusaslicer", FILE, "a.stl")).toBe(
       `thingport://open?url=${encodeURIComponent(FILE)}&slicer=prusaslicer&filename=a.stl`,
+    );
+  });
+
+  it("keeps Creality Print's native launch as the default for users without Bridge", () => {
+    expect(slicerLaunchUrl("crealityprintlink", FILE)).toBe(`crealityprintlink://open?file=${encodeURIComponent(FILE)}`);
+  });
+
+  it("offers an explicit Creality Print Bridge launch preserving the model filename", () => {
+    expect(slicerBridgeLaunchUrl("crealityprintlink", FILE, "Ghost light.stl")).toBe(
+      `thingport://open?url=${encodeURIComponent(FILE)}&slicer=crealityprintlink&filename=Ghost+light.stl`,
     );
   });
 
