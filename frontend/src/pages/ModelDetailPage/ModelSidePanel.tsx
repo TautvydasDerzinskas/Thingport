@@ -25,6 +25,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import type { Print } from "../../api/prints";
 import { categoriesApi, type Category } from "../../api/categories";
 import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
+import { FALLBACK_LANGUAGE, matchLanguage } from "../../constants/languages";
 import { aiCategorizationApi } from "../../api/aiCategorization";
 import { UnauthorizedError } from "../../api/client";
 import { useToast } from "../../components/ToastProvider";
@@ -117,8 +118,10 @@ export default function ModelSidePanel({
 }: Props) {
   const { t, i18n } = useTranslation(["models", "common"]);
   const [category, setCategory] = useState<Category | null>(null);
+  // Only a starter category's name has translations, and English needs none, so English skips the request.
+  const translating = matchLanguage(i18n.language) !== FALLBACK_LANGUAGE;
   useEffect(() => {
-    if (!print.category_id) return;
+    if (!print.category_id || !translating) return;
     let active = true;
     void categoriesApi.list().then(
       (categories) => {
@@ -131,9 +134,9 @@ export default function ModelSidePanel({
     return () => {
       active = false;
     };
-  }, [print.category_id]);
+  }, [print.category_id, translating]);
   const categoryName =
-    category && category.id === print.category_id && category.name === print.category_name
+    translating && category && category.id === print.category_id && category.name === print.category_name
       ? translateCategoryDisplay(category, i18n).name
       : print.category_name;
   const navigate = useNavigate();

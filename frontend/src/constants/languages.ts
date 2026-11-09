@@ -1,3 +1,5 @@
+import { LANGUAGE_FLAGS } from "./languageFlags";
+
 export type Locale = Record<string, Record<string, unknown>>;
 
 // Namespaces by area: "common" (generic words), "app" (shell chrome, modals), "library" (viewer
@@ -41,6 +43,34 @@ export const SUPPORTED_LANGUAGES: Language[] = Object.keys(LOCALES)
   .toSorted((a, b) =>
     a.code === FALLBACK_LANGUAGE ? -1 : b.code === FALLBACK_LANGUAGE ? 1 : a.label.localeCompare(b.label),
   );
+
+const PLURAL = /_(zero|one|two|few|many|other)$/;
+
+function keysOf(node: unknown, prefix = "", into = new Set<string>()): Set<string> {
+  if (node && typeof node === "object")
+    for (const [key, value] of Object.entries(node)) keysOf(value, prefix ? `${prefix}.${key}` : key, into);
+  // Plural forms differ between languages, so a key counts once whichever forms it has.
+  else into.add(prefix.replace(PLURAL, ""));
+  return into;
+}
+
+const ENGLISH_KEYS = keysOf(LOCALES[FALLBACK_LANGUAGE]);
+
+/** How much of English a language has translated, 0 to 100, rounded down so only a complete one says 100. */
+export function translatedPercent(code: string): number {
+  if (!LOCALES[code]) return 0;
+  const own = keysOf(LOCALES[code]);
+  let found = 0;
+  for (const key of ENGLISH_KEYS) if (own.has(key)) found++;
+  return Math.floor((found / ENGLISH_KEYS.size) * 100);
+}
+
+/** The flag file for a language code ("pt-BR" tries "pt-br", then "pt"), or null for one without a flag. */
+export function languageFlagUrl(code: string): string | null {
+  const lower = code.toLowerCase();
+  const flag = LANGUAGE_FLAGS[lower] ?? LANGUAGE_FLAGS[lower.split("-")[0]];
+  return flag ? `${import.meta.env.BASE_URL}flags/${flag}.svg` : null;
+}
 
 /** The supported language for an i18next language ("pt-BR" falls back to "pt"). */
 export function matchLanguage(lng: string | undefined): string {

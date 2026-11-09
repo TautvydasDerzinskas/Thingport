@@ -40,6 +40,7 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
 import { useBackgroundReload } from "../../hooks/useBackgroundReload";
+import { oneOrSeveral } from "../../utils/oneOrSeveral";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -175,7 +176,7 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
   const removeSelected = async () => {
     const confirmed = await confirm({
       title: t("models:collections.selection.deleteTitle", { count }),
-      message: t("models:collections.selection.deleteMessage", { count }),
+      message: t("models:collections.selection.deleteMessage", { count: oneOrSeveral(count) }),
       confirmLabel: t("common:delete"),
       destructive: true,
     });

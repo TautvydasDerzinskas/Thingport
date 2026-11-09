@@ -443,7 +443,10 @@
       },
       "language": {
         "heading": "Idioma",
-        "subtitle": "Elige el idioma que se usa en todo Thingport."
+        "subtitle": "Elige el idioma que se usa en todo Thingport.",
+        "search": "Buscar idiomas",
+        "noMatch": "Ningún idioma coincide",
+        "translated": "{{percent}} % traducido"
       },
       "slicer": {
         "failed": "No se pudo guardar. Inténtalo de nuevo.",
@@ -539,7 +542,22 @@
       "emptyUnread": "Estás al día.",
       "emptySystem": "No hay anuncios de Thingport.",
       "clearUnreadConfirm": "¿Eliminar todas las notificaciones no leídas? Esta acción no se puede deshacer.",
-      "clearSystemConfirm": "¿Eliminar todas las notificaciones del sistema? No volverán a enviarse. Esta acción no se puede deshacer."
+      "clearSystemConfirm": "¿Eliminar todas las notificaciones del sistema? No volverán a enviarse. Esta acción no se puede deshacer.",
+      "messages": {
+        "importFailed": "No se pudo importar un modelo",
+        "alreadyInLibrary": "«{{name}}» ya está en tu biblioteca",
+        "imported": "Importado «{{name}}»",
+        "profileAdded": "Se añadió otro perfil de impresión a «{{name}}»",
+        "importedModels_one": "Importado {{count}} modelo",
+        "importedModels_many": "Importados {{count}} de modelos",
+        "importedModels_other": "Importados {{count}} modelos",
+        "importRun_one": "{{done}} de {{count}} modelo importado",
+        "importRun_many": "{{done}} de {{count}} de modelos importados",
+        "importRun_other": "{{done}} de {{count}} modelos importados",
+        "importRunFrom_one": "{{done}} de {{count}} modelo importado desde {{site}}",
+        "importRunFrom_many": "{{done}} de {{count}} de modelos importados desde {{site}}",
+        "importRunFrom_other": "{{done}} de {{count}} modelos importados desde {{site}}"
+      }
     },
     "search": {
       "placeholder": "Buscar modelos, colecciones, etiquetas…",
@@ -902,8 +920,6 @@
     "dashboard": {
       "loadError": "No se pudo cargar tu panel.",
       "seeMore": "Ver más",
-      "viewCount": "{{count}} visualizaciones",
-      "printCount": "{{count}} impresiones",
       "collectionCount": {
         "label": "Colecciones",
         "count_one": "Colección",
@@ -939,12 +955,16 @@
       "topAuthors": {
         "title": "Principales autores",
         "empty": "Aún no hay autores: importa un modelo para ver aquí tus principales autores.",
-        "modelCount": "{{count}} modelos"
+        "modelCount_one": "{{count}} modelo",
+        "modelCount_many": "{{count}} de modelos",
+        "modelCount_other": "{{count}} modelos"
       },
       "topProviders": {
         "title": "Principales proveedores",
         "empty": "Aún no hay modelos.",
-        "modelCount": "{{count}} modelos"
+        "modelCount_one": "{{count}} modelo",
+        "modelCount_many": "{{count}} de modelos",
+        "modelCount_other": "{{count}} modelos"
       },
       "recentlyAdded": {
         "title": "Añadidos recientemente",
@@ -1379,7 +1399,13 @@
           "help": "Las palabras que muestra tu widget, un archivo por idioma. El script las pide por clave con t(\"clave\"), así que quedan fuera de la lógica y se traducen sin tocarla.",
           "empty": "Tu widget aún no tiene textos. Guarda las palabras que muestra en un archivo por idioma, y el script las pedirá por clave con t(\"clave\"): quien traduzca nunca tendrá que abrir el script."
         }
-      }
+      },
+      "viewCount_one": "{{count}} visualización",
+      "viewCount_many": "{{count}} de visualizaciones",
+      "viewCount_other": "{{count}} visualizaciones",
+      "printCount_one": "{{count}} impresión",
+      "printCount_many": "{{count}} de impresiones",
+      "printCount_other": "{{count}} impresiones"
     },
     "adminSettings": {
       "providers": {
@@ -1433,12 +1459,14 @@
         "bulkDisableTitle_many": "¿Desactivar {{count}} proveedores?",
         "bulkDisableTitle_other": "¿Desactivar {{count}} proveedores?",
         "bulkDisableMessage": "Nadie podrá importar desde {{names}} hasta que vuelvan a estar activados: se rechazarán los enlaces, Thingport Grab y la cola de importación, se pausarán las sincronizaciones de sus colecciones y las tareas en segundo plano los omitirán. Los modelos ya importados de ellos se conservan tal cual.",
-        "turnedOn_one": "{{name}} activado",
+        "turnedOn_one": "{{count}} proveedor activado",
         "turnedOn_many": "{{count}} proveedores activados",
         "turnedOn_other": "{{count}} proveedores activados",
-        "turnedOff_one": "{{name}} desactivado",
+        "turnedOff_one": "{{count}} proveedor desactivado",
         "turnedOff_many": "{{count}} proveedores desactivados",
-        "turnedOff_other": "{{count}} proveedores desactivados"
+        "turnedOff_other": "{{count}} proveedores desactivados",
+        "turnedOnNamed": "{{name}} activado",
+        "turnedOffNamed": "{{name}} desactivado"
       },
       "storageSettings": {
         "heading": "Almacenamiento"
@@ -4275,7 +4303,7 @@
       "modelFrom": "De {{name}}",
       "yourModel": "Tu modelo",
       "openModel": "Abrir {{name}}",
-      "sentModels_one": "📎 {{name}}",
+      "sentModels_one": "📎 {{count}} modelo",
       "sentModels_other": "📎 {{count}} modelos",
       "emojiPicker": {
         "search": "Buscar emoji",
@@ -4295,7 +4323,8 @@
       "instances_one": "{{count}} instancia",
       "instances_many": "{{count}} instancias",
       "instances_other": "{{count}} instancias",
-      "hostedOn": "Alojada en {{name}}"
+      "hostedOn": "Alojada en {{name}}",
+      "sentModel": "📎 {{name}}"
     },
     "modelPicker": {
       "search": "Buscar en tu biblioteca",

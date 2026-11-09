@@ -11,6 +11,15 @@ describe("profile weight formatting", () => {
     expect(format.grams(1250)).toMatch(/^1,25\sкг$/);
     expect(format.grams(0)).toBeNull();
   });
+  it("writes Belarusian units where the browser has no Belarusian", () => {
+    const supported = Intl.NumberFormat.supportedLocalesOf;
+    Intl.NumberFormat.supportedLocalesOf = () => [];
+    try {
+      expect(profileFormat(t, "be").grams(1250)).toMatch(/^1,25\sкг$/);
+    } finally {
+      Intl.NumberFormat.supportedLocalesOf = supported;
+    }
+  });
   it("preserves English units", () => {
     const format = profileFormat(t, "en");
     expect(format.grams(25)).toBe("25 g");

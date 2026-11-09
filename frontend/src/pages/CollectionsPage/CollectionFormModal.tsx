@@ -33,6 +33,7 @@ import { ListRowSkeletons } from "../../components/ListSkeleton";
 import { useSocialStatus } from "../../hooks/useSocialStatus";
 import SharedAvatars from "../../components/SharedAvatars";
 import { peopleNames } from "../../utils/peopleNames";
+import { oneOrSeveral } from "../../utils/oneOrSeveral";
 
 type Props = {
   collection?: Collection | null;
@@ -281,7 +282,7 @@ export default function CollectionFormModal({ collection, share = false, onClose
                   >
                     <SharedAvatars people={people.slice(0, 3)} size={22} dim />
                     <Typography variant="caption" color="text.secondary">
-                      {t("models:collections.form.keptPeople", { names, count: people.length })}
+                      {t("models:collections.form.keptPeople", { names, count: oneOrSeveral(people.length) })}
                     </Typography>
                   </Stack>
                 )
