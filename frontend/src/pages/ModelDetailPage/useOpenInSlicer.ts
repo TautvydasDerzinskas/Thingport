@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { type Plate, type Print, printsApi } from "../../api/prints";
 import { NORMALIZE_3MF_SLICER_IDS, SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
-import { slicerLaunchUrl } from "../../utils/slicerLaunch";
+import { slicerBridgeLaunchUrl, slicerLaunchUrl } from "../../utils/slicerLaunch";
 import { isProviderId, manifestOf } from "../../providers/index.generated";
 
 /** A file of the model a slicer can open or the user can download: a plate, or the prepared print when it
@@ -45,6 +45,11 @@ export function modelFiles(print: Print): ModelFile[] {
 
 export function slicerHref(slicerId: string, file: ModelFile): string {
   return slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename);
+}
+
+/** An explicit local-download Bridge alternative, preserving the existing native slicer link. */
+export function slicerBridgeHref(slicerId: string, file: ModelFile): string {
+  return slicerBridgeLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename);
 }
 
 /** The installed slicers that can be launched, and the one to open with: the last one used. */
