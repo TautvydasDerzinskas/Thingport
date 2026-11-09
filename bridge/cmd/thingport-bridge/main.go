@@ -121,7 +121,8 @@ func handleProtocol(raw string, cfg Config) error {
 	filename = sanitizeFilename(filename)
 
 	slicerID := strings.ToLower(strings.TrimSpace(q.Get("slicer")))
-	log.Printf("open request slicer=%s url=%s filename=%s", slicerID, redactURL(downloadURL), filename)
+	// Never write a signed /api/t/<session>/ URL to the log: it is a bearer credential.
+	log.Printf("open request slicer=%s filename=%s", slicerID, filename)
 
 	downloadDir := resolveDownloadDir(cfg)
 	if err := os.MkdirAll(downloadDir, 0755); err != nil {
@@ -241,11 +242,14 @@ func downloadFile(downloadURL, targetPath string) error {
 	client := &http.Client{Timeout: 5 * time.Minute}
 	req, err := http.NewRequest(http.MethodGet, downloadURL, nil)
 	if err != nil {
-		return fmt.Errorf("request: %w", err)
+		// URL parsing errors can echo the complete signed URL.
+		return errors.New("invalid download URL")
 	}
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("download: %w", err)
+		// url.Error contains the complete URL, including an embedded session token.
+		// Avoid including raw error strings in logs until they are comprehensively sanitized.
+		return errors.New("download request failed (check network, TLS and proxy access)")
 	}
 	defer res.Body.Close()
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
@@ -361,6 +365,11 @@ func windowsCandidates() map[string][]string {
 		"bambustudio": {"Bambu Studio/bambu-studio.exe", "Bambu Studio/BambuStudio.exe"},
 		"orcaslicer":  {"OrcaSlicer\\OrcaSlicer.exe"},
 		"prusaslicer": {"PrusaSlicer\\PrusaSlicer.exe"},
+		// Creality Print uses a versioned directory (e.g. Creality Print 7.3).
+		"crealityprintlink": {
+			"Creality/Creality Print */CrealityPrint.exe",
+			"Creality/Creality Print/CrealityPrint.exe",
+		},
 		// Globs because the dir embeds the version; renamed "Ultimaker" -> "UltiMaker" around 5.7.
 		"cura": {
 			"UltiMaker Cura */UltiMaker-Cura.exe",
@@ -424,7 +433,17 @@ func openWithDefault(filePath string) error {
 func redactURL(raw string) string {
 	parsed, err := url.Parse(raw)
 	if err != nil {
-		return raw
+		return "[invalid URL]"
+	}
+	// A /api/t/<JWT>/ segment is a signed session credential, like ?token=.
+	segments := strings.Split(parsed.Path, "/")
+	for i := 0; i+2 < len(segments); i++ {
+		if segments[i] == "api" && segments[i+1] == "t" && segments[i+2] != "" {
+			segments[i+2] = "REDACTED"
+			parsed.Path = strings.Join(segments, "/")
+			parsed.RawPath = ""
+			break
+		}
 	}
 	q := parsed.Query()
 	if q.Has("token") {
