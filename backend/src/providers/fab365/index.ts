@@ -28,21 +28,15 @@ import {
   type Fab365Member,
   type Fab365ModelResolution,
 } from "./api";
-import {
-  FAB365_CONNECT,
-  getFab365Connection,
-  getUserFab365Auth,
-  markFab365SessionRejected,
-  withFab365Auth,
-} from "./session";
+import { FAB365_CONNECT, getFab365Connection, getUserFab365Auth, withFab365Auth } from "./session";
 
 const SESSION_CODE = MANIFESTS.fab365.errorCodes.session;
 const RATE_LIMITED = "Fab365 rate-limited Thingport. Wait a while, then try again.";
 
-/** Fab365's errors as the HttpErrors an import reports; a rejected sign-in is remembered, so the app can say so. */
-async function fab365Failure(userId: string, err: unknown): Promise<unknown> {
+/** Fab365's errors as the HttpErrors an import reports. A rejected sign-in was remembered where it was turned down
+ *  (withFab365Auth, and renewing), and only while it was still the one stored, so it isn't marked again here. */
+async function fab365Failure(_userId: string, err: unknown): Promise<unknown> {
   if (err instanceof Fab365AuthError) {
-    await markFab365SessionRejected(userId);
     // 400, not 401: the frontend treats any 401 as an expired Thingport session.
     return new HttpError(400, err.message, SESSION_CODE);
   }

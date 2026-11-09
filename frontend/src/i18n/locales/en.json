@@ -6757,9 +6757,9 @@
         "steps": [
           "Easiest: with Thingport Grab, just open fab365.net while signed in. It connects your account and sends a new sign-in whenever yours changes there.",
           "Or by hand: sign in at fab365.net and open your browser's developer tools (F12).",
-          "Under Application (Chrome, Edge) or Storage (Firefox) → Local storage → fab365.net, copy the value of accessToken and paste it below. It expires after a while, so Thingport Grab keeps it renewed for you."
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Local storage → fab365.net, copy the accessToken and refreshToken rows (or the whole table) and paste them below. With the refresh token Thingport renews the sign-in itself; an accessToken on its own stops working after about 100 minutes and has to be pasted again."
         ],
-        "placeholder": "The accessToken from fab365.net's local storage"
+        "placeholder": "The accessToken and refreshToken rows from fab365.net's local storage"
       },
       "status": {
         "notConnected": "Fab365 gives its files to signed-in members only, its free models included. Connect your account to import the ones you own and see your favourites.",
@@ -6773,7 +6773,7 @@
         "grab": "Sends your sign-in as you visit fab365.net, so Thingport can download the files and read your favourites.",
         "setup": [
           "Install Thingport Grab, enable it on Fab365 and open fab365.net signed in.",
-          "By hand: copy the accessToken from a signed-in fab365.net tab's local storage and paste it in Configuration → Providers."
+          "By hand: copy the accessToken and refreshToken rows from a signed-in fab365.net tab's local storage and paste them in Configuration → Providers."
         ]
       },
       "admin": {

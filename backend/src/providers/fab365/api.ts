@@ -183,7 +183,8 @@ export type Fab365Tokens = { accessToken: string; refreshToken: string | null; e
 
 /** The access token still valid, as Fab365 says when asked to refresh one it hasn't let run out yet. */
 function stillValid(data: Record<string, unknown> | null): boolean {
-  return asText(data?.returnCode) === "E00002" || /valid[_\s]?token/i.test(asText(data?.message) ?? "");
+  // A whole word: "invalid_token" is a refusal, not this.
+  return asText(data?.returnCode) === "E00002" || /\bvalid[_\s]?token\b/i.test(asText(data?.message) ?? "");
 }
 
 /** Fab365's own renewal, as the site's pages make it on a 401: the old access token as the Bearer, the refresh token in
@@ -193,9 +194,9 @@ function stillValid(data: Record<string, unknown> | null): boolean {
  *
  *  Tested live 2026-11-09: the refresh token is *reusable* (renewing with the same one twice both succeeded), so the
  *  backend and the browser coexist -- a backend renewal doesn't sign the web session out. The one case not seen is a
- *  genuinely dead refresh token (ours stayed valid to its own expiry), so any answer that is neither a new pair nor
- *  `valid_Token` is still taken for a refusal; a network error throws through as itself, so an outage isn't read as one.
- *  Narrow the refusal check if the exact code for a dead refresh token ever turns up. */
+ *  genuinely dead refresh token (ours stayed valid to its own expiry), so any answer of Fab365's own that is neither a
+ *  new pair nor `valid_Token` is still taken for a refusal. One that isn't its JSON envelope, and a network error, throw
+ *  as themselves, so an outage isn't read as one. Narrow the refusal check if the code for a dead token ever turns up. */
 export async function refreshFab365Session(secret: Fab365Secret): Promise<Fab365Tokens> {
   if (!secret.refreshToken) throw new Fab365AuthError();
   const res = await api("/v3_1/refresh", {
@@ -220,6 +221,9 @@ export async function refreshFab365Session(secret: Fab365Secret): Promise<Fab365
       expiresAt: decodeFab365Token(secret.accessToken)?.expiresAt ?? null,
     };
   }
+  // Only Fab365's own answer says anything about the token: one that isn't its JSON envelope -- an outage, a proxy's
+  // error page -- is no refusal, or it would sign the user out.
+  if (!asText(data?.returnCode)) throw failure("a renewed sign-in", res);
   throw new Fab365AuthError();
 }
 

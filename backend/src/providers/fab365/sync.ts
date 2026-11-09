@@ -2,7 +2,7 @@ import { HttpError } from "../../utils/fileUtils";
 import { SyncHeldError, type SyncProblem } from "../syncProblem";
 import type { ProviderSync } from "../types";
 import { FAB365_LIKES_KEY, FAB365_LIKES_NAME, Fab365AuthError, fetchFab365Likes } from "./api";
-import { getFab365Connection, getUserFab365Auth, markFab365SessionRejected, withFab365Auth } from "./session";
+import { getFab365Connection, getUserFab365Auth, withFab365Auth } from "./session";
 
 const DISCONNECTED: SyncProblem = {
   error: "Fab365 isn't connected",
@@ -32,7 +32,9 @@ export const fab365Sync: ProviderSync = {
   signInOnly,
   rejected: {
     is: (err) => err instanceof Fab365AuthError,
-    mark: (userId) => markFab365SessionRejected(userId),
+    // Marked already, by the read it turned down, and only while it was still the sign-in stored: a newer one saved
+    // meanwhile isn't marked for it.
+    mark: async () => undefined,
     problem: EXPIRED,
   },
   problems: [DISCONNECTED, EXPIRED],

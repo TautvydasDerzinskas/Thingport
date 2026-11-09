@@ -47,6 +47,7 @@ afterAll(async () => {
     "grabcad",
     "meshy",
     "pixup3d",
+    "fab365",
   ] as const)
     await setProviderEnabled(provider, true);
 });
@@ -75,6 +76,7 @@ describe("turning providers off", () => {
       grabcad: true,
       meshy: true,
       pixup3d: true,
+      fab365: true,
     });
 
     expect(
@@ -106,6 +108,7 @@ describe("turning providers off", () => {
       grabcad: true,
       meshy: true,
       pixup3d: true,
+      fab365: true,
     });
   });
 

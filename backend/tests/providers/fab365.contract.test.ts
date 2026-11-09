@@ -2,11 +2,24 @@ import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
 import { fab365Browse } from "../../src/providers/fab365/browse";
 import { fab365Connection } from "../../src/providers/fab365/connection";
-import { fab365GalleryFrom, fab365LikesFrom, fab365ModelFrom, decodeFab365Token } from "../../src/providers/fab365/api";
+import {
+  decodeFab365Token,
+  Fab365AuthError,
+  fab365GalleryFrom,
+  fab365LikesFrom,
+  fab365ModelFrom,
+  refreshFab365Session,
+} from "../../src/providers/fab365/api";
 import { fab365Trending } from "../../src/providers/fab365";
-import { getFab365Connection, setUserFab365Session } from "../../src/providers/fab365/session";
+import {
+  getFab365Connection,
+  normalizeFab365Session,
+  readFab365Paste,
+  setUserFab365Session,
+} from "../../src/providers/fab365/session";
+import { fetchListing } from "../../src/services/collectionSyncRunner";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
-import { binary, expectStatus, json, loadFixture, stl, zip, type FetchHandler } from "./support";
+import { binary, expectStatus, html, json, loadFixture, stl, zip, type FetchHandler } from "./support";
 
 vi.mock("node:dns/promises", () => ({
   default: {
@@ -25,8 +38,9 @@ vi.mock("node:dns/promises", () => ({
 
 const b64url = (obj: object) => Buffer.from(JSON.stringify(obj)).toString("base64url");
 const jwt = (claims: object) => `${b64url({ typ: "JWT", alg: "HS256" })}.${b64url(claims)}.${"sig".repeat(10)}`;
-const token = (seconds: number) =>
-  jwt({ loginId: "242181", loginType: "W", index: "2af8a746", iat: 0, exp: Math.floor(Date.now() / 1000) + seconds });
+// `index` tells tokens apart however close together they're made, so one never stands in for another by accident.
+const token = (seconds: number, index = "2af8a746") =>
+  jwt({ loginId: "242181", loginType: "W", index, iat: 0, exp: Math.floor(Date.now() / 1000) + seconds });
 
 const ACCESS = token(3600);
 const REFRESH = token(7200);
@@ -41,8 +55,10 @@ const PLATES = ["Fab365_JetPack-A.stl", "Fab365_JetPack-B.stl"];
 type Overrides = {
   /** Which access tokens the API accepts, besides the default one. */
   accepts?: string[];
-  /** What `/api/v3_1/refresh` answers with, and the tokens it hands back. */
-  refresh?: { access: string; refresh: string } | "fail";
+  /** What `/api/v3_1/refresh` answers with: a new pair, Fab365's own refusal, or an outage's page that isn't its JSON. */
+  refresh?: { access: string; refresh: string } | "fail" | "outage";
+  /** Run before a request whose path matches is answered, such as another sign-in saved meanwhile. */
+  before?: { path: RegExp; run: () => Promise<unknown> };
 };
 
 function handlerFor(scenario: string, over: Overrides = {}): FetchHandler {
@@ -54,6 +70,7 @@ function handlerFor(scenario: string, over: Overrides = {}): FetchHandler {
   };
   const unauthorized = () => json({ returnCode: "E00005", message: "Unauthorized" }, 401);
   return async ({ url, method, headers }) => {
+    if (over.before?.path.test(url.pathname)) await over.before.run();
     if (url.hostname === ZIP_HOST && url.pathname.endsWith(".zip")) {
       return binary(await zip("fab365", Object.fromEntries(PLATES.map((name) => [name, stl(name)]))));
     }
@@ -77,6 +94,7 @@ function handlerFor(scenario: string, over: Overrides = {}): FetchHandler {
     if (p === `${API}/my/profile`) return authed(headers) ? json(loadFixture("fab365", "profile")) : unauthorized();
     if (p === `${API}/v2/item/offer`) return json(loadFixture("fab365", "popular"));
     if (p === `${API}/v3_1/refresh` && method === "POST") {
+      if (over.refresh === "outage") return html("<html><body><h1>502 Bad Gateway</h1></body></html>", 502);
       if (!over.refresh || over.refresh === "fail") return json({ returnCode: "C00008", code: "error_request_fail" });
       return json({
         returnCode: "C00000",
@@ -247,6 +265,107 @@ describe("Fab365 specifics", () => {
       status: 422,
     });
   });
+
+  it("keeps the refresh token from pasted local-storage rows, so a sign-in connected by hand renews too", async () => {
+    ctx.stub("ok");
+    // The site's local-storage table as DevTools copies it: key, tab, value, tab -- other rows left alone, the
+    // `bt_…` JWT among them.
+    const table = [
+      `__paypal_storage__\t{"id":"uid_x"}\t`,
+      `accessToken\t${ACCESS}\t`,
+      `bt_maker%40example.com\t${token(5000)}\t`,
+      `refreshToken\t${REFRESH}\t`,
+      `lang\ten\t`,
+    ].join("\n");
+    const secret = async () =>
+      (await prisma.providerConnection.findFirstOrThrow({ where: { userId: ctx.userId, provider: "fab365" } })).secret;
+    expect(await fab365Connection.save(ctx.userId, { token: table, verify: true })).toEqual({ configured: true });
+    expect(await secret()).toEqual({ accessToken: ACCESS, refreshToken: REFRESH });
+
+    // The access token's value alone still connects, with nothing to renew it by.
+    expect(await fab365Connection.save(ctx.userId, { token: ACCESS, verify: true })).toEqual({ configured: true });
+    expect(await secret()).toEqual({ accessToken: ACCESS, refreshToken: null });
+  });
+
+  it("takes only a whole-word valid_Token for a token still valid: invalid_token is a refusal", async () => {
+    const secret = { accessToken: ACCESS, refreshToken: REFRESH };
+    const answer = (body: object) =>
+      ctx.install(async ({ url }) => (url.pathname === `${API}/v3_1/refresh` ? json(body) : undefined));
+    for (const message of ["invalid_token", "Invalid Token"]) {
+      answer({ returnCode: "E00099", message });
+      await expect(refreshFab365Session(secret)).rejects.toBeInstanceOf(Fab365AuthError);
+    }
+    answer({ returnCode: "E00099", message: "valid_Token" });
+    await expect(refreshFab365Session(secret)).resolves.toMatchObject({ accessToken: ACCESS, refreshToken: REFRESH });
+
+    // An outage's page isn't Fab365's answer at all, so it says nothing about the token.
+    ctx.install(handlerFor("ok", { refresh: "outage" }));
+    const outage = await refreshFab365Session(secret).catch((err: unknown) => err);
+    expect(outage).toBeInstanceOf(Error);
+    expect(outage).not.toBeInstanceOf(Fab365AuthError);
+  });
+
+  const stored = async () =>
+    (await prisma.providerConnection.findFirstOrThrow({ where: { userId: ctx.userId, provider: "fab365" } })).secret;
+
+  it("doesn't mark a sign-in saved meanwhile expired when renewing the one an import started with is refused", async () => {
+    const other = { access: token(3400, "other"), refresh: token(7300, "other-refresh") };
+    await connect(ctx.userId, token(-10), REFRESH);
+    const reconnect = { path: /\/v3_1\/refresh$/, run: () => connect(ctx.userId, other.access, other.refresh) };
+    ctx.install(handlerFor("ok", { refresh: "fail", before: reconnect }));
+    const res = await ctx.importUrl();
+    expect(res.status).toBe(409);
+    expect(JSON.stringify(res.body)).toMatch(/replaced since/);
+    expect((await getFab365Connection(ctx.userId)).state).toBe("connected");
+    expect(await stored()).toEqual({ accessToken: other.access, refreshToken: other.refresh });
+  });
+
+  it("doesn't mark a sign-in saved meanwhile expired when the retried one is turned down", async () => {
+    const other = { access: token(3400, "other"), refresh: token(7300, "other-refresh") };
+    // Stored and fresh, but turned down; renewing it hands back one that's turned down too.
+    await connect(ctx.userId, token(3600, "stale"), REFRESH);
+    let downloads = 0;
+    const reconnect = {
+      path: /\/my\/downloads\/116$/,
+      run: async () => {
+        if (++downloads === 2) await connect(ctx.userId, other.access, other.refresh);
+      },
+    };
+    ctx.install(
+      handlerFor("ok", {
+        refresh: { access: token(3500, "renewed"), refresh: token(7250, "renewed-refresh") },
+        before: reconnect,
+      }),
+    );
+    const res = await ctx.importUrl();
+    expect(res.status).toBe(409);
+    expect(downloads).toBe(2);
+    expect((await getFab365Connection(ctx.userId)).state).toBe("connected");
+  });
+
+  it("leaves a sign-in saved during a sync alone when the sync's own is refused", async () => {
+    const other = { access: token(3400, "other"), refresh: token(7300, "other-refresh") };
+    await connect(ctx.userId, token(-10), REFRESH);
+    const reconnect = { path: /\/v3_1\/refresh$/, run: () => connect(ctx.userId, other.access, other.refresh) };
+    ctx.install(handlerFor("ok", { refresh: "fail", before: reconnect }));
+    const sync = { userId: ctx.userId, provider: "fab365", externalId: "likes", sourceUrl: LIKES_URL };
+    await expect(fetchListing(sync)).rejects.toThrow(/replaced since/);
+    expect((await getFab365Connection(ctx.userId)).state).toBe("connected");
+  });
+
+  it("keeps a working sign-in rather than swap it for a stale pair Grab sends that Fab365 turns down", async () => {
+    await connect(ctx.userId);
+    const stale = { access_token: token(-10, "stale"), refresh_token: token(7400, "stale-refresh") };
+    ctx.install(handlerFor("ok", { refresh: "fail" }));
+    expect(await fab365Connection.save(ctx.userId, stale)).toEqual({ configured: true });
+    expect(await stored()).toEqual({ accessToken: ACCESS, refreshToken: REFRESH });
+    expect((await getFab365Connection(ctx.userId)).state).toBe("connected");
+
+    // One that can't be checked just now is saved as it came: nothing says it doesn't work.
+    ctx.install(handlerFor("ok", { refresh: "outage" }));
+    expect(await fab365Connection.save(ctx.userId, stale)).toEqual({ configured: true });
+    expect(await stored()).toEqual({ accessToken: stale.access_token, refreshToken: stale.refresh_token });
+  });
 });
 
 describe("Fab365 pages", () => {
@@ -278,6 +397,30 @@ describe("Fab365 pages", () => {
   it("reads the favourites, and skips the empty list's one row of nothing", () => {
     expect(fab365LikesFrom(loadFixture("fab365", "likes")).map((entry) => entry.itemId)).toEqual(["116", "428", "232"]);
     expect(fab365LikesFrom(loadFixture("fab365", "likes-empty"))).toEqual([]);
+  });
+
+  it("reads the tokens out of a paste: local-storage rows, JSON or the access token alone", () => {
+    const both = { access: ACCESS, refresh: REFRESH };
+    expect(readFab365Paste(`accessToken\t${ACCESS}\t\nrefreshToken\t${REFRESH}\t`)).toEqual(both);
+    expect(readFab365Paste(JSON.stringify({ accessToken: ACCESS, refreshToken: REFRESH }))).toEqual(both);
+    expect(readFab365Paste(` "${ACCESS}" `)).toEqual({ access: ACCESS, refresh: null });
+    // A token under any other key isn't the sign-in.
+    expect(readFab365Paste(`bt_maker%40example.com\t${ACCESS}`)).toEqual({ access: null, refresh: null });
+    expect(readFab365Paste("not a token")).toEqual({ access: null, refresh: null });
+    expect(readFab365Paste(null)).toEqual({ access: null, refresh: null });
+  });
+
+  it("keeps a refresh token only when it's the same account's", () => {
+    const another = jwt({
+      loginId: "999",
+      loginType: "W",
+      index: "x",
+      iat: 0,
+      exp: Math.floor(Date.now() / 1000) + 7200,
+    });
+    expect(normalizeFab365Session(ACCESS, REFRESH)?.refreshToken).toBe(REFRESH);
+    expect(normalizeFab365Session(ACCESS, another)?.refreshToken).toBeNull();
+    expect(normalizeFab365Session(ACCESS, "not a jwt")?.refreshToken).toBeNull();
   });
 
   it("decodes who a token is and when it runs out", () => {

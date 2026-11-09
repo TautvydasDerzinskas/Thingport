@@ -6983,9 +6983,9 @@
         "steps": [
           "Lo más fácil: con Thingport Grab, solo abre fab365.net con la sesión iniciada. Conecta tu cuenta y envía una sesión nueva cada vez que cambie allí.",
           "O a mano: inicia sesión en fab365.net y abre las herramientas de desarrollo del navegador (F12).",
-          "En Application (Chrome, Edge) o Almacenamiento (Firefox) → Almacenamiento local → fab365.net, copia el valor de accessToken y pégalo abajo. Caduca al cabo de un rato, así que Thingport Grab lo mantiene renovado por ti."
+          "En Application (Chrome, Edge) o Almacenamiento (Firefox) → Almacenamiento local → fab365.net, copia las filas accessToken y refreshToken (o toda la tabla) y pégalas abajo. Con el refreshToken, Thingport renueva la sesión por sí mismo; un accessToken solo deja de funcionar al cabo de unos 100 minutos y hay que volver a pegarlo."
         ],
-        "placeholder": "El accessToken del almacenamiento local de fab365.net"
+        "placeholder": "Las filas accessToken y refreshToken del almacenamiento local de fab365.net"
       },
       "status": {
         "notConnected": "Fab365 solo da sus archivos a miembros con sesión iniciada, incluidos los modelos gratuitos. Conecta tu cuenta para importar los que tengas y ver tus favoritos.",
@@ -6999,7 +6999,7 @@
         "grab": "Envía tu sesión cuando visitas fab365.net, para que Thingport pueda descargar los archivos y leer tus favoritos.",
         "setup": [
           "Instala Thingport Grab, actívalo en Fab365 y abre fab365.net con la sesión iniciada.",
-          "A mano: copia el accessToken del almacenamiento local de una pestaña de fab365.net con sesión iniciada y pégalo en Configuración → Proveedores."
+          "A mano: copia las filas accessToken y refreshToken del almacenamiento local de una pestaña de fab365.net con sesión iniciada y pégalas en Configuración → Proveedores."
         ]
       },
       "admin": {

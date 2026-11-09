@@ -1,10 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../db";
 import { createLogger } from "../../logger";
+import { HttpError } from "../../utils/fileUtils";
 import {
   connectionState,
   readConnection,
-  rejectConnection,
   usableSecret,
   writeConnection,
   type Connection,
@@ -23,10 +23,10 @@ import manifest from "./manifest.generated";
 
 // Per-user: the Fab365 sign-in. Fab365 keeps it in page storage as a short-lived JWT (`accessToken`, about 100 minutes)
 // with the refresh token beside it. Thingport keeps both and renews the access token itself as it runs out, saving each
-// new refresh token, as the site's own 401 retry does -- the refresh token rotates, and only works once the access
-// token has actually expired. Thingport Grab reads the pair from an open fab365.net tab and sends each new one; a pasted
-// access token works too, though without a refresh token beside it, it can't be renewed. Who it is (accountId) is the
-// token's `loginId`.
+// new refresh token, as the site's own 401 retry does -- a new pair comes only once the access token has (nearly) run
+// out, and the old refresh token keeps working, so the browser's sign-in isn't ended by it. Thingport Grab reads the
+// pair from an open fab365.net tab and sends each new one; pasting the two local-storage rows works too, while an access
+// token pasted alone works until it expires but can't be renewed. Who it is (accountId) is the token's `loginId`.
 
 const ID = manifest.id;
 const log = createLogger(ID);
@@ -37,8 +37,8 @@ const RENEW_BEFORE_MS = 60 * 1000;
 /** A sign-in as read from the browser or a paste: the secret, whose it is and when its access token runs out. */
 export type Fab365Session = Fab365Secret & { userId: string; expiresAt: Date | null };
 
-/** The sign-in Grab sends (`access_token`/`refresh_token`) or a pasted access token; null when it isn't a token. A
- *  paste may bring only the access token, which works until it expires but can't be renewed. */
+/** The sign-in Grab sends (`access_token`/`refresh_token`), or what `readFab365Paste` found in a paste; null when the
+ *  access token isn't one. Without a refresh token it works until it expires but can't be renewed. */
 export function normalizeFab365Session(
   accessToken: string | null | undefined,
   refreshToken: string | null | undefined,
@@ -46,12 +46,31 @@ export function normalizeFab365Session(
   const access = (accessToken ?? "").trim();
   const claims = access ? decodeFab365Token(access) : null;
   if (!access || !claims) return null;
+  // Kept only when it's the same account's, so a renewal can't swap the connection over to another one.
+  const refresh = (refreshToken ?? "").trim();
+  const sameAccount = Boolean(refresh) && decodeFab365Token(refresh)?.userId === claims.userId;
   return {
     accessToken: access,
-    refreshToken: (refreshToken ?? "").trim() || null,
+    refreshToken: sameAccount ? refresh : null,
     userId: claims.userId,
     expiresAt: claims.expiresAt,
   };
+}
+
+// A JWT: three base64url parts.
+const JWT = String.raw`[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`;
+/** A token under its key, as a copied row of the site's local storage has it (`accessToken<tab><jwt>`), or as JSON. */
+const labelled = (key: string) => new RegExp(String.raw`\b${key}\b["']?\s*[:=\t ]\s*["']?(${JWT})`);
+
+/** The tokens in what a person pasted: the accessToken and refreshToken rows of fab365.net's local storage -- or the
+ *  whole table, whose other rows are left alone -- the same as JSON, or the accessToken's value on its own. */
+export function readFab365Paste(raw: string | null | undefined): { access: string | null; refresh: string | null } {
+  const text = (raw ?? "").trim();
+  const access = text.match(labelled("accessToken"))?.[1] ?? null;
+  const refresh = text.match(labelled("refreshToken"))?.[1] ?? null;
+  if (access || refresh) return { access, refresh };
+  const bare = text.replace(/^["']|["']$/g, "");
+  return { access: new RegExp(`^${JWT}$`).test(bare) ? bare : null, refresh: null };
 }
 
 const authOf = (secret: Fab365Secret, accountId: string): Fab365Auth => ({ token: secret.accessToken, accountId });
@@ -83,8 +102,24 @@ export async function setUserFab365Session(
   return true;
 }
 
-export async function markFab365SessionRejected(userId: string): Promise<void> {
-  await rejectConnection(userId, ID);
+/** Marks the sign-in turned down, only while `accessToken` is still the one stored; whether it was. A disconnect, or a
+ *  new sign-in saved meanwhile, isn't the one turned down. */
+export async function markFab365SessionRejected(userId: string, accessToken: string): Promise<boolean> {
+  const { count } = await prisma.providerConnection.updateMany({
+    where: { ...ROW(userId), secret: { path: ["accessToken"], equals: accessToken } },
+    data: { rejectedAt: new Date() },
+  });
+  return count > 0;
+}
+
+/** A turned-down sign-in that a newer one has replaced since: that one stays connected, so it's worth another try. */
+const replaced = () =>
+  new HttpError(409, "Fab365 turned down the sign-in this started with, which has been replaced since. Try again.");
+
+/** What to report for `accessToken` being turned down: Fab365AuthError once it's marked so, or the 409 above where a
+ *  newer sign-in replaced it meanwhile. */
+async function turnedDown(userId: string, accessToken: string): Promise<Error> {
+  return (await markFab365SessionRejected(userId, accessToken)) ? new Fab365AuthError() : replaced();
 }
 
 /** The Fab365 account the user connected, as far as it's known: its id always, its name once Fab365 said it. */
@@ -105,11 +140,11 @@ const renewing = new Map<string, Promise<Fab365Secret>>();
 
 /** The stored sign-in of `accountId`, renewed and saved. The save, and a refusal's mark, apply only while the refresh
  *  token renewed is still the one stored: a disconnect, or a new sign-in saved meanwhile, wins over them. Throws
- *  Fab365AuthError when Fab365 turns the refresh token down. */
+ *  Fab365AuthError when Fab365 turns the refresh token down, or the 409 to try again when it was replaced meanwhile. */
 function renew(userId: string, secret: Fab365Secret, accountId: string): Promise<Fab365Secret> {
   // A pasted access token with no refresh token beside it can't be renewed; it just runs out.
   const refreshToken = secret.refreshToken;
-  if (!refreshToken) return Promise.reject(new Fab365AuthError());
+  if (!refreshToken) return turnedDown(userId, secret.accessToken).then((err) => Promise.reject(err));
   const key = `${userId}:${refreshToken}`;
   const running = renewing.get(key);
   if (running) return running;
@@ -130,11 +165,13 @@ function renew(userId: string, secret: Fab365Secret, accountId: string): Promise
       log.info(count ? "access token renewed" : "access token renewed, but a newer sign-in was kept", { user: userId });
       return renewed;
     } catch (err) {
-      if (err instanceof Fab365AuthError) {
-        log.warn("refresh token turned down", { user: userId });
-        await prisma.providerConnection.updateMany({ where: stillStored, data: { rejectedAt: new Date() } });
-      }
-      throw err;
+      if (!(err instanceof Fab365AuthError)) throw err;
+      log.warn("refresh token turned down", { user: userId });
+      const { count } = await prisma.providerConnection.updateMany({
+        where: stillStored,
+        data: { rejectedAt: new Date() },
+      });
+      throw count ? err : replaced();
     }
   })().finally(() => renewing.delete(key));
   renewing.set(key, run);
@@ -155,7 +192,8 @@ export async function getUserFab365Auth(userId: string): Promise<{ auth: Fab365A
 }
 
 /** Runs `call` with the user's sign-in; when Fab365 turns the access token down, renews it and tries once more. Throws
- *  Fab365AuthError once the sign-in itself is turned down, and remembers it. */
+ *  Fab365AuthError once the sign-in itself is turned down, and remembers it -- only while it's still the one stored, so a
+ *  sign-in saved meanwhile isn't marked for it (a 409 says to try again instead). Callers don't mark it again. */
 export async function withFab365Auth<T>(
   userId: string,
   auth: Fab365Auth,
@@ -174,8 +212,7 @@ export async function withFab365Auth<T>(
     try {
       return await call(authOf(renewed, accountId));
     } catch (retryErr) {
-      if (retryErr instanceof Fab365AuthError) await markFab365SessionRejected(userId);
-      throw retryErr;
+      throw retryErr instanceof Fab365AuthError ? await turnedDown(userId, renewed.accessToken) : retryErr;
     }
   }
 }
