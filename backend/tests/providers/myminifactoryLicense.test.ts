@@ -80,6 +80,7 @@ describe("MyMiniFactory licences", () => {
     expect(myminifactoryLicenseFrom({ license: "BY-NC 4.0", licenses: [] })?.id).toBe("CC-BY-NC-4.0");
     expect(myminifactoryLicenseFrom({ license: "BY-NC", licenses: [] })?.id).toBe("CC-BY-NC-4.0");
     expect(myminifactoryLicenseFrom({ license: "by-nc 3.0", licenses: [] })?.id).toBe("CC-BY-NC-3.0");
+    expect(myminifactoryLicenseFrom({ license: "Attribution-ShareAlike", licenses: [] })?.id).toBe("CC-BY-SA-4.0");
     // Not a licence's name: its own, from the flags.
     expect(
       myminifactoryLicenseFrom({ license: "Attribution required", licenses: flags({ mention: true }) }),

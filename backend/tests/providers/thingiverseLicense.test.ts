@@ -106,6 +106,12 @@ describe("Thingiverse licences", () => {
           return Response.json({ id: 1015238, license: "Creative Commons - Attribution - Non-Commercial" });
         }
         if (pathname === "/things/1015239") return Response.json({ id: 1015239 });
+        if (pathname === "/things/1450") return Response.json({ error: "Unauthorized" }, { status: 401 });
+        if (url === "https://www.thingiverse.com/thing:1450") {
+          return new Response(loadFixtureHtml("thingiverse", "license-page-1450"), {
+            headers: { "content-type": "text/html" },
+          });
+        }
         return Response.json({ error: "Not Found" }, { status: 404 });
       }),
     );
@@ -117,6 +123,11 @@ describe("Thingiverse licences", () => {
     expect(await readThingiverseLicense("user-1", "404", { notes: null })).toBeNull();
     // A Thing answered without the field can't tell: read again later.
     expect(await readThingiverseLicense("user-1", "1015239", { notes: null })).toBeUndefined();
+    // A token it turns down: read off the public page instead.
+    expect(await readThingiverseLicense("user-1", "1450", { notes: null })).toEqual({
+      id: "GPL-3.0",
+      raw: "https://www.gnu.org/licenses/gpl-3.0.en.html",
+    });
   });
 
   it("reads it off the public page without a token, and throws when Cloudflare stops it", async () => {

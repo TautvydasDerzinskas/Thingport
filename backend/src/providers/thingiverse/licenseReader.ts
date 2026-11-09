@@ -5,13 +5,13 @@ import type { ProviderLicense } from "../../services/licenseCatalog";
 import { isCloudflareChallenge } from "../../services/flaresolverr";
 import { browserFetch } from "../../utils/browserFetch";
 import { readCapped } from "../../utils/readCapped";
-import { fetchThingiverseThing, ThingiverseRateLimitError } from "./api";
+import { fetchThingiverseThing, ThingiverseAuthError, ThingiverseRateLimitError } from "./api";
 import { thingiverseLicenseFrom, thingiverseLicenseFromPage } from "./license";
 import { getThingiverseAccessToken } from "./token";
 import { thingiverseThingUrl } from "./urls.generated";
 
-/** From the API with the instance's App Token, one request; without one, from the Thing's public page, which needs no
- *  token (Chrome's handshake gets it past Cloudflare). Null for a Thing that's gone or names no licence; undefined
+/** From the API with the instance's App Token, one request; without one, or with one it turns down, from the Thing's
+ *  public page, which needs no token (Chrome's handshake gets it past Cloudflare). Null for a Thing that's gone or names no licence; undefined
  *  for a page without the Thing's data, which can't tell; a refusal is thrown. */
 export async function readThingiverseLicense(
   _userId: string,
@@ -20,9 +20,14 @@ export async function readThingiverseLicense(
 ): Promise<ProviderLicense | null | undefined> {
   const token = await getThingiverseAccessToken();
   if (token) {
-    const thing = await fetchThingiverseThing(thingId, token);
-    // A Thing answered without the field can't tell: read again later.
-    return thing ? thingiverseLicenseFrom(thing) : null;
+    try {
+      const thing = await fetchThingiverseThing(thingId, token);
+      // A Thing answered without the field can't tell: read again later.
+      return thing ? thingiverseLicenseFrom(thing) : null;
+    } catch (err) {
+      // A token Thingiverse turned down: the public page needs none.
+      if (!(err instanceof ThingiverseAuthError)) throw err;
+    }
   }
   const res = await browserFetch(thingiverseThingUrl(thingId), {
     headers: { Accept: "text/html" },

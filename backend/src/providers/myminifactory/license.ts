@@ -12,13 +12,12 @@ import {
 type Flags = Map<string, boolean>;
 
 // A Creative Commons licence spelled out without saying so: "Attribution", its parts, then a version or the kind of
-// port ("Attribution-ShareAlike 4.0 International"). "Attribution required" is no licence name.
+// port ("Attribution-ShareAlike 4.0 International"), or its parts and nothing more ("Attribution-ShareAlike").
+// "Attribution required" is no licence name.
 const SPELLED_CC =
-  /^attribution(?:[\s_-]+(?:non[\s-]?commercial|no[\s-]?deriv\w*|share[\s-]?alike))*[\s_-]+(?:v?\d\.\d|international|generic|unported)\b/i;
-const CC_NAME = new RegExp(
-  `^(?:CC[\\s_-]*)?BY(?:[\\s_-]+(?:NC|ND|SA))*(?![A-Za-z])|${SPELLED_CC.source}|creative commons`,
-  "i",
-);
+  /^attribution(?:(?:[\s_-]+(?:non[\s-]?commercial|no[\s-]?deriv\w*|share[\s-]?alike))*[\s_-]+(?:v?\d\.\d|international|generic|unported)\b|(?:[\s_-]+(?:non[\s-]?commercial|no[\s-]?deriv\w*|share[\s-]?alike))+\s*$)/i;
+const CC_HEAD = /^(?:CC[\s_-]*)?BY(?:[\s_-]+(?:NC|ND|SA))*(?![A-Za-z])/i;
+const isCcName = (name: string) => CC_HEAD.test(name) || SPELLED_CC.test(name) || /creative commons/i.test(name);
 
 function flagsOf(value: unknown): Flags {
   const flags: Flags = new Map();
@@ -78,7 +77,7 @@ export function myminifactoryLicenseFrom(
   const cc = name ? ccId(name) : null;
   if (cc) return { id: cc, raw };
   // A Creative Commons licence the catalogue doesn't have, at an older version: kept by its name, allowing nothing.
-  if (name && !/myminifactory/i.test(name) && CC_NAME.test(name)) return { id: null, raw, label: name };
+  if (name && !/myminifactory/i.test(name) && isCcName(name)) return { id: null, raw, label: name };
   const credit = flags.has("mention") ? flags.get("mention")! : /\bcredit\b/i.test(name ?? "");
   return {
     id: "myminifactory",

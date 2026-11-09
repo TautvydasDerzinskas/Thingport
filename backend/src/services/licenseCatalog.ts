@@ -364,7 +364,7 @@ export function licenseIdFromText(raw: string | null | undefined): string | null
   if (/creative commons|\bcc[\s-]?by\b/.test(text)) {
     // The version is the licence's own: the first named after it ("v2.0" too), else before it ("Attribution 3.0 Creative
     // Commons"). At one the catalogue doesn't have, it's no licence Thingport knows, rather than the same one at 4.0.
-    const VERSION = /\bv?([1-4]\.[05])\b/;
+    const VERSION = /\bv?(\d\.\d)\b/;
     const named =
       text.slice(text.search(/creative commons|\bcc[\s-]?by\b/)).match(VERSION)?.[1] ?? text.match(VERSION)?.[1];
     if (named && named !== "3.0" && named !== "4.0") return null;
