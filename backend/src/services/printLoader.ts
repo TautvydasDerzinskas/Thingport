@@ -4,7 +4,7 @@ import { toPrintOut, type PrintOut } from "../dto";
 import { remoteOriginOut } from "../federation/remoteExplore";
 import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCategorizationService";
 import { aiDescriptionOut } from "./aiDescriptionService";
-import { printProfilesOut } from "./printProfileService";
+import { printProfilesOut, profileFillRunning } from "./printProfileService";
 import type { Author, Category, Plate, PreviewImage, Prisma, Print, PrintFile } from "@prisma/client";
 
 export type FullPrint = {
@@ -42,6 +42,8 @@ export async function printOutById(
   printId: string,
   scope: Prisma.PrintWhereInput = { userId },
 ): Promise<PrintOut> {
+  // Before its plates are read: see printProfilesOut.
+  const filling = profileFillRunning(printId);
   const [full, categoryPaths, suggestionsShown] = await Promise.all([
     loadFullPrint(userId, printId, scope),
     aiCategoryPaths(userId),
@@ -58,7 +60,7 @@ export async function printOutById(
     await aiSuggestionOut(userId, full.print.aiSuggestion, categoryPaths, suggestionsShown),
     await aiDescriptionOut(full.print),
   );
-  const profiles = await printProfilesOut(full.print, full.plates);
+  const profiles = await printProfilesOut(full.print, full.plates, filling);
   const withProfiles = Object.keys(profiles.profiles).length
     ? {
         plates: out.plates.map((plate) => ({ ...plate, profile: profiles.profiles[plate.id] ?? null })),

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
@@ -11,12 +11,15 @@ import type { Theme } from "@mui/material/styles";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import LockIcon from "@mui/icons-material/Lock";
 import PublicIcon from "@mui/icons-material/Public";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import { type Collection } from "../../api/collections";
 import { type PreviewMode } from "../../api/settings";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { renderPreviewContent } from "../../components/media/renderPreviewContent";
 import { collectionDisplayName } from "../../utils/collectionDisplay";
-import CollectionActionsMenu from "../CollectionDetailPage/CollectionActionsMenu";
+import CollectionActionsMenu, { type CollectionActionsHandle } from "../CollectionDetailPage/CollectionActionsMenu";
+import SharedAvatars from "../../components/SharedAvatars";
+import { peopleNames } from "../../utils/peopleNames";
 import CollectionSyncBadge from "../../components/CollectionSyncBadge";
 import CollectionSyncDialog from "../CollectionDetailPage/CollectionSyncDialog";
 import { useCardContextMenu } from "../../components/Layout/ConfigurationDialog/AppTiles";
@@ -114,8 +117,9 @@ export default function CollectionCard({
   selected = false,
   onToggleSelect,
 }: Props) {
-  const { t } = useTranslation(["models", "common"]);
+  const { t, i18n } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
+  const menuRef = useRef<CollectionActionsHandle>(null);
   const coverItems = collection.cover_items.slice(0, COVER_TILE_LIMIT);
   const extraCount = collection.item_count > COVER_TILE_LIMIT ? collection.item_count - COVER_TILE_LIMIT : 0;
   const displayName = collectionDisplayName(collection, t);
@@ -125,7 +129,18 @@ export default function CollectionCard({
   // Another user's public collection: theirs to change, so no menu, and whose it is where the count goes.
   const owner = collection.owner ?? null;
   // Only said while it means something: with social features off, nobody else sees it anyway.
-  const showPublic = useSocialStatus()?.enabled === true && Boolean(collection.is_public) && !owner;
+  const socialOn = useSocialStatus()?.enabled === true;
+  const showPublic = socialOn && Boolean(collection.is_public) && !owner;
+  // The owner's own shared one: who sees it, on its cover.
+  const sharedWith = socialOn && !owner && collection.visibility === "shared" ? (collection.shared_with ?? null) : null;
+  const sharedNames = sharedWith
+    ? peopleNames(
+        sharedWith.people.map((person) => person.display_name),
+        sharedWith.count,
+        t,
+        i18n.language,
+      )
+    : "";
   const [syncOpen, setSyncOpen] = useState(false);
   const contextMenu = useCardContextMenu();
   // A tool's collection is as fixed as a built-in one: no menu, and left out of merging and deleting.
@@ -207,6 +222,7 @@ export default function CollectionCard({
         >
           <Box
             sx={{
+              position: "relative",
               width: "100%",
               aspectRatio: "4 / 3",
               bgcolor: (muiTheme) =>
@@ -254,6 +270,61 @@ export default function CollectionCard({
                 ))}
               </Box>
             )}
+            {sharedWith && !selectMode && (
+              <Tooltip
+                title={
+                  sharedWith.count
+                    ? t("models:collections.card.sharedWith", { names: sharedNames })
+                    : t("models:collections.form.sharedNobody")
+                }
+              >
+                <Box
+                  component="button"
+                  type="button"
+                  aria-label={t("models:collections.card.changeSharing", {
+                    who: sharedWith.count ? sharedNames : t("models:collections.form.sharedNobody"),
+                  })}
+                  onClick={(event: React.MouseEvent) => {
+                    event.stopPropagation();
+                    menuRef.current?.openShare();
+                  }}
+                  sx={{
+                    position: "absolute",
+                    left: 8,
+                    bottom: 8,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    pl: sharedWith.count ? "3px" : 0.75,
+                    pr: 1,
+                    py: "3px",
+                    border: 0,
+                    borderRadius: 999,
+                    // The same veil as the ⋮ button's over the cover, whatever the theme.
+                    bgcolor: "rgba(0, 0, 0, 0.6)",
+                    color: "#fff",
+                    font: "inherit",
+                    fontSize: "0.72rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    animation: "shared-pill-in 200ms ease-out",
+                    "@keyframes shared-pill-in": {
+                      from: { opacity: 0, transform: "scale(0.9)" },
+                      to: { opacity: 1, transform: "none" },
+                    },
+                    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                    "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
+                  }}
+                >
+                  {sharedWith.count ? (
+                    <SharedAvatars people={sharedWith.people} size={18} ringColor="rgba(0, 0, 0, 0.6)" />
+                  ) : (
+                    <GroupOutlinedIcon sx={{ fontSize: 16 }} />
+                  )}
+                  {sharedWith.count}
+                </Box>
+              </Tooltip>
+            )}
           </Box>
 
           {selectMode && !system && <SelectionCheck selected={selected} />}
@@ -273,6 +344,7 @@ export default function CollectionCard({
               }}
             >
               <CollectionActionsMenu
+                ref={menuRef}
                 collection={collection}
                 onUpdated={onUpdated}
                 onDeleted={() => onDeleted(collection.id)}

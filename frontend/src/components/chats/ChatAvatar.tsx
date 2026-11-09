@@ -9,7 +9,13 @@ import InstanceAvatar from "../InstanceAvatar";
 import UserAvatar from "../UserAvatar";
 
 /** A green dot on someone's picture while they have Thingport open; their instance's badge for someone elsewhere. */
-export function PersonAvatar({ person, size = 36 }: { person: ChatPerson | null; size?: number }) {
+export function PersonAvatar({
+  person,
+  size = 36,
+}: {
+  person: (Omit<ChatPerson, "online"> & { online?: boolean }) | null;
+  size?: number;
+}) {
   if (!person) {
     return (
       <Avatar sx={{ width: size, height: size, fontSize: Math.round(size * 0.45), bgcolor: "action.selected" }}>

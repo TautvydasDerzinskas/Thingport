@@ -70,6 +70,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
     paths: [
       "/collections",
       "/collection/:id",
+      "/collection/:id/sharing",
       "/print/:id/collections",
       "/bookmarks",
       "/social",
@@ -77,6 +78,8 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/explore/user/:id",
       "/explore/user/:id/collections",
       "/explore/user/:id/models",
+      "/explore/shared",
+      "/explore/elsewhere/shared",
       "/explore/elsewhere/person/:id",
       "/explore/elsewhere/person/:id/collections",
       "/explore/elsewhere/person/:id/models",

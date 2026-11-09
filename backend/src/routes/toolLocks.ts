@@ -9,7 +9,17 @@ import { assertNotToolCollections, assertNotToolModels } from "../services/tools
 
 // What may still be done to a tool's model: things about the user's use of it, not the model itself. A copy is the
 // copier's own model, which leaves this one as it was.
-const PRINT_ALLOWED = [/^favorite$/, /^download$/, /^quality$/, /^plate\/[^/]+\/normalize$/, /^copy$/];
+const PRINT_ALLOWED = [/^favorite$/i, /^download$/i, /^quality$/i, /^plate\/[^/]+\/normalize$/i, /^copy$/i];
+
+/** A path's id as the route's parameter gets it: decoded, as Express decodes parameters, so `%61` can't stand for
+ *  `a` past the lock. Null for an encoding Express refuses, which never reaches a route. */
+function param(raw: string): string | null {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+}
 
 const ids = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];
@@ -17,17 +27,25 @@ const ids = (value: unknown): string[] =>
 export const toolLocks = asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
   if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return next();
   const body = (req.body ?? {}) as Record<string, unknown>;
+  // As the routes match it: Express takes `/collection/x/` for `/collection/x`, so a trailing slash mustn't get past,
+  // and `/Collection/x` too, so neither may another letter case (the ids keep theirs).
+  const path = req.path.length > 1 ? req.path.replace(/\/+$/, "") : req.path;
+  const route = path.toLowerCase();
 
-  const print = /^\/print\/([^/]+)(?:\/(.+))?$/.exec(req.path);
-  if (print && !PRINT_ALLOWED.some((allowed) => allowed.test(print[2] ?? ""))) await assertNotToolModels([print[1]]);
-  if (req.path === "/prints/tags") await assertNotToolModels(ids(body.print_ids));
+  const print = /^\/print\/([^/]+)(?:\/(.+))?$/i.exec(path);
+  const printId = print ? param(print[1]) : null;
+  if (print && printId && !PRINT_ALLOWED.some((allowed) => allowed.test(print[2] ?? ""))) {
+    await assertNotToolModels([printId]);
+  }
+  if (route === "/prints/tags") await assertNotToolModels(ids(body.print_ids));
 
   // The collection itself and what's in it; a bookmark of it is the user's own.
-  const collection = /^\/collection\/([^/]+)(?:\/(items(?:\/.*)?))?$/.exec(req.path);
-  if (collection && (collection[2] || req.method === "PATCH" || req.method === "DELETE"))
-    await assertNotToolCollections([collection[1]]);
-  if (req.path === "/collections/delete") await assertNotToolCollections(ids(body.ids));
-  if (req.path === "/collections/merge")
+  const collection = /^\/collection\/([^/]+)(?:\/(items(?:\/.*)?))?$/i.exec(path);
+  const collectionId = collection ? param(collection[1]) : null;
+  if (collection && collectionId && (collection[2] || req.method === "PATCH" || req.method === "DELETE"))
+    await assertNotToolCollections([collectionId]);
+  if (route === "/collections/delete") await assertNotToolCollections(ids(body.ids));
+  if (route === "/collections/merge")
     await assertNotToolCollections([
       ...ids(body.ids),
       ...(typeof body.primary_id === "string" ? [body.primary_id] : []),

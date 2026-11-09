@@ -155,6 +155,15 @@ export const PROVIDER_DOCS = [
     description:
       "Import Meshy's community models and your own AI generations as print-ready 3MFs, with your own sign-in.",
   },
+  {
+    slug: "providers/pixup3d",
+    source: "docs/providers/pixup3d.md",
+    group: "Providers",
+    title: "PIXUP",
+    nav: "PIXUP",
+    description:
+      "Import PIXUP's free models and the ones you bought, and anyone's wishlist or collections, with your own sign-in.",
+  },
 ];
 
 /** What each provider's page shows besides its Markdown and the comparison table, from its manifest and docs.ts: a
@@ -585,6 +594,28 @@ export const PROVIDER_PAGES = [
       categories: true,
     },
   },
+  {
+    docsSlug: "pixup3d",
+    accent: "#DC4B2D",
+    highlight: {
+      title: "Free models, ordered for you",
+      text: "PIXUP hands out even a free model's files only once it's in your library, through a $0 order. Thingport places that order itself, as long as your PIXUP cart holds nothing paid.",
+    },
+    facts: {
+      signIn: "user",
+      grab: "recommended",
+      grabSite: "optional",
+      flaresolverr: "none",
+      collections: true,
+      likes: true,
+      sync: true,
+      profiles: false,
+      slicers: [],
+      bambuProjects: false,
+      trending: "trending",
+      categories: true,
+    },
+  },
 ];
 
 /** The comparison table of docs/PROVIDER_SETUP.md, for the foot of each provider's page: the columns' headings, a row
@@ -824,6 +855,19 @@ export const PROVIDER_COMPARISON = {
         { need: "none" },
         { yes: true },
         { yes: false },
+        { yes: true },
+        { yes: false },
+      ],
+    },
+    {
+      docsSlug: "pixup3d",
+      name: "PIXUP",
+      cells: [
+        { text: "Yours, for the files" },
+        { need: "recommended" },
+        { need: "none" },
+        { text: "Collections, wishlists" },
+        { yes: true },
         { yes: true },
         { yes: false },
       ],

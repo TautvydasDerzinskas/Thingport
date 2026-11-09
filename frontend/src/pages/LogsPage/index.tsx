@@ -61,6 +61,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   model_copied: "success",
   collection_created: "success",
   collection_edited: "warning",
+  collection_sharing_changed: "warning",
   collection_deleted: "error",
   collections_merged: "warning",
   collection_item_added: "info",
@@ -159,6 +160,7 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "model_copied":
       case "collection_created":
       case "collection_edited":
+      case "collection_sharing_changed":
       case "collection_deleted":
       case "collection_item_added":
       case "collection_item_removed":

@@ -21,7 +21,9 @@ up, see the [connected instances guide](../guides/connected-instances.md).
   single partner narrows it down.
 - **Their models, as if they were here.** A partner's model opens with its pictures, description, files and the
   collections it's in. Download it file by file or as a ZIP, open it straight in your slicer, or **Copy to my library**
-  to keep your own copy, which stays even if they change or delete theirs.
+  to keep your own copy, which stays even if they change or delete theirs. The copy is the same model as theirs, with
+  its tags, print profiles and the site it came from, in your own category of the same name when you have one. If you
+  already have the model from that site, it opens yours instead.
 - **Their profiles.** A partner's person has a profile page like anyone here, with their cover, bio, links, shared
   models and public collections.
 - **Chats across instances.** Write to a partner's person directly, or add them to a private room. Messages arrive on
@@ -114,6 +116,7 @@ Partners see exactly what anyone signed in on your instance could see of someone
 | Public collections, and the models in them                                   | Private collections, and the rest of everyone's library |
 | Models made public under **My models**                                       | Settings, API tokens, provider sign-ins                 |
 | Messages in chats with partners' people                                      | Chats with nobody from that partner in them             |
+| Collections shared with partners' people, to their instance only             | Who else a collection is shared with, elsewhere         |
 | Handles, `name@this-instance`                                                | Your instance's users list, logs and stats              |
 
 ### Each instance keeps a copy

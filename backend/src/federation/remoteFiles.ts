@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { canSeeRemoteModel } from "./sharedCollections";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import os from "node:os";
@@ -12,24 +13,32 @@ import { prisma } from "../db";
 import { HttpError, sanitizeFilename } from "../utils/fileUtils";
 import { writeZip } from "../utils/zipWriter";
 import { originOf } from "./addresses";
+import type { RemoteFileDetails } from "./remoteIndex";
 import { signedGet } from "./signedFetch";
 
 /** A partner's model's files, through this instance: streamed to a viewer to download or open in a slicer, fetched
  *  whole to zip them or copy them (remoteCopy.ts). Never kept: what's in a viewer's library is their own copy. Only
  *  from an ACTIVE partner, and only the addresses its own model document gave, on its own origin. */
 
-export type RemoteFile = { name: string; size: number | null; mediaType: string | null; url: string | null };
+export type RemoteFile = {
+  name: string;
+  size: number | null;
+  mediaType: string | null;
+  url: string | null;
+} & RemoteFileDetails;
 export type RemoteModelRow = RemoteModel & { peer: Peer; person: RemotePerson };
 
 // However long a big file takes; the connection's own idle limit still ends one that stalls.
 const TRANSFER_MS = 30 * 60 * 1000;
 
-export async function activeRemoteModel(id: string): Promise<RemoteModelRow> {
+/** A partner's model `viewerId` may open: one shared openly there, or in a collection shared with them. 404 for any
+ *  other. */
+export async function activeRemoteModel(id: string, viewerId: string): Promise<RemoteModelRow> {
   const model = await prisma.remoteModel.findFirst({
     where: { id, peer: { status: "ACTIVE" } },
     include: { peer: true, person: true },
   });
-  if (!model) throw new HttpError(404, "Not found");
+  if (!model || !(await canSeeRemoteModel(model, viewerId))) throw new HttpError(404, "Not found");
   return model;
 }
 
@@ -37,13 +46,28 @@ export async function activeRemoteModel(id: string): Promise<RemoteModelRow> {
  *  keeps them: anything else is never fetched. */
 export function filesOf(model: Pick<RemoteModel, "files">, origin: string): RemoteFile[] {
   const list = Array.isArray(model.files) ? (model.files as Record<string, unknown>[]) : [];
+  const own = (url: unknown): url is string => typeof url === "string" && originOf(url) === origin;
   return list.map((file) => ({
     name: typeof file.name === "string" ? file.name : "file",
     size: typeof file.size === "number" ? file.size : null,
     mediaType: typeof file.mediaType === "string" ? file.mediaType : null,
-    url: typeof file.url === "string" && originOf(file.url) === origin ? file.url : null,
+    url: own(file.url) ? file.url : null,
+    // As remoteIndex.ts checked them; a row from before has none.
+    kind: file.kind === "plate" || file.kind === "file" ? file.kind : undefined,
+    role: file.role === "SUPPORTING" || file.role === "PREPARED" ? file.role : undefined,
+    profileId: typeof file.profileId === "string" ? file.profileId : undefined,
+    profile: isProfile(file.profile) ? file.profile : undefined,
+    thumb: own(file.thumb) ? file.thumb : undefined,
+    thumbGenerated: own(file.thumb) && file.thumbGenerated === true ? true : undefined,
   }));
 }
+
+const isProfile = (value: unknown): value is NonNullable<RemoteFileDetails["profile"]> =>
+  typeof value === "object" &&
+  value !== null &&
+  typeof (value as { version?: unknown }).version === "number" &&
+  typeof (value as { facts?: unknown }).facts === "object" &&
+  (value as { facts?: unknown }).facts !== null;
 
 /** A file's key in the address a viewer gets, from its own address at the partner: a read that reorders the model's
  *  files never turns an address handed out into another file, and one no longer shared answers 404. */
@@ -86,7 +110,7 @@ export async function streamRemoteFile(
   modelId: string,
   key: string,
 ): Promise<void> {
-  const model = await activeRemoteModel(modelId);
+  const model = await activeRemoteModel(modelId, req.userId!);
   const file = filesOf(model, model.peer.origin).find((item) => item.url && fileKey(item.url) === key);
   if (!file?.url) throw new HttpError(404, "Not found");
   const viewer = untilGone(req, res);
@@ -144,7 +168,7 @@ export async function sendRemoteZip(
   modelId: string,
   userId: string,
 ): Promise<void> {
-  const model = await activeRemoteModel(modelId);
+  const model = await activeRemoteModel(modelId, userId);
   const files = filesOf(model, model.peer.origin);
   if (!files.some((file) => file.url)) throw new HttpError(404, "No files available for download");
   const known = files.reduce((sum, file) => sum + (file.url ? (file.size ?? 0) : 0), 0);

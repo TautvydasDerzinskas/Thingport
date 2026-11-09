@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { useTranslation } from "react-i18next";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
@@ -15,9 +15,16 @@ import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import SyncIcon from "@mui/icons-material/Sync";
 import SyncDisabledIcon from "@mui/icons-material/SyncDisabled";
+import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { UnauthorizedError } from "../../api/client";
-import { type Collection, type CollectionInput, collectionsApi } from "../../api/collections";
+import {
+  type Collection,
+  type CollectionInput,
+  type CollectionSharingPatch,
+  collectionsApi,
+  withSharing,
+} from "../../api/collections";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 import DownloadZipConfirmDialog from "../../components/DownloadZipConfirmDialog";
@@ -27,6 +34,12 @@ import { allProvidersOff, useDisabledProviders } from "../../hooks/useProviders"
 import { importProviderInfo } from "../../constants/importProviders";
 import type { ImportProvider } from "../../api/settings";
 import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
+import { useSocialStatus } from "../../hooks/useSocialStatus";
+
+export type CollectionActionsHandle = {
+  /** Opens its form on who it's shared with, as Share… in the menu does. */
+  openShare: () => void;
+};
 
 type Props = {
   collection: Collection;
@@ -41,21 +54,27 @@ type Props = {
 };
 
 /** Shared by the collection detail header and the Collections grid cards. */
-export default function CollectionActionsMenu({
-  collection,
-  onUpdated,
-  onUnauthorized,
-  onDeleted,
-  onBookmarksChanged,
-  triggerSx,
-  contextMenuAt,
-  onContextMenuClose,
-}: Props) {
+const CollectionActionsMenu = forwardRef<CollectionActionsHandle, Props>(function CollectionActionsMenu(
+  {
+    collection,
+    onUpdated,
+    onUnauthorized,
+    onDeleted,
+    onBookmarksChanged,
+    triggerSx,
+    contextMenuAt,
+    onContextMenuClose,
+  },
+  ref,
+) {
   const { t } = useTranslation(["models", "common"]);
   const confirmDialog = useConfirm();
   const showToast = useToast();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
+  // The form, as Edit opens it, or as Share… does: on who sees it.
+  const [editOpen, setEditOpen] = useState<false | "edit" | "share">(false);
+  const social = useSocialStatus();
+  useImperativeHandle(ref, () => ({ openShare: () => setEditOpen("share") }), []);
   const [deleting, setDeleting] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
@@ -91,9 +110,12 @@ export default function CollectionActionsMenu({
     }
   };
 
-  const handleEdit = async (input: CollectionInput) => {
+  const handleEdit = async (input: CollectionInput, sharing: CollectionSharingPatch | null) => {
     try {
-      onUpdated(await collectionsApi.update(collection.id, input));
+      const updated = await collectionsApi.update(collection.id, input);
+      // Saved, whatever becomes of who sees it.
+      onUpdated(updated);
+      if (sharing) onUpdated(withSharing(updated, await collectionsApi.updateSharing(collection.id, sharing)));
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();
@@ -196,7 +218,7 @@ export default function CollectionActionsMenu({
         <MenuItem
           onClick={() => {
             closeMenu();
-            setEditOpen(true);
+            setEditOpen("edit");
           }}
         >
           <ListItemIcon>
@@ -204,6 +226,19 @@ export default function CollectionActionsMenu({
           </ListItemIcon>
           <ListItemText>{t("common:edit")}</ListItemText>
         </MenuItem>
+        {social?.enabled && (
+          <MenuItem
+            onClick={() => {
+              closeMenu();
+              setEditOpen("share");
+            }}
+          >
+            <ListItemIcon>
+              <GroupAddOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("models:collections.share")}</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem onClick={handleDelete}>
           <ListItemIcon>
             <DeleteIcon fontSize="small" color="error" />
@@ -246,7 +281,13 @@ export default function CollectionActionsMenu({
       </Menu>
 
       {editOpen && (
-        <CollectionFormModal collection={collection} onClose={() => setEditOpen(false)} onSubmit={handleEdit} />
+        <CollectionFormModal
+          collection={collection}
+          share={editOpen === "share"}
+          onClose={() => setEditOpen(false)}
+          onSubmit={handleEdit}
+          onUnauthorized={onUnauthorized}
+        />
       )}
 
       {syncOpen && (
@@ -268,4 +309,6 @@ export default function CollectionActionsMenu({
       />
     </>
   );
-}
+});
+
+export default CollectionActionsMenu;

@@ -301,6 +301,16 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
       body: form,
     });
     const printId = (await uploaded.json()).prints[0].id;
+    // Sorted and tagged as she has it: a copy is the same model, in the copier's own category of the same names.
+    const testModels = async (instance: Instance) => {
+      const categories: { id: string; name: string; parent_id: string | null }[] = (
+        await call(instance, "GET", "/categories")
+      ).body;
+      const printer = categories.find((category) => category.name === "3D Printer" && !category.parent_id)!;
+      return categories.find((category) => category.name === "Test Models" && category.parent_id === printer.id)!.id;
+    };
+    await call(ruta, "POST", `/print/${printId}/category`, { category_id: await testModels(ruta) });
+    await call(ruta, "POST", `/print/${printId}/tags`, { tags: ["Gridfinity", "Bin"] });
     const collection = await call(ruta, "POST", "/collections", { name: "Tool wall", is_public: true });
     await call(ruta, "POST", `/collection/${collection.body.id}/items/${printId}`);
 
@@ -366,6 +376,9 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     const copy = await call(a, "GET", `/print/${copied.copy_id}`);
     expect(copy.body).toMatchObject({
       title: "gridfinity-bin",
+      tags: ["Gridfinity", "Bin"],
+      category_id: await testModels(a),
+      category_source: "rule",
       plates: [expect.objectContaining({ filename: "gridfinity-bin.stl" })],
       copied_from_remote: {
         instance: { origin: b.base },
@@ -432,6 +445,55 @@ describe.skipIf(!DB_A || !DB_B)("two instances pairing", () => {
     await until("A's room without Rūta", async () => {
       const detail = await call(a, "GET", `/chats/${room.body.id}`);
       return !detail.body.members.some((member: { remote: unknown }) => member.remote) && detail.body;
+    });
+
+    // Alex shares a collection with Rūta alone: B is told, reads it from A, and keeps it for her, not for Bea.
+    const deskForm = new FormData();
+    deskForm.append("files", new Blob(["solid tray endsolid"]), "desk-tray.stl");
+    const deskUpload = await fetch(`${a.base}/api/upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${a.token}` },
+      body: deskForm,
+    });
+    const deskPrintId = (await deskUpload.json()).prints[0].id;
+    const desk = await call(a, "POST", "/collections", { name: "Desk organisers" });
+    await call(a, "POST", `/collection/${desk.body.id}/items/${deskPrintId}`);
+    const shared = await call(a, "PATCH", `/collection/${desk.body.id}/sharing`, {
+      visibility: "shared",
+      add_remote_person_ids: [rutaThere.id],
+    });
+    expect(shared.status).toBe(200);
+    expect(shared.body.people[0]).toMatchObject({ display_name: "Rūta", remote: { instance: { origin: b.base } } });
+    const sharedThere = await until("B keeps Alex's collection for Rūta", async () => {
+      const res = await call(ruta, "GET", "/explore");
+      return res.body.elsewhere.shared_with_you.find((item: { name: string }) => item.name === "Desk organisers");
+    });
+    expect(sharedThere).toMatchObject({ item_count: 1, owner: { display_name: "Alex" } });
+    expect((await call(b, "GET", "/explore")).body.elsewhere.shared_with_you).toEqual([]);
+    expect((await call(b, "GET", `/explore/elsewhere/collection/${sharedThere.id}`)).status).toBe(404);
+    const deskPage = await call(ruta, "GET", `/explore/elsewhere/collection/${sharedThere.id}`);
+    expect(deskPage.body.models[0]).toMatchObject({ title: "desk-tray" });
+    const deskModel = await call(ruta, "GET", `/explore/elsewhere/model/${deskPage.body.models[0].id}`);
+    const deskFile = await fetch(`${b.base}/api${deskModel.body.files[0].url}`, {
+      headers: { Authorization: `Bearer ${ruta.token}` },
+    });
+    expect(deskFile.status).toBe(200);
+    expect(await deskFile.text()).toBe("solid tray endsolid");
+    expect((await call(b, "GET", `/explore/elsewhere/model/${deskPage.body.models[0].id}`)).status).toBe(404);
+
+    // Rūta finds Alex by his handle, though he shares nothing openly: B asks A for him.
+    const alexHandle = `${(await call(a, "GET", "/me")).body.user.username}@${new URL(a.base).host}`;
+    const alexThere = await call(ruta, "GET", `/social/people?q=${encodeURIComponent(alexHandle)}`);
+    expect(alexThere.body.people.find((item: { remote: unknown }) => item.remote)).toMatchObject({
+      display_name: "Alex",
+      remote: { handle: alexHandle },
+    });
+
+    // Taken off the list, it's gone for her on B.
+    await call(a, "PATCH", `/collection/${desk.body.id}/sharing`, { remove_remote_person_ids: [rutaThere.id] });
+    await until("B lets Alex's collection go", async () => {
+      const res = await call(ruta, "GET", "/explore");
+      return res.body.elsewhere.shared_with_you.length === 0;
     });
 
     expect((await call(a, "POST", `/federation/peers/${partner.id}/disconnect`)).status).toBe(204);

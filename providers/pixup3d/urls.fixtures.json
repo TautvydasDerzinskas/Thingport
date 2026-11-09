@@ -1,0 +1,63 @@
+[
+  {
+    "url": "https://pixup3d.com/en/posts/11033",
+    "expect": { "provider": "pixup3d", "kind": "model", "externalId": "11033" }
+  },
+  {
+    "url": "https://pixup3d.com/posts/427",
+    "expect": { "provider": "pixup3d", "kind": "model", "externalId": "427" }
+  },
+  {
+    "url": "https://www.pixup3d.com/zh-TW/posts/427/",
+    "expect": { "provider": "pixup3d", "kind": "model", "externalId": "427" }
+  },
+  {
+    "url": "https://pixup3d.com/jp/posts/8927?ref=home",
+    "expect": { "provider": "pixup3d", "kind": "model", "externalId": "8927" }
+  },
+  {
+    "url": "https://pixup3d.com/en/p/TriDimenStudio/saved_posts",
+    "expect": { "provider": "pixup3d", "kind": "list", "externalId": "likes:TriDimenStudio", "listKind": "likes" }
+  },
+  {
+    "url": "https://pixup3d.com/p/bjqs0314turchi172646563604/saved_posts/",
+    "expect": {
+      "provider": "pixup3d",
+      "kind": "list",
+      "externalId": "likes:bjqs0314turchi172646563604",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://pixup3d.com/en/p/Atlanticus/collections/5",
+    "expect": { "provider": "pixup3d", "kind": "list", "externalId": "Atlanticus/5", "listKind": "collection" }
+  },
+  {
+    "url": "https://pixup3d.com/zh-CN/p/Atlanticus/collections/2?page=3",
+    "expect": { "provider": "pixup3d", "kind": "list", "externalId": "Atlanticus/2", "listKind": "collection" }
+  },
+  {
+    "url": "https://pixup3d.com/en/posts",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://pixup3d.com/en/posts?o=most_views_w",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://pixup3d.com/en/p/Atlanticus",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://pixup3d.com/en/p/Atlanticus/collections",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://pixup3d.com/en/series/phrozen-verified",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://notpixup3d.com/en/posts/427",
+    "expect": { "provider": null, "kind": null }
+  }
+]

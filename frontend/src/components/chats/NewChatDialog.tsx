@@ -12,7 +12,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { chatsApi, type ChatPerson } from "../../api/chats";
 import { UnauthorizedError } from "../../api/client";
 import { useChats } from "./ChatsContext";
-import PeoplePicker from "./PeoplePicker";
+import PeoplePicker from "../PeoplePicker";
 
 /** Someone to write to: picking them opens the user's direct messages with them, new or not. */
 export default function NewChatDialog({
@@ -58,6 +58,7 @@ export default function NewChatDialog({
         <Stack spacing={1}>
           {error && <Alert severity="error">{error}</Alert>}
           <PeoplePicker
+            search={chatsApi.people}
             onPick={(person) => void open(person)}
             // oxlint-disable-next-line jsx-a11y/no-autofocus
             autoFocus

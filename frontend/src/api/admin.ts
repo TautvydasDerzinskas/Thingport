@@ -78,6 +78,7 @@ export type LogAction =
   | "model_copied"
   | "collection_created"
   | "collection_edited"
+  | "collection_sharing_changed"
   | "collection_deleted"
   | "collections_merged"
   | "collection_item_added"

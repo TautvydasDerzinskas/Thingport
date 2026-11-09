@@ -2120,7 +2120,8 @@
           "federation_disconnected": "Disconnected an instance",
           "federation_blocked": "Blocked an instance",
           "federation_unblocked": "Unblocked an instance",
-          "federation_user_requested": "Asked to reach someone elsewhere"
+          "federation_user_requested": "Asked to reach someone elsewhere",
+          "collection_sharing_changed": "Collection sharing changed"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -5430,7 +5431,9 @@
         "itemCount_one": "{{count}} model",
         "itemCount_other": "{{count}} models",
         "ownerAndCount_one": "{{name}} · {{count}} model",
-        "ownerAndCount_other": "{{name}} · {{count}} models"
+        "ownerAndCount_other": "{{name}} · {{count}} models",
+        "sharedWith": "Shared with {{names}}",
+        "changeSharing": "Shared with {{who}}: change who sees it"
       },
       "form": {
         "createTitle": "New Collection",
@@ -5442,16 +5445,32 @@
         "create": "Create",
         "saveFailed": "Failed to save the collection. Please try again.",
         "visibilityLabel": "Visibility",
-        "visibilityHelp": "Public collections show on Explore: the instance's other users can open, download and copy their models. Private ones are yours alone.",
+        "visibilityHelp": "Private collections are yours alone. Shared ones are seen by the people you pick, here or on connected instances, public ones by everyone, on Explore. Whoever sees one can open, download and copy its models.",
         "private": "Private",
-        "public": "Public"
+        "public": "Public",
+        "shared": "Shared",
+        "sharedCount_one": "{{count}} person can see it",
+        "sharedCount_other": "{{count}} people can see it",
+        "sharedNobody": "Nobody yet: only you can see it",
+        "sharedElsewhere_one": "{{count}} on a connected instance",
+        "sharedElsewhere_other": "{{count}} on connected instances",
+        "sharedHelp": "They see it as they would a public collection: they can open, download and copy its models, and are told when you share it with them. Who else it's shared with is yours to know. Someone on a connected instance sees it through their own instance, which shows it to them alone; that instance's admins could see it too.",
+        "keptPeople_one": "{{names}} stays on the list: pick Shared to share it again.",
+        "keptPeople_other": "{{names}} stay on the list: pick Shared to share it again.",
+        "andMore_one": "{{count}} more",
+        "andMore_other": "{{count}} more",
+        "peopleFailed": "Couldn't load who it's shared with, so who sees it can't be changed until it does.",
+        "createdNotShared": "“{{name}}” was made, but couldn't be shared. Share… in its menu tries again.",
+        "findPeopleHelp": "Any part of a name finds someone here or on a connected instance; an email finds someone here only when typed in full, and is never shown. Someone elsewhere you can't find: type their whole handle, like name@their-instance."
       },
       "detail": {
         "title": "{{name}}",
         "subtitle": "Collection",
         "empty": "No models in this collection yet.",
         "confirmDelete": "Delete \"{{name}}\"? Models in it are not deleted.",
-        "deleteFailed": "Failed to delete the collection."
+        "deleteFailed": "Failed to delete the collection.",
+        "sharedWith_one": "Shared with {{count}}",
+        "sharedWith_other": "Shared with {{count}}"
       },
       "errors": {
         "loadFailed": "Unable to load collections.",
@@ -5560,7 +5579,8 @@
         "openToolUnknown": "Open the tool",
         "cantSelect": "A tool's collection can't be merged or deleted"
       },
-      "publicHint": "Public: shown to others on Explore"
+      "publicHint": "Public: shown to others on Explore",
+      "share": "Share…"
     },
     "tags": {
       "pageTitle": "Tags",
@@ -5974,7 +5994,12 @@
         "label": "Show",
         "all": "Everywhere",
         "here": "This instance"
-      }
+      },
+      "sharedWithYou": "Shared with you",
+      "sharedWithYouHelp": "Collections their owners shared with you and a few others. Nobody else sees them on Explore.",
+      "showMore_one": "Show {{count}} more",
+      "showMore_other": "Show {{count}} more",
+      "sharedFailed": "Couldn't load more of what's shared with you. Try again."
     }
   },
   "providers": {
@@ -6599,6 +6624,43 @@
       },
       "sync": {
         "notConnected": "OwlCAD can't be reached right now."
+      }
+    },
+    "pixup3d": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open pixup3d.com while signed in. It connects your account, and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at pixup3d.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → pixup3d.com, copy the value of _phrozen_session and paste it below. The Cookie header of a signed-in pixup3d.com request works too."
+        ],
+        "placeholder": "The _phrozen_session cookie, or a signed-in request's Cookie header"
+      },
+      "status": {
+        "notConnected": "PIXUP gives its files to signed-in members only, its free models included. Connect your account to import the ones you own; anyone's wishlist and collections read without it.",
+        "expired": "Sign-in expired. Sign in on pixup3d.com with Thingport Grab, or connect PIXUP again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "PIXUP: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Phrozen's model marketplace: figures, busts and tabletop miniatures, many pre-supported for resin printing, free and paid.",
+        "signIn": "Your own sign-in, for the files of the models you own; anyone's wishlist and collections read without it.",
+        "grab": "Sends your sign-in as you visit pixup3d.com, and marks the paid models you haven't bought.",
+        "setup": [
+          "Install Thingport Grab, enable it on PIXUP and open pixup3d.com signed in.",
+          "By hand: copy the _phrozen_session cookie of a signed-in pixup3d.com tab and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, wishlists and collections. Lists read without a sign-in; the files need each user's own. A free model is put in their PIXUP library with a $0 order first; a paid one only imports once bought."
+      },
+      "sync": {
+        "notConnected": "Connect PIXUP in Configuration > Providers, or visit it with Thingport Grab, to see your wishlist and collections here."
+      },
+      "blocked": {
+        "paid": {
+          "title": "Paid model",
+          "hint": "Buy it on PIXUP first. Once it's in your library, Thingport imports it."
+        }
       }
     }
   }

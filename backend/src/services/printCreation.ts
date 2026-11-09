@@ -68,6 +68,8 @@ export type PrintMetaInput = {
   /** Backs de-duplication of future imports of the same source model. */
   sourceProvider?: string | null;
   sourceExternalId?: string | null;
+  /** What its source had nothing for at the last fill (Print.unfillableGaps), carried over by a copy. */
+  unfillableGaps?: string[];
   /** The source has the script this model is generated from, but its creator chose not to share it. */
   generatorScriptWithheld?: boolean;
   /** Another user's model this one is a copy of (services/modelCopyService.ts), and the first original behind it. */
@@ -306,6 +308,7 @@ export async function createPrint(
       authorId,
       sourceProvider: meta.sourceProvider ?? null,
       sourceExternalId: meta.sourceExternalId ?? null,
+      unfillableGaps: meta.unfillableGaps ?? [],
       generatorScriptWithheld: meta.generatorScriptWithheld ?? false,
       copiedFromId: meta.copiedFromId ?? null,
       originalId: meta.originalId ?? null,

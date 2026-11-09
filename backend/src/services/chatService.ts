@@ -862,10 +862,15 @@ async function searchPeopleElsewhere(term: string, take: number): Promise<ChatPe
 }
 
 /** The instance's other users, by any part of their name, or by their whole email -- part of one would let anyone
- *  spell out the others' a letter at a time; then, while connected instances are on, partners' people. Everyone, by
- *  name, for no query. Never their emails. */
-export async function searchPeople(viewer: Viewer, query: string): Promise<ChatPersonOut[]> {
+ *  spell out the others' a letter at a time; then, while connected instances are on, partners' people, unless
+ *  `elsewhere` is false. Everyone, by name, for no query. Never their emails. */
+export async function searchPeople(
+  viewer: Viewer,
+  query: string,
+  { elsewhere = true }: { elsewhere?: boolean } = {},
+): Promise<ChatPersonOut[]> {
   const local = await searchPeopleHere(viewer, query);
+  if (!elsewhere) return local;
   const { isFederationLive } = await import("../federation/settings");
   if (!(await isFederationLive())) return local;
   return [...local, ...(await searchPeopleElsewhere(query.trim().slice(0, 200), MAX_PEOPLE_ELSEWHERE))];

@@ -1,0 +1,53 @@
+{
+  "data": {
+    "id": 893,
+    "name": "STL from Designer",
+    "post": {
+      "id": 427,
+      "url": "https://pixup3d.com/posts/427",
+      "path": "/posts/427",
+      "creator": {
+        "id": 2641,
+        "username": "Phrozen",
+        "display_name": "Phrozen",
+        "brand_name": "Phrozen",
+        "is_admin_user": false,
+        "post_count": 19,
+        "avatar_url": "https://file.pixup3d.com/uploads/profile/avatar/2641/x1_Phrozen_Logo%E5%9C%93_%E5%B7%A5%E4%BD%9C%E5%8D%80%E5%9F%9F_1__1_.png",
+        "public_path": "/p/Phrozen",
+        "created_at": "2023-03-09T15:58:37+08:00",
+        "read_pv_disclaimer": null
+      },
+      "title": "Phrozen XP Finder",
+      "adv_post": true,
+      "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/18752/webp_x1_Phrozen%20XP%20Finder_2000x2000_1.webp",
+      "state": "published",
+      "price": "0.0",
+      "original_price": "0.0",
+      "phrozen_verified": false,
+      "visible": true,
+      "views_count": 68527,
+      "likes_count": 45,
+      "downloads_count": 37945,
+      "created_at": "2023-03-09T16:14:30+08:00",
+      "updated_at": "2026-09-08T18:45:24+08:00"
+    },
+    "price": "0.0",
+    "original_price": "0.0",
+    "content": "",
+    "phrozen_verified": false,
+    "file_type": "non_supported",
+    "include_pre_supported": false,
+    "include_non_supported": true,
+    "include_sliced": false,
+    "printer_type": [],
+    "file_groups": [
+      {
+        "id": 2763,
+        "name": "Non-supported"
+      }
+    ],
+    "in_cart": false,
+    "purchased": false
+  }
+}

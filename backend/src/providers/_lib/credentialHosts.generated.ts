@@ -81,5 +81,8 @@ export const CREDENTIAL_HOSTS = {
   "meshy-auth": {
     exact: ["auth.meshy.ai"],
   },
+  "pixup3d-session": {
+    exact: ["pixup3d.com"],
+  },
 } as const;
 export type CredentialDestination = keyof typeof CREDENTIAL_HOSTS;

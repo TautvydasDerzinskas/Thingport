@@ -39,6 +39,8 @@ import grabcad from "./grabcad/manifest.generated";
 import { urls as grabcadUrls } from "./grabcad/urls.generated";
 import meshy from "./meshy/manifest.generated";
 import { urls as meshyUrls } from "./meshy/urls.generated";
+import pixup3d from "./pixup3d/manifest.generated";
+import { urls as pixup3dUrls } from "./pixup3d/urls.generated";
 
 export type {
   AuthField,
@@ -76,6 +78,7 @@ export const PROVIDER_IDS = [
   "cgtrader",
   "grabcad",
   "meshy",
+  "pixup3d",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -98,6 +101,7 @@ export const MANIFESTS = {
   cgtrader,
   grabcad,
   meshy,
+  pixup3d,
 } as const;
 
 /** What each site is, in two or three sentences (providers/<id>/docs.ts), for the UI that introduces a provider
@@ -139,6 +143,8 @@ export const ABOUT: { readonly [K in ProviderId]: string } = {
     "An engineers' community started in Estonia in 2009 and owned by Stratasys since 2014. Its free library holds millions of CAD models, from machine parts to whole assemblies, mostly as STEP files and native CAD formats.",
   meshy:
     "An AI 3D model generator that turns a prompt or a picture into a textured model in about a minute. Its community shares the results by the hundred thousand, and lets creators mark the ones fit to print.",
+  pixup3d:
+    "Phrozen's 3D model marketplace, from the Taiwanese maker of resin printers. Its designers sell and share figures, busts and tabletop miniatures, many of them pre-supported for resin printing.",
 };
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -160,6 +166,7 @@ export const TRENDING_PROVIDER_IDS = [
   "cgtrader",
   "grabcad",
   "meshy",
+  "pixup3d",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -182,6 +189,7 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   cgtrader: cgtraderUrls,
   grabcad: grabcadUrls,
   meshy: meshyUrls,
+  pixup3d: pixup3dUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {

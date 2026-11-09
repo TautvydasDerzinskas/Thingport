@@ -1,0 +1,146 @@
+{
+  "is_owner": false,
+  "data": [
+    {
+      "id": 5,
+      "title": "NPCs",
+      "is_public": true,
+      "total_posts": 6,
+      "preview_posts": [
+        {
+          "id": 4598,
+          "title": "Female Medieval Peasant - Clio Bill - Barmaid",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/84712/webp_x1_Clio%20Bill%20-%20Barmaid.webp"
+        },
+        {
+          "id": 4597,
+          "title": "Female Medieval Peasant - Clio Bill - Terrified",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/84713/webp_x1_Clio%20Bill%20-%20Terrified.webp"
+        },
+        {
+          "id": 4599,
+          "title": "Female Medieval Peasant - Clio Bill - Attacking",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/84711/webp_x1_Clio%20Bill%20-%20Attacking.webp"
+        },
+        {
+          "id": 4595,
+          "title": "Female Medieval Peasant - Clio Bill - Dead",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/84715/webp_x1_Clio%20Bill%20-%20Dead.webp"
+        },
+        {
+          "id": 4600,
+          "title": "Female Medieval Peasant - Clio Bill - Idle",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/84710/webp_x1_Clio%20Bill%20-%20Idle.webp"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Creatures",
+      "is_public": true,
+      "total_posts": 2,
+      "preview_posts": [
+        {
+          "id": 4018,
+          "title": "Spider (12.5mm) and Giant Spider (50mm)",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/76933/webp_x1_Spider%2000.webp"
+        },
+        {
+          "id": 4019,
+          "title": "Horse",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/76951/webp_x1_Horse%20-%20Walking%2000.webp"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Objects",
+      "is_public": true,
+      "total_posts": 2,
+      "preview_posts": [
+        {
+          "id": 3105,
+          "title": "Spell Effects - Wall of Fire",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/63346/webp_x1_Spell%20Effects%20-%20Wall%20of%20Fire.webp"
+        },
+        {
+          "id": 3104,
+          "title": "Spell Effects - Wall of Ice",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/63340/webp_x1_Spell%20Effects%20-%20Wall%20of%20Ice.webp"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Heroes",
+      "is_public": true,
+      "total_posts": 40,
+      "preview_posts": [
+        {
+          "id": 3057,
+          "title": "Female Human Paladin - Athena Lightshield - Sword 1H",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/62625/webp_x1_Athena%20Lightshield%20-%20Sword%201H%2002.webp"
+        },
+        {
+          "id": 3058,
+          "title": "Female Human Paladin - Athena Lightshield - Sword 2H",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/62630/webp_x1_Athena%20Lightshield%20-%20Sword%202H%2008.webp"
+        },
+        {
+          "id": 3059,
+          "title": "Female Human Paladin - Athena Lightshield - Mace",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/62639/webp_x1_Athena%20Lightshield%20-%20Mace%2002.webp"
+        },
+        {
+          "id": 3060,
+          "title": "Female Human Paladin - Athena Lightshield - Spear",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/62654/webp_x1_Athena%20Lightshield%20-%20Spear%2001.webp"
+        },
+        {
+          "id": 3064,
+          "title": "Male Human Barbarian - Sven Bloodaxe - Battleaxe Calm",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/62663/webp_x1_Sven%20Bloodaxe%20-%20Battleaxe%20Calm%2001.webp"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "title": "Bundles",
+      "is_public": true,
+      "total_posts": 10,
+      "preview_posts": [
+        {
+          "id": 3071,
+          "title": "Male Human Barbarian - Sven Bloodaxe - BUNDLE",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/62727/webp_x1_Atlanticus%202024-04%20-%20Sven%20Bloodaxe.webp"
+        },
+        {
+          "id": 4021,
+          "title": "Female Human Druid - Calista Ravenswood - BUNDLE",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/76988/webp_x1_Atlanticus%202024-12%20-%20Calista%20Ravenswood.webp"
+        },
+        {
+          "id": 3082,
+          "title": "Male Human Monk - Kenshin Tanaka - BUNDLE",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/62842/webp_x1_Atlanticus%20Arts%202024-05%20-%20Kenshin%20Tanaka.webp"
+        },
+        {
+          "id": 3094,
+          "title": "Male Half-Orc Fighter - Gorak Brokenfang - BUNDLE",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/63234/webp_x1_Atlanticus%202024-06%20-%20Gorak%20Brokenfang.webp"
+        },
+        {
+          "id": 3284,
+          "title": "Female Elf Bard - Isolde Nightstring - BUNDLE",
+          "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/67754/webp_x1_Atlanticus%202024-09%20-%20Isolde%20Nightstring.webp"
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 1,
+    "per_page": 20,
+    "total_count": 5
+  }
+}

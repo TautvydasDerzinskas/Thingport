@@ -370,7 +370,7 @@ describe("Explore with partners", () => {
         userId: shelver.id,
         name: `C${n}`,
         nameNormalized: `c${n}`,
-        isPublic: true,
+        visibility: "PUBLIC",
       })),
     });
     const page = await request(app).get(`/api/explore/user/${shelver.id}`).set(auth(viewer));
@@ -729,7 +729,7 @@ describe("keeping it current", () => {
     const collector = await register("Collector");
     const make = (name: string) =>
       prisma.collection.create({
-        data: { userId: collector.id, name, nameNormalized: name.toLowerCase(), isPublic: true },
+        data: { userId: collector.id, name, nameNormalized: name.toLowerCase(), visibility: "PUBLIC" },
         select: { id: true },
       });
     const shelves = [];
@@ -776,7 +776,7 @@ describe("keeping it current", () => {
     expect(rest.next).toBeUndefined();
     expect(new Set([...full["thingport:models"].first.orderedItems, ...rest.orderedItems]).size).toBe(parts.length);
     // A private one's aren't given.
-    await prisma.collection.update({ where: { id: shelves[0].id }, data: { isPublic: false } });
+    await prisma.collection.update({ where: { id: shelves[0].id }, data: { visibility: "PRIVATE" } });
     expect(await collectionModelsPage(shelves[0].id, 0)).toBeNull();
   });
 

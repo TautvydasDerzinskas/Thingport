@@ -4,6 +4,7 @@ import { requireAdmin, requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
+import { prisma } from "../db";
 import { createLog } from "../services/auditLog";
 import { copyPrintToLibrary } from "../services/modelCopyService";
 import { printOutById } from "../services/printLoader";
@@ -15,6 +16,8 @@ import {
   exploreUserCollections,
   exploreUserModels,
   PERSON_COLLECTIONS_PAGE,
+  SHARED_WITH_YOU_PAGE,
+  sharedWithYou,
   socialStatus,
 } from "../services/socialService";
 import { sendRemoteMedia } from "../federation/media";
@@ -26,12 +29,17 @@ import {
   remotePerson,
   remotePersonCollections,
   remotePersonModels,
+  REMOTE_SHARED_PAGE,
+  remoteSharedWithYou,
 } from "../federation/remoteExplore";
 import { remoteCopyStatus, startRemoteCopy } from "../federation/remoteCopy";
 import { sendRemoteZip, streamRemoteFile } from "../federation/remoteFiles";
 import { syncStale } from "../federation/remoteIndex";
 import { isFederationLive } from "../federation/settings";
 import { parseSortMode, splitList } from "../services/printQuery";
+import { MAX_SHARES, remoteShareOut, sharingOf, updateSharing } from "../services/collectionSharing";
+import { personByHandle } from "../federation/sharedCollections";
+import { searchPeople } from "../services/chatService";
 
 const router = Router();
 
@@ -98,14 +106,30 @@ router.get(
     const live = await isFederationLive();
     const local = !live || scope === "all" || scope === "here" ? await exploreOverview(req.userId!) : EMPTY_EXPLORE;
     if (!live) {
-      res.json({ ...local, elsewhere: { people: [], recent_models: [], recent_collections: [] }, instances: [] });
+      res.json({
+        ...local,
+        elsewhere: {
+          people: [],
+          recent_models: [],
+          recent_collections: [],
+          shared_with_you: [],
+          shared_with_you_total: 0,
+        },
+        instances: [],
+      });
       return;
     }
     void syncStale(EXPLORE_FRESH_MS).catch(() => {});
     const [elsewhere, instances] = await Promise.all([
       scope === "here"
-        ? Promise.resolve({ people: [], recent_models: [], recent_collections: [] })
-        : remoteOverview(scope === "all" ? null : scope),
+        ? Promise.resolve({
+            people: [],
+            recent_models: [],
+            recent_collections: [],
+            shared_with_you: [],
+            shared_with_you_total: 0,
+          })
+        : remoteOverview(scope === "all" ? null : scope, req.userId!),
       instancesOut(),
     ]);
     res.json({ ...local, elsewhere, instances });
@@ -118,6 +142,19 @@ async function assertElsewhere(): Promise<void> {
   await assertSocialOn();
   if (!(await isFederationLive())) throw new HttpError(404, "Connected instances are off", "federation_off");
 }
+
+// What partners' people shared with the viewer, past the first page Explore came with: ?scope=all (the default) or
+// a partner's id, as Explore's.
+router.get(
+  "/explore/elsewhere/shared",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    const scope = typeof req.query.scope === "string" && req.query.scope !== "all" ? req.query.scope : null;
+    const { limit, offset } = pageQuery(req.query, REMOTE_SHARED_PAGE);
+    const page = await remoteSharedWithYou(scope, req.userId!, limit, offset);
+    sendPage(res, page.collections, offset, page.total);
+  }),
+);
 
 router.get(
   "/explore/elsewhere/person/:id",
@@ -201,7 +238,7 @@ router.get(
   asyncHandler(async (req, res) => {
     await assertElsewhere();
     const { limit, offset } = pageQuery(req.query, 30);
-    const page = await remoteCollection(req.params.id, limit, offset);
+    const page = await remoteCollection(req.params.id, limit, offset, req.userId!);
     if (!page) throw new HttpError(404, "Not found");
     res.json(page);
   }),
@@ -211,7 +248,7 @@ router.get(
   "/explore/elsewhere/media/:token",
   asyncHandler(async (req, res) => {
     await assertElsewhere();
-    await sendRemoteMedia(req.params.token, res);
+    await sendRemoteMedia(req.params.token, res, req.userId!);
   }),
 );
 
@@ -234,6 +271,82 @@ router.get(
     const page = await exploreUserCollections(req.userId!, req.params.id, limit, offset);
     if (!page) throw new HttpError(404, "User not found");
     sendPage(res, page.collections, offset, page.total);
+  }),
+);
+
+// Collections their owners shared with the viewer, past the first page Explore came with.
+router.get(
+  "/explore/shared",
+  asyncHandler(async (req, res) => {
+    await assertSocialOn();
+    const { limit, offset } = pageQuery(req.query, SHARED_WITH_YOU_PAGE);
+    const page = await sharedWithYou(req.userId!, limit, offset);
+    // With when each was last shared or added to, as Explore's first page says, to order partners' beside them.
+    const items = page.collections.map((collection) => ({ ...collection, shared_at: page.at[collection.id] ?? null }));
+    sendPage(res, items, offset, page.total);
+  }),
+);
+
+// People to share a collection with: the instance's other users, by any part of their name or their whole email, as
+// a new chat finds them; then, while connected instances are on, partners' people, and someone on a partner by their
+// exact handle (name@host), asked of that partner if it's nobody this instance knows. Never their emails.
+router.get(
+  "/social/people",
+  asyncHandler(async (req, res) => {
+    await assertSocialOn();
+    const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 200) : "";
+    const people = await searchPeople({ id: req.userId!, isAdmin: false }, q);
+    if (q.includes("@") && (await isFederationLive())) {
+      const named = await personByHandle(q, req.userId!);
+      if (named && !people.some((person) => person.id === named.id)) {
+        people.push({ ...remoteShareOut(named), online: false });
+      }
+    }
+    res.json({ people });
+  }),
+);
+
+// Who the viewer's own collection is shared with, and whether it is: the whole list, kept while it's private or
+// public too.
+router.get(
+  "/collection/:id/sharing",
+  asyncHandler(async (req, res) => {
+    res.json(await sharingOf(req.userId!, req.params.id));
+  }),
+);
+
+const sharingSchema = z.object({
+  visibility: z.enum(["private", "shared", "public"]).optional(),
+  add_user_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
+  remove_user_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
+  add_remote_person_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
+  remove_remote_person_ids: z.array(z.string().min(1)).max(MAX_SHARES).optional(),
+});
+
+// Changes it: its visibility, people added to the list and taken off it (the rest stay). Those who can see it now
+// and couldn't are notified. Refused while social features are off.
+router.patch(
+  "/collection/:id/sharing",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(sharingSchema, req.body);
+    const sharing = await updateSharing(req.userId!, req.params.id, body);
+    res.json(sharing);
+    const collection = await prisma.collection.findUnique({ where: { id: req.params.id }, select: { name: true } });
+    void createLog({
+      userId: req.userId!,
+      action: "collection_sharing_changed",
+      targetId: req.params.id,
+      details: {
+        name: collection?.name ?? null,
+        visibility: sharing.visibility,
+        ...(body.add_user_ids?.length || body.add_remote_person_ids?.length
+          ? { added: (body.add_user_ids?.length ?? 0) + (body.add_remote_person_ids?.length ?? 0) }
+          : {}),
+        ...(body.remove_user_ids?.length || body.remove_remote_person_ids?.length
+          ? { removed: (body.remove_user_ids?.length ?? 0) + (body.remove_remote_person_ids?.length ?? 0) }
+          : {}),
+      },
+    });
   }),
 );
 

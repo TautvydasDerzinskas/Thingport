@@ -28,8 +28,21 @@ const PARTNER = "http://203.0.113.81";
 const PNG = Buffer.from("89504e470d0a1a0a0000000d49484452", "hex");
 let peerId: string;
 
-const app = express().get("/media/:token", (req, res) => void sendRemoteMedia(req.params.token, res));
+const app = express().get("/media/:token", (req, res) => void sendRemoteMedia(req.params.token, res, "viewer"));
 const tokenOf = (url: string) => mediaAddress(url)!.split("/").pop()!;
+const KEPT = `${PARTNER}/api/ap/media/avatar/kept?v=1`;
+const LATE = `${PARTNER}/api/ap/media/image/late?v=1`;
+const AFTER = `${PARTNER}/api/ap/media/image/after?v=1`;
+
+/** Someone of the partner's with `avatar`, and a model of theirs with `images`: what names its pictures here. */
+async function keep(avatar: string | null, images: string[]): Promise<void> {
+  const person = await prisma.remotePerson.create({
+    data: { peerId, apId: `${PARTNER}/api/ap/actors/ana`, displayName: "Ana", avatarUrl: avatar },
+  });
+  await prisma.remoteModel.create({
+    data: { peerId, personId: person.id, apId: `${PARTNER}/api/ap/models/m1`, title: "Hook", images },
+  });
+}
 
 beforeAll(async () => {
   await prisma.peer.deleteMany({ where: { origin: PARTNER } });
@@ -38,6 +51,7 @@ beforeAll(async () => {
       data: { origin: PARTNER, status: "ACTIVE", actorUrl: `${PARTNER}/api/ap/actors/instance` },
     })
   ).id;
+  await keep(KEPT, [LATE, AFTER]);
 });
 
 afterAll(async () => {
@@ -48,12 +62,18 @@ afterAll(async () => {
 describe("a partner's pictures", () => {
   it("keeps one it fetched, to send again", async () => {
     federationFetch.mockResolvedValueOnce(new Response(PNG, { headers: { "Content-Type": "image/png" } }));
-    const url = `${PARTNER}/api/ap/media/avatar/kept?v=1`;
-    const res = await request(app).get(`/media/${tokenOf(url)}`);
+    const res = await request(app).get(`/media/${tokenOf(KEPT)}`);
     expect(res.status).toBe(200);
+    expect(res.headers["cache-control"]).toBe("private, max-age=31536000, immutable");
     expect(fs.readdirSync(path.join(MEDIA_DIR, peerId))).toHaveLength(2);
     // Sent from what's kept: the partner isn't asked again.
-    expect((await request(app).get(`/media/${tokenOf(url)}`)).status).toBe(200);
+    expect((await request(app).get(`/media/${tokenOf(KEPT)}`)).status).toBe(200);
+    expect(federationFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends none that nothing kept here names, and doesn't ask the partner for it", async () => {
+    const res = await request(app).get(`/media/${tokenOf(`${PARTNER}/api/ap/media/image/unnamed?v=1`)}`);
+    expect(res.status).toBe(404);
     expect(federationFetch).toHaveBeenCalledTimes(1);
   });
 
@@ -76,7 +96,7 @@ describe("a partner's pictures", () => {
         ),
     );
     const answered = request(app)
-      .get(`/media/${tokenOf(`${PARTNER}/api/ap/media/image/late?v=1`)}`)
+      .get(`/media/${tokenOf(LATE)}`)
       .then((res) => res);
     await vi.waitFor(() => expect(federationFetch).toHaveBeenCalledTimes(2));
 
@@ -87,8 +107,9 @@ describe("a partner's pictures", () => {
     await forgetting;
     expect((await answered).status).toBe(404);
     expect(fs.existsSync(path.join(MEDIA_DIR, peerId))).toBe(false);
-    // And one asked for after is turned away, not fetched.
-    expect((await request(app).get(`/media/${tokenOf(`${PARTNER}/api/ap/media/image/after?v=1`)}`)).status).toBe(404);
+    // And one asked for after is turned away, not fetched, even named again by a read finishing meanwhile.
+    await keep(null, [AFTER]);
+    expect((await request(app).get(`/media/${tokenOf(AFTER)}`)).status).toBe(404);
     expect(federationFetch).toHaveBeenCalledTimes(2);
   });
 });

@@ -40,7 +40,7 @@ export function mediaAddress(url: string | null | undefined): string | null {
 }
 
 /** The picture behind an address `mediaAddress` gave, from what's kept or fetched now. */
-export async function sendRemoteMedia(token: string, res: Response): Promise<void> {
+export async function sendRemoteMedia(token: string, res: Response, viewerId: string): Promise<void> {
   const notFound = () => void res.status(404).json({ detail: "Not found" });
   const [encoded, signature] = token.split(".");
   if (!encoded || !signature) return notFound();
@@ -51,6 +51,9 @@ export async function sendRemoteMedia(token: string, res: Response): Promise<voi
   const origin = originOf(url);
   const peer = origin ? await prisma.peer.findUnique({ where: { origin }, select: { id: true, status: true } }) : null;
   if (!peer || peer.status !== "ACTIVE") return notFound();
+  // Kept here or not, a picture only of what was shared with some people here is theirs alone.
+  const access = await mayView(url, peer.id, viewerId);
+  if (!access) return notFound();
 
   const file = path.join(MEDIA_DIR, peer.id, mediaName(url));
   let type = await fs.readFile(`${file}.type`, "utf8").catch(() => null);
@@ -69,13 +72,36 @@ export async function sendRemoteMedia(token: string, res: Response): Promise<voi
   }
   res.setHeader("Content-Type", type);
   res.setHeader("X-Content-Type-Options", "nosniff");
-  // Its address carries the partner's version of it, so it never changes under the same one.
-  res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+  // Its address carries the partner's version of it, so it never changes under the same one. One only some people
+  // may see isn't kept by the browser: someone else signing in there would get it from what's kept.
+  res.setHeader("Cache-Control", access === "open" ? "private, max-age=31536000, immutable" : "private, no-store");
   if (type === "image/svg+xml")
     res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'");
   res.sendFile(file, (err) => {
     if (err && !res.headersSent) notFound();
   });
+}
+
+/** Whether `viewerId` may see a partner's picture, of those a browser is handed (an avatar, a cover, a model's
+ *  pictures): "open" while it's one of a person's kept here or of a model shared openly there; "limited" while it's
+ *  only of models kept for collections shared with some people here and `viewerId` may open one of those; otherwise
+ *  null, whoever has its address: one of something no longer kept here (taken off a list, say) is nobody's. */
+async function mayView(url: string, peerId: string, viewerId: string): Promise<"open" | "limited" | null> {
+  const [person, models] = await Promise.all([
+    prisma.remotePerson.findFirst({
+      where: { peerId, OR: [{ avatarUrl: url }, { coverUrl: url }] },
+      select: { id: true },
+    }),
+    // By the index on the pictures (RemoteModel_images_idx).
+    prisma.$queryRaw<{ apId: string; limited: boolean }[]>`
+      SELECT "apId", limited FROM "RemoteModel" WHERE "peerId" = ${peerId} AND images @> ARRAY[${url}]::text[]`,
+  ]);
+  if (person || models.some((model) => !model.limited)) return "open";
+  const { canSeeRemoteModel } = await import("./sharedCollections");
+  for (const model of models) {
+    if (await canSeeRemoteModel({ apId: model.apId, peerId, limited: true }, viewerId)) return "limited";
+  }
+  return null;
 }
 
 /** Fetches a picture, signed as this instance, from that partner only; its type, once it's kept. */
