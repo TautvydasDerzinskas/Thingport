@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -56,6 +57,29 @@ func TestRedactURLHidesAllSignedPathTokens(t *testing.T) {
 	}
 }
 
+func TestRedactURLHidesURLUserInfo(t *testing.T) {
+	redacted := redactURL("ftp://alice:secret-password@thingport.example/model.stl")
+	if strings.Contains(redacted, "alice") || strings.Contains(redacted, "secret-password") {
+		t.Fatalf("redacted URL contains credentials: %s", redacted)
+	}
+	if !strings.Contains(redacted, "REDACTED@") {
+		t.Fatalf("expected redacted user info, got %s", redacted)
+	}
+}
+
+func TestWindowsDefaultOpenFileExtensionAllowlist(t *testing.T) {
+	for _, name := range []string{"model.stl", "MODEL.3MF", "model.step", "model.stp", "model.obj", "model.glb", "model.gltf", "model.f3d", "model.lbrn", "model.lbrn2", "print.gcode", "print.bgcode"} {
+		if !isSafeDefaultFileExtension(name) {
+			t.Errorf("valid model file rejected: %q", name)
+		}
+	}
+	for _, name := range []string{"evil.exe", "evil.bat", "evil.cmd", "evil.ps1", "evil.lnk", "evil.url", "evil.stl.exe", "model", "script.sh", "archive.zip"} {
+		if isSafeDefaultFileExtension(name) {
+			t.Errorf("unsupported file accepted: %q", name)
+		}
+	}
+}
+
 func TestDownloadFileDoesNotExposeTokenInError(t *testing.T) {
 	err := downloadFile("https://%zz/api/t/secret-jwt/model.stl", filepath.Join(t.TempDir(), "model.stl"))
 	if err == nil || strings.Contains(err.Error(), "secret-jwt") {
@@ -86,6 +110,24 @@ func TestDownloadTLSErrorDoesNotLeakSignedURL(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), token) || strings.Contains(logs.String(), token) {
 		t.Fatalf("signed URL credential leaked in error or log: error=%v logs=%q", err, logs.String())
+	}
+}
+
+func TestSafeDownloadErrorClassifiesRemoteTLSAlert(t *testing.T) {
+	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	server.TLS = &tls.Config{ClientAuth: tls.RequireAnyClientCert}
+	server.StartTLS()
+	defer server.Close()
+
+	// Trust the test server certificate, but don't supply a client certificate.
+	_, err := server.Client().Get(server.URL)
+	if err == nil {
+		t.Fatal("expected a TLS client-certificate alert")
+	}
+	if got := safeDownloadError(err).Error(); !strings.Contains(got, "TLS") {
+		t.Fatalf("TLS alert was not classified as TLS: %q", got)
 	}
 }
 
