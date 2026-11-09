@@ -18,7 +18,7 @@ import FolderZipIcon from "@mui/icons-material/FolderZip";
 import TuneIcon from "@mui/icons-material/Tune";
 import type { SlicerOption } from "../../constants/settingsOptions";
 import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLogos";
-import { slicerHref, type ModelFile } from "./useOpenInSlicer";
+import { slicerBridgeHref, slicerHref, type ModelFile } from "./useOpenInSlicer";
 
 type Props = {
   /** The file every action but the zip applies to. */
@@ -93,7 +93,9 @@ export default function OpenInSlicerButton({
   const offersSlicers = canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
   // Likewise the download: in the menu unless it is the main button.
   const offersDownload = customizes || opensSlicer;
-  const hasMenu = offersSlicers || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
+  // Bridge is opt-in: Creality Print's native protocol remains usable without the helper installed.
+  const offersCrealityBridge = canOpen && slicerOptions.some((option) => option.id === "crealityprintlink");
+  const hasMenu = offersSlicers || offersCrealityBridge || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
   const close = () => setAnchor(null);
   const downloadIcon = downloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon fontSize="small" />;
 
@@ -171,6 +173,24 @@ export default function OpenInSlicerButton({
               <ListItemText primaryTypographyProps={{ variant: "body2" }}>{option.label}</ListItemText>
             </MenuItem>
           ))}
+        {offersCrealityBridge && (
+          <MenuItem
+            component="a"
+            href={slicerBridgeHref("crealityprintlink", file)}
+            onClick={() => {
+              onOpened("crealityprintlink");
+              close();
+            }}
+          >
+            <ListItemIcon>
+              <LogoTile id="crealityprintlink" size={16} />
+            </ListItemIcon>
+            <ListItemText
+              primaryTypographyProps={{ variant: "body2" }}
+              primary={t("models:detail.openInSlicer", { slicer: "Creality Print (Thingport Bridge)" })}
+            />
+          </MenuItem>
+        )}
         {onOpenInStudio && (
           <MenuItem
             disabled={openingInStudio}
@@ -189,7 +209,7 @@ export default function OpenInSlicerButton({
             <ListItemText primaryTypographyProps={{ variant: "body2" }}>{t("models:detail.openInStudio")}</ListItemText>
           </MenuItem>
         )}
-        {(offersSlicers || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
+        {(offersSlicers || offersCrealityBridge || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
         {offersDownload && (
           <MenuItem
             disabled={downloading}
