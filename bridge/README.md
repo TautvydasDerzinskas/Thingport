@@ -203,9 +203,14 @@ Anycubic Slicer Next is looked for as `AnycubicSlicerNext.app` or `Anycubic Slic
 on Linux. If yours is elsewhere (e.g. an AppImage), add an `anycubicslicernext` entry to
 `config.json` or set `THINGPORT_SLICER_ANYCUBICSLICERNEXT=/path/to/it`.
 
-On Windows, Bridge automatically discovers Creality Print in a versioned `Program Files/Creality/Creality Print <version>/CrealityPrint.exe` directory (such as Creality Print 7.3). If it is installed elsewhere, set `THINGPORT_SLICER_CREALITYPRINTLINK` to the executable or add a `crealityprintlink` entry to `config.json`. On macOS/Linux, use an explicit override until platform installation paths are supported.
+On Windows, Bridge automatically discovers Creality Print in a versioned
+`Program Files/Creality/Creality Print <version>/CrealityPrint.exe` directory (such
+as Creality Print 7.3). If it is installed elsewhere, set
+`THINGPORT_SLICER_CREALITYPRINTLINK` to the executable or add a `crealityprintlink`
+entry to `config.json`. On macOS/Linux, use an explicit override until platform
+installation paths are supported.
 
-On macOS, apps are looked for in both `/Applications` and your own `~/Applications`. 
+On macOS, apps are looked for in both `/Applications` and your own `~/Applications`.
 
 ## Testing
 
@@ -220,7 +225,9 @@ After install, paste this into your browser's address bar (replace the URL):
 
 ## Notes
 
-- Bridge avoids logging signed download URLs, which can embed session credentials in `/api/t/<token>/` paths. Older versions may have logged them; delete old logs and revoke exposed sessions before sharing diagnostics.
+- Bridge avoids logging signed download URLs, which can embed session credentials in
+  `/api/t/<token>/` paths. Older versions may have logged them; delete old logs
+  and revoke exposed sessions before sharing diagnostics.
 - The bridge downloads files into the user cache directory unless configured otherwise.
 - If a slicer isn't found, the file opens with the OS default app instead.
 - On macOS, the installed app keeps running in the background (no Dock icon) so repeat opens
