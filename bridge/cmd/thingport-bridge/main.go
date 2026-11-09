@@ -303,6 +303,13 @@ func safeDownloadError(err error) error {
 		errors.As(err, &tlsRecord) {
 		return errors.New("download request failed: TLS certificate or handshake error")
 	}
+	// Go's TLS stack can return remote alerts as an unexported error type.
+	// Inspect only the underlying error's fixed prefix, never its full message or URL.
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) && urlErr.Err != nil &&
+		strings.HasPrefix(urlErr.Err.Error(), "remote error: tls: ") {
+		return errors.New("download request failed: TLS certificate or handshake error")
+	}
 	return errors.New("download request failed: connection error")
 }
 
