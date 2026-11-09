@@ -19,6 +19,7 @@ import {
   urls,
 } from "./urls.generated";
 import manifest from "./manifest.generated";
+import { pinshapeLicenseIn } from "./license";
 export {
   parsePinshapeCollectionUrl,
   parsePinshapeLikesUrl,
@@ -221,6 +222,7 @@ export function pinshapeModelFromPage(html: string, modelId: string): PinshapeMo
       .map((el) => clean($(el).text())),
   );
   if (tags.length) meta.tags = tags;
+  meta.license = pinshapeLicenseIn($, ".main-item-container");
 
   // The picture it shows first, then the rest in the order its carousel has them.
   const shown = picture(main.find("img.item-detail-image").first().attr("src"));
@@ -288,12 +290,18 @@ async function moreTags(modelId: string, shown: number): Promise<string[]> {
   }
 }
 
-/** By its id. Null for a model that doesn't exist, or that it doesn't show. */
-export async function resolvePinshapeModel(modelId: string): Promise<PinshapeModelResolution | null> {
+/** A model's page by its id; null for a model that doesn't exist, or that it doesn't show. */
+export async function fetchPinshapeModelPage(modelId: string): Promise<string | null> {
   const res = await get(`/items/${modelId}`);
   if (toHome(redirectedTo(res)) || res.status === 404) return null;
   if (res.status !== 200) throw failure("this model", res);
-  const model = pinshapeModelFromPage(res.body, modelId);
+  return res.body;
+}
+
+/** By its id. Null for a model that doesn't exist, or that it doesn't show. */
+export async function resolvePinshapeModel(modelId: string): Promise<PinshapeModelResolution | null> {
+  const html = await fetchPinshapeModelPage(modelId);
+  const model = html === null ? null : pinshapeModelFromPage(html, modelId);
   const shown = model?.meta.tags ?? [];
   if (model && model.tagCount > shown.length) {
     const tags = unique([...shown, ...(await moreTags(modelId, shown.length))]);

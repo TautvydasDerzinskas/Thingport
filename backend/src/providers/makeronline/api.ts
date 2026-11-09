@@ -15,6 +15,7 @@ import {
   parseMakeronlineModelUrl,
 } from "./urls.generated";
 import manifest from "./manifest.generated";
+import { makeronlineLicenseFrom } from "./license";
 export {
   isMakeronlineLikesUrl,
   MAKERONLINE_LIKES_KEY,
@@ -174,6 +175,7 @@ export function makeronlineMetaFromDetail(detail: Record<string, unknown>): Make
     meta.siteCategoryIds = categoryIds;
     meta.categorySite = PROVIDER;
   }
+  meta.license = makeronlineLicenseFrom(detail);
   const profiles = (Array.isArray(detail.print_profiles) ? detail.print_profiles.filter(isRecord) : []).flatMap(
     (profile) => {
       const profileId = id(profile.id);

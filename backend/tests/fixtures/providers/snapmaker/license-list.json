@@ -1,0 +1,69 @@
+{
+  "code": 200,
+  "msg": "success",
+  "data": [
+    {
+      "id": 1,
+      "name": "CC BY 4.0",
+      "name_key": "cc-by",
+      "desc": "This work is licensed under the <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>CC BY</strong></a> license.",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "id": 2,
+      "name": "CC BY-NC 4.0",
+      "name_key": "cc-by-nc",
+      "desc": "This work is licensed under the <a href=\"https://creativecommons.org/licenses/by-nc/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>CC BY-NC</strong></a> license.",
+      "url": "https://creativecommons.org/licenses/by-nc/4.0/"
+    },
+    {
+      "id": 3,
+      "name": "CC BY-SA 4.0",
+      "name_key": "cc-by-sa",
+      "desc": "This work is licensed under the <a href=\"https://creativecommons.org/licenses/by-sa/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>CC BY-SA</strong></a> license.",
+      "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+    },
+    {
+      "id": 4,
+      "name": "CC BY-NC-SA 4.0",
+      "name_key": "cc-by-nc-sa",
+      "desc": "This work is licensed under the <a href=\"https://creativecommons.org/licenses/by-nc-sa/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>CC BY-NC-SA</strong></a> license.",
+      "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+    },
+    {
+      "id": 5,
+      "name": "CC BY-ND 4.0",
+      "name_key": "cc-by-nd",
+      "desc": "This work is licensed under the <a href=\"https://creativecommons.org/licenses/by-nd/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>CC BY-ND</strong></a> license.",
+      "url": "https://creativecommons.org/licenses/by-nd/4.0/"
+    },
+    {
+      "id": 6,
+      "name": "CC BY-NC-ND 4.0",
+      "name_key": "cc-by-nc-nd",
+      "desc": "This work is licensed under the <a href=\"https://creativecommons.org/licenses/by-nc-nd/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>CC BY-NC-ND</strong></a> license.",
+      "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+    },
+    {
+      "id": 7,
+      "name": "CC0 1.0",
+      "name_key": "cc0",
+      "desc": "This work is contributed to the public domain in accordance with CC0 license. <a href=\"https://creativecommons.org/publicdomain/zero/1.0/\" target=\"_blank\" rel=\"noopener noreferrer\">https://creativecommons.org/publicdomain/zero/1.0/</a>",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": 8,
+      "name": "Standard Digital File License",
+      "name_key": "standard-digital-file",
+      "desc": "<p>This work is licensed under the <strong>Standard Digital File License</strong>, permitting only non-commercial, personal use.</p><p>You shall not share, sub-license, sell, rent, host, transfer, or distribute in any way the digital or 3D printed versions of this work, nor any other derivative work of this work in its digital or physical format (including — but not limited to — remixes of this work, and hosting on other digital platforms). This work may not be used in any way whatsoever in which you charge money, collect fees, or receive any form of remuneration.</p>",
+      "url": ""
+    },
+    {
+      "id": 9,
+      "name": "Snapmaker-Only License",
+      "name_key": "snapmaker-only",
+      "desc": "<p>This work is licensed under the <strong>Snapmaker-Only License</strong>.</p><p>You are permitted to create derivative works based on this object, provided that all such derivative works are published solely on the Snapmaker platform and give credit to the original creator. You may not share, upload, host, distribute, or publish this object or any of its derivative works on any other digital platform, online marketplace, or distribution channel. Commercial use of this object or its derivative works is strictly prohibited, including but not limited to selling, leasing, sublicensing, or otherwise exploiting the object for monetary compensation or other economic gain.</p>",
+      "url": ""
+    }
+  ]
+}

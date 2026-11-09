@@ -1,0 +1,74 @@
+// A MyMiniFactory object's licence. Its API gives the licence's name (`license`) and the permissions the designer
+// picked (`licenses`, a flag each); the name is a Creative Commons one ("BY-NC-SA"), the store's for a paid object,
+// or one MyMiniFactory builds from the flags ("MyMiniFactory Exclusive - Credit - Remix - Noncommercial").
+
+import {
+  ccLicenseId,
+  licenseIdFromText,
+  type LicenseAction,
+  type ProviderLicense,
+} from "../../services/licenseCatalog";
+
+type Flags = Map<string, boolean>;
+
+function flagsOf(value: unknown): Flags {
+  const flags: Flags = new Map();
+  if (!Array.isArray(value)) return flags;
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const { type, value: on } = item as Record<string, unknown>;
+    if (typeof type === "string" && type.trim()) flags.set(type.trim().toLowerCase(), on === true);
+  }
+  return flags;
+}
+
+/** A Creative Commons licence by its name, as the site shows it ("BY-NC-SA", maybe a description after it) or spelled
+ *  out. */
+function ccId(name: string): string | null {
+  if (/myminifactory/i.test(name)) return null;
+  const head = name.match(/^(?:CC[\s_-]*)?BY(?:[\s_-]+(?:NC|ND|SA))*(?![A-Za-z])/)?.[0];
+  const id = (head ? ccLicenseId(head) : null) ?? licenseIdFromText(name);
+  return id && (id.startsWith("CC") || id === "public-domain") ? id : null;
+}
+
+/** What its own licence allows, from the flags, or failing those from the words of its name. An exclusive object may
+ *  not be put up anywhere else, so it's never passed on. */
+function ownAllows(flags: Flags, name: string | null): LicenseAction[] {
+  const words = (name ?? "").toLowerCase();
+  const has = (flag: string, yes: RegExp, no: RegExp) =>
+    flags.has(flag) ? flags.get(flag)! : yes.test(words) && !no.test(words);
+  const exclusive = flags.get("exclusivity") ?? /\bexclusive\b/.test(words);
+  const allows: LicenseAction[] = [];
+  if (!exclusive && flags.get("share")) allows.push("share");
+  if (has("remix", /\bremix\b/, /\bno[\s-]?remix\b/)) allows.push("remix");
+  if (has("commercial-use", /\bcommercial\b/, /\bnon[\s-]?commercial\b/)) allows.push("commercial");
+  return allows;
+}
+
+/** Null for an object that names no licence; undefined for one read without the fields. `paid`: on sale in its store,
+ *  whose licence covers whatever it's sold under. */
+export function myminifactoryLicenseFrom(
+  object: Record<string, unknown>,
+  paid = false,
+): ProviderLicense | null | undefined {
+  if (!("license" in object) && !("licenses" in object)) return undefined;
+  const name = typeof object.license === "string" && object.license.trim() ? object.license.trim() : null;
+  const flags = flagsOf(object.licenses);
+  const on = [...flags].filter(([, value]) => value).map(([type]) => type);
+  const raw = name ?? (flags.size ? on.join(", ") || "none" : null);
+  if (!raw) return paid ? { id: "myminifactory-store", raw: "store" } : null;
+  // The store's licence overrides every permission the designer could pick otherwise.
+  if (paid || flags.get("store") || (name && /store license/i.test(name))) return { id: "myminifactory-store", raw };
+  if (name && /official content|all rights reserved/i.test(name))
+    return { id: "all-rights-reserved", raw, label: name };
+  const cc = name ? ccId(name) : null;
+  if (cc) return { id: cc, raw };
+  const credit = flags.has("mention") ? flags.get("mention")! : /\bcredit\b/i.test(name ?? "");
+  return {
+    id: "myminifactory",
+    raw,
+    label: name,
+    allows: ownAllows(flags, name),
+    ...(credit ? { requires: { credit: true } } : {}),
+  };
+}

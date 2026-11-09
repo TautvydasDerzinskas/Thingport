@@ -1,0 +1,101 @@
+[
+  {
+    "id": "68e885a6aaaa058eabb03c65",
+    "urlAlias": "k2-d3p-riser-quad-space-extension",
+    "groupName": "K2 D3P riser -Quad Space Pi shelf extension",
+    "license": "CXY-SL",
+    "isVip": false,
+    "isExclusive": false,
+    "isPay": false,
+    "isCommercial": false,
+    "copyright": 4
+  },
+  {
+    "id": "6848425a484aeb342b6c4d0e",
+    "urlAlias": "creality-cfs-hub-4-way-motor-release",
+    "groupName": "Creality CFS Hub/4-Way Motor Release",
+    "license": "CC BY-NC",
+    "isVip": false,
+    "isExclusive": false,
+    "isPay": false,
+    "isCommercial": false,
+    "copyright": 0
+  },
+  {
+    "id": "69f7db4af76f419e084a70b5",
+    "urlAlias": "atlanta-braves-logo-keychain",
+    "groupName": "Atlanta Braves Logo Keychain (3 colors)",
+    "license": "CC BY-SA",
+    "isVip": false,
+    "isExclusive": false,
+    "isPay": false,
+    "isCommercial": false,
+    "copyright": 0
+  },
+  {
+    "id": "6aee4650de8d418cd244fd2e",
+    "urlAlias": "xmas-tree-3d-print-edition",
+    "groupName": "Christmas tree",
+    "license": "CC BY-NC-SA",
+    "isVip": false,
+    "isExclusive": false,
+    "isPay": false,
+    "isCommercial": false,
+    "copyright": 0
+  },
+  {
+    "id": "68942f573f4336b0b176d435",
+    "urlAlias": "hulk-model-3d-printing",
+    "groupName": "Hulk",
+    "license": "CC BY-NC-ND",
+    "isVip": false,
+    "isExclusive": false,
+    "isPay": false,
+    "isCommercial": false,
+    "copyright": 0
+  },
+  {
+    "id": "674e9b87e0e36f298cd27dde",
+    "urlAlias": "4-gear-fidget-spinner",
+    "groupName": "4-Gear Fidget Spinner",
+    "license": "CXY-SL",
+    "isVip": true,
+    "isExclusive": false,
+    "isPay": true,
+    "isCommercial": false,
+    "copyright": 0
+  },
+  {
+    "id": "69204cf09ede8e22c7d7741d",
+    "urlAlias": "shooting-arcade-game",
+    "groupName": "Shooting Arcade Game",
+    "license": "CXY-SL",
+    "isVip": false,
+    "isExclusive": false,
+    "isPay": false,
+    "isCommercial": true,
+    "copyright": 0
+  },
+  {
+    "id": "6adaf0f3d4b1f991f82045c3",
+    "urlAlias": "vazo-design-3d-print",
+    "groupName": "Vase - Vazo",
+    "license": "CC BY",
+    "isVip": false,
+    "isExclusive": false,
+    "isPay": false,
+    "isCommercial": false,
+    "copyright": 4
+  },
+  {
+    "id": "6a99e3a11d58b5505e2273f0",
+    "urlAlias": "3d-spiral-vase-project",
+    "groupName": "VASE",
+    "license": "CC BY-ND",
+    "isVip": false,
+    "isExclusive": false,
+    "isPay": true,
+    "isCommercial": false,
+    "copyright": 0
+  }
+]

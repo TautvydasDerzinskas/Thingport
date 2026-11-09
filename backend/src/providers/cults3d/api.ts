@@ -15,6 +15,7 @@ import {
   parseCults3dPrintlistUrl,
   urls,
 } from "./urls.generated";
+import { cults3dLicenseFrom } from "./license";
 import manifest from "./manifest.generated";
 export {
   cults3dLikesKey,
@@ -259,6 +260,7 @@ const CREATION_FIELDS = `
   illustrations { imageUrl }
   blueprints { fileName }
   creator { nick imageUrl bio url }
+  license { code name spdxId }
 `;
 
 /** The site's GraphQL ids are base64 of "Type/<number>": "Q2F0ZWdvcnkvMjM" is Category 23. */
@@ -362,6 +364,8 @@ export function cults3dMetaFromCreation(creation: Record<string, unknown>): Cult
     meta.siteCategoryIds = categories;
     meta.categorySite = PROVIDER;
   }
+  const license = cults3dLicenseFrom(creation.license);
+  if (license !== undefined) meta.license = license;
   const price = isRecord(creation.price) ? creation.price : null;
   const priceCents = count(price?.cents);
   return {
