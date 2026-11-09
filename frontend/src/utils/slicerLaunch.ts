@@ -25,13 +25,16 @@ function withFilenameHint(slicerId: string, fileUrl: string, filename: string): 
   return { fileUrl, extra: "" };
 }
 
+/** Explicit Bridge alternative for slicers whose native URL download can fail (for example Creality Print over HTTPS). */
+export function slicerBridgeLaunchUrl(slicerId: string, fileUrl: string, filename?: string): string {
+  const params = new URLSearchParams({ url: fileUrl, slicer: slicerId });
+  if (filename) params.set("filename", filename);
+  return `${BRIDGE_SCHEME}://open?${params.toString()}`;
+}
+
 // Only for SLICER_OPTIONS ids that register a protocol; never "other".
 export function slicerLaunchUrl(slicerId: string, fileUrl: string, filename?: string): string {
-  if (BRIDGED_SLICERS.has(slicerId)) {
-    const params = new URLSearchParams({ url: fileUrl, slicer: slicerId });
-    if (filename) params.set("filename", filename);
-    return `${BRIDGE_SCHEME}://open?${params.toString()}`;
-  }
+  if (BRIDGED_SLICERS.has(slicerId)) return slicerBridgeLaunchUrl(slicerId, fileUrl, filename);
   // eufyMake Studio is a PrusaSlicer fork without its Printables-only check; its link is the one its site's own
   // "Open in slicer" button makes, the file named after the link's last segment or `name`.
   if (slicerId === "eufystudio3d") {
