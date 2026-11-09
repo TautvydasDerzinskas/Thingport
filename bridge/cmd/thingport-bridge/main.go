@@ -236,6 +236,18 @@ func uniquePath(dir, name string) string {
 	return p
 }
 
+// isSafeDefaultFileExtension limits a protocol-triggered default-open to
+// supported 3D/laser model files. Never execute arbitrary downloaded programs.
+func isSafeDefaultFileExtension(filePath string) bool {
+	switch strings.ToLower(filepath.Ext(filePath)) {
+	case ".stl", ".3mf", ".step", ".stp", ".obj", ".glb", ".gltf",
+		".f3d", ".lbrn", ".lbrn2", ".gcode", ".bgcode":
+		return true
+	default:
+		return false
+	}
+}
+
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
@@ -285,7 +297,8 @@ func safeDownloadError(err error) error {
 	var invalidCert x509.CertificateInvalidError
 	var wrongHost x509.HostnameError
 	var tlsRecord tls.RecordHeaderError
-	if errors.As(err, &tlsErr) || errors.As(err, &unknownCA) ||
+	var tlsAlert tls.AlertError
+	if errors.As(err, &tlsAlert) || errors.As(err, &tlsErr) || errors.As(err, &unknownCA) ||
 		errors.As(err, &invalidCert) || errors.As(err, &wrongHost) ||
 		errors.As(err, &tlsRecord) {
 		return errors.New("download request failed: TLS certificate or handshake error")
@@ -476,6 +489,9 @@ func redactURL(raw string) string {
 	if changed {
 		parsed.Path = strings.Join(segments, "/")
 		parsed.RawPath = ""
+	}
+	if parsed.User != nil {
+		parsed.User = url.User("REDACTED")
 	}
 	q := parsed.Query()
 	if q.Has("token") {
