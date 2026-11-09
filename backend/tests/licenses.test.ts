@@ -124,6 +124,22 @@ describe("the licence catalogue", () => {
     expect(licenseIdFromText("Standard_Digital_File_License.txt")).toBe("sdfl");
     expect(licenseIdFromText("MIT License.txt")).toBe("MIT");
     expect(licenseIdFromText("Creative Commons")).toBeNull();
+    // At a version the catalogue doesn't have: none it knows, not the same one at 4.0.
+    expect(licenseIdFromText("CC BY-SA 2.0")).toBeNull();
+    expect(licenseIdFromText("Creative Commons Attribution 2.5 Generic")).toBeNull();
+    // The version is the licence's own, the first it names.
+    expect(licenseIdFromText("CC BY 4.0, adapted from a 2.0 original")).toBe("CC-BY-4.0");
+    expect(licenseIdFromText("CC BY 2.0, adapted from a 4.0 original")).toBeNull();
+    expect(licenseIdFromText("CC BY-NC 3.0, since 4.0 came out")).toBe("CC-BY-NC-3.0");
+    expect(licenseIdFromText("Model release 2.0; licensed CC BY 4.0")).toBe("CC-BY-4.0");
+    expect(licenseIdFromText("CC BY v2.0")).toBeNull();
+    expect(licenseIdFromText("CC BY 2.1 JP")).toBeNull();
+    // A number that isn't the licence's own version: a model's revision.
+    expect(licenseIdFromText("CC BY-SA (Thing v2.1)")).toBe("CC-BY-SA-4.0");
+    expect(licenseIdFromText("Creative Commons Legal Code\n\nAttribution-NonCommercial 3.0 Unported")).toBe(
+      "CC-BY-NC-3.0",
+    );
+    expect(licenseIdFromText("CC BY-SA v3.0")).toBe("CC-BY-SA-3.0");
     expect(licenseIdFromText("My own terms")).toBeNull();
   });
 

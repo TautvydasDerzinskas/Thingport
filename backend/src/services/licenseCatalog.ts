@@ -362,7 +362,14 @@ export function licenseIdFromText(raw: string | null | undefined): string | null
   if (/standard digital file/.test(text)) return "sdfl";
   if (/\bcc0\b|cc zero|public domain dedication/.test(text)) return "CC0-1.0";
   if (/creative commons|\bcc[\s-]?by\b/.test(text)) {
-    const version = /\b3\.0\b/.test(text) ? "3.0" : "4.0";
+    // The version is the licence's own, right after its name and parts ("CC BY-SA 4.0", "Attribution-NonCommercial 3.0
+    // Unported", "CC BY v2.0"); a number anywhere else ("Thing v2.1", "release 2.0") is something else's. At one the
+    // catalogue doesn't have, it's no licence Thingport knows, rather than the same one at 4.0.
+    const named = text.match(
+      /(?:\bcc[\s-]?by|\battribution)(?:[\s_-]+(?:non[\s-]?commercial|nc|no[\s-]?deriv\w*|nd|share[\s-]?alike|sa))*[\s_,-]+v?(\d\.\d)\b/,
+    )?.[1];
+    if (named && named !== "3.0" && named !== "4.0") return null;
+    const version = named === "3.0" ? "3.0" : "4.0";
     const parts = ["by"];
     if (/non[\s-]?commercial|\bnc\b/.test(text)) parts.push("nc");
     if (/no[\s-]?deriv|\bnd\b/.test(text)) parts.push("nd");

@@ -9,6 +9,7 @@ import { sleep } from "../../utils/concurrency";
 import { assertCredentialDestination } from "../credentialRequest";
 import { providerName } from "../names";
 import manifest from "./manifest.generated";
+import { pixup3dLicense } from "./license";
 import {
   parsePixup3dCollectionUrl,
   parsePixup3dModelUrl,
@@ -404,6 +405,8 @@ export function pixup3dModelFrom(data: unknown, page: string | null): Pixup3dMod
     meta.siteCategoryIds = categories;
     meta.categorySite = PROVIDER;
   }
+
+  meta.license = pixup3dLicense();
 
   return { meta, galleryImages, postId, price: priceOf(post.price), variants };
 }

@@ -18,6 +18,7 @@ import {
   isRecord,
 } from "../../services/importResolvers";
 import { decodeHtmlEntities } from "../../utils/htmlEntities";
+import { makerworldLicenseFrom } from "./license";
 import manifest from "./manifest.generated";
 import {
   isCaptchaChallenge,
@@ -180,6 +181,8 @@ export function makerworldMetaFromDesign(design: unknown): ImportedPageMetadata 
   meta.siteCategoryIds = makerworldCategoryIds(design);
   meta.categorySite = meta.siteCategoryIds.length ? manifest.id : null;
   meta.parametricSource = makerworldParametricSource(design);
+  const license = makerworldLicenseFrom(design);
+  if (license !== undefined) meta.license = license;
   return meta;
 }
 

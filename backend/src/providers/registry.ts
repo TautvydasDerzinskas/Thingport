@@ -149,6 +149,15 @@ import { nexprintProfileFacts } from "./nexprint/profileFacts";
 import type { GrabImportOptions } from "./makeronline/grabImports";
 import type { ImportCookies } from "../services/importResolvers";
 import type { ProviderProfileFactsById } from "../services/printProfileFacts";
+import { readMakerworldLicense } from "./makerworld/licenseReader";
+import { readThingiverseLicense } from "./thingiverse/licenseReader";
+import { readCrealitycloudLicense } from "./crealitycloud/license";
+import { readEufymakeLicense } from "./eufymake/license";
+import { readPixup3dLicense } from "./pixup3d/license";
+import { readPinshapeLicense } from "./pinshape/license";
+import { readToymakr3dLicense } from "./toymakr3d/license";
+import { readCgtraderLicense } from "./cgtrader/license";
+import { readGrabcadLicense } from "./grabcad/license";
 import type { ProviderLicense } from "../services/licenseCatalog";
 
 /** A provider's ids for the starter categories, by their path ("Parent/Child"). */
@@ -191,9 +200,13 @@ export type ProviderBackend = {
   profileFacts?(userId: string, externalId: string, profileIds: string[]): Promise<ProviderProfileFactsById | null>;
   /** The model's licence, read for an older import when its owner opens it (services/licenseService.ts): null when the site
    *  says none. Where it's absent, `details.read`'s `license` is used; a provider gives this where that's heavier than it
-   *  needs to be, or needs no request at all (`stored` is what the model keeps of its import). Throws when the site
-   *  can't be read now. */
-  license?(userId: string, externalId: string, stored: { notes: string | null }): Promise<ProviderLicense | null>;
+   *  needs to be, or needs no request at all (`stored` is what the model keeps of its import). Undefined when the site
+   *  answered without saying, so it's read again later; throws when the site can't be read now. */
+  license?(
+    userId: string,
+    externalId: string,
+    stored: { notes: string | null },
+  ): Promise<ProviderLicense | null | undefined>;
   /** Remembers its sign-in turned down, for a provider whose imports don't themselves. */
   markRejected?(userId: string): Promise<void>;
   stopTexts?: StopTexts;
@@ -268,6 +281,7 @@ export const PROVIDERS = {
     browse: makerworldBrowse,
     trending: makerworldTrending,
     details: makerworldDetails,
+    license: readMakerworldLicense,
     profileFacts: makerworldProfileFacts,
     profileUrls: listMakerworldProfileUrls,
     // Loaded when it runs: the import runner it shares reaches this registry.
@@ -310,6 +324,7 @@ export const PROVIDERS = {
     browse: thingiverseBrowse,
     trending: thingiverseTrending,
     details: thingiverseDetails,
+    license: readThingiverseLicense,
     instanceHealth: thingiverseInstanceHealth,
   },
   myminifactory: {
@@ -364,6 +379,7 @@ export const PROVIDERS = {
     browse: crealitycloudBrowse,
     trending: crealitycloudTrending,
     details: crealitycloudDetails,
+    license: readCrealitycloudLicense,
     profileFacts: crealitycloudProfileFacts,
     keptId: crealitycloudKeptId,
   },
@@ -418,6 +434,7 @@ export const PROVIDERS = {
     browse: eufymakeBrowse,
     trending: eufymakeTrending,
     details: eufymakeDetails,
+    license: readEufymakeLicense,
   },
   pinshape: {
     starterCategories: pinshapeCategories,
@@ -430,6 +447,7 @@ export const PROVIDERS = {
     browse: pinshapeBrowse,
     trending: pinshapeTrending,
     details: pinshapeDetails,
+    license: readPinshapeLicense,
   },
   toymakr3d: {
     starterCategories: toymakr3dCategories,
@@ -442,6 +460,7 @@ export const PROVIDERS = {
     browse: toymakr3dBrowse,
     trending: toymakr3dTrending,
     details: toymakr3dDetails,
+    license: readToymakr3dLicense,
   },
   makerables: {
     starterCategories: makerablesCategories,
@@ -468,6 +487,7 @@ export const PROVIDERS = {
     browse: cgtraderBrowse,
     trending: cgtraderTrending,
     details: cgtraderDetails,
+    license: readCgtraderLicense,
     // A link may name a model by its number, where it is kept under its slug.
     keptId: cgtraderKeptId,
     // AWS's bot check rather than Cloudflare's, which FlareSolverr gets a token past -- or the browser's, from Grab.
@@ -486,6 +506,7 @@ export const PROVIDERS = {
     browse: grabcadBrowse,
     trending: grabcadTrending,
     details: grabcadDetails,
+    license: readGrabcadLicense,
   },
   owlcad: {
     starterCategories: owlcadCategories,
@@ -527,6 +548,7 @@ export const PROVIDERS = {
     browse: pixup3dBrowse,
     trending: pixup3dTrending,
     details: pixup3dDetails,
+    license: readPixup3dLicense,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

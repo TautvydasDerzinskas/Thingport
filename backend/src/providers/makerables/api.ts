@@ -5,6 +5,7 @@ import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/im
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import { sleep } from "../../utils/concurrency";
+import { makerablesLicense } from "./license";
 import manifest from "./manifest.generated";
 import {
   isMakerablesProjectId,
@@ -251,6 +252,8 @@ export async function resolveMakerablesProject(projectId: string): Promise<Maker
       author,
       siteCategoryIds: categoryIdsIn(project.categories),
       categorySite: PROVIDER,
+      // Left unread where the answer has no such field at all, rather than taken as none.
+      ...("license" in project ? { license: makerablesLicense(project.license) } : {}),
     },
   };
 }

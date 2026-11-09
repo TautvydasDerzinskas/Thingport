@@ -1,0 +1,54 @@
+{
+  "code": 200,
+  "success": true,
+  "message": "Success",
+  "data": {
+    "data": [
+      {
+        "id": "b3146b6c-a760-43b7-b44a-749f3dc9a391",
+        "name": "CC0 1.0",
+        "code": "cc_0",
+        "is_active": true
+      },
+      {
+        "id": "8d33783a-a28b-4e0c-9604-bfb00d253c5c",
+        "name": "CC BY-SA 4.0",
+        "code": "cc_by_sa",
+        "is_active": true
+      },
+      {
+        "id": "7dfe7f1b-fc87-4c42-84c3-b49dd4981af4",
+        "name": "CC BY-ND 4.0",
+        "code": "cc_by_nd",
+        "is_active": true
+      },
+      {
+        "id": "b84724bc-2494-45f6-a6d1-3fab67eee4a6",
+        "name": "CC BY-NC-SA 4.0",
+        "code": "cc_by_nc_sa",
+        "is_active": true
+      },
+      {
+        "id": "ed085337-d233-437f-9e61-88ff07dabe1a",
+        "name": "CC BY-NC 4.0",
+        "code": "cc_by_nc",
+        "is_active": true
+      },
+      {
+        "id": "6e2257fe-b442-4231-82ef-8957ac67e0be",
+        "name": "CC BY 4.0",
+        "code": "cc_by",
+        "is_active": true
+      },
+      {
+        "id": "297a313f-8f86-4a33-ae25-d72e0d5d8f74",
+        "name": "CC BY-NC-ND 4.0",
+        "code": "cc_by_nc_nd",
+        "is_active": true
+      }
+    ],
+    "total": 7,
+    "page": 1,
+    "pageSize": 10
+  }
+}

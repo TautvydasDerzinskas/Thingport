@@ -20,8 +20,9 @@ model's page hands its components, and the small script a model's page loads to 
 - **Models.** Paste a model link (`https://www.cgtrader.com/3d-print-models/<category>/<subcategory>/<name>`, or the
   same under `/3d-models/`, `/free-3d-print-models/` or `/free-3d-models/`) in Thingport, or import it from the model
   page with Grab. A model is kept by the name its links end in. Its page carries the description, the tags, the whole
-  gallery, the designer and the details that matter for printing -- whether it's print-ready, its parts, units,
-  formats and licence.
+  gallery, the designer and the details that matter for printing -- whether it's print-ready, its parts, units and
+  formats -- and its [licence](../features/licenses.md): Royalty Free, Editorial or a custom one, with or without AI
+  use. Models imported before Thingport kept licences list it in their description, which is where it's read from.
 - **Files.** CGTrader lists a model's files one by one, often the same mesh in several formats. Thingport takes the
   ones a plate takes (STL, 3MF, STEP) and the zips that may hold some, skipping zips named for a format nothing prints
   from (a Blender scene, textures). OBJs come only when nothing else brought a model, as a CG model's OBJ can run to

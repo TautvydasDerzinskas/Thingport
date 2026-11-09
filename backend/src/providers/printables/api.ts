@@ -4,6 +4,7 @@ import { type ImportedAuthorInfo, type ImportedPageMetadata } from "../../servic
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, type TrendingModel } from "../../services/trendingModel";
+import { printablesLicenseFrom } from "./license";
 import manifest from "./manifest.generated";
 import { printablesCollectionUrl, printablesModelUrl, printablesUserUrl, urls } from "./urls.generated";
 export { parsePrintablesCollectionUrl, parsePrintablesLikesUrl, parsePrintablesModelUrl } from "./urls.generated";
@@ -80,6 +81,7 @@ const MODEL_QUERY = `
       tags { name }
       category { id name }
       stls { id name }
+      license { id name abbreviation content }
     }
   }
 `;
@@ -175,6 +177,9 @@ export async function resolvePrintablesModel(modelId: string): Promise<Printable
         .filter((f): f is Record<string, unknown> => isRecord(f) && typeof f.name === "string" && f.id != null)
         .map((f) => ({ name: f.name as string, id: String(f.id) }))
     : [];
+
+  const license = printablesLicenseFrom(model.license);
+  if (license !== undefined) meta.license = license;
 
   return { meta, plateFiles, galleryImages };
 }
