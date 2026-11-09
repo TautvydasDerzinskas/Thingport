@@ -12,6 +12,7 @@ const rendered: string[] = [];
 const actions = new Map<string, () => void>();
 const messages: { type: string; payload: Record<string, unknown> }[] = [];
 let answers: Record<string, unknown>;
+let profileScope: string | null = null;
 const store: Record<string, unknown> = {};
 
 /** The profile picker's value as a browser would give it: a hidden field's, the option marked selected, or the first. */
@@ -26,7 +27,8 @@ function pickedProfiles(): { value: string } | null {
 
 vi.mock("../shell", () => ({
   onPanelAction: (name: string, handler: () => void) => actions.set(name, handler),
-  panelQuery: (selector: string) => (selector === "#tg-profiles" ? pickedProfiles() : null),
+  panelQuery: (selector: string) =>
+    selector === "#tg-profiles" ? (profileScope ? { value: profileScope } : pickedProfiles()) : null,
   panelQueryAll: () => [{ value: "a.stl" }],
   renderPanel: (html: string) => rendered.push(html),
   setPanelNote: () => undefined,
@@ -110,12 +112,15 @@ async function panelFor(stored: { isAdmin: boolean; importQueue?: boolean }): Pr
 }
 
 /** Clicks a panel button whose work is started rather than awaited, until the panel moves on from `before`. */
-async function click(action: string): Promise<void> {
+async function click(action: string, timeout = 1000): Promise<void> {
   const before = rendered.length;
   actions.get(action)!();
-  await vi.waitFor(() => {
-    if (rendered.length === before || last().includes("tg-status")) throw new Error("still working");
-  });
+  await vi.waitFor(
+    () => {
+      if (rendered.length === before || last().includes("tg-status")) throw new Error("still working");
+    },
+    { timeout },
+  );
 }
 
 /** Through the button, to what the panel then says, entities read back. */
@@ -153,6 +158,7 @@ describe("the single-model panel", () => {
   beforeEach(() => {
     rendered.length = 0;
     messages.length = 0;
+    profileScope = null;
     actions.clear();
     for (const provider of Object.keys(contentModules)) delete contentModules[provider];
     answers = {
@@ -357,6 +363,26 @@ describe("the single-model panel", () => {
       expect(html).toContain("All designer print profiles (2)");
       expect(html).toContain("Designer &amp; community print profiles (4)");
       expect(html).not.toContain("missing print profiles");
+    });
+  });
+
+  describe("importing several print profiles", () => {
+    it("says why the ones that failed did, when some came in", async () => {
+      profileScope = "all";
+      contentModules.printables = { loadProfiles: async () => () => ["1", "2", "3"] };
+      let calls = 0;
+      Object.defineProperty(answers, "IMPORT_SINGLE", {
+        configurable: true,
+        get: () =>
+          ++calls === 1 ? { id: "print1", import_outcome: "created" } : new Error("MakerWorld wants a CAPTCHA"),
+      });
+      atProvider("printables", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+      await click("import", 5000); // the pause between two profiles is real
+
+      expect(last()).toContain("Partly imported");
+      expect(last()).toContain("1 print profile imported, 2 failed.");
+      expect(last()).toContain("Last error: MakerWorld wants a CAPTCHA");
     });
   });
 
