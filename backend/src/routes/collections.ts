@@ -31,6 +31,7 @@ import { relocatePrintsForToken } from "../services/printService";
 import { createLog } from "../services/auditLog";
 import { toCollectionOut, visibilityOut, type PrintOut } from "../dto";
 import { tellGained, visibilityAsked, withSharedWith } from "../services/collectionSharing";
+import { kickSharing, queueCollectionsGone, queueSharing } from "../federation/sharedCollections";
 import { syncToolModelsSoon } from "../services/toolsService";
 import { collectionOutsFor, libraryCopyIds, readableCollection, readablePrintWhere } from "../services/socialService";
 import { copyPrintToLibrary } from "../services/modelCopyService";
@@ -263,8 +264,12 @@ router.patch(
           ...(asked ? { visibility: visibilityAsked(body, found.visibility) } : {}),
         },
       });
+      // Partners with people on its list hear of a new name or visibility now, not at their next read: queued with
+      // the change, sent once it's kept.
+      if (saved.visibility !== found.visibility || saved.name !== found.name) await queueSharing(tx, saved.id);
       return { collection: found, updated: saved };
     });
+    kickSharing();
     const renamed = body.name !== collection.name;
     await tellGained(collection, updated);
     if (renamed) await relocatePrintsForToken("collection", await collectionPrintIds(updated.id));
@@ -299,7 +304,11 @@ router.delete(
     const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!collection) throw new HttpError(404, "Collection not found");
     const printIds = await collectionPrintIds(collection.id);
-    await prisma.collection.delete({ where: { id: collection.id } });
+    await prisma.$transaction(async (tx) => {
+      await queueCollectionsGone(tx, [collection.id]);
+      await tx.collection.delete({ where: { id: collection.id } });
+    });
+    kickSharing();
     await relocatePrintsForToken("collection", printIds);
     res.json({ ok: true });
     void createLog({

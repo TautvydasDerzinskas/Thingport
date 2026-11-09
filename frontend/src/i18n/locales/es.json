@@ -5492,7 +5492,7 @@
         "create": "Crear",
         "saveFailed": "No se pudo guardar la colección. Inténtalo de nuevo.",
         "visibilityLabel": "Visibilidad",
-        "visibilityHelp": "Las colecciones privadas son solo tuyas. Las compartidas las ven las personas que elijas y las públicas, todo el mundo, en Explorar. Quien ve una puede abrir, descargar y copiar sus modelos.",
+        "visibilityHelp": "Las colecciones privadas son solo tuyas. Las compartidas las ven las personas que elijas, aquí o en instancias conectadas, y las públicas, todo el mundo, en Explorar. Quien ve una puede abrir, descargar y copiar sus modelos.",
         "private": "Privada",
         "public": "Pública",
         "shared": "Compartida",
@@ -5501,13 +5501,14 @@
         "sharedNobody": "Nadie todavía: solo tú puedes verla",
         "sharedElsewhere_one": "{{count}} en una instancia conectada",
         "sharedElsewhere_other": "{{count}} en instancias conectadas",
-        "sharedHelp": "La ven como verían una colección pública: pueden abrir, descargar y copiar sus modelos, y reciben un aviso cuando la compartes con ellos. Con quién más está compartida solo lo sabes tú.",
+        "sharedHelp": "La ven como verían una colección pública: pueden abrir, descargar y copiar sus modelos, y reciben un aviso cuando la compartes con ellos. Con quién más está compartida solo lo sabes tú. Alguien en una instancia conectada la ve a través de su propia instancia, que solo se la muestra a esa persona; los administradores de esa instancia también podrían verla.",
         "keptPeople_one": "{{names}} sigue en la lista: elige Compartida para volver a compartirla.",
         "keptPeople_other": "{{names}} siguen en la lista: elige Compartida para volver a compartirla.",
         "andMore_one": "{{count}} más",
         "andMore_other": "{{count}} más",
         "peopleFailed": "No se pudo cargar con quién está compartida, así que no se puede cambiar quién la ve hasta que se cargue.",
-        "createdNotShared": "Se creó «{{name}}», pero no se pudo compartir. Compartir… en su menú lo vuelve a intentar."
+        "createdNotShared": "Se creó «{{name}}», pero no se pudo compartir. Compartir… en su menú lo vuelve a intentar.",
+        "findPeopleHelp": "Cualquier parte de un nombre encuentra a alguien aquí o en una instancia conectada; un correo encuentra a alguien de aquí solo si se escribe completo, y nunca se muestra. Si no encuentras a alguien de otra instancia, escribe su identificador completo, como nombre@su-instancia."
       },
       "detail": {
         "title": "{{name}}",

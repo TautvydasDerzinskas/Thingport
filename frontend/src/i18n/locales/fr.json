@@ -5505,7 +5505,7 @@
         "create": "Créer",
         "saveFailed": "Impossible d’enregistrer la collection. Veuillez réessayer.",
         "visibilityLabel": "Visibilité",
-        "visibilityHelp": "Les collections privées ne sont qu'à vous. Les partagées sont vues par les personnes que vous choisissez, les publiques par tout le monde, dans Explorer. Qui en voit une peut ouvrir, télécharger et copier ses modèles.",
+        "visibilityHelp": "Les collections privées ne sont qu'à vous. Les partagées sont vues par les personnes que vous choisissez, ici ou sur des instances connectées, les publiques par tout le monde, dans Explorer. Qui en voit une peut ouvrir, télécharger et copier ses modèles.",
         "private": "Privée",
         "public": "Publique",
         "shared": "Partagée",
@@ -5514,13 +5514,14 @@
         "sharedNobody": "Personne pour l'instant : vous seul la voyez",
         "sharedElsewhere_one": "{{count}} sur une instance connectée",
         "sharedElsewhere_other": "{{count}} sur des instances connectées",
-        "sharedHelp": "Ces personnes la voient comme une collection publique : elles peuvent ouvrir, télécharger et copier ses modèles, et sont prévenues quand vous la partagez avec elles. Vous seul savez avec qui d'autre elle est partagée.",
+        "sharedHelp": "Ces personnes la voient comme une collection publique : elles peuvent ouvrir, télécharger et copier ses modèles, et sont prévenues quand vous la partagez avec elles. Vous seul savez avec qui d'autre elle est partagée. Une personne sur une instance connectée la voit par sa propre instance, qui ne la montre qu'à elle ; les administrateurs de cette instance pourraient la voir aussi.",
         "keptPeople_one": "{{names}} reste dans la liste : choisissez Partagée pour la partager à nouveau.",
         "keptPeople_other": "{{names}} restent dans la liste : choisissez Partagée pour la partager à nouveau.",
         "andMore_one": "{{count}} autre",
         "andMore_other": "{{count}} autres",
         "peopleFailed": "Impossible de charger les personnes avec qui elle est partagée : qui la voit ne peut pas changer tant que ce n'est pas chargé.",
-        "createdNotShared": "« {{name}} » a été créée, mais n'a pas pu être partagée. Partager… dans son menu réessaie."
+        "createdNotShared": "« {{name}} » a été créée, mais n'a pas pu être partagée. Partager… dans son menu réessaie.",
+        "findPeopleHelp": "Une partie d'un nom trouve quelqu'un ici ou sur une instance connectée ; un e-mail ne trouve quelqu'un d'ici que saisi en entier, et n'est jamais affiché. Quelqu'un d'ailleurs que vous ne trouvez pas : saisissez son identifiant complet, comme nom@son-instance."
       },
       "detail": {
         "title": "{{name}}",

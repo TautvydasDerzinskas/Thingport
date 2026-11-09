@@ -1,6 +1,10 @@
 import { Prisma, type Collection, type CollectionVisibility } from "@prisma/client";
+import type { Peer, RemotePerson } from "@prisma/client";
 import { prisma } from "../db";
 import { visibilityOut, type CollectionOut, type CollectionVisibilityOut, type SharePersonOut } from "../dto";
+import { mediaAddress } from "../federation/media";
+import { isFederationLive } from "../federation/settings";
+import { kickSharing, queueSharing } from "../federation/sharedCollections";
 import { HttpError } from "../utils/fileUtils";
 import { createNotification } from "./notificationService";
 import { getSocialSettings } from "./settingsService";
@@ -9,7 +13,8 @@ import { userCards } from "./socialService";
 // Who a collection is shared with: its owner picks people, and while it's SHARED (and social features are on) they
 // see it as they would a public one (socialService's readablePrintWhere and readableCollection). The list is kept
 // while it's private or public too, so making it shared again shares it with the same people. Only its owner reads or
-// changes the list.
+// changes the list. People on connected instances can be on it too: their instances are told what they may see
+// (federation/sharedCollections.ts), in the transaction of the change.
 
 /** People a collection may be shared with at most. */
 export const MAX_SHARES = 100;
@@ -29,6 +34,9 @@ export type SharingPatch = {
   add_user_ids?: string[];
   /** Taken off it. The ones not named stay, so an editor that loaded only some can't take the others off. */
   remove_user_ids?: string[];
+  /** People on connected instances, by their id here (RemotePerson), added and taken off the same way. */
+  add_remote_person_ids?: string[];
+  remove_remote_person_ids?: string[];
 };
 
 export const visibilityIn = (visibility: CollectionVisibilityOut): CollectionVisibility =>
@@ -36,14 +44,29 @@ export const visibilityIn = (visibility: CollectionVisibilityOut): CollectionVis
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
+/** Someone on a connected instance, as a list shows them: with their handle and instance. */
+export function remoteShareOut(person: RemotePerson & { peer: Peer }): SharePersonOut {
+  const host = new URL(person.peer.origin).host;
+  return {
+    id: person.id,
+    display_name: person.displayName,
+    avatar_url: mediaAddress(person.avatarUrl),
+    remote: {
+      handle: person.username ? `${person.username}@${host}` : null,
+      instance: { name: person.peer.name ?? host, origin: person.peer.origin },
+      profile_id: person.listed && person.peer.status === "ACTIVE" ? person.id : null,
+    },
+  };
+}
+
 /** The people on each collection's list, the first added first. */
 async function peopleOf(collectionIds: string[], db: Db = prisma): Promise<Map<string, SharePersonOut[]>> {
   const out = new Map<string, SharePersonOut[]>();
   if (!collectionIds.length) return out;
   const rows = await db.collectionShare.findMany({
-    where: { collectionId: { in: collectionIds }, userId: { not: null } },
+    where: { collectionId: { in: collectionIds } },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: { collectionId: true, userId: true },
+    select: { collectionId: true, userId: true, remotePerson: { include: { peer: true } } },
   });
   const cards = await userCards(
     rows.flatMap((row) => (row.userId ? [row.userId] : [])),
@@ -51,8 +74,8 @@ async function peopleOf(collectionIds: string[], db: Db = prisma): Promise<Map<s
   );
   for (const row of rows) {
     const card = row.userId ? cards.get(row.userId) : undefined;
-    if (!card) continue;
-    out.set(row.collectionId, [...(out.get(row.collectionId) ?? []), { ...card, remote: null }]);
+    const person = card ? { ...card, remote: null } : row.remotePerson ? remoteShareOut(row.remotePerson) : null;
+    if (person) out.set(row.collectionId, [...(out.get(row.collectionId) ?? []), person]);
   }
   return out;
 }
@@ -73,12 +96,23 @@ export async function sharingOf(ownerId: string, collectionId: string): Promise<
   };
 }
 
+// Each statement sees what's committed, so the list counted after the lock is the whole of it, whatever the
+// database's default isolation.
+const COUNTED_AFTER_LOCK = { isolationLevel: "ReadCommitted" } as const;
+
 /** Changes who sees `ownerId`'s collection: its visibility, and who's on its list. The people who can see it now and
  *  couldn't before are told. Refused while social features are off, as nobody else sees anything then. */
 export async function updateSharing(ownerId: string, collectionId: string, patch: SharingPatch): Promise<SharingOut> {
   if (!(await getSocialSettings()).enabled) throw new HttpError(409, "Social features are off", "social_off");
   const remove = new Set(patch.remove_user_ids ?? []);
   const add = [...new Set(patch.add_user_ids ?? [])].filter((id) => id !== ownerId);
+  const removeRemote = new Set(patch.remove_remote_person_ids ?? []);
+  const addRemote = [...new Set(patch.add_remote_person_ids ?? [])];
+  // Someone elsewhere is added only while connected instances are on: their instance has to be told now. Taking
+  // someone off, or any other change, is told once they're on again.
+  if (addRemote.length && !(await isFederationLive())) {
+    throw new HttpError(409, "Connected instances are off", "federation_off");
+  }
   const result = await prisma.$transaction(async (tx) => {
     // One change at a time per collection, so two can't add past the limit between them.
     await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${collectionId} FOR UPDATE`;
@@ -102,6 +136,37 @@ export async function updateSharing(ownerId: string, collectionId: string, patch
         skipDuplicates: true,
       });
     }
+
+    // People elsewhere: only someone on a partner connected now is added; one paused can't be told yet.
+    const elsewhere = addRemote.length
+      ? await tx.remotePerson.findMany({ where: { id: { in: addRemote } }, include: { peer: true } })
+      : [];
+    if (elsewhere.length !== addRemote.length) {
+      throw new HttpError(400, "Someone to share with wasn't found", "unknown_person");
+    }
+    if (elsewhere.some((person) => person.peer.status !== "ACTIVE")) {
+      throw new HttpError(409, "Their instance isn't available right now", "partner_unavailable");
+    }
+    const listedElsewhere = await tx.collectionShare.findMany({
+      where: { collectionId, remotePersonId: { not: null } },
+      select: { remotePersonId: true, remotePerson: { select: { peerId: true } } },
+    });
+    const onList = new Set(listedElsewhere.map((row) => row.remotePersonId));
+    const removedRemote = listedElsewhere.filter(
+      (row) => row.remotePersonId && removeRemote.has(row.remotePersonId) && !addRemote.includes(row.remotePersonId),
+    );
+    if (removedRemote.length) {
+      await tx.collectionShare.deleteMany({
+        where: { collectionId, remotePersonId: { in: removedRemote.flatMap((row) => row.remotePersonId ?? []) } },
+      });
+    }
+    const addedRemote = addRemote.filter((id) => !onList.has(id));
+    if (addedRemote.length) {
+      await tx.collectionShare.createMany({
+        data: addedRemote.map((remotePersonId) => ({ collectionId, remotePersonId })),
+        skipDuplicates: true,
+      });
+    }
     if ((await tx.collectionShare.count({ where: { collectionId } })) > MAX_SHARES) {
       throw new HttpError(422, `A collection can be shared with ${MAX_SHARES} people at most`, "too_many_people");
     }
@@ -110,9 +175,18 @@ export async function updateSharing(ownerId: string, collectionId: string, patch
       visibility === before.visibility
         ? before
         : await tx.collection.update({ where: { id: collectionId }, data: { visibility } });
+    // Partners with people on the list, or just taken off it, hear where those people stand now.
+    if (visibility !== before.visibility || addedRemote.length || removedRemote.length) {
+      await queueSharing(
+        tx,
+        collectionId,
+        removedRemote.flatMap((row) => row.remotePerson?.peerId ?? []),
+      );
+    }
     const people = (await peopleOf([collectionId], tx)).get(collectionId) ?? [];
     return { before, after, people, added, removed };
-  });
+  }, COUNTED_AFTER_LOCK);
+  kickSharing();
   await tellGained(result.before, result.after, result.added);
   return {
     visibility: visibilityOut(result.after.visibility),
@@ -177,25 +251,33 @@ export async function withSharedWith(ownerId: string, outs: CollectionOut[]): Pr
   const [counts, firsts] = await Promise.all([
     prisma.collectionShare.groupBy({ by: ["collectionId"], where: { collectionId: { in: ownedIds } }, _count: true }),
     // The first few of each, without reading every name of a long list.
-    prisma.$queryRaw<{ collectionId: string; userId: string }[]>`
-      SELECT "collectionId", "userId" FROM (
-        SELECT "collectionId", "userId",
+    prisma.$queryRaw<{ collectionId: string; userId: string | null; remotePersonId: string | null }[]>`
+      SELECT "collectionId", "userId", "remotePersonId" FROM (
+        SELECT "collectionId", "userId", "remotePersonId",
           ROW_NUMBER() OVER (PARTITION BY "collectionId" ORDER BY "createdAt", id) AS place
         FROM "CollectionShare"
-        WHERE "collectionId" IN (${Prisma.join(ownedIds)}) AND "userId" IS NOT NULL
+        WHERE "collectionId" IN (${Prisma.join(ownedIds)})
       ) ranked
       WHERE place <= ${SUMMARY_PEOPLE}
       ORDER BY "collectionId", place`,
   ]);
-  const cards = await userCards(firsts.map((row) => row.userId));
+  const [cards, elsewhere] = await Promise.all([
+    userCards(firsts.flatMap((row) => row.userId ?? [])),
+    prisma.remotePerson.findMany({
+      where: { id: { in: firsts.flatMap((row) => row.remotePersonId ?? []) } },
+      include: { peer: true },
+    }),
+  ]);
   const countOf = new Map(counts.map((row) => [row.collectionId, row._count]));
   return outs.map((out) => {
     if (!ownedIds.includes(out.id)) return out;
     const people = firsts
       .filter((row) => row.collectionId === out.id)
-      .flatMap((row) => {
-        const card = cards.get(row.userId);
-        return card ? [{ ...card, remote: null }] : [];
+      .flatMap((row): SharePersonOut[] => {
+        const card = row.userId ? cards.get(row.userId) : undefined;
+        if (card) return [{ ...card, remote: null }];
+        const person = elsewhere.find((item) => item.id === row.remotePersonId);
+        return person ? [remoteShareOut(person)] : [];
       });
     return { ...out, shared_with: { count: countOf.get(out.id) ?? 0, people } };
   });

@@ -365,7 +365,8 @@ type Model = z.infer<typeof modelSchema>;
 type Collection = z.infer<typeof collectionSchema>;
 /** A collection as read, with its models' ids; `allIds` is false when a page of them couldn't be read, so the ones
  *  kept from before stay. */
-type ReadCollection = Collection & { modelIds: string[]; allIds: boolean };
+/** `fetchedAt`: when the page it came on was asked for. */
+type ReadCollection = Collection & { modelIds: string[]; allIds: boolean; fetchedAt: Date };
 
 type Shared = {
   person: Person;
@@ -417,6 +418,9 @@ async function sync(peerId: string): Promise<void> {
     } finally {
       if (storing.get(peer.id) === written) storing.delete(peer.id);
     }
+    // Then what its people shared with people here: renamed, added to, or no longer shared.
+    const { refreshShared } = await import("./sharedCollections");
+    await refreshShared(peer.id);
   } catch (err) {
     const message = (err as Error).message || "Couldn't read what it shares";
     console.warn(`[federation] Couldn't read what ${peer.origin} shares:`, message);
@@ -457,6 +461,14 @@ export async function readModels(
   return { models, all: true };
 }
 
+let lastAsked = 0;
+/** When a read of a collection is asked for, by the index or as shared (sharedCollections.ts): a millisecond past the
+ *  last one's if need be, so no two share a time, and both kinds keep to one clock to be told apart by. */
+export function askedAt(): Date {
+  lastAsked = Math.max(Date.now(), lastAsked + 1);
+  return new Date(lastAsked);
+}
+
 /** A person's public collections, page by page, each with its models' ids. `all` is false unless every page was read,
  *  as with their models: those not read stay as they were. */
 export async function readCollections(
@@ -471,6 +483,7 @@ export async function readCollections(
       return { collections, all: false };
     }
     let body: z.infer<typeof pageSchema>;
+    const fetchedAt = askedAt();
     try {
       body = pageSchema.parse(await read(url));
     } catch (err) {
@@ -482,7 +495,8 @@ export async function readCollections(
       if (!parsed.success || !own(parsed.data.id)) continue;
       // One past the cap: not read, so the rest kept from before stay.
       if (collections.length >= MAX_COLLECTIONS) return { collections, all: false };
-      collections.push({ ...parsed.data, ...(await readModelIds(read, parsed.data["thingport:models"]?.first, own)) });
+      const ids = await readModelIds(read, parsed.data["thingport:models"]?.first, own);
+      collections.push({ ...parsed.data, ...ids, fetchedAt });
     }
     url = body.next;
   }
@@ -636,7 +650,14 @@ async function storeIn(
     if (!allCollections) partlyCollections.push(saved.id);
     for (const model of models) {
       if (model.attributedTo !== person.id) continue;
-      const modelData = { peerId: peer.id, personId: saved.id, ...remoteModelData(model, own), syncedAt: readAt };
+      // Shared openly there: on Explore, whatever collection shared with people here also holds it.
+      const modelData = {
+        peerId: peer.id,
+        personId: saved.id,
+        ...remoteModelData(model, own),
+        syncedAt: readAt,
+        limited: false,
+      };
       await tx.remoteModel.upsert({
         where: { apId: model.id },
         create: { apId: model.id, ...modelData },
@@ -653,26 +674,75 @@ async function storeIn(
         description: markdownOf(collection.source, 5000),
         updatedAt: collection.updated,
         syncedAt: readAt,
+        fetchedAt: collection.fetchedAt,
+        // Public there now: for everyone here, not only the people it was once shared with.
+        limited: false,
       };
       const modelApIds = collection.modelIds;
-      await tx.remoteCollection.upsert({
-        where: { apId: collection.id },
-        create: { apId: collection.id, ...collectionData, modelApIds },
-        // Its models read only in part: those it had stay.
-        update: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
-        select: { id: true },
-      });
+      // Unless it was asked for since, as shared with some people here (sharedCollections.ts): that's newer than this,
+      // so it stays theirs alone, as it does when both were asked for in the same millisecond (one public then is
+      // written, so it's not pruned as stale). Checked as it's written, so a read of it finishing meanwhile counts too.
+      const write = () =>
+        tx.remoteCollection.updateMany({
+          where: {
+            apId: collection.id,
+            OR: [
+              { fetchedAt: null },
+              { fetchedAt: { lt: collection.fetchedAt } },
+              { fetchedAt: collection.fetchedAt, limited: false },
+            ],
+          },
+          // Its models read only in part: those it had stay.
+          data: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
+        });
+      if (!(await write()).count) {
+        await tx.remoteCollection.createMany({
+          data: { apId: collection.id, ...collectionData, modelApIds },
+          skipDuplicates: true,
+        });
+        // Made meanwhile by a read of it as shared, asked for earlier than this: this is kept instead.
+        await write();
+      }
     }
   }
-  // Whatever it no longer shares goes.
+  // One that was shared with some people here and is public there now is for everyone: nobody's its viewer.
+  await tx.remoteCollectionViewer.deleteMany({ where: { collection: { peerId: peer.id, limited: false } } });
+  // Whatever it no longer shares goes, except what was sent to people here rather than listed: a collection shared
+  // with them goes when its owner's instance says so (sharedCollections.ts), and a model no longer shared openly but
+  // still in one stays for them.
   const stale = { peerId: peer.id, syncedAt: { lt: readAt } };
-  await tx.remoteCollection.deleteMany({ where: { ...stale, personId: { notIn: partlyCollections } } });
-  await tx.remoteModel.deleteMany({ where: { ...stale, personId: { notIn: partly } } });
-  // Someone no longer listed whom a chat still names is kept for it, off Explore.
-  const inChats = { OR: [{ chats: { some: {} } }, { messages: { some: {} } }] } satisfies Prisma.RemotePersonWhereInput;
+  await tx.remoteCollection.deleteMany({ where: { ...stale, limited: false, personId: { notIn: partlyCollections } } });
+  // Someone whose models were read only in part keeps the rest as they were: one not read may still be shared openly.
+  const readInPart = partly.length ? Prisma.sql`AND m."personId" NOT IN (${Prisma.join(partly)})` : Prisma.empty;
+  await tx.$executeRaw`
+    UPDATE "RemoteModel" m SET limited = true
+    WHERE m."peerId" = ${peer.id} AND m."syncedAt" < ${readAt} AND NOT m.limited ${readInPart}
+      AND EXISTS (
+        SELECT 1 FROM "RemoteCollection" c
+        WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
+      )`;
+  await tx.remoteModel.deleteMany({ where: { ...stale, limited: false, personId: { notIn: partly } } });
+  // Someone no longer listed whom a chat, a collection shared with people here, or a collection here shared with them
+  // still names is kept for it, off Explore.
+  const named = {
+    OR: [
+      { chats: { some: {} } },
+      { messages: { some: {} } },
+      { collections: { some: { limited: true } } },
+      { collectionShares: { some: {} } },
+    ],
+  } satisfies Prisma.RemotePersonWhereInput;
   // Their cover goes with it, so the picture kept of it is pruned: it's not theirs to show any more.
-  await tx.remotePerson.updateMany({ where: { ...stale, ...inChats }, data: { listed: false, coverUrl: null } });
-  await tx.remotePerson.deleteMany({ where: { ...stale, chats: { none: {} }, messages: { none: {} } } });
+  await tx.remotePerson.updateMany({ where: { ...stale, ...named }, data: { listed: false, coverUrl: null } });
+  await tx.remotePerson.deleteMany({
+    where: {
+      ...stale,
+      chats: { none: {} },
+      messages: { none: {} },
+      collections: { none: { limited: true } },
+      collectionShares: { none: {} },
+    },
+  });
   // Someone this instance's people had direct messages with, back after a disconnect: in those chats again.
   await tx.$executeRaw`
     INSERT INTO "ChatRemoteMember" ("chatId", "personId")

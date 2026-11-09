@@ -2,9 +2,8 @@
 
 Thingport starts as a private library for each person on it. Social features let them share some of it: public
 collections and models, found by everyone on **Explore**, collections shared with only the people picked, profiles to
-show them on, and chats to talk about them. With [connected instances](connected-instances.md), public collections and
-models, profiles and chats reach the people on partner instances too; a collection is shared with people on this
-instance only.
+show them on, and chats to talk about them. With [connected instances](connected-instances.md), all of it reaches the
+people on partner instances too: a shared collection only the people picked there, through their own instance.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/42_explore.png">
@@ -21,10 +20,17 @@ chats with the switch under them. Until then, every library is private and nothi
   only to the people you pick there, by any part of their name or their whole email: they see it as they would a
   public one, and nobody else sees it, on Explore or anywhere. **Share…** in a collection's ⋮ menu opens the form on
   who sees it.
+- **People on [connected instances](connected-instances.md) too.** Find them by name, or type someone's whole handle,
+  `name@their-instance`, if they share nothing yet. Their instance is told and shows the collection to them alone, so
+  its admins could see it too.
 - **Who it's shared with is yours to change.** Add or take people off at any time; someone taken off loses it at once.
-  Making it private or public keeps the list, so making it shared again shares it with the same people. A shared
-  collection shows who on its cover and beside its name, to you; the people it's shared with don't see who else is on
-  the list. At most 100 people a collection.
+  Someone on a connected instance loses it once their instance is told, usually a moment later. Until then they can
+  still fetch its files if someone else there is still on the list, as this instance lets their instance fetch them,
+  not each person. A download already under way may finish, and what they downloaded or copied stays theirs. If this instance has theirs paused, it can't be told yet: the
+  collection stays in their list, with the pictures it already showed them, until it's resumed. If theirs has this
+  one paused, it's hidden there meanwhile. Making it private or public keeps the list, so making it shared again shares it with
+  the same people. A shared collection shows who on its cover and beside its name, to you; the people it's shared with
+  don't see who else is on the list. At most 100 people a collection.
 - **So can your own models**: the ones under **My models**, with the lock beside **Edit profile** there. Models you
   collected from someone else aren't listed as yours.
 - **Everything else stays yours.** Only public collections, shared ones (by the people they're shared with), the

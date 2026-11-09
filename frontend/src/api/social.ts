@@ -1,6 +1,6 @@
 import { appendTokenToUrl, authHeaders } from "../utils/auth";
 import { apiBase, assertOkWithMessage, readErrorMessage, UnauthorizedError } from "./client";
-import type { Collection, SharePerson } from "./collections";
+import { sharePeopleIn, type Collection, type SharePerson } from "./collections";
 import { FederationError } from "./federation";
 import type { ListPrintsResult, Print, PrintSortMode } from "./prints";
 import type { ProfileCoverValue } from "../constants/profileCovers";
@@ -84,8 +84,13 @@ export type ExploreOverview = {
   shared_with_you_total?: number;
   /** When each of the above was last shared, by id: what orders partners' beside them. */
   shared_at?: { people: Record<string, string>; models: Record<string, string>; collections: Record<string, string> };
-  /** What partners share, while connected instances are on. */
-  elsewhere?: { people: RemotePerson[]; recent_models: RemoteModelCard[]; recent_collections: RemoteCollectionCard[] };
+  /** What partners share, while connected instances are on, and what their people shared with the user (with when). */
+  elsewhere?: {
+    people: RemotePerson[];
+    recent_models: RemoteModelCard[];
+    recent_collections: RemoteCollectionCard[];
+    shared_with_you?: (RemoteCollectionCard & { shared_at: string })[];
+  };
   instances?: InstanceRef[];
 };
 
@@ -166,7 +171,7 @@ const modelPictures = <T extends RemoteModelCard>(model: T): T => ({
   ...withOwner(model),
   thumb_url: picture(model.thumb_url),
 });
-const collectionPictures = (collection: RemoteCollectionCard): RemoteCollectionCard => ({
+const collectionPictures = <T extends RemoteCollectionCard>(collection: T): T => ({
   ...withOwner(collection),
   cover_urls: collection.cover_urls.flatMap((url) => picture(url) ?? []),
 });
@@ -236,6 +241,7 @@ export const socialApi = {
             people: elsewhere.people.map(personPictures),
             recent_models: elsewhere.recent_models.map(modelPictures),
             recent_collections: elsewhere.recent_collections.map(collectionPictures),
+            shared_with_you: (elsewhere.shared_with_you ?? []).map(collectionPictures),
           },
         }
       : overview;
@@ -363,8 +369,14 @@ export const socialApi = {
 
   /** People to share a collection with: by any part of their name, or their whole email. */
   people: async (query: string): Promise<SharePerson[]> =>
-    (await getJson<{ people: SharePerson[] }>(`/social/people?q=${encodeURIComponent(query)}`, "Failed to find people"))
-      .people,
+    sharePeopleIn(
+      (
+        await getJson<{ people: SharePerson[] }>(
+          `/social/people?q=${encodeURIComponent(query)}`,
+          "Failed to find people",
+        )
+      ).people,
+    ),
 
   userCollections: async (
     userId: string,

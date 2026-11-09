@@ -87,7 +87,7 @@ export async function libraryCopyOfRemote(
 export async function remoteCopyStatus(userId: string, modelId: string): Promise<CopyStatus> {
   const job = jobs.get(keyOf(userId, modelId));
   if (job && job.state !== "done") return job;
-  const model = await activeRemoteModel(modelId);
+  const model = await activeRemoteModel(modelId, userId);
   const copyId = await libraryCopyOfRemote(userId, model);
   if (copyId) return { state: "done", files: job?.files ?? [], copy_id: copyId, error: null };
   return { state: "idle", files: [], copy_id: null, error: null };
@@ -107,7 +107,7 @@ export function startRemoteCopy(userId: string, modelId: string): Promise<CopySt
 async function admit(userId: string, modelId: string, key: string): Promise<CopyStatus> {
   const running = jobs.get(key);
   if (running?.state === "copying") return running;
-  const model = await activeRemoteModel(modelId);
+  const model = await activeRemoteModel(modelId, userId);
   const copyId = await libraryCopyOfRemote(userId, model);
   if (copyId) return { state: "done", files: [], copy_id: copyId, error: null };
   const listed = filesOf(model, model.peer.origin);
