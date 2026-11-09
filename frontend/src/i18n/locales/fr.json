@@ -2175,6 +2175,8 @@
         "socialOff": "Désactivées",
         "federationOn": "Activées",
         "federationOff": "Désactivées",
+        "licenseFilesOn": "Activés",
+        "licenseFilesOff": "Désactivés",
         "chatsOn": "Discussions activées",
         "chatsOff": "Discussions désactivées"
       },
@@ -5978,6 +5980,8 @@
       "title": "Licence",
       "notStated": "Non indiquée par {{site}}",
       "reading": "Lecture de la licence",
+      "readFailed": "Impossible de lire la licence sur {{site}}",
+      "retry": "Réessayer",
       "details": "{{license}} : détails de la licence",
       "summary": {
         "credit": "Attribution",
@@ -5986,6 +5990,7 @@
         "shareAlike": "Partage à l'identique",
         "noSharing": "Pas de partage des fichiers",
         "personalUse": "Usage personnel uniquement",
+        "nothingGiven": "Aucun droit accordé",
         "noConditions": "Aucune condition",
         "seeTerms": "Voir ses conditions"
       },

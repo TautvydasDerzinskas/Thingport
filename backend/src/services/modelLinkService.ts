@@ -190,8 +190,9 @@ export async function linkPrintToSource(userId: string, printId: string, rawUrl:
     await localizeDescriptionImages(print.id).catch(didNot("store its description's images"));
   }
   await bringPictures(print, meta).catch(didNot("bring its pictures"));
+  // Its LICENSE.txt names the new source and creator, even under a licence its owner picked, which no read replaces.
+  await afterLicenseChange(print.id);
   if (meta.license === undefined) startLicenseFill(print.id);
-  else await afterLicenseChange(print.id);
   const mapped = await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds).catch(() => null);
   if (mapped) await suggestMappedCategory(print, mapped, source.provider).catch(didNot("suggest its category"));
 

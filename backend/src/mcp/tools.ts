@@ -768,6 +768,12 @@ const editModel: McpToolDefinition = {
     }
     if (license !== undefined) {
       await setOwnerLicense(print, license);
+      void createLog({
+        userId,
+        action: "model_edited",
+        targetId: print.id,
+        details: { field: "license", name: print.name },
+      });
       changed.push("license");
     }
     if (tagArgs.some(Boolean)) {

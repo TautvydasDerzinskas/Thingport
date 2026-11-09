@@ -179,6 +179,8 @@ export type Print = {
   /** From the detail fetch: its source hasn't been read for its licence yet, and one is already waiting or running. */
   license_pending?: boolean;
   license_filling?: boolean;
+  /** The last read of its source failed: its owner can retry. */
+  license_failed?: boolean;
 };
 
 /** What a licence may allow: pass the files on unchanged, change them, use them commercially. */
@@ -210,7 +212,7 @@ export type License = Omit<LicenseOption, "id" | "family"> & {
   provider: string | null;
 };
 
-export type PrintLicense = { license: License | null; pending: boolean; filling: boolean };
+export type PrintLicense = { license: License | null; pending: boolean; filling: boolean; failed: boolean };
 
 export type ListPrintsResult = {
   items: Print[];
@@ -404,8 +406,13 @@ export const printsApi = {
   },
 
   /** Starts reading the model's licence from its source; returns at once, `filling` while it runs. */
-  fillLicense: async (id: string): Promise<PrintLicense> => {
-    const res = await fetch(`${apiBase()}/print/${id}/license/fill`, { method: "POST", headers: authHeaders() });
+  /** `retry` reads it now even when a read failed a moment ago. */
+  fillLicense: async (id: string, opts: { retry?: boolean } = {}): Promise<PrintLicense> => {
+    const res = await fetch(`${apiBase()}/print/${id}/license/fill`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(opts.retry ? { retry: true } : {}),
+    });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to read the licence");
     return res.json();

@@ -5,7 +5,7 @@ import { remoteOriginOut } from "../federation/remoteExplore";
 import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCategorizationService";
 import { aiDescriptionOut } from "./aiDescriptionService";
 import { printProfilesOut, profileFillRunning } from "./printProfileService";
-import { licenseFillRunning, licensePending } from "./licenseService";
+import { licenseFillRunning, licensePending, licenseReadFailed } from "./licenseService";
 import type { Author, Category, Plate, PreviewImage, Prisma, Print, PrintFile } from "@prisma/client";
 
 export type FullPrint = {
@@ -74,6 +74,7 @@ export async function printOutById(
     ...withProfiles,
     license_pending: licensePending(full.print),
     license_filling: licenseFillRunning(full.print.id),
+    license_failed: !licenseFillRunning(full.print.id) && licenseReadFailed(full.print.id),
     copied_from_remote: await remoteOriginOut(full.print.remoteSource),
   };
 }

@@ -2142,6 +2142,8 @@
         "socialOff": "Turned off",
         "federationOn": "Turned on",
         "federationOff": "Turned off",
+        "licenseFilesOn": "Turned on",
+        "licenseFilesOff": "Turned off",
         "chatsOn": "Chats turned on",
         "chatsOff": "Chats turned off"
       },
@@ -5903,6 +5905,8 @@
       "title": "Licence",
       "notStated": "Not stated by {{site}}",
       "reading": "Reading the licence",
+      "readFailed": "Couldn't read the licence from {{site}}",
+      "retry": "Retry",
       "details": "{{license}}: licence details",
       "summary": {
         "credit": "Credit",
@@ -5911,6 +5915,7 @@
         "shareAlike": "Share alike",
         "noSharing": "No sharing the files",
         "personalUse": "Personal use only",
+        "nothingGiven": "No rights given",
         "noConditions": "No conditions",
         "seeTerms": "See its terms"
       },

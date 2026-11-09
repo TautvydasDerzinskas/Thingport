@@ -8,6 +8,7 @@ import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { isProviderId, MANIFESTS } from "../providers/index.generated";
 import { HttpError } from "../utils/fileUtils";
+import { isProviderEnabled } from "./providerSettingsService";
 import {
   LICENSE_ACTIONS,
   LICENSE_MAP_VERSION,
@@ -124,9 +125,27 @@ export function licenseOut(print: Pick<Print, "license">): LicenseOut | null {
 // ---------------------------------------------------------------------------------------------------------------
 // Reading an older import's licence
 
-// A source that couldn't be read is asked again only after this, or after a restart.
+// A source that couldn't be read is asked again only after this, after a restart, or when its owner retries.
 const RETRY_AFTER_MS = 24 * 60 * 60 * 1000;
 const triedAt = new Map<string, number>();
+// Of those, the ones that failed, rather than had a site that couldn't say: their page offers to try again.
+const failed = new Set<string>();
+
+function markTried(printId: string, didFail: boolean): void {
+  triedAt.set(printId, Date.now());
+  if (didFail) failed.add(printId);
+  else failed.delete(printId);
+}
+
+function forgetTries(printId: string): void {
+  triedAt.delete(printId);
+  failed.delete(printId);
+}
+
+/** The last read of its source failed, and it hasn't been read since. */
+export function licenseReadFailed(printId: string): boolean {
+  return failed.has(printId);
+}
 
 /** Reading the source now would find something: an import never read, or read before its provider's mapping changed.
  *  Never one whose owner picked the licence. */
@@ -169,19 +188,24 @@ async function fillLicense(printId: string): Promise<void> {
     },
   });
   if (!print || !licensePending(print)) return;
+  // An admin turned its site off: it's left alone, as by every other background job.
+  if (!(await isProviderEnabled(print.sourceProvider!))) {
+    markTried(print.id, true);
+    return;
+  }
   let license: ProviderLicense | null | undefined;
   try {
     license = await readSourceLicense(print.userId, print.sourceProvider!, print.sourceExternalId!, print.notes);
   } catch (err) {
-    triedAt.set(print.id, Date.now());
+    markTried(print.id, true);
     log.warn("couldn't read the model's licence", { print: print.id, provider: print.sourceProvider, err });
     return;
   }
   if (license === undefined) {
-    triedAt.set(print.id, Date.now());
+    markTried(print.id, false);
     return;
   }
-  triedAt.delete(print.id);
+  forgetTries(print.id);
   // The owner may have picked one while it was read.
   const updated = await prisma.print.updateMany({
     where: {
@@ -229,10 +253,22 @@ export function scheduleLicenseFill(printId: string): void {
   settling.set(printId, timer);
 }
 
-export type PrintLicenseState = { license: LicenseOut | null; pending: boolean; filling: boolean };
+/** For its owner's Retry: reads it now, however recently a read failed. */
+export function retryLicenseFill(print: LicenseFields): void {
+  forgetTries(print.id);
+  if (licensePending(print)) startLicenseFill(print.id);
+}
+
+export type PrintLicenseState = { license: LicenseOut | null; pending: boolean; filling: boolean; failed: boolean };
 
 export function printLicenseState(print: LicenseFields & Pick<Print, "license">): PrintLicenseState {
-  return { license: licenseOut(print), pending: licensePending(print), filling: licenseFillRunning(print.id) };
+  const filling = licenseFillRunning(print.id);
+  return {
+    license: licenseOut(print),
+    pending: licensePending(print),
+    filling,
+    failed: !filling && licenseReadFailed(print.id),
+  };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -266,7 +302,7 @@ export async function setOwnerLicense(
       where: { id: print.id },
       data: { license: Prisma.DbNull, licenseAllows: [], licenseReadAt: null },
     });
-    triedAt.delete(print.id);
+    forgetTries(print.id);
     await afterLicenseChange(print.id);
     startLicenseFill(print.id);
     return;

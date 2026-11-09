@@ -275,10 +275,16 @@ async function makeCopy(
         sourceExternalId: site?.externalId ?? null,
         unfillableGaps: site ? details?.unfillableGaps : [],
         generatorScriptWithheld: details?.generatorScriptWithheld ?? false,
-        // As its owner's library had it; from a partner too old to say, read from the source like any older import.
-        licenseColumns: details?.license
-          ? licenseData(details.license, details.license.source, site?.provider ?? null)
-          : undefined,
+        // As its owner's library had it, none included; from a partner too old to say, or one that hasn't read it
+        // yet, read from the source like any older import.
+        licenseColumns:
+          details?.license !== undefined
+            ? licenseData(
+                details.license,
+                details.license?.source ?? "provider",
+                details.license?.provider ?? site?.provider ?? null,
+              )
+            : undefined,
         categoryId,
         categorySource: categoryId ? "RULE" : null,
         remoteSource: source as unknown as Prisma.InputJsonValue,

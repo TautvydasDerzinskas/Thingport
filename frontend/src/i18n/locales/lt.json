@@ -2218,6 +2218,8 @@
         "socialOff": "Išjungta",
         "federationOn": "Įjungta",
         "federationOff": "Išjungta",
+        "licenseFilesOn": "Įjungta",
+        "licenseFilesOff": "Išjungta",
         "chatsOn": "Pokalbiai įjungti",
         "chatsOff": "Pokalbiai išjungti"
       },
@@ -6197,6 +6199,8 @@
       "title": "Licencija",
       "notStated": "{{site}} licencijos nenurodo",
       "reading": "Skaitoma licencija",
+      "readFailed": "Nepavyko perskaityti licencijos iš {{site}}",
+      "retry": "Bandyti dar kartą",
       "details": "{{license}}: licencijos informacija",
       "summary": {
         "credit": "Nurodyti autorių",
@@ -6205,6 +6209,7 @@
         "shareAlike": "Ta pačia licencija",
         "noSharing": "Failais dalintis negalima",
         "personalUse": "Tik asmeniniam naudojimui",
+        "nothingGiven": "Jokių teisių nesuteikia",
         "noConditions": "Be sąlygų",
         "seeTerms": "Žr. jos sąlygas"
       },

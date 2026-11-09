@@ -5,8 +5,8 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { Prisma, type Print } from "@prisma/client";
-import { STORAGE } from "../config";
+import crypto from "node:crypto";
+import { Prisma, type Author, type Print, type PrintFile } from "@prisma/client";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { withStorageLock } from "../utils/storageLock";
@@ -20,16 +20,21 @@ const log = createLogger("license-file");
 
 export const LICENSE_FILENAME = "LICENSE.txt";
 
-type LicensedPrint = Pick<
+export type LicensedPrint = Pick<
   Print,
   "title" | "name" | "creator" | "sourceProvider" | "sourceExternalId" | "license" | "licenseReadAt"
->;
+> & { author?: Pick<Author, "name" | "handle"> | null };
 
 const ACTION_WORDS: Record<string, string> = {
   share: "share the files as they are",
   remix: "change it",
   commercial: "use it commercially, selling prints included",
 };
+
+/** Who made it, named as the model page names them. */
+function madeBy(print: LicensedPrint): string | null {
+  return print.author?.name?.trim() || print.author?.handle?.trim() || print.creator?.trim() || null;
+}
 
 function sentence(items: string[]): string {
   if (items.length <= 1) return items.join("");
@@ -39,7 +44,8 @@ function sentence(items: string[]): string {
 /** The credit line the licence asks for, or one that's good manners where it doesn't. */
 export function creditLine(print: LicensedPrint, license: LicenseOut | null): string {
   const title = print.title?.trim() || print.name;
-  const by = print.creator?.trim() ? ` by ${print.creator.trim()}` : "";
+  const maker = madeBy(print);
+  const by = maker ? ` by ${maker}` : "";
   const source = buildImportSourceUrl(print.sourceProvider, print.sourceExternalId);
   const from = source ? ` (${source})` : "";
   const under = license ? ` is licensed under ${license.short}` : "";
@@ -54,7 +60,8 @@ export function licenseFileText(print: LicensedPrint): string | null {
   const site = providerName(stored?.provider ?? print.sourceProvider);
   const source = buildImportSourceUrl(print.sourceProvider, print.sourceExternalId);
   const lines: string[] = [print.title?.trim() || print.name];
-  if (print.creator?.trim()) lines.push(`by ${print.creator.trim()}`);
+  const maker = madeBy(print);
+  if (maker) lines.push(`by ${maker}`);
   if (source) lines.push(`Source: ${source}`);
   lines.push("", `Licence: ${license.name}${license.short !== license.name ? ` (${license.short})` : ""}`);
   if (license.url) lines.push(license.url);
@@ -102,28 +109,47 @@ export function syncLicenseFile(printId: string): Promise<void> {
   return next;
 }
 
-async function syncNow(printId: string): Promise<void> {
-  const print = await prisma.print.findUnique({
-    where: { id: printId },
-    include: { files: { where: { role: "LICENSE" } } },
-  });
-  if (!print) return;
-  const [current, ...extra] = print.files;
-  const text = (await getLicenseFiles()) ? licenseFileText(print) : null;
-  for (const file of text ? extra : print.files) await removeLicenseFile(file);
-  if (!text) return;
-
-  const body = Buffer.from(text, "utf8");
-  if (current) {
-    const existing = await fs.readFile(managedPrintFilePath(current)).catch(() => null);
-    if (existing?.equals(body)) return;
-    await writeAtomically(managedPrintFilePath(current), body);
-    await prisma.printFile.update({
-      where: { id: current.id },
-      data: { size: body.length, contentSha256: null, reuseIno: null, reuseCtimeNs: null },
+// Under the storage lock, rows read inside it: a storage move renames files and saves their new paths under it, so a
+// path read before it could be one the file has just left.
+function syncNow(printId: string): Promise<void> {
+  return withStorageLock(async () => {
+    const print = await prisma.print.findUnique({
+      where: { id: printId },
+      include: { author: { select: { name: true, handle: true } }, files: { where: { role: "LICENSE" } } },
     });
-    return;
-  }
+    if (!print) return;
+    // The one at LICENSE.txt itself first: a merge brings the other models' along, renamed beside it.
+    const [current, ...extra] = print.files.toSorted(
+      (a, b) => Number(!isCanonical(a)) - Number(!isCanonical(b)) || a.createdAt.getTime() - b.createdAt.getTime(),
+    );
+    const text = (await getLicenseFiles()) ? licenseFileText(print) : null;
+    for (const file of text ? extra : print.files) await removeLicenseFile(file);
+    if (!text) return;
+
+    const body = Buffer.from(text, "utf8");
+    if (current) await rewrite(current, body);
+    else await create(print, body);
+  });
+}
+
+const isCanonical = (file: Pick<PrintFile, "storagePath">) => path.basename(file.storagePath) === LICENSE_FILENAME;
+
+async function rewrite(file: PrintFile, body: Buffer): Promise<void> {
+  const destination = managedPrintFilePath(file);
+  const existing = await fs.readFile(destination).catch(() => null);
+  const same = existing?.equals(body) ?? false;
+  if (!same) await writeAtomically(destination, body);
+  // Also when the bytes are already right: a write whose row update failed left the row saying what was there before.
+  const sha = crypto.createHash("sha256").update(body).digest("hex");
+  const stale = !same || file.size !== body.length || (file.contentSha256 !== null && file.contentSha256 !== sha);
+  if (!stale) return;
+  await prisma.printFile.update({
+    where: { id: file.id },
+    data: { size: body.length, contentSha256: null, reuseIno: null, reuseCtimeNs: null },
+  });
+}
+
+async function create(print: Print, body: Buffer): Promise<void> {
   const storagePath = await renderPrintFileStoragePath(print, LICENSE_FILENAME);
   let created;
   try {
@@ -143,7 +169,7 @@ async function syncNow(printId: string): Promise<void> {
     throw err;
   }
   try {
-    await writeAtomically(path.join(STORAGE, storagePath), body);
+    await writeAtomically(managedPrintFilePath(created), body);
   } catch (err) {
     await prisma.printFile.delete({ where: { id: created.id } }).catch(() => undefined);
     throw err;
@@ -153,29 +179,45 @@ async function syncNow(printId: string): Promise<void> {
 async function writeAtomically(destination: string, body: Buffer): Promise<void> {
   await fs.mkdir(path.dirname(destination), { recursive: true });
   const temp = `${destination}.${process.pid}.tmp`;
-  await fs.writeFile(temp, body);
   try {
-    await withStorageLock(() => fs.rename(temp, destination));
+    await fs.writeFile(temp, body);
+    await fs.rename(temp, destination);
   } catch (err) {
     await fs.rm(temp, { force: true }).catch(() => undefined);
     throw err;
   }
 }
 
-async function removeLicenseFile(file: { id: string; storagePath: string }): Promise<void> {
-  await prisma.printFile.delete({ where: { id: file.id } }).catch(() => undefined);
+/** The file first, then its row: a file that can't be removed keeps the row that finds it, for the next sync. */
+async function removeLicenseFile(file: PrintFile): Promise<void> {
   const filePath = managedPrintFilePath(file);
-  await fs.rm(filePath, { force: true }).catch(() => undefined);
+  await fs.rm(filePath, { force: true });
+  await prisma.printFile.delete({ where: { id: file.id } }).catch(() => undefined);
   await pruneEmptyStorageDirs(path.dirname(filePath)).catch(() => undefined);
 }
 
 let sweeping: Promise<void> | null = null;
+let waiting: Promise<void> | null = null;
 
-/** After the admin setting changes: writes LICENSE.txt for every model with a licence, or removes them all. Local
- *  files only; nothing is asked of any site. */
+/** After the admin setting is saved: writes LICENSE.txt for every model with a licence, or removes them all. Local
+ *  files only; nothing is asked of any site. Never rejects: it runs in the background. One runs at a time, and at most
+ *  one waits, as a sweep that starts after a save covers it. */
 export function syncAllLicenseFiles(): Promise<void> {
-  if (sweeping) return sweeping.then(() => syncAllLicenseFiles());
-  sweeping = (async () => {
+  if (sweeping) {
+    waiting ??= sweeping.then(() => {
+      waiting = null;
+      return syncAllLicenseFiles();
+    });
+    return waiting;
+  }
+  sweeping = sweep().finally(() => {
+    sweeping = null;
+  });
+  return sweeping;
+}
+
+async function sweep(): Promise<void> {
+  try {
     const prints = await prisma.print.findMany({
       where: { OR: [{ license: { not: Prisma.DbNull } }, { files: { some: { role: "LICENSE" } } }] },
       select: { id: true },
@@ -184,8 +226,7 @@ export function syncAllLicenseFiles(): Promise<void> {
     for (const { id } of prints) {
       await syncLicenseFile(id).catch((err) => log.warn("couldn't sync LICENSE.txt", { print: id, err }));
     }
-  })().finally(() => {
-    sweeping = null;
-  });
-  return sweeping;
+  } catch (err) {
+    log.warn("couldn't bring LICENSE.txt files in line", { err });
+  }
 }

@@ -186,6 +186,10 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "chat_room_edited":
       case "chat_room_deleted":
         return typeof d.name === "string" ? d.name : "";
+      case "license_files_changed":
+        return typeof d.enabled === "boolean"
+          ? t(d.enabled ? "adminSettings.logs.licenseFilesOn" : "adminSettings.logs.licenseFilesOff")
+          : "";
       case "federation_settings_changed":
         return typeof d.enabled === "boolean"
           ? t(d.enabled ? "adminSettings.logs.federationOn" : "adminSettings.logs.federationOff")

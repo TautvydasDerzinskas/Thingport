@@ -15,8 +15,8 @@ A strip closes the description box: the licence's marks, its name and what it co
 - **Copy credit line**, for crediting the model where you post a print or a remix:
   `“Articulated Dragon” by Mara Voss (https://makerworld.com/…) is licensed under CC BY-NC-SA 4.0.`
 
-A model whose site says nothing shows **Not stated by** the site. A model you added yourself shows no strip until you
-pick a licence.
+A model whose site says nothing shows **Not stated by** the site. One whose site couldn't be read says so, with
+**Retry**. A model you added yourself shows no strip until you pick a licence.
 
 ## Where it comes from
 

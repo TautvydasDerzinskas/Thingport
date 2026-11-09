@@ -19,6 +19,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import type { License } from "../../api/prints";
 import { printProviderInfo } from "../../constants/importProviders";
 import { neutralTint } from "../../theme";
@@ -34,7 +35,12 @@ type Row = { key: string; label: string; can: Can };
 export function licenseSummary(license: License, t: TFunction): string {
   if (!license.family) return t("models:license.summary.seeTerms");
   const allows = new Set(license.allows);
-  if (!allows.size) return t("models:license.summary.personalUse");
+  // A site's own licence gives personal use; one with every right reserved gives nothing.
+  if (!allows.size) {
+    return t(
+      license.family === "reserved" ? "models:license.summary.nothingGiven" : "models:license.summary.personalUse",
+    );
+  }
   const parts: string[] = [];
   if (license.requires.credit) parts.push(t("models:license.summary.credit"));
   if (!allows.has("commercial")) parts.push(t("models:license.summary.nonCommercial"));
@@ -74,6 +80,9 @@ type Props = {
   license: License | null;
   /** Being read from its source now. */
   loading: boolean;
+  /** Its source couldn't be read, as opposed to stating none; `onRetry` asks again. */
+  failed?: boolean;
+  onRetry?: () => void;
   /** Where the model came from; with no licence, the strip says that site doesn't state one. */
   provider: string | null | undefined;
   /** What the credit line names. */
@@ -89,7 +98,16 @@ type Props = {
  * it opens the rest -- what it allows, the site's or creator's own terms, the licence itself and a credit line to copy.
  * Renders nothing for a model with no source and no licence.
  */
-export default function LicenseStrip({ license, loading, provider, credit, onChange, variant = "footer" }: Props) {
+export default function LicenseStrip({
+  license,
+  loading,
+  failed = false,
+  onRetry,
+  provider,
+  credit,
+  onChange,
+  variant = "footer",
+}: Props) {
   const { t } = useTranslation(["models", "common"]);
   const showToast = useToast();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -117,6 +135,17 @@ export default function LicenseStrip({ license, loading, provider, credit, onCha
         <GavelOutlinedIcon fontSize="small" sx={{ color: "text.disabled" }} />
         {loading ? (
           <Skeleton variant="rounded" width={220} height={18} aria-label={t("models:license.reading")} />
+        ) : failed ? (
+          <>
+            <Typography variant="body2" color="text.secondary" sx={{ flex: 1, minWidth: 0 }}>
+              {t("models:license.readFailed", { site })}
+            </Typography>
+            {onRetry && (
+              <Button size="small" startIcon={<RefreshIcon fontSize="small" />} onClick={onRetry} sx={{ my: -0.5 }}>
+                {t("models:license.retry")}
+              </Button>
+            )}
+          </>
         ) : (
           <Typography variant="body2" color="text.disabled">
             {t("models:license.notStated", { site })}

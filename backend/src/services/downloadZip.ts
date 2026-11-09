@@ -86,6 +86,19 @@ export async function buildZipEntries(
     }
   }
 
+  // LICENSE.txt names the creator as the model page does, its author first.
+  const authorIds = [...new Set(prints.flatMap((print) => (print.authorId ? [print.authorId] : [])))];
+  const authors = new Map(
+    authorIds.length
+      ? (
+          await prisma.author.findMany({
+            where: { id: { in: authorIds } },
+            select: { id: true, name: true, handle: true },
+          })
+        ).map((author) => [author.id, author])
+      : [],
+  );
+
   const entries: ZipEntryDescriptor[] = [];
   for (const print of prints) {
     const prefix = opts.flatten ? print.name : `${print.category?.name || "unassigned"}/${print.name}`;
@@ -95,7 +108,7 @@ export async function buildZipEntries(
       if (filePath) entries.push({ arcname: `${prefix}/${plate.filename}`, filePath });
     }
     // Made now rather than read from disk: it's then there whether or not LICENSE.txt files are written beside them.
-    const license = licenseFileText(print);
+    const license = licenseFileText({ ...print, author: print.authorId ? authors.get(print.authorId) : null });
     if (license) {
       entries.push({
         arcname: `${prefix}/${LICENSE_FILENAME}`,

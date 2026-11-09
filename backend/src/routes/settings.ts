@@ -429,8 +429,9 @@ router.post(
     const { enabled } = parseBody(licenseFilesSchema, req.body);
     const previous = await getLicenseFiles();
     await setLicenseFiles(enabled);
+    // Even when it's unchanged: saving it again finishes a sweep a restart cut short.
+    void syncAllLicenseFiles();
     if (previous !== enabled) {
-      void syncAllLicenseFiles();
       void createLog({ userId: req.userId!, action: "license_files_changed", details: { enabled } });
     }
     res.json({ enabled });

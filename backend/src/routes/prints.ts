@@ -39,8 +39,10 @@ import { printQuality, startPrintQualityCheck } from "../services/modelQualitySe
 import { printProfilesOut, profileFillRunning, startProfileFill } from "../services/printProfileService";
 import { licenseById, PICKABLE_LICENSE_IDS } from "../services/licenseCatalog";
 import {
-  licenseFillRunning,
+  afterLicenseChange,
+  licensePending,
   printLicenseState,
+  retryLicenseFill,
   startLicenseFill,
   type PrintLicenseState,
 } from "../services/licenseService";
@@ -317,6 +319,7 @@ const licenseStateOut = (state: PrintLicenseState) => ({
   license: state.license,
   pending: state.pending,
   filling: state.filling,
+  failed: state.failed,
 });
 
 router.get(
@@ -327,14 +330,17 @@ router.get(
 );
 
 // The owner's only, as with print profiles: someone else's shared model shows what its owner's library kept.
+// `retry`: its owner asked again after a read failed, which is otherwise tried again only after a while.
+const licenseFillSchema = z.object({ retry: z.boolean().optional() });
 router.post(
   "/print/:id/license/fill",
   asyncHandler(async (req, res) => {
+    const { retry } = parseBody(licenseFillSchema, req.body ?? {});
     const print = await readableLicense(req.userId!, req.params.id);
     if (print.userId !== req.userId) throw new HttpError(404, "Print not found");
-    const before = printLicenseState(print);
-    if (before.pending) startLicenseFill(print.id);
-    res.json(licenseStateOut({ ...before, filling: licenseFillRunning(print.id) }));
+    if (retry) retryLicenseFill(print);
+    else if (licensePending(print)) startLicenseFill(print.id);
+    res.json(licenseStateOut(printLicenseState(print)));
   }),
 );
 
@@ -612,6 +618,8 @@ router.post(
     });
     if (print.authorId) await deleteAuthorIfOrphaned(print.authorId);
     await relocatePrintsForToken("creator", [print.id]);
+    // LICENSE.txt names who made it and where it's from, whatever the storage structure uses.
+    await afterLicenseChange(print.id);
     res.json({ print: await printOutById(req.userId!, print.id) });
     void createLog({
       userId: req.userId!,

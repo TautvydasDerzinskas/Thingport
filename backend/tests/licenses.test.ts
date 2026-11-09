@@ -16,7 +16,9 @@ import {
   PICKABLE_LICENSE_IDS,
 } from "../src/services/licenseCatalog";
 import { licenseData, licenseOut, licensePending } from "../src/services/licenseService";
-import { licenseFileText, syncAllLicenseFiles, syncLicenseFile } from "../src/services/licenseFile";
+import { licenseFileText, syncLicenseFile } from "../src/services/licenseFile";
+import { buildZipEntries } from "../src/services/downloadZip";
+import { setProviderEnabled } from "../src/services/providerSettingsService";
 import { getLicenseFiles, setLicenseFiles } from "../src/services/settingsService";
 import { emptyImportedPageMetadata } from "../src/services/importResolvers";
 import { readZipEntry } from "../src/utils/zipReader";
@@ -44,6 +46,24 @@ async function licenseFiles(printId: string) {
 }
 
 const read = (storagePath: string) => fs.readFileSync(path.join(STORAGE, storagePath), "utf8");
+
+/** Waits for what runs in the background after a request to get there. */
+async function until(check: () => Promise<boolean>, timeoutMs = 5000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!(await check())) {
+    if (Date.now() > deadline) throw new Error("timed out");
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+
+/** The licence state once a read has finished. */
+async function settled(printId: string) {
+  for (let i = 0; ; i++) {
+    const state = (await request(app).get(`/api/print/${printId}/license`).set(auth())).body;
+    if (!state.filling || i >= 100) return state;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+}
 
 let previousLicenseFiles = true;
 
@@ -196,6 +216,14 @@ describe("a model's licence", () => {
     expect(fs.existsSync(path.join(STORAGE, renamed.storagePath))).toBe(false);
   });
 
+  it("isn't counted in the model's size", async () => {
+    const printId = await upload(`Sized ${stamp}`);
+    await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "MIT" });
+    expect(await licenseFiles(printId)).toHaveLength(1);
+    const res = await request(app).get(`/api/print/${printId}`).set(auth());
+    expect(res.body.total_size).toBe(Buffer.byteLength(STL));
+  });
+
   it("lets the grid filter by what the licence allows", async () => {
     const open = await upload(`Open ${stamp}`);
     const closed = await upload(`Closed ${stamp}`);
@@ -256,24 +284,29 @@ describe("a model's licence", () => {
   it("is written or removed for every model when the admin setting changes", async () => {
     const printId = await upload(`Setting ${stamp}`);
     await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "MIT" });
-    expect(await licenseFiles(printId)).toHaveLength(1);
+    const [file] = await licenseFiles(printId);
+    const admin = { Authorization: `Bearer ${adminToken}` };
+    const save = (enabled: boolean) => request(app).post("/api/settings/license-files").set(admin).send({ enabled });
+    const written = async () => (await licenseFiles(printId)).length === 1;
 
-    await setLicenseFiles(false);
-    await syncAllLicenseFiles();
-    expect(await licenseFiles(printId)).toHaveLength(0);
+    expect((await save(false)).body).toEqual({ enabled: false });
+    await until(async () => !(await written()));
+    expect(fs.existsSync(path.join(STORAGE, file.storagePath))).toBe(false);
     // Zips still carry it.
     const print = await prisma.print.findUniqueOrThrow({ where: { id: printId } });
     expect(licenseFileText(print)).toContain("MIT License");
 
-    await setLicenseFiles(true);
-    await syncAllLicenseFiles();
-    expect(await licenseFiles(printId)).toHaveLength(1);
+    expect((await save(true)).body).toEqual({ enabled: true });
+    await until(written);
 
-    const off = await request(app)
-      .post("/api/settings/license-files")
-      .set({ Authorization: `Bearer ${adminToken}` })
-      .send({ enabled: true });
-    expect(off.body).toEqual({ enabled: true });
+    // Off, with the backend stopped before its sweep: saving it off again finishes the job.
+    await setLicenseFiles(false);
+    expect(await written()).toBe(true);
+    await save(false);
+    await until(async () => !(await written()));
+    await save(true);
+    await until(written);
+
     expect((await request(app).post("/api/settings/license-files").set(auth()).send({ enabled: false })).status).toBe(
       403,
     );
@@ -344,10 +377,44 @@ describe("an older import's licence", () => {
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
       const state = (await request(app).get(`/api/print/${printId}/license`).set(auth())).body;
-      expect(state).toMatchObject({ license: null, pending: false });
+      // Failed, not stated: its page says so and offers to try again.
+      expect(state).toMatchObject({ license: null, pending: false, failed: true });
+      expect((await request(app).get(`/api/print/${printId}`).set(auth())).body.license_failed).toBe(true);
       const print = await prisma.print.findUniqueOrThrow({ where: { id: printId } });
       expect(licensePending(print, Date.now() + 25 * 60 * 60 * 1000)).toBe(true);
     } finally {
+      reader.mockRestore();
+    }
+  });
+
+  it("isn't asked of a site an admin turned off, and is read on its owner's retry once it's back on", async () => {
+    const printId = await upload(`Off ${stamp}`);
+    await prisma.print.update({
+      where: { id: printId },
+      data: { sourceProvider: "makerables", sourceExternalId: `off-${stamp}`, licenseReadAt: null },
+    });
+    const reader = vi.spyOn(PROVIDERS.makerables.details, "read").mockResolvedValue({
+      ...emptyImportedPageMetadata(),
+      license: { id: "CC-BY-4.0", raw: "cc_by" },
+    });
+    await setProviderEnabled("makerables", false);
+    try {
+      await request(app).post(`/api/print/${printId}/license/fill`).set(auth());
+      expect(await settled(printId)).toMatchObject({ license: null, pending: false, failed: true });
+      expect(reader).not.toHaveBeenCalled();
+
+      await setProviderEnabled("makerables", true);
+      // Asked again without retry, it waits as after any failed read.
+      await request(app).post(`/api/print/${printId}/license/fill`).set(auth());
+      expect(await settled(printId)).toMatchObject({ license: null, failed: true });
+      expect(reader).not.toHaveBeenCalled();
+
+      const res = await request(app).post(`/api/print/${printId}/license/fill`).set(auth()).send({ retry: true });
+      expect(res.status).toBe(200);
+      expect(res.body.failed).toBe(false);
+      expect(await settled(printId)).toMatchObject({ license: { id: "CC-BY-4.0" }, failed: false });
+    } finally {
+      await setProviderEnabled("makerables", true);
       reader.mockRestore();
     }
   });
@@ -394,5 +461,105 @@ describe("LICENSE.txt", () => {
     expect(text).toContain("You may not: use it commercially, selling prints included.");
     expect(text).toContain("MakerWorld adds:\nPlease don't sell prints.");
     expect(text).toContain('Credit line:\n"Articulated Dragon" by Mara Voss (https://makerworld.com/');
+  });
+
+  it("names the model's author when it has no creator, as its page does, in the folder and in zips", async () => {
+    const printId = await upload(`Authored ${stamp}`);
+    const author = await prisma.author.create({
+      data: { id: `lic-author-${stamp}`, provider: "makerworld", externalId: `a-${stamp}`, name: "Mara Voss" },
+    });
+    await prisma.print.update({
+      where: { id: printId },
+      data: { authorId: author.id, creator: null, ...licenseData({ id: "CC-BY-4.0", raw: "BY" }, "user", null) },
+    });
+    await syncLicenseFile(printId);
+    const [file] = await licenseFiles(printId);
+    expect(read(file.storagePath)).toContain("\nby Mara Voss\n");
+    expect(read(file.storagePath)).toContain(`" by Mara Voss`);
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: printId },
+      include: { plates: true, category: true },
+    });
+    const entry = (await buildZipEntries([print])).find((e) => e.arcname.endsWith("/LICENSE.txt"));
+    expect(entry && "content" in entry ? entry.content.toString("utf8") : "").toContain("\nby Mara Voss\n");
+  });
+
+  it("forgets the creator and source when its owner resets the author", async () => {
+    const printId = await upload(`Reset ${stamp}`);
+    await prisma.print.update({
+      where: { id: printId },
+      data: {
+        creator: "Mara Voss",
+        sourceProvider: "makerworld",
+        sourceExternalId: `reset-${stamp}`,
+        ...licenseData({ id: "CC-BY-4.0", raw: "BY" }, "provider", "makerworld"),
+      },
+    });
+    await syncLicenseFile(printId);
+    expect(read((await licenseFiles(printId))[0].storagePath)).toContain("Mara Voss");
+    expect((await request(app).post(`/api/print/${printId}/author-reset`).set(auth())).status).toBe(200);
+    const text = read((await licenseFiles(printId))[0].storagePath);
+    expect(text).not.toContain("Mara Voss");
+    expect(text).not.toContain("Source:");
+  });
+
+  it("brings its row back in line when the file already says the right thing", async () => {
+    const printId = await upload(`Repaired ${stamp}`);
+    await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "MIT" });
+    const [file] = await licenseFiles(printId);
+    // As a write whose row update failed leaves it.
+    await prisma.printFile.update({ where: { id: file.id }, data: { size: 1, contentSha256: "0".repeat(64) } });
+    await syncLicenseFile(printId);
+    const [row] = await licenseFiles(printId);
+    expect(row.size).toBe(fs.statSync(path.join(STORAGE, row.storagePath)).size);
+    expect(row.contentSha256).toBeNull();
+  });
+
+  it("keeps the row of a file it couldn't remove, for the next sync", async () => {
+    const printId = await upload(`Stuck ${stamp}`);
+    await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "MIT" });
+    await prisma.print.update({ where: { id: printId }, data: { license: Prisma.DbNull, licenseAllows: [] } });
+    const fsp = (await import("node:fs/promises")).default;
+    const realRm = fsp.rm.bind(fsp);
+    // Only LICENSE.txt's removal fails, whatever else runs meanwhile.
+    const rm = vi
+      .spyOn(fsp, "rm")
+      .mockImplementation((target, options) =>
+        String(target).endsWith("LICENSE.txt")
+          ? Promise.reject(Object.assign(new Error("busy"), { code: "EBUSY" }))
+          : realRm(target, options),
+      );
+    try {
+      await expect(syncLicenseFile(printId)).rejects.toThrow("busy");
+    } finally {
+      rm.mockRestore();
+    }
+    expect(await licenseFiles(printId)).toHaveLength(1);
+    await syncLicenseFile(printId);
+    expect(await licenseFiles(printId)).toHaveLength(0);
+  });
+
+  it("keeps the one at LICENSE.txt when a merge brings another along beside it", async () => {
+    const printId = await upload(`Merged ${stamp}`);
+    await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "MIT" });
+    const [canonical] = await licenseFiles(printId);
+    const renamed = path.join(path.dirname(canonical.storagePath), "LICENSE (2).txt");
+    fs.writeFileSync(path.join(STORAGE, renamed), "another model's licence");
+    // Older than the model's own, as a merged model's from before it can be.
+    await prisma.printFile.create({
+      data: {
+        printId,
+        role: "LICENSE",
+        filename: "LICENSE.txt",
+        mime: "text/plain",
+        size: 24,
+        storagePath: renamed,
+        createdAt: new Date(0),
+      },
+    });
+    await syncLicenseFile(printId);
+    const files = await licenseFiles(printId);
+    expect(files.map((f) => f.id)).toEqual([canonical.id]);
+    expect(fs.existsSync(path.join(STORAGE, renamed))).toBe(false);
   });
 });

@@ -45,7 +45,9 @@ export type ProviderLicense = {
   requires?: Partial<LicenseDef["requires"]>;
 };
 
-// Raised when a provider's mapping changes, so a model read before is read again the next time it's opened.
+// Raised when a provider's mapping changes, so a model read before is read again the next time it's opened. Only
+// models with a licence carry it: one whose site stated none is read again only if a migration clears its
+// licenseReadAt, as one should for that site's models when its mapping starts finding a licence it didn't before.
 export const LICENSE_MAP_VERSION = 1;
 
 const NONE = { credit: false, sameLicense: false };

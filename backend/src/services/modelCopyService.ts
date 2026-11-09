@@ -74,7 +74,10 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
   const plates = source.plates.map((plate) => ({ plate, from: resolvePlateFilePath(plate) }));
   const missing = [
     ...plates.flatMap(({ plate, from }) => (from ? [] : [plate.filename])),
-    ...source.files.flatMap((file) => (fsSync.existsSync(managedPrintFilePath(file)) ? [] : [file.filename])),
+    // Not its LICENSE.txt, which the copy writes for itself.
+    ...source.files.flatMap((file) =>
+      file.role === "LICENSE" || fsSync.existsSync(managedPrintFilePath(file)) ? [] : [file.filename],
+    ),
   ];
   if (missing.length) {
     throw new HttpError(

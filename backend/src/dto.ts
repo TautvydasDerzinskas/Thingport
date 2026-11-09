@@ -227,9 +227,11 @@ export type PrintOut = {
   profiles_pending?: boolean;
   profiles_filling?: boolean;
   /** On the detail fetch: the source hasn't been read for its licence yet, so its owner's model page starts that
-   *  (POST /print/:id/license/fill); and one is already waiting or running. */
+   *  (POST /print/:id/license/fill); one is already waiting or running; and the last read failed, which its owner
+   *  can retry (`{ retry: true }`). */
   license_pending?: boolean;
   license_filling?: boolean;
+  license_failed?: boolean;
 };
 
 export type RemoteOriginOut = {
@@ -379,7 +381,9 @@ export function toPrintOut(
   const generatorScripts = supporting
     .filter((f) => f.filename.toLowerCase().endsWith(".scad"))
     .map((f) => ({ id: f.id, filename: f.filename }));
-  const totalSize = plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + f.size, 0);
+  // The model's own files: LICENSE.txt is Thingport's, written from its licence.
+  const totalSize =
+    plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + (f.role === "LICENSE" ? 0 : f.size), 0);
   const previewImageOuts = (previewImages ?? [])
     .toSorted((a, b) => a.position - b.position)
     .map((image) => toPreviewImageOut(image, print.assetsPath))

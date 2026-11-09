@@ -359,6 +359,17 @@ describe("copying, more closely", () => {
     expect(await prisma.print.count({ where: { userId: viewer.id, copiedFromId: sourceId } })).toBe(0);
   });
 
+  it("copies a model whose LICENSE.txt is missing, and writes the copy's own", async () => {
+    const sourceId = await sharedModel(owner, `licensed-${Date.now()}`);
+    await request(app).post(`/api/print/${sourceId}/meta`).set(auth(owner)).send({ license: "CC-BY-4.0" });
+    const license = await prisma.printFile.findFirstOrThrow({ where: { printId: sourceId, role: "LICENSE" } });
+    fs.rmSync(path.join(STORAGE, license.storagePath));
+    const res = await request(app).post(`/api/print/${sourceId}/copy`).set(auth(viewer));
+    expect(res.status).toBe(200);
+    const copy = await prisma.printFile.findFirstOrThrow({ where: { printId: res.body.print.id, role: "LICENSE" } });
+    expect(fs.readFileSync(path.join(STORAGE, copy.storagePath), "utf8")).toContain("Attribution 4.0");
+  });
+
   it("refuses a model left with no files", async () => {
     const sourceId = await sharedModel(owner, `emptied-${Date.now()}`);
     await prisma.plate.deleteMany({ where: { printId: sourceId } });

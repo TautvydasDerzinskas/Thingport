@@ -287,6 +287,7 @@ const MODEL_SELECT = {
   },
   descriptionImages: { select: { id: true, mime: true } },
   license: true,
+  licenseReadAt: true,
 } satisfies Prisma.PrintSelect;
 type PublishedPrint = Prisma.PrintGetPayload<{ select: typeof MODEL_SELECT }>;
 
@@ -392,16 +393,17 @@ function modelDoc(
     "thingport:author": print.author ?? undefined,
     "thingport:category": category,
     "thingport:generatorScriptWithheld": print.generatorScriptWithheld || undefined,
-    "thingport:license": licenseTerm(print.license),
+    "thingport:license": licenseTerm(print),
     "thingport:unfillableGaps": print.unfillableGaps.length ? print.unfillableGaps : undefined,
     "thingport:descriptionImages": descriptionImages.length ? descriptionImages : undefined,
   });
 }
 
 /** The model's licence as partners keep it: what its source listed or its owner picked. */
-function licenseTerm(value: Prisma.JsonValue) {
-  const license = storedLicense(value);
-  if (!license) return undefined;
+function licenseTerm(print: Pick<PublishedPrint, "license" | "licenseReadAt" | "sourceProvider">) {
+  const license = storedLicense(print.license);
+  // Read from its site, which stated none: said too, so a copy doesn't read it again and its page says "not stated".
+  if (!license) return print.licenseReadAt && print.sourceProvider ? { none: true as const } : undefined;
   return {
     id: license.id ?? undefined,
     raw: license.raw.slice(0, LICENSE_TEXT_MAX),

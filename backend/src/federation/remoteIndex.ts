@@ -309,26 +309,30 @@ const modelSchema = z.object({
     .optional()
     .catch(undefined),
   "thingport:generatorScriptWithheld": flag,
+  // A licence, or `{ none: true }` for a model whose site was read and stated none.
   "thingport:license": z
-    .object({
-      id: z.string().max(100).optional().catch(undefined),
-      raw: z.string().max(500),
-      label: z.string().max(500).optional().catch(undefined),
-      url: z
-        .string()
-        .max(500)
-        .regex(/^https?:\/\//)
-        .optional()
-        .catch(undefined),
-      terms: z.string().max(20_000).optional().catch(undefined),
-      allows: z.array(z.enum(LICENSE_ACTIONS)).max(LICENSE_ACTIONS.length).optional().catch(undefined),
-      requires: z
-        .object({ credit: z.boolean().optional(), sameLicense: z.boolean().optional() })
-        .optional()
-        .catch(undefined),
-      source: z.enum(["provider", "user"]).catch("provider"),
-      provider: z.string().max(40).optional().catch(undefined),
-    })
+    .union([
+      z.object({
+        id: z.string().max(100).optional().catch(undefined),
+        raw: z.string().max(500),
+        label: z.string().max(500).optional().catch(undefined),
+        url: z
+          .string()
+          .max(500)
+          .regex(/^https?:\/\//)
+          .optional()
+          .catch(undefined),
+        terms: z.string().max(20_000).optional().catch(undefined),
+        allows: z.array(z.enum(LICENSE_ACTIONS)).max(LICENSE_ACTIONS.length).optional().catch(undefined),
+        requires: z
+          .object({ credit: z.boolean().optional(), sameLicense: z.boolean().optional() })
+          .optional()
+          .catch(undefined),
+        source: z.enum(["provider", "user"]).catch("provider"),
+        provider: z.string().max(40).optional().catch(undefined),
+      }),
+      z.object({ none: z.literal(true) }),
+    ])
     .optional()
     .catch(undefined),
   "thingport:unfillableGaps": strings(SOURCE_GAPS.length, 40),
@@ -344,8 +348,9 @@ export type RemoteModelDetails = {
   author: { provider: string; externalId: string } | null;
   category: CategoryRef | null;
   generatorScriptWithheld: boolean;
-  /** Its licence, as its owner's library had it. Absent from a partner too old to say. */
-  license?: (ProviderLicense & { source: "provider" | "user" }) | null;
+  /** Its licence, as its owner's library had it; null when its site was read and stated none. Absent from a partner
+   *  too old to say, or one whose library hasn't read it yet. */
+  license?: (ProviderLicense & { source: "provider" | "user"; provider: string | null }) | null;
   unfillableGaps: SourceGap[];
   /** Its description's images by their ids there (`/description-image/<id>`), and where each is fetched. */
   descriptionImages: { id: string; url: string }[];
@@ -619,7 +624,7 @@ const saysMore = (model: Model) =>
   );
 
 function licenseOfTerm(term: Model["thingport:license"]): RemoteModelDetails["license"] {
-  if (!term) return null;
+  if (!term || "none" in term) return null;
   return {
     id: term.id ?? null,
     raw: term.raw,
@@ -629,6 +634,7 @@ function licenseOfTerm(term: Model["thingport:license"]): RemoteModelDetails["li
     ...(term.allows ? { allows: term.allows } : {}),
     ...(term.requires ? { requires: term.requires } : {}),
     source: term.source,
+    provider: term.provider ?? null,
   };
 }
 

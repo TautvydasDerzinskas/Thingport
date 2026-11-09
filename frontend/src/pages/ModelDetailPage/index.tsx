@@ -89,7 +89,9 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     useCallback(
       (id: string, license: License | null) =>
         setPrint((prev) =>
-          prev && prev.id === id ? { ...prev, license, license_pending: false, license_filling: false } : prev,
+          prev && prev.id === id
+            ? { ...prev, license, license_pending: false, license_filling: false, license_failed: false }
+            : prev,
         ),
       [],
     ),
@@ -488,8 +490,15 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
             <LicenseStrip
               license={print.license ?? null}
               loading={licenseFill.loading}
+              failed={licenseFill.failed}
+              onRetry={licenseFill.retry}
               provider={print.source_provider}
-              credit={{ title: print.title || print.name, creator: print.creator, sourceUrl: print.source_url }}
+              credit={{
+                title: print.title || print.name,
+                // Named as the side panel names them.
+                creator: print.author?.name || print.author?.handle || print.creator,
+                sourceUrl: print.source_url,
+              }}
               onChange={
                 print.owner || print.tool_id ? undefined : () => navigate(`/models/${print.id}?edit=${print.id}`)
               }
