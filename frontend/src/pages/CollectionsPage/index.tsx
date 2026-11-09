@@ -346,7 +346,13 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
         </Stack>
       )}
 
-      {formOpen && <CollectionFormModal onClose={() => setFormOpen(false)} onSubmit={createCollection} />}
+      {formOpen && (
+        <CollectionFormModal
+          onClose={() => setFormOpen(false)}
+          onSubmit={createCollection}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
     </Stack>
   );
 }

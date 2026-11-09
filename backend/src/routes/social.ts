@@ -29,6 +29,8 @@ import {
   remotePerson,
   remotePersonCollections,
   remotePersonModels,
+  REMOTE_SHARED_PAGE,
+  remoteSharedWithYou,
 } from "../federation/remoteExplore";
 import { remoteCopyStatus, startRemoteCopy } from "../federation/remoteCopy";
 import { sendRemoteZip, streamRemoteFile } from "../federation/remoteFiles";
@@ -106,7 +108,13 @@ router.get(
     if (!live) {
       res.json({
         ...local,
-        elsewhere: { people: [], recent_models: [], recent_collections: [], shared_with_you: [] },
+        elsewhere: {
+          people: [],
+          recent_models: [],
+          recent_collections: [],
+          shared_with_you: [],
+          shared_with_you_total: 0,
+        },
         instances: [],
       });
       return;
@@ -114,7 +122,13 @@ router.get(
     void syncStale(EXPLORE_FRESH_MS).catch(() => {});
     const [elsewhere, instances] = await Promise.all([
       scope === "here"
-        ? Promise.resolve({ people: [], recent_models: [], recent_collections: [], shared_with_you: [] })
+        ? Promise.resolve({
+            people: [],
+            recent_models: [],
+            recent_collections: [],
+            shared_with_you: [],
+            shared_with_you_total: 0,
+          })
         : remoteOverview(scope === "all" ? null : scope, req.userId!),
       instancesOut(),
     ]);
@@ -128,6 +142,19 @@ async function assertElsewhere(): Promise<void> {
   await assertSocialOn();
   if (!(await isFederationLive())) throw new HttpError(404, "Connected instances are off", "federation_off");
 }
+
+// What partners' people shared with the viewer, past the first page Explore came with: ?scope=all (the default) or
+// a partner's id, as Explore's.
+router.get(
+  "/explore/elsewhere/shared",
+  asyncHandler(async (req, res) => {
+    await assertElsewhere();
+    const scope = typeof req.query.scope === "string" && req.query.scope !== "all" ? req.query.scope : null;
+    const { limit, offset } = pageQuery(req.query, REMOTE_SHARED_PAGE);
+    const page = await remoteSharedWithYou(scope, req.userId!, limit, offset);
+    sendPage(res, page.collections, offset, page.total);
+  }),
+);
 
 router.get(
   "/explore/elsewhere/person/:id",
@@ -254,7 +281,9 @@ router.get(
     await assertSocialOn();
     const { limit, offset } = pageQuery(req.query, SHARED_WITH_YOU_PAGE);
     const page = await sharedWithYou(req.userId!, limit, offset);
-    sendPage(res, page.collections, offset, page.total);
+    // With when each was last shared or added to, as Explore's first page says, to order partners' beside them.
+    const items = page.collections.map((collection) => ({ ...collection, shared_at: page.at[collection.id] ?? null }));
+    sendPage(res, items, offset, page.total);
   }),
 );
 

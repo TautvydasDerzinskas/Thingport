@@ -70,7 +70,11 @@ export const SOCIAL_SURFACES: Record<string, FederationPlan> = {
   },
   "GET /explore/shared": {
     kind: "federates",
-    how: "This instance's collections shared with the viewer; partners' people's come with GET /explore, from the Update of a thingport:Collection addressed to them",
+    how: "This instance's collections shared with the viewer; partners' people's at GET /explore/elsewhere/shared",
+  },
+  "GET /explore/elsewhere/shared": {
+    kind: "federates",
+    how: "Partners' people's collections shared with the viewer, kept from the Update of a thingport:Collection addressed to them",
   },
   "GET /social/people": {
     kind: "federates",

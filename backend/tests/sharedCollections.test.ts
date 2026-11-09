@@ -6,6 +6,7 @@ import os from "node:os";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { setSocialSettings } from "../src/services/settingsService";
+import { blockedBy, sessionOf } from "./helpers/locks";
 
 const app = createApp();
 
@@ -135,6 +136,8 @@ describe("a collection shared with picked people", () => {
       expect(page.status).toBe(200);
       expect(page.body).toHaveLength(1);
       expect(page.headers["x-total-count"]).toBe("2");
+      // With when, to order partners' people's beside it.
+      expect(Date.parse(page.body[0].shared_at)).toBeGreaterThan(0);
     }
     expect(pages.map((page) => page.body[0].id).toSorted()).toEqual([collectionId, second].toSorted());
     await request(app).delete(`/api/collection/${second}`).set(auth(carl));
@@ -264,6 +267,116 @@ describe("a collection shared with picked people", () => {
     } finally {
       await request(app).delete(`/api/collection/${big}`).set(auth(alex));
       await prisma.user.deleteMany({ where: { id: { in: ids } } });
+    }
+  });
+
+  it("lets in only one of two people added at once to a list of 99", async () => {
+    const crowd = Array.from({ length: 101 }, (_, n) => ({
+      email: `shared-race-${n}-${RUN}@example.com`,
+      displayName: `Race ${n}`,
+    }));
+    await prisma.user.createMany({ data: crowd });
+    const ids = (
+      await prisma.user.findMany({ where: { email: { in: crowd.map((user) => user.email) } }, select: { id: true } })
+    ).map((user) => user.id);
+    const full = (
+      await request(app)
+        .post("/api/collections")
+        .set(auth(alex))
+        .send({ name: `Nearly full ${RUN}` })
+    ).body.id as string;
+    const share = (body: Record<string, unknown>) =>
+      request(app)
+        .patch(`/api/collection/${full}/sharing`)
+        .set(auth(alex))
+        .send(body)
+        .then((res) => res);
+    // Both asked while its row is held, so each waits on it and they come in one after the other, whatever the pace.
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let holding!: () => void;
+    const holds = new Promise<void>((resolve) => (holding = resolve));
+    let holder = 0;
+    try {
+      expect((await share({ add_user_ids: ids.slice(0, 99) })).body.people).toHaveLength(99);
+      const held = prisma
+        .$transaction(
+          async (tx) => {
+            holder = await sessionOf(tx);
+            await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${full} FOR UPDATE`;
+            holding();
+            await released;
+          },
+          { timeout: 20_000 },
+        )
+        .catch(() => {});
+      await holds;
+      const both = [share({ add_user_ids: [ids[99]] }), share({ add_user_ids: [ids[100]] })];
+      try {
+        await blockedBy(holder, 2);
+      } finally {
+        release();
+        await held;
+      }
+      const statuses = (await Promise.all(both)).map((res) => res.status).toSorted();
+      expect(statuses).toEqual([200, 422]);
+      const kept = await request(app).get(`/api/collection/${full}/sharing`).set(auth(alex));
+      expect(kept.body.people).toHaveLength(100);
+    } finally {
+      release();
+      await request(app).delete(`/api/collection/${full}`).set(auth(alex));
+      await prisma.user.deleteMany({ where: { id: { in: ids } } });
+    }
+  });
+
+  it("is refused, with nobody told, when social features are turned off as it's shared", async () => {
+    const quiet = (
+      await request(app)
+        .post("/api/collections")
+        .set(auth(alex))
+        .send({ name: `Quiet ${RUN}` })
+    ).body.id as string;
+    const told = () => prisma.notification.count({ where: { userId: carl.id, type: "share" } });
+    const before = await told();
+    // An admin turning them off, under way as it's shared: their row's held until that's done.
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let changed!: () => void;
+    const changing = new Promise<void>((resolve) => (changed = resolve));
+    let holder = 0;
+    const turningOff = prisma
+      .$transaction(
+        async (tx) => {
+          holder = await sessionOf(tx);
+          await tx.$executeRaw`UPDATE "Setting" SET value = value || '{"enabled": false}'::jsonb WHERE key = 'social'`;
+          changed();
+          await released;
+        },
+        { timeout: 20_000 },
+      )
+      .catch(() => {});
+    try {
+      await changing;
+      const shared = request(app)
+        .patch(`/api/collection/${quiet}/sharing`)
+        .set(auth(alex))
+        .send({ visibility: "shared", add_user_ids: [carl.id] })
+        .then((res) => res);
+      try {
+        await blockedBy(holder);
+      } finally {
+        release();
+        await turningOff;
+      }
+      const res = await shared;
+      expect(res.status).toBe(409);
+      expect(res.body.code).toBe("social_off");
+      expect(await prisma.collectionShare.count({ where: { collectionId: quiet } })).toBe(0);
+      expect(await told()).toBe(before);
+    } finally {
+      release();
+      await setSocialSettings({ enabled: true });
+      await request(app).delete(`/api/collection/${quiet}`).set(auth(alex));
     }
   });
 

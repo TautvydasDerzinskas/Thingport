@@ -286,6 +286,7 @@ const CollectionActionsMenu = forwardRef<CollectionActionsHandle, Props>(functio
           share={editOpen === "share"}
           onClose={() => setEditOpen(false)}
           onSubmit={handleEdit}
+          onUnauthorized={onUnauthorized}
         />
       )}
 

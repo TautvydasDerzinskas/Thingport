@@ -1176,9 +1176,9 @@ enum PeerStatus {
 
 /// Another instance: asked by us, connected, paused or blocked. One asking us is a PeerRequest until an admin approves.
 model Peer {
-  id            String               @id @default(cuid())
+  id            String                 @id @default(cuid())
   /// Scheme, host and port, as all of its addresses start: who it is here.
-  origin        String               @unique
+  origin        String                 @unique
   name          String?
   version       String?
   /// Its instance actor and shared inbox, as it published them.
@@ -1191,7 +1191,7 @@ model Peer {
   /// The Follow that paired us, ours or theirs: what an Undo or a Reject refers to.
   followId      String?
   /// "us" when we asked, "them" when they did.
-  initiatedBy   String               @default("us")
+  initiatedBy   String                 @default("us")
   /// Ours, sent with our request.
   note          String?
   connectedAt   DateTime?
@@ -1199,8 +1199,8 @@ model Peer {
   lastSeenAt    DateTime?
   lastInboundAt DateTime?
   lastError     String?
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
   deliveries    FederationDelivery[]
   /// When what it shares was last read into the index below, and why the last try failed.
   syncedAt      DateTime?
@@ -1209,7 +1209,7 @@ model Peer {
   /// when the partner does. Everything for the side that can't be reached then goes through it (links.ts).
   link          String?
   /// The secret the link is opened with: as it is for "ours", its SHA-256 for "theirs".
-  linkToken     String?              @unique
+  linkToken     String?                @unique
   /// When the link was last open.
   linkSeenAt    DateTime?
   /// "theirs": its actor document from when an admin compared its key, so its signatures are checked without asking it.
@@ -1217,6 +1217,7 @@ model Peer {
   people        RemotePerson[]
   models        RemoteModel[]
   collections   RemoteCollection[]
+  withdrawn     RemoteCollectionGone[]
   rooms         Chat[]
 
   @@index([status])
@@ -1314,6 +1315,17 @@ model RemoteCollection {
   @@index([peerId])
   @@index([personId])
   @@index([updatedAt])
+}
+
+/// A collection shared with people here that its owner's instance withdrew, and when (as asked for): a read of the
+/// partner's index asked for before then can't bring it back as public. Kept until a later read of the index is stored.
+model RemoteCollectionGone {
+  apId   String   @id
+  peerId String
+  peer   Peer     @relation(fields: [peerId], references: [id], onDelete: Cascade)
+  at     DateTime
+
+  @@index([peerId])
 }
 
 /// One of this instance's people a partner's person shared a collection with.

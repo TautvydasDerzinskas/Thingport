@@ -6,8 +6,7 @@ import { mediaAddress } from "../federation/media";
 import { isFederationLive } from "../federation/settings";
 import { kickSharing, queueSharing } from "../federation/sharedCollections";
 import { HttpError } from "../utils/fileUtils";
-import { createNotification } from "./notificationService";
-import { getSocialSettings } from "./settingsService";
+import { getSocialSettings, holdSocialSettings } from "./settingsService";
 import { userCards } from "./socialService";
 
 // Who a collection is shared with: its owner picks people, and while it's SHARED (and social features are on) they
@@ -184,10 +183,13 @@ export async function updateSharing(ownerId: string, collectionId: string, patch
       );
     }
     const people = (await peopleOf([collectionId], tx)).get(collectionId) ?? [];
+    // Turned off since the check above: refused, as it would have been then, rather than kept with nobody told.
+    if (!(await tellGained(tx, before, after, added))) {
+      throw new HttpError(409, "Social features are off", "social_off");
+    }
     return { before, after, people, added, removed };
   }, COUNTED_AFTER_LOCK);
   kickSharing();
-  await tellGained(result.before, result.after, result.added);
   return {
     visibility: visibilityOut(result.after.visibility),
     people: result.people,
@@ -198,35 +200,45 @@ export async function updateSharing(ownerId: string, collectionId: string, patch
 /** Whom a change to a collection lets see it who couldn't: everyone on its list when it's made shared from private,
  *  and those just added while it's shared. Someone added to a public one made shared could see it already, but was
  *  picked by name all the same, so they're told too. */
-async function gainedBy(before: Collection, after: Collection, added: string[]): Promise<string[]> {
+async function gainedBy(
+  tx: Prisma.TransactionClient,
+  before: Collection,
+  after: Collection,
+  added: string[],
+): Promise<string[]> {
   if (after.visibility !== "SHARED") return [];
   if (before.visibility !== "PRIVATE") return added;
-  const rows = await prisma.collectionShare.findMany({
+  const rows = await tx.collectionShare.findMany({
     where: { collectionId: after.id, userId: { not: null } },
     select: { userId: true },
   });
   return rows.flatMap((row) => (row.userId ? [row.userId] : []));
 }
 
-/** Tells each person who can see `after` now and couldn't before. Nobody while social features are off: they can't
- *  open it then, and are told once they can, when it's next shared with them. Never fails the change that led to it. */
-export async function tellGained(before: Collection, after: Collection, added: string[] = []): Promise<void> {
-  try {
-    if (!(await getSocialSettings()).enabled) return;
-    const userIds = (await gainedBy(before, after, added)).filter((id) => id !== after.userId);
-    if (!userIds.length) return;
-    const owner = await prisma.user.findUnique({ where: { id: after.userId }, select: { displayName: true } });
-    const title = `${owner?.displayName ?? "Someone"} shared “${after.name}” with you`;
-    await Promise.all(
-      userIds.map((userId) =>
-        createNotification(userId, { type: "share", title, internalPath: `/explore/collections/${after.id}` }).catch(
-          () => {},
-        ),
-      ),
-    );
-  } catch {
-    // Telling them is a courtesy; the change itself is made.
-  }
+/** Tells each person who can see `after` now and couldn't before, in `tx`, the change's own transaction, holding the
+ *  social setting until it's kept: so they're told exactly when it's kept, and turning social features off waits for
+ *  it. Nobody while they're off, when they can't open it, and false then. Everyone told has a row the change holds
+ *  (their place on its list), so telling them can't fail it. */
+export async function tellGained(
+  tx: Prisma.TransactionClient,
+  before: Collection,
+  after: Collection,
+  added: string[] = [],
+): Promise<boolean> {
+  if (!(await holdSocialSettings(tx)).enabled) return false;
+  const userIds = (await gainedBy(tx, before, after, added)).filter((id) => id !== after.userId);
+  if (!userIds.length) return true;
+  const owner = await tx.user.findUnique({ where: { id: after.userId }, select: { displayName: true } });
+  const title = `${owner?.displayName ?? "Someone"} shared “${after.name}” with you`;
+  await tx.notification.createMany({
+    data: userIds.map((userId) => ({
+      userId,
+      type: "share" as const,
+      title,
+      internalPath: `/explore/collections/${after.id}`,
+    })),
+  });
+  return true;
 }
 
 /** The visibility a collection's form asks for: `visibility` if it's sent, else `is_public` as older clients send it,

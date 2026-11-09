@@ -51,13 +51,16 @@ export type RemoteOverviewOut = {
   recent_collections: RemoteCollectionCardOut[];
   /** What partners' people shared with the viewer, the latest shared with them first, with when. */
   shared_with_you: (RemoteCollectionCardOut & { shared_at: string })[];
+  /** How many there are: the rest come a page at a time (`remoteSharedWithYou`). */
+  shared_with_you_total: number;
 };
 
 const PEOPLE = 48;
 const RECENT_MODELS = 12;
 const RECENT_COLLECTIONS = 8;
-// What partners' people shared with the viewer: all of it, short of someone sharing very many.
+// What partners' people shared with the viewer: on Explore's first page, then a page at a time.
 const SHARED_WITH_YOU = 48;
+export const REMOTE_SHARED_PAGE = 24;
 const ACTIVE = { status: "ACTIVE" } as const;
 
 const instanceOut = (peer: Pick<Peer, "id" | "name" | "origin">): InstanceOut => ({
@@ -158,6 +161,36 @@ export async function instancesOut(): Promise<InstanceOut[]> {
   return peers.map(instanceOut);
 }
 
+/** A page of what partners' people (`peerId`'s, or every connected partner's) shared with `viewerId`, the latest
+ *  shared with them first, each with when; and how many there are. */
+export async function remoteSharedWithYou(
+  peerId: string | null,
+  viewerId: string,
+  limit: number,
+  offset: number,
+): Promise<{ collections: (RemoteCollectionCardOut & { shared_at: string })[]; total: number }> {
+  const peer: Prisma.PeerWhereInput = peerId ? { ...ACTIVE, id: peerId } : ACTIVE;
+  const where = {
+    userId: viewerId,
+    collection: { peer, limited: true },
+  } satisfies Prisma.RemoteCollectionViewerWhereInput;
+  const [views, total] = await Promise.all([
+    prisma.remoteCollectionViewer.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }, { collectionId: "asc" }],
+      take: limit,
+      skip: offset,
+      include: { collection: { include: { peer: true, person: true } } },
+    }),
+    prisma.remoteCollectionViewer.count({ where }),
+  ]);
+  const cards = await collectionCardsOut(views.map((view) => view.collection));
+  return {
+    collections: cards.map((card, index) => ({ ...card, shared_at: views[index].createdAt.toISOString() })),
+    total,
+  };
+}
+
 /** Explore's rows of what partners share, from one partner (`peerId`) or all, and what their people shared with
  *  `viewerId`. What was shared with some people here only is never on the other rows. */
 export async function remoteOverview(peerId: string | null, viewerId: string): Promise<RemoteOverviewOut> {
@@ -181,22 +214,14 @@ export async function remoteOverview(peerId: string | null, viewerId: string): P
       take: RECENT_COLLECTIONS,
       include: { peer: true, person: true },
     }),
-    prisma.remoteCollectionViewer.findMany({
-      where: { userId: viewerId, collection: { peer, limited: true } },
-      orderBy: [{ createdAt: "desc" }, { collectionId: "asc" }],
-      take: SHARED_WITH_YOU,
-      include: { collection: { include: { peer: true, person: true } } },
-    }),
+    remoteSharedWithYou(peerId, viewerId, SHARED_WITH_YOU, 0),
   ]);
-  const sharedCards = await collectionCardsOut(sharedWithViewer.map((view) => view.collection));
   return {
     people: people.map(personOut),
     recent_models: models.map(modelCardOut),
     recent_collections: await collectionCardsOut(collections),
-    shared_with_you: sharedCards.map((card, index) => ({
-      ...card,
-      shared_at: sharedWithViewer[index].createdAt.toISOString(),
-    })),
+    shared_with_you: sharedWithViewer.collections,
+    shared_with_you_total: sharedWithViewer.total,
   };
 }
 

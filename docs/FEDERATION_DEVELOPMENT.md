@@ -228,23 +228,31 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   rows or a person's page, and opening one, its models or their files takes being among its viewers
   (`canSeeRemoteModel`). A person named newly is notified. The read of the partner's index leaves them alone (a model
   no longer listed but still in one becomes limited), and their owner is kept while they name them. After each read of
-  the index, every collection kept this way is read again: what's filed in it since, a new name, or a `404` that means
-  it's no longer shared with anyone here.
+  the index, whether or not it could be read, every collection kept this way is read again: what's filed in it since, a
+  new name, or a `404` that means it's no longer shared with anyone here. Shared with you on Explore pages them past
+  its first 48 (`/api/explore/elsewhere/shared`), each with when it was shared, beside this instance's own.
 - **Found again, read one at a time.** Each refresh also reads `/api/ap/shared`, a page at a time (`next`), every
   collection the partner's people shared with people here, so one whose `Update` never got here (social features off
-  here for longer than delivery keeps trying) still turns up; a list that can't be read is the partner's `syncError`.
+  here for longer than delivery keeps trying) still turns up; a list that can't be read, or the first collection that
+  can't, is the partner's `syncError` (unless reading its index failed then: that's the one shown).
   Reads and deletions of one collection run one at a time, from fetching to writing, so an older read can't put back
   someone a newer one took off. Each kept collection notes when it was asked for (`RemoteCollection.fetchedAt`), by
   the index or as shared, and the later of two reads is what's kept, whichever finishes last. Each model kept for one
   notes it too (`syncedAt`). Both kinds of read take their times from one clock (`askedAt` in `remoteIndex.ts`) that
   never gives two the same, so the later is always told apart; a tie, were there one, goes to the read as shared. A
+  model read as shared isn't made public by a read of the index asked for before it. A collection let go of (a
+  `Delete`, or a `404`) is noted with when (`RemoteCollectionGone`), so a read of the index asked for before then
+  can't bring it back as public; the note goes once a read of the index begun after it is stored. Reads being kept
+  hold the partner's kept collections and models shared, while the index is written, a collection let go of, or models
+  no collection holds pruned, alone (`holdRemoteModels`, an advisory lock), so each sees what the others wrote. A
   read writes nothing, its owner included, once the partner is blocked: it holds the partner's row
   (`FOR SHARE`, last) until it's written, so a block waits for it and then forgets it all. Nothing is read or kept while
   social features are off here: each read checks as its turn comes, and holds the setting (`FOR SHARE`) while it's
   kept and whoever's new is told, in one transaction, so turning them off waits for it, and one that finds them off
   keeps nothing and is read again once they're on.
   Deleting an account locks its row, then its collections, first, so none is made meanwhile, a change to who sees one
-  waits, and each one's `Delete` is queued.
+  waits, and each one's `Delete` is queued; deleting or merging collections locks them first too. Sharing with someone
+  here tells them in the same transaction, holding the social setting, so a share is never kept untold.
 - **Pictures.** The proxy serves a partner's picture only while something kept here names it: a person's avatar or
   cover, or a model's picture (`RemoteModel.images`, indexed). One only of models kept for shared collections goes
   only to someone who may see one of those models, whoever has its address, and is never cached by the browser; once

@@ -19,7 +19,13 @@ import type { Collection } from "../../api/collections";
 import { UnauthorizedError } from "../../api/client";
 import type { Print } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
-import { socialApi, type ExploreOverview, type ExploreScope, type InstanceRef } from "../../api/social";
+import {
+  socialApi,
+  type ExploreOverview,
+  type ExploreScope,
+  type InstanceRef,
+  type RemoteSharedCard,
+} from "../../api/social";
 import Segmented from "../../components/controls/Segmented";
 import { useToast } from "../../components/ToastProvider";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
@@ -77,7 +83,12 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
   const [elsewhereOpen, setElsewhereOpen] = useState(false);
   // Shared with the user past the first page, as Show more loaded them, and how many there are as it last said. A page
   // asked for before Explore was loaded again (another scope) is dropped when it comes.
-  const [moreShared, setMoreShared] = useState<{ items: Collection[]; total: number | null }>({
+  const [moreShared, setMoreShared] = useState<{
+    items: (Collection & { shared_at?: string | null })[];
+    total: number | null;
+  }>({ items: [], total: null });
+  // The same of what partners' people shared with the user.
+  const [moreElsewhere, setMoreElsewhere] = useState<{ items: RemoteSharedCard[]; total: number | null }>({
     items: [],
     total: null,
   });
@@ -98,6 +109,7 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
       sharedAsk.current += 1;
       setLoadingShared(false);
       setMoreShared({ items: [], total: null });
+      setMoreElsewhere({ items: [], total: null });
       setInstances(value.instances ?? []);
       // A partner no longer there: back to everything.
       if (scope !== "all" && scope !== "here" && !(value.instances ?? []).some((item) => item.id === scope)) {
@@ -263,32 +275,53 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
     RECENT_COLLECTIONS,
   );
 
-  const sharedWithYou = [...(overview.shared_with_you ?? []), ...moreShared.items];
+  const sharedWithYou: (Collection & { shared_at?: string | null })[] = [
+    ...(overview.shared_with_you ?? []),
+    ...moreShared.items,
+  ];
   const sharedTotal = moreShared.total ?? overview.shared_with_you_total ?? sharedWithYou.length;
-  // This instance's and partners' people's together, the latest shared with the user first.
+  const sharedElsewhere = [...(elsewhere?.shared_with_you ?? []), ...moreElsewhere.items];
+  const elsewhereTotal = moreElsewhere.total ?? elsewhere?.shared_with_you_total ?? sharedElsewhere.length;
+  const sharedLeft =
+    Math.max(0, sharedTotal - sharedWithYou.length) + Math.max(0, elsewhereTotal - sharedElsewhere.length);
+  // This instance's and partners' people's together, the latest shared with the user first: a page past the first
+  // carries its own times.
   const sharedEntries = newestFirst(
     [
       ...sharedWithYou.map((collection) => ({
-        at: sharedAt?.collections[collection.id],
+        at: sharedAt?.collections[collection.id] ?? collection.shared_at,
         node: collectionCard(collection),
       })),
-      ...(elsewhere?.shared_with_you ?? []).map((collection) => ({
+      ...sharedElsewhere.map((collection) => ({
         at: collection.shared_at,
         node: <RemoteCollectionCardView key={collection.id} collection={collection} />,
       })),
     ],
     Number.POSITIVE_INFINITY,
   );
+  // The next page of each that has more, this instance's and partners' people's.
   const showMoreShared = async () => {
     const asked = ++sharedAsk.current;
     setLoadingShared(true);
     try {
-      const page = await socialApi.sharedWithYou({ limit: SHARED_MORE, offset: sharedWithYou.length });
+      const none = { items: [], total: null };
+      const [page, remote] = await Promise.all([
+        sharedWithYou.length < sharedTotal
+          ? socialApi.sharedWithYou({ limit: SHARED_MORE, offset: sharedWithYou.length })
+          : Promise.resolve(none),
+        sharedElsewhere.length < elsewhereTotal
+          ? socialApi.elsewhere.shared({ scope, limit: SHARED_MORE, offset: sharedElsewhere.length })
+          : Promise.resolve(none),
+      ]);
       if (asked !== sharedAsk.current) return;
       const known = new Set(sharedWithYou.map((collection) => collection.id));
+      const knownElsewhere = new Set(sharedElsewhere.map((collection) => collection.id));
       // Something shared since Explore loaded moved the ranking under its pages: start again from the top, unless
       // Explore is being loaded already (another scope picked), which starts them again itself.
-      if (page.items.some((collection) => known.has(collection.id))) {
+      if (
+        page.items.some((collection) => known.has(collection.id)) ||
+        remote.items.some((collection) => knownElsewhere.has(collection.id))
+      ) {
         if (loadingOverview.current) return;
         const again = ++latest.current;
         loadingOverview.current = true;
@@ -301,10 +334,10 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
         return;
       }
       // The total as it is now: one unshared meanwhile leaves no button asking for it again.
-      setMoreShared((prev) => ({
-        items: [...prev.items, ...page.items.filter((collection) => !known.has(collection.id))],
-        total: page.total,
-      }));
+      if (page.total !== null) setMoreShared((prev) => ({ items: [...prev.items, ...page.items], total: page.total }));
+      if (remote.total !== null) {
+        setMoreElsewhere((prev) => ({ items: [...prev.items, ...remote.items], total: remote.total }));
+      }
     } catch (err) {
       if (asked !== sharedAsk.current) return;
       if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -350,10 +383,10 @@ export default function ExplorePage({ theme, previewMode, onUnauthorized, viewer
           action={!people.length ? elsewhereButton : undefined}
         >
           <Box sx={cardGridSx(6)}>{sharedEntries}</Box>
-          {sharedWithYou.length < sharedTotal && (
+          {sharedLeft > 0 && (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
               <Button size="small" variant="outlined" onClick={showMoreShared} disabled={loadingShared}>
-                {t("models:explore.showMore", { count: sharedTotal - sharedWithYou.length })}
+                {t("models:explore.showMore", { count: sharedLeft })}
               </Button>
             </Box>
           )}

@@ -389,6 +389,12 @@ describe("installing", () => {
     expect(await lockedBy("POST", "/collections/merge/", { primary_id: collection.id, ids: [] })).toBe(403);
     expect(await lockedBy("DELETE", `/collection/${encoded(collection.id)}`)).toBe(403);
     expect(await lockedBy("DELETE", `/print/${encoded(print.id)}`)).toBe(403);
+    // Nor a path in other letter case, which the routes take the same.
+    expect(await lockedBy("DELETE", `/Collection/${collection.id}`)).toBe(403);
+    expect(await lockedBy("DELETE", `/PRINT/${print.id}`)).toBe(403);
+    expect(await lockedBy("POST", "/Collections/Delete", { ids: [collection.id] })).toBe(403);
+    expect(await lockedBy("POST", "/Prints/Tags", { print_ids: [print.id] })).toBe(403);
+    expect((await request(app).delete(`/api/Collection/${collection.id}`).set(as)).status).toBe(403);
     expect(
       (
         await request(app)

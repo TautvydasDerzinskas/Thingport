@@ -8,7 +8,7 @@ import { here, localUserId, personOn, RetryLater, type Here } from "./chats";
 import { enqueueActivity, kickDelivery } from "./delivery";
 import { FederationFetchError } from "./fetch";
 import { sharedAudience } from "./publish";
-import { askedAt, readModels, remoteModelData } from "./remoteIndex";
+import { askedAt, holdRemoteModels, readModels, remoteModelData } from "./remoteIndex";
 import { AP_PREFIX, getRuntime } from "./runtime";
 
 /** Collections shared with partners' people (docs/FEDERATION_DEVELOPMENT.md, "Shared collections"). What partners
@@ -37,7 +37,7 @@ const collectionUrl = (at: Pick<Here, "origin">, id: string) => `${at.origin}${A
 export async function queueSharing(db: Db, collectionId: string, alsoPeerIds: string[] = []): Promise<void> {
   const peers = await peersOf(db, [collectionId], alsoPeerIds);
   if (!peers.length) return;
-  const at = await here();
+  const at = await here(db);
   const url = collectionUrl(at, collectionId);
   for (const peer of peers) {
     // Who it's for and its name only: the partner reads the rest from its address, its owner's avatar too.
@@ -59,12 +59,15 @@ export async function queueSharing(db: Db, collectionId: string, alsoPeerIds: st
  *  transaction that deletes them. */
 export async function queueCollectionsGone(db: Db, collectionIds: string[]): Promise<void> {
   if (!collectionIds.length) return;
+  // Held until they're gone, as a change to who sees one holds it (collectionSharing.ts): one under way is in what's
+  // read below, and one after waits, then finds it gone.
+  await db.$queryRaw`SELECT id FROM "Collection" WHERE id = ANY(${collectionIds}::text[]) FOR UPDATE`;
   const shares = await db.collectionShare.findMany({
     where: { collectionId: { in: collectionIds }, remotePersonId: { not: null } },
     select: { collectionId: true, remotePerson: { select: { peerId: true } } },
   });
   if (!shares.length) return;
-  const at = await here();
+  const at = await here(db);
   // One Delete of each to each partner, however many of its people were on the list.
   const told = new Map<string, { collectionId: string; peerId: string }>();
   for (const { collectionId, remotePerson } of shares) {
@@ -94,7 +97,7 @@ export async function queueAccountGone(db: Db, userId: string): Promise<void> {
     where: { userId, shares: { some: { remotePersonId: { not: null } } } },
     select: { id: true },
   });
-  if (!collections.length || !(await getPublicUrl())) return;
+  if (!collections.length || !(await getPublicUrl(db))) return;
   await queueCollectionsGone(
     db,
     collections.map((collection) => collection.id),
@@ -204,11 +207,7 @@ export async function sharedCollectionGoneFrom(actorId: URL, objectId: string): 
   if (!peer) return false;
   let gone = false;
   await oneAtATime(objectId, async () => {
-    const { count } = await prisma.remoteCollection.deleteMany({
-      where: { apId: objectId, peerId: peer.id, limited: true },
-    });
-    if (count) await pruneLimitedModels(peer.id);
-    gone = count > 0;
+    gone = await forget(peer.id, objectId, askedAt());
   });
   return gone;
 }
@@ -245,17 +244,29 @@ export async function refreshShared(peerId: string): Promise<void> {
   if (listed.error) {
     const message = `Couldn't list what its people shared with people here: ${listed.error.message}`;
     console.warn(`[federation] ${peer.origin}: ${message}`);
-    await prisma.peer.update({ where: { id: peer.id }, data: { syncError: message.slice(0, 500) } }).catch(() => {});
+    await failedOn(peer, message);
   }
+  // One that can't be read stays as it was; the first such is shown too, and the rest are read all the same.
+  let failed: string | null = null;
   for (const apId of new Set([...rows.map((row) => row.apId), ...listed.urls])) {
     try {
       await readShared(peer, apId);
     } catch (err) {
       // Social features turned off meanwhile: the rest wait too.
       if (err instanceof RetryLater) return;
+      failed ??= `Couldn't read a collection its people shared with people here: ${(err as Error).message}`;
       console.warn(`[federation] Couldn't read a collection shared from ${peer.origin}:`, (err as Error).message);
     }
   }
+  if (failed) await failedOn(peer, failed);
+}
+
+/** Shows `message` to the admin on the partner's row, unless the read of its index just now failed: that says more,
+ *  and stays. A read of it that works clears both. */
+async function failedOn(peer: Peer, message: string): Promise<void> {
+  await prisma.peer
+    .updateMany({ where: { id: peer.id, syncError: null }, data: { syncError: message.slice(0, 500) } })
+    .catch(() => {});
 }
 
 const sharedList = z.object({ orderedItems: z.array(z.unknown()), next: z.string().optional().catch(undefined) });
@@ -312,7 +323,7 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
   } catch (err) {
     // Not shared with anyone here any more, or gone: its owner's instance answers for it no longer.
     if (err instanceof FederationFetchError && (err.status === 404 || err.status === 410)) {
-      await forget(peer.id, apId);
+      await forget(peer.id, apId, readAt);
       return;
     }
     throw err;
@@ -321,7 +332,7 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
   const named = [...new Set(doc.to.flatMap((url) => localUserId(runtime, url) ?? []))].slice(0, VIEWERS_MAX);
   const users = named.length ? await prisma.user.findMany({ where: { id: { in: named } }, select: { id: true } }) : [];
   if (!users.length) {
-    await forget(peer.id, apId);
+    await forget(peer.id, apId, readAt);
     return;
   }
   const items = doc["thingport:items"];
@@ -336,6 +347,7 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
         // of it is kept, so nobody's its viewer without being told. Read again once they're on, by the Update tried
         // again or the refresh after the next read of the index.
         if (!(await holdSocialSettings(tx)).enabled) throw new RetryLater(SOCIAL_OFF);
+        await holdRemoteModels(tx, peer.id);
         const kept = await tx.remoteCollection.findUnique({
           where: { apId },
           select: { id: true, peerId: true, modelApIds: true, fetchedAt: true, viewers: { select: { userId: true } } },
@@ -452,20 +464,33 @@ async function tell(
   });
 }
 
-async function forget(peerId: string, apId: string): Promise<void> {
-  const { count } = await prisma.remoteCollection.deleteMany({ where: { apId, peerId, limited: true } });
+/** Lets go of `apId`, no longer shared with anyone here, as its owner's instance said `at` (when what told it was asked
+ *  for): noted, so a read of the index asked for before then can't bring it back as public (remoteIndex.ts). False when
+ *  it wasn't one kept here. */
+async function forget(peerId: string, apId: string, at: Date): Promise<boolean> {
+  const count = await prisma.$transaction(async (tx) => {
+    await holdRemoteModels(tx, peerId);
+    const deleted = await tx.remoteCollection.deleteMany({ where: { apId, peerId, limited: true } });
+    await tx.remoteCollectionGone.upsert({ where: { apId }, create: { apId, peerId, at }, update: { peerId, at } });
+    return deleted.count;
+  });
   if (count) await pruneLimitedModels(peerId);
+  return count > 0;
 }
 
-/** The models kept only for collections shared with people here that no such collection holds any more. */
-export async function pruneLimitedModels(peerId: string, db: Db = prisma): Promise<void> {
-  await db.$executeRaw`
-    DELETE FROM "RemoteModel" m
-    WHERE m."peerId" = ${peerId} AND m.limited
-      AND NOT EXISTS (
-        SELECT 1 FROM "RemoteCollection" c
-        WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
-      )`;
+/** The models kept only for collections shared with people here that no such collection holds any more. Waits for any
+ *  read being kept meanwhile, so a model it gives another collection is seen as held. */
+export async function pruneLimitedModels(peerId: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await holdRemoteModels(tx, peerId, true);
+    await tx.$executeRaw`
+      DELETE FROM "RemoteModel" m
+      WHERE m."peerId" = ${peerId} AND m.limited
+        AND NOT EXISTS (
+          SELECT 1 FROM "RemoteCollection" c
+          WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
+        )`;
+  });
 }
 
 /** Whether `userId` may open a partner's model: one shared openly there, or in a collection shared with them. */

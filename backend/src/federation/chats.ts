@@ -88,8 +88,9 @@ export async function live(): Promise<Runtime | null> {
 /** Here as the runtime has it, without loading it: a chat change made while connected instances are off (a message
  *  deleted, someone joining or leaving, a room changed or deleted) is queued for partners all the same, and sent once
  *  they're on again. */
-export async function here(): Promise<Here> {
-  const publicUrl = await getPublicUrl();
+export async function here(db?: Pick<Prisma.TransactionClient, "setting">): Promise<Here> {
+  // In the caller's transaction when it has one: it needn't wait for another connection while holding its own.
+  const publicUrl = await getPublicUrl(db);
   // What partners know this instance by: without it nothing can be addressed to them, so the change isn't made (its
   // transaction undone) and can be made again once it's set.
   if (!publicUrl) {

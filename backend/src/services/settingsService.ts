@@ -397,8 +397,9 @@ export function normalizePublicUrl(value: string | null | undefined): string | n
 
 // Seeded from PUBLIC_URL at startup; after that the row wins, so an admin's change sticks across restarts.
 // "" when there's none: links in emails then can't be absolute, and single sign-on can't work.
-export async function getPublicUrl(): Promise<string> {
-  const row = await prisma.setting.findUnique({ where: { key: PUBLIC_URL_KEY } });
+// `db`: the caller's transaction, when it's read in one.
+export async function getPublicUrl(db: Pick<Prisma.TransactionClient, "setting"> = prisma): Promise<string> {
+  const row = await db.setting.findUnique({ where: { key: PUBLIC_URL_KEY } });
   if (row) return typeof row.value === "string" ? (normalizePublicUrl(row.value) ?? "") : "";
   return normalizePublicUrl(PUBLIC_URL) ?? "";
 }

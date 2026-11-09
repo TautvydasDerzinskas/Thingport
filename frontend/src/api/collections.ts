@@ -208,7 +208,8 @@ export const collectionsApi = {
   merge: async (primaryId: string, ids: string[]): Promise<CollectionMergeResult> => {
     const res = await postJson("/collections/merge", { primary_id: primaryId, ids });
     await assertOkWithMessage(res, "Merge failed");
-    return res.json();
+    const result = (await res.json()) as CollectionMergeResult;
+    return { ...result, collection: collectionIn(result.collection) };
   },
 
   /** Their models are untouched. */

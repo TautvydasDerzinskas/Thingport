@@ -90,9 +90,14 @@ export type ExploreOverview = {
     recent_models: RemoteModelCard[];
     recent_collections: RemoteCollectionCard[];
     shared_with_you?: (RemoteCollectionCard & { shared_at: string })[];
+    /** How many there are: the rest from `elsewhere.shared`. */
+    shared_with_you_total?: number;
   };
   instances?: InstanceRef[];
 };
+
+/** A collection a partner's person shared with the user, with when. */
+export type RemoteSharedCard = RemoteCollectionCard & { shared_at: string };
 
 /** Explore narrowed: everything, this instance's own, or one partner's (its id). */
 export type ExploreScope = "all" | "here" | string;
@@ -242,6 +247,7 @@ export const socialApi = {
             recent_models: elsewhere.recent_models.map(modelPictures),
             recent_collections: elsewhere.recent_collections.map(collectionPictures),
             shared_with_you: (elsewhere.shared_with_you ?? []).map(collectionPictures),
+            shared_with_you_total: elsewhere.shared_with_you_total,
           },
         }
       : overview;
@@ -249,6 +255,19 @@ export const socialApi = {
 
   /** What partners' people share, read-only: null for something no longer there (or connected instances off). */
   elsewhere: {
+    /** What partners' people (one partner's, for its id) shared with the user, past the first page Explore came with. */
+    shared: async (params: {
+      scope: ExploreScope;
+      limit: number;
+      offset: number;
+    }): Promise<{ items: RemoteSharedCard[]; total: number }> => {
+      const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
+      if (params.scope !== "all") qs.set("scope", params.scope);
+      const res = await fetch(`${apiBase()}/explore/elsewhere/shared?${qs}`, { headers: authHeaders() });
+      await assertOkWithMessage(res, "Failed to load the collections");
+      const items = (await res.json()) as RemoteSharedCard[];
+      return { items: items.map(collectionPictures), total: Number(res.headers.get("X-Total-Count") ?? 0) };
+    },
     person: async (id: string): Promise<RemotePersonPage | null> => {
       const page = await getOrNull<RemotePersonPage>(`/explore/elsewhere/person/${encodeURIComponent(id)}`);
       return (
@@ -358,8 +377,12 @@ export const socialApi = {
   },
 
   /** A page of a user's public collections past the first, which came with their page; null for none any more. */
-  /** Collections their owners shared with the user, past the first page Explore came with. */
-  sharedWithYou: async (params: { limit: number; offset: number }): Promise<{ items: Collection[]; total: number }> => {
+  /** Collections their owners shared with the user, past the first page Explore came with, each with when it was last
+   *  shared or added to (older servers leave that out). */
+  sharedWithYou: async (params: {
+    limit: number;
+    offset: number;
+  }): Promise<{ items: (Collection & { shared_at?: string | null })[]; total: number }> => {
     const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
     const res = await fetch(`${apiBase()}/explore/shared?${qs}`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();

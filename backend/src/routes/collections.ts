@@ -267,11 +267,12 @@ router.patch(
       // Partners with people on its list hear of a new name or visibility now, not at their next read: queued with
       // the change, sent once it's kept.
       if (saved.visibility !== found.visibility || saved.name !== found.name) await queueSharing(tx, saved.id);
+      // Whoever can see it now and couldn't is told with the change (nobody while social features are off).
+      if (saved.visibility !== found.visibility) await tellGained(tx, found, saved);
       return { collection: found, updated: saved };
     });
     kickSharing();
     const renamed = body.name !== collection.name;
-    await tellGained(collection, updated);
     if (renamed) await relocatePrintsForToken("collection", await collectionPrintIds(updated.id));
     const [itemCount, covers, bookmarked, sync] = await Promise.all([
       prisma.collectionItem.count({ where: { collectionId: updated.id } }),

@@ -23,6 +23,7 @@ import {
   type CollectionVisibility,
   type SharePerson,
 } from "../../api/collections";
+import { UnauthorizedError } from "../../api/client";
 import { socialApi } from "../../api/social";
 import TagInput from "../../components/TagInput";
 import Segmented from "../../components/controls/Segmented";
@@ -40,6 +41,8 @@ type Props = {
   onClose: () => void;
   /** `sharing` is who sees it, when that changed: applied once the collection is saved. */
   onSubmit: (input: CollectionInput, sharing: CollectionSharingPatch | null) => Promise<void>;
+  /** The session ran out while finding people or loading who sees it. */
+  onUnauthorized?: () => void;
 };
 
 const iconSx = { fontSize: 16 } as const;
@@ -49,7 +52,7 @@ export const visibilityOf = (collection?: Collection | null): CollectionVisibili
   collection?.visibility ?? (collection?.is_public ? "public" : "private");
 
 /** Edit mode is create mode prefilled from `collection`. */
-export default function CollectionFormModal({ collection, share = false, onClose, onSubmit }: Props) {
+export default function CollectionFormModal({ collection, share = false, onClose, onSubmit, onUnauthorized }: Props) {
   const { t, i18n } = useTranslation(["models", "common"]);
   const [name, setName] = useState(collection?.name || "");
   const [description, setDescription] = useState(collection?.description || "");
@@ -58,9 +61,12 @@ export default function CollectionFormModal({ collection, share = false, onClose
   const social = useSocialStatus();
   // On a phone the three choices fit one row without their icons.
   const narrow = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
-  const [visibility, setVisibility] = useState<CollectionVisibility>(() =>
-    share && visibilityOf(collection) === "private" ? "shared" : visibilityOf(collection),
-  );
+  // As saved, from the card until who sees it is loaded, then as the server has it (changed elsewhere meanwhile, say):
+  // what's sent is only a change from that.
+  const [savedVisibility, setSavedVisibility] = useState<CollectionVisibility>(() => visibilityOf(collection));
+  const opened = (saved: CollectionVisibility): CollectionVisibility =>
+    share && saved === "private" ? "shared" : saved;
+  const [visibility, setVisibility] = useState<CollectionVisibility>(() => opened(visibilityOf(collection)));
   // Who it's shared with, as saved (kept while it's private or public too) and as picked here. Until the saved list is
   // here, who sees it can't be changed: making it shared would share it with people the owner wasn't shown.
   const [savedPeople, setSavedPeople] = useState<SharePerson[] | null>(collection ? null : []);
@@ -84,11 +90,14 @@ export default function CollectionFormModal({ collection, share = false, onClose
     collectionsApi.sharing(collectionId).then(
       (sharing) => {
         if (!current) return;
+        setSavedVisibility(sharing.visibility);
+        setVisibility(opened(sharing.visibility));
         setSavedPeople(sharing.people);
         setPeople(sharing.people);
       },
-      () => {
+      (err: unknown) => {
         if (!current) return;
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
         setLoadFailed(true);
         // Back to how it is: nothing about who sees it changes until the list loads.
         setVisibility(visibilityOf(collection));
@@ -110,7 +119,7 @@ export default function CollectionFormModal({ collection, share = false, onClose
     // Someone here by their user id, someone elsewhere by their id on this instance.
     const ids = (list: SharePerson[], remote: boolean) =>
       list.filter((person) => Boolean(person.remote) === remote).map((person) => person.id);
-    const changed = visibility !== visibilityOf(collection);
+    const changed = visibility !== savedVisibility;
     if (!changed && !add.length && !remove.length) return null;
     const patch: CollectionSharingPatch = changed ? { visibility } : {};
     if (ids(add, false).length) patch.add_user_ids = ids(add, false);
@@ -242,6 +251,7 @@ export default function CollectionFormModal({ collection, share = false, onClose
                   ) : (
                     <PeoplePicker
                       search={socialApi.people}
+                      onUnauthorized={onUnauthorized}
                       // What's picked is sent as Save is pressed: a change made while it saves would be lost.
                       disabled={saving}
                       help={social.federation ? t("models:collections.form.findPeopleHelp") : undefined}
