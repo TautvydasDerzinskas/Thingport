@@ -25,8 +25,8 @@ import manifest from "./manifest.generated";
 // with the refresh token beside it. Thingport keeps both and renews the access token itself as it runs out, saving each
 // new refresh token, as the site's own 401 retry does -- a new pair comes only once the access token has (nearly) run
 // out, and the old refresh token keeps working, so the browser's sign-in isn't ended by it. Thingport Grab reads the
-// pair from an open fab365.net tab and sends each new one; pasting the two local-storage rows works too, while an access
-// token pasted alone works until it expires but can't be renewed. Who it is (accountId) is the token's `loginId`.
+// pair from an open fab365.net tab and sends each new one; pasting the two local-storage values works too, while an
+// access token pasted alone works until it expires but can't be renewed. Who it is (accountId) is the token's `loginId`.
 
 const ID = manifest.id;
 const log = createLogger(ID);
@@ -62,8 +62,9 @@ const JWT = String.raw`[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`;
 /** A token under its key, as a copied row of the site's local storage has it (`accessToken<tab><jwt>`), or as JSON. */
 const labelled = (key: string) => new RegExp(String.raw`\b${key}\b["']?\s*[:=\t ]\s*["']?(${JWT})`);
 
-/** The tokens in what a person pasted: the accessToken and refreshToken rows of fab365.net's local storage -- or the
- *  whole table, whose other rows are left alone -- the same as JSON, or the accessToken's value on its own. */
+/** The tokens in what a person pasted: the accessToken and refreshToken values of fab365.net's local storage, each after
+ *  its name (`accessToken: …`), as the table's rows copied as text (its other rows left alone) or as JSON -- or the
+ *  accessToken's value on its own. */
 export function readFab365Paste(raw: string | null | undefined): { access: string | null; refresh: string | null } {
   const text = (raw ?? "").trim();
   const access = text.match(labelled("accessToken"))?.[1] ?? null;

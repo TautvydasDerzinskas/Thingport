@@ -11,9 +11,9 @@ import {
   setUserFab365Session,
 } from "./session";
 
-// `token` is what a person pastes: the accessToken and refreshToken rows of the site's local storage, or the access
-// token's value alone, which works until it expires but can't be renewed. `access_token`/`refresh_token` are what Grab
-// reads from page storage and sends together.
+// `token` is what a person pastes: the accessToken and refreshToken values from the site's local storage, each after its
+// name, or the access token's value alone, which works until it expires but can't be renewed. `access_token`/
+// `refresh_token` are what Grab reads from page storage and sends together.
 const schema = z.object({
   token: z.string().max(20_000).nullable().optional(),
   access_token: z.string().max(20_000).nullable().optional(),
@@ -34,8 +34,9 @@ export const fab365Connection: ConnectionSlot = {
     if ((body.access_token ?? body.token ?? "").trim() && !session) {
       throw new HttpError(
         422,
-        "That doesn't look like a Fab365 sign-in: copy the accessToken and refreshToken rows from a signed-in " +
-          "fab365.net tab's local storage and paste them here, or sign in with Thingport Grab, which sends them for you.",
+        "That doesn't look like a Fab365 sign-in: paste the accessToken and refreshToken values from a signed-in " +
+          "fab365.net tab's local storage, each on its own line after its name (accessToken: … and refreshToken: …), " +
+          "or sign in with Thingport Grab, which sends them for you.",
       );
     }
     let account: Fab365Member | null = null;

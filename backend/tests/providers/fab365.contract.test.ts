@@ -289,13 +289,17 @@ describe("Fab365 specifics", () => {
 
   it("takes only a whole-word valid_Token for a token still valid: invalid_token is a refusal", async () => {
     const secret = { accessToken: ACCESS, refreshToken: REFRESH };
-    const answer = (body: object) =>
-      ctx.install(async ({ url }) => (url.pathname === `${API}/v3_1/refresh` ? json(body) : undefined));
+    const answer = (body: object, status = 200) =>
+      ctx.install(async ({ url }) => (url.pathname === `${API}/v3_1/refresh` ? json(body, status) : undefined));
     for (const message of ["invalid_token", "Invalid Token"]) {
       answer({ returnCode: "E00099", message });
       await expect(refreshFab365Session(secret)).rejects.toBeInstanceOf(Fab365AuthError);
     }
-    answer({ returnCode: "E00099", message: "valid_Token" });
+    // Fab365's own answers, as seen live: `E00002` comes with valid_Token, but also refuses a refresh token with "Login
+    // is required" -- on a 501, as is valid_Token -- so neither its code nor its status says which it is.
+    answer({ returnCode: "E00002", message: "Login is required" }, 501);
+    await expect(refreshFab365Session(secret)).rejects.toBeInstanceOf(Fab365AuthError);
+    answer({ returnCode: "E00002", message: "valid_Token" }, 501);
     await expect(refreshFab365Session(secret)).resolves.toMatchObject({ accessToken: ACCESS, refreshToken: REFRESH });
 
     // An outage's page isn't Fab365's answer at all, so it says nothing about the token.
@@ -401,6 +405,8 @@ describe("Fab365 pages", () => {
 
   it("reads the tokens out of a paste: local-storage rows, JSON or the access token alone", () => {
     const both = { access: ACCESS, refresh: REFRESH };
+    // The two values on lines of their own, each after its name, as the connect form asks for them.
+    expect(readFab365Paste(`accessToken: ${ACCESS}\nrefreshToken: ${REFRESH}`)).toEqual(both);
     expect(readFab365Paste(`accessToken\t${ACCESS}\t\nrefreshToken\t${REFRESH}\t`)).toEqual(both);
     expect(readFab365Paste(JSON.stringify({ accessToken: ACCESS, refreshToken: REFRESH }))).toEqual(both);
     expect(readFab365Paste(` "${ACCESS}" `)).toEqual({ access: ACCESS, refresh: null });

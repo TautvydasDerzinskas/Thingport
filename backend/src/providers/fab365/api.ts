@@ -181,10 +181,10 @@ export function decodeFab365Token(token: string): { userId: string; expiresAt: D
 
 export type Fab365Tokens = { accessToken: string; refreshToken: string | null; expiresAt: Date | null };
 
-/** The access token still valid, as Fab365 says when asked to refresh one it hasn't let run out yet. */
+/** The access token still valid, as Fab365 says when asked to refresh one it hasn't let run out yet: `valid_Token`, as a
+ *  whole word, so "invalid_token" is a refusal. Its code says nothing: `E00002` also comes with "Login is required". */
 function stillValid(data: Record<string, unknown> | null): boolean {
-  // A whole word: "invalid_token" is a refusal, not this.
-  return asText(data?.returnCode) === "E00002" || /\bvalid[_\s]?token\b/i.test(asText(data?.message) ?? "");
+  return /\bvalid[_\s]?token\b/i.test(asText(data?.message) ?? "");
 }
 
 /** Fab365's own renewal, as the site's pages make it on a 401: the old access token as the Bearer, the refresh token in
@@ -193,10 +193,10 @@ function stillValid(data: Record<string, unknown> | null): boolean {
  *  token is turned down.
  *
  *  Tested live 2026-11-09: the refresh token is *reusable* (renewing with the same one twice both succeeded), so the
- *  backend and the browser coexist -- a backend renewal doesn't sign the web session out. The one case not seen is a
- *  genuinely dead refresh token (ours stayed valid to its own expiry), so any answer of Fab365's own that is neither a
- *  new pair nor `valid_Token` is still taken for a refusal. One that isn't its JSON envelope, and a network error, throw
- *  as themselves, so an outage isn't read as one. Narrow the refusal check if the code for a dead token ever turns up. */
+ *  backend and the browser coexist -- a backend renewal doesn't sign the web session out. Its refusals don't follow the
+ *  HTTP status: a forged or malformed refresh token gets a 200 with `C00008`, a missing one a 501 with `E00002` and
+ *  "Login is required". So any answer of Fab365's own that is neither a new pair nor `valid_Token` is a refusal, whatever
+ *  its status; one that isn't its JSON envelope, and a network error, throw as themselves, so an outage isn't one. */
 export async function refreshFab365Session(secret: Fab365Secret): Promise<Fab365Tokens> {
   if (!secret.refreshToken) throw new Fab365AuthError();
   const res = await api("/v3_1/refresh", {

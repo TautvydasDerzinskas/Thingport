@@ -6996,9 +6996,9 @@
         "steps": [
           "Le plus simple : avec Thingport Grab, ouvrez simplement fab365.net en étant connecté. Il relie votre compte et envoie une nouvelle connexion dès qu'elle change là-bas.",
           "Ou à la main : connectez-vous sur fab365.net et ouvrez les outils de développement du navigateur (F12).",
-          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Stockage local → fab365.net, copiez les lignes accessToken et refreshToken (ou tout le tableau) et collez-les ci-dessous. Avec le refreshToken, Thingport renouvelle la connexion lui-même ; un accessToken seul cesse de fonctionner au bout d'environ 100 minutes et doit être recollé."
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Stockage local → fab365.net, copiez les valeurs d'accessToken et de refreshToken et collez-les ci-dessous, chacune sur sa propre ligne après son nom (accessToken: … et refreshToken: …). Avec le refreshToken, Thingport renouvelle la connexion lui-même ; un accessToken seul cesse de fonctionner au bout d'environ 100 minutes et doit être recollé."
         ],
-        "placeholder": "Les lignes accessToken et refreshToken du stockage local de fab365.net"
+        "placeholder": "accessToken: … et refreshToken: …, chacun sur sa ligne"
       },
       "status": {
         "notConnected": "Fab365 ne donne ses fichiers qu'aux membres connectés, modèles gratuits compris. Connectez votre compte pour importer ceux que vous possédez et voir vos favoris.",
@@ -7012,7 +7012,7 @@
         "grab": "Envoie votre connexion quand vous visitez fab365.net, pour que Thingport puisse télécharger les fichiers et lire vos favoris.",
         "setup": [
           "Installez Thingport Grab, activez-le sur Fab365 et ouvrez fab365.net en étant connecté.",
-          "À la main : copiez les lignes accessToken et refreshToken depuis le stockage local d'un onglet fab365.net connecté et collez-les dans Configuration → Fournisseurs."
+          "À la main : copiez les valeurs d'accessToken et de refreshToken depuis le stockage local d'un onglet fab365.net connecté et collez-les dans Configuration → Fournisseurs, chacune sur sa ligne après son nom."
         ]
       },
       "admin": {

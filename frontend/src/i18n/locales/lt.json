@@ -7076,9 +7076,9 @@
         "steps": [
           "Paprasčiausia: su Thingport Grab tiesiog atverkite fab365.net būdami prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą, kai tik jis ten pasikeis.",
           "Arba rankiniu būdu: prisijunkite fab365.net ir atverkite naršyklės kūrėjo įrankius (F12).",
-          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Local storage → fab365.net nukopijuokite accessToken ir refreshToken eilutes (arba visą lentelę) ir įklijuokite žemiau. Su refreshToken Thingport prisijungimą atnaujina pats; vien accessToken nustoja veikti maždaug po 100 minučių, tada jį reikia įklijuoti iš naujo."
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Local storage → fab365.net nukopijuokite accessToken ir refreshToken reikšmes ir įklijuokite žemiau, kiekvieną atskiroje eilutėje po jos pavadinimo (accessToken: … ir refreshToken: …). Su refreshToken Thingport prisijungimą atnaujina pats; vien accessToken nustoja veikti maždaug po 100 minučių, tada jį reikia įklijuoti iš naujo."
         ],
-        "placeholder": "accessToken ir refreshToken eilutės iš fab365.net vietinės saugyklos"
+        "placeholder": "accessToken: … ir refreshToken: …, kiekvienas atskiroje eilutėje"
       },
       "status": {
         "notConnected": "Fab365 failus duoda tik prisijungusiems nariams, įskaitant nemokamus modelius. Prijunkite paskyrą, kad importuotumėte turimus ir matytumėte mėgstamus.",
@@ -7092,7 +7092,7 @@
         "grab": "Siunčia jūsų prisijungimą, kai apsilankote fab365.net, kad Thingport galėtų atsisiųsti failus ir perskaityti jūsų mėgstamus.",
         "setup": [
           "Įdiekite Thingport Grab, įjunkite jį Fab365 ir atverkite fab365.net prisijungę.",
-          "Rankiniu būdu: nukopijuokite accessToken ir refreshToken eilutes iš prisijungusios fab365.net kortelės vietinės saugyklos ir įklijuokite Konfigūracija → Tiekėjai."
+          "Rankiniu būdu: nukopijuokite accessToken ir refreshToken reikšmes iš prisijungusios fab365.net kortelės vietinės saugyklos ir įklijuokite Konfigūracija → Tiekėjai, kiekvieną atskiroje eilutėje po jos pavadinimo."
         ]
       },
       "admin": {
