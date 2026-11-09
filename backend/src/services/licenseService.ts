@@ -222,6 +222,8 @@ let queue: Promise<void> = Promise.resolve();
 const waiting = new Set<string>();
 const running = new Set<string>();
 const settling = new Map<string, NodeJS.Timeout>();
+// Retries asked for while a read of the model runs: it's read again once that one is done.
+const retryAfter = new Set<string>();
 
 /** Reads the model's licence in the background, once however often it's asked while it waits or runs. */
 export function startLicenseFill(printId: string): void {
@@ -238,7 +240,13 @@ export function startLicenseFill(printId: string): void {
       markTried(printId, true);
       log.warn("reading a licence failed", { print: printId, err });
     })
-    .finally(() => running.delete(printId));
+    .finally(() => {
+      running.delete(printId);
+      if (retryAfter.delete(printId)) {
+        forgetTries(printId);
+        startLicenseFill(printId);
+      }
+    });
 }
 
 export function licenseFillRunning(printId: string): boolean {
@@ -259,6 +267,11 @@ export function scheduleLicenseFill(printId: string): void {
 
 /** For its owner's Retry: reads it now, however recently a read failed. */
 export function retryLicenseFill(print: LicenseFields): void {
+  // One running now may be about to record a failure: read again after it, rather than forget now what it records.
+  if (running.has(print.id)) {
+    retryAfter.add(print.id);
+    return;
+  }
   forgetTries(print.id);
   if (licensePending(print)) startLicenseFill(print.id);
 }

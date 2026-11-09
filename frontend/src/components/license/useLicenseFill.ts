@@ -3,9 +3,10 @@ import { UnauthorizedError } from "../../api/client";
 import { printsApi, type License, type Print, type PrintLicense } from "../../api/prints";
 
 const POLL_MS = 1500;
-// One read waits behind other models' and asks its site once; past this the page stops asking, and the next visit
-// tries again.
-const MAX_POLLS = 40;
+// One read waits behind other models' and asks its site once. Past this many polls it's asked after less often, for as
+// long as it's still waiting or running.
+const FAST_POLLS = 40;
+const SLOW_POLL_MS = 5000;
 
 /**
  * Whether the model's licence is still being read. An older import's is read the first time its owner opens it: this
@@ -49,14 +50,14 @@ export function useLicenseFill(
 
     const settle = (state: PrintLicense) => {
       if (cancelled) return;
-      if (state.filling && polls < MAX_POLLS) {
-        timer = setTimeout(() => void poll(), POLL_MS);
+      if (state.filling) {
+        timer = setTimeout(() => void poll(), polls < FAST_POLLS ? POLL_MS : SLOW_POLL_MS);
         return;
       }
       answered.current = Math.max(answered.current, retryN);
       setFillingId(null);
       // Still pending once it's done: the read never got as far as saying anything.
-      if (state.filling || state.failed || state.pending) setFailedId(printId);
+      if (state.failed || state.pending) setFailedId(printId);
       else callbacks.current.onRead(printId, state.license);
     };
     const fail = (err: unknown) => {

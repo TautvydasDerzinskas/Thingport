@@ -16,11 +16,16 @@ import {
   PICKABLE_LICENSE_IDS,
 } from "../src/services/licenseCatalog";
 import { licenseData, licenseOut, licensePending, startLicenseFill } from "../src/services/licenseService";
-import { licenseFileText, syncLicenseFile } from "../src/services/licenseFile";
+import { syncLicenseFile } from "../src/services/licenseFile";
 import { upsertAuthorFromImport } from "../src/services/authorService";
 import { buildZipEntries } from "../src/services/downloadZip";
 import { setProviderEnabled } from "../src/services/providerSettingsService";
-import { getLicenseFiles, setLicenseFiles } from "../src/services/settingsService";
+import {
+  getLicenseFiles,
+  getSocialSettings,
+  setLicenseFiles,
+  setSocialSettings,
+} from "../src/services/settingsService";
 import { emptyImportedPageMetadata } from "../src/services/importResolvers";
 import { readZipEntry } from "../src/utils/zipReader";
 
@@ -294,8 +299,12 @@ describe("a model's licence", () => {
     await until(async () => !(await written()));
     expect(fs.existsSync(path.join(STORAGE, file.storagePath))).toBe(false);
     // Zips still carry it.
-    const print = await prisma.print.findUniqueOrThrow({ where: { id: printId } });
-    expect(licenseFileText(print)).toContain("MIT License");
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: printId },
+      include: { plates: true, category: true },
+    });
+    const entry = (await buildZipEntries([print])).find((e) => e.arcname.endsWith("/LICENSE.txt"));
+    expect(entry && "content" in entry ? entry.content.toString("utf8") : "").toContain("MIT License");
 
     expect((await save(true)).body).toEqual({ enabled: true });
     await until(written);
@@ -437,15 +446,76 @@ describe("an older import's licence", () => {
     }
   });
 
-  it("isn't read for another user's shared model", async () => {
+  it("is shown on another user's shared model, but read only by its owner", async () => {
     const printId = await upload(`Theirs ${stamp}`);
-    const other = await request(app)
-      .post("/api/register")
-      .send({ displayName: "Other", email: `licenses-other-${stamp}@example.com`, password: "password123" });
-    const res = await request(app)
-      .post(`/api/print/${printId}/license/fill`)
-      .set({ Authorization: `Bearer ${other.body.token}` });
-    expect(res.status).toBe(404);
+    await prisma.print.update({
+      where: { id: printId },
+      data: { sourceProvider: "makerables", sourceExternalId: `theirs-${stamp}`, licenseReadAt: null },
+    });
+    const social = await getSocialSettings();
+    await setSocialSettings({ enabled: true });
+    try {
+      const collection = await request(app)
+        .post("/api/collections")
+        .set(auth())
+        .send({ name: `Shared licences ${stamp}`, is_public: true });
+      await request(app).post(`/api/collection/${collection.body.id}/items/${printId}`).set(auth());
+      const other = await request(app)
+        .post("/api/register")
+        .send({ displayName: "Other", email: `licenses-other-${stamp}@example.com`, password: "password123" });
+      const theirs = { Authorization: `Bearer ${other.body.token}` };
+      const state = await request(app).get(`/api/print/${printId}/license`).set(theirs);
+      expect(state.status).toBe(200);
+      expect(state.body).toMatchObject({ license: null, pending: true });
+      expect((await request(app).post(`/api/print/${printId}/license/fill`).set(theirs)).status).toBe(404);
+    } finally {
+      await setSocialSettings(social);
+    }
+  });
+
+  it("keeps the owner's pick made while the source was being read", async () => {
+    const printId = await upload(`Picked meanwhile ${stamp}`);
+    await prisma.print.update({
+      where: { id: printId },
+      data: { sourceProvider: "makerables", sourceExternalId: `meanwhile-${stamp}`, licenseReadAt: null },
+    });
+    let answer!: (value: Awaited<ReturnType<typeof PROVIDERS.makerables.details.read>>) => void;
+    const reader = vi
+      .spyOn(PROVIDERS.makerables.details, "read")
+      .mockReturnValue(new Promise((resolve) => (answer = resolve)));
+    try {
+      await request(app).post(`/api/print/${printId}/license/fill`).set(auth());
+      await until(async () => reader.mock.calls.length > 0);
+      await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "all-rights-reserved" });
+      answer({ ...emptyImportedPageMetadata(), license: { id: "CC-BY-4.0", raw: "cc_by" } });
+      expect((await settled(printId)).license).toMatchObject({ id: "all-rights-reserved", source: "user" });
+    } finally {
+      reader.mockRestore();
+    }
+  });
+
+  it("is read again after a read that was running when its owner asked to retry", async () => {
+    const printId = await upload(`Retried meanwhile ${stamp}`);
+    await prisma.print.update({
+      where: { id: printId },
+      data: { sourceProvider: "makerables", sourceExternalId: `retried-${stamp}`, licenseReadAt: null },
+    });
+    let fail!: (err: Error) => void;
+    const reader = vi
+      .spyOn(PROVIDERS.makerables.details, "read")
+      .mockReturnValueOnce(new Promise((_, reject) => (fail = reject)))
+      .mockResolvedValue({ ...emptyImportedPageMetadata(), license: { id: "CC-BY-4.0", raw: "cc_by" } });
+    try {
+      await request(app).post(`/api/print/${printId}/license/fill`).set(auth());
+      await until(async () => reader.mock.calls.length > 0);
+      const retry = await request(app).post(`/api/print/${printId}/license/fill`).set(auth()).send({ retry: true });
+      expect(retry.body.filling).toBe(true);
+      fail(new Error("site down"));
+      expect(await settled(printId)).toMatchObject({ license: { id: "CC-BY-4.0" }, failed: false });
+      expect(reader).toHaveBeenCalledTimes(2);
+    } finally {
+      reader.mockRestore();
+    }
   });
 });
 
