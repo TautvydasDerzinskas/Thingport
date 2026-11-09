@@ -8,7 +8,7 @@ import { here, localUserId, personOn, RetryLater, type Here } from "./chats";
 import { enqueueActivity, kickDelivery } from "./delivery";
 import { FederationFetchError } from "./fetch";
 import { sharedAudience } from "./publish";
-import { askedAt, holdRemoteModels, readModels, remoteModelData } from "./remoteIndex";
+import { askedAt, holdRemoteModels, HOLD_TIMEOUT_MS, pruneIn, readModels, remoteModelData } from "./remoteIndex";
 import { AP_PREFIX, getRuntime } from "./runtime";
 
 /** Collections shared with partners' people (docs/FEDERATION_DEVELOPMENT.md, "Shared collections"). What partners
@@ -183,7 +183,6 @@ const NAME_MAX = 200;
 const DESCRIPTION_MAX = 5000;
 const VIEWERS_MAX = 100;
 // However long a big collection's models take to write, as the index's own read allows (remoteIndex.ts).
-const WRITE_TIMEOUT_MS = 5 * 60 * 1000;
 // Collections a partner lists as shared with people here, and the pages of that list, read at most.
 const SHARED_LIST_MAX = 10_000;
 const SHARED_LIST_PAGES = 40;
@@ -430,7 +429,7 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
         if (!viewers.length) {
           await tx.remoteCollection.deleteMany({ where: { apId, peerId: peer.id, limited: true } });
           await noteGone(tx, peer.id, apId, readAt);
-          await pruneIn(tx, peer.id);
+          await pruneIn(tx, peer.id, [...new Set([...data.modelApIds, ...(kept?.modelApIds ?? [])])]);
           await holdPartner(tx, peer.id);
           return;
         }
@@ -448,10 +447,15 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
           saved.id,
         );
         // Those it no longer holds, with nothing else holding them, in the same go: nothing comes between.
-        await pruneIn(tx, peer.id);
+        const holds = new Set(data.modelApIds);
+        await pruneIn(
+          tx,
+          peer.id,
+          (kept?.modelApIds ?? []).filter((id) => !holds.has(id)),
+        );
         await holdPartner(tx, peer.id);
       },
-      { timeout: WRITE_TIMEOUT_MS, maxWait: 10_000 },
+      { timeout: HOLD_TIMEOUT_MS, maxWait: 10_000 },
     )
     .catch((err: unknown) => {
       if (!(err instanceof Superseded)) throw err;
@@ -491,14 +495,21 @@ async function tell(
  *  for), with the models only it held, in one go. False when it wasn't one kept here. Nothing's kept of a partner
  *  blocked meanwhile: its notes go with the rest (`forgetPeerContent`). */
 async function forget(peerId: string, apId: string, at: Date): Promise<boolean> {
-  return prisma.$transaction(async (tx) => {
-    await holdRemoteModels(tx, peerId);
-    const deleted = await tx.remoteCollection.deleteMany({ where: { apId, peerId, limited: true } });
-    await noteGone(tx, peerId, apId, at);
-    if (deleted.count) await pruneIn(tx, peerId);
-    await holdPartner(tx, peerId);
-    return deleted.count > 0;
-  });
+  return prisma.$transaction(
+    async (tx) => {
+      await holdRemoteModels(tx, peerId);
+      const kept = await tx.remoteCollection.findFirst({
+        where: { apId, peerId, limited: true },
+        select: { id: true, modelApIds: true },
+      });
+      if (kept) await tx.remoteCollection.delete({ where: { id: kept.id } });
+      await noteGone(tx, peerId, apId, at);
+      if (kept) await pruneIn(tx, peerId, kept.modelApIds);
+      await holdPartner(tx, peerId);
+      return Boolean(kept);
+    },
+    { timeout: HOLD_TIMEOUT_MS, maxWait: 10_000 },
+  );
 }
 
 /** Notes `apId` gone as of `at`, so a read of the index asked for before then can't bring it back as public
@@ -506,25 +517,6 @@ async function forget(peerId: string, apId: string, at: Date): Promise<boolean> 
 async function noteGone(tx: Prisma.TransactionClient, peerId: string, apId: string, at: Date): Promise<void> {
   await tx.$executeRaw`
     INSERT INTO "RemoteGone" ("apId", "peerId", "at") VALUES (${apId}, ${peerId}, ${at})
-    ON CONFLICT ("apId") DO UPDATE SET "at" = GREATEST("RemoteGone"."at", EXCLUDED."at")`;
-}
-
-/** The models kept only for collections shared with people here that no such collection holds any more, in `tx`
- *  (which holds the partner's kept collections and models), each noted gone as of now: a read of the index asked for
- *  before can't bring it back as public. */
-async function pruneIn(tx: Prisma.TransactionClient, peerId: string): Promise<void> {
-  await tx.$executeRaw`
-    WITH gone AS (
-      DELETE FROM "RemoteModel" m
-      WHERE m."peerId" = ${peerId} AND m.limited
-        AND NOT EXISTS (
-          SELECT 1 FROM "RemoteCollection" c
-          WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
-        )
-      RETURNING m."apId"
-    )
-    INSERT INTO "RemoteGone" ("apId", "peerId", "at")
-    SELECT "apId", ${peerId}, ${askedAt()} FROM gone
     ON CONFLICT ("apId") DO UPDATE SET "at" = GREATEST("RemoteGone"."at", EXCLUDED."at")`;
 }
 

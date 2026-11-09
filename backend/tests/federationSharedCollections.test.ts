@@ -114,6 +114,8 @@ const openCollections: unknown[] = [];
 // Whether its directory fails; models Rūta shares openly besides "listed-1".
 const directory = { fails: false };
 const openModels: unknown[] = [];
+// Collections holding only their first model now.
+const shrunk = new Set<string>();
 let peopleAsked = 0;
 
 /** Holds the stand-in's answer for `key`: `reached` once it's asked for it, `open()` to send it. */
@@ -177,7 +179,7 @@ beforeAll(async () => {
         next: req.params.id === "partial" ? `${PARTNER}/api/ap/collections/partial/items?after=1` : undefined,
         type: "OrderedCollectionPage",
         // "c26b" holds c26a's models, as said of them later.
-        orderedItems: [1, 2].map((n) => ({
+        orderedItems: (shrunk.has(req.params.id) ? [1] : [1, 2]).map((n) => ({
           id: `${PARTNER}/api/ap/models/${req.params.id === "c26b" ? "c26a" : req.params.id}-m${n}`,
           type: "thingport:Model",
           name: req.params.id === "c26b" ? `Later hook ${n}` : `Hook ${n}`,
@@ -1636,6 +1638,102 @@ describe("a partner's person sharing a collection with people here", () => {
       0,
     );
   });
+
+  it("prunes a model its collection no longer holds, and keeps the one it still does", async () => {
+    docs.set("c42", doc("c42", [actor(bea.id)]));
+    await sharedCollectionFrom(actorOf(PARTNER), apId("c42"));
+    const [first, second] = [1, 2].map((n) => `${PARTNER}/api/ap/models/c42-m${n}`);
+    expect(await prisma.remoteModel.count({ where: { apId: { in: [first, second] } } })).toBe(2);
+    shrunk.add("c42");
+    try {
+      await sharedCollectionFrom(actorOf(PARTNER), apId("c42"));
+    } finally {
+      shrunk.delete("c42");
+    }
+    expect(await prisma.remoteModel.count({ where: { apId: first } })).toBe(1);
+    expect(await prisma.remoteModel.count({ where: { apId: second } })).toBe(0);
+    expect(await prisma.remoteGone.count({ where: { apId: second } })).toBe(1);
+  });
+
+  it("doesn't make public a model noted gone since the index asked, though a read as shared kept it again", async () => {
+    const model = `${PARTNER}/api/ap/models/c41-m1`;
+    await sharesOpenly(model);
+    // Still shared with Bea when it's read again after the index.
+    docs.set("c41", doc("c41", [actor(bea.id)]));
+    const models = hold("ruta-models");
+    try {
+      // The index asks for her models; the model's pruned, then kept again by a read as shared, as of a page asked
+      // for before the index's, before that's stored.
+      const syncing = syncPeer(partnerId);
+      await models.reached;
+      const asked = new Date(Date.now() - 60_000);
+      await prisma.remoteGone.create({ data: { apId: model, peerId: partnerId, at: new Date() } });
+      await prisma.remoteModel.create({
+        data: { apId: model, peerId: partnerId, personId: rutaId, title: "Kept again", limited: true, syncedAt: asked },
+      });
+      await prisma.remoteCollection.create({
+        data: {
+          apId: apId("c41"),
+          peerId: partnerId,
+          personId: rutaId,
+          name: "Hooks",
+          limited: true,
+          modelApIds: [model],
+          fetchedAt: asked,
+          viewers: { create: { userId: bea.id } },
+        },
+      });
+      models.open();
+      await syncing;
+    } finally {
+      models.open();
+      directoryPeople.length = 0;
+      openModels.length = 0;
+    }
+    const kept = await prisma.remoteModel.findUniqueOrThrow({ where: { apId: model } });
+    expect(kept.limited).toBe(true);
+    expect(await remoteModel(kept.id, carl.id)).toBeNull();
+    await prisma.remoteCollection.deleteMany({ where: { apId: apId("c41") } });
+    await prisma.remoteModel.deleteMany({ where: { apId: model } });
+  });
+
+  it("clears what was noted gone of a partner blocked during a long write of its kept collections", async () => {
+    await prisma.remoteGone.create({ data: { apId: apId("noted-late"), peerId: partnerId, at: new Date() } });
+    // A write holding the partner's lock for longer than a transaction's usual five seconds.
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let holding!: () => void;
+    const holds = new Promise<void>((resolve) => (holding = resolve));
+    let holder = 0;
+    const held = prisma
+      .$transaction(
+        async (tx) => {
+          holder = await sessionOf(tx);
+          await holdRemoteModels(tx, partnerId);
+          holding();
+          await released;
+        },
+        { timeout: 20_000 },
+      )
+      .then(
+        () => null,
+        (err: Error) => err,
+      );
+    await holds;
+    const forgetting = forgetPeerContent(partnerId).then(
+      () => null,
+      (err: Error) => err,
+    );
+    try {
+      await blockedBy(holder);
+      await new Promise((resolve) => setTimeout(resolve, 5_500));
+    } finally {
+      release();
+      await held;
+    }
+    expect(await forgetting).toBeNull();
+    expect(await prisma.remoteGone.count({ where: { peerId: partnerId } })).toBe(0);
+  }, 20_000);
 
   // Last: it forgets everything of the partner's.
   it("keeps nothing of a read that a block of its partner finished during, its owner neither", async () => {

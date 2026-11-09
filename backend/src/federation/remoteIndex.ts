@@ -32,6 +32,9 @@ const MAX_COLLECTION_MODELS = 2000;
 const MAX_ID_PAGES = 10;
 // Writing what was read, in one transaction: however many rows a big partner has.
 const STORE_TIMEOUT_MS = 5 * 60 * 1000;
+/** For a transaction that takes a partner's lock (`holdRemoteModels`): long enough to wait out a store holding it, and
+ *  then do its own writes. */
+export const HOLD_TIMEOUT_MS = 2 * STORE_TIMEOUT_MS;
 
 const running = new Map<string, Promise<void>>();
 // The part of a sync that writes: what forgetting a partner waits for, so it isn't written back after.
@@ -66,10 +69,13 @@ export async function forgetPeerContent(peerId: string): Promise<void> {
   await storing.get(peerId)?.catch(() => {});
   // What was noted gone of it, too: nothing of a blocked partner's is kept. After any write of its kept collections
   // under way (which, finding it blocked, keeps nothing more).
-  await prisma.$transaction(async (tx) => {
-    await holdRemoteModels(tx, peerId);
-    await tx.remoteGone.deleteMany({ where: { peerId } });
-  });
+  await prisma.$transaction(
+    async (tx) => {
+      await holdRemoteModels(tx, peerId);
+      await tx.remoteGone.deleteMany({ where: { peerId } });
+    },
+    { timeout: HOLD_TIMEOUT_MS, maxWait: 10_000 },
+  );
   await forgetMedia(peerId);
   // Rooms hosted here go on without its people, their other partners told; the copies of its rooms go. Direct messages
   // with its people stay, as they said.
@@ -638,6 +644,27 @@ export async function holdRemoteModels(tx: Prisma.TransactionClient, peerId: str
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('remote-models'), hashtext(${peerId}))`;
 }
 
+/** The models kept only for collections shared with people here that no such collection holds any more, in `tx`
+ *  (which holds the partner's lock): of `candidates` when given (those a read or a let-go dropped), else all of the
+ *  partner's. Each is noted gone as of now, so a read of the index asked for before can't bring it back as public. */
+export async function pruneIn(tx: Prisma.TransactionClient, peerId: string, candidates?: string[]): Promise<void> {
+  if (candidates && !candidates.length) return;
+  const only = candidates ? Prisma.sql`AND m."apId" = ANY(${candidates}::text[])` : Prisma.empty;
+  await tx.$executeRaw`
+    WITH gone AS (
+      DELETE FROM "RemoteModel" m
+      WHERE m."peerId" = ${peerId} AND m.limited ${only}
+        AND NOT EXISTS (
+          SELECT 1 FROM "RemoteCollection" c
+          WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
+        )
+      RETURNING m."apId"
+    )
+    INSERT INTO "RemoteGone" ("apId", "peerId", "at")
+    SELECT "apId", ${peerId}, ${askedAt()} FROM gone
+    ON CONFLICT ("apId") DO UPDATE SET "at" = GREATEST("RemoteGone"."at", EXCLUDED."at")`;
+}
+
 async function storeIn(
   tx: Prisma.TransactionClient,
   peer: Peer,
@@ -698,6 +725,10 @@ async function storeIn(
         syncedAt: readAt,
         limited: false,
       };
+      // Let go of since this was asked for, kept only for a collection shared with people here: not made public again,
+      // whether or not a read as shared has kept it since.
+      const gone = goneAt.get(model.id);
+      if (gone && gone >= model.fetchedAt) continue;
       // Unless it was read since this was asked for, for a collection shared with some people here, and isn't known to
       // be open as of then: it stays theirs alone until a later read of this says otherwise (its files are fetched for
       // anyone here meanwhile, as they're shared with someone here).
@@ -707,9 +738,6 @@ async function storeIn(
           data: modelData,
         });
       if (!(await write()).count) {
-        // Let go of since this was asked for, kept only for a collection shared with people here: not brought back.
-        const gone = goneAt.get(model.id);
-        if (gone && gone >= model.fetchedAt) continue;
         const made = await tx.remoteModel.createMany({
           data: { apId: model.id, ...modelData },
           skipDuplicates: true,
@@ -732,6 +760,9 @@ async function storeIn(
         limited: false,
       };
       const modelApIds = collection.modelIds;
+      // Withdrawn by its owner's instance since this was asked for, once shared with people here: not made public again.
+      const gone = goneAt.get(collection.id);
+      if (gone && gone >= collection.fetchedAt) continue;
       // Unless it was asked for since, as shared with some people here (sharedCollections.ts): that's newer than this,
       // so it stays theirs alone, as it does when both were asked for in the same millisecond (one public then is
       // written, so it's not pruned as stale). Checked as it's written, so a read of it finishing meanwhile counts too.
@@ -749,9 +780,6 @@ async function storeIn(
           data: collection.allIds ? { ...collectionData, modelApIds } : collectionData,
         });
       if (!(await write()).count) {
-        // Withdrawn by its owner's instance since this was asked for, once shared with people here: not brought back.
-        const gone = goneAt.get(collection.id);
-        if (gone && gone >= collection.fetchedAt) continue;
         await tx.remoteCollection.createMany({
           data: { apId: collection.id, ...collectionData, modelApIds },
           skipDuplicates: true,
@@ -780,6 +808,9 @@ async function storeIn(
         WHERE c."peerId" = m."peerId" AND c.limited AND m."apId" = ANY(c."modelApIds")
       )`;
   await tx.remoteModel.deleteMany({ where: { ...stale, limited: false, personId: { notIn: partly } } });
+  // And any kept only for a collection shared with people here that's now public, or for none: the one look across all
+  // of them, once a read of the index.
+  await pruneIn(tx, peer.id);
   // Someone no longer listed whom a chat, a collection shared with people here, or a collection here shared with them
   // still names is kept for it, off Explore.
   const named = {

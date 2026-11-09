@@ -245,8 +245,9 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   collection shared with people here holds it, as of then, so a read of the index asked for before then can't bring
   either back as public; the note goes once a read of the index begun after it is stored. Every write of a partner's
   kept collections and models (a read kept, a let-go, the index written, a block) holds them alone
-  (`holdRemoteModels`, an advisory lock), and the models a read or a let-go leaves no collection holding are pruned
-  within it, so each sees what the one before wrote and nothing comes between. A
+  (`holdRemoteModels`, an advisory lock), and the models a read or a let-go drops that no other collection holds are
+  pruned within it (the index store looks across all of them once), so each sees what the one before wrote and nothing
+  comes between. A
   read writes nothing, its owner included, once the partner is blocked: it holds the partner's row
   (`FOR SHARE`, last) until it's written, so a block waits for it and then forgets it all. Nothing is read or kept while
   social features are off here: each read checks as its turn comes, and holds the setting (`FOR SHARE`) while it's
