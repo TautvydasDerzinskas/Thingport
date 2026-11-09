@@ -32,6 +32,20 @@ func TestRedactURLHidesTokenQueryValue(t *testing.T) {
 	}
 }
 
+func TestRedactURLHidesTokenPathValue(t *testing.T) {
+	redacted := redactURL("https://thingport.example/api/t/secret-jwt/print/1/plate/2/file/model.stl")
+	if strings.Contains(redacted, "secret-jwt") || !strings.Contains(redacted, "/api/t/REDACTED/") {
+		t.Fatalf("redacted URL contains a session token: %s", redacted)
+	}
+}
+
+func TestDownloadFileDoesNotExposeTokenInError(t *testing.T) {
+	err := downloadFile("https://%zz/api/t/secret-jwt/model.stl", filepath.Join(t.TempDir(), "model.stl"))
+	if err == nil || strings.Contains(err.Error(), "secret-jwt") {
+		t.Fatalf("downloadFile error included session token: %v", err)
+	}
+}
+
 func TestFindWindowsCommandResolvesVersionedCuraInstall(t *testing.T) {
 	base := t.TempDir()
 	t.Setenv("LOCALAPPDATA", base)
@@ -103,6 +117,25 @@ func TestHandleProtocolRejectsUntrustedShapesBeforeDownload(t *testing.T) {
 		if err := handleProtocol(raw, Config{}); err == nil {
 			t.Fatalf("handleProtocol(%q) unexpectedly succeeded", raw)
 		}
+	}
+}
+
+func TestFindWindowsCommandResolvesCrealityPrint(t *testing.T) {
+	base := t.TempDir()
+	t.Setenv("ProgramFiles", base)
+	t.Setenv("ProgramFiles(x86)", "")
+	t.Setenv("LOCALAPPDATA", "")
+
+	dir := filepath.Join(base, "Creality", "Creality Print 7.3")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	exePath := filepath.Join(dir, "CrealityPrint.exe")
+	if err := os.WriteFile(exePath, nil, 0644); err != nil {
+		t.Fatalf("write exe: %v", err)
+	}
+	if got := findWindowsCommand("crealityprintlink", windowsCandidates()); got != exePath {
+		t.Fatalf("findWindowsCommand(crealityprintlink) = %q, expected %q", got, exePath)
 	}
 }
 
