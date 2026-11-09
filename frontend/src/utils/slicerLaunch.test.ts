@@ -17,7 +17,9 @@ describe("slicerLaunchUrl", () => {
   });
 
   it("keeps Creality Print's native launch as the default for users without Bridge", () => {
-    expect(slicerLaunchUrl("crealityprintlink", FILE)).toBe(`crealityprintlink://open?file=${encodeURIComponent(FILE)}`);
+    expect(slicerLaunchUrl("crealityprintlink", FILE)).toBe(
+      `crealityprintlink://open?file=${encodeURIComponent(FILE)}`,
+    );
   });
 
   it("offers an explicit Creality Print Bridge launch preserving the model filename", () => {
