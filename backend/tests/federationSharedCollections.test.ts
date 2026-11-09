@@ -169,6 +169,8 @@ beforeAll(async () => {
         id: `${PARTNER}/api/ap/models/${req.params.id}-m${n}`,
         type: "thingport:Model",
         name: `Hook ${n}`,
+        // What's said of c17's only to those it's shared with.
+        source: req.params.id === "c17" ? { content: "Only shared" } : undefined,
         attributedTo: `${PARTNER}/api/ap/actors/ruta`,
         image: [],
         attachment: [],
@@ -422,40 +424,86 @@ describe("sharing with a partner's people", () => {
     ).body.id as string;
     await prisma.federationDelivery.deleteMany({ where: { origin: PARTNER } });
     // A change to who sees it, under way as the account goes: it holds the collection's row until it's kept.
-    let release!: () => void;
-    const released = new Promise<void>((resolve) => (release = resolve));
-    let added!: () => void;
-    const adding = new Promise<void>((resolve) => (added = resolve));
-    const change = prisma.$transaction(
-      async (tx) => {
-        await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${theirs} FOR UPDATE`;
-        await tx.collectionShare.create({ data: { collectionId: theirs, remotePersonId: rutaId } });
-        added();
-        await released;
-      },
-      { timeout: 20_000 },
-    );
-    await adding;
-    const deleting = deleteUser(alex.id, fay.id);
-    // Let go only once the deletion waits on it, so it's the race being tested whatever the machine's pace.
-    await vi.waitFor(
-      async () => {
-        const [{ waiting }] = await prisma.$queryRaw<{ waiting: number }[]>`
-          SELECT COUNT(*)::int AS waiting FROM pg_stat_activity
-          WHERE datname = current_database() AND wait_event_type = 'Lock'
-            AND (query LIKE '%"Collection"%FOR UPDATE%' OR query LIKE '%DELETE FROM "public"."User"%')`;
-        expect(waiting).toBeGreaterThan(0);
-      },
-      { timeout: 10_000, interval: 25 },
-    );
-    release();
-    await change;
-    await deleting;
+    await deleteDuring(fay, async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${theirs} FOR UPDATE`;
+      await tx.collectionShare.create({ data: { collectionId: theirs, remotePersonId: rutaId } });
+    });
     const sent = await queued(PARTNER);
     expect(sent.map((activity) => [activity.type, objectId(activity)])).toEqual([
       ["Delete", `${ORIGIN}/api/ap/collections/${theirs}`],
     ]);
   });
+
+  it("says Delete of what was made and shared as its owner's account was deleted", async () => {
+    const gil = await register("Gil");
+    await prisma.federationDelivery.deleteMany({ where: { origin: PARTNER } });
+    // Made and shared as the account goes: not there yet to be held.
+    let made = "";
+    await deleteDuring(gil, async (tx) => {
+      const name = `Gil's ${stamp}`;
+      made = (
+        await tx.collection.create({
+          data: { userId: gil.id, name, nameNormalized: name.toLowerCase() },
+          select: { id: true },
+        })
+      ).id;
+      await tx.collectionShare.create({ data: { collectionId: made, remotePersonId: rutaId } });
+    });
+    const sent = await queued(PARTNER);
+    expect(sent.map((activity) => [activity.type, objectId(activity)])).toEqual([
+      ["Delete", `${ORIGIN}/api/ap/collections/${made}`],
+    ]);
+  });
+
+  /** Deletes `account` while `change` is under way in a transaction, let go once the deletion waits on it, so it's the
+   *  race being tested whatever the machine's pace. */
+  async function deleteDuring(
+    account: Account,
+    change: (tx: Prisma.TransactionClient) => Promise<void>,
+  ): Promise<void> {
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let changed!: () => void;
+    const changing = new Promise<void>((resolve) => (changed = resolve));
+    const held = prisma
+      .$transaction(
+        async (tx) => {
+          await change(tx);
+          changed();
+          await released;
+        },
+        { timeout: 20_000 },
+      )
+      .then(
+        () => null,
+        (err: Error) => err,
+      );
+    let deleting: Promise<Error | null> | undefined;
+    try {
+      await Promise.race([changing, held]);
+      deleting = deleteUser(alex.id, account.id).then(
+        () => null,
+        (err: Error) => err,
+      );
+      await vi.waitFor(
+        async () => {
+          const [{ waiting }] = await prisma.$queryRaw<{ waiting: number }[]>`
+            SELECT COUNT(*)::int AS waiting FROM pg_stat_activity
+            WHERE datname = current_database() AND wait_event_type = 'Lock'
+              AND (query LIKE '%"Collection"%FOR UPDATE%' OR query LIKE '%"User"%FOR UPDATE%'
+                OR query LIKE '%DELETE FROM "public"."User"%')`;
+          expect(waiting).toBeGreaterThan(0);
+        },
+        { timeout: 10_000, interval: 25 },
+      );
+    } finally {
+      release();
+      await held;
+      await deleting;
+    }
+    expect(await held).toBeNull();
+    expect(await deleting).toBeNull();
+  }
 
   it("finds someone on a partner by their exact handle, asking that partner only", async () => {
     people.set("dana", {
@@ -1064,22 +1112,54 @@ describe("a partner's person sharing a collection with people here", () => {
         peerId: partnerId,
         personId: rutaId,
         title: "Open title",
+        description: "Open description",
         limited: false,
         syncedAt: new Date(Date.now() - 60_000),
       },
     });
     docs.set("c17", doc("c17", [actor(bea.id)]));
     await sharedCollectionFrom(actorOf(PARTNER), apId("c17"));
+    const openly = { title: "Open title", description: "Open description" };
     expect(await prisma.remoteModel.findUniqueOrThrow({ where: { id: open.id } })).toMatchObject({
-      title: "Open title",
+      ...openly,
       limited: false,
     });
+    // Carl, whom it isn't shared with, sees what's open there and no more.
+    expect(await remoteModel(open.id, carl.id)).toMatchObject(openly);
     // The next read of the index doesn't list it: shared only, and read again as such after.
     await syncPeer(partnerId);
     expect(await prisma.remoteModel.findUniqueOrThrow({ where: { id: open.id } })).toMatchObject({
       title: "Hook 1",
+      description: "Only shared",
       limited: true,
     });
+    expect(await remoteModel(open.id, carl.id)).toBeNull();
+  });
+
+  it("keeps a public collection the index read again in the same millisecond", async () => {
+    const at = new Date();
+    const open = await prisma.remoteCollection.create({
+      data: {
+        apId: apId("c23"),
+        peerId: partnerId,
+        personId: rutaId,
+        name: "Hooks",
+        limited: false,
+        fetchedAt: at,
+        syncedAt: new Date(at.getTime() - 60_000),
+      },
+    });
+    await listedOpenly("c23");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(at);
+    try {
+      await syncPeer(partnerId);
+    } finally {
+      vi.useRealTimers();
+      directoryPeople.length = 0;
+      openCollections.length = 0;
+    }
+    expect(await prisma.remoteCollection.findUnique({ where: { id: open.id } })).toMatchObject({ limited: false });
   });
 
   it("stays shared when the index asked for it in the same millisecond as it was read as shared", async () => {

@@ -85,7 +85,10 @@ export async function queueCollectionsGone(db: Db, collectionIds: string[]): Pro
  *  their account. Without a Public URL nothing can be sent, and nothing stops the account going: each partner finds
  *  them gone the next time it reads them. */
 export async function queueAccountGone(db: Db, userId: string): Promise<void> {
-  // Held until the account's gone: a change to who sees one waits, then finds it gone, and one under way is read below.
+  // Held until the account's gone: its row, so no collection is made meanwhile (one being made is waited for), then its
+  // collections, so a change to who sees one waits, then finds it gone, and one under way is read below. In the order
+  // deleting the account takes them.
+  await db.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
   await db.$queryRaw`SELECT id FROM "Collection" WHERE "userId" = ${userId} FOR UPDATE`;
   const collections = await db.collection.findMany({
     where: { userId, shares: { some: { remotePersonId: { not: null } } } },
@@ -356,9 +359,14 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
           const data = { peerId: peer.id, personId: owner.id, ...remoteModelData(model, own), syncedAt: readAt };
           // One shared openly there stays as its index has it, details too: these may be newer than what's open there
           // (made private and changed since), and its index's next read says which (remoteIndex.ts).
-          const { count } = await tx.remoteModel.updateMany({ where: { apId: model.id, limited: true }, data });
-          if (!count) {
-            await tx.remoteModel.createMany({ data: { apId: model.id, ...data, limited: true }, skipDuplicates: true });
+          const write = () => tx.remoteModel.updateMany({ where: { apId: model.id, limited: true }, data });
+          if (!(await write()).count) {
+            const { count } = await tx.remoteModel.createMany({
+              data: { apId: model.id, ...data, limited: true },
+              skipDuplicates: true,
+            });
+            // Made meanwhile, by a read of another collection holding it: written over, unless it's public.
+            if (!count) await write();
           }
         }
         const data = {

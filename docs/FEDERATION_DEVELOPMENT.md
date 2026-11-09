@@ -241,7 +241,8 @@ their people, so such a collection can't go in it: it's sent, through `sharedCol
   social features are off here: each read checks as its turn comes, and holds the setting (`FOR SHARE`) while it's
   kept and whoever's new is told, in one transaction, so turning them off waits for it, and one that finds them off
   keeps nothing and is read again once they're on.
-  Deleting an account locks its collections first, so a change to who sees one waits and its `Delete` is queued.
+  Deleting an account locks its row, then its collections, first, so none is made meanwhile, a change to who sees one
+  waits, and each one's `Delete` is queued.
 - **Pictures.** The proxy serves a partner's picture only while something kept here names it: a person's avatar or
   cover, or a model's picture (`RemoteModel.images`, indexed). One only of models kept for shared collections goes
   only to someone who may see one of those models, whoever has its address, and is never cached by the browser; once
