@@ -1136,6 +1136,29 @@ describe("a partner's person sharing a collection with people here", () => {
     expect(await remoteModel(open.id, carl.id)).toBeNull();
   });
 
+  it("leaves a model as a read of another collection holding it, asked for later, wrote it", async () => {
+    // Shared with Bea in another collection too, and read so after this one was asked for.
+    const later = await prisma.remoteModel.create({
+      data: {
+        apId: `${PARTNER}/api/ap/models/c24-m1`,
+        peerId: partnerId,
+        personId: rutaId,
+        title: "Read later",
+        limited: true,
+        syncedAt: new Date(Date.now() + 60_000),
+      },
+    });
+    docs.set("c24", doc("c24", [actor(bea.id)]));
+    await sharedCollectionFrom(actorOf(PARTNER), apId("c24"));
+    expect(await prisma.remoteModel.findUniqueOrThrow({ where: { id: later.id } })).toMatchObject({
+      title: "Read later",
+    });
+    // Its other model is this read's.
+    expect(
+      await prisma.remoteModel.findUniqueOrThrow({ where: { apId: `${PARTNER}/api/ap/models/c24-m2` } }),
+    ).toMatchObject({ title: "Hook 2" });
+  });
+
   it("keeps a public collection the index read again in the same millisecond", async () => {
     const at = new Date();
     const open = await prisma.remoteCollection.create({

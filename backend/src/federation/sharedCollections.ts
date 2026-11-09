@@ -358,14 +358,16 @@ async function readSharedNow(peer: Peer, apId: string): Promise<void> {
         for (const model of theirs) {
           const data = { peerId: peer.id, personId: owner.id, ...remoteModelData(model, own), syncedAt: readAt };
           // One shared openly there stays as its index has it, details too: these may be newer than what's open there
-          // (made private and changed since), and its index's next read says which (remoteIndex.ts).
-          const write = () => tx.remoteModel.updateMany({ where: { apId: model.id, limited: true }, data });
+          // (made private and changed since), and its index's next read says which (remoteIndex.ts). One a read of
+          // another collection holding it asked for later has already written stays as that read has it.
+          const write = () =>
+            tx.remoteModel.updateMany({ where: { apId: model.id, limited: true, syncedAt: { lte: readAt } }, data });
           if (!(await write()).count) {
             const { count } = await tx.remoteModel.createMany({
               data: { apId: model.id, ...data, limited: true },
               skipDuplicates: true,
             });
-            // Made meanwhile, by a read of another collection holding it: written over, unless it's public.
+            // Made meanwhile, by a read of another collection holding it: written over, unless it's public or newer.
             if (!count) await write();
           }
         }
