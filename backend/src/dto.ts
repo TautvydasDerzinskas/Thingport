@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { readNotificationMessage, type NotificationMessage } from "./services/notificationMessage";
 import { LIKES_ID_PREFIX, PROVIDER_IDS, type ProviderId } from "./providers/index.generated";
 import { syncLikesUsername } from "./providers/names";
 import { nextSyncAt, syncNowAvailableAt } from "./services/collectionSyncSchedule";
@@ -816,6 +817,8 @@ export type NotificationOut = {
   id: string;
   type: string;
   title: string;
+  /** The title as a key and values to translate; null shows `title`. */
+  message: NotificationMessage | null;
   body: string | null;
   external_url: string | null;
   internal_path: string | null;
@@ -829,6 +832,7 @@ export function toNotificationOut(notification: Notification): NotificationOut {
     id: notification.id,
     type: notification.type,
     title: notification.title,
+    message: readNotificationMessage(notification.message),
     body: notification.body,
     external_url: notification.externalUrl,
     internal_path: notification.internalPath,

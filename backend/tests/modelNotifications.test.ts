@@ -89,8 +89,11 @@ describe("single imports", () => {
       title: `Imported "${first.body.title || first.body.name}"`,
       externalUrl: pageUrl,
       internalPath: `/models/${first.body.id}`,
+      // The same title for the app to translate.
+      message: { key: "imported", values: { name: first.body.title || first.body.name } },
     });
     expect(again.title).toMatch(/is already in your library$/);
+    expect(again.message).toEqual({ key: "alreadyInLibrary", values: { name: first.body.title || first.body.name } });
   });
 
   it("folds imports one after another into one notification while it's unread", async () => {
@@ -105,7 +108,12 @@ describe("single imports", () => {
     });
     const [merged, ...rest] = await notifications();
     expect(rest).toHaveLength(0);
-    expect(merged).toMatchObject({ type: "import", title: "Imported 2 models", internalPath: "/models" });
+    expect(merged).toMatchObject({
+      type: "import",
+      title: "Imported 2 models",
+      message: { key: "importedModels", values: { count: 2 } },
+      internalPath: "/models",
+    });
     expect(merged.body).toContain(`"${other.body.title || other.body.name}"`);
 
     // Once read, the next import starts a notification of its own.
@@ -120,7 +128,12 @@ describe("single imports", () => {
     const failed = await post();
     expect(failed.status).toBeGreaterThanOrEqual(400);
     const [notification] = await notifications();
-    expect(notification).toMatchObject({ type: "import", title: "Couldn't import a model", body: failed.body.detail });
+    expect(notification).toMatchObject({
+      type: "import",
+      title: "Couldn't import a model",
+      message: { key: "importFailed" },
+      body: failed.body.detail,
+    });
 
     await prisma.notification.deleteMany({ where: { userId } });
     mockMakerworld();
@@ -145,6 +158,7 @@ describe("single imports", () => {
     expect(summary).toMatchObject({
       type: "import",
       title: "Imported 1 of 3 models from MakerWorld",
+      message: { key: "importRunFrom", values: { done: 1, count: 3, site: "MakerWorld" } },
       internalPath: `/models/${first.body.id}`,
     });
     expect(summary.body).toContain("Stopped early: MakerWorld wants a CAPTCHA.");

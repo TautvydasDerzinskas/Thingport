@@ -552,6 +552,9 @@ model Notification {
   /// Set on notifications later ones may fold into, e.g. { key: "single-import", items: [...] }.
   group        Json?
   title        String
+  /// The title as the app translates it, { key, values }: `title` stays the English, for anything else that reads it.
+  /// Null on a kind not translated yet, and on those written before.
+  message      Json?
   body         String?
   externalUrl  String?
   internalPath String?
