@@ -15,6 +15,11 @@ handlers won't take a link straight from a self-hosted Thingport instance:
   OrcaSlicer's own `orcaslicer://` protocol instead of one of its own -- with both installed, only
   one of them gets those links. The Bridge launches it by path, so the slicer you picked opens.
 
+Creality Print also has a native `crealityprintlink://` handler. If that handler fails to import
+models from a self-hosted HTTPS Thingport, choose **Open in Creality Print (Thingport Bridge)**
+from the model's slicer-button menu. Bridge downloads the model first and passes a local file
+to Creality Print. Native launch remains the default, so Bridge is optional.
+
 OrcaSlicer's protocol handler accepts any HTTP(S) URL directly with no such restriction, so it's
 launched straight from the browser and never needs this bridge.
 
@@ -186,6 +191,7 @@ Environment override (per slicer): `THINGPORT_SLICER_BAMBUSTUDIO=/path/to/BambuS
 - anycubicslicernext (Anycubic Slicer Next -- an OrcaSlicer fork that registers OrcaSlicer's own
   `orcaslicer://` protocol, so it's launched by path to avoid opening OrcaSlicer instead when both
   are installed)
+- crealityprintlink (Creality Print; optional local-file alternative to the native handler)
 - other (opens with the OS default app)
 
 Cura's AppImage and Flatpak builds aren't on `PATH` and won't be auto-detected. If "Open in Cura"
@@ -197,7 +203,9 @@ Anycubic Slicer Next is looked for as `AnycubicSlicerNext.app` or `Anycubic Slic
 on Linux. If yours is elsewhere (e.g. an AppImage), add an `anycubicslicernext` entry to
 `config.json` or set `THINGPORT_SLICER_ANYCUBICSLICERNEXT=/path/to/it`.
 
-On macOS, apps are looked for in both `/Applications` and your own `~/Applications`.
+On Windows, Bridge automatically discovers Creality Print in a versioned `Program Files/Creality/Creality Print <version>/CrealityPrint.exe` directory (such as Creality Print 7.3). If it is installed elsewhere, set `THINGPORT_SLICER_CREALITYPRINTLINK` to the executable or add a `crealityprintlink` entry to `config.json`. On macOS/Linux, use an explicit override until platform installation paths are supported.
+
+On macOS, apps are looked for in both `/Applications` and your own `~/Applications`. 
 
 ## Testing
 
@@ -212,6 +220,7 @@ After install, paste this into your browser's address bar (replace the URL):
 
 ## Notes
 
+- Bridge avoids logging signed download URLs, which can embed session credentials in `/api/t/<token>/` paths. Older versions may have logged them; delete old logs and revoke exposed sessions before sharing diagnostics.
 - The bridge downloads files into the user cache directory unless configured otherwise.
 - If a slicer isn't found, the file opens with the OS default app instead.
 - On macOS, the installed app keeps running in the background (no Dock icon) so repeat opens
