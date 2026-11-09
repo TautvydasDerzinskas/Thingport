@@ -22,9 +22,9 @@ export function useLicenseFill(
   const [failedId, setFailedId] = useState<string | null>(null);
   // A model whose page said its last read failed, until its owner retried.
   const [retriedId, setRetriedId] = useState<string | null>(null);
-  // Retries asked for, and how many of them have been answered: an effect run again for another reason (or twice, in
-  // development) asks again only for one not answered yet.
-  const [retries, setRetries] = useState(0);
+  // The last retry asked for, numbered, and the number answered last: an effect run again for another reason (or twice,
+  // in development) asks again only for one not answered yet, and only for the model it was asked for.
+  const [asked, setAsked] = useState<{ printId: string; n: number } | null>(null);
   const answered = useRef(0);
   const callbacks = useRef({ onRead, onUnauthorized });
   useEffect(() => {
@@ -35,9 +35,10 @@ export function useLicenseFill(
   const ownModel = Boolean(print) && !print?.owner;
   const startPending = Boolean(print?.license_pending);
   const startFilling = Boolean(print?.license_filling);
+  const retryN = asked && asked.printId === printId ? asked.n : 0;
 
   useEffect(() => {
-    const retrying = retries > answered.current;
+    const retrying = retryN > answered.current;
     if (!printId || !ownModel || !(startPending || startFilling || retrying)) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -49,14 +50,15 @@ export function useLicenseFill(
         timer = setTimeout(() => void poll(), POLL_MS);
         return;
       }
-      answered.current = retries;
+      answered.current = Math.max(answered.current, retryN);
       setFillingId(null);
-      if (state.filling || state.failed) setFailedId(printId);
+      // Still pending once it's done: the read never got as far as saying anything.
+      if (state.filling || state.failed || state.pending) setFailedId(printId);
       else callbacks.current.onRead(printId, state.license);
     };
     const fail = (err: unknown) => {
       if (cancelled) return;
-      answered.current = retries;
+      answered.current = Math.max(answered.current, retryN);
       setFillingId(null);
       if (err instanceof UnauthorizedError) {
         callbacks.current.onUnauthorized?.();
@@ -94,12 +96,13 @@ export function useLicenseFill(
       clearTimeout(timer);
       setFillingId(null);
     };
-  }, [printId, ownModel, startPending, startFilling, retries]);
+  }, [printId, ownModel, startPending, startFilling, retryN]);
 
   const retry = useCallback(() => {
+    if (!printId) return;
     setFailedId(null);
     setRetriedId(printId);
-    setRetries((count) => count + 1);
+    setAsked((prev) => ({ printId, n: (prev?.n ?? 0) + 1 }));
   }, [printId]);
 
   const loading = fillingId !== null && fillingId === printId;

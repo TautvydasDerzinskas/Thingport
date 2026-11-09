@@ -233,7 +233,11 @@ export function startLicenseFill(printId: string): void {
       running.add(printId);
       await fillLicense(printId);
     })
-    .catch((err) => log.warn("reading a licence failed", { print: printId, err }))
+    .catch((err) => {
+      // Failed before it could say so: its page offers to try again, rather than read it as none stated.
+      markTried(printId, true);
+      log.warn("reading a licence failed", { print: printId, err });
+    })
     .finally(() => running.delete(printId));
 }
 

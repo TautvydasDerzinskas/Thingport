@@ -729,6 +729,10 @@ describe("the tools that write", () => {
     const id = await upload(writer.session, "licensed.stl");
     const result = await callTool(writer.token, "edit_model", { model_id: id, license: "CC-BY-4.0" });
     expect(result.data.changed).toEqual(["license"]);
+    expect((await prisma.print.findUniqueOrThrow({ where: { id } })).license).toMatchObject({
+      id: "CC-BY-4.0",
+      source: "user",
+    });
     const logs = await logsWhen({ userId: writer.userId, action: "model_edited", targetId: id }, (count) => count > 0);
     expect(logs.map((log) => (log.details as { field?: string }).field)).toEqual(["license"]);
   });

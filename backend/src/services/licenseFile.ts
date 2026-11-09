@@ -13,7 +13,7 @@ import { withStorageLock } from "../utils/storageLock";
 import { buildImportSourceUrl } from "./importService";
 import { licenseOut, providerName, storedLicense, type LicenseOut } from "./licenseService";
 import { managedPrintFilePath } from "./printFileService";
-import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
+import { printFilePathFree, pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
 import { getLicenseFiles } from "./settingsService";
 
 const log = createLogger("license-file");
@@ -134,7 +134,8 @@ function syncNow(printId: string): Promise<void> {
 
 const isCanonical = (file: Pick<PrintFile, "storagePath">) => path.basename(file.storagePath) === LICENSE_FILENAME;
 
-async function rewrite(file: PrintFile, body: Buffer): Promise<void> {
+async function rewrite(found: PrintFile, body: Buffer): Promise<void> {
+  const file = isCanonical(found) ? found : await backToCanonical(found);
   const destination = managedPrintFilePath(file);
   const existing = await fs.readFile(destination).catch(() => null);
   const same = existing?.equals(body) ?? false;
@@ -147,6 +148,28 @@ async function rewrite(file: PrintFile, body: Buffer): Promise<void> {
     where: { id: file.id },
     data: { size: body.length, contentSha256: null, reuseIno: null, reuseCtimeNs: null },
   });
+}
+
+/** A LICENSE.txt numbered aside because another file had the name, moved back once the name is free. */
+async function backToCanonical(file: PrintFile): Promise<PrintFile> {
+  const wanted = path.join(path.dirname(file.storagePath), LICENSE_FILENAME);
+  if (!(await printFilePathFree(wanted, file.id))) return file;
+  const from = managedPrintFilePath(file);
+  const to = managedPrintFilePath({ storagePath: wanted });
+  // One that's gone is written at the new place.
+  const moved = await fs.rename(from, to).then(
+    () => true,
+    (err: NodeJS.ErrnoException) => {
+      if (err.code === "ENOENT") return false;
+      throw err;
+    },
+  );
+  try {
+    return await prisma.printFile.update({ where: { id: file.id }, data: { storagePath: wanted } });
+  } catch (err) {
+    if (moved) await fs.rename(to, from).catch(() => undefined);
+    throw err;
+  }
 }
 
 async function create(print: Print, body: Buffer): Promise<void> {
@@ -188,12 +211,24 @@ async function writeAtomically(destination: string, body: Buffer): Promise<void>
   }
 }
 
-/** The file first, then its row: a file that can't be removed keeps the row that finds it, for the next sync. */
+/** The file first, then its row: either failing throws, and the row left behind is removed by the next sync. */
 async function removeLicenseFile(file: PrintFile): Promise<void> {
   const filePath = managedPrintFilePath(file);
   await fs.rm(filePath, { force: true });
-  await prisma.printFile.delete({ where: { id: file.id } }).catch(() => undefined);
+  await prisma.printFile.deleteMany({ where: { id: file.id } });
   await pruneEmptyStorageDirs(path.dirname(filePath)).catch(() => undefined);
+}
+
+/** After an author's name or handle changes, or models are linked to it: LICENSE.txt names it, whoever's models they
+ *  are. */
+export async function syncAuthorLicenseFiles(authorId: string): Promise<void> {
+  const prints = await prisma.print.findMany({
+    where: { authorId, OR: [{ license: { not: Prisma.DbNull } }, { files: { some: { role: "LICENSE" } } }] },
+    select: { id: true },
+  });
+  for (const { id } of prints) {
+    await syncLicenseFile(id).catch((err) => log.warn("couldn't sync LICENSE.txt", { print: id, err }));
+  }
 }
 
 let sweeping: Promise<void> | null = null;

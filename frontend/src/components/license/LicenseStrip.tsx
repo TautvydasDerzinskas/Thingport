@@ -155,6 +155,9 @@ export default function LicenseStrip({
     );
   }
 
+  // Where the licence was read from: the site it names, even once the model's source is cleared.
+  const from = license.provider ?? provider ?? null;
+  const fromSite = from ? printProviderInfo(from).label : null;
   const summary = licenseSummary(license, t);
   const creditLine = [
     `“${credit.title}”`,
@@ -254,8 +257,8 @@ export default function LicenseStrip({
             <Box sx={{ borderLeft: 3, borderColor: "divider", pl: 1.25, py: 0.25 }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
                 {/* Added to a standard licence by the site or its creator; a site's own licence is its terms. */}
-                {license.source === "provider" && site && (license.family === "cc" || license.family === "open")
-                  ? t("models:license.siteAdds", { site })
+                {license.source === "provider" && fromSite && (license.family === "cc" || license.family === "open")
+                  ? t("models:license.siteAdds", { site: fromSite })
                   : t("models:license.terms")}
               </Typography>
               <Typography
@@ -269,11 +272,11 @@ export default function LicenseStrip({
           <Divider />
           <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" useFlexGap>
             <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: "text.secondary", minWidth: 0 }}>
-              {license.source === "provider" && hasProviderLogo(provider) && <ProviderLogo id={provider} size={14} />}
+              {license.source === "provider" && hasProviderLogo(from) && <ProviderLogo id={from} size={14} />}
               <Typography variant="caption">
-                {license.source === "user" || !site
+                {license.source === "user" || !fromSite
                   ? t("models:license.pickedByOwner")
-                  : t("models:license.asListed", { site })}
+                  : t("models:license.asListed", { site: fromSite })}
               </Typography>
               {license.url && (
                 <>

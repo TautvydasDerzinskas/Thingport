@@ -15,8 +15,9 @@ import {
   licenseIdFromUrl,
   PICKABLE_LICENSE_IDS,
 } from "../src/services/licenseCatalog";
-import { licenseData, licenseOut, licensePending } from "../src/services/licenseService";
+import { licenseData, licenseOut, licensePending, startLicenseFill } from "../src/services/licenseService";
 import { licenseFileText, syncLicenseFile } from "../src/services/licenseFile";
+import { upsertAuthorFromImport } from "../src/services/authorService";
 import { buildZipEntries } from "../src/services/downloadZip";
 import { setProviderEnabled } from "../src/services/providerSettingsService";
 import { getLicenseFiles, setLicenseFiles } from "../src/services/settingsService";
@@ -419,6 +420,23 @@ describe("an older import's licence", () => {
     }
   });
 
+  it("counts a read that broke before it could say anything as failed", async () => {
+    const printId = await upload(`Broken ${stamp}`);
+    await prisma.print.update({
+      where: { id: printId },
+      data: { sourceProvider: "makerables", sourceExternalId: `broken-${stamp}`, licenseReadAt: null },
+    });
+    // Breaks outside the read itself, as a database error would.
+    const providers = await import("../src/services/providerSettingsService");
+    const enabled = vi.spyOn(providers, "isProviderEnabled").mockRejectedValueOnce(new Error("database gone"));
+    try {
+      startLicenseFill(printId);
+      expect(await settled(printId)).toMatchObject({ license: null, pending: false, failed: true });
+    } finally {
+      enabled.mockRestore();
+    }
+  });
+
   it("isn't read for another user's shared model", async () => {
     const printId = await upload(`Theirs ${stamp}`);
     const other = await request(app)
@@ -539,6 +557,21 @@ describe("LICENSE.txt", () => {
     expect(await licenseFiles(printId)).toHaveLength(0);
   });
 
+  it("says when its row couldn't be removed, and removes it on the next sync", async () => {
+    const printId = await upload(`Row stuck ${stamp}`);
+    await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "MIT" });
+    await prisma.print.update({ where: { id: printId }, data: { license: Prisma.DbNull, licenseAllows: [] } });
+    const remove = vi.spyOn(prisma.printFile, "deleteMany").mockRejectedValueOnce(new Error("database gone"));
+    try {
+      await expect(syncLicenseFile(printId)).rejects.toThrow("database gone");
+    } finally {
+      remove.mockRestore();
+    }
+    expect(await licenseFiles(printId)).toHaveLength(1);
+    await syncLicenseFile(printId);
+    expect(await licenseFiles(printId)).toHaveLength(0);
+  });
+
   it("keeps the one at LICENSE.txt when a merge brings another along beside it", async () => {
     const printId = await upload(`Merged ${stamp}`);
     await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "MIT" });
@@ -561,5 +594,62 @@ describe("LICENSE.txt", () => {
     const files = await licenseFiles(printId);
     expect(files.map((f) => f.id)).toEqual([canonical.id]);
     expect(fs.existsSync(path.join(STORAGE, renamed))).toBe(false);
+  });
+
+  it("goes back to LICENSE.txt once another file there is gone", async () => {
+    const printId = await upload(`Aside ${stamp}`);
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId } });
+    const canonical = path.join(path.dirname(plate.storagePath), "LICENSE.txt");
+    // Someone's own LICENSE.txt, saved as a supporting file first.
+    fs.mkdirSync(path.dirname(path.join(STORAGE, canonical)), { recursive: true });
+    fs.writeFileSync(path.join(STORAGE, canonical), "their own");
+    const theirs = await prisma.printFile.create({
+      data: {
+        printId,
+        role: "SUPPORTING",
+        filename: "LICENSE.txt",
+        mime: "text/plain",
+        size: 9,
+        storagePath: canonical,
+      },
+    });
+    await request(app).post(`/api/print/${printId}/meta`).set(auth()).send({ license: "MIT" });
+    const [aside] = await licenseFiles(printId);
+    expect(path.basename(aside.storagePath)).toBe("LICENSE (2).txt");
+
+    await prisma.printFile.delete({ where: { id: theirs.id } });
+    fs.rmSync(path.join(STORAGE, canonical));
+    await syncLicenseFile(printId);
+    const [back] = await licenseFiles(printId);
+    expect(back.id).toBe(aside.id);
+    expect(back.storagePath).toBe(canonical);
+    expect(read(canonical)).toContain("MIT License");
+    expect(fs.existsSync(path.join(STORAGE, aside.storagePath))).toBe(false);
+  });
+
+  it("follows its author's new name, on everyone's models", async () => {
+    const printId = await upload(`Renamed author ${stamp}`);
+    const externalId = `renamed-${stamp}`;
+    const info = {
+      provider: "makerworld",
+      externalId,
+      name: "Mara",
+      handle: null,
+      bio: null,
+      bioTranslated: null,
+      links: [],
+      avatarUrl: null,
+      backgroundUrl: null,
+    };
+    const author = (await upsertAuthorFromImport(info))!;
+    await prisma.print.update({
+      where: { id: printId },
+      data: { authorId: author.id, ...licenseData({ id: "CC-BY-4.0", raw: "BY" }, "user", null) },
+    });
+    await syncLicenseFile(printId);
+    expect(read((await licenseFiles(printId))[0].storagePath)).toContain("\nby Mara\n");
+
+    await upsertAuthorFromImport({ ...info, name: "Mara Voss" });
+    await until(async () => read((await licenseFiles(printId))[0].storagePath).includes("\nby Mara Voss\n"));
   });
 });
