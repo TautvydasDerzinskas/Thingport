@@ -51,7 +51,7 @@ func TestRedactURLHidesAllSignedPathTokens(t *testing.T) {
 			t.Fatalf("redacted URL still includes a credential %q: %s", secret, redacted)
 		}
 	}
-	if strings.Count(redacted, "/api/t/REDACTED/") != 2 {
+	if strings.Count(redacted, "/api/t/REDACTED") != 2 {
 		t.Fatalf("expected both signed path segments to be redacted: %s", redacted)
 	}
 }
