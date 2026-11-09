@@ -131,6 +131,9 @@ describe("the licence catalogue", () => {
     expect(licenseIdFromText("CC BY 4.0, adapted from a 2.0 original")).toBe("CC-BY-4.0");
     expect(licenseIdFromText("CC BY 2.0, adapted from a 4.0 original")).toBeNull();
     expect(licenseIdFromText("CC BY-NC 3.0, since 4.0 came out")).toBe("CC-BY-NC-3.0");
+    expect(licenseIdFromText("Model release 2.0; licensed CC BY 4.0")).toBe("CC-BY-4.0");
+    expect(licenseIdFromText("CC BY v2.0")).toBeNull();
+    expect(licenseIdFromText("CC BY-SA v3.0")).toBe("CC-BY-SA-3.0");
     expect(licenseIdFromText("My own terms")).toBeNull();
   });
 

@@ -11,7 +11,14 @@ import {
 
 type Flags = Map<string, boolean>;
 
-const CC_NAME = /^(?:CC[\s_-]*)?BY(?:[\s_-]+(?:NC|ND|SA))*(?![A-Za-z])|^attribution\b|creative commons/i;
+// A Creative Commons licence spelled out without saying so: "Attribution", its parts, then a version or the kind of
+// port ("Attribution-ShareAlike 4.0 International"). "Attribution required" is no licence name.
+const SPELLED_CC =
+  /^attribution(?:[\s_-]+(?:non[\s-]?commercial|no[\s-]?deriv\w*|share[\s-]?alike))*[\s_-]+(?:v?\d\.\d|international|generic|unported)\b/i;
+const CC_NAME = new RegExp(
+  `^(?:CC[\\s_-]*)?BY(?:[\\s_-]+(?:NC|ND|SA))*(?![A-Za-z])|${SPELLED_CC.source}|creative commons`,
+  "i",
+);
 
 function flagsOf(value: unknown): Flags {
   const flags: Flags = new Map();
@@ -28,11 +35,11 @@ function flagsOf(value: unknown): Flags {
  *  out. */
 function ccId(name: string): string | null {
   if (/myminifactory/i.test(name)) return null;
-  const head = name.match(/^((?:CC[\s_-]*)?BY(?:[\s_-]+(?:NC|ND|SA))*)(?![A-Za-z])(?:[\s_-]*v?(\d\.\d))?/);
+  const head = name.match(/^((?:CC[\s_-]*)?BY(?:[\s_-]+(?:NC|ND|SA))*)(?![A-Za-z])(?:[\s_-]*v?(\d\.\d))?/i);
   // At the version it names ("BY-SA 3.0"), 4.0 when it names none.
   const version = head?.[2] === "3.0" ? "3.0" : head?.[2] && head[2] !== "4.0" ? null : "4.0";
   // Spelled out, it may leave out "Creative Commons" ("Attribution-ShareAlike 4.0 International").
-  const spelled = /^attribution\b/i.test(name) ? `Creative Commons ${name}` : name;
+  const spelled = SPELLED_CC.test(name) ? `Creative Commons ${name}` : name;
   const id = (head && version ? ccLicenseId(head[1], version) : null) ?? licenseIdFromText(spelled);
   return id && (id.startsWith("CC") || id === "public-domain") ? id : null;
 }

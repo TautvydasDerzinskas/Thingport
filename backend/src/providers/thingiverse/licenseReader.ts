@@ -21,7 +21,8 @@ export async function readThingiverseLicense(
   const token = await getThingiverseAccessToken();
   if (token) {
     const thing = await fetchThingiverseThing(thingId, token);
-    return thing ? (thingiverseLicenseFrom(thing) ?? null) : null;
+    // A Thing answered without the field can't tell: read again later.
+    return thing ? thingiverseLicenseFrom(thing) : null;
   }
   const res = await browserFetch(thingiverseThingUrl(thingId), {
     headers: { Accept: "text/html" },

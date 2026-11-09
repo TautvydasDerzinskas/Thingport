@@ -105,6 +105,7 @@ describe("Thingiverse licences", () => {
         if (pathname === "/things/1015238") {
           return Response.json({ id: 1015238, license: "Creative Commons - Attribution - Non-Commercial" });
         }
+        if (pathname === "/things/1015239") return Response.json({ id: 1015239 });
         return Response.json({ error: "Not Found" }, { status: 404 });
       }),
     );
@@ -114,6 +115,8 @@ describe("Thingiverse licences", () => {
     });
     expect(calls).toEqual(["https://api.thingiverse.com/things/1015238?access_token=app-token"]);
     expect(await readThingiverseLicense("user-1", "404", { notes: null })).toBeNull();
+    // A Thing answered without the field can't tell: read again later.
+    expect(await readThingiverseLicense("user-1", "1015239", { notes: null })).toBeUndefined();
   });
 
   it("reads it off the public page without a token, and throws when Cloudflare stops it", async () => {

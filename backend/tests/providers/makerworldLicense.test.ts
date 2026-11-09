@@ -99,9 +99,12 @@ describe("MakerWorld licences", () => {
       "fetch",
       vi.fn(async (url: string, init: RequestInit) => {
         calls.push({ url, headers: init.headers as Record<string, string> });
-        return url.endsWith("/design/3541343")
-          ? Response.json(design)
-          : Response.json({ code: 1, error: "not found" }, { status: 404 });
+        if (url.endsWith("/design/3541343")) return Response.json(design);
+        if (url.endsWith("/design/3541344")) {
+          const { license: _omitted, ...rest } = design as Record<string, unknown>;
+          return Response.json(rest);
+        }
+        return Response.json({ code: 1, error: "not found" }, { status: 404 });
       }),
     );
     const stored = { notes: null };
@@ -109,6 +112,8 @@ describe("MakerWorld licences", () => {
     expect(calls[0].url).toBe("https://api.bambulab.com/v1/design-service/design/3541343");
     expect(calls[0].headers).not.toHaveProperty("Authorization");
     expect(await readMakerworldLicense("user-1", "999", stored)).toBeNull();
+    // A design answered without the field can't tell: read again later, rather than kept as none.
+    expect(await readMakerworldLicense("user-1", "3541344", stored)).toBeUndefined();
   });
 
   it("throws when MakerWorld won't answer, so it's read again later", async () => {
