@@ -918,7 +918,7 @@
       },
       "categoryCount": {
         "label": "Categories & folders",
-        "count_one": "Categories & folders",
+        "count_one": "Category or folder",
         "count_other": "Categories & folders"
       },
       "topViewed": {

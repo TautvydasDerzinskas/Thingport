@@ -940,7 +940,7 @@
       },
       "categoryCount": {
         "label": "Catégories et dossiers",
-        "count_one": "Catégories et dossiers",
+        "count_one": "Catégorie ou dossier",
         "count_many": "Catégories et dossiers",
         "count_other": "Catégories et dossiers"
       },

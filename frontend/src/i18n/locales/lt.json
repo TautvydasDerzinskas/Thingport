@@ -950,7 +950,7 @@
       },
       "categoryCount": {
         "label": "Kategorijos ir aplankai",
-        "count_one": "Kategorijos ir aplankai",
+        "count_one": "Kategorija ar aplankas",
         "count_few": "Kategorijos ir aplankai",
         "count_other": "Kategorijų ir aplankų"
       },
@@ -5673,7 +5673,7 @@
         "sharedCount_few": "{{count}} žmonės gali ją matyti",
         "sharedCount_other": "{{count}} žmonių gali ją matyti",
         "sharedNobody": "Kol kas niekas: matote tik jūs",
-        "sharedElsewhere_one": "{{count}} sujungtame serveryje",
+        "sharedElsewhere_one": "{{count}} sujungtuose serveriuose",
         "sharedElsewhere_few": "{{count}} sujungtuose serveriuose",
         "sharedElsewhere_other": "{{count}} sujungtuose serveriuose",
         "sharedHelp": "Jie mato ją kaip viešą kolekciją: gali atidaryti, atsisiųsti ir kopijuoti jos modelius, ir gauna pranešimą, kai su jais pasidalinate. Su kuo dar ji bendrinama, žinote tik jūs. Žmogus sujungtame serveryje ją mato per savo serverį, kuris rodo ją tik jam; to serverio administratoriai irgi galėtų ją matyti.",

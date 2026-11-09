@@ -4935,7 +4935,7 @@
         "sharedCount_many": "{{count}} пользователей имеют доступ",
         "sharedCount_other": "{{count}} пользователя имеют доступ",
         "sharedNobody": "Пока никто: коллекция видна только вам",
-        "sharedElsewhere_one": "{{count}} пользователь на подключённом экземпляре",
+        "sharedElsewhere_one": "{{count}} пользователь на подключённых экземплярах",
         "sharedElsewhere_few": "{{count}} пользователя на подключённых экземплярах",
         "sharedElsewhere_many": "{{count}} пользователей на подключённых экземплярах",
         "sharedElsewhere_other": "{{count}} пользователя на подключённых экземплярах",

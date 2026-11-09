@@ -156,16 +156,19 @@ export default async function mount(thingport) {
     t,
   });
 
+  /** What the solver takes from a form: the open one, or a saved project's. */
+  const planInput = (from) => ({
+    widthMm: clean(from.widthMm, 0),
+    heightMm: clean(from.heightMm, 0),
+    printer: getPrinter(from.printerId, { x: clean(from.bedX, 256), y: clean(from.bedY, 256) }),
+    strategyId: from.strategyId,
+    maxGapMm: clean(from.maxGapMm, 40),
+  });
+
   function replan() {
     planError = null;
     try {
-      plan = planWall({
-        widthMm: clean(form.widthMm, 0),
-        heightMm: clean(form.heightMm, 0),
-        printer: printer(),
-        strategyId: form.strategyId,
-        maxGapMm: clean(form.maxGapMm, 40),
-      });
+      plan = planWall(planInput(form));
       markers = hardwareMarkers(plan, system());
     } catch (error) {
       plan = null;
@@ -491,20 +494,38 @@ export default async function mount(thingport) {
 
   /* ---- projects ---- */
 
+  /** A saved project keeps its plan's numbers, so the list can say them in any language without solving it again. */
+  const statsOf = (solved) => ({
+    boards: solved.boards.length,
+    widthMm: Math.round(solved.widthMm),
+    heightMm: Math.round(solved.heightMm),
+  });
+
   function projectSummary(project) {
-    const saved = { ...START, ...project.form };
-    try {
-      const savedPlan = planWall({
-        widthMm: clean(saved.widthMm, 0),
-        heightMm: clean(saved.heightMm, 0),
-        printer: getPrinter(saved.printerId, { x: clean(saved.bedX, 256), y: clean(saved.bedY, 256) }),
-        strategyId: saved.strategyId,
-        maxGapMm: clean(saved.maxGapMm, 40),
-      });
-      return `${plural(t, savedPlan.boards.length, "list.boardWord")}, ${Math.round(savedPlan.widthMm)} × ${Math.round(savedPlan.heightMm)} mm`;
-    } catch {
-      return project.summary ?? "";
-    }
+    const { stats } = project;
+    if (!stats) return project.summary ?? "";
+    return `${plural(t, stats.boards, "list.boardWord")}, ${stats.widthMm} × ${stats.heightMm} mm`;
+  }
+
+  // A project saved before the numbers were kept has only English words: its plan is solved again in the background,
+  // one project at a time, so the list never waits on the solver.
+  const unsolvable = new Set();
+  let filling = null;
+  function fillMissingStats() {
+    if (filling || closed) return;
+    const next = projects.find((project) => !project.stats && !unsolvable.has(project.id));
+    if (!next) return;
+    filling = setTimeout(async () => {
+      filling = null;
+      if (closed) return;
+      try {
+        next.stats = statsOf(planWall(planInput({ ...START, ...next.form })));
+        await keepProjects();
+      } catch {
+        unsolvable.add(next.id);
+      }
+      renderProjects();
+    }, 0);
   }
 
   function renderProjects() {
@@ -513,6 +534,7 @@ export default async function mount(thingport) {
       list.innerHTML = `<li class="skp-empty">${escapeHtml(t("plans.empty"))}</li>`;
       return;
     }
+    fillMissingStats();
     list.replaceChildren(
       ...projects.map((project) => {
         const row = document.createElement("li");
@@ -576,6 +598,7 @@ export default async function mount(thingport) {
       name,
       at: new Date().toISOString(),
       form: { ...form },
+      stats: statsOf(plan),
     });
     projects = projects.slice(0, PROJECT_LIMIT);
     await keepProjects();
@@ -706,6 +729,7 @@ export default async function mount(thingport) {
   return () => {
     closed = true;
     clearTimeout(formTimer);
+    clearTimeout(filling);
     stopResize?.();
     canvas.removeEventListener("pointerdown", onPointerDown);
     canvas.removeEventListener("pointermove", onPointerMove);

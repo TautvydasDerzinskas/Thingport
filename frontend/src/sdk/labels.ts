@@ -73,11 +73,13 @@ export function translator(locales: Locales, language: string): Translate {
     words[`${key}.${form}`] ?? words[`${key}.other`];
   return (key, vars) => {
     const count = typeof vars?.count === "number" ? vars.count : null;
-    const counted =
-      count === null
-        ? undefined
-        : (plural(chosen, key, rules.select(count)) ?? plural(fallback, key, englishRules.select(count)));
-    const text = counted ?? chosen[key] ?? fallback[key] ?? key;
+    // The user's own words first, plural or plain, so a translation behind English's plural forms still shows.
+    const text =
+      (count === null ? undefined : plural(chosen, key, rules.select(count))) ??
+      chosen[key] ??
+      (count === null ? undefined : plural(fallback, key, englishRules.select(count))) ??
+      fallback[key] ??
+      key;
     if (!vars) return text;
     return text.replace(/\{(\w+)\}/g, (whole, name: string) =>
       name in vars ? String(vars[name as keyof typeof vars]) : whole,

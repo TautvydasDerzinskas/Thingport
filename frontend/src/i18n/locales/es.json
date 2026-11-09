@@ -940,7 +940,7 @@
       },
       "categoryCount": {
         "label": "Categorías y carpetas",
-        "count_one": "Categorías y carpetas",
+        "count_one": "Categoría o carpeta",
         "count_many": "Categorías y carpetas",
         "count_other": "Categorías y carpetas"
       },

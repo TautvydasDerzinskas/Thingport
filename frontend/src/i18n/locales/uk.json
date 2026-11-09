@@ -4942,7 +4942,7 @@
         "sharedCount_many": "{{count}} користувачів мають доступ",
         "sharedCount_other": "{{count}} користувача мають доступ",
         "sharedNobody": "Поки ніхто: колекцію бачите лише ви",
-        "sharedElsewhere_one": "{{count}} користувач на підключеному екземплярі",
+        "sharedElsewhere_one": "{{count}} користувач на підключених екземплярах",
         "sharedElsewhere_few": "{{count}} користувачі на підключених екземплярах",
         "sharedElsewhere_many": "{{count}} користувачів на підключених екземплярах",
         "sharedElsewhere_other": "{{count}} користувача на підключених екземплярах",

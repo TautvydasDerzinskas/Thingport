@@ -36,6 +36,14 @@ describe("translator plurals", () => {
     expect(translator(LOCALES, "xx-invalid-")("bar.pieces", { count: 1 })).toBe("piece");
   });
 
+  it("takes the language's plain words over English's plural forms", () => {
+    const ru = translator(
+      { en: { "unit.kmh.one": "km/h", "unit.kmh.other": "km/h" }, ru: { "unit.kmh": "км/ч" } },
+      "ru",
+    );
+    expect(ru("unit.kmh", { count: 5 })).toBe("км/ч");
+  });
+
   it("leaves a key without plural forms as it was", () => {
     const en = translator({ en: { hello: "Hi {count}" } }, "en");
     expect(en("hello", { count: 3 })).toBe("Hi 3");

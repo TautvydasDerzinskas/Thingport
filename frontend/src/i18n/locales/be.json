@@ -4941,7 +4941,7 @@
         "sharedCount_many": "{{count}} карыстальнікаў маюць доступ",
         "sharedCount_other": "{{count}} карыстальнікі маюць доступ",
         "sharedNobody": "Пакуль ніхто: калекцыю бачыце толькі вы",
-        "sharedElsewhere_one": "{{count}} карыстальнік на падключаным асобніку",
+        "sharedElsewhere_one": "{{count}} карыстальнік на падключаных асобніках",
         "sharedElsewhere_few": "{{count}} карыстальнікі на падключаных асобніках",
         "sharedElsewhere_many": "{{count}} карыстальнікаў на падключаных асобніках",
         "sharedElsewhere_other": "{{count}} карыстальнікі на падключаных асобніках",

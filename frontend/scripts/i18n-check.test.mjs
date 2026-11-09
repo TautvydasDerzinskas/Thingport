@@ -31,6 +31,9 @@ describe("i18n checker", () => {
       const output = execFileSync(process.execPath, [join(root, "scripts/i18n-check.mjs"), "ru"], { encoding: "utf8" });
       expect(output).toContain("missing  models.customizer.pick.title");
       expect(output).not.toContain("missing  models.customizer.pick.body");
+      // English's title isn't counted, so a translator's title_one is a leftover to remove.
+      expect(output).toContain("unused   models.customizer.pick.title_one");
+      expect(output).not.toContain("unused   models.customizer.pick.body_");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

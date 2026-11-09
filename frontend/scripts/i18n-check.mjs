@@ -20,7 +20,6 @@ for (const key of read("en")) {
   if (PLURAL.test(key)) plurals.add(key.replace(PLURAL, ""));
   else plain.push(key);
 }
-const plainSet = new Set(plain);
 // English has a single string for these lookups, but every caller supplies count.
 const pluralOnly = new Set([
   "app.studio.prompt.limit",
@@ -54,10 +53,11 @@ for (const code of codes) {
     ...[...plurals].flatMap((base) => forms.map((form) => `${base}_${form}`)),
   ]);
   // Extra plural forms a translator added (Lithuanian `_many`) aren't stale, just unused by this locale's whole numbers.
+  // Only a word English counts has them: `title_one` beside English's plain `title` is a leftover.
   const locale = new Set(
     localeLeaves.filter((key) => {
       const base = key.replace(PLURAL, "");
-      return en.has(key) || !(PLURAL.test(key) && (plurals.has(base) || plainSet.has(base)));
+      return en.has(key) || !(PLURAL.test(key) && (plurals.has(base) || pluralOnly.has(base)));
     }),
   );
   const missing = [...en].filter((key) => !locale.has(key));
