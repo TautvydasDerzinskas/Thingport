@@ -105,4 +105,7 @@
 - name: "provider: PIXUP"
   color: "dc4b2d"
   description: "About PIXUP, from the bug form's Provider answer"
+- name: "provider: Fab365"
+  color: "00c300"
+  description: "About Fab365, from the bug form's Provider answer"
 # /providers:labels

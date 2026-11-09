@@ -1,0 +1,42 @@
+{
+  "returnCode": "C00000",
+  "data": [
+    {
+      "item": {
+        "id_item": "116",
+        "name_en": "Jet Pack & Laser gun",
+        "name_ko": "제트팩",
+        "free": "y",
+        "price_usd": "0.00",
+        "list_img": "https://st.fab365.net/img/item/325/116_cover.jpg"
+      },
+      "product_id": "116",
+      "id_user": "242181"
+    },
+    {
+      "item": {
+        "id_item": "428",
+        "name_en": "Foldable Walker",
+        "name_ko": "워커",
+        "free": "y",
+        "price_usd": "0.00",
+        "list_img": "https://st.fab365.net/img/item/325/428_cover.jpg"
+      },
+      "product_id": "428",
+      "id_user": "242181"
+    },
+    {
+      "item": {
+        "id_item": "232",
+        "name_en": "Second Stage",
+        "name_ko": "세컨드",
+        "free": "n",
+        "price_usd": "9.90",
+        "list_img": "https://st.fab365.net/img/item/325/232_cover.jpg"
+      },
+      "product_id": "232",
+      "id_user": "242181"
+    }
+  ],
+  "description": "OK"
+}

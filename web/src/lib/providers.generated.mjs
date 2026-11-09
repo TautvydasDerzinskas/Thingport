@@ -164,6 +164,15 @@ export const PROVIDER_DOCS = [
     description:
       "Import PIXUP's free models and the ones you bought, and anyone's wishlist or collections, with your own sign-in.",
   },
+  {
+    slug: "providers/fab365",
+    source: "docs/providers/fab365.md",
+    group: "Providers",
+    title: "Fab365",
+    nav: "Fab365",
+    description:
+      "Import Fab365's free models and the ones you own, and your favourites, with your own sign-in for the files.",
+  },
 ];
 
 /** What each provider's page shows besides its Markdown and the comparison table, from its manifest and docs.ts: a
@@ -616,6 +625,28 @@ export const PROVIDER_PAGES = [
       categories: true,
     },
   },
+  {
+    docsSlug: "fab365",
+    accent: "#00C300",
+    highlight: {
+      title: "Owned and free models, your files",
+      text: "Fab365 sells its models and gives a few free. Thingport imports the free ones and any you own — bought or redeemed with a Fab365 ticket — with your own sign-in for the files; it never spends your money or tickets.",
+    },
+    facts: {
+      signIn: "user",
+      grab: "recommended",
+      grabSite: "optional",
+      flaresolverr: "none",
+      collections: false,
+      likes: true,
+      sync: true,
+      profiles: false,
+      slicers: [],
+      bambuProjects: false,
+      trending: "popular",
+      categories: true,
+    },
+  },
 ];
 
 /** The comparison table of docs/PROVIDER_SETUP.md, for the foot of each provider's page: the columns' headings, a row
@@ -872,6 +903,19 @@ export const PROVIDER_COMPARISON = {
         { yes: false },
       ],
     },
+    {
+      docsSlug: "fab365",
+      name: "Fab365",
+      cells: [
+        { text: "Yours, for the files" },
+        { need: "recommended" },
+        { need: "none" },
+        { yes: false },
+        { yes: true, note: 7 },
+        { yes: true },
+        { yes: false },
+      ],
+    },
   ],
   notes: [
     "Your private Printables collections and your likes are read by Grab, while you're on Printables.",
@@ -880,5 +924,6 @@ export const PROVIDER_COMPARISON = {
     "A gallery item that is a CAD project, rather than a library part, has no stored mesh: OwlCAD's editor builds its file, so Thingport Grab exports it on owlcad.com.",
     "Toymakr3D hands a model's files to signed-in users only, the free ones included, and shows your likes to you alone.",
     "CGTrader shows your likes and wishlist to you alone, and its downloads sit behind AWS's bot check, which Thingport passes with Grab's token from your browser or FlareSolverr's own.",
+    "Fab365 hands a model's files to signed-in members only, the free ones included, and shows your favourites to you alone.",
   ],
 };

@@ -1,0 +1,38 @@
+[
+  {
+    "url": "https://fab365.net/items/428",
+    "expect": { "provider": "fab365", "kind": "model", "externalId": "428" }
+  },
+  {
+    "url": "https://fab365.net/items/116/",
+    "expect": { "provider": "fab365", "kind": "model", "externalId": "116" }
+  },
+  {
+    "url": "https://www.fab365.net/items/3222?ref=home",
+    "expect": { "provider": "fab365", "kind": "model", "externalId": "3222" }
+  },
+  {
+    "url": "https://fab365.net/my/likes",
+    "expect": { "provider": "fab365", "kind": "list", "externalId": "likes", "listKind": "likes" }
+  },
+  {
+    "url": "https://fab365.net/my/likes/",
+    "expect": { "provider": "fab365", "kind": "list", "externalId": "likes", "listKind": "likes" }
+  },
+  {
+    "url": "https://fab365.net/items",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://fab365.net/categories",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://fab365.net/my/downloads",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://notfab365.net/items/428",
+    "expect": { "provider": null, "kind": null }
+  }
+]

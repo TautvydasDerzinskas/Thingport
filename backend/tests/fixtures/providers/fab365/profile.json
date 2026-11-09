@@ -1,0 +1,17 @@
+{
+  "returnCode": "C00000",
+  "data": {
+    "user": {
+      "id_user": "242181",
+      "name": "maker-one",
+      "userid": "maker-one",
+      "email": "maker@example.com",
+      "status": "active"
+    },
+    "userPrinters": [],
+    "printerSlicer": [],
+    "subscription": [],
+    "isEmailVerified": true
+  },
+  "description": "OK"
+}

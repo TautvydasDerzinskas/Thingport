@@ -211,6 +211,12 @@ const SITE: LicenseDef[] = [
       "Copyright is owned by the designer: the model is only allowed for private use. The buyer gets a nonexclusive " +
       "authorization for personal and noncommercial use, not the copyright.",
   }),
+  site("fab365-personal", "Personal Use", "Fab365 Personal Use", [], {
+    url: "https://fab365.net/terms",
+    text:
+      "For personal use only, and the copyright stays the designer's. Print the model for yourself and share pictures " +
+      "of your prints; no commercial use, and no sharing, reselling or redistributing the files or the prints.",
+  }),
   site("grabcad-terms", "GrabCAD Terms", "GrabCAD Community Cross License", ["remix"], {
     url: "https://grabcad.com/terms",
     text:

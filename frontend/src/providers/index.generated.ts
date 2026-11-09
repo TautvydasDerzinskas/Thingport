@@ -41,6 +41,8 @@ import meshy from "./meshy/manifest.generated";
 import { urls as meshyUrls } from "./meshy/urls.generated";
 import pixup3d from "./pixup3d/manifest.generated";
 import { urls as pixup3dUrls } from "./pixup3d/urls.generated";
+import fab365 from "./fab365/manifest.generated";
+import { urls as fab365Urls } from "./fab365/urls.generated";
 
 export type {
   AuthField,
@@ -79,6 +81,7 @@ export const PROVIDER_IDS = [
   "grabcad",
   "meshy",
   "pixup3d",
+  "fab365",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -102,6 +105,7 @@ export const MANIFESTS = {
   grabcad,
   meshy,
   pixup3d,
+  fab365,
 } as const;
 
 /** What each site is, in two or three sentences (providers/<id>/docs.ts), for the UI that introduces a provider
@@ -145,6 +149,8 @@ export const ABOUT: { readonly [K in ProviderId]: string } = {
     "An AI 3D model generator that turns a prompt or a picture into a textured model in about a minute. Its community shares the results by the hundred thousand, and lets creators mark the ones fit to print.",
   pixup3d:
     "Phrozen's 3D model marketplace, from the Taiwanese maker of resin printers. Its designers sell and share figures, busts and tabletop miniatures, many of them pre-supported for resin printing.",
+  fab365:
+    "Fab365 is a South Korean 3D-model marketplace, running since 2018. It's known for meticulously engineered models — SpaceX rockets, foldable robots, Star Wars ships — many designed to print cleanly without supports.",
 };
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -167,6 +173,7 @@ export const TRENDING_PROVIDER_IDS = [
   "grabcad",
   "meshy",
   "pixup3d",
+  "fab365",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -190,6 +197,7 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   grabcad: grabcadUrls,
   meshy: meshyUrls,
   pixup3d: pixup3dUrls,
+  fab365: fab365Urls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {

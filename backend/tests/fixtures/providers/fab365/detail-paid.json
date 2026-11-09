@@ -1,0 +1,22 @@
+{
+  "returnCode": "C00000",
+  "item": {
+    "id": "3222",
+    "name": "Nightcrawler Multi Part",
+    "listImg": "https://st.fab365.net/img/item/325/3222_cover.jpg",
+    "desc": "A multi-part model for painting and display.",
+    "shortDesc": "Multi part figure",
+    "free": "n",
+    "selling": "y",
+    "price": "6.50",
+    "price_option": "paid",
+    "isOwn": false,
+    "buy_status": "n",
+    "download_status": "n",
+    "id_category": 1007,
+    "category_name": "Characters",
+    "studio_id": "29",
+    "studio_name": null
+  },
+  "description": "OK"
+}

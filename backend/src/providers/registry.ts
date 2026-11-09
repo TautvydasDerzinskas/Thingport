@@ -22,6 +22,7 @@ import grabcadCategories from "./grabcad/categories.json";
 import owlcadCategories from "./owlcad/categories.json";
 import meshyCategories from "./meshy/categories.json";
 import pixup3dCategories from "./pixup3d/categories.json";
+import fab365Categories from "./fab365/categories.json";
 import { meshyImport, meshyTrending, meshyLists, meshyDetails } from "./meshy";
 import { meshyConnection } from "./meshy/connection";
 import { meshySync } from "./meshy/sync";
@@ -30,6 +31,10 @@ import { pixup3dImport, pixup3dTrending, pixup3dLists, pixup3dDetails } from "./
 import { pixup3dConnection } from "./pixup3d/connection";
 import { pixup3dSync } from "./pixup3d/sync";
 import { pixup3dBrowse } from "./pixup3d/browse";
+import { fab365Import, fab365Trending, fab365Lists, fab365Details } from "./fab365";
+import { fab365Connection } from "./fab365/connection";
+import { fab365Sync } from "./fab365/sync";
+import { fab365Browse } from "./fab365/browse";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -154,6 +159,7 @@ import { readThingiverseLicense } from "./thingiverse/licenseReader";
 import { readCrealitycloudLicense } from "./crealitycloud/license";
 import { readEufymakeLicense } from "./eufymake/license";
 import { readPixup3dLicense } from "./pixup3d/license";
+import { readFab365License } from "./fab365/license";
 import { readPinshapeLicense } from "./pinshape/license";
 import { readToymakr3dLicense } from "./toymakr3d/license";
 import { readCgtraderLicense } from "./cgtrader/license";
@@ -549,6 +555,19 @@ export const PROVIDERS = {
     trending: pixup3dTrending,
     details: pixup3dDetails,
     license: readPixup3dLicense,
+  },
+  fab365: {
+    starterCategories: fab365Categories,
+    connection: { default: fab365Connection },
+    // Its files and favourites are read with the sign-in; its model pages and listings read without one.
+    authStopText: grabSignInStop("fab365"),
+    sourcedImport: fab365Import,
+    lists: fab365Lists,
+    sync: fab365Sync,
+    browse: fab365Browse,
+    trending: fab365Trending,
+    details: fab365Details,
+    license: readFab365License,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 
