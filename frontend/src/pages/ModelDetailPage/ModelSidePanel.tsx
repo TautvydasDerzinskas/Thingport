@@ -147,8 +147,7 @@ export default function ModelSidePanel({
   const viewerAvatarUrl = viewer?.avatar_url;
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
-  const { slicerOption, slicerOptions, files, canOpen, normalizedTargetsOf } =
-    useOpenInSlicer(print);
+  const { slicerOption, slicerOptions, files, canOpen, normalizedTargetsOf } = useOpenInSlicer(print);
   // Every action below applies to this file; until one is picked, the first profile (the designer's, where there is
   // one), else the first file.
   const [ownSelectedKey, setOwnSelectedKey] = useState<string | null>(null);

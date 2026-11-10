@@ -51,6 +51,16 @@ describe("slicerTarget", () => {
     await expect(downloadTarget()).resolves.toBe("flat");
   });
 
+  it("still gives a click made before the button went its answer", async () => {
+    const answer = deferred<string | null>();
+    void lookUpSlicer(() => answer.promise);
+    const target = downloadTarget();
+    forgetSlicer();
+    answer.resolve("snapmaker-orca");
+    await expect(target).resolves.toBe("orca");
+    expect(knownSlicer()).toBeNull();
+  });
+
   describe("when the instance is slow", () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => vi.useRealTimers());

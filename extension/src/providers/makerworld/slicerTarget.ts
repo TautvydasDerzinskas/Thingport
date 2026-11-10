@@ -24,8 +24,8 @@ export function lookUpSlicer(ask: () => Promise<string | null>): Promise<string 
   pending = Promise.race([ask().catch(() => null), timedOut])
     .finally(() => clearTimeout(timer))
     .then((slicer) => {
-      if (mine !== generation) return null;
-      known = slicer;
+      // Only the shared state is guarded: a click already waiting on this answer still gets it.
+      if (mine === generation) known = slicer;
       return slicer;
     });
   return pending;
