@@ -44,7 +44,7 @@ posting account.
 ```bash
 npm test # the feed and what to post, without Reddit
 npm run typecheck
-npm run playtest # devvit playtest: runs it on a test subreddit, with logs
+npm run playtest # devvit playtest: runs it on a test subreddit with logs, rebuilding as you edit
 ```
 
 `src/feed.ts` reads the feed and picks what to post; `src/server/index.ts` is the app's routes, named in

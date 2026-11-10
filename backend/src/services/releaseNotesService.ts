@@ -230,7 +230,8 @@ function curatedProblem(text: string): string {
   }
 }
 
-/** A checkout's picture as LOCAL_FILES_PATH serves it, or null when it's outside the folder of the file naming it. */
+/** A checkout's picture as LOCAL_FILES_PATH serves it, or null when it's outside `fileUrl`'s folder. Every notes file,
+ *  archived ones included, resolves its pictures against release-notes/, which is the folder LOCAL_FILES_PATH serves. */
 function servedLocally(url: URL, fileUrl: string): string | null {
   const relative = path.relative(fileURLToPath(new URL(".", fileUrl)), fileURLToPath(url));
   const parts = relative.split(path.sep);

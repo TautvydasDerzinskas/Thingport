@@ -25,7 +25,7 @@
     "items": [
       {
         "label": "Check the Thingport blog now",
-        "description": "Posts the newest blog post, if it hasn't been posted yet",
+        "description": "Posts the oldest blog post of the last seven days that hasn't been posted yet",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/check-blog"
@@ -53,7 +53,8 @@
     }
   },
   "scripts": {
-    "build": "npm run build"
+    "build": "npm run build",
+    "dev": "npm run build -- --watch=forever"
   },
   "dev": {
     "subreddit": "thingport_blog_dev"

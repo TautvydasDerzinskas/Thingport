@@ -27,14 +27,13 @@
 //                                                            handles (name@instance) are what the shots show
 //   --headed                                                 show the browser
 //
-// The account's theme and Categories/Folders choice are switched for the shots and restored afterwards. Nothing is
-// changed in the library: the merge and download dialogs are only opened, and System Health's full test only checks
-// connections. Email addresses on the page are blurred. The import queue's rows are made up and answered in the browser,
-// so nothing is queued on the instance, and so is Explore, so social features needn't be on: the library's own models,
-// shown as shared by made-up people. The Studio prompt layout is switched for its shot and restored afterwards.
-// Social features are switched on for the run, so the sidebar has Explore and Chats and Administration -> Social shows
-// them on, and put back afterwards, as are the account's print profiles layout and, for the sharing form, who the
-// collection's shared with, which the shot only answers in the browser.
+// The account's theme, Categories/Folders choice and print profiles layout are switched for the shots and restored
+// afterwards, and so are social features, which are on for the run so the sidebar has Explore and Chats and
+// Administration -> Social shows them on. Nothing is changed in the library: the merge and download dialogs are only
+// opened, and System Health's full test only checks connections. Email addresses on the page are blurred. The import
+// queue's rows are made up and answered in the browser, so nothing is queued on the instance, and so are Explore (the
+// library's own models, shown as shared by made-up people) and who the sharing form's collection is shared with. The
+// Studio prompt layout is switched for its shot and restored afterwards.
 //
 // The connected-instances shots (43-49) need a partner instance, and are skipped without one: 43-45 and 48 are taken
 // on the instance that connects from home, as its admin, 46, 47 and 49 on the one it connects to. 48 looks up
