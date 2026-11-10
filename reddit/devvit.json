@@ -8,7 +8,7 @@
   "permissions": {
     "http": {
       "enable": true,
-      "domains": ["thingport.net"]
+      "domains": ["www.thingport.net"]
     },
     "redis": true,
     "reddit": true
