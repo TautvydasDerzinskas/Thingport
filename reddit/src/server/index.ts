@@ -80,8 +80,10 @@ async function check(): Promise<string> {
 }
 
 function send(res: ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { "Content-Type": "application/json" });
-  res.end(JSON.stringify(body));
+  const json = JSON.stringify(body);
+  // Devvit drops a reply without a Content-Length, and the moderator sees only "Something went wrong".
+  res.writeHead(status, { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(json) });
+  res.end(json);
 }
 
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
