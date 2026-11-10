@@ -1,0 +1,190 @@
+{
+  "version": "1.5.0",
+  "title": "AI becomes Thingport's engine",
+  "summary": "With 1.5.0, AI stops being a helper on the side and becomes an engine you drive. Studio, a new CAD page, is built for an AI to run from start to finish: describe a part, or a change to a model you have, and watch it designed step by step, by the assistant in the page or one connected over MCP, which already searches, imports and files your models. Claude joins as an AI of its own, and Meshy, an AI model generator, as the eighteenth site to import from. Imports take turns in one queue that survives a restart, and everyone opens their own from the Add button. Social features, off until an admin turns them on, let a household share collections, find each other's models on Explore and talk in chats. And provider sign-ins and remote imports are guarded more tightly.",
+  "items": [
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Studio: describe a part, and an AI builds it",
+      "description": "Studio is a CAD page for printable parts, under Tools in everyone's sidebar. It was built for an AI to drive from start to finish: every change a person can make to a design is a command, and every command is also a tool the AI can use, so nothing on the page is out of an assistant's reach. Describe a part in the Ask AI box at the bottom, or select something and ask for a change to it, and the assistant builds it step by step while you watch: shapes and sketches, extrudes and revolves, fillets, holes, shells, threads, patterns, text, pictures traced into outlines. It checks its own work for printing as it goes, and each of its steps undoes like one of yours. Open any model from your library in Studio and it reworks that instead, and with an AI that sees pictures, a photo or a drawing with sizes on it is something to build from. How far it gets is down to the model. The desk organizer in the picture was one paragraph to Claude Opus 5.5: fourteen steps in under two minutes, including a print check that found letters too thin to print, which it fixed by picking another font. A small local model on the compact tool set manages simple parts. Each design keeps its conversation, so \"make it taller\" follows on from what came before. An admin turns the assistant on under Administration → AI → Features and picks the AIs it offers. An assistant connected over MCP gets the same tools with the Studio designs permission on its API token, and its changes show on the page as it makes them.",
+      "code": "Design a desk organizer that prints in one piece: 140 × 90 mm, 60 mm tall at the back stepping down to 35 mm at the front, 3 mm walls, rounded corners, a pen compartment across the back and two in front. Engrave THINGPORT on the front.",
+      "images": [
+        {
+          "src": "screenshots/1.5.0-studio-ai.webp",
+          "caption": "One paragraph to Claude Opus 5.5: fourteen steps, under two minutes, and a print check it ran on its own"
+        },
+        {
+          "src": "screenshots/1.5.0-studio-assistant.webp",
+          "caption": "Administration → AI → Features: the Studio assistant, and which AIs it offers"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/studio.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "A CAD toolset that stays editable",
+      "description": "Edit brings in the toolbar and the side panels. A design is a list of features built in order, so changing a box's width or a sketch's circle changes everything made from it. Sketch on a plane or on a body's face with lines, arcs, rectangles, circles, polygons, SVG paths and text, then extrude, revolve, loft or sweep it. Press/pull a face, fillet and chamfer edges, drill plain, counterbored, countersunk or tapped holes, shell, split, pattern, mirror, hull, align and lay flat, and combine bodies with union, subtract and intersect. The mouse and the view cube work as in other CAD, units are the design's own (mm, cm or in), and parameters with formulas drive any size. Measure reads distances, angles and volumes, and Check for printing finds floating bodies, overhangs and thin walls. Open in Thingport Studio, on any model's menu, brings its STL, 3MF, STEP, OBJ or GLB in to change, and Separate makes each loose piece its own body. Download STL, or Save to Thingport to put the design in your library as a model with its picture.",
+      "images": [
+        {
+          "src": "screenshots/1.5.0-studio-edit.webp",
+          "caption": "Edit mode: the toolbar, the feature list and exact values for what's selected"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/studio.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Claude, as an AI of its own",
+      "description": "An AI under Administration → AI now has a type: OpenAI-compatible, as every AI so far, or Claude, through Anthropic's own API. Pick Claude and paste an API key, and the models it may use are listed. Categorization, improved descriptions, the Studio assistant, the connection test and System Health all work with it, and each feature can use a different AI. Answers come back as structured output, long descriptions stream as they're written, and Effort sets how much Claude thinks first. Claude Opus 5.5, Sonnet 5.5 and Fable 5.1 ask for Anthropic's fallback, so a harmless request declined by mistake is answered by another model. In Studio, Claude finds the tools it needs by searching for them rather than being sent all of them, and its instructions are cached, which keeps a long design session's cost down. AIs you already have carry on as they were.",
+      "images": [
+        {
+          "src": "screenshots/1.5.0-ai-claude.webp",
+          "caption": "An AI's type: Claude fills in its address and lists your key's models"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/ai.md#claude"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Import from Meshy, the eighteenth site",
+      "description": "Meshy is an AI 3D model generator: describe something, or give it a picture, and it makes a model, which its community shares as posts. Those posts and collections import, and so do your own generations, by their workspace link or with the whole workspace synced as Meshy generations, so what you make there lands in your library by itself. Files come as print-ready 3MF, 75 mm tall and standing on the plate, and a post with several models brings each as a plate. Meshy hands files only to a signed-in account, which Thingport Grab sends and the backend keeps renewing. Community models need a Meshy Pro or Studio plan, and Grab says so on a post before you try.",
+      "images": [
+        {
+          "src": "screenshots/1.5.0-providers.webp",
+          "caption": "Meshy, at the foot of eighteen sites"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/providers/meshy.md"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "An import queue of your own, in one line that survives a restart",
+      "description": "Imports now take turns in one line for the whole server, kept in the database, so a restart no longer loses what was waiting. Everyone has their own queue, opened from Add in the top bar, in place of the import bar along the bottom and the admin-only queue page: Importing, Needs attention with why something failed, Waiting, split into In line and On hold, and Finished. Add shows your imports at a glance: a ring while one runs, your place while one waits, a tick when they've finished, a badge when one needs you. Start and Retry go to the back of the line, so nobody's number ever goes up, and other people's imports show only as private rows that say nothing about them. Admins switch from Mine to Everyone to see every import by person and act on it. Synced collections run in a lane of their own, so they never hold the line up, and Thingport Grab's Add to the queue works for everyone, its links on hold until you start them or set them to start by themselves. The top bar is one compact row of two-tone buttons to go with it. The idea of a persistent line came from kreativmonkey's work in #169.",
+      "images": [
+        {
+          "src": "screenshots/1.5.0-import-queue.webp",
+          "caption": "The queue, by section, with what's running, waiting and done"
+        },
+        {
+          "src": "screenshots/1.5.0-add-hub.webp",
+          "caption": "Add opens onto your imports at a glance, beside importing and uploading"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/importing.md#the-import-queue"
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Share collections with the people on your Thingport instance",
+      "description": "Thingport has always given everyone in a household a library of their own. Now an admin can let them share: Social features, a switch at the top of Administration → Users, is off until it's turned on. A collection's form then offers Private or Public, private by default, and Explore appears in the sidebar once there's more than one user: the people who share, the newest shared models, recently updated public collections and the most collected models. Someone else's public collection and its models open with whose they are, and can be downloaded, opened in a slicer or in Studio and customized, but not changed. Adding one of their models to a collection of yours makes your own copy, which stays when the original goes private or is deleted. Others see your display name, never your email.",
+      "images": [
+        {
+          "src": "screenshots/1.5.0-explore.webp",
+          "caption": "Explore: who shares, and the newest models they've shared"
+        },
+        {
+          "src": "screenshots/1.5.0-social-switch.webp",
+          "caption": "Social features, switched on at the top of Users"
+        }
+      ]
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Chats: direct messages and rooms, with models in them",
+      "description": "With social features on, an admin can turn on Chats from the cog beside their switch, and Chats appears in everyone's sidebar with an unread count. Find someone by any part of their name, or by their whole email, which is never shown, and write to them. Admins make rooms: public ones anyone can read and join, and private ones for the people they pick. A message takes emoji and up to five of your own models, which anyone who can read the chat can open, download and copy, until the message is deleted. Chats can be favourited and muted, and a new message brings a toast and one bell notification per chat. It all stays on your instance: nothing is fetched from outside it, emoji included. Chats have an API-token scope of their own, which new tokens leave out.",
+      "images": [
+        {
+          "src": "screenshots/1.5.0-chats.webp",
+          "caption": "A room, with a model sent in it"
+        }
+      ]
+    },
+    {
+      "type": "feature",
+      "highlight": true,
+      "title": "Sign-ins and imports, guarded more tightly",
+      "description": "A site's cookies and tokens now go only to the hosts that site declares, over HTTPS, and never follow a redirect anywhere else. An import link, every redirect it takes and every picture it brings are checked at each hop, and one that leads to an address on your own network is refused, so a crafted link can't make Thingport reach into it. FlareSolverr is used only on the routes that need it and doesn't follow redirects. System Health says when a remote solver is reached over plain HTTP, and FLARESOLVERR_REQUIRE_HTTPS=true refuses one. Thingport Grab no longer passes your credentials on through a redirect, other than a reverse proxy moving the same host from http to https. An instance on plain HTTP is still supported, as before. Thanks to kreativmonkey for this work (#151).",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/pull/151"
+    },
+    {
+      "type": "feature",
+      "title": "Merge uploads into one model, and file several at once",
+      "description": "A multi-part model often arrives as one upload per part. In the Models page's Folders view, select them and choose Merge: pick the main one, and the others' files, pictures and descriptions move into it, their tags and collections join its, and they're deleted. Assign category gives every selected model one category in one go, picked from a tree you filter by typing. Both work on your own uploads, not on imported models or a tool's."
+    },
+    {
+      "type": "feature",
+      "title": "Link an upload to its page on a site",
+      "description": "A model you uploaded yourself can be linked to its page on one of the sites Thingport imports from: Link to a provider, on the model's menu, or in the Folders view on a card's menu or the selection toolbar. It takes the page's pictures, description, tags and author, and the site's badge and link, and downloads no files. The site's category is offered as a suggestion to accept, as an AI's would be."
+    },
+    {
+      "type": "feature",
+      "title": "Import glTF models",
+      "description": "A .gltf keeps its geometry and textures in files beside it, so a download from Sketchfab used to arrive as a model per texture. Upload the folder, or drop it in the consume folder, and each .gltf is packed with its files into one .glb, which previews in its own materials and gets a rendered thumbnail and a print quality check, read in millimetres."
+    },
+    {
+      "type": "feature",
+      "title": "Print profiles for a whole MakerWorld collection, in Grab",
+      "description": "Grab's guided collection import offers what a model's page does: each model's default print profile, all the designer's, or the community's too. Each profile is picked and downloaded on the model's own page with its Download 3MF, at the same unhurried pace as a model, and models already in your library get only the profiles they lack."
+    },
+    {
+      "type": "feature",
+      "title": "A model's collections, at a glance",
+      "description": "A bookmark chip on the model page, between the view and print counts, says how many collections the model is in and opens the dialog to change them. Every dialog that picks a collection can make a new one where you are, so having none yet is no longer a dead end."
+    },
+    {
+      "type": "feature",
+      "title": "Landscapes and visitors in the weather scene",
+      "description": "The weather widget draws a field, a forest, mountains, a city or a random one of them, each following the weather, the time and the season, with animals, people and traffic passing through where they fit, and a guest who comes when the scene is double-clicked."
+    },
+    {
+      "type": "improvement",
+      "title": "The tab's icon carries a red bubble with your unread notifications, up to 9+, with the exact count in the title and on an installed app's icon"
+    },
+    {
+      "type": "improvement",
+      "title": "Tags filter by how many models they have, and collections by system, user and tool, both remembered per browser"
+    },
+    {
+      "type": "improvement",
+      "title": "Run from a checkout, Thingport offers the community widgets in its own folder, so a widget can be tried before it's pushed"
+    },
+    {
+      "type": "improvement",
+      "title": "thingport.net follows your system's light or dark theme, with a three-way toggle"
+    },
+    {
+      "type": "fix",
+      "title": "MakerWorld imports bring a print profile's 3MF again, rather than a zip of its STLs, and Grab's panel offers the print profiles again"
+    },
+    {
+      "type": "fix",
+      "title": "A Cults3D model you bought imports, and Grab no longer calls it unbought (#232)"
+    },
+    {
+      "type": "fix",
+      "title": "A MakerWorld link that names no print profile is filed under the profile the page shows, not the design's default"
+    },
+    {
+      "type": "fix",
+      "title": "Grab's MakerWorld panel stays open while it picks a print profile, rather than closing mid-import"
+    },
+    {
+      "type": "fix",
+      "title": "Grab lists a linked zip's files by name"
+    },
+    {
+      "type": "fix",
+      "title": "Loading more models after some have left the list no longer skips or repeats one"
+    },
+    {
+      "type": "fix",
+      "title": "The weather widget's shapes no longer turn square in dark themes, and its text shows for anyone who asks for reduced motion"
+    }
+  ]
+}

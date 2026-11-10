@@ -15,6 +15,11 @@ chats with the switch under them. Until then, every library is private and nothi
 
 ## Share what you choose
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/52_collection_sharing.png">
+  <img src="../../frontend/src/assets/screenshots/light/52_collection_sharing.png" alt="A collection's form with Shared picked, and the three people it's shared with" width="100%">
+</picture>
+
 - **A collection can be shared or public.** Its form offers **Private**, **Shared** or **Public**, and new
   collections start private. A public collection shows its models to everyone on the instance. A shared one shows them
   only to the people you pick there, by any part of their name or their whole email: they see it as they would a

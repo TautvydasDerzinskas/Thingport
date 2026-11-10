@@ -190,15 +190,21 @@ the same extension ID as the store version.
 `npm run store-assets` renders everything a listing asks for into `docs/store/`, from the HTML
 templates in `store-assets/` (styled like the website's social card):
 
-| File                | Size     | Use                                                                                                  |
-| ------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| `logo.png`          | 300x300  | Store logo                                                                                           |
-| `store-icon.png`    | 128x128  | Chrome Web Store icon -- transparent, 96x96 artwork with 16px padding                                |
-| `tile-small.png`    | 440x280  | Small promotional tile                                                                               |
-| `tile-large.png`    | 1400x560 | Large promotional tile -- the extension's real panel (its compiled stylesheet) on a placeholder page |
-| `screenshots/*.png` | 1280x800 | The README's page screenshots as PNG, which is all the stores accept                                 |
+| File                          | Size     | Use                                                                                                  |
+| ----------------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `logo.png`                    | 300x300  | Store logo                                                                                           |
+| `store-icon.png`              | 128x128  | Chrome Web Store icon -- transparent, 96x96 artwork with 16px padding                                |
+| `tile-small.png`              | 440x280  | Small promotional tile                                                                               |
+| `tile-large.png`              | 1400x560 | Large promotional tile -- the extension's real panel (its compiled stylesheet) on a placeholder page |
+| `screenshots/1-providers.png` | 1280x800 | The logo among every site Grab works on, and what it does                                            |
+| `screenshots/2-popup.png`     | 1280x800 | The popup: not connected yet, and each tab once it is                                                |
+| `screenshots/3-sites.png`     | 1280x800 | A model page's corner on each site, with Grab's button or panel                                      |
 
-Run `npm run screenshots` first when the screenshots need refreshing. They show live provider
+The popup pictures come from `docs/screenshots/popup-*.png` and the corners from `npm run screenshots -- --corners`,
+which visits a model page on every site, so run those first when the pictures need refreshing. A site added since
+uses the example model its manifest names, unless `CORNER_SITES` in `scripts/screenshots.ts` pins another, and sale
+banners are hidden so a picture doesn't date. Store listings can't be changed through the stores' APIs, so these are
+uploaded by hand. They show live provider
 pages, so check them before uploading: a front-page model can be someone else's trademarked
 character, and Printables pages carry its own ads. Pick neutral models with
 `npm run screenshots -- --makerworld=<url> --printables=<url> --thingiverse=<url>`. MyMiniFactory uses a fixed free

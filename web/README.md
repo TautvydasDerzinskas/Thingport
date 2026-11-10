@@ -35,7 +35,9 @@ file that moves or is renamed can't quietly drop off the site.
   Starlight's layout. The install page embeds the real `docker-compose.deploy.yml` and `.env.example`.
 - **Blog posts** are Markdown files in [`src/content/blog/`](src/content/blog/). Frontmatter: `title`, `description`,
   `pubDate`, and optionally `updatedDate`, `tags` and `draft: true`. Link to site pages root-relative
-  (`/docs/install/`); the base path is added automatically.
+  (`/docs/install/`); the base path is added automatically. Once deployed, a post is posted to r/Thingport on or
+  after its `pubDate` by the Devvit app in [`reddit/`](../reddit/README.md), from the RSS feed, as long as that's within
+  seven days of it: one deployed later needs posting by hand.
 - **Widgets & tools** (`/community/`, and a page for each under it) lists what Thingport offers to install, found as
   the app finds it: the folders `community-widgets/index.json` and `tools/index.json` list, in their order, each with
   its metadata (`.json` or `.yml`), script and `README.md`

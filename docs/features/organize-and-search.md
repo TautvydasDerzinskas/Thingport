@@ -42,7 +42,9 @@ bookmarked. What's kept is the sites you hid, so models from a site new to your 
 
 - **Collections** group models however you like, and a model can be in as many as you want. Give a collection a
   description and tags, or [sync it](../guides/synced-collections.md) with a collection or a list of likes on one of the
-  sites Thingport imports from.
+  sites Thingport imports from. With [social features](social.md) on, a collection can be **Private**, **Shared** with
+  [the people you pick](social.md#share-what-you-choose), or **Public**, and the ones shared with you are under
+  **Shared with you** on Explore.
 - **Tags** come with imported models, and you can add your own. Browse every tag with a picture made from its models,
   hide tags used only once, or delete a tag from every model at once.
 - **Favourites** and your **Browsing history** are kept as collections of their own.

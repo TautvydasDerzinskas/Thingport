@@ -79,7 +79,7 @@ const data = {
   providers,
   popups: Object.fromEntries(
     await Promise.all(
-      ["setup", "connected", "features", "history"].map(async (name) => [
+      ["setup", "connected", "appearance", "features", "history"].map(async (name) => [
         name,
         await fileUrl(path.join(SCREENSHOTS_DIR, `popup-${name}.png`)),
       ]),

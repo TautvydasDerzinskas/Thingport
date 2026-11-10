@@ -5,6 +5,11 @@ published under, shows it on the model page, filters by it and writes it beside 
 
 ## On the model page
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/51_model_license.png">
+  <img src="../../frontend/src/assets/screenshots/light/51_model_license.png" alt="A model's licence opened from the strip under its description: what it allows, its terms, Change and Copy credit line" width="100%">
+</picture>
+
 A strip closes the description box: the licence's marks, its name and what it comes to in a few words, such as
 "Credit · Non-commercial · Share alike". Click it for the rest:
 

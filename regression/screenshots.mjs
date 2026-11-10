@@ -15,16 +15,31 @@
 //   --synced-collection     SCREENSHOT_SYNCED_COLLECTION     a synced collection; default the first one
 //   --ai-description-model  SCREENSHOT_AI_DESCRIPTION_MODEL  a model whose description AI rewrote; skipped without one
 //   --studio-design         SCREENSHOT_STUDIO_DESIGN         a Studio design Ask AI built; default the one edited last
+//   --profiles-model        SCREENSHOT_PROFILES_MODEL        a model with print profiles and a licence, both read already
+//   --license-model         SCREENSHOT_LICENSE_MODEL         a model whose licence was read, default --profiles-model
+//   --connect-to            SCREENSHOT_CONNECT_TO            an instance's address for the Connect dialog (48), looked up only
+//   --host-rules            SCREENSHOT_HOST_RULES            Chromium --host-resolver-rules, for names this machine can't resolve
+//   --shared-collection     SCREENSHOT_SHARED_COLLECTION     a collection of the account's to show the sharing form on
 //   --themes                SCREENSHOT_THEMES                comma-separated, default light,dark
 //   --only                  SCREENSHOT_ONLY                  comma-separated shot names or numbers, e.g. 06,07
 //   --out                   SCREENSHOT_OUT                   output folder, holding one folder per theme
+//   --no-blur                                                leave addresses unblurred, on a demo instance whose
+//                                                            handles (name@instance) are what the shots show
 //   --headed                                                 show the browser
 //
-// The account's theme and Categories/Folders choice are switched for the shots and restored afterwards. Nothing is
-// changed in the library: the merge and download dialogs are only opened, and System Health's full test only checks
-// connections. Email addresses on the page are blurred. The import queue's rows are made up and answered in the browser,
-// so nothing is queued on the instance, and so is Explore, so social features needn't be on: the library's own models,
-// shown as shared by made-up people. The Studio prompt layout is switched for its shot and restored afterwards.
+// The account's theme, Categories/Folders choice and print profiles layout are switched for the shots and restored
+// afterwards, and so are social features, which are on for the run so the sidebar has Explore and Chats and
+// Administration -> Social shows them on. Nothing is changed in the library: the merge and download dialogs are only
+// opened, and System Health's full test only checks connections. Email addresses on the page are blurred. The import
+// queue's rows are made up and answered in the browser, so nothing is queued on the instance, and so are Explore (the
+// library's own models, shown as shared by made-up people) and who the sharing form's collection is shared with. The
+// Studio prompt layout is switched for its shot and restored afterwards.
+//
+// The connected-instances shots (43-49) need a partner instance, and are skipped without one: 43-45 and 48 are taken
+// on the instance that connects from home, as its admin, 46, 47 and 49 on the one it connects to. 48 looks up
+// --connect-to and 49 reviews a waiting request, so those two come before the request is approved. On a partner
+// reached over a link, 48's lookup is shown suggesting the link and 47's Public URL as confirmed, answered in the
+// browser, as a demo pair on one machine sees itself as local.
 //
 // The guide_* cut-outs replace the images in docs/guides/images, light only, and run only when named with --only;
 // guide_consume_settings needs the consume folder mounted.
@@ -46,9 +61,15 @@ const { values: args } = parseArgs({
     "synced-collection": { type: "string" },
     "ai-description-model": { type: "string" },
     "studio-design": { type: "string" },
+    "profiles-model": { type: "string" },
+    "license-model": { type: "string" },
+    "shared-collection": { type: "string" },
+    "connect-to": { type: "string" },
+    "host-rules": { type: "string" },
     themes: { type: "string" },
     only: { type: "string" },
     out: { type: "string" },
+    "no-blur": { type: "boolean", default: false },
     headed: { type: "boolean", default: false },
   },
 });
@@ -68,7 +89,12 @@ const optionalIds = {
   syncedCollection: args["synced-collection"] || process.env.SCREENSHOT_SYNCED_COLLECTION,
   aiDescriptionModel: args["ai-description-model"] || process.env.SCREENSHOT_AI_DESCRIPTION_MODEL,
   studioDesign: args["studio-design"] || process.env.SCREENSHOT_STUDIO_DESIGN,
+  profilesModel: args["profiles-model"] || process.env.SCREENSHOT_PROFILES_MODEL,
+  sharedCollection: args["shared-collection"] || process.env.SCREENSHOT_SHARED_COLLECTION,
 };
+optionalIds.connectTo = args["connect-to"] || process.env.SCREENSHOT_CONNECT_TO;
+const hostRules = args["host-rules"] || process.env.SCREENSHOT_HOST_RULES;
+optionalIds.licenseModel = args["license-model"] || process.env.SCREENSHOT_LICENSE_MODEL || optionalIds.profilesModel;
 const themes = list(args.themes || process.env.SCREENSHOT_THEMES || "light,dark");
 const outDir = path.resolve(
   args.out || process.env.SCREENSHOT_OUT || path.join(here, "../frontend/src/assets/screenshots"),
@@ -248,9 +274,14 @@ async function exploreAnswers(api) {
   const alex = { id: "alex", display_name: "Alex Morgan", avatar_url: null };
   const sam = { id: "sam", display_name: "Sam Rivera", avatar_url: null };
   const models = (await api("GET", "/prints?limit=40")).filter((m) => m.preview_images?.length);
-  const collections = (await api("GET", "/collections")).filter((c) => !c.tool_id && c.item_count > 3);
+  const collections = (await api("GET", "/collections")).filter((c) => !c.tool_id && !c.system_key && c.item_count > 3);
   const owned = (list, i) => ({ ...list, owner: i % 3 === 2 ? sam : alex });
+  const shared = collections
+    .slice(4, 7)
+    .map((collection, i) => ({ ...owned(collection, i + 1), visibility: "shared" }));
   return {
+    shared_with_you: shared,
+    shared_with_you_total: shared.length,
     people: [
       { ...alex, collection_count: 3, model_count: 41 },
       { ...sam, collection_count: 2, model_count: 17 },
@@ -259,6 +290,28 @@ async function exploreAnswers(api) {
     recent_collections: collections.slice(0, 4).map(owned),
     most_collected: models.slice(10, 15).map((model, i) => ({ model: owned(model, i), copies: 4 - (i % 3) })),
   };
+}
+
+/** What partner instances share on this one's Explore. */
+async function partnerContent(ctx) {
+  const overview = await ctx.api("GET", "/explore").catch(() => null);
+  return { models: overview?.elsewhere?.recent_models ?? [], people: overview?.elsewhere?.people ?? [] };
+}
+
+/** The partner instances this one is connected with. */
+async function partners(ctx) {
+  const instances = await ctx.api("GET", "/federation/instances").catch(() => null);
+  return instances?.partners ?? [];
+}
+
+/** This instance's Public URL shown as confirmed by a partner, as it is on a real one on the internet. */
+async function confirmedPublicUrl(page) {
+  await page.route(/\/api\/federation\/settings$/, async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    const reachability = { ...json.reachability, kind: "public", reason: null, detail: null };
+    await route.fulfill({ response, json: { ...json, reachability, confirmedBy: Math.max(1, json.confirmedBy ?? 0) } });
+  });
 }
 
 const SHOTS = [
@@ -303,7 +356,11 @@ const SHOTS = [
   {
     name: "06_model_details",
     needs: "model",
-    run: (page) => open(page, `/models/${modelId}`),
+    run: async (page, ctx) => {
+      // Print profiles as most people see them: the default picker.
+      await ctx.api("PATCH", "/settings/print-profiles-view", { view: "picker" });
+      await open(page, `/models/${modelId}`);
+    },
   },
   {
     name: "07_model_3d_preview",
@@ -348,7 +405,7 @@ const SHOTS = [
     name: "12_tags_select",
     run: async (page) => {
       await open(page, "/models/tags");
-      await selectFirst(page, "Select tags", 4, ["Hide tags used once"]);
+      await selectFirst(page, "Select tags", 4);
     },
   },
   {
@@ -437,7 +494,21 @@ const SHOTS = [
       await settle(page, 1500);
     },
   },
-  { name: "33_my_models", run: (page) => open(page, "/authors/self") },
+  {
+    name: "33_my_models",
+    run: async (page) => {
+      // A profile with links under its bio, answered in the browser, so the account's own aren't changed.
+      await page.route(/\/api\/me$/, async (route) => {
+        const response = await route.fetch();
+        const json = await response.json();
+        if (json.user && !json.user.links?.length) {
+          json.user.links = ["https://github.com/TautvydasDerzinskas/Thingport", "https://thingport.net"];
+        }
+        await route.fulfill({ response, json });
+      });
+      await open(page, "/authors/self");
+    },
+  },
   {
     name: "34_models_filters",
     run: async (page) => {
@@ -566,6 +637,145 @@ const SHOTS = [
     },
   },
   {
+    name: "43_explore_everywhere",
+    run: async (page, ctx) => {
+      if (!(await partnerContent(ctx)).models.length) return { skip: "no partner's models on Explore" };
+      await open(page, "/explore");
+      await page.getByRole("button", { name: "Everywhere" }).first().waitFor();
+    },
+  },
+  {
+    name: "44_partner_model",
+    run: async (page, ctx) => {
+      const { models } = await partnerContent(ctx);
+      const model = models.find((m) => /vase/i.test(m.name ?? m.title ?? "")) ?? models[0];
+      if (!model) return { skip: "no partner's models on Explore" };
+      await open(page, `/explore/elsewhere/models/${encodeURIComponent(model.id)}`);
+      await page
+        .getByRole("button", { name: /^Copy to my library|^Open my copy/ })
+        .first()
+        .waitFor();
+    },
+  },
+  {
+    name: "45_partner_profile",
+    run: async (page, ctx) => {
+      const { people } = await partnerContent(ctx);
+      const person = people.find((p) => p.model_count > 0) ?? people[0];
+      if (!person) return { skip: "no partner's people on Explore" };
+      await open(page, `/explore/elsewhere/people/${encodeURIComponent(person.id)}`);
+      await page.getByRole("button", { name: "Message" }).first().waitFor();
+    },
+  },
+  {
+    name: "46_chat_partner",
+    run: async (page, ctx) => {
+      const chats = await ctx.api("GET", "/chats").catch(() => null);
+      const list = Array.isArray(chats) ? chats : (chats?.chats ?? []);
+      const room = list.find((c) => c.kind === "room" && (c.instances ?? 1) > 1);
+      if (!room) return { skip: "no room with a partner's people in it" };
+      await open(page, `/chats/${encodeURIComponent(room.id)}`);
+      await page.getByPlaceholder(/^Message /).waitFor();
+    },
+  },
+  {
+    name: "47_admin_partners",
+    run: async (page, ctx) => {
+      if (!(await partners(ctx)).length) return { skip: "no partner instance" };
+      await confirmedPublicUrl(page);
+      await open(page, "/admin-social");
+      await page
+        .getByRole("button", { name: /^Partners/ })
+        .or(page.getByRole("tab", { name: /^Partners/ }))
+        .first()
+        .click();
+      await page
+        .getByRole("button", { name: /^More for / })
+        .first()
+        .waitFor();
+    },
+  },
+  {
+    name: "48_connect_link",
+    optional: "connectTo",
+    run: async (page, ctx) => {
+      // The other instance's lookup, shown suggesting the link a home instance keeps open.
+      await page.route(/\/api\/federation\/lookup/, async (route) => {
+        const response = await route.fetch();
+        const json = await response.json();
+        await route.fulfill({ response, json: { ...json, suggestLink: "local" } });
+      });
+      await open(page, "/admin-social");
+      await page.getByRole("button", { name: "Connect to an instance" }).first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Its address").fill(ctx.connectTo);
+      await dialog.getByRole("button", { name: "Look up" }).click();
+      await dialog.getByText("The keys match").waitFor({ timeout: 20000 });
+      await dialog.getByText("The keys match").click();
+      await dialog.getByLabel("Note for their admin (optional)").fill("Hi from Sam's garage workshop!");
+    },
+  },
+  {
+    name: "49_request_link",
+    run: async (page, ctx) => {
+      const instances = await ctx.api("GET", "/federation/instances").catch(() => null);
+      const request = instances?.incoming?.[0];
+      if (!request) return { skip: "no request waiting" };
+      // In its own dialog, as the admin's notification opens it.
+      await open(page, `/admin-social?request=${encodeURIComponent(request.id)}`);
+      await page
+        .getByText(/ wants to connect$/)
+        .first()
+        .waitFor();
+    },
+  },
+  {
+    name: "50_model_print_profiles",
+    optional: "profilesModel",
+    run: async (page, ctx) => {
+      await ctx.api("PATCH", "/settings/print-profiles-view", { view: "tiles" });
+      await open(page, `/models/${ctx.profilesModel}`);
+      await page
+        .getByText(/^Print profiles? · \d+$/)
+        .first()
+        .waitFor();
+    },
+  },
+  {
+    name: "51_model_license",
+    optional: "licenseModel",
+    run: async (page, ctx) => {
+      await ctx.api("PATCH", "/settings/print-profiles-view", { view: "picker" });
+      await open(page, `/models/${ctx.licenseModel}`);
+      const strip = page.getByRole("button", { name: /: licence details$/ });
+      await strip.scrollIntoViewIfNeeded();
+      await strip.click();
+      await page.getByRole("button", { name: "Copy credit line" }).waitFor();
+    },
+  },
+  {
+    name: "52_collection_sharing",
+    optional: "sharedCollection",
+    run: async (page, ctx) => {
+      // Shared with made-up people, answered in the browser: the form is only opened, never saved.
+      const person = (id, display_name, username) => ({ id, display_name, username, avatar_url: null });
+      const people = [
+        person("alex", "Alex Morgan", "alex"),
+        person("sam", "Sam Rivera", "sam"),
+        person("lena", "Lena Fischer", "lena"),
+      ];
+      await page.route(/\/api\/collection\/[^/]+\/sharing$/, (route) =>
+        route.fulfill({ json: { visibility: "shared", people, max_people: 100 } }),
+      );
+      await page.route(/\/api\/social\/people/, (route) => route.fulfill({ json: { people } }));
+      await open(page, `/models/collections/${ctx.sharedCollection}`);
+      await page.getByRole("button", { name: "More", exact: true }).first().click();
+      await page.getByRole("menuitem", { name: "Share…" }).click();
+      await page.getByRole("dialog").getByText("Sam Rivera").waitFor();
+    },
+  },
+  { name: "53_admin_social", run: (page) => open(page, "/admin-social") },
+  {
     name: "guide_consume_settings",
     guide: true,
     run: async (page) => {
@@ -642,7 +852,10 @@ async function api(token, method, url, body) {
   return res.json();
 }
 
-const browser = await chromium.launch({ headless: !args.headed });
+const browser = await chromium.launch({
+  headless: !args.headed,
+  args: hostRules ? [`--host-resolver-rules=${hostRules}`] : [],
+});
 const context = await browser.newContext({
   baseURL: baseUrl,
   viewport: VIEWPORT,
@@ -670,6 +883,8 @@ let token = null;
 let originalTheme;
 let originalView;
 let originalLayout;
+let originalProfilesView;
+let originalSocial;
 let failed = 0;
 try {
   await page.goto("/");
@@ -683,6 +898,11 @@ try {
   if (!token || !displayName) throw new Error("Signed in, but couldn't read the session from the page");
 
   originalTheme = (await api(token, "GET", "/settings/theme")).theme;
+  originalProfilesView = (await api(token, "GET", "/settings/print-profiles-view")).view;
+  // Explore and Chats in the sidebar, and switched on under Administration -> Social.
+  const social = await api(token, "GET", "/social/settings");
+  originalSocial = { enabled: social.enabled, chats: social.chats };
+  await api(token, "PATCH", "/social/settings", { enabled: true, chats: true });
   // The models page shows the category tree, not folders.
   originalView = (await api(token, "GET", "/settings/categories-view")).view;
   await api(token, "PATCH", "/settings/categories-view", { view: "categories" });
@@ -718,11 +938,15 @@ try {
       try {
         await page.setViewportSize(VIEWPORT);
         const result = await shot.run(page, ctx);
+        if (result?.skip) {
+          console.log(`skipped, ${result.skip}`);
+          continue;
+        }
         if (!result?.saved) {
           // Off the page, so no tooltip shows up under the pointer.
           await page.mouse.move(VIEWPORT.width - 1, VIEWPORT.height - 1);
           await settle(page);
-          await blurEmails(page);
+          if (!args["no-blur"]) await blurEmails(page);
           await blurLocation(page);
           await page.screenshot({ path: path.join(outDir, theme, `${shot.name}.png`) });
         }
@@ -748,6 +972,16 @@ try {
   if (token && originalView !== undefined) {
     await api(token, "PATCH", "/settings/categories-view", { view: originalView }).catch((err) =>
       console.error(`Couldn't restore the Categories/Folders choice (${originalView}): ${err.message}`),
+    );
+  }
+  if (token && originalProfilesView !== undefined) {
+    await api(token, "PATCH", "/settings/print-profiles-view", { view: originalProfilesView }).catch((err) =>
+      console.error(`Couldn't restore the print profiles layout (${originalProfilesView}): ${err.message}`),
+    );
+  }
+  if (token && originalSocial !== undefined) {
+    await api(token, "PATCH", "/social/settings", originalSocial).catch((err) =>
+      console.error(`Couldn't restore social features (${JSON.stringify(originalSocial)}): ${err.message}`),
     );
   }
   if (token && originalLayout !== undefined) {

@@ -2,37 +2,41 @@
 // Captures the What's new pictures for a release from a running instance with a populated library, cropped to the
 // thing each one is about and written as WebP into release-notes/screenshots/, named after the version:
 //
-//   THINGPORT_PASSWORD='…' THINGPORT_VIEWER_PASSWORD='…' npm --prefix regression run release-shots -- \
-//     --url https://thingport.example --email me@example.com --viewer-email someone@example.com
+//   THINGPORT_PASSWORD='…' npm --prefix regression run release-shots -- --url https://thingport.example \
+//     --email me@example.com --profiles-model <id> --license-model <id> --shared-collection <id>
 //
 // Options, also settable as env vars:
 //   --url                 THINGPORT_URL              instance to capture (required)
 //   --email               THINGPORT_EMAIL            admin account to sign in with (required)
 //   --password            THINGPORT_PASSWORD
-//   --viewer-email        THINGPORT_VIEWER_EMAIL     a second account, for Explore, which leaves out your own shares
-//   --viewer-password     THINGPORT_VIEWER_PASSWORD
-//   --studio-design       SCREENSHOT_STUDIO_DESIGN   a design Ask AI built, default the one edited last
-//   --chat                SCREENSHOT_CHAT            the chat to show, default the one written in last
+//   --profiles-model      SCREENSHOT_PROFILES_MODEL  a model with print profiles, read already (open it once first)
+//   --license-model       SCREENSHOT_LICENSE_MODEL   a model whose licence was read, default --profiles-model
+//   --shared-collection   SCREENSHOT_SHARED_COLLECTION  a collection to show the sharing form on
+//   --connect-to          SCREENSHOT_CONNECT_TO      an instance's address for the Connect dialog, looked up only
+//   --host-rules          SCREENSHOT_HOST_RULES      Chromium --host-resolver-rules, for names this machine can't resolve
+//   --no-blur                                        leave addresses unblurred, on a demo instance of made-up handles
 //   --version             RELEASE_SHOTS_VERSION      names the files, default the version the notes name
 //   --theme               RELEASE_SHOTS_THEME        light (the default) or dark
-//   --only                RELEASE_SHOTS_ONLY         comma-separated shot names, e.g. studio-ai,chats
+//   --only                RELEASE_SHOTS_ONLY         comma-separated shot names, e.g. print-profiles-tiles,licence
 //   --out                 RELEASE_SHOTS_OUT          output folder, default release-notes/screenshots
 //   --headed                                         show the browser
 //
-// Shots needing something the instance doesn't have -- a Claude AI, a Studio design with an Ask AI answer, chats
-// switched on, a second account -- are skipped with a line saying so, and the rest still run. Nothing in the library is changed: dialogs
-// and panels are only opened. Email addresses are blurred. The accounts' themes, and the admin's Studio prompt layout,
-// are switched for the run and restored afterwards.
+// Shots needing something the instance doesn't have -- a model with print profiles, a partner instance -- are
+// skipped with a line saying so, and the rest still run. Nothing in the library is changed: dialogs and menus are only
+// opened, and what the sharing form and Explore show of other people is answered in the browser, so social features
+// needn't be on. Email addresses are blurred. The account's theme and print profiles layout are switched for the run
+// and restored afterwards.
 //
-// What the shots show has to be there first: a Studio design Ask AI built, with its conversation; a public collection
-// of the admin's for the viewer's Explore; and a chat with a model sent in it.
-//
-// Thingport Grab's own pictures aren't covered: they come from `npm --prefix extension run screenshots`, which
-// loads the built extension into a visible browser. Convert the ones you want with `sharp` as this script does.
+// The connected-instances shots need a partner, so they're taken from an instance that has one, with --only naming
+// them: explore-everywhere, partner-model and connect-link on the one that connects from home, partners on the one it
+// connects to. As in screenshots.mjs, a demo pair on one machine has the Connect dialog's lookup shown suggesting the
+// link, and the Public URL shown confirmed, answered in the browser. Thingport Grab's own pictures aren't covered:
+// they come from `npm --prefix extension run screenshots`, which loads the built extension into a visible browser.
+// Convert the ones you want with `sharp` as this script does.
 //
 // The file a shot writes is what a release-notes item then names in its `images`, e.g.
 //
-//   { "src": "screenshots/1.5.0-chats.webp", "caption": "A room, with a model sent in it" }
+//   { "src": "screenshots/1.6.0-licence.webp", "caption": "A model's licence: what it allows, its terms and a credit line to copy" }
 //
 // so a shot added here wants an item in release-notes/latest-release-notes.json to put it in, and the other way
 // round: an item naming a picture nothing captures leaves a gap in What's new. Earlier releases' shots are in this
@@ -61,10 +65,12 @@ const { values: args } = parseArgs({
     url: { type: "string" },
     email: { type: "string" },
     password: { type: "string" },
-    "viewer-email": { type: "string" },
-    "viewer-password": { type: "string" },
-    "studio-design": { type: "string" },
-    chat: { type: "string" },
+    "profiles-model": { type: "string" },
+    "license-model": { type: "string" },
+    "shared-collection": { type: "string" },
+    "connect-to": { type: "string" },
+    "host-rules": { type: "string" },
+    "no-blur": { type: "boolean", default: false },
     version: { type: "string" },
     theme: { type: "string" },
     only: { type: "string" },
@@ -81,10 +87,11 @@ const list = (value) =>
 const baseUrl = (args.url || process.env.THINGPORT_URL || "").replace(/\/+$/, "");
 const email = args.email || process.env.THINGPORT_EMAIL;
 const password = args.password || process.env.THINGPORT_PASSWORD;
-const viewerEmail = args["viewer-email"] || process.env.THINGPORT_VIEWER_EMAIL;
-const viewerPassword = args["viewer-password"] || process.env.THINGPORT_VIEWER_PASSWORD;
-let designId = args["studio-design"] || process.env.SCREENSHOT_STUDIO_DESIGN;
-const chatId = args.chat || process.env.SCREENSHOT_CHAT;
+const profilesModel = args["profiles-model"] || process.env.SCREENSHOT_PROFILES_MODEL;
+const licenseModel = args["license-model"] || process.env.SCREENSHOT_LICENSE_MODEL || profilesModel;
+const sharedCollection = args["shared-collection"] || process.env.SCREENSHOT_SHARED_COLLECTION;
+const connectTo = args["connect-to"] || process.env.SCREENSHOT_CONNECT_TO;
+const hostRules = args["host-rules"] || process.env.SCREENSHOT_HOST_RULES;
 const theme = args.theme || process.env.RELEASE_SHOTS_THEME || "light";
 const only = list(args.only || process.env.RELEASE_SHOTS_ONLY);
 const outDir = path.resolve(
@@ -164,213 +171,313 @@ async function blurEmails(page) {
   });
 }
 
-/** Studio on the design, its geometry built. */
-async function openStudio(page) {
-  await open(page, designId ? `/studio?design=${encodeURIComponent(designId)}` : "/studio");
-  await page.getByRole("button", { name: "Edit design" }).waitFor({ timeout: 30000 });
-  await page.locator("canvas").first().waitFor();
-  // The bodies are built in a worker once the design arrives, and the camera eases onto them.
-  await settle(page, 3000);
+// Made-up people for what the sharing form and Explore show, so nobody real is in a published picture.
+const person = (id, display_name) => ({ id, display_name, username: id, avatar_url: null });
+const ALEX = person("alex", "Alex Morgan");
+const SAM = person("sam", "Sam Rivera");
+const LENA = person("lena", "Lena Fischer");
+
+/** Explore and the sidebar's Explore and Chats answered in the browser, with `overview` as what Explore shows. */
+async function stubSocial(page, overview) {
+  await page.route(/\/api\/social$/, (route) => route.fulfill({ json: { enabled: true, explore: true, chats: true } }));
+  await page.route(/\/api\/chats\/unread/, (route) => route.fulfill({ json: { unread: 0, latest: null } }));
+  if (overview) await page.route(/\/api\/explore$/, (route) => route.fulfill({ json: overview }));
 }
 
-/** Why a Studio shot can't be taken, or null. It changes the prompt layout, which must be put back afterwards. */
-function studioBlocked(layoutSaved) {
-  if (!layoutSaved) return "Studio's settings couldn't be read, so its layout couldn't be put back";
-  if (!designId) return "no Studio design with anything in it";
-  return null;
+/** A model's page in a print profiles layout, and the box of its side panel: the one with Open in the slicer. */
+async function profilesPanel(page, api, view) {
+  if (!profilesModel) return { skip: "needs --profiles-model" };
+  await api("PATCH", "/settings/print-profiles-view", { view });
+  await open(page, `/models/${encodeURIComponent(profilesModel)}`);
+  // A link when the slicer opens by address, a button otherwise.
+  const openButton = page
+    .getByRole("link", { name: /^Open in / })
+    .or(page.getByRole("button", { name: /^Open in / }))
+    .first();
+  await openButton.waitFor({ timeout: 20000 });
+  const panel = openButton.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
+  await settle(page, 800);
+  return { panel };
 }
 
-/** Ask AI's picker set to `model`, when it's still offered; otherwise left as it is. */
-async function pickModel(page, model) {
-  const picker = page.getByRole("combobox", { name: "AI model" });
-  if (!model || !(await picker.isVisible().catch(() => false))) return;
-  await picker.click();
-  const option = page.getByRole("option", { name: model }).first();
-  if (await option.isVisible().catch(() => false)) await option.click();
-  else await page.keyboard.press("Escape");
+/** A clip around `boxes` that may reach past VIEWPORT, for shots taken in a taller window. */
+function clipIn(page, boxes, pad = PAD) {
+  const size = page.viewportSize() ?? VIEWPORT;
+  const left = Math.max(0, Math.min(...boxes.map((b) => b.x)) - pad);
+  const top = Math.max(0, Math.min(...boxes.map((b) => b.y)) - pad);
+  const right = Math.min(size.width, Math.max(...boxes.map((b) => b.x + b.width)) + pad);
+  const bottom = Math.min(size.height, Math.max(...boxes.map((b) => b.y + b.height)) + pad);
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+/** What partner instances share on this one's Explore. */
+async function partnerContent(api) {
+  const overview = await api("GET", "/explore").catch(() => null);
+  return { models: overview?.elsewhere?.recent_models ?? [], people: overview?.elsewhere?.people ?? [] };
 }
 
 const SHOTS = [
   {
-    name: "studio-ai",
-    run: async (page, { api, layoutSaved }) => {
-      const blocked = studioBlocked(layoutSaved);
-      if (blocked) return { skip: blocked };
-      // Beside the view rather than over it, so the conversation and the design both show.
-      await api("PATCH", "/studio/settings", { prompt_layout: "panel" });
-      await openStudio(page);
-      // The picker shows the AI that wrote the conversation's last answer, so the two agree.
-      const opened = new URL(page.url()).searchParams.get("design");
-      const thread = opened ? await api("GET", `/studio/designs/${encodeURIComponent(opened)}/assistant`) : null;
-      const answer = thread?.messages.findLast((message) => message.role === "assistant");
-      if (!answer) return { skip: "the design has no Ask AI answer to show" };
-      await pickModel(page, answer.model);
-      // The steps the answer took, folded under it until asked for.
-      const steps = page.getByRole("button", { name: /^\d+ steps?$/ }).last();
-      if (await steps.isVisible().catch(() => false)) await steps.click();
-      await settle(page, 1000);
-      return { clip: await mainClip(page) };
+    name: "print-profiles-picker",
+    run: async (page, { api }) => {
+      const { skip, panel } = await profilesPanel(page, api, "picker");
+      if (skip) return { skip };
+      // The model's picture beside the panel, cut off where the panel ends.
+      const main = await page.locator("main").first().boundingBox();
+      const box = await panel.boundingBox();
+      return { clip: clipAround([{ x: main.x + PAD, y: 0, width: 1, height: 1 }, box]) };
     },
   },
   {
-    name: "studio-edit",
-    run: async (page, { api, layoutSaved }) => {
-      const blocked = studioBlocked(layoutSaved);
-      if (blocked) return { skip: blocked };
-      await api("PATCH", "/studio/settings", { prompt_layout: "bar" });
-      await openStudio(page);
-      // The prompt folds to its button, leaving the view to the design and the panels.
-      await page.getByRole("button", { name: "Minimise" }).click();
-      await page.getByRole("button", { name: "Edit design" }).click();
-      const top = page.getByRole("tree").getByRole("treeitem").first();
-      await top.waitFor();
-      // Selected, so Properties shows its exact values, and opened one level to show what it's built from: clicked
-      // past the chevron, which only folds, then the right arrow, which opens a row as in a file tree.
-      await top
-        .locator(".MuiListItemButton-root")
-        .first()
-        .click({ position: { x: 120, y: 16 } });
-      await page.keyboard.press("ArrowRight");
-      await settle(page, 1200);
-      return { clip: await mainClip(page) };
+    name: "print-profiles-tiles",
+    run: async (page, { api }) => {
+      // Taller, so every tile fits.
+      await page.setViewportSize({ width: VIEWPORT.width, height: 1500 });
+      const { skip, panel } = await profilesPanel(page, api, "tiles");
+      if (skip) return { skip };
+      return { clip: clipIn(page, [await panel.boundingBox()]) };
     },
   },
   {
-    name: "studio-assistant",
+    name: "print-profiles-list",
+    run: async (page, { api }) => {
+      await page.setViewportSize({ width: VIEWPORT.width, height: 1500 });
+      const { skip, panel } = await profilesPanel(page, api, "list");
+      if (skip) return { skip };
+      return { clip: clipIn(page, [await panel.boundingBox()]) };
+    },
+  },
+  {
+    name: "licence",
+    run: async (page, { api }) => {
+      if (!licenseModel) return { skip: "needs --license-model" };
+      await api("PATCH", "/settings/print-profiles-view", { view: "picker" });
+      await open(page, `/models/${encodeURIComponent(licenseModel)}`);
+      const strip = page.getByRole("button", { name: /: licence details$/ });
+      if (!(await strip.isVisible().catch(() => false)))
+        return { skip: "the model shows no licence yet: open it once" };
+      // Its description box with the strip at its foot, and the details it opens.
+      const box = strip.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
+      await box.scrollIntoViewIfNeeded();
+      await settle(page, 300);
+      // Measured first: the open popover hides the rest of the page from role queries.
+      const stripBox = await strip.boundingBox();
+      await strip.click();
+      const details = page.locator(".MuiPopover-paper").first();
+      await page.getByRole("button", { name: "Copy credit line" }).waitFor();
+      await settle(page, 400);
+      return { clip: clipAround([stripBox, await details.boundingBox()].filter(Boolean)) };
+    },
+  },
+  {
+    name: "licence-filter",
     run: async (page) => {
-      await open(page, "/admin-ai");
-      const tile = page.getByRole("button", { name: "Studio assistant settings" });
-      if (!(await tile.isVisible().catch(() => false))) return { skip: "Studio isn't on this instance" };
-      await tile.click();
-      const dialog = page.getByRole("dialog");
-      await dialog.getByText("Available models").waitFor();
-      await settle(page, 600);
-      return { clip: await clipOf(page, dialog, 0) };
-    },
-  },
-  {
-    name: "ai-claude",
-    run: async (page) => {
-      await open(page, "/admin-ai");
-      // An AI's tile is named after its model. A saved API key never comes back to the page, so the field shows dots.
-      const tile = page.getByRole("button", { name: /^claude/i }).first();
-      if (!(await tile.isVisible().catch(() => false))) return { skip: "no Claude AI under Administration → AI" };
-      await tile.dblclick();
-      const dialog = page.getByRole("dialog");
-      await dialog.getByText("Effort", { exact: true }).first().waitFor();
-      await settle(page, 600);
-      return { clip: await clipOf(page, dialog, 0) };
-    },
-  },
-  {
-    name: "import-queue",
-    run: async (page) => {
+      await page.setViewportSize({ width: VIEWPORT.width, height: 1300 });
       await open(page, "/models");
-      await page.getByRole("button", { name: "Add", exact: true }).click();
-      await page.getByRole("button", { name: "Open", exact: true }).click();
-      const dialog = page.getByRole("dialog").filter({ hasText: "Import queue" });
-      await dialog.waitFor();
-      // An idle queue opens on an empty Importing, so it goes to the first section with something in it.
-      for (const section of [/^Importing\s*[1-9]/, /^Waiting\s*[1-9]/, /^Finished\s*[1-9]/]) {
-        const button = dialog.getByRole("button", { name: section });
-        if (await button.isVisible().catch(() => false)) {
-          await button.click();
-          break;
-        }
-      }
-      await settle(page);
-      return { clip: await clipOf(page, dialog, 0) };
-    },
-  },
-  {
-    name: "add-hub",
-    run: async (page) => {
-      await open(page, "/models");
-      const button = page.getByRole("button", { name: "Add", exact: true });
-      // Measured first: an open popover hides the rest of the page from role queries. The whole row of top-bar
-      // buttons, so the crop doesn't cut through the bell beside Add.
-      const row = await button.locator("xpath=ancestor::*[count(.//button) >= 4][1]").boundingBox();
+      const button = page.getByRole("button", { name: "Filters" });
+      const buttonBox = await button.boundingBox();
       await button.click();
-      const hub = page.locator(".MuiPopover-paper").first();
-      await hub.waitFor();
-      await settle(page, 500);
-      return { clip: clipAround([row, await hub.boundingBox()]) };
+      const popover = page.locator(".MuiPopover-paper, .MuiMenu-paper").first();
+      await popover.getByText("Licence allows").waitFor();
+      await settle(page, 400);
+      return { clip: clipIn(page, [buttonBox, await popover.boundingBox()]) };
     },
   },
   {
     name: "providers",
     run: async (page) => {
       await open(page, "/admin-providers");
+      // Newest first: the three sites this release adds lead the grid.
+      await page
+        .getByRole("tab", { name: "Newest" })
+        .or(page.getByRole("button", { name: "Newest", exact: true }))
+        .first()
+        .click();
       await settle(page);
-      // The newest site is at the foot of the list, which is what this shot is about.
-      await page.getByText("Meshy", { exact: true }).first().scrollIntoViewIfNeeded();
-      await settle(page, 400);
+      return { clip: await mainClip(page) };
     },
   },
   {
-    name: "social-switch",
+    name: "share-collection",
     run: async (page) => {
-      // Narrower, so the switch's card and the people under it make a picture rather than a strip.
-      await page.setViewportSize({ width: 1200, height: VIEWPORT.height });
-      await open(page, "/admin-users");
-      const label = page.getByText("Social features", { exact: true }).first();
-      await label.waitFor();
-      const card = label.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
-      await settle(page);
-      const boxes = [await card.boundingBox(), await page.getByRole("table").first().boundingBox()];
-      return { clip: clipAround(boxes.filter(Boolean)) };
+      if (!sharedCollection) return { skip: "needs --shared-collection" };
+      await stubSocial(page);
+      // Who it's shared with, answered in the browser: the form is only opened, never saved.
+      await page.route(/\/api\/collection\/[^/]+\/sharing$/, (route) =>
+        route.fulfill({ json: { visibility: "shared", people: [ALEX, SAM, LENA], max_people: 100 } }),
+      );
+      await page.route(/\/api\/social\/people/, (route) => route.fulfill({ json: { people: [ALEX, SAM, LENA] } }));
+      await open(page, `/models/collections/${encodeURIComponent(sharedCollection)}`);
+      await page.getByRole("button", { name: "More", exact: true }).first().click();
+      await page.getByRole("menuitem", { name: "Share…" }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByText("Sam Rivera").waitFor();
+      await settle(page, 500);
+      return { clip: await clipOf(page, dialog, 0) };
     },
   },
   {
-    name: "explore",
-    needs: { viewer: "--viewer-email" },
-    run: async (_page, { viewer }) => {
-      const page = await viewer();
+    name: "shared-with-you",
+    run: async (page, { api }) => {
+      // The library's own collections and models, as the made-up people's shares.
+      const models = (await api("GET", "/prints?limit=40")).filter((m) => m.preview_images?.length);
+      const collections = (await api("GET", "/collections")).filter(
+        (c) => !c.tool_id && !c.system_key && c.item_count > 3,
+      );
+      const owner = (i) => [ALEX, SAM, LENA][i % 3];
+      const shared = collections.slice(0, 3).map((c, i) => ({ ...c, visibility: "shared", owner: owner(i) }));
+      await stubSocial(page, {
+        shared_with_you: shared,
+        shared_with_you_total: shared.length,
+        people: [
+          { ...ALEX, collection_count: 3, model_count: 41 },
+          { ...SAM, collection_count: 2, model_count: 17 },
+          { ...LENA, collection_count: 1, model_count: 9 },
+        ],
+        recent_models: models.slice(0, 10).map((m, i) => ({ ...m, owner: owner(i) })),
+        recent_collections: collections.slice(3, 7).map((c, i) => ({ ...c, visibility: "public", owner: owner(i) })),
+        most_collected: [],
+      });
       await open(page, "/explore");
-      if (
-        !(await page
-          .getByText("People", { exact: true })
-          .first()
-          .isVisible()
-          .catch(() => false))
-      ) {
-        return { skip: "Explore is empty for the viewer: turn social features on and make a collection public" };
-      }
+      const heading = page.getByText("Shared with you", { exact: true }).first();
+      await heading.waitFor();
       await settle(page);
-      return { page };
+      const main = await page.locator("main").first().boundingBox();
+      const top = await heading.boundingBox();
+      // Down to the heading of the section after it.
+      const next = await page.getByText("People", { exact: true }).first().boundingBox();
+      const bottom = next && next.y > top.y ? next.y - 8 : top.y + 380;
+      return {
+        clip: { x: main.x, y: top.y - PAD, width: VIEWPORT.width - main.x, height: bottom - top.y + PAD },
+      };
     },
   },
   {
-    name: "chats",
+    name: "profile",
     run: async (page) => {
-      // Shorter than the others: a conversation is a few lines, and the rest of a tall window is empty.
-      await page.setViewportSize({ width: VIEWPORT.width, height: 600 });
-      await open(page, chatId ? `/chats/${encodeURIComponent(chatId)}` : "/chats");
-      if (
-        await page
-          .getByText("Chats are off on this instance")
-          .isVisible()
-          .catch(() => false)
-      ) {
-        return { skip: "chats are off" };
-      }
-      if (!chatId) {
-        // The list is newest first.
-        const first = page.locator("[href^='/chats/']").first();
-        if (!(await first.isVisible().catch(() => false))) return { skip: "no chats yet" };
-        await first.click();
-      }
-      // A chat that opened has somewhere to write; a stale or mistyped --chat gets an error instead.
-      const composer = page.getByPlaceholder(/^Message /);
-      if (
-        !(await composer.waitFor({ timeout: 15000 }).then(
-          () => true,
-          () => false,
-        ))
-      ) {
-        return { skip: "the chat didn't open: check --chat" };
-      }
-      await settle(page, 1500);
+      // Links under the bio, answered in the browser when the account has none, so its own aren't changed.
+      await page.route(/\/api\/me$/, async (route) => {
+        const response = await route.fetch();
+        const json = await response.json();
+        if (json.user && !json.user.links?.length) {
+          json.user.links = ["https://github.com/TautvydasDerzinskas/Thingport", "https://thingport.net"];
+        }
+        await route.fulfill({ response, json });
+      });
+      await open(page, "/authors/self");
+      const edit = page.getByRole("button", { name: "Edit profile" });
+      await edit.waitFor();
+      await settle(page);
+      const main = await page.locator("main").first().boundingBox();
+      const lastLink = page.getByRole("link", { name: /thingport\.net/ }).last();
+      const end = (await lastLink.boundingBox()) ?? (await edit.boundingBox());
+      return { clip: { x: main.x, y: 0, width: VIEWPORT.width - main.x, height: end.y + end.height + PAD * 2 } };
+    },
+  },
+  {
+    name: "avatar",
+    run: async (page) => {
+      await open(page, "/authors/self");
+      await page.getByRole("button", { name: "Change avatar" }).first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.waitFor();
+      await settle(page, 600);
+      return { clip: await clipOf(page, dialog, 0) };
+    },
+  },
+  {
+    name: "languages",
+    run: async (page, { displayName }) => {
+      await open(page, "/models");
+      await page.getByRole("button", { name: displayName }).click();
+      await page.getByRole("menuitem", { name: "Configuration" }).click();
+      const dialog = page.getByRole("dialog");
+      const picker = dialog.getByRole("button", { name: /^Language: / });
+      await picker.waitFor();
+      const pickerBox = await picker.boundingBox();
+      await picker.click();
+      const list = page.getByRole("listbox", { name: "Language" });
+      await list.waitFor();
+      await settle(page, 500);
+      const listBox = await list.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]").boundingBox();
+      return { clip: clipAround([pickerBox, listBox ?? (await list.boundingBox())]) };
+    },
+  },
+  {
+    name: "explore-everywhere",
+    run: async (page, { api }) => {
+      if (!(await partnerContent(api)).models.length) return { skip: "no partner's models on Explore" };
+      await open(page, "/explore");
+      await page.getByRole("button", { name: "Everywhere" }).first().waitFor();
+      await settle(page);
+      return { clip: await mainClip(page) };
+    },
+  },
+  {
+    name: "partner-model",
+    run: async (page, { api }) => {
+      const { models } = await partnerContent(api);
+      const model = models.find((m) => /vase/i.test(m.name ?? m.title ?? "")) ?? models[0];
+      if (!model) return { skip: "no partner's models on Explore" };
+      await open(page, `/explore/elsewhere/models/${encodeURIComponent(model.id)}`);
+      await page
+        .getByRole("button", { name: /^Copy to my library|^Open my copy/ })
+        .first()
+        .waitFor();
+      await settle(page);
+      return { clip: await mainClip(page) };
+    },
+  },
+  {
+    name: "connect-link",
+    run: async (page) => {
+      if (!connectTo) return { skip: "needs --connect-to" };
+      await page.route(/\/api\/federation\/lookup/, async (route) => {
+        const response = await route.fetch();
+        const json = await response.json();
+        await route.fulfill({ response, json: { ...json, suggestLink: "local" } });
+      });
+      await open(page, "/admin-social");
+      await page.getByRole("button", { name: "Connect to an instance" }).first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Its address").fill(connectTo);
+      await dialog.getByRole("button", { name: "Look up" }).click();
+      await dialog.getByText("The keys match").waitFor({ timeout: 20000 });
+      await dialog.getByText("The keys match").click();
+      await dialog.getByLabel("Note for their admin (optional)").fill("Hi from Sam's garage workshop!");
+      await settle(page, 500);
+      return { clip: await clipOf(page, dialog, 0) };
+    },
+  },
+  {
+    name: "partners",
+    run: async (page, { api }) => {
+      const instances = await api("GET", "/federation/instances").catch(() => null);
+      if (!instances?.partners?.length) return { skip: "no partner instance" };
+      await page.route(/\/api\/federation\/settings$/, async (route) => {
+        const response = await route.fetch();
+        const json = await response.json();
+        const reachability = { ...json.reachability, kind: "public", reason: null, detail: null };
+        await route.fulfill({
+          response,
+          json: { ...json, reachability, confirmedBy: Math.max(1, json.confirmedBy ?? 0) },
+        });
+      });
+      await open(page, "/admin-social");
+      await page
+        .getByRole("button", { name: /^Partners/ })
+        .or(page.getByRole("tab", { name: /^Partners/ }))
+        .first()
+        .click();
+      const more = page.getByRole("button", { name: /^More for / }).first();
+      await more.waitFor();
+      await settle(page);
+      // From the connected instances switch down to the partners under it.
+      const row = page.getByText("Connected instances", { exact: true }).first();
+      const top = row.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
+      const list = more.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
+      const boxes = [await top.boundingBox(), await list.boundingBox()].filter(Boolean);
+      return { clip: clipAround(boxes) };
     },
   },
 ];
@@ -391,20 +498,16 @@ if (!version) {
   console.error(`Couldn't read a version from ${notesFile}; pass --version.`);
   process.exit(1);
 }
-const missing = { viewer: !viewerEmail || !viewerPassword };
 const wanted = SHOTS.filter((shot) => !only.length || only.includes(shot.name));
 if (only.length && !wanted.length) {
   console.error(`No shot is named ${only.join(", ")}. Shots: ${SHOTS.map((shot) => shot.name).join(", ")}.`);
   process.exit(1);
 }
-// Sign-in takes the email trimmed and in any case, so this is the same account however it's typed.
-const sameAccount = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
-if (viewerEmail && sameAccount(viewerEmail, email)) {
-  console.error("--viewer-email must be another account: Explore leaves out the viewer's own shares.");
-  process.exit(1);
-}
 
-const browser = await chromium.launch({ headless: !args.headed });
+const browser = await chromium.launch({
+  headless: !args.headed,
+  args: hostRules ? [`--host-resolver-rules=${hostRules}`] : [],
+});
 
 // What puts each account's theme back at the end, newest first.
 const restores = [];
@@ -456,44 +559,28 @@ async function signIn(accountEmail, accountPassword) {
   );
   await api("PATCH", "/settings/theme", { theme });
   await page.emulateMedia({ colorScheme: theme });
-  return { page, api };
+  const user = JSON.parse((await page.evaluate(() => localStorage.getItem("thingport_auth_user"))) || "{}");
+  const displayName = user.display_name || user.displayName;
+  // Shots open the user menu by it, and an empty name would match every button.
+  if (!displayName) throw new Error(`Signed in as ${accountEmail}, but couldn't read its display name from the page`);
+  return { page, api, displayName };
 }
 
-let originalLayout;
+let originalProfilesView;
 let admin;
 try {
   admin = await signIn(email, password);
-  if (wanted.some((shot) => shot.name.startsWith("studio-"))) {
-    // An instance older than Studio has none to read, and its Studio shots fail on their own.
-    originalLayout = await admin.api("GET", "/studio/settings").then(
-      (settings) => settings.prompt_layout,
-      () => undefined,
-    );
-    // The newest design with something in it when none was named: the latest may be an empty one just opened.
-    designId ??= await admin.api("GET", "/studio/designs").then(
-      (designs) => designs.find((design) => design.feature_count > 0)?.id,
-      () => undefined,
-    );
-  }
-  let viewerPage;
-  const viewer = async () => {
-    if (!viewerPage) {
-      viewerPage = (await signIn(viewerEmail, viewerPassword)).page;
-    }
-    return viewerPage;
-  };
+  originalProfilesView = await admin.api("GET", "/settings/print-profiles-view").then(
+    (settings) => settings.view,
+    () => undefined,
+  );
   fs.mkdirSync(outDir, { recursive: true });
 
   for (const shot of wanted) {
-    const needs = shot.needs && Object.entries(shot.needs).find(([key]) => missing[key]);
-    if (needs) {
-      console.log(`${shot.name}... skipped, needs ${needs[1]}`);
-      continue;
-    }
     process.stdout.write(`${shot.name}... `);
     try {
       await admin.page.setViewportSize(VIEWPORT);
-      const result = await shot.run(admin.page, { api: admin.api, viewer, layoutSaved: originalLayout !== undefined });
+      const result = await shot.run(admin.page, { api: admin.api, displayName: admin.displayName });
       if (result?.skip) {
         console.log(`skipped, ${result.skip}`);
         continue;
@@ -503,7 +590,7 @@ try {
       const size = page.viewportSize() ?? VIEWPORT;
       await page.mouse.move(size.width - 1, size.height - 1);
       await settle(page, 300);
-      await blurEmails(page);
+      if (!args["no-blur"]) await blurEmails(page);
       const png = await page.screenshot(result?.clip ? { clip: result.clip } : {});
       const file = path.join(outDir, `${version}-${shot.name}.webp`);
       await sharp(png).resize({ width: MAX_WIDTH, withoutEnlargement: true }).webp({ quality: 85 }).toFile(file);
@@ -514,14 +601,17 @@ try {
       // Twice: a dialog can open over another one.
       await admin.page.keyboard.press("Escape").catch(() => undefined);
       await admin.page.keyboard.press("Escape").catch(() => undefined);
+      await admin.page.unrouteAll({ behavior: "ignoreErrors" });
     }
   }
   console.log(`Saved to ${outDir}`);
 } finally {
-  if (admin && originalLayout !== undefined) {
+  if (admin && originalProfilesView !== undefined) {
     await admin
-      .api("PATCH", "/studio/settings", { prompt_layout: originalLayout })
-      .catch((err) => console.error(`Couldn't restore the Studio prompt layout (${originalLayout}): ${err.message}`));
+      .api("PATCH", "/settings/print-profiles-view", { view: originalProfilesView })
+      .catch((err) =>
+        console.error(`Couldn't restore the print profiles layout (${originalProfilesView}): ${err.message}`),
+      );
   }
   for (const restore of restores) await restore();
   await browser.close();

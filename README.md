@@ -230,7 +230,7 @@ To have Thingport import whatever you drop into a folder on the server, uncommen
 
 ## Features
 
-- **[A library that keeps everything](docs/features/organize-and-search.md)**: models, files, collections, tags and authors, with 3D previews, search and bulk editing
+- **[A library that keeps everything](docs/features/organize-and-search.md)**: models, files, print profiles, collections, tags, authors and [licences](docs/features/licenses.md), with 3D previews, search and bulk editing
 - **[Imports from 21 sites](docs/features/importing.md)**: MakerWorld, Printables, Thingiverse, MyMiniFactory and 17 more, with [synced collections](docs/guides/synced-collections.md)
 - **[AI that tidies up](docs/guides/ai.md)**: better descriptions and categories, on a local model or Claude
 - **[Studio, a CAD of its own](docs/guides/studio.md)**: describe a part in one prompt and the AI builds it, or design it by hand

@@ -1,0 +1,48 @@
+name: Reddit app
+
+# Checks the Devvit app in reddit/ that posts new blog posts to r/Thingport. It's uploaded to Reddit by hand
+# (reddit/README.md), since Devvit has no credential for CI.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "reddit/**"
+      - ".github/workflows/reddit-app.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "reddit/**"
+      - ".github/workflows/reddit-app.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: reddit-app-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # A main -> develop back-merge only brings release commits main already tested.
+    if: github.head_ref != 'main'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: reddit
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: reddit/package-lock.json
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build

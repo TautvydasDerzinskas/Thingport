@@ -26,10 +26,12 @@ All of these are under **Administration → Auth** and **Administration → Capt
 ## Sharing with each other
 
 Libraries are private until an admin turns on **Social features** in **Administration → Social**; it's off by default.
-With it on, a collection, or a model under **My models**, can be made public, and **Explore** shows everyone what the
-others share: the people who share, their newest models and public collections, and the models copied most. Someone
-else's model can be downloaded, opened in a slicer and copied to your own library, never changed. Others see your
-display name and avatar, never your email. See [social features](social.md).
+With it on, a collection can be **Private**, **Shared** with [the people you pick](social.md#share-what-you-choose), or
+**Public**, and a model under **My models** can be made public too. **Explore** shows everyone what the others share:
+the people who share, their newest models and public collections, and the models copied most, with the collections
+shared with them under **Shared with you** at the top. Someone else's model can be downloaded, opened in a slicer and
+copied to your own library, never changed. Others see your display name and avatar, never your email. See
+[social features](social.md).
 
 Admins can also connect this instance with other Thingport instances, on the same network, a VPN or the internet,
 even from a home network that can't be reached from outside, so their people show up here too. See
