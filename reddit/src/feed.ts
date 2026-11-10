@@ -1,7 +1,8 @@
 // Reads thingport.net's RSS feed (web/src/pages/rss.xml.ts) and picks what to post. Kept free of Devvit imports so
 // it's tested on its own.
 
-// The www host: GitHub Pages serves the site there and redirects thingport.net to it, a host devvit.json doesn't list.
+// GitHub Pages serves the site on www.thingport.net and redirects thingport.net to it. Devvit fetches only the exact
+// hosts devvit.json lists, and it lists www.thingport.net alone.
 export const FEED_URL = "https://www.thingport.net/rss.xml";
 // Only posts published this recently are posted, so installing the app doesn't post the whole blog, and a post the
 // app missed while it was off isn't posted weeks late.
