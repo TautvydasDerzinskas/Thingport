@@ -818,25 +818,35 @@ describe("the import worker", () => {
     const STALLED = "This import stopped responding, so the line moved on. If Retry isn't offered, restart the server.";
     // The watchdog's limit for the job meant to stall, short so it's given up on quickly. A job meant to keep going
     // mustn't be held to it on a loaded runner, where one that works can look stuck that long (200ms did, in CI): the
-    // jobs after a stuck one get the usual limit once the line has moved on, and one that shows signs of life gets
-    // LIVELY's, watched for longer still.
+    // jobs after a stuck one get the usual limit (relaxWhenGivenUp), and one that shows signs of life gets LIVELY's,
+    // watched for longer still.
     const WATCH = { stallLimitMs: 1_000, stallCheckMs: 20 };
     const LIVELY = { stallLimitMs: 2_000, stallCheckMs: 20 };
     const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-    /** The usual limit again, once the line has moved past the stuck job to `nextId`: the watchdog reads it on every
-     *  check, so the job after it is held to that from the start. */
-    const relaxOnceMovedOn = async (nextId: string) => {
-      await until(async () => (await reload(nextId)).status !== "QUEUED");
-      Object.assign(importWorkerTuning, tuning);
+    /** The usual limit again as the watchdog gives up on `stuckId`: within its own write marking the job stalled,
+     *  which the line waits on before it claims the next job, so that job is held to the usual limit from the start. */
+    const relaxWhenGivenUp = (stuckId: string) => {
+      const updateMany = prisma.importJob.updateMany.bind(prisma.importJob);
+      vi.spyOn(prisma.importJob, "updateMany").mockImplementation((async (args: Prisma.ImportJobUpdateManyArgs) => {
+        const written = await updateMany(args);
+        if (args.where?.id === stuckId && args.data.errorMessage === STALLED) Object.assign(importWorkerTuning, tuning);
+        return written;
+      }) as never);
     };
 
     it("moves the line on and says so, though its runner may still be stuck", async () => {
       Object.assign(importWorkerTuning, WATCH);
       const release = gate(base + 90);
       const stuck = await enqueueSingleImport(alice, modelUrl(base + 90), {});
+      relaxWhenGivenUp(stuck.job.id);
+      // The limit the next job starts under: the usual one, as the line moved on only once it was back.
+      let nextLimit: number | null = null;
+      onDesign = () => {
+        if (started.at(-1) === String(base + 91)) nextLimit = importWorkerTuning.stallLimitMs;
+      };
       const next = await enqueueSingleImport(bob, modelUrl(base + 91), {});
-      await relaxOnceMovedOn(next.job.id);
       await importWorkerIdle();
+      expect(nextLimit).toBe(tuning.stallLimitMs);
 
       expect(await reload(stuck.job.id)).toMatchObject({
         status: "ERROR",
@@ -861,6 +871,7 @@ describe("the import worker", () => {
         beats = setInterval(noteImportActivity, 20).unref();
       };
       const busy = await enqueueSingleImport(alice, modelUrl(base + 92), {});
+      relaxWhenGivenUp(busy.job.id);
       const next = await enqueueSingleImport(bob, modelUrl(base + 93), {});
       await until(() => started.includes(String(base + 92)));
       // Well past the limit.
@@ -871,7 +882,6 @@ describe("the import worker", () => {
       // And once the beats stop, it is.
       clearInterval(beats);
       await until(async () => (await reload(busy.job.id)).status === "ERROR");
-      await relaxOnceMovedOn(next.job.id);
       release();
       await importWorkerIdle();
       expect((await reload(next.job.id)).status).toBe("DONE");
@@ -897,10 +907,10 @@ describe("the import worker", () => {
       Object.assign(importWorkerTuning, WATCH);
       const release = gate(base + 95);
       const stuck = await enqueueLinksImport(alice, [modelUrl(base + 95), modelUrl(base + 96)], {});
+      relaxWhenGivenUp(stuck.job.id);
       const next = await enqueueSingleImport(bob, modelUrl(base + 97), {});
       await until(() => started.includes(String(base + 95)));
       await prisma.importJob.update({ where: { id: stuck.job.id }, data: { status: "PAUSED" } });
-      await relaxOnceMovedOn(next.job.id);
       await importWorkerIdle();
       expect((await reload(stuck.job.id)).status).toBe("PAUSED");
       expect((await reload(next.job.id)).status).toBe("DONE");
