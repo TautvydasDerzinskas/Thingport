@@ -350,6 +350,23 @@ describe("the single-model panel", () => {
       expect(html).toContain(">Add profile</button>");
     });
 
+    it("opens a model that has everything in Thingport, with nothing to add", async () => {
+      const html = await openInLibrary(held("complete", ["1", "2", "3", "4"]));
+
+      expect(html).toContain("Everything here is in your library: the model, its 4 print profiles and its details.");
+      expect(html).toContain(`href="${INSTANCE}/models/print1"`);
+      expect(html).toContain(">Open in Thingport</a>");
+      expect(html).not.toContain("data-action");
+    });
+
+    it("opens the library where the instance only says it has the model, not which it is", async () => {
+      const html = await openInLibrary({ ...held("complete", null), printId: null });
+
+      expect(html).toContain("This model is in your library.");
+      expect(html).toContain(`href="${INSTANCE}/models"`);
+      expect(html).not.toContain("data-action");
+    });
+
     it("only fills in details when the model has every profile", async () => {
       const html = await openInLibrary({ ...held("imported", ["1", "2", "3", "4"]), gaps: ["tags"] });
 

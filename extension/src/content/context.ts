@@ -1,11 +1,11 @@
 import type { SourceGap } from "../shared/api";
 import type { Classification } from "../shared/urls";
 
-/** The model is in the library. "imported" (this profile too) only gets a panel while the model
- *  has gaps to fill or lacks some of the page's other profiles; otherwise this profile may be
- *  missing, so offer to add it. */
+/** The model is in the library. "complete": everything the page has is in it, so the panel opens it in Thingport.
+ *  "imported" (this profile too): the model has gaps to fill or lacks some of the page's other profiles. Otherwise
+ *  this profile may be missing, so offer to add it. */
 export type LibraryState = {
-  state: "imported" | "profile_missing" | "profile_unknown";
+  state: "complete" | "imported" | "profile_missing" | "profile_unknown";
   printId: string | null;
   gaps: SourceGap[];
   /** The print profiles the model has a file of; null from an instance that doesn't say. */

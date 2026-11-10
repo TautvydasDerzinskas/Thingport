@@ -1,0 +1,278 @@
+@use "../../styles/tokens" as t;
+@use "../../styles/mixins" as m;
+@use "../../styles/bubble-looks" as looks;
+@use "../../content/styles/fab";
+
+// The Appearance tab (popup/appearance.ts): the bubble's styles as tiles, each with the page's own bubble drawn in
+// it by the page's own stylesheet, and its corners picked on a small window.
+
+.looks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: t.$space-2;
+}
+
+.look {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 5px;
+  border: 1px solid t.c("border");
+  border-radius: t.$radius-md;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  @include m.focus-ring;
+
+  &:hover {
+    border-color: t.c("text-muted");
+  }
+
+  &[aria-checked="true"] {
+    border-color: t.c("accent");
+    box-shadow: 0 0 0 1px t.c("accent");
+  }
+
+  &__swatch {
+    position: relative;
+    display: block;
+    height: 56px;
+    overflow: hidden;
+    border-radius: t.$radius-sm;
+    background: t.c("surface-sunken");
+  }
+
+  &__name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 2px 1px;
+    overflow: hidden;
+    font-size: t.$font-size-xs;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
+
+// A page, drawn small, for the bubble to sit over.
+.look__page {
+  position: absolute;
+  inset: 7px 7px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &-pic {
+    display: block;
+    width: 58%;
+    height: 16px;
+    border-radius: 3px;
+    background: t.c("accent-soft");
+  }
+
+  &-line {
+    display: block;
+    width: 72%;
+    height: 4px;
+    border-radius: 2px;
+    background: t.c("border");
+  }
+
+  &-line + &-line {
+    width: 46%;
+  }
+}
+
+// The page's own bubble, small, in its corner of the tile; there to be looked at, so nothing on it reacts.
+.look__swatch .tg-fab {
+  position: absolute;
+  right: 6px;
+  bottom: 5px;
+  transform: scale(0.62);
+  transform-origin: right bottom;
+  pointer-events: none;
+}
+
+.look__swatch svg [stroke="#1f1f1f"],
+.spots__mark svg [stroke="#1f1f1f"] {
+  stroke: t.c("text");
+}
+
+.look__swatch[data-style="pill"] .tg-fab {
+  @include looks.pill;
+}
+
+.look__swatch[data-style="mini"] .tg-fab {
+  @include looks.mini;
+}
+
+.look__swatch[data-style="brand"] .tg-fab {
+  @include looks.brand;
+}
+
+.look__swatch[data-style="glass"] .tg-fab {
+  @include looks.glass;
+}
+
+.look__swatch[data-style="edge"] .tg-fab {
+  @include looks.edge(right);
+  right: 0;
+}
+
+// The corners, on a window drawn small: its title bar, a page, and a spot in each corner, the top ones below the
+// bar as the top corners sit below a site's header.
+.spots {
+  position: relative;
+  height: 104px;
+  overflow: hidden;
+  border: 1px solid t.c("border");
+  border-radius: t.$radius-md;
+  background: t.c("surface-sunken");
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 12px;
+    border-bottom: 1px solid t.c("border");
+    background: t.c("border-soft");
+  }
+
+  &__page {
+    position: absolute;
+    top: 24px;
+    right: 52px;
+    left: 52px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &-pic {
+      display: block;
+      height: 28px;
+      border-radius: 4px;
+      background: t.c("border");
+    }
+
+    &-line {
+      display: block;
+      width: 72%;
+      height: 6px;
+      border-radius: 3px;
+      background: t.c("border");
+    }
+
+    &-line + &-line {
+      width: 46%;
+    }
+  }
+
+  &__spot {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1.5px dashed t.c("text-muted");
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+    @include m.focus-ring;
+
+    &:hover {
+      border-color: t.c("accent");
+      background: t.c("accent-soft");
+    }
+
+    &[aria-checked="true"] {
+      border: 0;
+      background: t.c("surface");
+      box-shadow: 0 2px 6px t.c("shadow");
+      animation: spots-in 0.22s ease-out;
+    }
+
+    &--top-left {
+      top: 20px;
+      left: 10px;
+    }
+
+    &--top-right {
+      top: 20px;
+      right: 10px;
+    }
+
+    &--bottom-left {
+      bottom: 10px;
+      left: 10px;
+    }
+
+    &--bottom-right {
+      right: 10px;
+      bottom: 10px;
+    }
+  }
+
+  &__mark {
+    display: none;
+    width: 16px;
+    height: 16px;
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &__spot[aria-checked="true"] &__mark {
+    display: block;
+  }
+
+  &__caption {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 6px 0 0;
+    font-size: t.$font-size-xs;
+    color: t.c("text-muted");
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__spot[aria-checked="true"] {
+      animation: none;
+    }
+  }
+}
+
+// Picked: the icon arrives in its corner.
+@keyframes spots-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// "Default", beside the choice that is.
+.chip {
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: t.c("surface-sunken");
+  color: t.c("text-muted");
+  font-size: 10px;
+  font-weight: 600;
+}

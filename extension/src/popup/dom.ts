@@ -7,7 +7,7 @@ function byId<T extends HTMLElement>(id: string): T {
 export const els = {
   headerIcon: byId("header-icon"),
   instanceRow: byId("instance-row"),
-  instanceUrlText: byId("instance-url-text"),
+  instanceLink: byId<HTMLAnchorElement>("instance-link"),
   editInstanceBtn: byId<HTMLButtonElement>("edit-instance-btn"),
   disconnectBtn: byId<HTMLButtonElement>("disconnect-btn"),
   confirmDialog: byId<HTMLDialogElement>("confirm-dialog"),
@@ -18,9 +18,15 @@ export const els = {
   disconnectedNote: byId("disconnected-note"),
   tabs: byId("tabs"),
   connectTab: byId<HTMLButtonElement>("tab-connect"),
+  appearanceTab: byId<HTMLButtonElement>("tab-appearance"),
   offlineTab: byId<HTMLButtonElement>("tab-offline"),
   historyTab: byId<HTMLButtonElement>("tab-history"),
   connectPanel: byId("panel-connect"),
+  appearancePanel: byId("panel-appearance"),
+  bubbleStyles: byId("bubble-styles"),
+  bubblePlaces: byId("bubble-places"),
+  bubblePlaceName: byId("bubble-place-name"),
+  appearanceError: byId("appearance-error"),
   offlinePanel: byId("panel-offline"),
   historyPanel: byId("panel-history"),
   offlineNote: byId("offline-note"),
@@ -73,4 +79,15 @@ export function showError(message: string, el: HTMLElement = els.error): void {
 export function clearError(el: HTMLElement = els.error): void {
   el.textContent = "";
   el.classList.remove("error--visible");
+}
+
+/** `link`, opening wherever its href points when it's clicked in a new tab, and closing the popup: a plain link click
+ *  in a popup isn't guaranteed to open a tab, and the popup should close after. */
+export function opensInTab(link: HTMLAnchorElement): HTMLAnchorElement {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    void chrome.tabs.create({ url: link.href });
+    window.close();
+  });
+  return link;
 }

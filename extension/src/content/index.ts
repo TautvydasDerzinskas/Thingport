@@ -5,7 +5,8 @@
 
 import type { ImportStatus } from "../shared/api";
 import { listen, send, type ContentMessages } from "../shared/messages";
-import { CONFIG_CHANGE_KEYS } from "../shared/storage";
+import { bubbleLookOf } from "../shared/bubble";
+import { CONFIG_CHANGE_KEYS, STORAGE_KEYS } from "../shared/storage";
 import { classifyUrl } from "../shared/urls";
 import { setContext, type LibraryState } from "./context";
 import {
@@ -30,7 +31,16 @@ import {
   WITHHELD_SCRIPT_EXPLAINER,
   WITHHELD_SCRIPT_NOTE_HTML,
 } from "./scriptNote";
-import { mountFab, mountFabNote, mountHost, mountPanel, renderPanel, setPanelOpen, unmountHost } from "./shell";
+import {
+  mountFab,
+  mountFabNote,
+  mountHost,
+  mountPanel,
+  renderPanel,
+  setBubbleLook,
+  setPanelOpen,
+  unmountHost,
+} from "./shell";
 import { manifestOf, providerOfHost } from "../providers/index.generated";
 
 declare global {
@@ -83,6 +93,8 @@ async function init(): Promise<void> {
     reportTabIconState(false);
     return;
   }
+  // Before any bubble is mounted, so it comes up in its own style and corner.
+  setBubbleLook(stateRes.data.bubble);
   // On every page, importable or not: the header shows who's signed in everywhere.
   if (stateRes.data.configured) captureProviderAccount(location.hostname);
 
@@ -175,12 +187,12 @@ async function init(): Promise<void> {
         const missing = status.print_id ? await loadMissingProfiles(classification.provider, url, heldProfiles) : null;
         if (isStale()) return;
         missingProfiles = missing?.all.length ?? 0;
-        // Nothing to import, so the bubble only shows while there are profiles to add or details to fill in.
-        if ((!gaps.length && !missingProfiles) || !status.print_id) {
-          reportTabIconState(false);
-          return;
-        }
-        library = { state: "imported", printId: status.print_id, gaps, heldProfiles };
+        // Nothing left to bring over: the bubble stays, ticked, to open the model in Thingport. So it does for a model
+        // the instance doesn't name, as nothing could be filled in on it.
+        const complete = (!gaps.length && !missingProfiles) || !status.print_id;
+        library = complete
+          ? { state: "complete", printId: status.print_id ?? null, gaps: [], heldProfiles }
+          : { state: "imported", printId: status.print_id ?? null, gaps, heldProfiles };
       } else if (status.state === "profile_missing" || status.state === "profile_unknown") {
         library = { state: status.state, printId: status.print_id ?? null, gaps, heldProfiles };
       }
@@ -201,14 +213,17 @@ async function init(): Promise<void> {
   const root = mountHost();
   const togglePanel = mountPanel(root, () => void loadPanel());
   mountFab(root, {
-    variant: library ? "in-library" : undefined,
+    // A plus while there's something to add to the library's model, a tick once there's nothing.
+    variant: !library ? undefined : library.state === "complete" ? "complete" : "in-library",
     label: !library
       ? "Import to Thingport"
-      : missingProfiles
-        ? `Add the ${missingProfiles} missing print profile${missingProfiles === 1 ? "" : "s"} to Thingport`
-        : library.state === "imported"
-          ? "Fetch this model's missing details into Thingport"
-          : "Add this print profile to Thingport",
+      : library.state === "complete"
+        ? "Imported to Thingport: open it there"
+        : missingProfiles
+          ? `Add the ${missingProfiles} missing print profile${missingProfiles === 1 ? "" : "s"} to Thingport`
+          : library.state === "imported"
+            ? "Fetch this model's missing details into Thingport"
+            : "Add this print profile to Thingport",
     onClick: togglePanel,
   });
   reportTabIconState(true);
@@ -260,7 +275,15 @@ if (!window.thingportGrabInjected) {
   window.thingportGrabInjected = true;
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== "local" || !CONFIG_CHANGE_KEYS.some((key) => key in changes)) return;
+    if (areaName !== "local") return;
+    // A new look in the popup's Appearance tab moves the bubble showing now, its panel open or not.
+    if (STORAGE_KEYS.bubbleStyle in changes || STORAGE_KEYS.bubblePlace in changes) {
+      void chrome.storage.local.get([STORAGE_KEYS.bubbleStyle, STORAGE_KEYS.bubblePlace]).then(
+        (stored) => setBubbleLook(bubbleLookOf(stored)),
+        () => undefined,
+      );
+    }
+    if (!CONFIG_CHANGE_KEYS.some((key) => key in changes)) return;
     unmount();
     void init();
   });
