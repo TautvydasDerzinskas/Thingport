@@ -56,6 +56,9 @@ const SID = "testsession0000000000000001";
 const ITEM = "667112";
 const MODEL_URL = `https://3dexport.com/3d-model-elephant-a001-${ITEM}`;
 const PAID_ITEM = "686532";
+// A free model in a single format, whose page has one "Download free" button rather than a list of formats.
+const SINGLE_ITEM = "660588";
+const SINGLE_URL = `https://3dexport.com/3d-model-towing-tug-benchy-boat-${SINGLE_ITEM}`;
 const COLLECTION = "6956";
 const COLLECTION_URL = `https://3dexport.com/bookmarks/3d-collection-${COLLECTION}`;
 const DEFAULT_URL = "https://3dexport.com/mybookmarks/default";
@@ -76,6 +79,7 @@ const FORMAT_OF: Record<string, string> = {
   "2401622": "stl",
   "2401623": "svg",
   "2401645": "x_t",
+  "2381412": "stl",
 };
 
 type State = {
@@ -127,6 +131,10 @@ function handlerFor(scenario: string, state: State = {}): FetchHandler {
     }
     if (p === `/3d-model-pocket-drift-car-${PAID_ITEM}`) {
       return answer(html(loadFixtureHtml("threedexport", me ? "page-paid" : "page-visitor")), call);
+    }
+    if (p === `/3d-model-item-${SINGLE_ITEM}`) return answer(redirect(SINGLE_URL, 301), call);
+    if (p === `/3d-model-towing-tug-benchy-boat-${SINGLE_ITEM}`) {
+      return answer(html(loadFixtureHtml("threedexport", me ? "page-single" : "page-visitor")), call);
     }
     if (/^\/3d-model-[\w-]+-\d+$/.test(p)) return answer(html("<h1>404</h1>", 404), call);
     if (p === "/download") {
@@ -290,6 +298,15 @@ describe("3DExport specifics", () => {
     expect(res.status).toBe(400);
     expect(JSON.stringify(res.body)).toMatch(/no files Thingport can import/);
     expect(callsTo(stub.calls, "/download")).toEqual([]);
+  });
+
+  it("imports a model in a single format, from its plain Download button", async () => {
+    await connect(ctx.userId);
+    const stub = ctx.stub("ok");
+    expectStatus(await ctx.importUrl(SINGLE_URL), 200);
+    expect(callsTo(stub.calls, "/download").map((call) => call.url.searchParams.get("nf"))).toEqual(["2381412"]);
+    const [print] = await ctx.prints();
+    expect(print.title).toBe("Towing Tug Benchy Boat");
   });
 
   it("refuses a paid model the user hasn't bought, without asking for anything", async () => {
@@ -467,6 +484,18 @@ describe("3DExport pages", () => {
     const { first, fallback } = threedexportFilePicks(model.files);
     expect(first.map((file) => file.ext)).toEqual(["step", "stl"]);
     expect(fallback).toEqual([]);
+  });
+
+  it("takes a single-format model's format from the page's panel, as its button names none", () => {
+    const model = threedexportModelFrom(loadFixtureHtml("threedexport", "page-single"))!;
+    expect(model.files.map((file) => [file.label, file.ext])).toEqual([["Stereolithography (.stl)", "stl"]]);
+    expect(threedexportFilePicks(model.files).first).toHaveLength(1);
+    // Without a panel to say, the download is tried only once nothing else brought a model.
+    const unsaid = threedexportModelFrom(
+      loadFixtureHtml("threedexport", "page-single").replace(/<ul class="list-group details-panel">[\s\S]*?<\/ul>/, ""),
+    )!;
+    expect(unsaid.files.map((file) => file.ext)).toEqual([null]);
+    expect(threedexportFilePicks(unsaid.files)).toMatchObject({ first: [], fallback: [{ ext: null }] });
   });
 
   it("reads a paid model's page as Basic, with no downloads", () => {

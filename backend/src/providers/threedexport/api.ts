@@ -369,9 +369,11 @@ function extensionOf(label: string): string | null {
   return label.match(/\(\.([a-z0-9_]{1,12})\)/i)?.[1]?.toLowerCase() ?? null;
 }
 
-/** The downloads a signed-in user's page links, one per format. */
+/** The downloads a signed-in user's page links, one per format. A model in more than one lists them by format; one in
+ *  a single format has a plain "Download free" button instead, which names none, so its format is the one the page's
+ *  panel lists. */
 export function threedexportFilesFrom($: cheerio.CheerioAPI): ThreedexportFile[] {
-  return $('a[href*="download?link="]')
+  const files = $('a[href*="download?link="]')
     .toArray()
     .flatMap((el) => {
       const href = absolute($(el).attr("href"));
@@ -382,6 +384,14 @@ export function threedexportFilesFrom($: cheerio.CheerioAPI): ThreedexportFile[]
       return [{ href, label, ext: extensionOf(label) }];
     })
     .filter((file, index, all) => all.findIndex((other) => other.href === file.href) === index);
+  const formats = formatNames($);
+  const ext = formats.length === 1 ? extensionOf(formats[0]) : null;
+  for (const file of files) {
+    if (file.ext || !ext) continue;
+    file.label = formats[0];
+    file.ext = ext;
+  }
+  return files;
 }
 
 /** An author's own picture; null for the one the site gives anyone without (`/storage/avatars/default.png`). */
@@ -487,14 +497,15 @@ const PRINT_FORMATS = new Set(["stl", "3mf", "step", "stp", "lbrn", "lbrn2"]);
 const FALLBACK_FORMATS = new Set(["obj", "glb"]);
 
 /** Which of a model's formats to download: the ones a plate takes first, and its OBJ or GLB only when those bring
- *  nothing. A CG model comes in a dozen, its textures and scenes among them, which are never fetched. */
+ *  nothing, with any download whose format the page doesn't say. A CG model comes in a dozen, its textures and scenes
+ *  among them, which are never fetched. */
 export function threedexportFilePicks(files: ThreedexportFile[]): {
   first: ThreedexportFile[];
   fallback: ThreedexportFile[];
 } {
   return {
     first: files.filter((file) => file.ext && PRINT_FORMATS.has(file.ext)),
-    fallback: files.filter((file) => file.ext && FALLBACK_FORMATS.has(file.ext)),
+    fallback: files.filter((file) => !file.ext || FALLBACK_FORMATS.has(file.ext)),
   };
 }
 
