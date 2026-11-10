@@ -89,8 +89,10 @@ type State = {
   packaging?: boolean;
   /** Answers each request with a new session cookie. */
   renews?: boolean;
-  /** Where a checkout sends the member: the library, unless said otherwise. */
+  /** Where a checkout sends the member: its success page, unless said otherwise. */
   checkoutTo?: string;
+  /** What a checkout took, which its success page puts in the library once it's opened. */
+  ordered?: { id: string; price: string }[];
   /** What a cart answer says, in place of what's in it: a broken one, or one priced by the cart. */
   cartAnswer?: (answer: ReturnType<typeof cartAnswer>) => unknown;
   /** How many pages the library runs to; what's owned is on the last. */
@@ -111,7 +113,8 @@ function cartAnswer(state: State) {
       ...cart.cart,
       variants: state.cart.map((item) => ({ ...variant, id: Number(item.id), price: item.price })),
     },
-    order: { ...cart.order, total_price: total.toFixed(1), final_price: total.toFixed(1) },
+    // As PIXUP answers an empty cart: with no order at all, rather than one for $0.
+    order: state.cart.length ? { ...cart.order, total_price: total.toFixed(1), final_price: total.toFixed(1) } : null,
   };
 }
 
@@ -204,19 +207,31 @@ function handlerFor(scenario: string, state: State = freshState()): FetchHandler
     if (inCart) {
       if (!me) return unauthorized();
       if (call.headers["x-csrf-token"] !== TOKEN) return json({ error: "Invalid authenticity token" }, 422);
-      if (method === "POST") state.cart.push({ id: inCart[1], price: "0.0" });
-      if (method === "DELETE") state.cart = state.cart.filter((item) => item.id !== inCart[1]);
-      return answer(json({ status: "ok", cart_item_count: state.cart.length }), call);
+      // As PIXUP answers: 201 for one put in, `success` for one taken out.
+      if (method === "POST") {
+        state.cart.push({ id: inCart[1], price: "0.0" });
+        return answer(json({ status: "ok", cart_item_count: state.cart.length }, 201), call);
+      }
+      state.cart = state.cart.filter((item) => item.id !== inCart[1]);
+      return answer(json({ success: true }), call);
     }
     if (p === "/cart/checkout" && method === "POST") {
       if (!me) return redirect("https://pixup3d.com/users/sign_in");
       if (new URLSearchParams(call.body ?? "").get("authenticity_token") !== TOKEN) return html("Unprocessable", 422);
       // A payment page takes nothing until it's paid.
       if (state.checkoutTo) return answer(redirect(state.checkoutTo), call);
-      for (const item of state.cart) state.owned.add(item.id);
+      // As PIXUP does: a $0 checkout goes on to its success page, and only opening that finishes the order.
+      state.ordered = state.cart;
       state.cart = [];
+      return answer(redirect("https://pixup3d.com/order/checkout_succeeded?order_number=PO0001"), call);
+    }
+    if (p === "/order/checkout_succeeded") {
+      if (!me) return redirect("https://pixup3d.com/users/sign_in");
+      for (const item of state.ordered ?? []) state.owned.add(item.id);
+      state.ordered = [];
       return answer(redirect("https://pixup3d.com/profile/libraries"), call);
     }
+    if (p === "/profile/libraries" || p === "/en/cart") return answer(html("<main></main>"), call);
     const download = p.match(/^\/posts\/(\d+)\/download$/);
     if (download) {
       if (!me) return redirect("https://pixup3d.com/users/sign_in");
@@ -337,6 +352,10 @@ describe("PIXUP specifics", () => {
     const checkout = callsTo(stub.calls, "/cart/checkout");
     expect(checkout).toHaveLength(1);
     expect(new URLSearchParams(checkout[0].body!).get("authenticity_token")).toBe(TOKEN);
+    // Its success page, opened with the sign-in, is what finished the order.
+    const succeeded = callsTo(stub.calls, "/order/checkout_succeeded");
+    expect(succeeded.map((call) => call.url.search)).toEqual(["?order_number=PO0001"]);
+    expect(succeeded[0].headers.cookie).toBe(`_phrozen_session=${SESSION}`);
     expect(state.owned.has(STL_VARIANT)).toBe(true);
     // The sliced variant was never ordered.
     expect(callsTo(stub.calls, /\/cart\/variants\/892$/)).toEqual([]);
@@ -450,7 +469,9 @@ describe("PIXUP specifics", () => {
     // Nor one it can't read once it's put the model in, which comes out again: a price left out isn't $0, and a cart
     // that doesn't list what was put in isn't the one checkout would take.
     const missing = (answer: Answer) => ({ ...answer, cart: { ...answer.cart, variants: [] } });
-    const brokenAfter: ((answer: Answer) => unknown)[] = [unpriced, failed, missing];
+    // No order is how an empty cart is answered, not one with something in it.
+    const unordered = (answer: Answer) => ({ ...answer, order: null });
+    const brokenAfter: ((answer: Answer) => unknown)[] = [unpriced, failed, missing, unordered];
     for (const after of brokenAfter) {
       let reads = 0;
       const state = freshState({
