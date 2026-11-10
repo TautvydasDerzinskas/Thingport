@@ -1,5 +1,5 @@
 {
-  "name": "thingport-reddit",
+  "name": "thingport-blog",
   "private": true,
   "license": "AGPL-3.0-only",
   "description": "A Reddit Devvit app that posts each new thingport.net blog post to r/Thingport.",
@@ -28,5 +28,6 @@
   "allowScripts": {
     "esbuild": true,
     "protobufjs": false
-  }
+  },
+  "version": "0.0.0"
 }

@@ -1,15 +1,24 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
   "name": "thingport-blog",
-  "server": { "dir": "dist/server", "entry": "index.cjs" },
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.cjs"
+  },
   "permissions": {
-    "http": { "enable": true, "domains": ["thingport.net"] },
+    "http": {
+      "enable": true,
+      "domains": ["thingport.net"]
+    },
     "redis": true,
     "reddit": true
   },
   "scheduler": {
     "tasks": {
-      "check-blog": { "endpoint": "/internal/scheduler/check-blog", "cron": "7 * * * *" }
+      "check-blog": {
+        "endpoint": "/internal/scheduler/check-blog",
+        "cron": "7 * * * *"
+      }
     }
   },
   "menu": {
@@ -30,12 +39,23 @@
         "label": "Post as",
         "helpText": "A link to the post, which shows its picture, or a text post with its summary and a link.",
         "options": [
-          { "label": "Link", "value": "link" },
-          { "label": "Text", "value": "text" }
+          {
+            "label": "Link",
+            "value": "link"
+          },
+          {
+            "label": "Text",
+            "value": "text"
+          }
         ],
         "defaultValue": "link"
       }
     }
   },
-  "scripts": { "build": "npm run build" }
+  "scripts": {
+    "build": "npm run build"
+  },
+  "dev": {
+    "subreddit": "thingport_blog_dev"
+  }
 }
