@@ -12,10 +12,16 @@
 // Usage: node wait-for-job.mjs <workflow file> <job name or ""> <minutes>
 
 const [workflow, job, minutes] = process.argv.slice(2);
+if (!workflow || !(Number(minutes) > 0)) {
+  console.log(`::error::Usage: node wait-for-job.mjs <workflow file> <job name or ""> <minutes>`);
+  process.exit(1);
+}
 const { GITHUB_API_URL, GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_REF_NAME, GH_TOKEN } = process.env;
 const deadline = Date.now() + Number(minutes) * 60_000;
 // GITHUB_TOKEN may make 1,000 API requests an hour for the repository, shared by every workflow.
 const POLL_MS = 15_000;
+// How long no run for this commit is taken as "not yet created" before it means "not triggered".
+const NO_RUN_GRACE_MS = 2 * 60_000;
 
 async function api(path) {
   const res = await fetch(`${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/${path}`, {
@@ -63,9 +69,14 @@ if (!job) {
   process.exit(0);
 }
 
-const { run, timedOut: noRun } = await poll(async () => ({
-  run: (await runs({ head_sha: GITHUB_SHA, per_page: "1" }))[0] ?? null,
-}));
+// The same push starts both workflows, but GitHub may list the other's run a little later than this one's.
+const noRunBy = Date.now() + NO_RUN_GRACE_MS;
+const { run, timedOut: noRun } = await poll(async () => {
+  const [found] = await runs({ head_sha: GITHUB_SHA, per_page: "1" });
+  if (found) return { run: found };
+  if (Date.now() < noRunBy) return { waiting: `No ${workflow} run for this commit yet.` };
+  return { run: null };
+});
 if (noRun) {
   console.log(`::error::Couldn't read ${workflow}'s runs for ${minutes} minutes, so this image wasn't tagged.`);
   process.exit(1);

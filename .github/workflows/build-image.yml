@@ -202,4 +202,8 @@ jobs:
           while IFS= read -r tag; do
             [ -z "$tag" ] || args+=(--tag "$tag")
           done <<< "$TAGS"
+          if [ -z "$IMAGE" ] || [ -z "$DIGEST" ] || [ ${#args[@]} -eq 0 ]; then
+            echo "::error::The build job passed on no image, digest or tags to publish."
+            exit 1
+          fi
           docker buildx imagetools create "${args[@]}" "$IMAGE@$DIGEST"
