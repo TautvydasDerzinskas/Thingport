@@ -109,6 +109,7 @@
   "plans.savedInTool": "El plano está guardado en la herramienta",
   "printer.custom": "Una cama mía",
   "save.callIt": "Llámalo",
+  "save.done": "Guardado en tu biblioteca: «{name}»",
   "save.nameLabel": "Nombre",
   "save.note": "Un modelo con una placa por cada pieza, en orden de impresión y cada una a su tamaño real — una imagen del plano es su portada y el orden de impresión está en sus notas. Las piezas en sí se quedan donde estaban: estas placas son el plano, no los archivos de AU3D.",
   "save.pickCollection": "Guardar el plano en",

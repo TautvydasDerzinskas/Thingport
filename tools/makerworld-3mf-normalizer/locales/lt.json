@@ -94,6 +94,8 @@
   "status.normalizingDots": "Normalizuojama…",
   "status.waiting": "Laukia",
   "status.waitingTurn": "Laukia savo eilės",
+  "toast.added": "Pridėta prie {model}: {file}",
+  "toast.saved": "Įrašyta: {name}",
   "view.normalized": "Normalizuotas",
   "view.original": "Pradinis"
 }

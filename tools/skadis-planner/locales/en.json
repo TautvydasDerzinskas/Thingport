@@ -109,6 +109,7 @@
   "plans.savedInTool": "The plan is saved in the tool",
   "printer.custom": "A bed of my own",
   "save.callIt": "Call it",
+  "save.done": "Saved “{name}” to your library",
   "save.nameLabel": "Name",
   "save.note": "One model with a plate for every part, in print order, each at its true size — a picture of the plan is its cover and the print order is in its notes. The parts themselves stay where they came from: these plates are the plan, not AU3D's files.",
   "save.pickCollection": "Save the plan to",

@@ -84,6 +84,7 @@
   "problem.bin": "A {w}×{d} bin {issues}.",
   "problem.cellTooBig": "A single cell and its border don't fit the bed: make the bed bigger.",
   "save.addToCollection": "Add to a collection",
+  "save.done": "Saved {name}",
   "save.go": "Save",
   "save.making": "Making the parts…",
   "save.note": "Every part as one model, with how many to print of each in its description.",

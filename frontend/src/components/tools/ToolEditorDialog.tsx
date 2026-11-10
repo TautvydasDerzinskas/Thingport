@@ -20,6 +20,7 @@ import Segmented from "../controls/Segmented";
 import HelpTip from "../HelpTip";
 import AiToolGuide from "./AiToolGuide";
 import ToolDetailsForm, { fromManifest, problems, toManifest, type ToolDraft } from "./ToolDetailsForm";
+import { useToastHost } from "../ToastProvider";
 import ToolIcon from "./ToolIcon";
 import ToolRunner from "./ToolRunner";
 import LabelsPanel, { FALLBACK_LANGUAGE, labelProblem, labelsOf, type LabelDrafts } from "../LabelsPanel";
@@ -74,6 +75,8 @@ type Props = {
 /** Makes or edits one of the user's own tools: its details from a form, its script and HTML with CSS in a code editor,
  *  and the tool running on a tab of its own. */
 export default function ToolEditorDialog({ open, tool, onClose, ...rest }: Props) {
+  // The preview's toasts show inside the dialog, as a tool window's do.
+  const toastHost = useToastHost(open);
   return (
     <Dialog
       open={open}
@@ -81,6 +84,7 @@ export default function ToolEditorDialog({ open, tool, onClose, ...rest }: Props
       maxWidth={false}
       slotProps={{
         paper: {
+          ref: toastHost,
           sx: {
             width: 1180,
             maxWidth: "calc(100% - 32px)",

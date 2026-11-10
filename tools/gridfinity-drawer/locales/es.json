@@ -84,6 +84,7 @@
   "problem.bin": "Una cajita {w}×{d} {issues}.",
   "problem.cellTooBig": "Una sola celda con su borde no cabe en la cama: haz la cama más grande.",
   "save.addToCollection": "Añadir a una colección",
+  "save.done": "Guardado: {name}",
   "save.go": "Guardar",
   "save.making": "Creando las piezas…",
   "save.note": "Cada pieza en un modelo, con cuántas imprimir de cada una en su descripción.",

@@ -94,6 +94,8 @@
   "status.normalizingDots": "Нармалізацыя…",
   "status.waiting": "Чаканне",
   "status.waitingTurn": "Чакае сваёй чаргі",
+  "toast.added": "Дададзена ў «{model}»: {file}",
+  "toast.saved": "Захавана: {name}",
   "view.normalized": "Нармалізаваны",
   "view.original": "Зыходны"
 }

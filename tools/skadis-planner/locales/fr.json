@@ -109,6 +109,7 @@
   "plans.savedInTool": "Le plan est enregistré dans l'outil",
   "printer.custom": "Un plateau à moi",
   "save.callIt": "Appelez-le",
+  "save.done": "Enregistré dans votre bibliothèque : « {name} »",
   "save.nameLabel": "Nom",
   "save.note": "Un modèle avec une plaque par pièce, dans l'ordre d'impression et chacune à sa taille réelle — une image du plan sert de couverture et l'ordre d'impression est dans ses notes. Les pièces elles-mêmes restent là d'où elles viennent : ces plaques sont le plan, pas les fichiers d'AU3D.",
   "save.pickCollection": "Enregistrer le plan dans",

@@ -10,6 +10,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
+import { useToastHost } from "../ToastProvider";
 import ToolIcon from "./ToolIcon";
 import ToolRunner from "./ToolRunner";
 import type { RunnableTool, ToolContext } from "./toolSdk";
@@ -35,6 +36,8 @@ export default function ToolWindow({ tool, context, onClose, onAbout, onUnauthor
     if (!tool) setFull(false);
   }, [tool]);
   const size = tool?.manifest.window ?? { width: 960, height: 640 };
+  // A tool's toasts, an Open button among them, show inside its window, where a keyboard and screen reader reach them.
+  const toastHost = useToastHost(Boolean(tool));
 
   return (
     <Dialog
@@ -45,6 +48,7 @@ export default function ToolWindow({ tool, context, onClose, onAbout, onUnauthor
       aria-labelledby="tool-window-title"
       slotProps={{
         paper: {
+          ref: toastHost,
           sx: {
             width: full ? "100%" : size.width,
             height: full ? "100%" : size.height,

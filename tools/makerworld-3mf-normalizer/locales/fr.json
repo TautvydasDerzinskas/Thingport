@@ -94,6 +94,8 @@
   "status.normalizingDots": "Normalisation…",
   "status.waiting": "En attente",
   "status.waitingTurn": "Attend son tour",
+  "toast.added": "Ajouté à {model} : {file}",
+  "toast.saved": "Enregistré : {name}",
   "view.normalized": "Normalisé",
   "view.original": "Original"
 }
