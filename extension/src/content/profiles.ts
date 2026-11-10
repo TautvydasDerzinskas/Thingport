@@ -25,15 +25,18 @@ export function missingOf(ids: (scope: ProfileScope) => string[], held: readonly
   return { total: all.length, all: withoutHeld(all, held), designer: withoutHeld(ids("designer"), held) };
 }
 
-/** Null where it can't be told: the instance doesn't say which profiles the model has (older than 1.6.0), or the
- *  site has none or won't list them. */
-export async function loadMissingProfiles(
+/** What the library's model lacks of the page's print profiles. "none" where there's nothing it could lack: the site
+ *  has no print profiles, or this page none. Null where it can't be told: the instance doesn't say which the model has
+ *  (older than 1.6.0), or the page won't list them. */
+export async function profileGap(
   provider: ProviderId,
   url: string,
   held: readonly string[] | null | undefined,
-): Promise<MissingProfiles | null> {
+): Promise<MissingProfiles | "none" | null> {
   const load = CONTENT_MODULES[provider].loadProfiles;
-  if (!held || !load) return null;
+  if (!load) return "none";
   const ids = await load(url).catch(() => null);
-  return ids ? missingOf(ids, held) : null;
+  if (!ids) return null;
+  if (!ids("all").length) return "none";
+  return held ? missingOf(ids, held) : null;
 }

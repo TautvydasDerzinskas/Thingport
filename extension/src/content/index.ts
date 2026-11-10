@@ -8,7 +8,7 @@ import { listen, send, type ContentMessages } from "../shared/messages";
 import { bubbleLookOf } from "../shared/bubble";
 import { CONFIG_CHANGE_KEYS, STORAGE_KEYS } from "../shared/storage";
 import { classifyUrl } from "../shared/urls";
-import { setContext, type LibraryState } from "./context";
+import { libraryStateOf, setContext, type LibraryState } from "./context";
 import {
   isMakerworldBlockingError,
   resolveMakerworldDownloadUrl,
@@ -17,7 +17,7 @@ import {
 import { offerNormalizedDownload, unmountNormalizedDownload } from "../providers/makerworld/normalizedDownload";
 import { mountJobOverlay, mountPausedJobOverlay } from "./overlays";
 import { loadPanel } from "./panels";
-import { loadMissingProfiles } from "./profiles";
+import { profileGap } from "./profiles";
 import { captureProviderAccount } from "./providerAccount";
 import { providerEnabled } from "./providerSettings";
 import { CONTENT_MODULES } from "../providers/content";
@@ -181,27 +181,14 @@ async function init(): Promise<void> {
     try {
       const status = await api<ImportStatus>("GET", `/import/status?url=${encodeURIComponent(url)}`);
       if (isStale()) return;
-      const gaps = status.gaps ?? [];
-      const heldProfiles = status.imported_profile_ids ?? null;
-      if (status.already_imported) {
-        const missing = status.print_id ? await loadMissingProfiles(classification.provider, url, heldProfiles) : null;
-        if (isStale()) return;
-        missingProfiles = missing?.all.length ?? 0;
-        // Nothing left to bring over: the bubble stays, ticked, to open the model in Thingport. So it does for a model
-        // the instance doesn't name, as nothing could be filled in on it.
-        const complete = (!gaps.length && !missingProfiles) || !status.print_id;
-        library = complete
-          ? {
-              state: "complete",
-              printId: status.print_id ?? null,
-              gaps: [],
-              heldProfiles,
-              profiles: missing?.total ?? 0,
-            }
-          : { state: "imported", printId: status.print_id ?? null, gaps, heldProfiles };
-      } else if (status.state === "profile_missing" || status.state === "profile_unknown") {
-        library = { state: status.state, printId: status.print_id ?? null, gaps, heldProfiles };
-      }
+      // Which of the page's print profiles the library's model lacks, for a model it has.
+      const gap =
+        status.already_imported && status.print_id
+          ? await profileGap(classification.provider, url, status.imported_profile_ids)
+          : "none";
+      if (isStale()) return;
+      missingProfiles = gap && gap !== "none" ? gap.all.length : 0;
+      library = libraryStateOf(status, gap);
     } catch {
       // Show the icon anyway; the panel surfaces the real error.
     }
