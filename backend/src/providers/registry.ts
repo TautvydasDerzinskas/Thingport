@@ -23,6 +23,7 @@ import owlcadCategories from "./owlcad/categories.json";
 import meshyCategories from "./meshy/categories.json";
 import pixup3dCategories from "./pixup3d/categories.json";
 import fab365Categories from "./fab365/categories.json";
+import threedexportCategories from "./threedexport/categories.json";
 import { meshyImport, meshyTrending, meshyLists, meshyDetails } from "./meshy";
 import { meshyConnection } from "./meshy/connection";
 import { meshySync } from "./meshy/sync";
@@ -35,6 +36,10 @@ import { fab365Import, fab365Trending, fab365Lists, fab365Details } from "./fab3
 import { fab365Connection } from "./fab365/connection";
 import { fab365Sync } from "./fab365/sync";
 import { fab365Browse } from "./fab365/browse";
+import { threedexportImport, threedexportTrending, threedexportLists, threedexportDetails } from "./threedexport";
+import { threedexportConnection } from "./threedexport/connection";
+import { threedexportSync } from "./threedexport/sync";
+import { threedexportBrowse } from "./threedexport/browse";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -568,6 +573,20 @@ export const PROVIDERS = {
     trending: fab365Trending,
     details: fab365Details,
     license: readFab365License,
+  },
+  threedexport: {
+    starterCategories: threedexportCategories,
+    connection: { default: threedexportConnection },
+    // Its files and the user's own collections are read with the sign-in; its model pages, listings and anyone's
+    // public collections without one.
+    authStopText: grabSignInStop("threedexport"),
+    sourcedImport: threedexportImport,
+    lists: threedexportLists,
+    sync: threedexportSync,
+    browse: threedexportBrowse,
+    trending: threedexportTrending,
+    // An older import's licence comes from its page's details, one request with no sign-in.
+    details: threedexportDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

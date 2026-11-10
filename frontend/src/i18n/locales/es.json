@@ -7008,6 +7008,37 @@
       "sync": {
         "notConnected": "Conecta Fab365 en Configuración > Proveedores, o visítalo con la sesión iniciada con Thingport Grab, para ver aquí tus favoritos."
       }
+    },
+    "threedexport": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir 3dexport.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que cambie allí.",
+          "O manualmente: inicia sesión en 3dexport.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En la pestaña Red, recarga la página, haz clic en cualquier petición a 3dexport.com, copia su cabecera Cookie y pégala abajo. Sus cookies nm_userid y nm_hash son el inicio de sesión, y cerrar la sesión en 3dexport.com las anula."
+        ],
+        "placeholder": "La cabecera Cookie de una petición a 3dexport.com con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "3DExport solo entrega sus archivos a usuarios con sesión iniciada, también los modelos gratuitos. Conecta tu cuenta para importarlos junto con tus colecciones; las colecciones públicas de cualquiera se leen sin ella.",
+        "expired": "El inicio de sesión ha caducado: cerrar la sesión en 3dexport.com lo anula. Vuelve a iniciar sesión allí con Thingport Grab o vuelve a conectar 3DExport en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "3DExport: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Uno de los mercados de modelos 3D más antiguos, abierto desde 2004: recursos para juegos y cine, texturas y un gran catálogo de impresión 3D, en parte gratuito.",
+        "signIn": "Tu propio inicio de sesión, para los archivos y tus propias colecciones; las colecciones públicas de cualquiera se leen sin él.",
+        "grab": "Envía tu inicio de sesión cuando visitas 3dexport.com y marca los modelos de pago que no has comprado.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en 3DExport y abre 3dexport.com con la sesión iniciada.",
+          "Manualmente: copia la cabecera Cookie de una petición a 3dexport.com con la sesión iniciada y pégala en Configuración → Proveedores."
+        ]
+      },
+      "admin": {
+        "description": "Modelos y colecciones: las de cada usuario y las públicas de cualquiera. Las páginas de los modelos y las colecciones públicas se leen sin iniciar sesión; los archivos necesitan la del propio usuario. Se importan los modelos gratuitos, uno de pago solo una vez comprado, y solo los formatos que abre un laminador."
+      },
+      "sync": {
+        "notConnected": "Conecta 3DExport en Configuración > Proveedores, o visítalo con la sesión iniciada y Thingport Grab, para ver aquí tus colecciones."
+      }
     }
   }
 }

@@ -27,6 +27,7 @@ how to connect it:
 - <img src="assets/providers/meshy.svg" alt="" width="18" height="18" align="absmiddle"> [Meshy](providers/meshy.md) -- your own sign-in; community models also need a Meshy Pro or Studio plan.
 - <img src="assets/providers/pixup3d.svg" alt="" width="18" height="18" align="absmiddle"> [PIXUP](providers/pixup3d.md) -- your own sign-in, for the files of the models you own; anyone's wishlist and collections read without it.
 - <img src="assets/providers/fab365.svg" alt="" width="18" height="18" align="absmiddle"> [Fab365](providers/fab365.md) -- your own sign-in, for the files and your favourites; its models read without one.
+- <img src="assets/providers/3dexport.svg" alt="" width="18" height="18" align="absmiddle"> [3DExport](providers/3dexport.md) -- your own sign-in, for the files and your own collections; anyone's public collections read without it.
 
 <!-- /providers:list -->
 
@@ -60,6 +61,7 @@ badge, shows the same in short.
 | <img src="assets/providers/meshy.svg" alt="" width="18" height="18" align="absmiddle"> [Meshy](providers/meshy.md)                               | Yours; Pro for community models | Recommended    |              | ✓                      |       | ✓    |                |
 | <img src="assets/providers/pixup3d.svg" alt="" width="18" height="18" align="absmiddle"> [PIXUP](providers/pixup3d.md)                           | Yours, for the files            | Recommended    |              | Collections, wishlists | ✓     | ✓    |                |
 | <img src="assets/providers/fab365.svg" alt="" width="18" height="18" align="absmiddle"> [Fab365](providers/fab365.md)                            | Yours, for the files            | Recommended    |              |                        | ✓⁷    | ✓    |                |
+| <img src="assets/providers/3dexport.svg" alt="" width="18" height="18" align="absmiddle"> [3DExport](providers/3dexport.md)                      | Yours, for the files            | Recommended    |              | Bookmark collections   |       | ✓    |                |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.

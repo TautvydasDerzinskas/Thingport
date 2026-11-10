@@ -173,6 +173,15 @@ export const PROVIDER_DOCS = [
     description:
       "Import Fab365's free models and the ones you own, and your favourites, with your own sign-in for the files.",
   },
+  {
+    slug: "providers/3dexport",
+    source: "docs/providers/3dexport.md",
+    group: "Providers",
+    title: "3DExport",
+    nav: "3DExport",
+    description:
+      "Import 3DExport's free 3D print models and the ones you bought, and your own or anyone's public collections, with your own sign-in.",
+  },
 ];
 
 /** What each provider's page shows besides its Markdown and the comparison table, from its manifest and docs.ts: a
@@ -647,6 +656,28 @@ export const PROVIDER_PAGES = [
       categories: true,
     },
   },
+  {
+    docsSlug: "3dexport",
+    accent: "#EE1111",
+    highlight: {
+      title: "Only the formats a printer takes",
+      text: "3DExport packs each of a model's formats into a zip of its own, often a dozen for one CG model. Thingport downloads the ones a slicer opens, STL, 3MF and STEP, and an OBJ or GLB only when there's nothing else.",
+    },
+    facts: {
+      signIn: "user",
+      grab: "recommended",
+      grabSite: "optional",
+      flaresolverr: "none",
+      collections: true,
+      likes: false,
+      sync: true,
+      profiles: false,
+      slicers: [],
+      bambuProjects: false,
+      trending: "popular",
+      categories: true,
+    },
+  },
 ];
 
 /** The comparison table of docs/PROVIDER_SETUP.md, for the foot of each provider's page: the columns' headings, a row
@@ -912,6 +943,19 @@ export const PROVIDER_COMPARISON = {
         { need: "none" },
         { yes: false },
         { yes: true, note: 7 },
+        { yes: true },
+        { yes: false },
+      ],
+    },
+    {
+      docsSlug: "3dexport",
+      name: "3DExport",
+      cells: [
+        { text: "Yours, for the files" },
+        { need: "recommended" },
+        { need: "none" },
+        { text: "Bookmark collections" },
+        { yes: false },
         { yes: true },
         { yes: false },
       ],

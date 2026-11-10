@@ -87,5 +87,8 @@ export const CREDENTIAL_HOSTS = {
   "fab365-token": {
     exact: ["fab365.net"],
   },
+  "threedexport-session": {
+    exact: ["3dexport.com"],
+  },
 } as const;
 export type CredentialDestination = keyof typeof CREDENTIAL_HOSTS;

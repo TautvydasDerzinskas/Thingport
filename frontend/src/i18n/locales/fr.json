@@ -7021,6 +7021,37 @@
       "sync": {
         "notConnected": "Connectez Fab365 dans Configuration > Fournisseurs, ou visitez-le en étant connecté avec Thingport Grab, pour voir vos favoris ici."
       }
+    },
+    "threedexport": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir 3dexport.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois qu’elle change là-bas.",
+          "Ou manuellement : connectez-vous à 3dexport.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Dans l’onglet Réseau, rechargez la page, cliquez sur n’importe quelle requête vers 3dexport.com, copiez son en-tête Cookie et collez-le ci-dessous. Ses cookies nm_userid et nm_hash sont la connexion, et se déconnecter de 3dexport.com y met fin."
+        ],
+        "placeholder": "L’en-tête Cookie d’une requête à 3dexport.com faite en étant connecté"
+      },
+      "status": {
+        "notConnected": "3DExport ne remet ses fichiers qu’aux utilisateurs connectés, modèles gratuits compris. Reliez votre compte pour les importer avec vos propres collections ; les collections publiques de chacun se lisent sans elle.",
+        "expired": "La connexion a expiré : se déconnecter de 3dexport.com y met fin. Reconnectez-vous-y avec Thingport Grab, ou reconnectez 3DExport dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "3DExport : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "L’une des plus anciennes boutiques de modèles 3D, ouverte depuis 2004 : ressources pour le jeu et le cinéma, textures et un grand catalogue d’impression 3D, en partie gratuit.",
+        "signIn": "Votre propre connexion, pour les fichiers et vos propres collections ; les collections publiques de chacun se lisent sans elle.",
+        "grab": "Envoie votre connexion lorsque vous visitez 3dexport.com, et signale les modèles payants que vous n’avez pas achetés.",
+        "setup": [
+          "Installez Thingport Grab, activez-le sur 3DExport et ouvrez 3dexport.com en étant connecté.",
+          "Manuellement : copiez l’en-tête Cookie d’une requête à 3dexport.com faite en étant connecté et collez-le dans Configuration → Fournisseurs."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles et les collections : celles de chaque utilisateur et les collections publiques de chacun. Les pages des modèles et les collections publiques se lisent sans connexion ; les fichiers demandent celle de l’utilisateur. Les modèles gratuits s’importent, un modèle payant seulement une fois acheté, et seulement les formats qu’ouvre un trancheur."
+      },
+      "sync": {
+        "notConnected": "Connectez 3DExport dans Configuration > Fournisseurs, ou visitez-le connecté avec Thingport Grab, pour voir ici vos collections."
+      }
     }
   }
 }

@@ -21,6 +21,7 @@ import { parseCgtraderListUrl } from "../src/providers/cgtrader/api";
 import { parseGrabcadLikesUrl } from "../src/providers/grabcad/api";
 import { parsePixup3dWishlistUrl } from "../src/providers/pixup3d/api";
 import { isFab365LikesUrl } from "../src/providers/fab365/api";
+import { isThreedexportDefaultUrl } from "../src/providers/threedexport/api";
 
 type Expected = {
   provider: string | null;
@@ -54,6 +55,7 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
   if (provider === "snapmaker") return parseSnapmakerListUrl(url)?.list ?? "collection";
   if (provider === "makerables" && parseMakerablesSavedUrl(url)) return "bookmarks";
   if (provider === "cgtrader" && parseCgtraderListUrl(url) === "wishlist") return "bookmarks";
+  if (provider === "threedexport" && isThreedexportDefaultUrl(url)) return "bookmarks";
   if (
     (provider === "thingiverse" && parseThingiverseLikesUrl(url)) ||
     (provider === "printables" && parsePrintablesLikesUrl(url)) ||
@@ -75,8 +77,8 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
 
 describe("provider URL corpus (backend)", () => {
   it("contains every provider and both positive and negative cases", () => {
-    expect(cases).toHaveLength(153);
-    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(20);
+    expect(cases).toHaveLength(168);
+    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(21);
   });
 
   it.each(cases)("$url", ({ url, expect: common, divergent }) => {

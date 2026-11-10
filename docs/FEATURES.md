@@ -2,7 +2,7 @@
 
 Everything Thingport does, each with its page in the docs. The [README](../README.md#features) picks out the highlights.
 
-- **[Import from 20 sites](features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP and Fab365
+- **[Import from 21 sites](features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365 and 3DExport
 - **[Your own import queue, in one line that survives a restart](features/importing.md#the-import-queue)**
 - **[Import bookmarklet](guides/bookmarklet.md)**
 - **[Synced collections](guides/synced-collections.md)**

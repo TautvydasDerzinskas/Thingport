@@ -7101,6 +7101,37 @@
       "sync": {
         "notConnected": "Prijunkite Fab365 Konfigūracija > Tiekėjai arba apsilankykite prisijungę su Thingport Grab, kad čia matytumėte mėgstamus."
       }
+    },
+    "threedexport": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite 3dexport.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai jis ten pasikeis.",
+          "Arba rankiniu būdu: prisijunkite prie 3dexport.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Network iš naujo įkelkite puslapį, spustelėkite bet kurią 3dexport.com užklausą, nukopijuokite jos Cookie antraštę ir įklijuokite ją žemiau. Prisijungimas yra jos slapukai nm_userid ir nm_hash, o atsijungus nuo 3dexport.com jie nebegalioja."
+        ],
+        "placeholder": "Prisijungus siųstos 3dexport.com užklausos Cookie antraštė"
+      },
+      "status": {
+        "notConnected": "3DExport failus duoda tik prisijungusiems naudotojams, įskaitant ir nemokamus modelius. Prijunkite paskyrą, kad galėtumėte juos ir savo kolekcijas importuoti; bet kieno viešos kolekcijos skaitomos ir be jo.",
+        "expired": "Prisijungimo galiojimas baigėsi: atsijungus nuo 3dexport.com jis nebegalioja. Vėl prisijunkite ten su Thingport Grab arba vėl prijunkite 3DExport skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "3DExport: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "Viena seniausių 3D modelių parduotuvių, veikianti nuo 2004 m.: žaidimų ir kino modeliai, tekstūros ir didelis 3D spausdinimo katalogas, dalis jo nemokama.",
+        "signIn": "Jūsų pačių prisijungimas, failams ir jūsų kolekcijoms; bet kieno viešos kolekcijos skaitomos ir be jo.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės 3dexport.com, ir pažymi mokamus modelius, kurių nepirkote.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį 3DExport ir atverkite 3dexport.com prisijungę.",
+          "Rankiniu būdu: nukopijuokite prisijungus siųstos 3dexport.com užklausos Cookie antraštę ir įklijuokite ją skiltyje Konfigūracija → Šaltiniai."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir kolekcijos: kiekvieno naudotojo savos ir bet kieno viešos. Modelių puslapiai ir viešos kolekcijos skaitomi be prisijungimo; failams reikia paties naudotojo prisijungimo. Importuojami nemokami modeliai, mokamas tik nupirktas, ir tik tie formatai, kuriuos atveria pjaustyklė."
+      },
+      "sync": {
+        "notConnected": "Prijunkite 3DExport skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame prisijungę su Thingport Grab, kad čia matytumėte savo kolekcijas."
+      }
     }
   }
 }

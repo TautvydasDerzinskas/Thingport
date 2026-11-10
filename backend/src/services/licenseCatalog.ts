@@ -138,6 +138,15 @@ const site = (
   ...(opts.text ? { text: opts.text } : {}),
 });
 
+const THREEDEXPORT_ROYALTY_FREE_TEXT =
+  "Use it in your own projects, commercial ones too, as many times as you like, without paying royalties. It may not " +
+  "be sold, given or passed on to anyone else in the form it was downloaded in, and the seller keeps it to sell on.";
+const THREEDEXPORT_BASIC_TEXT =
+  "Use it in a single application of your own or for a client, such as a video, a visualization, or prints given " +
+  "away for free, alone or incorporated into your own work. No reselling or giving away the files, and no use in " +
+  "something made for sale: that takes the Extended License.";
+const THREEDEXPORT_NO_AI_TEXT = "Not for machine learning or training AI models.";
+
 const SDFL_TEXT =
   "Digital files have a strict non-commercial, personal use only license. You shall not share, sub-license, sell, " +
   "rent, host, transfer, or distribute in any way the digital file or 3D printed versions of this object, nor any " +
@@ -254,6 +263,30 @@ const SITE: LicenseDef[] = [
   }),
   site("cgtrader-custom-no-ai", "Custom (no AI)", "CGTrader Custom License, no AI use", [], {
     url: "https://www.cgtrader.com/pages/terms-and-conditions#general-terms-of-licensing",
+  }),
+  // 3DExport's own: a free model is royalty free, used in your own work, commercial too, but never passed on as it
+  // came; a bought one is under the Basic licence it's sold with, unless the buyer paid for the Extended one.
+  site("3dexport-royalty-free", "Royalty Free", "3DExport Royalty Free License", ["remix", "commercial"], {
+    url: "https://help.3dexport.com/item/royalty-free-license/",
+    text: THREEDEXPORT_ROYALTY_FREE_TEXT,
+  }),
+  site(
+    "3dexport-royalty-free-no-ai",
+    "Royalty Free (no AI)",
+    "3DExport Royalty Free License, no AI training",
+    ["remix", "commercial"],
+    {
+      url: "https://help.3dexport.com/item/no-ai-training-license/",
+      text: `${THREEDEXPORT_ROYALTY_FREE_TEXT} ${THREEDEXPORT_NO_AI_TEXT}`,
+    },
+  ),
+  site("3dexport-basic", "Basic License", "3DExport Basic License", ["remix"], {
+    url: "https://help.3dexport.com/item/basic-license-and-extended-license/",
+    text: THREEDEXPORT_BASIC_TEXT,
+  }),
+  site("3dexport-basic-no-ai", "Basic License (no AI)", "3DExport Basic License, no AI training", ["remix"], {
+    url: "https://help.3dexport.com/item/basic-license-and-extended-license/",
+    text: `${THREEDEXPORT_BASIC_TEXT} ${THREEDEXPORT_NO_AI_TEXT}`,
   }),
   // Built from each model's own permissions, which its provider passes as `allows`.
   site("myminifactory", "MyMiniFactory", "MyMiniFactory License", [], {

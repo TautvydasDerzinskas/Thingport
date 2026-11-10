@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bookmarks 3D Models - 3DExport</title>
+  </head>
+  <body>
+    <header id="header">
+      <ul class="nav navbar-nav navbar-avatar pull-right">
+        <li><a href="https://3dexport.com/makerone" class="profile-link" rel="nofollow">My profile</a></li>
+        <li><a href="https://3dexport.com/logout?return_url=" rel="nofollow">Log out</a></li>
+      </ul>
+    </header>
+    <section id="content">
+      <section class="wide-container">
+        <div class="col-lg-12 clearfix"><h1>Bookmarks</h1></div>
+        <div class="m-t">
+          <div class="col-lg-9">
+            <section class="panel">
+              <div id="BookmarksBody">
+                <div class="table-responsive">
+                  <table class="table table-striped m-b-none">
+                    <thead>
+                      <tr>
+                        <th>Collection Name</th>
+                        <th class="text-center">Access</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="imagerow1">
+                        <td class="BookmarksTitle">
+                          <a href="https://3dexport.com/mybookmarks/default">Default Collection</a>
+                          <span class="text-small">0 items</span>
+                          <span class="pull-right">You cannot edit or delete this collection!</span>
+                        </td>
+                        <td align="center">Private</td>
+                      </tr>
+                      <tr class="imagerow2">
+                        <td class="BookmarksTitle">
+                          <a href="https://3dexport.com/bookmarks/3d-collection-6984" id="aid6984"
+                            >Thingport test private</a
+                          >
+                          <span id="cid6984"></span> <span class="text-small">1 item</span>
+                          <span class="pull-right"
+                            ><a class="btn btn-info btn-xs" href="#">Edit</a>
+                            <a class="btn btn-danger btn-xs" href="?action=delete&amp;id=6984">Delete</a></span
+                          >
+                        </td>
+                        <td align="center">
+                          <span id="p6984">Private</span> <input type="hidden" id="ph6984" value="1" />
+                        </td>
+                      </tr>
+                      <tr class="imagerow1">
+                        <td class="BookmarksTitle">
+                          <a href="https://3dexport.com/bookmarks/3d-collection-6985" id="aid6985"
+                            >Thingport test public</a
+                          >
+                          <span id="cid6985"></span> <span class="text-small">1 item</span>
+                          <span class="pull-right"
+                            ><a class="btn btn-info btn-xs" href="#">Edit</a>
+                            <a class="btn btn-danger btn-xs" href="?action=delete&amp;id=6985">Delete</a></span
+                          >
+                        </td>
+                        <td align="center">
+                          <span id="p6985">Public</span> <input type="hidden" id="ph6985" value="0" />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </div>
+          <div class="col-lg-3">
+            <section class="panel">
+              <header class="panel-heading"><div class="input-group">Create a New Collection</div></header>
+              <div class="panel-body">
+                <div id="BookmarksRightSide">
+                  <form action="" method="get">
+                    <div class="input-group">
+                      <input name="collectionname" type="text" class="form-control" />
+                      <span class="input-group-btn"><button type="submit" class="btn btn-lg">Create</button> </span>
+                    </div>
+                    <div class="input-group">
+                      <label for="collectionprivat">
+                        <input type="checkbox" name="collectionprivat" id="collectionprivat" />
+                        Private collection?</label
+                      >
+                      <input type="hidden" name="action" value="createcollection" />
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </section>
+  </body>
+</html>

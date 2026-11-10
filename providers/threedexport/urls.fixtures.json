@@ -1,0 +1,62 @@
+[
+  {
+    "url": "https://3dexport.com/3d-model-elephant-a001-667112",
+    "expect": { "provider": "threedexport", "kind": "model", "externalId": "667112" }
+  },
+  {
+    "url": "https://www.3dexport.com/es/3d-model-elephant-a001-667112/",
+    "expect": { "provider": "threedexport", "kind": "model", "externalId": "667112" }
+  },
+  {
+    "url": "https://3dexport.com/3d-model-cylindrical-gear-paired-z77-m2-d158-d30-403121?ref=related",
+    "expect": { "provider": "threedexport", "kind": "model", "externalId": "403121" }
+  },
+  {
+    "url": "https://3dexport.com/3d-model-item-686532",
+    "expect": { "provider": "threedexport", "kind": "model", "externalId": "686532" }
+  },
+  {
+    "url": "https://3dexport.com/bookmarks/3d-collection-6956",
+    "expect": { "provider": "threedexport", "kind": "list", "externalId": "6956", "listKind": "collection" }
+  },
+  {
+    "url": "https://3dexport.com/de/bookmarks/3d-collection-6956/?page=2",
+    "expect": { "provider": "threedexport", "kind": "list", "externalId": "6956", "listKind": "collection" }
+  },
+  {
+    "url": "https://3dexport.com/mybookmarks/default",
+    "expect": { "provider": "threedexport", "kind": "list", "externalId": "default", "listKind": "bookmarks" }
+  },
+  {
+    "url": "https://3dexport.com/3d-print-models",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://3dexport.com/3d-print-models/science/engineering",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://3dexport.com/3d-models/animals/elephant",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://3dexport.com/bookmarks",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://3dexport.com/mybookmarks",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://3dexport.com/mybookmarks/6984",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://3dexport.com/amaxart",
+    "expect": { "provider": null, "kind": null }
+  },
+  {
+    "url": "https://not3dexport.com/3d-model-elephant-a001-667112",
+    "expect": { "provider": null, "kind": null }
+  }
+]
