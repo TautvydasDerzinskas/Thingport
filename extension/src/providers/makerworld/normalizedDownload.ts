@@ -12,6 +12,7 @@ import { gettingFilePhrases, normalizingPhrases, rotatePhrases } from "../../con
 import { resolveMakerworldDownloadUrl } from "./downloadResolver";
 import { DOWNLOAD_3MF, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
 import { normalizeBambu3mf } from "./normalize";
+import { downloadTarget, forgetSlicer, knownSlicer, lookUpSlicer } from "./slicerTarget";
 
 // Converting holds the file, its unzipped model XML and the result in memory at once.
 const MAX_BYTES = 50 * 1024 * 1024;
@@ -39,13 +40,11 @@ let host: HTMLElement | null = null;
 let observer: MutationObserver | null = null;
 let themeObserver: MutationObserver | null = null;
 let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
-// The instance's slicer for the explanation, once it has answered; the button doesn't wait for it.
-let slicerLabel: string | null = null;
-// Which copy to make: the Orca-fork one for Snapmaker Orca, the flat one otherwise (also before the answer).
-let slicerId: string | null = null;
 
 /** The button's explanation text for the target copy, naming the instance's slicer in the flat one when known. */
-function explanation(slicer: string | null, target: "flat" | "orca"): string {
+function explanation(slicerId: string | null): string {
+  const target = normalizeTargetFor(slicerId);
+  const slicer = slicerId ? (NORMALIZE_3MF_SLICERS[slicerId] ?? null) : null;
   if (target === "orca")
     return "Builds a copy for Snapmaker Orca (U1): printer, nozzle, process preset and wipe tower are adapted to the U1. Your filament names and values stay.";
   const slicers = slicer ? `${slicer} often opens` : "PrusaSlicer, Cura and other slicers often open";
@@ -116,12 +115,14 @@ function saveFile(bytes: Uint8Array, filename: string): void {
 }
 
 async function downloadNormalized(pageUrl: string, onProgress: (text: string) => void): Promise<void> {
-  // Resolved once, before the download starts: the slicer setting can change while the file downloads, and the
-  // conversion and the file name must agree on the same target.
-  const target = normalizeTargetFor(slicerId);
   let stopRotation = rotatePhrases(gettingFilePhrases, onProgress);
-  // The normalizer reads the 3MF project, never the raw-files zip.
-  const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stopRotation);
+  // Resolved once, before the download starts, and only after the instance has said which slicer it uses: the
+  // conversion and the file name must agree on the same target. The normalizer reads the 3MF project, never the
+  // raw-files zip.
+  const [target, resolved] = await Promise.all([
+    downloadTarget(),
+    resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }),
+  ]).finally(stopRotation);
   if (!resolved) {
     throw new Error(
       "Couldn't get this model's file from MakerWorld. Make sure you're signed in to MakerWorld, then try again.",
@@ -188,7 +189,7 @@ function buildHost(pageUrl: string): HTMLElement {
     bubble.hidden = true;
   };
   const showInfo = () => {
-    if (bubble.hidden) showBubble(explanation(slicerLabel, normalizeTargetFor(slicerId)));
+    if (bubble.hidden) showBubble(explanation(knownSlicer()));
   };
   icon.addEventListener("mouseenter", showInfo);
   icon.addEventListener("mouseleave", () => !bubble.classList.contains("tg-nd-bubble--error") && hideBubble());
@@ -312,8 +313,7 @@ export function unmountNormalizedDownload(): void {
   host?.remove();
   host = null;
   anchor = null;
-  slicerLabel = null;
-  slicerId = null;
+  forgetSlicer();
   clearTimeout(bubbleTimer);
 }
 
@@ -327,12 +327,5 @@ export async function offerNormalizedDownload(
   if (isStale()) return;
   mount(pageUrl);
   if (!configured) return;
-  const mounted = host;
-  const slicer = await api<{ slicer: string | null }>("GET", "/settings/slicer")
-    .then((res) => res.slicer)
-    .catch(() => null);
-  if (host === mounted) {
-    slicerLabel = slicer ? (NORMALIZE_3MF_SLICERS[slicer] ?? null) : null;
-    slicerId = slicer;
-  }
+  await lookUpSlicer(() => api<{ slicer: string | null }>("GET", "/settings/slicer").then((res) => res.slicer));
 }

@@ -1,0 +1,41 @@
+// The instance's slicer for the "Download normalized" button, asked for once per mounted button. The button shows
+// before the answer and its explanation uses whatever is known, but a click waits for it: the slicer decides which copy
+// is made, and taking the flat one just because the answer hadn't come yet would hand a Snapmaker Orca user the wrong
+// file.
+
+import { normalizeTargetFor } from "../../shared/slicers";
+
+let known: string | null = null;
+let pending: Promise<string | null> = Promise.resolve(null);
+// Bumped on every lookup and reset, so an answer for a button that's gone doesn't land on the next one.
+let generation = 0;
+
+/** Starts asking; a failed answer counts as no slicer. */
+export function lookUpSlicer(ask: () => Promise<string | null>): Promise<string | null> {
+  const mine = ++generation;
+  known = null;
+  pending = ask()
+    .catch(() => null)
+    .then((slicer) => {
+      if (mine !== generation) return null;
+      known = slicer;
+      return slicer;
+    });
+  return pending;
+}
+
+/** The slicer as far as it's known right now, null until the instance has answered. */
+export function knownSlicer(): string | null {
+  return known;
+}
+
+/** Which copy a download makes, once the instance has answered. */
+export async function downloadTarget(): Promise<"flat" | "orca"> {
+  return normalizeTargetFor(await pending);
+}
+
+export function forgetSlicer(): void {
+  generation++;
+  known = null;
+  pending = Promise.resolve(null);
+}
