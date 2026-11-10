@@ -207,21 +207,33 @@ from the Actions tab. When it fails, the HTML report, traces and container logs 
 The README and website screenshots in `frontend/src/assets/screenshots/` are captured from a running
 instance with a populated library, by `regression/screenshots.mjs` (the extension's screenshots
 aren't covered). It signs in, captures every shot in the light and the dark theme at 1400×790 and 2× scale,
-and overwrites the files in `light/` and `dark/`. The account's theme and Categories/Folders choice are switched
-for the shots and restored afterwards, and a shot that can't be taken is reported without stopping the run. The import
-queue's rows are made up and answered in the browser, so nothing is queued on the instance.
+and overwrites the files in `light/` and `dark/`. The account's theme, Categories/Folders choice and print profiles
+layout are switched for the shots and restored afterwards, as are social features, which are on for the run so the
+sidebar has Explore and Chats. A shot that can't be taken is reported without stopping the run. The import queue's rows,
+Explore and who a collection is shared with are made up and answered in the browser, so nothing changes on the
+instance.
 
 ```bash
 cd regression
 THINGPORT_PASSWORD='…' npm run screenshots -- --url https://thingport.example --email you@example.com \
-  --model <id> --quality-model <id> --ai-description-model <id>
+  --model <id> --quality-model <id> --ai-description-model <id> --profiles-model <id> --license-model <id> \
+  --shared-collection <id>
 npm run screenshots -- --url … --email … --only 03,04     # just some shots
 ```
 
 Models are named by id: one for the details and 3D preview shots, one whose print quality check found problems,
 and one whose description AI rewrote (that shot is skipped without it). The customizer and collection sync shots
 take the library's first model with a script and first synced collection, unless `--generative-model` or
-`--synced-collection` names another.
+`--synced-collection` names another. The print profiles and licence shots need a model whose profiles and licence were
+read, which happens the first time its owner opens it, and the sharing shot a collection to open the form on.
+
+The connected-instances shots, 43-49, need two instances paired with each other, which a library instance usually
+isn't, so they're taken from a demo pair: one at home connecting to one on the internet through a link. Take 43-45 and
+48 on the home instance as its admin and 46, 47 and 49 on the other, 48 (`--connect-to` the other's address) before
+connecting and 49 before approving the request. For a pair on one machine under names it can't resolve, such as
+`workshop.lan` and `makerspace.example` behind a local proxy, `--host-rules` passes Chromium its
+`--host-resolver-rules`, Node needs the same names mapped for the script's own requests, and `--no-blur` keeps the
+made-up handles, `name@instance`, which are what the shots show.
 
 `--out` writes somewhere else instead, e.g. to compare before replacing. Self-signed certificates
 are accepted.
@@ -230,23 +242,25 @@ are accepted.
 
 The What's new pictures are a different set: cropped to the thing each one is about, WebP, and named after the
 release. `regression/release-shots.mjs` captures them from a running instance into `release-notes/screenshots/`,
-the same way, and skips the shots the instance has nothing for (no Claude AI, chats off, no second account) rather
-than failing the run. It holds the current release's shots; earlier ones are in its git history.
+the same way, and skips the shots the instance has nothing for (no model with print profiles, no partner instance)
+rather than failing the run. It holds the current release's shots; earlier ones are in its git history.
 
 ```bash
 cd regression
-THINGPORT_PASSWORD='…' THINGPORT_VIEWER_PASSWORD='…' npm run release-shots -- --url https://thingport.example \
-  --email you@example.com --viewer-email someone@example.com --studio-design <id> --chat <id>
-npm run release-shots -- --url … --email … --only studio-ai,chats   # just some shots
+THINGPORT_PASSWORD='…' npm run release-shots -- --url https://thingport.example --email you@example.com \
+  --profiles-model <id> --license-model <id> --shared-collection <id>
+npm run release-shots -- --url … --email … --only licence,providers   # just some shots
 ```
 
 A shot's file is what an item's `images` then names, so the two are written together -- an item naming a picture
 nothing captures leaves a gap in the dialog. Thingport Grab's own pictures come from
 `npm --prefix extension run screenshots` instead, and are converted to WebP by hand.
 
-What the shots show has to be on the instance first: a Studio design Ask AI built, social features and chats on, a
-public collection of yours for the viewer's Explore (which leaves out your own), and a chat with a model sent in it.
-The script only switches your Studio prompt layout and both accounts' themes for the run, and restores them.
+What the shots show has to be on the instance first: a model with print profiles and one with a licence, both read
+already. The people the sharing form and Explore show are made up in the browser, so social features needn't be on.
+The connected-instances shots (`explore-everywhere`, `partner-model`, `connect-link`, `partners`) are taken from a
+demo pair as above, with the same `--host-rules`, `--connect-to` and `--no-blur`. The script only switches your theme
+and print profiles layout for the run, and restores them.
 
 ## Quality checks
 

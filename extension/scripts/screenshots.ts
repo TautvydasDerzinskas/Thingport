@@ -576,6 +576,8 @@ async function main(): Promise<void> {
     await screenshotPopup(context, extensionId, "popup-features-dark.png", "dark", "#tab-offline");
     await screenshotPopup(context, extensionId, "popup-history.png", "light", "#tab-history");
     await screenshotPopup(context, extensionId, "popup-history-dark.png", "dark", "#tab-history");
+    await screenshotPopup(context, extensionId, "popup-appearance.png", "light", "#tab-appearance");
+    await screenshotPopup(context, extensionId, "popup-appearance-dark.png", "dark", "#tab-appearance");
 
     if (CORNERS_DIR) await captureCorners(page, models, mockState);
 
