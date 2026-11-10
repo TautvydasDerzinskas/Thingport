@@ -23,11 +23,26 @@ async function onSubreddit(subredditName: string, link: string): Promise<boolean
   return recent.some((post) => post.url === link || (post.body ?? "").includes(link));
 }
 
-async function claim(link: string): Promise<boolean> {
+/** The token this run holds `link` by, or null when another run holds it. */
+async function claim(link: string): Promise<string | null> {
   const key = `claim:${link}`;
   const token = `${Date.now()}:${Math.random()}`;
   await redis.set(key, token, { nx: true, expiration: new Date(Date.now() + CLAIM_MS) });
-  return (await redis.get(key)) === token;
+  return (await redis.get(key)) === token ? token : null;
+}
+
+/** Lets `link` go, unless the claim expired and another run holds it now: that one's is left alone. */
+async function release(link: string, token: string): Promise<void> {
+  const key = `claim:${link}`;
+  const txn = await redis.watch(key);
+  if ((await redis.get(key)) !== token) {
+    await txn.unwatch();
+    return;
+  }
+  // Fails, deleting nothing, if the key changed since it was watched.
+  await txn.multi();
+  await txn.del(key);
+  await txn.exec();
 }
 
 async function postKind(): Promise<PostKind> {
@@ -46,7 +61,8 @@ async function check(): Promise<string> {
   const done: string[] = [];
   for (const entry of due) {
     if (done.length === MAX_PER_RUN) break;
-    if (!(await claim(entry.link))) continue;
+    const token = await claim(entry.link);
+    if (!token) continue;
     try {
       if (await onSubreddit(subredditName, entry.link)) {
         await redis.hSet(POSTED_KEY, { [entry.link]: "found" });
@@ -57,7 +73,7 @@ async function check(): Promise<string> {
       console.log(`posted ${entry.link} as ${post.id}`);
       done.push(entry.title);
     } finally {
-      await redis.del(`claim:${entry.link}`);
+      await release(entry.link, token).catch(() => undefined);
     }
   }
   return done.length ? `Posted "${done.join('", "')}".` : "The new posts are already here.";

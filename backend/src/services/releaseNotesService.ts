@@ -408,7 +408,13 @@ const cache = new Map<string, { at: number; text: string | null }>();
 /** A failed fetch keeps the last good copy; misses are cached too, so a dialog opened offline doesn't wait each time. */
 async function fetchText(url: string, now = Date.now()): Promise<string | null> {
   // A checkout is read afresh, so notes being written show as soon as they're saved.
-  if (isLocal(url)) return fs.promises.readFile(new URL(url), "utf8").catch(() => null);
+  if (isLocal(url)) {
+    return fs.promises.readFile(new URL(url), "utf8").catch((error: NodeJS.ErrnoException) => {
+      // A missing file is a release without one; anything else is worth saying while notes are being written.
+      if (error.code !== "ENOENT") console.warn(`[release-notes] couldn't read ${url}: ${error.message}`);
+      return null;
+    });
+  }
   const hit = cache.get(url);
   if (hit && now - hit.at < CACHE_TTL_MS) return hit.text;
   let text: string | null = null;

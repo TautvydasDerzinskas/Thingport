@@ -19,7 +19,8 @@ function decode(text: string): string {
     .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, name: string) => {
       if (name[0] !== "#") return ENTITIES[name.toLowerCase()] ?? whole;
       const code = name[1] === "x" || name[1] === "X" ? parseInt(name.slice(2), 16) : parseInt(name.slice(1), 10);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : whole;
+      // fromCodePoint throws past the last code point, which would fail every run until the feed changed.
+      return Number.isInteger(code) && code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
     })
     .trim();
 }

@@ -30,6 +30,12 @@ describe("the blog feed", () => {
     expect(entries[2].description).toBe("");
   });
 
+  it("keeps a numeric entity past the last code point as it's written, rather than failing the whole feed", () => {
+    const xml = `<rss><channel><item><title>Big &#99999999; &#x110000; &#x1F600;</title>
+<link>https://thingport.net/blog/x/</link><pubDate>Tue, 10 Nov 2026 00:00:00 GMT</pubDate></item></channel></rss>`;
+    expect(parseFeed(xml)[0].title).toBe("Big &#99999999; &#x110000; 😀");
+  });
+
   it("posts only recent entries not posted yet, oldest first, and none dated ahead", () => {
     const entries = parseFeed(FEED);
     const now = new Date("2026-11-10T12:00:00Z");

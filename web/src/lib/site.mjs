@@ -257,7 +257,7 @@ export const DOCS = [
     title: "Licences",
     nav: "Licences",
     description:
-      "The licence each model was published under, shown on its page with a credit line, filtered by what it allows, and written beside its files as LICENSE.txt.",
+      "The licence each model was published under, shown on its page with a credit line, filtered by what it allows, and written beside its files as LICENSE.txt unless an admin turns that off.",
   },
   {
     slug: "features/downloads",

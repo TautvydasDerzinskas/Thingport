@@ -159,7 +159,8 @@ see it, by any part of their name or their whole email, or by their handle on a 
 ![Private, Shared or Public, and who it's shared with](../../../../release-notes/screenshots/1.6.0-share-collection.webp)
 
 They see it as they would a public one, with its models to open, download, open in a slicer and copy, and nobody else
-sees it at all. They're told, and find it under **Shared with you**, at the top of Explore.
+on your instance sees it. Shared with someone on a connected instance, it's sent to theirs, whose admins could see it
+too. They're told, and find it under **Shared with you**, at the top of Explore.
 
 ![Shared with you, at the top of Explore](../../../../release-notes/screenshots/1.6.0-shared-with-you.webp)
 

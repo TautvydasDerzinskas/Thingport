@@ -560,7 +560,10 @@ async function signIn(accountEmail, accountPassword) {
   await api("PATCH", "/settings/theme", { theme });
   await page.emulateMedia({ colorScheme: theme });
   const user = JSON.parse((await page.evaluate(() => localStorage.getItem("thingport_auth_user"))) || "{}");
-  return { page, api, displayName: user.display_name || user.displayName };
+  const displayName = user.display_name || user.displayName;
+  // Shots open the user menu by it, and an empty name would match every button.
+  if (!displayName) throw new Error(`Signed in as ${accountEmail}, but couldn't read its display name from the page`);
+  return { page, api, displayName };
 }
 
 let originalProfilesView;
