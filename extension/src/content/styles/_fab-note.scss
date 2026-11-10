@@ -275,7 +275,7 @@
 @media (prefers-reduced-motion: reduce) {
   .tg-fab-note {
     animation: none;
-    transform: translateX(50%);
+    transform: translateX(var(--tg-note-shift, 50%));
   }
 
   .tg-face__head,

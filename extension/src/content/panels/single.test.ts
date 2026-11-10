@@ -351,12 +351,21 @@ describe("the single-model panel", () => {
     });
 
     it("opens a model that has everything in Thingport, with nothing to add", async () => {
-      const html = await openInLibrary(held("complete", ["1", "2", "3", "4"]));
+      const html = await openInLibrary({ ...held("complete", ["1", "2", "3", "4"]), profiles: 4 });
 
       expect(html).toContain("Everything here is in your library: the model, its 4 print profiles and its details.");
       expect(html).toContain(`href="${INSTANCE}/models/print1"`);
       expect(html).toContain(">Open in Thingport</a>");
       expect(html).not.toContain("data-action");
+    });
+
+    it("draws that panel at once, asking the site nothing more", async () => {
+      // A site that never answers: the panel must not be waiting on it.
+      contentModules.snapmaker = { loadProfiles: () => new Promise(() => undefined) };
+      atProvider("snapmaker", { canQueue: false, importQueue: false }, { ...held("complete", ["1"]), profiles: 1 });
+      await loadSingleItem();
+
+      expect(last()).toContain("Everything here is in your library: the model, its print profile and its details.");
     });
 
     it("opens the library where the instance only says it has the model, not which it is", async () => {

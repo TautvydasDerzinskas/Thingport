@@ -191,7 +191,13 @@ async function init(): Promise<void> {
         // the instance doesn't name, as nothing could be filled in on it.
         const complete = (!gaps.length && !missingProfiles) || !status.print_id;
         library = complete
-          ? { state: "complete", printId: status.print_id ?? null, gaps: [], heldProfiles }
+          ? {
+              state: "complete",
+              printId: status.print_id ?? null,
+              gaps: [],
+              heldProfiles,
+              profiles: missing?.total ?? 0,
+            }
           : { state: "imported", printId: status.print_id ?? null, gaps, heldProfiles };
       } else if (status.state === "profile_missing" || status.state === "profile_unknown") {
         library = { state: status.state, printId: status.print_id ?? null, gaps, heldProfiles };

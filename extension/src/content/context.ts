@@ -10,6 +10,8 @@ export type LibraryState = {
   gaps: SourceGap[];
   /** The print profiles the model has a file of; null from an instance that doesn't say. */
   heldProfiles: string[] | null;
+  /** "complete": how many print profiles the page has, as counted when that was found out; 0 where it couldn't be. */
+  profiles?: number;
 };
 
 /** Set once per page by init(); title is filled in later. */

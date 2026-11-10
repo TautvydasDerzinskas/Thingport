@@ -156,7 +156,7 @@ export async function loadSingleItem(): Promise<void> {
   startScriptNote();
   // A MakerWorld profile is always one 3MF, so inspecting would only cost a download resolution.
   if (library?.state === "complete") {
-    renderPanel(await completeHtml());
+    renderPanel(completeHtml());
     return;
   }
   if (library) {
@@ -280,10 +280,11 @@ function libraryModelLink(): string {
 }
 
 /** Everything's in the library: the model, the page's print profiles and its details, so all there is to do is open
- *  it. Where the instance didn't say which model it is, only that it has it, the button opens the library. */
-async function completeHtml(): Promise<string> {
+ *  it. Where the instance didn't say which model it is, only that it has it, the button opens the library. Drawn at
+ *  once, from the count taken when the model was found complete: nothing more is asked of the site first. */
+function completeHtml(): string {
   const { library } = ctx();
-  const profiles = library?.printId ? ((await profileIdsFor())?.("all").length ?? 0) : 0;
+  const profiles = library?.printId ? (library.profiles ?? 0) : 0;
   const what =
     profiles > 1
       ? `the model, its ${profiles} print profiles and its details`
