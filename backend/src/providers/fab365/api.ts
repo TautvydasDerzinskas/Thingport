@@ -184,7 +184,7 @@ export type Fab365Tokens = { accessToken: string; refreshToken: string | null; e
 /** The access token still valid, as Fab365 says when asked to refresh one it hasn't let run out yet: `valid_Token`, as a
  *  whole word, so "invalid_token" is a refusal. Its code says nothing: `E00002` also comes with "Login is required". */
 function stillValid(data: Record<string, unknown> | null): boolean {
-  return /\bvalid[_\s]?token\b/i.test(asText(data?.message) ?? "");
+  return /\bvalid_token\b/i.test(asText(data?.message) ?? "");
 }
 
 /** Fab365's own renewal, as the site's pages make it on a 401: the old access token as the Bearer, the refresh token in
@@ -194,9 +194,10 @@ function stillValid(data: Record<string, unknown> | null): boolean {
  *
  *  Tested live 2026-11-09: the refresh token is *reusable* (renewing with the same one twice both succeeded), so the
  *  backend and the browser coexist -- a backend renewal doesn't sign the web session out. Its refusals don't follow the
- *  HTTP status: a forged or malformed refresh token gets a 200 with `C00008`, a missing one a 501 with `E00002` and
- *  "Login is required". So any answer of Fab365's own that is neither a new pair nor `valid_Token` is a refusal, whatever
- *  its status; one that isn't its JSON envelope, and a network error, throw as themselves, so an outage isn't one. */
+ *  HTTP status: a forged or malformed refresh token gets a 200 with `C00008`, an expired or missing one a 501 with
+ *  `E00002` and "Login is required". So any answer of Fab365's own that is neither a new pair nor `valid_Token` is a
+ *  refusal, whatever its status; one that isn't its JSON envelope, and a network error, throw as themselves, so an
+ *  outage isn't one. */
 export async function refreshFab365Session(secret: Fab365Secret): Promise<Fab365Tokens> {
   if (!secret.refreshToken) throw new Fab365AuthError();
   const res = await api("/v3_1/refresh", {

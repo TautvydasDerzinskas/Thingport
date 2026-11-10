@@ -32,6 +32,7 @@ export const fab365Session: SessionSource = {
   async read() {
     const tabs = await chrome.tabs.query({ url: [...fab365.extension.origins] }).catch(() => []);
     let readAny = false;
+    let unreadable = false;
     for (const tab of tabs) {
       if (tab.id === undefined) continue;
       try {
@@ -44,10 +45,14 @@ export const fab365Session: SessionSource = {
           body: { access_token: tokens.access, refresh_token: tokens.refresh },
           userId: tokens.userId,
         };
-      } catch {} // A tab still loading, or one Grab may not reach: another may answer.
+      } catch {
+        // A tab still loading, or one Grab may not reach: another may answer, but this one may hold the sign-in.
+        unreadable = true;
+      }
     }
-    // Signed out only when a tab said so; with none to ask, nothing is known.
-    return readAny ? null : undefined;
+    // Signed out only when every tab asked said so. fab365.net and www.fab365.net keep their storage apart, so a tab
+    // without the sign-in doesn't speak for one that couldn't be read; with none to ask, nothing is known either.
+    return readAny && !unreadable ? null : undefined;
   },
   signedOut: { access_token: null, refresh_token: null },
 };

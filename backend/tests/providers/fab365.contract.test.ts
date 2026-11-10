@@ -291,7 +291,8 @@ describe("Fab365 specifics", () => {
     const secret = { accessToken: ACCESS, refreshToken: REFRESH };
     const answer = (body: object, status = 200) =>
       ctx.install(async ({ url }) => (url.pathname === `${API}/v3_1/refresh` ? json(body, status) : undefined));
-    for (const message of ["invalid_token", "Invalid Token"]) {
+    // Only the word Fab365 really sends: a message that merely mentions a valid token isn't one.
+    for (const message of ["invalid_token", "Invalid Token", "valid token required"]) {
       answer({ returnCode: "E00099", message });
       await expect(refreshFab365Session(secret)).rejects.toBeInstanceOf(Fab365AuthError);
     }
