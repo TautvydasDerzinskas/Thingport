@@ -337,7 +337,8 @@ The first time a backend starts on a newer version than it last ran, every user 
 the What's new dialog (admins can reopen it from Update Checker in Administration). A fresh installation doesn't get this notification. There's no need to add a "Welcome to
 X.Y.Z" entry to `system-notifications.json` for this any more.
 
-The dialog fetches its content from `main`, so it can be written after the release is out:
+The dialog fetches its content from `main`, so it can be written after the release is out (a dev backend reads
+its own checkout instead, for previews, as described below):
 
 1. [`release-notes/latest-release-notes.json`](../release-notes/latest-release-notes.json) when its `version` is the
    instance's backend version.
@@ -391,7 +392,13 @@ version inside it: one that names another is never shown. Then replace the file'
   whole file, which then falls back to the changelog, so check the longest one-line fixes.
 - A file that doesn't parse falls back to the changelog, as does one naming a version outside the running
   release's `x.y` line. One naming an earlier patch of that line still counts, for the quiet hotfixes below.
-- `RELEASE_NOTES_URL` points a backend at another copy of the repo files; an empty value turns fetching off.
+- `RELEASE_NOTES_URL` points a backend at another copy of the repo files, or a `file://` URL at a checkout; an empty
+  value turns fetching off.
+
+To preview the notes before they're pushed, open What's new on a backend started with `npm run dev`: it reads these
+files from the checkout it runs in rather than from `main`, afresh each time, and shows the latest file under its own
+version, whatever `package.json` names, with its pictures. A file that doesn't parse falls back to the changelog as
+it would for everyone, and the backend's console says what's wrong with it.
 
 To update without telling anyone, e.g. a hotfix straight after a release, add its version to
 [`release-notes/quiet-releases.json`](../release-notes/quiet-releases.json) in the same release PR, so it's on `main`

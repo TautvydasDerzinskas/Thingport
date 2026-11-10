@@ -35,7 +35,7 @@ import providerCollectionsRoutes from "./routes/providerCollections";
 import bookmarksRoutes from "./routes/bookmarks";
 import searchRoutes from "./routes/search";
 import notificationsRoutes from "./routes/notifications";
-import releaseNotesRoutes from "./routes/releaseNotes";
+import releaseNotesRoutes, { localFilesRoutes as releaseNotesFilesRoutes } from "./routes/releaseNotes";
 import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
 import widgetRoutes from "./routes/widgets";
@@ -86,6 +86,8 @@ export function createApp(): Express {
   app.use("/api", iconRoutes);
   // And a cover's.
   app.use("/api", profileRoutes);
+  // And the pictures of release notes read from a checkout.
+  app.use("/api", releaseNotesFilesRoutes);
   app.use("/api", captchaRoutes);
   app.use("/api", authRoutes);
   app.use("/api", oidcRoutes);

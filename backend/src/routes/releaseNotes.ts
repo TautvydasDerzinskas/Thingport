@@ -1,10 +1,10 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { asyncHandler } from "../utils/asyncHandler";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
-import { getReleaseNotes } from "../services/releaseNotesService";
+import { LOCAL_FILES_PATH, getReleaseNotes, localReleaseNotesDir } from "../services/releaseNotesService";
 
 const router = Router();
 
@@ -31,5 +31,17 @@ router.get(
     res.json(notes);
   }),
 );
+
+/** The pictures of notes read from a checkout. No sign-in, since an <img> can't send the token, and they're the
+ *  repo's own files. */
+export function localFilesRouter(dir: string): Router {
+  return Router().use(LOCAL_FILES_PATH, express.static(dir, { index: false, dotfiles: "deny" }), (_req, res) => {
+    res.status(404).json({ detail: "Not found" });
+  });
+}
+
+const localDir = localReleaseNotesDir();
+/** Empty unless the notes are read from a checkout, as under `npm run dev`. */
+export const localFilesRoutes = localDir ? localFilesRouter(localDir) : Router();
 
 export default router;
