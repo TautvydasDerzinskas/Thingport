@@ -21,8 +21,8 @@ const EN: Record<PageId, string> = {
   adminTools: "Tools",
   adminAi: "AI",
   adminUsers: "Users",
+  adminSocial: "Social",
   adminLogs: "Logs",
-  adminTriggers: "Triggers",
   adminConnections: "Connections",
   adminCaptcha: "Captcha",
 };
@@ -55,6 +55,12 @@ describe("matchPages", () => {
     expect(ids("health", true)).toEqual(["admin"]);
     expect(ids("oidc", true)).toEqual(["adminAuth"]);
     expect(ids("admin", true)).toHaveLength(SEARCH_PAGES.filter((page) => page.adminOnly).length);
+  });
+
+  it("finds the social switches on Social, not Users", () => {
+    expect(ids("social", true)).toEqual(["adminSocial"]);
+    expect(ids("rooms", true)).toEqual(["adminSocial"]);
+    expect(ids("public collections", true, true)).toContain("adminSocial");
   });
 
   it("finds the import queue for everyone, by a path that opens it for them", () => {

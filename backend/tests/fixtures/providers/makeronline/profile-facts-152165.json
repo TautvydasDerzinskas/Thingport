@@ -1,0 +1,111 @@
+{
+  "code": 0,
+  "data": {
+    "id": 152165,
+    "user_id": "ed1f6451-e902-44f9-9cb2-2bf7b2b26f07",
+    "print_profiles": [
+      {
+        "id": 48891,
+        "title": "Chute + Basket - .2mm",
+        "desc": "<p>Already oriented with the supports in the right places.</p><p><br></p>",
+        "user_id": "ed1f6451-e902-44f9-9cb2-2bf7b2b26f07",
+        "user_display_name": "ezafs",
+        "is_author": 1,
+        "print_time_label": "6h41m",
+        "printer_label": "Kobra S1、Kobra S1 Max、Kobra 3、Kobra 2、Kobra 4、Kobra X、Kobra 3 V2、Kobra 3 Max、Kobra 2 Max、Kobra 2 Pro、Kobra 2 Neo、Kobra 2 Plus",
+        "nozzle": "0.4",
+        "plate_count": 2,
+        "materials_label": [
+          {
+            "paint_color": "0,64,128",
+            "material_type": "PLA",
+            "filament_used_g": 191.19
+          }
+        ],
+        "files": [
+          {
+            "id": 1,
+            "name": "",
+            "print_time": "2h33m",
+            "nozzle": "",
+            "layer": 0.2,
+            "materials": [
+              {
+                "paint_color": "0,64,128",
+                "material_type": "PLA",
+                "filament_used_g": 78.92
+              }
+            ],
+            "print_profile_id": 48891
+          },
+          {
+            "id": 2,
+            "name": "",
+            "print_time": "4h8m",
+            "nozzle": "",
+            "layer": 0.2,
+            "materials": [
+              {
+                "paint_color": "0,64,128",
+                "material_type": "PLA",
+                "filament_used_g": 112.27
+              }
+            ],
+            "print_profile_id": 48891
+          }
+        ]
+      },
+      {
+        "id": 190636,
+        "title": "Kobra S1 Poop Chute ubgrade",
+        "desc": "",
+        "user_id": "accf3507-6a6d-401f-afdb-31fea3ea6612",
+        "user_display_name": "szymon",
+        "is_author": 0,
+        "print_time_label": "9h6m",
+        "printer_label": "Kobra S1、Kobra S1 Max、Kobra 3、Kobra 4、Kobra X、Kobra 3 V2、Kobra 3 Max、Kobra 2 Max、Kobra 2 Plus",
+        "nozzle": "0.4",
+        "plate_count": 2,
+        "materials_label": [
+          {
+            "paint_color": "0,64,128",
+            "material_type": "PLA",
+            "filament_used_g": 254.76999999999998
+          }
+        ],
+        "files": [
+          {
+            "id": 1,
+            "name": "",
+            "print_time": "2h33m",
+            "nozzle": "",
+            "layer": 0.2,
+            "materials": [
+              {
+                "paint_color": "0,64,128",
+                "material_type": "PLA",
+                "filament_used_g": 88.26
+              }
+            ],
+            "print_profile_id": 190636
+          },
+          {
+            "id": 2,
+            "name": "",
+            "print_time": "6h33m",
+            "nozzle": "",
+            "layer": 0.2,
+            "materials": [
+              {
+                "paint_color": "0,64,128",
+                "material_type": "PLA",
+                "filament_used_g": 166.51
+              }
+            ],
+            "print_profile_id": 190636
+          }
+        ]
+      }
+    ]
+  }
+}

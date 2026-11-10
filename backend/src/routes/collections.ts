@@ -29,7 +29,9 @@ import {
 import { printOutsByIds } from "../services/printLoader";
 import { relocatePrintsForToken } from "../services/printService";
 import { createLog } from "../services/auditLog";
-import { toCollectionOut, type PrintOut } from "../dto";
+import { toCollectionOut, visibilityOut, type PrintOut } from "../dto";
+import { tellGained, visibilityAsked, withSharedWith } from "../services/collectionSharing";
+import { kickSharing, queueCollectionsGone, queueSharing } from "../federation/sharedCollections";
 import { syncToolModelsSoon } from "../services/toolsService";
 import { collectionOutsFor, libraryCopyIds, readableCollection, readablePrintWhere } from "../services/socialService";
 import { copyPrintToLibrary } from "../services/modelCopyService";
@@ -41,7 +43,10 @@ const collectionSchema = z.object({
   name: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).nullable().optional(),
   tags: z.array(z.string()).default([]),
-  // Left as it is when not sent. Kept while social features are off, and only shown to others while they're on.
+  // Who besides its owner sees it: nobody, the people it's shared with (changed at /collections/:id/sharing), or
+  // everyone. Left as it is when not sent. Kept while social features are off, and only shown to others while they're
+  // on. `is_public` is how older clients ask; `visibility` wins when both are sent.
+  visibility: z.enum(["private", "shared", "public"]).optional(),
   is_public: z.boolean().optional(),
 });
 
@@ -115,15 +120,18 @@ router.get(
     const printOuts = await printOutsByIds(req.userId!, coverPrintIds);
     res.json([
       ...systemCollections,
-      ...collections.map((c) =>
-        toCollectionOut(
-          c,
-          c._count.items,
-          c.items.map((i) => printOuts.get(i.printId)).filter((p): p is PrintOut => Boolean(p)),
-          bookmarkedIds.has(c.id),
-          c.sync,
+      ...(await withSharedWith(
+        req.userId!,
+        collections.map((c) =>
+          toCollectionOut(
+            c,
+            c._count.items,
+            c.items.map((i) => printOuts.get(i.printId)).filter((p): p is PrintOut => Boolean(p)),
+            bookmarkedIds.has(c.id),
+            c.sync,
+          ),
         ),
-      ),
+      )),
     ]);
   }),
 );
@@ -132,7 +140,7 @@ router.post(
   "/collections",
   asyncHandler(async (req, res) => {
     const body = parseBody(collectionSchema, req.body);
-    const collection = await createCollection(req.userId!, { ...body, isPublic: body.is_public });
+    const collection = await createCollection(req.userId!, { ...body, visibility: visibilityAsked(body, "PRIVATE") });
     res.json(toCollectionOut(collection, 0, [], false));
   }),
 );
@@ -160,11 +168,10 @@ router.post(
       prisma.bookmark.findFirst({ where: { userId: req.userId, type: "COLLECTION", collectionId: primary.id } }),
       prisma.collectionSync.findUnique({ where: { collectionId: primary.id } }),
     ]);
-    res.json({
-      collection: toCollectionOut(primary, itemCount, covers, Boolean(bookmarked), sync),
-      merged_ids: merged.map((c) => c.id),
-      added,
-    });
+    const [collection] = await withSharedWith(req.userId!, [
+      toCollectionOut(primary, itemCount, covers, Boolean(bookmarked), sync),
+    ]);
+    res.json({ collection, merged_ids: merged.map((c) => c.id), added });
     void createLog({
       userId: req.userId!,
       action: "collections_merged",
@@ -204,7 +211,7 @@ router.get(
       include: { _count: { select: { items: true } }, sync: true },
     });
     if (!collection) {
-      // Another user's public one, while social features are on.
+      // Another user's public one, or one shared with the viewer, while social features are on.
       const shared = await readableCollection(req.userId!, req.params.id);
       if (!shared) throw new HttpError(404, "Collection not found");
       res.json((await collectionOutsFor(req.userId!, [shared]))[0]);
@@ -215,7 +222,7 @@ router.get(
         where: { userId: req.userId, type: "COLLECTION", collectionId: collection.id },
       }),
     );
-    res.json(
+    const [out] = await withSharedWith(req.userId!, [
       toCollectionOut(
         collection,
         collection._count.items,
@@ -223,7 +230,8 @@ router.get(
         bookmarked,
         collection.sync,
       ),
-    );
+    ]);
+    res.json(out);
   }),
 );
 
@@ -234,20 +242,37 @@ router.patch(
       throw new HttpError(400, "This collection can't be edited");
     }
     const body = parseBody(collectionSchema, req.body);
-    const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
-    if (!collection) throw new HttpError(404, "Collection not found");
-    await assertCollectionNameAvailable(req.userId!, body.name, collection.id);
-    const renamed = body.name !== collection.name;
-    const updated = await prisma.collection.update({
-      where: { id: collection.id },
-      data: {
-        name: body.name,
-        nameNormalized: normalizeCollectionName(body.name),
-        description: body.description?.trim() || null,
-        tags: normalizeTags(body.tags),
-        isPublic: body.is_public ?? collection.isPublic,
-      },
+    await assertCollectionNameAvailable(req.userId!, body.name, req.params.id);
+    // Visibility is written only when it's asked for, so a save of the name alone can't put back what was read over a
+    // change made meanwhile; and what it's compared with is read under the lock /sharing changes it under.
+    const asked = body.visibility !== undefined || body.is_public !== undefined;
+    const { collection, updated } = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${req.params.id} FOR UPDATE`;
+      const found = await tx.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
+      if (!found) throw new HttpError(404, "Collection not found");
+      // A tool's, whatever way the request came: the tool keeps it as it brought it.
+      if (found.toolId) {
+        throw new HttpError(403, `"${found.name}" belongs to a tool and can't be changed`, "TOOL_OWNED");
+      }
+      const saved = await tx.collection.update({
+        where: { id: found.id },
+        data: {
+          name: body.name,
+          nameNormalized: normalizeCollectionName(body.name),
+          description: body.description?.trim() || null,
+          tags: normalizeTags(body.tags),
+          ...(asked ? { visibility: visibilityAsked(body, found.visibility) } : {}),
+        },
+      });
+      // Partners with people on its list hear of a new name or visibility now, not at their next read: queued with
+      // the change, sent once it's kept.
+      if (saved.visibility !== found.visibility || saved.name !== found.name) await queueSharing(tx, saved.id);
+      // Whoever can see it now and couldn't is told with the change (nobody while social features are off).
+      if (saved.visibility !== found.visibility) await tellGained(tx, found, saved);
+      return { collection: found, updated: saved };
     });
+    kickSharing();
+    const renamed = body.name !== collection.name;
     if (renamed) await relocatePrintsForToken("collection", await collectionPrintIds(updated.id));
     const [itemCount, covers, bookmarked, sync] = await Promise.all([
       prisma.collectionItem.count({ where: { collectionId: updated.id } }),
@@ -255,14 +280,17 @@ router.patch(
       prisma.bookmark.findFirst({ where: { userId: req.userId, type: "COLLECTION", collectionId: updated.id } }),
       prisma.collectionSync.findUnique({ where: { collectionId: updated.id } }),
     ]);
-    res.json(toCollectionOut(updated, itemCount, covers, Boolean(bookmarked), sync));
+    const [out] = await withSharedWith(req.userId!, [
+      toCollectionOut(updated, itemCount, covers, Boolean(bookmarked), sync),
+    ]);
+    res.json(out);
     void createLog({
       userId: req.userId!,
       action: "collection_edited",
       targetId: updated.id,
       details: {
         name: updated.name,
-        ...(updated.isPublic !== collection.isPublic ? { is_public: updated.isPublic } : {}),
+        ...(updated.visibility !== collection.visibility ? { visibility: visibilityOut(updated.visibility) } : {}),
       },
     });
   }),
@@ -277,7 +305,11 @@ router.delete(
     const collection = await prisma.collection.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!collection) throw new HttpError(404, "Collection not found");
     const printIds = await collectionPrintIds(collection.id);
-    await prisma.collection.delete({ where: { id: collection.id } });
+    await prisma.$transaction(async (tx) => {
+      await queueCollectionsGone(tx, [collection.id]);
+      await tx.collection.delete({ where: { id: collection.id } });
+    });
+    kickSharing();
     await relocatePrintsForToken("collection", printIds);
     res.json({ ok: true });
     void createLog({

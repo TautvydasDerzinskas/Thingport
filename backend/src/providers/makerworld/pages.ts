@@ -1,4 +1,4 @@
-// MakerWorld's model pages, read for what its cloud API gives a signed-in user: the design, and its author.
+// MakerWorld's model pages, read for what its cloud API gives a signed-in user: the design.
 
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_HTML_MAX_BYTES } from "../../config";
 import { maybeSleep } from "../../utils/concurrency";
@@ -6,12 +6,10 @@ import { HttpError, isHtmlContentType } from "../../utils/fileUtils";
 import { readCapped } from "../../utils/readCapped";
 import { CLOUDFLARE_BLOCKED_CODE } from "../../services/flaresolverr";
 import { fetchWithGuard } from "../../services/guardedFetch";
-import { extractNextDataJson, type ImportedAuthorInfo } from "../../services/importResolvers";
+import { extractNextDataJson } from "../../services/importResolvers";
 import { makerworldHtmlHeaders } from "./pageData";
-import { makerworldPageMetadata } from "./pageData";
 import { makerworldModelUrl } from "./urls.generated";
 import {
-  completeMakerworldAuthor,
   extractMakerworldBearerToken,
   fetchMakerworldDesign,
   makerworldCaptchaCooloffActive,
@@ -53,28 +51,4 @@ export async function fetchMakerworldDesignForImport(
 ): Promise<Record<string, unknown> | null> {
   const bearer = extractMakerworldBearerToken(cookie);
   return bearer ? fetchMakerworldDesign(designId, bearer, paceMs) : fetchMakerworldPageDesign(designId, cookie, paceMs);
-}
-
-/** Fallback for fetchMakerworldDesignAuthor when there's no MakerWorld login. */
-export async function fetchMakerworldPageAuthor(
-  designId: string,
-  cookie: string | null,
-  paceMs?: number,
-): Promise<ImportedAuthorInfo | null> {
-  if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
-  const url = makerworldModelUrl(designId);
-  await maybeSleep(paceMs);
-  let res: Response;
-  try {
-    res = await fetchWithGuard(url, {
-      "User-Agent": IMPORT_BROWSER_USER_AGENT,
-      Accept: "*/*",
-      ...makerworldHtmlHeaders(url, cookie),
-    });
-  } catch {
-    return null;
-  }
-  if (!isHtmlContentType(res.headers.get("content-type") || "")) return null;
-  const { buffer } = await readCapped(res, IMPORT_HTML_MAX_BYTES);
-  return completeMakerworldAuthor(makerworldPageMetadata(buffer.toString("utf-8")).author, paceMs);
 }

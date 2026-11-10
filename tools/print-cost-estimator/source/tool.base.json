@@ -10,7 +10,7 @@
   },
   "hosts": [],
   "category": "calculators",
-  "locales": ["en", "lt", "es", "fr"],
+  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be"],
   "screenshots": [
     {
       "file": "screenshots/estimate.webp",

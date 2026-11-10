@@ -18,6 +18,7 @@ import {
   parseCgtraderModelUrl,
   urls,
 } from "./urls.generated";
+import { cgtraderLicense } from "./license";
 import manifest from "./manifest.generated";
 import { freshWafToken, isWafChallenge, markWafBlocked, wafTokenFor } from "./waf";
 export {
@@ -313,17 +314,9 @@ export function cgtraderCategoryPaths(path: string): string[] {
   return m ? [`${m[1]}/${m[2]}`.toLowerCase(), m[1].toLowerCase()] : [];
 }
 
-const LICENSES: Record<string, string> = {
-  royalty_free: "Royalty free",
-  royalty_free_no_ai: "Royalty free, not for AI training",
-  editorial: "Editorial use only",
-  custom: "Custom",
-};
-
 /** The details its page lists beside the model that matter for printing it, as a short markdown list. */
 function detailsMarkdown(top: Record<string, unknown>): string | null {
   const details = asRecord(top.detailsArea) ?? {};
-  const pricing = asRecord(top.pricingArea) ?? {};
   const formats = unique(
     [details.ungroupedFormats, details.nativeFormats, details.exchangeFormats]
       .flatMap(recordsOf)
@@ -331,7 +324,6 @@ function detailsMarkdown(top: Record<string, unknown>): string | null {
   );
   const parts = asCount(asRecord(details.multiplePartsDetails)?.numberOfParts);
   const polygons = asCount(details.polygons);
-  const license = asText(pricing.license);
   const rows = [
     details.readyFor3dPrinting === true && "**Ready for 3D printing**",
     details.readyFor3dPrinting === true && details.isPreSupported === true && "**Pre-supported**",
@@ -339,7 +331,6 @@ function detailsMarkdown(top: Record<string, unknown>): string | null {
     asText(details.units) && `**Units:** ${asText(details.units)}`,
     formats.length && `**Formats:** ${formats.join(", ")}`,
     polygons && `**Polygons:** ${polygons.toLocaleString("en-US")}`,
-    license && `**License:** ${LICENSES[license] ?? license.replace(/_/g, " ")}`,
   ].filter((row): row is string => typeof row === "string");
   return rows.length ? rows.map((row) => `- ${row}`).join("\n") : null;
 }
@@ -368,6 +359,7 @@ export function cgtraderModelFromPage(
 
   const tags = unique(recordsOf(describe.relatedTags).map((tag) => clean(asText(tag.text))));
   if (tags.length) meta.tags = tags;
+  meta.license = cgtraderLicense(asText(pricing.license), asText(pricing.customLicense));
 
   // Its gallery, at the size its viewer opens; the site's own renders of the model come along with the designer's.
   const images = unique(

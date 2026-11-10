@@ -1,5 +1,7 @@
 // The square, clickable thumbnails of the History tab's grids.
 
+import { opensInTab } from "./dom";
+
 /** `image` is a data URL or a provider's own image URL; without one, or if it fails, the title's first letter. */
 export function thumbLink({
   url,
@@ -21,12 +23,7 @@ export function thumbLink({
   link.href = url;
   link.title = title || "";
   link.setAttribute("aria-label", title || label);
-  // A plain link click in a popup isn't guaranteed to open a tab, and the popup should close after.
-  link.addEventListener("click", (event) => {
-    event.preventDefault();
-    void chrome.tabs.create({ url });
-    window.close();
-  });
+  opensInTab(link);
 
   const placeholder = () => {
     link.prepend((title || "?").trim().charAt(0).toUpperCase() || "?");

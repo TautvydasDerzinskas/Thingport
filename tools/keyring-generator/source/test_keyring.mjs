@@ -30,9 +30,32 @@ import { edgeSizes } from "./finishing.js";
 import { creasedGeometry } from "./meshNormals.js";
 import { obj, stl, threeMf } from "./files.js";
 import { DEFAULTS } from "./engine.js";
+import { countWord } from "./ui.js";
+import { translator } from "../../../frontend/src/sdk/labels.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(here, "../../..");
+
+// A count's word has a key per plural form, "{base}.one" to "{base}.other", and each language has the forms its own
+// rules reach: Russian a few and a many that English hasn't.
+const FORMS = ["zero", "one", "two", "few", "many", "other"];
+const PLURALS = new Set(
+  Object.keys(JSON.parse(fs.readFileSync(path.resolve(here, "../locales/en.json"), "utf8")))
+    .filter((key) => key.endsWith(".other"))
+    .map((key) => key.slice(0, -".other".length)),
+);
+const baseOf = (key) => {
+  const at = key.lastIndexOf(".");
+  return PLURALS.has(key.slice(0, at)) && FORMS.includes(key.slice(at + 1)) ? key.slice(0, at) : key;
+};
+/** The forms a language's whole numbers need that it has neither of nor an `.other` for. */
+const missingForms = (code, words) => {
+  const rules = new Intl.PluralRules(code);
+  const forms = new Set(Array.from({ length: 201 }, (_, count) => rules.select(count)));
+  return [...PLURALS].flatMap((base) =>
+    [...forms].filter((form) => !words[`${base}.${form}`] && !words[`${base}.other`]).map((form) => `${base}.${form}`),
+  );
+};
 
 let passed = 0;
 let skipped = 0;
@@ -411,13 +434,41 @@ const STRINGS = Object.fromEntries(
     .map((name) => [name.slice(0, -".json".length), JSON.parse(fs.readFileSync(path.join(localeDir, name), "utf8"))]),
 );
 
+await test("part counts take each language's own plural forms, 21 included", () => {
+  const word = (code, count) => countWord(translator(STRINGS, code), "bar.pieces", count);
+  assert.deepEqual(
+    [1, 2, 5, 21, 22].map((count) => word("ru", count)),
+    ["деталь", "детали", "деталей", "деталь", "детали"],
+  );
+  assert.deepEqual(
+    [1, 2, 10, 21].map((count) => word("lt", count)),
+    ["dalis", "dalys", "dalių", "dalis"],
+  );
+  assert.deepEqual(
+    [1, 2].map((count) => word("en", count)),
+    ["piece", "pieces"],
+  );
+  // An older Thingport's t() has no plural forms: it still gets a word rather than the key.
+  assert.equal(
+    countWord((key) => STRINGS.en[key] ?? key, "bar.pieces", 3),
+    "pieces",
+  );
+  // There the tool picks the form: two pieces in Lithuanian are "dalys", not the other form's "dalių".
+  const older = (key) => STRINGS.lt[key] ?? STRINGS.en[key] ?? key;
+  assert.deepEqual(
+    [1, 2, 10, 21].map((count) => countWord(older, "bar.pieces", count, "lt")),
+    ["dalis", "dalys", "dalių", "dalis"],
+  );
+});
+
 // ---- the words ---------------------------------------------------------------------------------------------------
 
 await test("every language says everything, and nothing extra", () => {
-  const english = Object.keys(STRINGS.en);
+  const english = [...new Set(Object.keys(STRINGS.en).map(baseOf))];
   assert.ok(english.length > 150, `only ${english.length} strings`);
   for (const [code, words] of Object.entries(STRINGS)) {
-    const keys = Object.keys(words);
+    const keys = [...new Set(Object.keys(words).map(baseOf))];
+    assert.deepEqual(missingForms(code, words), [], `${code} is missing these plural forms`);
     assert.deepEqual(
       english.filter((key) => !keys.includes(key)),
       [],
@@ -436,7 +487,8 @@ await test("a translation fills in the same blanks as the English", () => {
   for (const [code, words] of Object.entries(STRINGS)) {
     if (code === "en") continue;
     for (const [key, text] of Object.entries(words)) {
-      assert.deepEqual(blanks(text), blanks(STRINGS.en[key]), `${code} ${key} fills in different things`);
+      const english = STRINGS.en[key] ?? STRINGS.en[`${baseOf(key)}.other`];
+      assert.deepEqual(blanks(text), blanks(english), `${code} ${key} fills in different things`);
     }
   }
 });
@@ -474,7 +526,7 @@ await test("the window asks for labels that exist, and none are left unused", ()
   // What caught this before: a panel was taken out and its labels stayed behind, translated into four languages
   // nobody would ever read. This checks both directions.
   const window = fs.readFileSync(path.join(here, "ui.js"), "utf8");
-  const english = Object.keys(STRINGS.en);
+  const english = [...new Set(Object.keys(STRINGS.en).map(baseOf))];
 
   // Asked for by name — anywhere, since a label is often picked by a ternary inside the call.
   const asked = new Set([...window.matchAll(/"([a-z][\w-]*(?:\.[\w-]+)+)"/g)].map((match) => match[1]));

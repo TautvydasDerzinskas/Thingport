@@ -1,0 +1,142 @@
+@use "../../styles/bubble-looks" as looks;
+
+// The floating icon's style and corner, as the popup's Appearance tab picked them: `data-style` and `data-place` on
+// the host (shell.ts, shared/bubble.ts). The icon, the panel column above it and the note under it are all placed
+// from the variables below (_fab.scss, _panel.scss, _fab-note.scss), so a new pick moves every one of them at once,
+// on a page already open too. Without either attribute, it's the white bubble in the bottom right corner.
+
+// The top corners sit below the sites' own header bars, rather than over their menus.
+$top: 88px;
+// Between the icon and the panel.
+$gap: 10px;
+// The panel column's distance from the window's side, whichever the icon's.
+$stack-side: 24px;
+
+:host {
+  // From the window's side, and from its top or bottom edge.
+  --tg-fab-side: 24px;
+  --tg-fab-end: 24px;
+  // The icon's size, for what's placed by it.
+  --tg-fab-w: 56px;
+  --tg-fab-h: 56px;
+  // Where the panel scales from: the icon's centre, from the panel column's side and from its edge nearest the icon.
+  --tg-stack-x: calc(100% - (var(--tg-fab-side) + var(--tg-fab-w) / 2 - #{$stack-side}));
+  --tg-stack-y: calc(100% + #{$gap} + var(--tg-fab-h) / 2);
+}
+
+// ---- Styles ----
+
+:host([data-style="pill"]) {
+  --tg-fab-h: 44px;
+  // Its width is its word's: about this, for where the panel scales from.
+  --tg-fab-w: 96px;
+}
+
+:host([data-style="mini"]) {
+  --tg-fab-w: 40px;
+  --tg-fab-h: 40px;
+}
+
+:host([data-style="edge"]) {
+  --tg-fab-side: 0px;
+  --tg-fab-w: 46px;
+  --tg-fab-h: 52px;
+}
+
+:host([data-style="pill"]) .tg-fab {
+  @include looks.pill;
+}
+
+:host([data-style="mini"]) .tg-fab {
+  @include looks.mini;
+}
+
+:host([data-style="brand"]) .tg-fab {
+  @include looks.brand;
+}
+
+:host([data-style="glass"]) .tg-fab {
+  @include looks.glass;
+}
+
+:host([data-style="edge"]) .tg-fab {
+  @include looks.edge(right);
+}
+
+:host([data-style="edge"][data-place$="-left"]) .tg-fab {
+  @include looks.edge(left);
+}
+
+// ---- Corners ----
+
+// The left ones: the bottom right's, mirrored.
+:host([data-place$="-left"]) {
+  --tg-stack-x: calc(var(--tg-fab-side) + var(--tg-fab-w) / 2 - #{$stack-side});
+  --tg-note-shift: -50%;
+}
+
+:host([data-place$="-left"]) .tg-fab {
+  right: auto;
+  left: var(--tg-fab-side);
+}
+
+:host([data-place$="-left"]) .tg-panel-stack {
+  right: auto;
+  left: $stack-side;
+}
+
+:host([data-place$="-left"]) .tg-fab-note {
+  right: auto;
+  left: calc(var(--tg-fab-side) + var(--tg-fab-w) / 2);
+}
+
+// The top ones: below the header, with the panel opening downward and the note under the icon as ever.
+:host([data-place^="top-"]) {
+  --tg-fab-end: #{$top};
+  --tg-stack-y: calc(-#{$gap} - var(--tg-fab-h) / 2);
+}
+
+:host([data-place^="top-"]) .tg-fab {
+  top: var(--tg-fab-end);
+  bottom: auto;
+}
+
+:host([data-place^="top-"]) .tg-panel-stack {
+  top: calc(var(--tg-fab-end) + var(--tg-fab-h) + #{$gap});
+  bottom: auto;
+}
+
+// It opens downward from lower on the page, so it stops short of the window's foot.
+:host([data-place^="top-"]) .tg-panel {
+  max-height: min(70vh, calc(100vh - var(--tg-fab-end) - var(--tg-fab-h) - #{$gap} - 24px));
+}
+
+:host([data-place^="top-"]) .tg-fab-note {
+  top: calc(var(--tg-fab-end) + var(--tg-fab-h) + 4px);
+  bottom: auto;
+}
+
+// The pill, wider than it's tall, and the tab, against the edge: the note lines up with their outer side instead
+// of centring on them.
+:host([data-style="pill"]),
+:host([data-style="edge"]) {
+  --tg-note-shift: 0%;
+}
+
+:host([data-style="pill"]) .tg-fab-note {
+  right: var(--tg-fab-side);
+}
+
+:host([data-style="edge"]) .tg-fab-note {
+  right: 8px;
+}
+
+:host([data-style="pill"][data-place$="-left"]) .tg-fab-note {
+  right: auto;
+  left: var(--tg-fab-side);
+}
+
+:host([data-style="edge"][data-place$="-left"]) .tg-fab-note {
+  right: auto;
+  left: 8px;
+}

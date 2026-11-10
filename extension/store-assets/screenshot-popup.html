@@ -46,14 +46,14 @@
         left: 28px;
         right: 28px;
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 18px;
       }
       .step__head {
         display: grid;
         grid-template-columns: 28px 1fr;
         gap: 10px;
-        height: 66px;
+        height: 88px;
       }
       .step__num {
         width: 28px;
@@ -99,7 +99,7 @@
     <header>
       <div class="eyebrow">In the toolbar</div>
       <h1>Set it up once, <em>then just browse</em></h1>
-      <p>Pair with your Thingport, choose the sites, and find what you imported, all from the popup.</p>
+      <p>Pair with your Thingport instance, choose the sites, and find what you imported, all from the popup.</p>
     </header>
     <div class="row" id="row"></div>
     <script>
@@ -110,6 +110,7 @@
           text: "Approve this browser in Thingport. No password is saved.",
         },
         { popup: "connected", title: "Choose the sites", text: "Every site Grab works on, each on or off." },
+        { popup: "appearance", title: "Its look", text: "Six looks for its button, in any corner of the page." },
         {
           popup: "features",
           title: "Extra features",

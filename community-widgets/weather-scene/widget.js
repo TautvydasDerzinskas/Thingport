@@ -881,7 +881,7 @@ function moonMask(age) {
 }
 
 export default function mount(thingport) {
-  const { root, settings, theme, t } = thingport;
+  const { root, settings, theme, t, language } = thingport;
   const q = (c) => root.querySelector(c);
   const wx = q(".wx");
   const layer = {
@@ -902,6 +902,25 @@ export default function mount(thingport) {
   };
   const text = { temp: q(".wx-temp"), desc: q(".wx-desc"), place: q(".wx-place"), extra: q(".wx-extra") };
   const imperial = settings.units === "imperial";
+  /** The speed unit in the reader's language, in the form the number takes ("5 миль/год"). On a Thingport instance
+   *  whose t() has no plural forms the form is picked here, then .other; labels older than this script get the
+   *  forecast's own unit. */
+  const windUnit = (speed) => {
+    const key = imperial ? "unit.mph" : "unit.kmh";
+    const word = t(key, { count: speed });
+    if (word !== key) return word;
+    let form = "other";
+    try {
+      form = new Intl.PluralRules(language).select(speed);
+    } catch {
+      // A code Intl doesn't know: .other below.
+    }
+    for (const asked of [`${key}.${form}`, `${key}.other`]) {
+      const found = t(asked);
+      if (found !== asked) return found;
+    }
+    return data?.current_units?.wind_speed_10m ?? (imperial ? "mph" : "km/h");
+  };
   const shuffled = settings.landscape === "random";
   let landscape = LANDSCAPES[settings.landscape] ? settings.landscape : "field";
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -1170,7 +1189,7 @@ export default function mount(thingport) {
     if (settings.details) {
       for (const line of [
         t("extra.feels", { temp: deg(cur.apparent_temperature) }),
-        t("extra.wind", { speed: Math.round(cur.wind_speed_10m), unit: data.current_units.wind_speed_10m }),
+        t("extra.wind", { speed: Math.round(cur.wind_speed_10m), unit: windUnit(Math.round(cur.wind_speed_10m)) }),
         t("extra.humidity", { percent: cur.relative_humidity_2m }),
       ]) {
         const div = document.createElement("div");

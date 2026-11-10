@@ -14,6 +14,7 @@ import {
   parseEufymakeModelUrl,
 } from "./urls.generated";
 import manifest from "./manifest.generated";
+import { eufymakeLicenseFrom } from "./license";
 export { EUFYMAKE_LIKES_KEY, EUFYMAKE_LIKES_URL, eufymakeModelUrl, isEufymakeLikesUrl, parseEufymakeModelUrl };
 
 // eufyMake's Make it Real has no public API, so this is the one its own pages call, on Anker's API host: every call is
@@ -216,6 +217,7 @@ export function eufymakeMetaFromDetail(model: Record<string, unknown>): Eufymake
     meta.siteCategoryIds = categoryIds;
     meta.categorySite = PROVIDER;
   }
+  meta.license = eufymakeLicenseFrom(model);
   const listed = records(model.model_file).flatMap((file) => {
     const url = str(file.download_link);
     return url ? [{ type: file.file_type, name: str(file.file_name) ?? nameFromUrl(url, `${modelId}`), url }] : [];
@@ -233,12 +235,18 @@ export function eufymakeMetaFromDetail(model: Record<string, unknown>): Eufymake
   };
 }
 
-/** By its id. Null for a model that doesn't exist or isn't shown. */
-export async function resolveEufymakeModel(modelId: string): Promise<EufymakeModelResolution | null> {
+/** The model's details as the site answers them, by its id. Null for a model that doesn't exist or isn't shown. */
+export async function fetchEufymakeModel(modelId: string): Promise<Record<string, unknown> | null> {
   const { code, message, data } = await fetchApi("model/get_model_detail", { model_id: modelId }, null);
   if (code === CODE_NO_MODEL) return null;
   if (code !== CODE_OK) throw failure("this model", code, message);
-  return isRecord(data) && isRecord(data.model) ? eufymakeMetaFromDetail(data.model) : null;
+  return isRecord(data) && isRecord(data.model) ? data.model : null;
+}
+
+/** By its id. Null for a model that doesn't exist or isn't shown. */
+export async function resolveEufymakeModel(modelId: string): Promise<EufymakeModelResolution | null> {
+  const model = await fetchEufymakeModel(modelId);
+  return model ? eufymakeMetaFromDetail(model) : null;
 }
 
 /** eufyMake's file links are signed CloudFront ones. */

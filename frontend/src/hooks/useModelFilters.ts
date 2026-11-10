@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { type PrintSource, printsApi } from "../api/prints";
+import { LICENSE_ACTIONS, type LicenseAction, type PrintSource, printsApi } from "../api/prints";
 
 export type ModelFilters = ReturnType<typeof useModelFilters>;
 
@@ -37,12 +37,43 @@ export function useModelFilters() {
     [setSearchParams],
   );
 
+  // What the licence must allow, and whether models with none are left out: narrowing switches, so what's kept is what's
+  // on.
+  const allowsParam = searchParams.get("licenseAllows") ?? "";
+  const licenseAllows = useMemo(
+    () => LICENSE_ACTIONS.filter((action) => allowsParam.split(",").includes(action)),
+    [allowsParam],
+  );
+  const setLicenseAllows = useCallback(
+    (next: LicenseAction[]) =>
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        if (next.length) params.set("licenseAllows", next.join(","));
+        else params.delete("licenseAllows");
+        return params;
+      }),
+    [setSearchParams],
+  );
+  const licensed = searchParams.get("licensed") === "1";
+  const setLicensed = useCallback(
+    (on: boolean) =>
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        if (on) params.set("licensed", "1");
+        else params.delete("licensed");
+        return params;
+      }),
+    [setSearchParams],
+  );
+
   const clear = useCallback(
     () =>
       setSearchParams((prev) => {
         const params = new URLSearchParams(prev);
         params.delete("generative");
         params.delete("hideProviders");
+        params.delete("licenseAllows");
+        params.delete("licensed");
         return params;
       }),
     [setSearchParams],
@@ -53,9 +84,13 @@ export function useModelFilters() {
     setGenerative,
     hiddenProviders,
     setHiddenProviders,
+    licenseAllows,
+    setLicenseAllows,
+    licensed,
+    setLicensed,
     clear,
     /** How many of the filters are narrowing the list, for the button's badge. */
-    active: (generative ? 1 : 0) + (hiddenProviders.length ? 1 : 0),
+    active: (generative ? 1 : 0) + (hiddenProviders.length ? 1 : 0) + licenseAllows.length + (licensed ? 1 : 0),
   };
 }
 

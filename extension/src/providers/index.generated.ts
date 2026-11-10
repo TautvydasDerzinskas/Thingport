@@ -39,6 +39,12 @@ import grabcad from "./grabcad/manifest.generated";
 import { urls as grabcadUrls } from "./grabcad/urls.generated";
 import meshy from "./meshy/manifest.generated";
 import { urls as meshyUrls } from "./meshy/urls.generated";
+import pixup3d from "./pixup3d/manifest.generated";
+import { urls as pixup3dUrls } from "./pixup3d/urls.generated";
+import fab365 from "./fab365/manifest.generated";
+import { urls as fab365Urls } from "./fab365/urls.generated";
+import threedexport from "./threedexport/manifest.generated";
+import { urls as threedexportUrls } from "./threedexport/urls.generated";
 
 export type {
   AuthField,
@@ -76,6 +82,9 @@ export const PROVIDER_IDS = [
   "cgtrader",
   "grabcad",
   "meshy",
+  "pixup3d",
+  "fab365",
+  "threedexport",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -98,6 +107,9 @@ export const MANIFESTS = {
   cgtrader,
   grabcad,
   meshy,
+  pixup3d,
+  fab365,
+  threedexport,
 } as const;
 
 /** What each site is, in two or three sentences (providers/<id>/docs.ts), for the UI that introduces a provider
@@ -139,6 +151,12 @@ export const ABOUT: { readonly [K in ProviderId]: string } = {
     "An engineers' community started in Estonia in 2009 and owned by Stratasys since 2014. Its free library holds millions of CAD models, from machine parts to whole assemblies, mostly as STEP files and native CAD formats.",
   meshy:
     "An AI 3D model generator that turns a prompt or a picture into a textured model in about a minute. Its community shares the results by the hundred thousand, and lets creators mark the ones fit to print.",
+  pixup3d:
+    "Phrozen's 3D model marketplace, from the Taiwanese maker of resin printers. Its designers sell and share figures, busts and tabletop miniatures, many of them pre-supported for resin printing.",
+  fab365:
+    "Fab365 is a South Korean 3D-model marketplace, running since 2018. It's known for meticulously engineered models — SpaceX rockets, foldable robots, Star Wars ships — many designed to print cleanly without supports.",
+  threedexport:
+    "One of the oldest 3D model marketplaces, open since 2004 and based in San Jose: game and film assets, textures and a large 3D printing catalogue, sold by their designers and some given away free.",
 };
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -160,6 +178,9 @@ export const TRENDING_PROVIDER_IDS = [
   "cgtrader",
   "grabcad",
   "meshy",
+  "pixup3d",
+  "fab365",
+  "threedexport",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -182,6 +203,9 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   cgtrader: cgtraderUrls,
   grabcad: grabcadUrls,
   meshy: meshyUrls,
+  pixup3d: pixup3dUrls,
+  fab365: fab365Urls,
+  threedexport: threedexportUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {

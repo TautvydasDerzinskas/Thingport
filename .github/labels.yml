@@ -102,4 +102,13 @@
 - name: "provider: Meshy"
   color: "c5f955"
   description: "About Meshy, from the bug form's Provider answer"
+- name: "provider: PIXUP"
+  color: "dc4b2d"
+  description: "About PIXUP, from the bug form's Provider answer"
+- name: "provider: Fab365"
+  color: "00c300"
+  description: "About Fab365, from the bug form's Provider answer"
+- name: "provider: 3DExport"
+  color: "ee1111"
+  description: "About 3DExport, from the bug form's Provider answer"
 # /providers:labels

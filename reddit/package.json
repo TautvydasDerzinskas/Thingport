@@ -1,0 +1,33 @@
+{
+  "name": "thingport-blog",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "description": "A Reddit Devvit app that posts each new thingport.net blog post to r/Thingport.",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/server/index.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/server/index.cjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "login": "devvit login",
+    "playtest": "devvit playtest",
+    "upload": "npm run typecheck && npm test && devvit upload"
+  },
+  "dependencies": {
+    "@devvit/web": "0.15.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "devvit": "0.15.3",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3",
+    "vitest": "4.1.12"
+  },
+  "engines": {
+    "node": ">=22.2.0"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "protobufjs": false
+  },
+  "version": "0.0.0"
+}

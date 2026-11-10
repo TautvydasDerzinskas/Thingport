@@ -25,6 +25,9 @@ how to connect it:
 - <img src="assets/providers/cgtrader.svg" alt="" width="18" height="18" align="absmiddle"> [CGTrader](providers/cgtrader.md) -- your own sign-in, for the files, your likes and your wishlist; Grab or FlareSolverr for its bot check.
 - <img src="assets/providers/grabcad.svg" alt="" width="18" height="18" align="absmiddle"> [GrabCAD](providers/grabcad.md) -- your own sign-in, for the files; anyone's likes read without it.
 - <img src="assets/providers/meshy.svg" alt="" width="18" height="18" align="absmiddle"> [Meshy](providers/meshy.md) -- your own sign-in; community models also need a Meshy Pro or Studio plan.
+- <img src="assets/providers/pixup3d.svg" alt="" width="18" height="18" align="absmiddle"> [PIXUP](providers/pixup3d.md) -- your own sign-in, for the files of the models you own; anyone's wishlist and collections read without it.
+- <img src="assets/providers/fab365.svg" alt="" width="18" height="18" align="absmiddle"> [Fab365](providers/fab365.md) -- your own sign-in, for the files and your favourites; its models read without one.
+- <img src="assets/providers/3dexport.svg" alt="" width="18" height="18" align="absmiddle"> [3DExport](providers/3dexport.md) -- your own sign-in, for the files and your own collections; anyone's public collections read without it.
 
 <!-- /providers:list -->
 
@@ -36,26 +39,29 @@ badge, shows the same in short.
 <!-- providers:table -->
 <!-- Written by scripts/sync-providers.mjs from providers/: change it there. -->
 
-| Provider                                                                                                                                         | Sign-in                         | Thingport Grab | FlareSolverr | Collections | Likes | Sync | Print profiles |
-| ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------- | ------------ | ----------- | ----- | ---- | -------------- |
-| <img src="assets/providers/makerworld.svg" alt="" width="18" height="18" align="absmiddle"> [MakerWorld](providers/makerworld.md)                | Your cookie                     | Recommended    | Optional     | ✓           |       | ✓    | ✓              |
-| <img src="assets/providers/printables.svg" alt="" width="18" height="18" align="absmiddle"> [Printables](providers/printables.md)                | None                            | Optional¹      | Recommended  | ✓           | ✓¹    | ✓    |                |
-| <img src="assets/providers/thingiverse.svg" alt="" width="18" height="18" align="absmiddle"> [Thingiverse](providers/thingiverse.md)             | Admin's App Token               | Optional       | Recommended  | ✓           | ✓     | ✓    |                |
-| <img src="assets/providers/myminifactory.svg" alt="" width="18" height="18" align="absmiddle"> [MyMiniFactory](providers/myminifactory.md)       | Admin's API key, yours for paid | Optional       | Recommended  | ✓           |       | ✓    |                |
-| <img src="assets/providers/snapmaker-space.svg" alt="" width="18" height="18" align="absmiddle"> [Snapmaker Space](providers/snapmaker-space.md) | Yours, for a day                | Recommended²   |              | Bookmarks   | ✓     | ✓    | ✓              |
-| <img src="assets/providers/makeronline.svg" alt="" width="18" height="18" align="absmiddle"> [MakerOnline](providers/makeronline.md)             | Yours, for likes only           | **Required**   |              | ✓           | ✓     | ✓    | ✓              |
-| <img src="assets/providers/creality-cloud.svg" alt="" width="18" height="18" align="absmiddle"> [Creality Cloud](providers/creality-cloud.md)    | Yours, for a week               | Recommended    |              | ✓           | ✓     | ✓    | ✓              |
-| <img src="assets/providers/nexprint.svg" alt="" width="18" height="18" align="absmiddle"> [NexPrint](providers/nexprint.md)                      | Yours                           | Recommended    |              | ✓           |       | ✓    | ✓              |
-| <img src="assets/providers/thangs.svg" alt="" width="18" height="18" align="absmiddle"> [Thangs](providers/thangs.md)                            | Yours, renewed for a year       | Recommended    | Optional     | ✓           | ✓     | ✓    |                |
-| <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md)                         | Your API key + browser sign-in  | Recommended³   |              | Printlists  | ✓     | ✓    |                |
-| <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md)                      | Yours, for likes only           | Recommended    |              |             | ✓     | ✓    |                |
-| <img src="assets/providers/pinshape.svg" alt="" width="18" height="18" align="absmiddle"> [Pinshape](providers/pinshape.md)                      | Yours, for the files            | Recommended    |              | ✓           | ✓     | ✓    |                |
-| <img src="assets/providers/owlcad.svg" alt="" width="18" height="18" align="absmiddle"> [OwlCAD](providers/owlcad.md)                            | None                            | Recommended⁴   |              |             |       |      |                |
-| <img src="assets/providers/toymakr3d.svg" alt="" width="18" height="18" align="absmiddle"> [Toymakr3D](providers/toymakr3d.md)                   | Yours, for the files            | Recommended    |              |             | ✓⁵    | ✓    |                |
-| <img src="assets/providers/makerables.svg" alt="" width="18" height="18" align="absmiddle"> [Makerables](providers/makerables.md)                | Yours, for saved projects only  | Recommended    |              | Saved       |       | ✓    |                |
-| <img src="assets/providers/cgtrader.svg" alt="" width="18" height="18" align="absmiddle"> [CGTrader](providers/cgtrader.md)                      | Yours, for the files            | Recommended⁶   | Recommended  | Wishlist    | ✓⁶    | ✓    |                |
-| <img src="assets/providers/grabcad.svg" alt="" width="18" height="18" align="absmiddle"> [GrabCAD](providers/grabcad.md)                         | Yours, for the files            | Recommended    |              |             | ✓     | ✓    |                |
-| <img src="assets/providers/meshy.svg" alt="" width="18" height="18" align="absmiddle"> [Meshy](providers/meshy.md)                               | Yours; Pro for community models | Recommended    |              | ✓           |       | ✓    |                |
+| Provider                                                                                                                                         | Sign-in                         | Thingport Grab | FlareSolverr | Collections            | Likes | Sync | Print profiles |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------- | ------------ | ---------------------- | ----- | ---- | -------------- |
+| <img src="assets/providers/makerworld.svg" alt="" width="18" height="18" align="absmiddle"> [MakerWorld](providers/makerworld.md)                | Your cookie                     | Recommended    | Optional     | ✓                      |       | ✓    | ✓              |
+| <img src="assets/providers/printables.svg" alt="" width="18" height="18" align="absmiddle"> [Printables](providers/printables.md)                | None                            | Optional¹      | Recommended  | ✓                      | ✓¹    | ✓    |                |
+| <img src="assets/providers/thingiverse.svg" alt="" width="18" height="18" align="absmiddle"> [Thingiverse](providers/thingiverse.md)             | Admin's App Token               | Optional       | Recommended  | ✓                      | ✓     | ✓    |                |
+| <img src="assets/providers/myminifactory.svg" alt="" width="18" height="18" align="absmiddle"> [MyMiniFactory](providers/myminifactory.md)       | Admin's API key, yours for paid | Optional       | Recommended  | ✓                      |       | ✓    |                |
+| <img src="assets/providers/snapmaker-space.svg" alt="" width="18" height="18" align="absmiddle"> [Snapmaker Space](providers/snapmaker-space.md) | Yours, for a day                | Recommended²   |              | Bookmarks              | ✓     | ✓    | ✓              |
+| <img src="assets/providers/makeronline.svg" alt="" width="18" height="18" align="absmiddle"> [MakerOnline](providers/makeronline.md)             | Yours, for likes only           | **Required**   |              | ✓                      | ✓     | ✓    | ✓              |
+| <img src="assets/providers/creality-cloud.svg" alt="" width="18" height="18" align="absmiddle"> [Creality Cloud](providers/creality-cloud.md)    | Yours, for a week               | Recommended    |              | ✓                      | ✓     | ✓    | ✓              |
+| <img src="assets/providers/nexprint.svg" alt="" width="18" height="18" align="absmiddle"> [NexPrint](providers/nexprint.md)                      | Yours                           | Recommended    |              | ✓                      |       | ✓    | ✓              |
+| <img src="assets/providers/thangs.svg" alt="" width="18" height="18" align="absmiddle"> [Thangs](providers/thangs.md)                            | Yours, renewed for a year       | Recommended    | Optional     | ✓                      | ✓     | ✓    |                |
+| <img src="assets/providers/cults3d.svg" alt="" width="18" height="18" align="absmiddle"> [Cults3D](providers/cults3d.md)                         | Your API key + browser sign-in  | Recommended³   |              | Printlists             | ✓     | ✓    |                |
+| <img src="assets/providers/eufymake.svg" alt="" width="18" height="18" align="absmiddle"> [eufyMake](providers/eufymake.md)                      | Yours, for likes only           | Recommended    |              |                        | ✓     | ✓    |                |
+| <img src="assets/providers/pinshape.svg" alt="" width="18" height="18" align="absmiddle"> [Pinshape](providers/pinshape.md)                      | Yours, for the files            | Recommended    |              | ✓                      | ✓     | ✓    |                |
+| <img src="assets/providers/owlcad.svg" alt="" width="18" height="18" align="absmiddle"> [OwlCAD](providers/owlcad.md)                            | None                            | Recommended⁴   |              |                        |       |      |                |
+| <img src="assets/providers/toymakr3d.svg" alt="" width="18" height="18" align="absmiddle"> [Toymakr3D](providers/toymakr3d.md)                   | Yours, for the files            | Recommended    |              |                        | ✓⁵    | ✓    |                |
+| <img src="assets/providers/makerables.svg" alt="" width="18" height="18" align="absmiddle"> [Makerables](providers/makerables.md)                | Yours, for saved projects only  | Recommended    |              | Saved                  |       | ✓    |                |
+| <img src="assets/providers/cgtrader.svg" alt="" width="18" height="18" align="absmiddle"> [CGTrader](providers/cgtrader.md)                      | Yours, for the files            | Recommended⁶   | Recommended  | Wishlist               | ✓⁶    | ✓    |                |
+| <img src="assets/providers/grabcad.svg" alt="" width="18" height="18" align="absmiddle"> [GrabCAD](providers/grabcad.md)                         | Yours, for the files            | Recommended    |              |                        | ✓     | ✓    |                |
+| <img src="assets/providers/meshy.svg" alt="" width="18" height="18" align="absmiddle"> [Meshy](providers/meshy.md)                               | Yours; Pro for community models | Recommended    |              | ✓                      |       | ✓    |                |
+| <img src="assets/providers/pixup3d.svg" alt="" width="18" height="18" align="absmiddle"> [PIXUP](providers/pixup3d.md)                           | Yours, for the files            | Recommended    |              | Collections, wishlists | ✓     | ✓    |                |
+| <img src="assets/providers/fab365.svg" alt="" width="18" height="18" align="absmiddle"> [Fab365](providers/fab365.md)                            | Yours, for the files            | Recommended    |              |                        | ✓⁷    | ✓    |                |
+| <img src="assets/providers/3dexport.svg" alt="" width="18" height="18" align="absmiddle"> [3DExport](providers/3dexport.md)                      | Yours, for the files            | Recommended    |              | Bookmark collections   |       | ✓    |                |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.
@@ -63,6 +69,7 @@ badge, shows the same in short.
 4. A gallery item that is a CAD project, rather than a library part, has no stored mesh: OwlCAD's editor builds its file, so Thingport Grab exports it on owlcad.com.
 5. Toymakr3D hands a model's files to signed-in users only, the free ones included, and shows your likes to you alone.
 6. CGTrader shows your likes and wishlist to you alone, and its downloads sit behind AWS's bot check, which Thingport passes with Grab's token from your browser or FlareSolverr's own.
+7. Fab365 hands a model's files to signed-in members only, the free ones included, and shows your favourites to you alone.
 
 <!-- /providers:table -->
 
@@ -76,9 +83,9 @@ badge, shows the same in short.
 importing straight from a model's page, it hands your browser's sign-in to Thingport, so the sites that need one connect
 by just being visited, and stay connected. On MakerOnline it does the downloading itself, so there it's required, and
 on OwlCAD it exports CAD projects from OwlCAD's own editor. Install it from the **Downloads** page and connect it with
-**Pair with Thingport** in its popup: that opens your Thingport in a tab, where you approve that browser, so no password
-is kept in Grab (see [its setup](../extension/README.md#setup)). Sites after MakerWorld, Printables and Thingiverse
-need one click first, on the site in Grab's popup (a + marks one that's off) or on **Enable all**.
+**Pair with Thingport** in its popup: that opens your Thingport instance in a tab, where you approve that browser, so no
+password is kept in Grab (see [its setup](../extension/README.md#setup)). Sites after MakerWorld, Printables and
+Thingiverse need one click first, on the site in Grab's popup (a + marks one that's off) or on **Enable all**.
 If a reverse proxy upgrades your instance's `http://` address to `https://` on the same host, Grab follows that
 upgrade. It never sends your sign-in along any other redirect: then enter the final address in Grab instead. Grab spots
 the upgrade with a GET request, so a proxy that redirects only other methods, such as POST, needs the final address too.
@@ -130,8 +137,10 @@ listed.
 
 ## Turning a provider off
 
-Admins choose which providers this Thingport imports from, under **Administration → Providers**. All are on by
+Admins choose which providers this Thingport instance imports from, under **Administration → Providers**. All are on by
 default. Turn one off and nothing new comes from it for anyone: links to it, Thingport Grab and the import queue are
 refused, its synced collections pause, and background jobs skip it. It also disappears from everyone's
 **Configuration → Providers**. Models already imported from it stay as they are, and turning it back on picks up where
-it left off. The Thingiverse App Token and the MyMiniFactory API key are set on the same page.
+it left off. To switch several at once, choose the select button, pick them, and turn them on or off together; the
+filter button narrows the list by whether they're on, what they import, who signs in and what they need. The
+Thingiverse App Token and the MyMiniFactory API key are set on the same page.

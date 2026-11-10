@@ -17,7 +17,7 @@ import {
 
 async function requireToken(): Promise<string> {
   const token = await getThingiverseAccessToken();
-  if (!token) throw new HttpError(409, "Thingiverse isn't connected on this Thingport yet");
+  if (!token) throw new HttpError(409, "Thingiverse isn't connected on this Thingport instance yet");
   return token;
 }
 

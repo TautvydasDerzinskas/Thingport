@@ -3,8 +3,6 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { setProviderEnabled } from "../src/services/providerSettingsService";
-import { runAuthorLinking, type AuthorLinkingRun } from "../src/services/authorLinkingService";
-import { getThingiverseAccessToken, setThingiverseAccessToken } from "../src/providers/thingiverse/token";
 
 const app = createApp();
 let admin: string;
@@ -48,6 +46,9 @@ afterAll(async () => {
     "cgtrader",
     "grabcad",
     "meshy",
+    "pixup3d",
+    "fab365",
+    "threedexport",
   ] as const)
     await setProviderEnabled(provider, true);
 });
@@ -75,6 +76,9 @@ describe("turning providers off", () => {
       cgtrader: true,
       grabcad: true,
       meshy: true,
+      pixup3d: true,
+      fab365: true,
+      threedexport: true,
     });
 
     expect(
@@ -105,7 +109,54 @@ describe("turning providers off", () => {
       cgtrader: true,
       grabcad: true,
       meshy: true,
+      pixup3d: true,
+      fab365: true,
+      threedexport: true,
     });
+  });
+
+  it("switches several at once, for admins only", async () => {
+    const send = (token: string, body: unknown) =>
+      request(app).patch("/api/settings/providers").set(as(token)).send(body);
+    expect((await send(member, { providers: ["pinshape"], enabled: false })).status).toBe(403);
+    expect((await send(admin, { providers: [], enabled: false })).status).toBe(400);
+    expect((await send(admin, { providers: ["no-such-site"], enabled: false })).status).toBe(400);
+
+    const saved = async () => enabledMap((await request(app).get("/api/settings/providers").set(as(member))).body);
+    const off = await send(admin, { providers: ["pinshape", "grabcad", "pinshape"], enabled: false });
+    expect(off.status).toBe(200);
+    expect(enabledMap(off.body)).toMatchObject({ pinshape: false, grabcad: false, printables: true });
+    expect(await saved()).toMatchObject({ pinshape: false, grabcad: false, printables: true });
+
+    const on = await send(admin, { providers: ["pinshape", "grabcad"], enabled: true });
+    expect(enabledMap(on.body)).toMatchObject({ pinshape: true, grabcad: true });
+    expect(await saved()).toMatchObject({ pinshape: true, grabcad: true });
+  });
+
+  it("keeps both of two changes made at once", async () => {
+    // The list is stored whole, so it must exist for the row to be held.
+    await setProviderEnabled("pinshape", true);
+    const send = (providers: string[]) =>
+      request(app).patch("/api/settings/providers").set(as(admin)).send({ providers, enabled: false });
+    let first: Promise<request.Response> | undefined;
+    let second: Promise<request.Response> | undefined;
+    // An outside transaction holds the stored list while both requests start: each has read it, unchanged, by the
+    // time it's let go, unless the reads wait their turn.
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT key FROM "Setting" WHERE key = 'disabled_providers' FOR UPDATE`;
+        first = send(["pinshape"]).then((res) => res);
+        second = send(["grabcad"]).then((res) => res);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      },
+      { timeout: 10_000 },
+    );
+    expect((await first!).status).toBe(200);
+    expect((await second!).status).toBe(200);
+    const saved = enabledMap((await request(app).get("/api/settings/providers").set(as(member))).body);
+    expect(saved).toMatchObject({ pinshape: false, grabcad: false });
+    await setProviderEnabled("pinshape", true);
+    await setProviderEnabled("grabcad", true);
   });
 
   it("refuses new imports from a provider that's off, and only from it", async () => {
@@ -202,30 +253,6 @@ describe("turning providers off", () => {
     expect(res.status).toBeLessThan(300);
     expect(await prisma.collectionSync.findUnique({ where: { collectionId: collection.id } })).toBeNull();
     await setProviderEnabled("printables", true);
-  });
-
-  it("doesn't report a turned-off provider's missing token as a problem when linking authors", async () => {
-    const previous = await getThingiverseAccessToken();
-    await setThingiverseAccessToken(null);
-    // All off, so the run has nothing to look up online in a shared database; afterAll turns them back on.
-    for (const provider of ["makerworld", "printables", "thingiverse"] as const)
-      await setProviderEnabled(provider, false);
-    try {
-      const run: AuthorLinkingRun = {
-        running: true,
-        startedAt: new Date().toISOString(),
-        finishedAt: null,
-        toLookUp: 0,
-        lookedUp: 0,
-        linked: 0,
-        notFound: 0,
-        problems: [],
-      };
-      await runAuthorLinking(run);
-      expect(run.problems).not.toContain("thingiverse_no_token");
-    } finally {
-      await setThingiverseAccessToken(previous);
-    }
   });
 
   it("won't list a provider's collections to sync with while it's off", async () => {

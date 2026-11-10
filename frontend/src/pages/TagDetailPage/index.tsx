@@ -16,6 +16,7 @@ import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
 import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import ModelCard from "../ModelsPage/ModelCard";
 import SortTabs from "../ModelsPage/SortTabs";
@@ -44,13 +45,13 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
   const { tagName } = useParams<{ tagName: string }>();
   const tag = tagName ? decodeURIComponent(tagName) : "";
   const { t } = useTranslation(["models", "common"]);
-  const [items, setItems] = useState<Print[]>([]);
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
+    loadingAtFirst: true,
+  });
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState(true);
   const [bookmarked, setBookmarked] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(items.length);
   const finishedVersion = useFinishedVersion();
   const isBackgroundReload = useBackgroundReload(finishedVersion);
   // A page on its way when the list reloads belongs to the old list, and is dropped.
@@ -62,7 +63,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
 
   const filters = useModelFilters();
-  const { generative, hiddenProviders } = filters;
+  const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
 
   const setSortMode = (mode: PrintSortMode) => {
@@ -112,7 +113,10 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     if (!tag) return;
     let cancelled = false;
     listRun.current += 1;
-    const background = isBackgroundReload();
+    // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
+    const kept = returning();
+    if (kept !== null) setOffset(kept);
+    const background = isBackgroundReload() || kept !== null;
     if (!background) setLoading(true);
     (async () => {
       try {
@@ -120,8 +124,10 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
           tags: [tag],
           generative: generative || undefined,
           hide_providers: hiddenProviders,
+          license_allows: licenseAllows,
+          licensed: licensed || undefined,
           order_by: sortMode,
-          limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
+          limit: background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
           offset: 0,
         });
         if (cancelled) return;
@@ -139,7 +145,7 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tag, sortMode, generative, hiddenProviders, finishedVersion]);
+  }, [tag, sortMode, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
 
   useEffect(() => {
     if (!tag) return;
@@ -188,6 +194,8 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
         tags: [tag],
         generative: generative || undefined,
         hide_providers: hiddenProviders,
+        license_allows: licenseAllows,
+        licensed: licensed || undefined,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,

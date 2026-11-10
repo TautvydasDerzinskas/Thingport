@@ -34,6 +34,8 @@ import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
+import { authorIdByName } from "./authorService";
+import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -47,6 +49,8 @@ export type NewPlateInput = {
   copyFromPath?: string; // copied into managed storage, source left intact
   sourcePath?: string; // no-copy: file stays at this path, storagePath is still rendered/recorded
   sourceInstanceId?: string | null;
+  /** What was read of the print profile it is (Plate.profile), carried over by a copy so it isn't read again. */
+  profile?: Prisma.JsonValue | null;
 };
 
 /** A file that is a script a model can be generated from, rather than geometry to print. */
@@ -65,11 +69,18 @@ export type PrintMetaInput = {
   /** Backs de-duplication of future imports of the same source model. */
   sourceProvider?: string | null;
   sourceExternalId?: string | null;
+  /** What its source had nothing for at the last fill (Print.unfillableGaps), carried over by a copy. */
+  unfillableGaps?: string[];
   /** The source has the script this model is generated from, but its creator chose not to share it. */
   generatorScriptWithheld?: boolean;
   /** Another user's model this one is a copy of (services/modelCopyService.ts), and the first original behind it. */
   copiedFromId?: string | null;
   originalId?: string | null;
+  /** A copy of a partner instance's model: where it came from (federation/remoteCopy.ts). */
+  remoteSource?: Prisma.InputJsonValue | null;
+  /** Its licence's columns (services/licenseService.ts): what an import read, or what a copy carries over. Absent on an
+   *  import that didn't look, whose licence is then read once it has settled. */
+  licenseColumns?: Partial<Pick<Prisma.PrintUncheckedCreateInput, "license" | "licenseAllows" | "licenseReadAt">>;
 };
 
 /** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
@@ -196,6 +207,7 @@ async function createPlateAtPosition(
         storagePath,
         sourcePath: input.sourcePath ?? null,
         sourceInstanceId: input.sourceInstanceId ?? null,
+        profile: input.profile == null ? undefined : (input.profile as Prisma.InputJsonValue),
         contentSha256,
         ...marker,
       },
@@ -207,6 +219,10 @@ async function createPlateAtPosition(
   }
 
   await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
+  // A print profile's facts are read once its import has settled. Loaded when used: the service reaches this file.
+  if (record.sourceInstanceId) {
+    void import("./printProfileService").then(({ scheduleProfileFill }) => scheduleProfileFill(print.id));
+  }
   return { record, effectivePath };
 }
 
@@ -275,6 +291,12 @@ export async function createPrint(
   }
   const baseName = (meta.title || "").trim() || nameHint;
   const finalName = await availableModelName(userId, baseName, meta.categoryId ?? null);
+  // An import that couldn't fetch the author still has their name: the author another import saved, if only one goes
+  // by it. Never fails the import.
+  const creator = meta.creator?.trim() || null;
+  const authorId =
+    meta.authorId ??
+    (creator && meta.sourceProvider ? await authorIdByName(meta.sourceProvider, creator).catch(() => null) : null);
 
   const print = await prisma.print.create({
     data: {
@@ -283,16 +305,19 @@ export async function createPrint(
       nameNormalized: finalName.trim().toLowerCase(),
       title: meta.title ?? null,
       notes: meta.notes ?? null,
-      creator: meta.creator?.trim() || null,
+      creator,
       tags: normalizeTags(meta.tags || []),
       categoryId: meta.categoryId ?? null,
       categorySource: meta.categoryId ? (meta.categorySource ?? "MANUAL") : null,
-      authorId: meta.authorId ?? null,
+      authorId,
       sourceProvider: meta.sourceProvider ?? null,
       sourceExternalId: meta.sourceExternalId ?? null,
+      unfillableGaps: meta.unfillableGaps ?? [],
       generatorScriptWithheld: meta.generatorScriptWithheld ?? false,
       copiedFromId: meta.copiedFromId ?? null,
       originalId: meta.originalId ?? null,
+      remoteSource: meta.remoteSource ?? undefined,
+      ...meta.licenseColumns,
     },
   });
   // Chosen now, though nothing is in it yet, so a null assetsPath only ever means a model from before (see
@@ -323,6 +348,9 @@ export async function createPrint(
     }
 
     await keepGeneratorScripts(userId, print.id, sourceInputs);
+    // Once the files are in place, so LICENSE.txt lands in the folder they chose.
+    if (meta.licenseColumns?.licenseReadAt) await afterLicenseChange(print.id);
+    else if (print.sourceProvider) scheduleLicenseFill(print.id);
 
     // Background classification is intentionally detached: importing a model must not wait for,
     // or fail because of, a third-party AI provider.

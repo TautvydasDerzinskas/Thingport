@@ -2,13 +2,16 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import Button from "@mui/material/Button";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../../api/client";
-import { settingsApi, type CardPreview } from "../../../api/settings";
-import { matchLanguage, SUPPORTED_LANGUAGES } from "../../../constants/languages";
+import {
+  DEFAULT_PRINT_PROFILES_VIEW,
+  settingsApi,
+  type CardPreview,
+  type PrintProfilesView,
+} from "../../../api/settings";
+import { matchLanguage } from "../../../constants/languages";
 import {
   ACCENT_COLORS,
   DEFAULT_ACCENT,
@@ -28,18 +31,19 @@ import {
 import { setCachedAuthorPreviewEnabled, useAuthorPreviewEnabled } from "../../../hooks/useAuthorPreviewEnabled";
 import { useCardPreview } from "../../../hooks/useCardPreview";
 import { useHoverSlideshowEnabled } from "../../../hooks/useHoverSlideshowEnabled";
+import { usePrintProfilesView } from "../../../hooks/usePrintProfilesView";
 import { accentSwatch, renderSwatch } from "../../../theme";
 import { useConfirm } from "../../ConfirmProvider";
 import ColorSwatches from "../../controls/ColorSwatches";
 import Segmented from "../../controls/Segmented";
+import LanguagePicker from "../../LanguagePicker";
 import HelpTip from "../../HelpTip";
 import { PanelHeader, SectionLabel } from "./parts";
 
 const THEMES: ThemeSelection[] = ["light", "dark", "system"];
 const DEFAULT_THEME: ThemeSelection = "system";
 const DEFAULT_CARD_PREVIEW: CardPreview = "images";
-// More languages than this no longer fit a segmented control comfortably.
-const MAX_SEGMENTED_LANGUAGES = 4;
+const PRINT_PROFILES_VIEWS: PrintProfilesView[] = ["off", "list", "picker", "tiles"];
 
 type Props = {
   theme: ThemeSelection;
@@ -47,8 +51,8 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Language, theme, accent, render colour, model card pictures and hover slideshow, and author preview, each applied as
- *  it's changed. Studio's own settings are in Studio. */
+/** Language, theme, accent, render colour, model card pictures, print profiles, hover slideshow and author preview, each
+ *  applied as it's changed. Studio's own settings are in Studio. */
 export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }: Props) {
   const { t, i18n } = useTranslation("app");
   const authorPreview = useAuthorPreviewEnabled();
@@ -74,6 +78,8 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
   const [cardPreviewError, setCardPreviewError] = React.useState<string | null>(null);
   const [hoverSlideshow, setHoverSlideshow] = useHoverSlideshowEnabled();
   const [hoverSlideshowError, setHoverSlideshowError] = React.useState<string | null>(null);
+  const [printProfilesView, setPrintProfilesView] = usePrintProfilesView();
+  const [printProfilesError, setPrintProfilesError] = React.useState<string | null>(null);
   const confirm = useConfirm();
 
   const changeTheme = async (next: ThemeSelection) => {
@@ -89,6 +95,16 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setCardPreviewError(t("appearance.cardPreview.failed"));
+    }
+  };
+
+  const changePrintProfilesView = async (next: PrintProfilesView) => {
+    setPrintProfilesError(null);
+    try {
+      await setPrintProfilesView(next);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else setPrintProfilesError(t("appearance.printProfiles.failed"));
     }
   };
 
@@ -159,6 +175,7 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
     theme === DEFAULT_THEME &&
     accentAtDefault &&
     (cardPreview ?? DEFAULT_CARD_PREVIEW) === DEFAULT_CARD_PREVIEW &&
+    (printProfilesView ?? DEFAULT_PRINT_PROFILES_VIEW) === DEFAULT_PRINT_PROFILES_VIEW &&
     hoverSlideshow &&
     authorPreview;
 
@@ -174,6 +191,9 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
     // A new accent puts the render colour back to following it.
     if (!accentAtDefault) void changeAccent(DEFAULT_ACCENT);
     if (cardPreview !== null && cardPreview !== DEFAULT_CARD_PREVIEW) void changeCardPreview(DEFAULT_CARD_PREVIEW);
+    if (printProfilesView !== null && printProfilesView !== DEFAULT_PRINT_PROFILES_VIEW) {
+      void changePrintProfilesView(DEFAULT_PRINT_PROFILES_VIEW);
+    }
     if (!hoverSlideshow) void toggleHoverSlideshow(true);
     if (!authorPreview) void toggleAuthorPreview(true);
   };
@@ -197,28 +217,11 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
       <Stack spacing={2.5}>
         <div>
           <SectionLabel>{t("profile.language.heading")}</SectionLabel>
-          {SUPPORTED_LANGUAGES.length > MAX_SEGMENTED_LANGUAGES ? (
-            <Select
-              size="small"
-              value={language}
-              onChange={(e) => void i18n.changeLanguage(e.target.value)}
-              inputProps={{ "aria-label": t("profile.language.heading") }}
-              sx={{ minWidth: 200 }}
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <MenuItem key={lang.code} value={lang.code} lang={lang.code}>
-                  {lang.label}
-                </MenuItem>
-              ))}
-            </Select>
-          ) : (
-            <Segmented
-              label={t("profile.language.heading")}
-              value={language}
-              onChange={(code) => void i18n.changeLanguage(code)}
-              options={SUPPORTED_LANGUAGES.map((lang) => ({ value: lang.code, label: lang.label }))}
-            />
-          )}
+          <LanguagePicker
+            label={t("profile.language.heading")}
+            value={language}
+            onChange={(code) => void i18n.changeLanguage(code)}
+          />
         </div>
         <div>
           <SectionLabel>{t("userMenu.theme")}</SectionLabel>
@@ -289,6 +292,27 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
           {cardPreviewError && (
             <Typography variant="caption" color="error" sx={{ display: "block", mt: 1 }}>
               {cardPreviewError}
+            </Typography>
+          )}
+        </div>
+        <div>
+          <SectionLabel>
+            {t("appearance.printProfiles.heading")}
+            <HelpTip text={t("appearance.printProfiles.help")} />
+          </SectionLabel>
+          <Segmented
+            label={t("appearance.printProfiles.heading")}
+            value={printProfilesView ?? DEFAULT_PRINT_PROFILES_VIEW}
+            disabled={printProfilesView === null}
+            onChange={(next) => void changePrintProfilesView(next)}
+            options={PRINT_PROFILES_VIEWS.map((view) => ({
+              value: view,
+              label: t(`appearance.printProfiles.${view}`),
+            }))}
+          />
+          {printProfilesError && (
+            <Typography variant="caption" color="error" sx={{ display: "block", mt: 1 }}>
+              {printProfilesError}
             </Typography>
           )}
         </div>

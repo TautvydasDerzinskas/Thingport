@@ -17,11 +17,13 @@ type Props = {
   icon: ReactNode;
   /** Its place on the page, so the sections rise one after another. */
   order: number;
+  /** At the end of the heading's line. */
+  action?: ReactNode;
   children: ReactNode;
 };
 
 /** One of Explore's rows: a heading, and what's in it rising into place. */
-export default function ExploreSection({ title, help, icon, order, children }: Props) {
+export default function ExploreSection({ title, help, icon, order, action, children }: Props) {
   return (
     <Box
       component="section"
@@ -43,6 +45,7 @@ export default function ExploreSection({ title, help, icon, order, children }: P
           {title}
           <HelpTip text={help} />
         </Typography>
+        {action && <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>{action}</Box>}
       </Stack>
       {children}
     </Box>

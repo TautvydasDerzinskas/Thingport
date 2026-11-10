@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { readNotificationMessage, type NotificationMessage } from "./services/notificationMessage";
 import { LIKES_ID_PREFIX, PROVIDER_IDS, type ProviderId } from "./providers/index.generated";
 import { syncLikesUsername } from "./providers/names";
 import { nextSyncAt, syncNowAvailableAt } from "./services/collectionSyncSchedule";
@@ -6,6 +7,7 @@ import type {
   CollectionSync,
   Author,
   Collection,
+  CollectionVisibility,
   Category,
   CategorySiteId,
   ImportJob,
@@ -18,6 +20,7 @@ import type {
   User,
 } from "@prisma/client";
 import type { AssetHome } from "./services/modelAssets";
+import type { PrintProfileOut } from "./services/printProfileService";
 import { plateThumbPath } from "./services/printService";
 import { previewImagePath } from "./services/previewImageService";
 import { preparedFilename } from "./services/preparedPrint";
@@ -30,6 +33,9 @@ import {
 } from "./services/modelPreviewCache";
 import { buildImportSourceUrl } from "./services/importService";
 import { openSourceGaps, type SourceGap } from "./services/sourceGaps";
+import { licenseOut, type LicenseOut } from "./services/licenseService";
+import { profileOut, type PublicProfileOut } from "./services/publicProfileService";
+import { avatarOut, type AvatarOut } from "./services/avatarService";
 import { parseQueuedLinkOptions, SYNC_RESUME_MARKS } from "./services/importJobRunner";
 import { jobPayload } from "./services/importJobService";
 import type { LineOut, OwnQueue, QueueJobRow, QueueJobView } from "./services/importQueueService";
@@ -39,21 +45,23 @@ export type UserOut = {
   id: string;
   email: string;
   display_name: string;
+  /** Null only until /me makes one: see services/usernames.ts. */
+  username: string | null;
   role: "ADMIN" | "MEMBER";
   pending_email: string | null;
-  bio: string | null;
-  background_url: string | null;
-};
+} & PublicProfileOut &
+  AvatarOut;
 
 export function toUserOut(user: User): UserOut {
   return {
     id: user.id,
     email: user.email,
     display_name: user.displayName,
+    username: user.username,
     role: user.role,
     pending_email: user.pendingEmail,
-    bio: user.bio,
-    background_url: user.backgroundUrl,
+    ...profileOut(user),
+    ...avatarOut(user),
   };
 }
 
@@ -117,6 +125,11 @@ export type PlateOut = {
   /** The file carries colours of its own -- a painted project, or a script's `color()` calls. True once the
    *  render found them, so its picture of the model is a colour one rather than the grey cards tint. */
   own_colors: boolean;
+  /** The provider's id of the print profile this file is, for a model imported with print profiles; null for any
+   *  other file. */
+  profile_id: string | null;
+  /** That profile as the model page shows it, on the detail fetch only (services/printProfileService.ts). */
+  profile?: PrintProfileOut | null;
 };
 
 export type PrintFileOut = {
@@ -186,6 +199,8 @@ export type PrintOut = {
   /** The source had a script for this model but its creator chose not to share it, so there is none to open.
    *  Without it, that is indistinguishable from a model that never had one. */
   generator_script_withheld: boolean;
+  /** Its licence: what its source lists, or what its owner picked (services/licenseService.ts). Null when nothing says. */
+  license: LicenseOut | null;
   /** All plates plus supporting and prepared files; gallery images aren't counted. */
   total_size: number;
   prepared_print: PreparedPrintOut | null;
@@ -205,6 +220,32 @@ export type PrintOut = {
   owner: UserCardOut | null;
   /** On another user's model: the viewer's own copy of it, once they have one. */
   library_copy_id: string | null;
+  /** Set on a copy of a partner instance's model (federation/remoteCopy.ts), on the detail fetch only: where it
+   *  came from. */
+  copied_from_remote: RemoteOriginOut | null;
+  /** On the detail fetch of a model with print profiles: reading them now would find something new, so its owner's
+   *  model page starts that (POST /print/:id/profiles/fill); and one is already waiting or running. */
+  profiles_pending?: boolean;
+  profiles_filling?: boolean;
+  /** On the detail fetch: the source hasn't been read for its licence yet, so its owner's model page starts that
+   *  (POST /print/:id/license/fill); one is already waiting or running; and the last read failed, which its owner
+   *  can retry (`{ retry: true }`). */
+  license_pending?: boolean;
+  license_filling?: boolean;
+  license_failed?: boolean;
+};
+
+export type RemoteOriginOut = {
+  /** The partner as it's named now, while still connected; as it was when copied otherwise. */
+  instance: { name: string; origin: string; http: boolean };
+  /** Their page here, while their instance is connected and still lists them. */
+  owner_id: string | null;
+  owner_name: string;
+  /** username@their-instance, when they had a username. */
+  owner_handle: string | null;
+  owner_avatar_url: string | null;
+  /** The original's id, for its page here, while the partner is connected and still shares it. */
+  original_id: string | null;
 };
 
 /** Another of the instance's users, as social features show them: never their email. */
@@ -275,6 +316,7 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     preview_glb_url: previewGlbUrl(plate),
     render_url: renderUrl(plate, home),
     own_colors: modelColorImagePath(plate.id, home) !== null,
+    profile_id: plate.sourceInstanceId ?? null,
   };
 }
 
@@ -340,7 +382,9 @@ export function toPrintOut(
   const generatorScripts = supporting
     .filter((f) => f.filename.toLowerCase().endsWith(".scad"))
     .map((f) => ({ id: f.id, filename: f.filename }));
-  const totalSize = plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + f.size, 0);
+  // The model's own files: LICENSE.txt is Thingport's, written from its licence.
+  const totalSize =
+    plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + (f.role === "LICENSE" ? 0 : f.size), 0);
   const previewImageOuts = (previewImages ?? [])
     .toSorted((a, b) => a.position - b.position)
     .map((image) => toPreviewImageOut(image, print.assetsPath))
@@ -412,6 +456,7 @@ export function toPrintOut(
     supporting_file_count: supportingCount,
     generator_scripts: generatorScripts,
     generator_script_withheld: print.generatorScriptWithheld,
+    license: licenseOut(print),
     total_size: totalSize,
     prepared_print: prepared,
     slicer_url: slicerUrl,
@@ -424,6 +469,7 @@ export function toPrintOut(
     source_gaps: previewImages ? openSourceGaps(print, previewImages) : null,
     owner: null,
     library_copy_id: null,
+    copied_from_remote: null,
   };
 }
 
@@ -445,10 +491,24 @@ export type CollectionOut = {
   sync: CollectionSyncOut | null;
   /** Set on the collection of a tool's models: fixed, and gone when the tool is uninstalled. */
   tool_id: string | null;
-  /** Shown to the instance's other users while social features are on. */
+  /** Shown to the instance's other users while social features are on: `visibility` is "public". Kept for older
+   *  clients, which know no other. */
   is_public: boolean;
-  /** Set on another user's public collection: whose it is. Null on the viewer's own. */
+  /** Who besides its owner sees it while social features are on: nobody, the people it's shared with, or everyone. */
+  visibility: CollectionVisibilityOut;
+  /** On the owner's own shared collection: how many it's shared with, and the first few of them. Null otherwise; who
+   *  else it's shared with is the owner's to know. */
+  shared_with: { count: number; people: SharePersonOut[] } | null;
+  /** Set on another user's collection: whose it is. Null on the viewer's own. */
   owner: UserCardOut | null;
+};
+
+export type CollectionVisibilityOut = "private" | "shared" | "public";
+
+/** Someone a collection is shared with: a person here (`remote` null), or one on a partner instance. */
+export type SharePersonOut = UserCardOut & {
+  /** As a chat's person is: their handle, their instance, and their page on Explore while they share something. */
+  remote: { handle: string | null; instance: { name: string; origin: string }; profile_id: string | null } | null;
 };
 
 export type SyncProfileScope = "url" | "designer" | "all";
@@ -508,10 +568,15 @@ export function toCollectionOut(
     bookmarked,
     sync: sync ? toCollectionSyncOut(sync) : null,
     tool_id: collection.toolId ?? null,
-    is_public: collection.isPublic,
+    is_public: collection.visibility === "PUBLIC",
+    visibility: visibilityOut(collection.visibility),
+    shared_with: null,
     owner: null,
   };
 }
+
+export const visibilityOut = (visibility: CollectionVisibility): CollectionVisibilityOut =>
+  visibility === "PUBLIC" ? "public" : visibility === "SHARED" ? "shared" : "private";
 
 /** `name` is an untranslated fallback; the frontend translates via `system_key`. */
 export function toSystemCollectionOut(
@@ -534,6 +599,8 @@ export function toSystemCollectionOut(
     sync: null,
     tool_id: null,
     is_public: false,
+    visibility: "private",
+    shared_with: null,
     owner: null,
   };
 }
@@ -762,6 +829,8 @@ export type NotificationOut = {
   id: string;
   type: string;
   title: string;
+  /** The title as a key and values to translate; null shows `title`. */
+  message: NotificationMessage | null;
   body: string | null;
   external_url: string | null;
   internal_path: string | null;
@@ -775,6 +844,7 @@ export function toNotificationOut(notification: Notification): NotificationOut {
     id: notification.id,
     type: notification.type,
     title: notification.title,
+    message: readNotificationMessage(notification.message),
     body: notification.body,
     external_url: notification.externalUrl,
     internal_path: notification.internalPath,

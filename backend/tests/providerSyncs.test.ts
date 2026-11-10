@@ -201,7 +201,9 @@ describe("what a sync reads", () => {
       externalId: "creator/dragons",
       sourceUrl: URLS.myminifactory,
     };
-    await expect(fetchListing({ ...sync, userId })).rejects.toThrow("MyMiniFactory isn't connected on this Thingport");
+    await expect(fetchListing({ ...sync, userId })).rejects.toThrow(
+      "MyMiniFactory isn't connected on this Thingport instance",
+    );
     await setMyminifactoryApiKey("mmf-key");
     fns.checkMyminifactoryCollection.mockResolvedValueOnce(null);
     expect(await fetchListing({ ...sync, userId })).toBeNull();
@@ -303,7 +305,7 @@ describe("what holds a sync", () => {
   it("holds every MyMiniFactory sync while the instance has no key", async () => {
     const sync = await syncRow("myminifactory", "creator/dragons", URLS.myminifactory);
     expect(await syncCollection(sync.id)).toBe("disconnected");
-    expect(await errorOf(sync)).toBe("MyMiniFactory isn't connected on this Thingport");
+    expect(await errorOf(sync)).toBe("MyMiniFactory isn't connected on this Thingport instance");
   });
 
   it("holds Snapmaker syncs without a sign-in, and once Snapmaker turns it down", async () => {
@@ -620,6 +622,9 @@ describe("a sync's model links", () => {
       cgtrader: "lotus-ring-with-opening-and-closing-mechanism",
       grabcad: "arduino-uno-r3-1",
       meshy: "01a1560f-f5f6-7426-80e3-4876e325f98f",
+      pixup3d: "427",
+      fab365: "428",
+      threedexport: "667112",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),

@@ -1,0 +1,66 @@
+{
+  "ccBy": {
+    "id": "0197881a-d112-7119-a94e-a45fc33aaab7",
+    "items": [
+      {
+        "kind": "model",
+        "refId": "01978813-b2e7-7341-9b23-4deb33188f5f",
+        "position": 0,
+        "modelArgs": {
+          "draft": {
+            "aiModel": "meshy-5",
+            "modelType": "standard",
+            "topology": "",
+            "prompt": "Rock Formation, #arch#",
+            "imageId": "",
+            "imageIds": null,
+            "symmetryMode": 0,
+            "seed": 0,
+            "license": "",
+            "imageUrl": "",
+            "imageUrls": null
+          },
+          "generate": {
+            "draftIds": null,
+            "modelId": "uploads/711ced15d1d56530343c8b6092c212613414d42bc3b8510c15281d9061cddd25.fbx",
+            "name": "Rock Formation, #arch#",
+            "enableOriginalUV": false,
+            "license": "cc-by-4.0"
+          }
+        }
+      }
+    ]
+  },
+  "private": {
+    "id": "019a2778-da79-707b-bf1a-edc60a4525df",
+    "items": [
+      {
+        "kind": "model",
+        "refId": "019a276c-ad53-744a-9acf-dbeeee687e52",
+        "position": 0,
+        "modelArgs": {
+          "draft": {
+            "aiModel": "meshy-5.1",
+            "modelType": "standard",
+            "topology": "",
+            "prompt": "A_perfectly_sculpted__1027200502_generate",
+            "imageId": "",
+            "imageIds": null,
+            "symmetryMode": 0,
+            "seed": 0,
+            "license": "",
+            "imageUrl": "",
+            "imageUrls": null
+          },
+          "generate": {
+            "draftIds": null,
+            "modelId": "uploads/3a29d6a0c5cdf9afdf52505b5dbc1d27bab43b3af032810570ad263d033fec26.fbx",
+            "name": "A_perfectly_sculpted__1027200502_generate",
+            "enableOriginalUV": true,
+            "license": "private"
+          }
+        }
+      }
+    ]
+  }
+}

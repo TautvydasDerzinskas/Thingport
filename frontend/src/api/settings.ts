@@ -38,13 +38,15 @@ export type FileReuseBackfill = {
 /** Null when none has run since the server started. */
 export type FileReuseSettings = { mode: FileReuse; backfill: FileReuseBackfill | null };
 
-/** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
-export type SlicerSettings = { slicer: string | null; slicers: string[] };
+/** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed, `bridged` those
+ *  with a protocol of their own the user sends through Thingport Bridge instead. */
+export type SlicerSettings = { slicer: string | null; slicers: string[]; bridged: string[] };
 
-/** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. */
+/** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. One
+ *  older than `bridged` sends none through the Bridge. */
 function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
   const slicer = body.slicer ?? null;
-  return { slicer, slicers: body.slicers ?? (slicer ? [slicer] : []) };
+  return { slicer, slicers: body.slicers ?? (slicer ? [slicer] : []), bridged: body.bridged ?? [] };
 }
 
 export type StorageToken =
@@ -127,6 +129,9 @@ export type DashboardLayout = "left" | "top" | "right" | "bottom" | "topTwo" | "
 /** What model pictures lead with, on cards, dashboard lists and tag tiles: the model's own pictures, or our render
  *  tinted with the render colour. */
 export type CardPreview = "images" | "renders";
+/** How a model page shows the print profiles a model was imported with; "off" shows them as plain files. */
+export type PrintProfilesView = "off" | "list" | "picker" | "tiles";
+export const DEFAULT_PRINT_PROFILES_VIEW: PrintProfilesView = "picker";
 /** Where Studio's assistant shows its conversation: in the bar under the view, or in a panel beside it. */
 /** Only the widgets the user has switched; the rest follow their default. */
 export type DashboardWidgetChoices = Partial<Record<DashboardWidgetId, boolean>>;
@@ -445,6 +450,25 @@ export const settingsApi = {
     return res.json();
   },
 
+  getLicenseFiles: async (): Promise<{ enabled: boolean }> => {
+    const res = await fetch(`${apiBase()}/settings/license-files`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the LICENSE.txt setting");
+    return res.json();
+  },
+
+  /** Turning it on or off writes or removes every model's LICENSE.txt in the background. */
+  updateLicenseFiles: async (enabled: boolean): Promise<{ enabled: boolean }> => {
+    const res = await fetch(`${apiBase()}/settings/license-files`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ enabled }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the LICENSE.txt setting"));
+    return res.json();
+  },
+
   getFileReuse: async (): Promise<FileReuseSettings> => {
     const res = await fetch(`${apiBase()}/settings/file-reuse`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
@@ -567,6 +591,18 @@ export const settingsApi = {
     return ((await res.json()) as { providers: ProviderSetting[] }).providers;
   },
 
+  /** Several in one write; separate calls at once would overwrite each other's change. */
+  setProvidersEnabled: async (providers: ImportProvider[], enabled: boolean): Promise<ProviderSetting[]> => {
+    const res = await fetch(`${apiBase()}/settings/providers`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ providers, enabled }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the providers"));
+    return ((await res.json()) as { providers: ProviderSetting[] }).providers;
+  },
+
   getAuth: async (): Promise<AuthSettings> => {
     const res = await fetch(`${apiBase()}/settings/auth`, { headers: authHeaders() });
     assertOk(res, "Failed to load session settings");
@@ -681,9 +717,15 @@ export const settingsApi = {
     return toSlicerSettings(await res.json());
   },
 
-  /** A field left out keeps its value. `enable`/`disable` switch one slicer in the list as the server has it. */
+  /** A field left out keeps its value. `enable`/`disable` switch one slicer in the list as the server has it, and
+   *  `bridge`/`unbridge` send one through the Bridge or back to its own protocol. */
   updateSlicer: async (
-    patch: Partial<SlicerSettings> & { enable?: string; disable?: string },
+    patch: Partial<Omit<SlicerSettings, "bridged">> & {
+      enable?: string;
+      disable?: string;
+      bridge?: string;
+      unbridge?: string;
+    },
   ): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, {
       method: "PATCH",
@@ -784,6 +826,23 @@ export const settingsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the model card preview setting"));
+    return res.json();
+  },
+
+  getPrintProfilesView: async (): Promise<{ view: PrintProfilesView }> => {
+    const res = await fetch(`${apiBase()}/settings/print-profiles-view`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the print profiles setting");
+    return res.json();
+  },
+
+  updatePrintProfilesView: async (view: PrintProfilesView): Promise<{ view: PrintProfilesView }> => {
+    const res = await fetch(`${apiBase()}/settings/print-profiles-view`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ view }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update the print profiles setting"));
     return res.json();
   },
 

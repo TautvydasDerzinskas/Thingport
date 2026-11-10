@@ -1,0 +1,53 @@
+{
+  "data": [
+    {
+      "id": 11827,
+      "name": "STL From Designer",
+      "post": {
+        "id": 10998,
+        "url": "https://pixup3d.com/posts/10998",
+        "path": "/posts/10998",
+        "creator": {
+          "id": 59596,
+          "username": "TriDimenStudio",
+          "display_name": "TriDimen Studio",
+          "brand_name": "TriDimen Studio",
+          "is_admin_user": false,
+          "post_count": 64,
+          "avatar_url": "https://file.pixup3d.com/uploads/profile/avatar/59596/x1_3d.png",
+          "public_path": "/p/TriDimenStudio",
+          "created_at": "2026-04-10T22:51:12+08:00",
+          "read_pv_disclaimer": null
+        },
+        "title": "Deoxys Pokemon Flexi",
+        "adv_post": false,
+        "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/182647/webp_x1_2.webp",
+        "state": "published",
+        "price": "0.0",
+        "original_price": "0.0",
+        "phrozen_verified": false,
+        "visible": true,
+        "views_count": 200,
+        "likes_count": 0,
+        "downloads_count": 2,
+        "created_at": "2026-11-03T15:55:11+08:00",
+        "updated_at": "2026-11-03T15:58:49+08:00"
+      },
+      "price": "0.0",
+      "original_price": "0.0",
+      "content": "",
+      "phrozen_verified": false,
+      "file_type": "pre_supported",
+      "include_pre_supported": false,
+      "include_non_supported": false,
+      "include_sliced": false,
+      "printer_type": [],
+      "file_groups": [{ "id": 17388, "name": "Default name" }],
+      "in_cart": false,
+      "purchased": true,
+      "current_review": null
+    }
+  ],
+  "pagination": { "current_page": 1, "total_pages": 1, "per_page": 12, "total_count": 1 },
+  "counts": { "all": 1, "new_purchase": 1 }
+}

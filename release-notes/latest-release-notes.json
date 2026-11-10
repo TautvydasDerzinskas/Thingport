@@ -1,190 +1,202 @@
 {
-  "version": "1.5.0",
-  "title": "AI becomes Thingport's engine",
-  "summary": "With 1.5.0, AI stops being a helper on the side and becomes an engine you drive. Studio, a new CAD page, is built for an AI to run from start to finish: describe a part, or a change to a model you have, and watch it designed step by step, by the assistant in the page or one connected over MCP, which already searches, imports and files your models. Claude joins as an AI of its own, and Meshy, an AI model generator, as the eighteenth site to import from. Imports take turns in one queue that survives a restart, and everyone opens their own from the Add button. Social features, off until an admin turns them on, let a household share collections, find each other's models on Explore and talk in chats. And provider sign-ins and remote imports are guarded more tightly.",
+  "version": "1.6.0",
+  "title": "Models that say more, and instances that connect",
+  "summary": "With 1.6.0, a model tells you more about how to print it and what you may do with it. Print profiles show on the model page with their print time, filament and plates, laid out the way each person picks, and every model keeps the licence it was published under, filtered by what it allows and written beside its files. And Thingport instances connect with each other: pair yours with a friend's, a makerspace's or the one at work, and their people's models, collections and profiles show up on your Explore, to download, open in a slicer or copy, with chats across both. One at home connects to one on the internet with no port forwarding. PIXUP, Fab365 and 3DExport bring the sites Thingport imports from to twenty-one, collections can be shared with just the people you pick, profiles get covers and avatars, and the app speaks Russian, Ukrainian and Belarusian.",
   "items": [
     {
       "type": "feature",
       "highlight": true,
-      "title": "Studio: describe a part, and an AI builds it",
-      "description": "Studio is a CAD page for printable parts, under Tools in everyone's sidebar. It was built for an AI to drive from start to finish: every change a person can make to a design is a command, and every command is also a tool the AI can use, so nothing on the page is out of an assistant's reach. Describe a part in the Ask AI box at the bottom, or select something and ask for a change to it, and the assistant builds it step by step while you watch: shapes and sketches, extrudes and revolves, fillets, holes, shells, threads, patterns, text, pictures traced into outlines. It checks its own work for printing as it goes, and each of its steps undoes like one of yours. Open any model from your library in Studio and it reworks that instead, and with an AI that sees pictures, a photo or a drawing with sizes on it is something to build from. How far it gets is down to the model. The desk organizer in the picture was one paragraph to Claude Opus 5.5: fourteen steps in under two minutes, including a print check that found letters too thin to print, which it fixed by picking another font. A small local model on the compact tool set manages simple parts. Each design keeps its conversation, so \"make it taller\" follows on from what came before. An admin turns the assistant on under Administration → AI → Features and picks the AIs it offers. An assistant connected over MCP gets the same tools with the Studio designs permission on its API token, and its changes show on the page as it makes them.",
-      "code": "Design a desk organizer that prints in one piece: 140 × 90 mm, 60 mm tall at the back stepping down to 35 mm at the front, 3 mm walls, rounded corners, a pen compartment across the back and two in front. Engrave THINGPORT on the front.",
+      "title": "Print profiles on the model page, shown the way you like",
+      "description": "A model imported with its print profiles, from MakerWorld, Snapmaker Space, Creality Cloud, NexPrint or MakerOnline, now shows them as profiles above Open rather than as a row of 3MF files. Each has its name, whether the designer or the community made it, with the designer's first, its print time, filament by colour and weight, its plates with their pictures, and the printer, nozzle, layer height, infill and walls, read from the site and from the profile's own 3MF. The 3D preview shows the picked profile's plates. Everyone chooses how they look under Configuration → Appearance → Print profiles: a Picker like the file picker, with the picked profile's numbers below it, which is the default; a List of every profile at once; Tiles of their pictures; or Off, for plain files as before. Models imported earlier read their profiles the first time their owner opens them, and new imports a few seconds after they arrive. Downloads, likes and ratings are left out on purpose: what's shown is what helps you print.",
       "images": [
         {
-          "src": "screenshots/1.5.0-studio-ai.webp",
-          "caption": "One paragraph to Claude Opus 5.5: fourteen steps, under two minutes, and a print check it ran on its own"
+          "src": "screenshots/1.6.0-print-profiles-picker.webp",
+          "caption": "Picker, the default: the picked profile's time, filament, plates and settings"
         },
         {
-          "src": "screenshots/1.5.0-studio-assistant.webp",
-          "caption": "Administration → AI → Features: the Studio assistant, and which AIs it offers"
-        }
-      ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/studio.md"
-    },
-    {
-      "type": "feature",
-      "highlight": true,
-      "title": "A CAD toolset that stays editable",
-      "description": "Edit brings in the toolbar and the side panels. A design is a list of features built in order, so changing a box's width or a sketch's circle changes everything made from it. Sketch on a plane or on a body's face with lines, arcs, rectangles, circles, polygons, SVG paths and text, then extrude, revolve, loft or sweep it. Press/pull a face, fillet and chamfer edges, drill plain, counterbored, countersunk or tapped holes, shell, split, pattern, mirror, hull, align and lay flat, and combine bodies with union, subtract and intersect. The mouse and the view cube work as in other CAD, units are the design's own (mm, cm or in), and parameters with formulas drive any size. Measure reads distances, angles and volumes, and Check for printing finds floating bodies, overhangs and thin walls. Open in Thingport Studio, on any model's menu, brings its STL, 3MF, STEP, OBJ or GLB in to change, and Separate makes each loose piece its own body. Download STL, or Save to Thingport to put the design in your library as a model with its picture.",
-      "images": [
-        {
-          "src": "screenshots/1.5.0-studio-edit.webp",
-          "caption": "Edit mode: the toolbar, the feature list and exact values for what's selected"
-        }
-      ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/studio.md"
-    },
-    {
-      "type": "feature",
-      "highlight": true,
-      "title": "Claude, as an AI of its own",
-      "description": "An AI under Administration → AI now has a type: OpenAI-compatible, as every AI so far, or Claude, through Anthropic's own API. Pick Claude and paste an API key, and the models it may use are listed. Categorization, improved descriptions, the Studio assistant, the connection test and System Health all work with it, and each feature can use a different AI. Answers come back as structured output, long descriptions stream as they're written, and Effort sets how much Claude thinks first. Claude Opus 5.5, Sonnet 5.5 and Fable 5.1 ask for Anthropic's fallback, so a harmless request declined by mistake is answered by another model. In Studio, Claude finds the tools it needs by searching for them rather than being sent all of them, and its instructions are cached, which keeps a long design session's cost down. AIs you already have carry on as they were.",
-      "images": [
-        {
-          "src": "screenshots/1.5.0-ai-claude.webp",
-          "caption": "An AI's type: Claude fills in its address and lists your key's models"
-        }
-      ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/ai.md#claude"
-    },
-    {
-      "type": "feature",
-      "highlight": true,
-      "title": "Import from Meshy, the eighteenth site",
-      "description": "Meshy is an AI 3D model generator: describe something, or give it a picture, and it makes a model, which its community shares as posts. Those posts and collections import, and so do your own generations, by their workspace link or with the whole workspace synced as Meshy generations, so what you make there lands in your library by itself. Files come as print-ready 3MF, 75 mm tall and standing on the plate, and a post with several models brings each as a plate. Meshy hands files only to a signed-in account, which Thingport Grab sends and the backend keeps renewing. Community models need a Meshy Pro or Studio plan, and Grab says so on a post before you try.",
-      "images": [
-        {
-          "src": "screenshots/1.5.0-providers.webp",
-          "caption": "Meshy, at the foot of eighteen sites"
-        }
-      ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/providers/meshy.md"
-    },
-    {
-      "type": "feature",
-      "highlight": true,
-      "title": "An import queue of your own, in one line that survives a restart",
-      "description": "Imports now take turns in one line for the whole server, kept in the database, so a restart no longer loses what was waiting. Everyone has their own queue, opened from Add in the top bar, in place of the import bar along the bottom and the admin-only queue page: Importing, Needs attention with why something failed, Waiting, split into In line and On hold, and Finished. Add shows your imports at a glance: a ring while one runs, your place while one waits, a tick when they've finished, a badge when one needs you. Start and Retry go to the back of the line, so nobody's number ever goes up, and other people's imports show only as private rows that say nothing about them. Admins switch from Mine to Everyone to see every import by person and act on it. Synced collections run in a lane of their own, so they never hold the line up, and Thingport Grab's Add to the queue works for everyone, its links on hold until you start them or set them to start by themselves. The top bar is one compact row of two-tone buttons to go with it. The idea of a persistent line came from kreativmonkey's work in #169.",
-      "images": [
-        {
-          "src": "screenshots/1.5.0-import-queue.webp",
-          "caption": "The queue, by section, with what's running, waiting and done"
+          "src": "screenshots/1.6.0-print-profiles-tiles.webp",
+          "caption": "Tiles: each profile by its picture"
         },
         {
-          "src": "screenshots/1.5.0-add-hub.webp",
-          "caption": "Add opens onto your imports at a glance, beside importing and uploading"
+          "src": "screenshots/1.6.0-print-profiles-list.webp",
+          "caption": "List: every profile at once"
         }
       ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/importing.md#the-import-queue"
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/importing.md#what-comes-with-a-model"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "Share collections with the people on your Thingport",
-      "description": "Thingport has always given everyone in a household a library of their own. Now an admin can let them share: Social features, a switch at the top of Administration → Users, is off until it's turned on. A collection's form then offers Private or Public, private by default, and Explore appears in the sidebar once there's more than one user: the people who share, the newest shared models, recently updated public collections and the most collected models. Someone else's public collection and its models open with whose they are, and can be downloaded, opened in a slicer or in Studio and customized, but not changed. Adding one of their models to a collection of yours makes your own copy, which stays when the original goes private or is deleted. Others see your display name, never your email.",
+      "title": "Connect your Thingport instance with others",
+      "description": "Thingport instances can now connect, so the people on them find, open and copy each other's models and write to each other as if they were on one instance: your home instance with a friend's, your makerspace's or the one at work. Partners' people, public collections and newest models show up on Explore beside yours, each marked with its instance, and Everywhere, This instance or one partner narrows it down. A partner's model opens with its pictures, description, files and collections: download it file by file or as a ZIP, open it in your slicer, or Copy to my library to keep your own, with its tags, print profiles, licence and the site it came from. A partner's people have profiles like anyone here, and can be written to, added to private rooms and shared a collection with. Everyone gets a handle, name@their.instance, and can ask to reach someone on an instance that isn't a partner yet, which goes to the admins. It's off until an admin turns it on under Administration → Social, with social features on, and admins on both sides approve every partner after comparing a key. Nothing private crosses: libraries, private collections, settings and emails stay where they are. It runs over ActivityPub, between Thingport instances only, and works over plain HTTP too.",
       "images": [
         {
-          "src": "screenshots/1.5.0-explore.webp",
-          "caption": "Explore: who shares, and the newest models they've shared"
+          "src": "screenshots/1.6.0-explore-everywhere.webp",
+          "caption": "Explore, everywhere: people and models from this instance and a partner, each marked with its instance"
         },
         {
-          "src": "screenshots/1.5.0-social-switch.webp",
-          "caption": "Social features, switched on at the top of Users"
+          "src": "screenshots/1.6.0-partner-model.webp",
+          "caption": "A partner's model, to download, open in a slicer or copy"
         }
-      ]
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/connected-instances.md"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "Chats: direct messages and rooms, with models in them",
-      "description": "With social features on, an admin can turn on Chats from the cog beside their switch, and Chats appears in everyone's sidebar with an unread count. Find someone by any part of their name, or by their whole email, which is never shown, and write to them. Admins make rooms: public ones anyone can read and join, and private ones for the people they pick. A message takes emoji and up to five of your own models, which anyone who can read the chat can open, download and copy, until the message is deleted. Chats can be favourited and muted, and a new message brings a toast and one bell notification per chat. It all stays on your instance: nothing is fetched from outside it, emoji included. Chats have an API-token scope of their own, which new tokens leave out.",
+      "title": "An instance at home connects too, with no port forwarding",
+      "description": "Most home instances can't be reached from the internet: the router in front of them turns away whatever nobody inside asked for, which would leave them without partners. So an instance at home reaches out to its partner on the internet and keeps a link open to it, and whatever the partner would send it or fetch from it comes back down that link. No port forwarding, domain or certificate: a Raspberry Pi, a NAS or an old laptop is enough, and only the instance on the internet needs an address others can reach. Explore, pictures, downloads, copies and chats work both ways through it. Connecting from an instance that's on your network only, or that nothing can reach, turns Keep a link open on by itself and says why, and Partners shows whether each link is open. While the home instance is off, what's said to its people waits on the partner's side for up to about three days, and arrives once its link opens again. Its own address is never tried from the other side. Two instances on one network connect directly, as any two that reach each other do. Two that are both at home can't reach each other: put them on one VPN, such as Tailscale or WireGuard, and they connect as two instances on one network.",
       "images": [
         {
-          "src": "screenshots/1.5.0-chats.webp",
-          "caption": "A room, with a model sent in it"
+          "src": "screenshots/1.6.0-connect-link.webp",
+          "caption": "Connecting from home: the partner's key to compare, and Keep a link open"
+        },
+        {
+          "src": "screenshots/1.6.0-partners.webp",
+          "caption": "Partners under Administration → Social, a home instance with its link open"
         }
-      ]
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/connected-instances.md#your-home-instance-can-connect-too"
     },
     {
       "type": "feature",
       "highlight": true,
-      "title": "Sign-ins and imports, guarded more tightly",
-      "description": "A site's cookies and tokens now go only to the hosts that site declares, over HTTPS, and never follow a redirect anywhere else. An import link, every redirect it takes and every picture it brings are checked at each hop, and one that leads to an address on your own network is refused, so a crafted link can't make Thingport reach into it. FlareSolverr is used only on the routes that need it and doesn't follow redirects. System Health says when a remote solver is reached over plain HTTP, and FLARESOLVERR_REQUIRE_HTTPS=true refuses one. Thingport Grab no longer passes your credentials on through a redirect, other than a reverse proxy moving the same host from http to https. An instance on plain HTTP is still supported, as before. Thanks to kreativmonkey for this work (#151).",
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/pull/151"
+      "title": "Every model keeps its licence",
+      "description": "What you may do with a model, whether you may share its files, remix it or sell prints of it, now comes with it. Every site Thingport imports from says what licence a model has, and the import keeps it: Creative Commons licences, CC0, open-source ones such as GPL and MIT, and each site's own. A strip at the foot of the description box shows its marks and what it comes to, such as \"Credit · Non-commercial · Share alike\", and opens what it lets you do, the terms the site or the creator added, a link to the licence and Copy credit line. Edit has a Licence field, for a model you uploaded or one you've made your own, and a licence you pick is never read over. The filter on every list of models gains Licence allows: Can be shared, Commercial use, Remixing and Only with a licence, which combine. Each model with a licence gets a LICENSE.txt beside its files, with the credit line, and every ZIP download carries one; admins can turn the files off under Administration → Storage → Licence files. Copies, connected instances and the MCP tools carry the licence too. Models imported earlier read theirs the first time you open them. A licence only informs: nothing is blocked or warned about because of one.",
+      "images": [
+        {
+          "src": "screenshots/1.6.0-licence.webp",
+          "caption": "A model's licence: what it allows, its terms and a credit line to copy"
+        },
+        {
+          "src": "screenshots/1.6.0-licence-filter.webp",
+          "caption": "Licence allows, in every list's filter"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/licenses.md"
     },
     {
       "type": "feature",
-      "title": "Merge uploads into one model, and file several at once",
-      "description": "A multi-part model often arrives as one upload per part. In the Models page's Folders view, select them and choose Merge: pick the main one, and the others' files, pictures and descriptions move into it, their tags and collections join its, and they're deleted. Assign category gives every selected model one category in one go, picked from a tree you filter by typing. Both work on your own uploads, not on imported models or a tool's."
+      "highlight": true,
+      "title": "Import from PIXUP, Fab365 and 3DExport: twenty-one sites",
+      "description": "Three more sites to import from, each signed in to per person, through Thingport Grab or by pasting the sign-in, with no FlareSolverr needed. PIXUP, Phrozen's marketplace: free models and the ones you bought, anyone's wishlists and your collections, synced too. PIXUP hands over a free model's files only once it's in your account, so Thingport checks it out at $0 through your cart, as long as everything in the cart is free. Fab365: free models and the ones you own, bought or redeemed with a ticket, and your favourites, synced too; Thingport never spends money or tickets, and keeps renewing your sign-in itself. 3DExport, one of the oldest marketplaces: free and bought models, with their STL, 3MF, STEP and LightBurn files and a CG model's scenes and textures left behind, and your Default Collection and your own or anyone's public collections, synced too. Each brings its categories, trending models and licence, and all three are on for everyone after the update.",
+      "images": [
+        {
+          "src": "screenshots/1.6.0-providers.webp",
+          "caption": "Administration → Providers, newest first: 3DExport, Fab365 and PIXUP"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/PROVIDER_SETUP.md"
     },
     {
       "type": "feature",
-      "title": "Link an upload to its page on a site",
-      "description": "A model you uploaded yourself can be linked to its page on one of the sites Thingport imports from: Link to a provider, on the model's menu, or in the Folders view on a card's menu or the selection toolbar. It takes the page's pictures, description, tags and author, and the site's badge and link, and downloads no files. The site's category is offered as a suggestion to accept, as an AI's would be."
+      "highlight": true,
+      "title": "Share a collection with just the people you pick",
+      "description": "A collection's form now offers Private, Shared or Public. Shared shows it only to the people you pick, by any part of their name or their whole email, or by their handle on a connected instance: they see it as they would a public one, with its models to open, download, open in a slicer and copy, and nobody else on your instance sees it. Shared with someone on a connected instance, it's sent to theirs, whose admins could see it too. They're told, and find it under Shared with you, at the top of Explore. Share… on a collection's ⋮ menu opens the form on who sees it. You see who it's shared with on its cover and beside its name; they don't see who else is on the list. Add or take people off at any time, and the list stays when you make the collection private or public, for the next time you share it. Up to 100 people a collection, with social features on.",
+      "images": [
+        {
+          "src": "screenshots/1.6.0-share-collection.webp",
+          "caption": "Private, Shared or Public, and who it's shared with"
+        },
+        {
+          "src": "screenshots/1.6.0-shared-with-you.webp",
+          "caption": "Shared with you, at the top of Explore"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/social.md#share-what-you-choose"
     },
     {
       "type": "feature",
-      "title": "Import glTF models",
-      "description": "A .gltf keeps its geometry and textures in files beside it, so a download from Sketchfab used to arrive as a model per texture. Upload the folder, or drop it in the consume folder, and each .gltf is packed with its files into one .glb, which previews in its own materials and gets a rendered thumbnail and a print quality check, read in millimetres."
+      "highlight": true,
+      "title": "Profiles with a cover, an avatar, a bio and links",
+      "description": "Edit profile, on My models, gives everyone a cover, a bio of up to 1,000 characters in Markdown and up to five links. A cover is one of five drawn designs, retro, pixel art, mosaic, ASCII or blueprint, a linked account's cover, or a picture of your own, cropped to fit. Click your avatar to design one from hair, glasses, expressions and colours, or to upload a picture. Left alone, it's your Gravatar, fetched by your instance so nobody else learns your email from it, or one drawn for you. With social features on, the lock beside Edit profile puts My models on Explore: your uploads and your linked authors' models, for others to open, download and copy. Someone's profile on Explore opens on their models, with their collections beside them.",
+      "images": [
+        {
+          "src": "screenshots/1.6.0-profile.webp",
+          "caption": "A profile: cover, avatar, bio and links"
+        },
+        {
+          "src": "screenshots/1.6.0-avatar.webp",
+          "caption": "Design an avatar, or use a picture or your Gravatar"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/social.md#profiles"
     },
     {
       "type": "feature",
-      "title": "Print profiles for a whole MakerWorld collection, in Grab",
-      "description": "Grab's guided collection import offers what a model's page does: each model's default print profile, all the designer's, or the community's too. Each profile is picked and downloaded on the model's own page with its Download 3MF, at the same unhurried pace as a model, and models already in your library get only the profiles they lack."
+      "highlight": true,
+      "title": "Русский, Українська and Беларуская",
+      "description": "Thingport, its nine built-in tools and the weather widget now speak Russian, Ukrainian and Belarusian, each with its own plural forms, thanks to krolbot (#280). Configuration → Appearance → Language is a list to search, with each language's flag, its own name and how much of the app it covers, and import notifications are titled in your language too.",
+      "images": [
+        {
+          "src": "screenshots/1.6.0-languages.webp",
+          "caption": "Seven languages, by flag, name and how much is translated"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/appearance.md"
     },
     {
       "type": "feature",
-      "title": "A model's collections, at a glance",
-      "description": "A bookmark chip on the model page, between the view and print counts, says how many collections the model is in and opens the dialog to change them. Every dialog that picks a collection can make a new one where you are, so having none yet is no longer a dead end."
+      "title": "A copy is the whole model",
+      "description": "Adding someone else's model to a collection of yours, or copying one from a connected instance, now brings all of it: its category, as your own category of the same name when you have one, or for AI categorization to sort if that's on, the site it came from, its print profiles and its pictures, with a partner's description images kept on your instance. If you already have the model from that site, yours opens instead of a second copy."
     },
     {
       "type": "feature",
-      "title": "Landscapes and visitors in the weather scene",
-      "description": "The weather widget draws a field, a forest, mountains, a city or a random one of them, each following the weather, the time and the season, with animals, people and traffic passing through where they fit, and a guest who comes when the scene is double-clicked."
+      "title": "Pick how Thingport Grab looks on a page",
+      "description": "Grab's popup has an Appearance tab once it's connected: six looks for its button on a model page, Bubble, Pill, Mini, Brand, Glass and Edge tab, in any of the four corners, changing as you pick. The button now shows on every model page: a tick and a green ring when the model is in your library, opening it there, and a + when part of it is, such as some of its print profiles. Grab then adds just the missing ones, so a site's daily download limit isn't spent on the profiles you have. The sites you've turned on, and your instance's address, are links in the popup.",
+      "images": [
+        {
+          "src": "screenshots/1.6.0-grab-appearance.webp",
+          "caption": "Grab's Appearance tab: a look and a corner for its button"
+        }
+      ],
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md"
+    },
+    {
+      "type": "feature",
+      "title": "Open in a slicer through Thingport Bridge, when the slicer can't reach your instance",
+      "description": "Some slicers can't download from an instance themselves, over a certificate they don't trust, for one. Right-click a slicer under Configuration → Slicer and turn on Through Thingport Bridge, and opening a model in that slicer goes through Bridge on your computer, marked with a cable on the slicer's tile. It works for OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca and eufyMake Studio. The new Bridge fetches only model files, opens them directly rather than through cmd on Windows, keeps session tokens out of its log, and finds those slicers where they're installed, Creality Print 7 included. Thanks to pike338 (#287).",
+      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/slicers.md"
+    },
+    {
+      "type": "feature",
+      "title": "Administration → Social, for what people share",
+      "description": "Social features and chats moved from the Users page to a page of their own, after Users, which also switches connected instances on and holds their requests, partners and blocked instances."
+    },
+    {
+      "type": "feature",
+      "title": "Administration → Providers, as cards",
+      "description": "Each site is a card: its logo and name, what it imports, such as collections, likes, print profiles or paid models, who signs in, and what it needs, such as Thingport Grab or FlareSolverr. Sort by newest, oldest or name, filter by any of those, and turn several on or off at once with Select providers, shift-clicking for a range."
+    },
+    {
+      "type": "feature",
+      "title": "Delete all of someone's models, and no more Triggers page",
+      "description": "A person's ⋮ menu under Administration → Users has Delete all models, confirmed by typing their email, which keeps their account, collections and categories. Any admin can do it to a member, only the owner to another admin, and nobody to the owner. Administration → Triggers is gone: authors are still linked as more of their models are imported, or one model at a time with Fetch missing details."
+    },
+    {
+      "type": "feature",
+      "title": "Earlier releases, from What's new",
+      "description": "The history button at the top of What's new opens any earlier release's notes in place, with Back to latest to return, and an instance still on an older release is shown that release's own notes."
     },
     {
       "type": "improvement",
-      "title": "The tab's icon carries a red bubble with your unread notifications, up to 9+, with the exact count in the title and on an installed app's icon"
+      "title": "Every page opens at the top, and going back to a list of models returns to the same models at the same place, without loading them again"
     },
     {
       "type": "improvement",
-      "title": "Tags filter by how many models they have, and collections by system, user and tool, both remembered per browser"
-    },
-    {
-      "type": "improvement",
-      "title": "Run from a checkout, Thingport offers the community widgets in its own folder, so a widget can be tried before it's pushed"
-    },
-    {
-      "type": "improvement",
-      "title": "thingport.net follows your system's light or dark theme, with a three-way toggle"
+      "title": "thingport.net has a new home page, built around a demo video of Thingport"
     },
     {
       "type": "fix",
-      "title": "MakerWorld imports bring a print profile's 3MF again, rather than a zip of its STLs, and Grab's panel offers the print profiles again"
+      "title": "Loading more models at the foot of a list no longer stalls"
     },
     {
       "type": "fix",
-      "title": "A Cults3D model you bought imports, and Grab no longer calls it unbought (#232)"
+      "title": "Grab's note on a part-finished print profile import ends with the last error, so you can see why the rest failed, thanks to truri83 (#265)"
     },
     {
       "type": "fix",
-      "title": "A MakerWorld link that names no print profile is filed under the profile the page shows, not the design's default"
-    },
-    {
-      "type": "fix",
-      "title": "Grab's MakerWorld panel stays open while it picks a print profile, rather than closing mid-import"
-    },
-    {
-      "type": "fix",
-      "title": "Grab lists a linked zip's files by name"
-    },
-    {
-      "type": "fix",
-      "title": "Loading more models after some have left the list no longer skips or repeats one"
-    },
-    {
-      "type": "fix",
-      "title": "The weather widget's shapes no longer turn square in dark themes, and its text shows for anyone who asks for reduced motion"
+      "title": "A tool's models and collections can no longer be changed through an address written another way, with a trailing slash or an encoded id"
     }
   ]
 }

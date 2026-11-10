@@ -14,8 +14,12 @@ export type ModelFile = {
   launchFilename: string;
   index: number;
   plate: Plate | null;
+  /** Given where the size isn't on the plate: a partner's model's files. */
+  size?: number | null;
 };
 export type SlicerTarget = ModelFile & { href: string };
+
+export const PREPARED_KEY = "prepared";
 
 /** Sliced .gcode.3mf plates are never normalized: dropping their G-code would leave nothing to print. */
 function isNormalizable3mf(filename: string): boolean {
@@ -29,7 +33,7 @@ export function modelFiles(print: Print): ModelFile[] {
   const out: ModelFile[] = [];
   if (print.slicer_url && !sortedPlates.some((p) => p.url === print.slicer_url)) {
     const filename = print.slicer_filename ?? "";
-    out.push({ key: "prepared", url: print.slicer_url, filename, launchFilename: filename, index: -1, plate: null });
+    out.push({ key: PREPARED_KEY, url: print.slicer_url, filename, launchFilename: filename, index: -1, plate: null });
   }
   sortedPlates.forEach((plate, index) => {
     const launchFilename =
@@ -39,8 +43,21 @@ export function modelFiles(print: Print): ModelFile[] {
   return out;
 }
 
-export function slicerHref(slicerId: string, file: ModelFile): string {
-  return slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename);
+/** `bridged` are the slicers the user sends through the Bridge. */
+export function slicerHref(slicerId: string, file: ModelFile, bridged: readonly string[]): string {
+  return slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename, bridged);
+}
+
+/** The installed slicers that can be launched, and the one to open with: the last one used. `bridged` are those sent
+ *  through the Bridge. */
+export function useSlicerChoice() {
+  const { slicer, slicers, bridged } = useSlicerSettings();
+  const slicerOptions = useMemo(
+    () => SLICER_OPTIONS.filter((opt) => opt.id !== "other" && slicers.includes(opt.id)),
+    [slicers],
+  );
+  const slicerOption = slicerOptions.find((opt) => opt.id === slicer) ?? slicerOptions[0] ?? null;
+  return { slicerOption, slicerOptions, bridged };
 }
 
 /** `slicerOptions` are the installed slicers that can be launched, `slicerOption` the one the main button opens
@@ -48,19 +65,17 @@ export function slicerHref(slicerId: string, file: ModelFile): string {
  *  several, the caller offers a pick rather than opening the first. `normalizedTargets` is empty unless the
  *  slicer needs MakerWorld 3MFs converted. */
 export function useOpenInSlicer(print: Print) {
-  const { slicer, slicers } = useSlicerSettings();
-  const slicerOptions = useMemo(
-    () => SLICER_OPTIONS.filter((opt) => opt.id !== "other" && slicers.includes(opt.id)),
-    [slicers],
-  );
-  const slicerOption = slicerOptions.find((opt) => opt.id === slicer) ?? slicerOptions[0] ?? null;
+  const { slicerOption, slicerOptions, bridged } = useSlicerChoice();
 
   const files = useMemo(() => modelFiles(print), [print]);
   const canOpen = Boolean(print.slicer_url) && files.length > 0;
 
   const targets = useMemo<SlicerTarget[]>(
-    () => (slicerOption && canOpen ? files.map((file) => ({ ...file, href: slicerHref(slicerOption.id, file) })) : []),
-    [files, canOpen, slicerOption],
+    () =>
+      slicerOption && canOpen
+        ? files.map((file) => ({ ...file, href: slicerHref(slicerOption.id, file, bridged) }))
+        : [],
+    [files, canOpen, slicerOption, bridged],
   );
 
   const normalizedTargets = useMemo<SlicerTarget[]>(() => {
@@ -80,9 +95,9 @@ export function useOpenInSlicer(print: Print) {
         launchFilename,
         index,
         plate,
-        href: slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(`${url}?normalize=1`), filename),
+        href: slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(`${url}?normalize=1`), filename, bridged),
       }));
-  }, [files, print.source_provider, print.prepared_print, slicerOption]);
+  }, [files, print.source_provider, print.prepared_print, slicerOption, bridged]);
 
   /** The normalized counterpart of `file`, if the current slicer offers one. */
   const normalizedTargetFor = useCallback(

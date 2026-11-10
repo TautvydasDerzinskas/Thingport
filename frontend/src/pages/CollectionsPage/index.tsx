@@ -13,7 +13,12 @@ import CallMergeIcon from "@mui/icons-material/CallMerge";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import { UnauthorizedError } from "../../api/client";
-import { type Collection, type CollectionInput, collectionsApi } from "../../api/collections";
+import {
+  type Collection,
+  type CollectionInput,
+  type CollectionSharingPatch,
+  collectionsApi,
+} from "../../api/collections";
 import { type PreviewMode } from "../../api/settings";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
@@ -35,6 +40,7 @@ import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
 import { useBackgroundReload } from "../../hooks/useBackgroundReload";
+import { oneOrSeveral } from "../../utils/oneOrSeveral";
 
 type Props = {
   onUnauthorized?: () => void;
@@ -116,8 +122,20 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
   const count = selected.length;
   const allBookmarked = count > 0 && selected.every((c) => c.bookmarked);
 
-  const createCollection = async (input: CollectionInput) => {
-    await collectionsApi.create(input);
+  const createCollection = async (input: CollectionInput, sharing: CollectionSharingPatch | null) => {
+    const created = await collectionsApi.create(input);
+    // Made, whatever becomes of who sees it: a failure there is said, and the form closes rather than offering to make
+    // it again under a name it now has. Share… in its menu tries again.
+    if (sharing) {
+      await collectionsApi.updateSharing(created.id, sharing).catch((err: unknown) => {
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else
+          showToast({
+            message: t("models:collections.form.createdNotShared", { name: created.name }),
+            severity: "error",
+          });
+      });
+    }
     await load();
     // Making one is asking to see it, so the filters don't leave it hidden.
     if (hiddenTypes.includes("user")) changeHiddenTypes(hiddenTypes.filter((type) => type !== "user"));
@@ -158,7 +176,7 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
   const removeSelected = async () => {
     const confirmed = await confirm({
       title: t("models:collections.selection.deleteTitle", { count }),
-      message: t("models:collections.selection.deleteMessage", { count }),
+      message: t("models:collections.selection.deleteMessage", { count: oneOrSeveral(count) }),
       confirmLabel: t("common:delete"),
       destructive: true,
     });
@@ -329,7 +347,13 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
         </Stack>
       )}
 
-      {formOpen && <CollectionFormModal onClose={() => setFormOpen(false)} onSubmit={createCollection} />}
+      {formOpen && (
+        <CollectionFormModal
+          onClose={() => setFormOpen(false)}
+          onSubmit={createCollection}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
     </Stack>
   );
 }

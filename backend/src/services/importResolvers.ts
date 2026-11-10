@@ -14,6 +14,7 @@ import { isJsonContentType } from "../utils/fileUtils";
 import { type ProviderId } from "../providers/index.generated";
 // The metadata a link import carries holds MakerWorld's print profile, as its link import is the shared one.
 import type { MakerworldProfileRef } from "../providers/makerworld/pageData";
+import type { ProviderLicense } from "./licenseCatalog";
 import { decodeHtmlEntities } from "../utils/htmlEntities";
 import {
   extractJsonFromBrowserBody,
@@ -356,6 +357,9 @@ export type ImportedPageMetadata = {
   makerworldProfile?: MakerworldProfileRef;
   /** The scripts the model is generated from, where the site says it has them. Absent for an ordinary model. */
   parametricSource?: ParametricSourceInfo;
+  /** The model's licence as the site lists it: null when the site says none; absent when this read didn't look (Grab's
+   *  cut-down MakerWorld design), so it's read again later (services/licenseService.ts). */
+  license?: ProviderLicense | null;
 };
 
 /** What a site says about a model's generator scripts, read from its metadata before anything is downloaded. */

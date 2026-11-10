@@ -1,12 +1,19 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import express from "express";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { localFilesRouter } from "../src/routes/releaseNotes";
 import {
   announceVersionUpdate,
   clearReleaseNotesCache,
   getReleaseNotes,
   isQuietRelease,
+  localReleaseNotesDir,
   notesFromChangelogs,
   parseChangelog,
   parseCuratedNotes,
@@ -207,6 +214,59 @@ describe("release notes", () => {
     }
   });
 
+  it("reads an earlier release's notes from the archive, and lists the releases that have some", async () => {
+    const files: Record<string, string> = {
+      "/release-notes/latest-release-notes.json": JSON.stringify({
+        version: "1.2.0",
+        title: "Latest title",
+        items: [{ type: "feature", title: "Curated feature" }],
+      }),
+      "/release-notes/archive/1.1.0.json": JSON.stringify({
+        version: "1.1.0",
+        title: "Archived title",
+        items: [{ type: "feature", title: "Archived feature", images: [{ src: "screenshots/1.1.0-shot.webp" }] }],
+      }),
+      // Named for one release but holding another's, so it's never shown as the one it's named for.
+      "/release-notes/archive/1.1.1.json": JSON.stringify({
+        version: "1.1.0",
+        items: [{ type: "fix", title: "Wrong" }],
+      }),
+      "/backend/CHANGELOG.md": BACKEND_CHANGELOG,
+      "/frontend/CHANGELOG.md": FRONTEND_CHANGELOG,
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const body = files[new URL(String(input)).pathname];
+      return new Response(body ?? "", { status: body ? 200 : 404 });
+    });
+    try {
+      clearReleaseNotesCache();
+      const latest = await getReleaseNotes({ version: "1.2.0" }, "https://notes.example");
+      expect(latest?.earlier).toEqual([{ version: "1.1.0", title: "Archived title" }]);
+
+      const archived = await getReleaseNotes({ version: "1.1.0" }, "https://notes.example");
+      expect(archived).toMatchObject({ source: "curated", version: "1.1.0", title: "Archived title", earlier: [] });
+      // Its pictures are where they were when it was the latest file.
+      expect(archived?.items[0].images[0].url).toBe("https://notes.example/release-notes/screenshots/1.1.0-shot.webp");
+
+      // A release without notes of its own comes from the changelog, with the earlier ones still offered.
+      const patch = await getReleaseNotes({ version: "1.1.1" }, "https://notes.example");
+      expect(patch?.source).toBe("changelog");
+      expect(patch?.earlier.map((release) => release.version)).toEqual(["1.1.0"]);
+
+      // A hotfix shows the notes of the release it fixes, which aren't offered again beside them.
+      const hotfix = await getReleaseNotes({ version: "1.2.1" }, "https://notes.example");
+      expect(hotfix?.title).toBe("Latest title");
+      expect(hotfix?.earlier.map((release) => release.version)).toEqual(["1.1.0"]);
+
+      // A release whose notes aren't written yet offers the latest file's among the earlier ones.
+      const next = await getReleaseNotes({ version: "1.3.0" }, "https://notes.example");
+      expect(next?.earlier.map((release) => release.version)).toEqual(["1.2.0", "1.1.0"]);
+    } finally {
+      fetchMock.mockRestore();
+      clearReleaseNotesCache();
+    }
+  });
+
   it("resolves curated screenshots against the file and drops unsafe ones", () => {
     const notes = parseCuratedNotes(
       {
@@ -233,6 +293,71 @@ describe("release notes", () => {
     expect(notes?.items[1]).toMatchObject({ highlight: true, code: "claude mcp add thingport" });
     expect(notes?.items[0]).toMatchObject({ highlight: false, code: null });
     expect(parseCuratedNotes({ version: "next", items: [] }, "https://x.example/a.json")).toBeNull();
+  });
+
+  it("previews a checkout's latest notes, read afresh at their own version, with its pictures served", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "release-notes-"));
+    const write = (file: string, body: string) => {
+      fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      fs.writeFileSync(path.join(root, file), body);
+    };
+    const draft = (title: string) =>
+      JSON.stringify({
+        version: "1.3.0",
+        title,
+        items: [
+          {
+            type: "feature",
+            title: "Curated feature",
+            images: [{ src: "screenshots/1.3.0 shot.webp" }, { src: "../backend/CHANGELOG.md" }],
+          },
+        ],
+      });
+    write("release-notes/latest-release-notes.json", draft("Draft"));
+    write("release-notes/screenshots/1.3.0 shot.webp", "webp");
+    write("backend/CHANGELOG.md", BACKEND_CHANGELOG);
+    const base = pathToFileURL(root).href;
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      expect(localReleaseNotesDir(base)).toBe(path.join(root, "release-notes"));
+      expect(localReleaseNotesDir("https://notes.example")).toBeNull();
+
+      // Whatever version package.json names: it's bumped only by the release.
+      const notes = await getReleaseNotes({}, base);
+      expect(notes).toMatchObject({ source: "curated", version: "1.3.0", title: "Draft" });
+      // A picture outside the release-notes folder isn't served, so it's left out.
+      const shot = "/api/release-notes/files/screenshots/1.3.0%20shot.webp";
+      expect(notes?.items[0].images).toEqual([{ url: shot, caption: null }]);
+
+      write("release-notes/latest-release-notes.json", draft("Edited"));
+      expect((await getReleaseNotes({}, base))?.title).toBe("Edited");
+      // Asking for a version still gets that version's.
+      expect(await getReleaseNotes({ version: "1.2.0" }, base)).toMatchObject({
+        version: "1.2.0",
+        source: "changelog",
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+
+      const app = express().use("/api", localFilesRouter(path.join(root, "release-notes")));
+      const served = await request(app).get(shot);
+      expect(served.status).toBe(200);
+      expect(served.headers["content-type"]).toMatch(/^image\/webp/);
+      expect((await request(app).get("/api/release-notes/files/%2e%2e/backend/CHANGELOG.md")).status).toBe(404);
+      expect((await request(app).get("/api/release-notes/files/screenshots/missing.webp")).status).toBe(404);
+
+      // A draft that doesn't parse says why, as the dialog quietly falls back to the changelog.
+      write(
+        "release-notes/latest-release-notes.json",
+        JSON.stringify({ version: "1.3.0", items: [{ type: "feature" }] }),
+      );
+      expect((await getReleaseNotes({}, base))?.source).not.toBe("curated");
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("items.0.title"));
+    } finally {
+      fetchMock.mockRestore();
+      warn.mockRestore();
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

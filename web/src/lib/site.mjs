@@ -90,7 +90,7 @@ export const DOCS = [
     group: "Companion apps",
     title: "Thingport Grab browser extension",
     nav: "Thingport Grab",
-    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport, and no password is saved.`,
+    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport instance, and no password is saved.`,
   },
   {
     slug: "grab/privacy",
@@ -213,7 +213,8 @@ export const DOCS = [
     group: "Features",
     title: "Profile and activity",
     nav: "Profile and activity",
-    description: "A year-long activity heatmap and timeline of everything you've done with your library.",
+    description:
+      "A profile with your cover, avatar, bio and links, and a year-long activity heatmap and timeline of everything you've done with your library.",
   },
   {
     slug: "features/authors",
@@ -250,6 +251,15 @@ export const DOCS = [
       "Keep instructions, notes and a ready-to-print sliced file next to each model, and customize one that came with its OpenSCAD script right in your browser.",
   },
   {
+    slug: "features/licenses",
+    source: "docs/features/licenses.md",
+    group: "Features",
+    title: "Licences",
+    nav: "Licences",
+    description:
+      "The licence each model was published under, shown on its page with a credit line, filtered by what it allows, and written beside its files as LICENSE.txt unless an admin turns that off.",
+  },
+  {
     slug: "features/downloads",
     source: "docs/features/downloads.md",
     group: "Features",
@@ -276,6 +286,24 @@ export const DOCS = [
       "Separate libraries for everyone, collections and chats to share once an admin allows it, and open or invite-only registration, email verification, captcha and single sign-on.",
   },
   {
+    slug: "features/social",
+    source: "docs/features/social.md",
+    group: "Features",
+    title: "Social features",
+    nav: "Social features",
+    description:
+      "Collections that are private, shared with the people you pick or public, found on Explore and under Shared with you, profiles to show them on, and chats with models in them, across connected instances too.",
+  },
+  {
+    slug: "features/connected-instances",
+    source: "docs/features/connected-instances.md",
+    group: "Features",
+    title: "Connected instances",
+    nav: "Connected instances",
+    description:
+      "Thingport instances connected as partners: one Explore, their models to download and copy, chats across instances, even from a home network the internet can't reach.",
+  },
+  {
     slug: "features/administration",
     source: "docs/features/administration.md",
     group: "Features",
@@ -291,7 +319,7 @@ export const DOCS = [
     title: "Themes, colours and languages",
     nav: "Themes and languages",
     description:
-      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French or Lithuanian.",
+      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French, Lithuanian, Russian, Ukrainian or Belarusian.",
   },
   {
     slug: "guides/system-health",
@@ -319,6 +347,15 @@ export const DOCS = [
     nav: "Single sign-on",
     description:
       "Let people sign in to Thingport with Authentik, Pocket ID, Keycloak or any other OpenID Connect provider.",
+  },
+  {
+    slug: "guides/connected-instances",
+    source: "docs/guides/connected-instances.md",
+    group: "Administration",
+    title: "Set up connected instances",
+    nav: "Set up connected instances",
+    description:
+      "Turn connected instances on, connect to another instance, answer requests and look after partners, step by step, a home instance behind its router included.",
   },
   {
     slug: "guides/api-token",
@@ -416,7 +453,7 @@ export const DOCS = [
     title: "Build with an AI assistant",
     nav: "With an AI assistant",
     description:
-      "Describe a widget or a tool to Claude or another assistant over MCP, which writes it and saves it to your Thingport.",
+      "Describe a widget or a tool to Claude or another assistant over MCP, which writes it and saves it to your Thingport instance.",
   },
   {
     slug: "developers/publishing",
@@ -424,7 +461,7 @@ export const DOCS = [
     group: "Build for Thingport",
     title: "Publishing widgets and tools",
     nav: "Publishing",
-    description: "Share a widget or a tool with every Thingport through a pull request to the repository.",
+    description: "Share a widget or a tool with every Thingport instance through a pull request to the repository.",
   },
   {
     slug: "contributing",

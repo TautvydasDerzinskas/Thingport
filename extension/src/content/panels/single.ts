@@ -13,6 +13,7 @@ import {
 } from "../../providers/makerworld/downloadResolver";
 import { currentMakerworldProfileTitle } from "../../providers/makerworld/pageData";
 import { CONTENT_MODULES, type ProfileScope, type ScriptState } from "../../providers/content";
+import { missingOf, profileUrl, withoutHeld, type MissingProfiles } from "../profiles";
 import { api, escapeHtml } from "../runtime";
 import { onPanelAction, panelQuery, panelQueryAll, renderPanel, setPanelNote } from "../shell";
 import { modelHeadHtml, modelTitle } from "./modelHead";
@@ -45,6 +46,27 @@ async function hasPrintProfiles(): Promise<boolean> {
   return ((await profileIdsFor())?.("all").length ?? 0) > 0;
 }
 
+/** What the profile picker picks: a scope of the page's profiles, or of the ones the library's model lacks. */
+type ProfileChoice = ProfileScope | "missing" | "missing-designer";
+
+type ProfileOption = { value: ProfileChoice; label: string };
+
+/** A lone choice other than the page's own profile, which is what no picker means, still goes in as a hidden field. */
+function profilePickerHtml(options: ProfileOption[], picked: ProfileChoice = "url"): string {
+  if (options.length < 2) {
+    const only = options[0]?.value;
+    return only && only !== "url" ? `<input type="hidden" id="tg-profiles" value="${only}" />` : "";
+  }
+  const rows = options.map(
+    ({ value, label }) =>
+      `<option value="${value}"${value === picked ? " selected" : ""}>${escapeHtml(label)}</option>`,
+  );
+  return `
+    <label class="tg-label" for="tg-profiles">Print profiles</label>
+    <select id="tg-profiles" class="tg-select">${rows.join("")}</select>
+  `;
+}
+
 /** The page's selected profile first, then "designer's" and "all" where they'd import more. */
 async function profilesPickerHtml(): Promise<string> {
   const ids = await profileIdsFor();
@@ -52,23 +74,35 @@ async function profilesPickerHtml(): Promise<string> {
   const all = ids("all").length;
   if (all < 2) return "";
   const designer = ids("designer").length;
-  const options = [`<option value="url">Currently selected print profile</option>`];
-  if (designer > 1) options.push(`<option value="designer">All designer print profiles (${designer})</option>`);
-  if (all > designer) options.push(`<option value="all">Designer &amp; community print profiles (${all})</option>`);
-  return `
-    <label class="tg-label" for="tg-profiles">Print profiles</label>
-    <select id="tg-profiles" class="tg-select">${options.join("")}</select>
-  `;
+  const options: ProfileOption[] = [{ value: "url", label: "Currently selected print profile" }];
+  if (designer > 1) options.push({ value: "designer", label: `All designer print profiles (${designer})` });
+  if (all > designer) options.push({ value: "all", label: `Designer & community print profiles (${all})` });
+  return profilePickerHtml(options);
 }
 
-function selectedProfileScope(): ProfileScope {
-  const value = panelQuery<HTMLSelectElement>("#tg-profiles")?.value;
-  return value === "designer" || value === "all" ? value : "url";
+/** For a model in the library: the page's own profile while the model lacks it, picked first, then the missing
+ *  ones, the designer's and all of them, all of them picked otherwise. A choice the one before it covers is left out. */
+function missingProfilesPickerHtml(missing: MissingProfiles, selectedMissing: boolean): string {
+  const options: ProfileOption[] = [];
+  if (selectedMissing) options.push({ value: "url", label: "Currently selected print profile" });
+  const designer = missing.designer.length;
+  if (designer && designer < missing.all.length && designer > (selectedMissing ? 1 : 0)) {
+    options.push({ value: "missing-designer", label: `Missing designer print profiles (${designer})` });
+  }
+  if (missing.all.length > (selectedMissing ? 1 : 0)) {
+    options.push({ value: "missing", label: `All missing print profiles (${missing.all.length})` });
+  }
+  return profilePickerHtml(options, selectedMissing ? "url" : "missing");
 }
 
-function profileUrl(url: string, instanceId: string): string {
-  const own = CONTENT_MODULES[ctx().classification.provider].profileUrl;
-  return own ? own(url, instanceId) : `${url.split("#")[0]}#profileId-${instanceId}`;
+function selectedProfileChoice(): ProfileChoice {
+  const value = panelQuery<HTMLSelectElement | HTMLInputElement>("#tg-profiles")?.value;
+  return value === "designer" || value === "all" || value === "missing" || value === "missing-designer" ? value : "url";
+}
+
+/** The scope a choice is queued or signed with: the instance leaves out what the model already has. */
+function scopeOf(choice: ProfileChoice): ProfileScope {
+  return choice === "missing" ? "all" : choice === "missing-designer" ? "designer" : choice;
 }
 
 function importHeading(): string {
@@ -112,7 +146,7 @@ function queueButtonHtml(): string {
 function onQueueAction(): void {
   onPanelAction("queue", () => {
     const choice = readCollectionChoice();
-    const scope = selectedProfileScope();
+    const scope = scopeOf(selectedProfileChoice());
     void collectionIdFor(choice).then((collectionId) => runQueueImport(scope, collectionId));
   });
 }
@@ -120,14 +154,23 @@ function onQueueAction(): void {
 export async function loadSingleItem(): Promise<void> {
   const { library } = ctx();
   startScriptNote();
-  if (library?.state === "imported") {
-    renderPanel(fillGapsHtml());
-    onPanelAction("fill-gaps", () => void runFillGaps());
+  // A MakerWorld profile is always one 3MF, so inspecting would only cost a download resolution.
+  if (library?.state === "complete") {
+    renderPanel(completeHtml());
     return;
   }
-  // A MakerWorld profile is always one 3MF, so inspecting would only cost a download resolution.
   if (library) {
-    renderPanel(addProfileHtml(await profilesPickerHtml()));
+    const ids = library.heldProfiles ? await profileIdsFor() : null;
+    const missing = ids && library.heldProfiles ? missingOf(ids, library.heldProfiles) : null;
+    if (library.state === "imported" && !missing?.all.length) {
+      renderPanel(fillGapsHtml());
+      onPanelAction("fill-gaps", () => void runFillGaps());
+      return;
+    }
+    const picker = missing
+      ? missingProfilesPickerHtml(missing, library.state !== "imported")
+      : await profilesPickerHtml();
+    renderPanel(addProfileHtml(picker, missing));
     onPanelAction("import", () => void runDirectImport());
     onQueueAction();
     onPanelAction("fill-gaps", () => void runFillGaps());
@@ -189,20 +232,24 @@ export async function loadSingleItem(): Promise<void> {
   onPanelAction("choose-files", () => void loadZipEntries());
 }
 
-/** The model's in the library but this profile may not be. */
-function addProfileHtml(profilesPicker: string): string {
+/** The model's in the library but this profile, or others of the page's, may not be. */
+function addProfileHtml(profilesPicker: string, missing: MissingProfiles | null): string {
   const { library, url } = ctx();
   const profileName = currentMakerworldProfileTitle(url);
   const profileLabel = profileName ? `the "${escapeHtml(profileName)}" profile` : "this print profile";
-  const hint =
-    library?.state === "profile_missing"
+  // This profile is on the model, so what's on offer is the others.
+  const lacking = library?.state === "imported" && missing?.all.length ? missing : null;
+  const others = lacking?.all.length ?? 0;
+  const hint = lacking
+    ? `You have ${lacking.total - others} of this model's ${lacking.total} print profiles. Add ${others === 1 ? "the missing one" : `the ${others} missing`} as more files on it?`
+    : library?.state === "profile_missing"
       ? `You already have this model. Add ${profileLabel} as another file on it?`
       : `This model is in your library. Add ${profileLabel} if you don't have it yet -- if one of the model's files already is this profile, nothing is downloaded twice.`;
   return `
     ${modelHeadHtml("In your library")}
     <div class="tg-hint">${hint}</div>
     ${profilesPicker}
-    <button class="tg-btn" type="button" data-action="import">Add profile</button>
+    <button class="tg-btn" type="button" data-action="import">${others > 1 ? "Add profiles" : "Add profile"}</button>
     ${queueButtonHtml()}
     ${library?.gaps.length ? fillGapsButtonHtml("tg-btn--secondary") : ""}
     <a class="tg-btn tg-btn--secondary" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">Open model in Thingport</a>
@@ -230,6 +277,26 @@ function fillGapsButtonHtml(variant = ""): string {
 function libraryModelLink(): string {
   const { library, instanceUrl } = ctx();
   return library?.printId ? `${instanceUrl}/models/${library.printId}` : `${instanceUrl}/models`;
+}
+
+/** Everything's in the library: the model, the page's print profiles and its details, so all there is to do is open
+ *  it. Where the instance didn't say which model it is, only that it has it, the button opens the library. Drawn at
+ *  once, from the count taken when the model was found complete: nothing more is asked of the site first. */
+function completeHtml(): string {
+  const { library } = ctx();
+  const profiles = library?.printId ? (library.profiles ?? 0) : 0;
+  const what =
+    profiles > 1
+      ? `the model, its ${profiles} print profiles and its details`
+      : profiles === 1
+        ? "the model, its print profile and its details"
+        : "the model and its details";
+  const hint = library?.printId ? `Everything here is in your library: ${what}.` : "This model is in your library.";
+  return `
+    ${modelHeadHtml("In your library")}
+    <div class="tg-hint">${hint}</div>
+    <a class="tg-btn" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">Open in Thingport</a>
+  `;
 }
 
 /** Everything's imported, but the library model has empty details the source can fill. */
@@ -304,17 +371,17 @@ async function loadZipEntries(): Promise<void> {
 async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
   // Captured up front: SPA navigation clears the context mid-import.
   const choice = readCollectionChoice();
-  const scope = selectedProfileScope();
+  const profiles = selectedProfileChoice();
   if (ctx().classification.provider === MANIFESTS.makeronline.id) {
-    await runMakeronlineImport(scope, await collectionIdFor(choice));
+    await runMakeronlineImport(scopeOf(profiles), await collectionIdFor(choice));
     return;
   }
   if (ctx().classification.provider === MANIFESTS.owlcad.id) {
     await runOwlcadImport(await collectionIdFor(choice));
     return;
   }
-  if (scope !== "url") {
-    await runProfilesImport(scope, await collectionIdFor(choice));
+  if (profiles !== "url") {
+    await runProfilesImport(profiles, await collectionIdFor(choice));
     return;
   }
   const { url, instanceUrl, classification, title } = ctx();
@@ -407,14 +474,24 @@ function nullUnlessBlocking(err: unknown): null {
   return null;
 }
 
-/** The first profile creates (or finds) the model; later ones are added as files. Stops on a
- *  CAPTCHA or the daily download limit, which would fail every later one. */
-async function runProfilesImport(scope: ProfileScope, collectionId: string | null): Promise<void> {
-  const { url, instanceUrl, title, classification } = ctx();
+/** The first profile creates (or finds) the model; later ones are added as files. Ones the library's model has are
+ *  left out before anything is downloaded: each MakerWorld download counts towards its daily limit, which a retry
+ *  after a partial import would otherwise spend on them again. Stops on a CAPTCHA or that limit, which would fail
+ *  every later one. */
+async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collectionId: string | null): Promise<void> {
+  const { url, instanceUrl, title, classification, library } = ctx();
+  const scope = scopeOf(choice);
   const makerworld = classification.provider === MANIFESTS.makerworld.id;
   const ids = (await profileIdsFor())?.(scope) ?? [];
   if (!ids.length) {
     renderPanel(errorHtml(new Error("Couldn't read this model's print profiles. Reload the page and try again.")));
+    return;
+  }
+  const wanted = withoutHeld(ids, library?.heldProfiles ?? []);
+  if (!wanted.length) {
+    renderPanel(
+      successHtml(libraryModelLink(), "These print profiles are all on the model already.", "Already in your library"),
+    );
     return;
   }
 
@@ -423,8 +500,8 @@ async function runProfilesImport(scope: ProfileScope, collectionId: string | nul
   let failed = 0;
   let lastError: unknown = null;
   let printId: string | null = null;
-  for (const [index, instanceId] of ids.entries()) {
-    renderPanel(statusHtml(`Importing print profile ${index + 1} of ${ids.length}…`));
+  for (const [index, instanceId] of wanted.entries()) {
+    renderPanel(statusHtml(`Importing print profile ${index + 1} of ${wanted.length}…`));
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, PROFILE_GAP_MS));
     // Each profile is picked on the page, then downloaded with its own button: the one the page shows needn't be the
     // first of these. Snapmaker's and Creality Cloud's the instance fetches itself.
@@ -433,8 +510,9 @@ async function runProfilesImport(scope: ProfileScope, collectionId: string | nul
         ? await resolveMakerworldProfileDownload(url, instanceId).catch(nullUnlessBlocking)
         : null;
       const print = await request("IMPORT_SINGLE", {
-        // MakerWorld's page link carries its profile; the others' is named, so a model already in the library gets it.
-        url: index === 0 && makerworld ? url : profileUrl(url, instanceId),
+        // Named even where it's the page's own: a MakerWorld link naming none means the default profile to the
+        // instance, which a model already in the library may have.
+        url: profileUrl(classification.provider, url, instanceId),
         collectionId,
         resolved,
         title,
@@ -447,7 +525,7 @@ async function runProfilesImport(scope: ProfileScope, collectionId: string | nul
       lastError = err;
       // The backend's errors arrive as plain text.
       if (err instanceof Error && /captcha|download limit/i.test(err.message)) {
-        failed += ids.length - index - 1;
+        failed += wanted.length - index - 1;
         break;
       }
     }
@@ -460,8 +538,17 @@ async function runProfilesImport(scope: ProfileScope, collectionId: string | nul
   const parts = [`${added} print profile${added === 1 ? "" : "s"} imported`];
   if (already) parts.push(`${already} already on the model`);
   if (failed) parts.push(`${failed} failed`);
+  // Onto a model already in the library, as adding the page's own profile there says.
+  const addedTitle = library && added ? `Profile${added === 1 ? "" : "s"} added` : undefined;
+  // The last failure's reason (a CAPTCHA, the daily limit, the instance's refusal) says what to do about the rest.
+  const reason =
+    failed && lastError ? ` Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}` : "";
   renderPanel(
-    successHtml(`${instanceUrl}/models/${printId}`, `${parts.join(", ")}.`, failed ? "Partly imported" : undefined),
+    successHtml(
+      `${instanceUrl}/models/${printId}`,
+      `${parts.join(", ")}.${reason}`,
+      failed ? "Partly imported" : addedTitle,
+    ),
   );
 }
 

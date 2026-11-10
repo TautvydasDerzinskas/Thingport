@@ -7,8 +7,9 @@ import { seasonalIcon } from "../shared/seasonalIcon";
 import { dressMark } from "../shared/seasonalMark";
 import { send, type Connection, type ExtensionState } from "../shared/messages";
 import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type OfflineFeature } from "../shared/storage";
+import { showAppearance } from "./appearance";
 import { confirmAction } from "./confirm";
-import { clearError, els, showError } from "./dom";
+import { clearError, els, opensInTab, showError } from "./dom";
 import { loadRecentImports } from "./recentImports";
 import { loadRecentlyViewed } from "./recentlyViewed";
 import { loadSites } from "./sites";
@@ -23,6 +24,8 @@ dressMark(els.headerIcon, seasonalIcon(), "header__season");
 if (els.headerIcon.dataset.season) els.headerIcon.closest(".header")?.classList.add("header--seasonal");
 // Bumped by semantic-release in package.json, which the build copies into the manifest.
 els.version.textContent = `v${chrome.runtime.getManifest().version}`;
+// The instance's address, shown once connected, opens it.
+opensInTab(els.instanceLink);
 
 const FEATURE_SWITCHES: Record<OfflineFeature, HTMLInputElement> = {
   normalizeMakerworld: els.normalizeSwitch,
@@ -30,19 +33,27 @@ const FEATURE_SWITCHES: Record<OfflineFeature, HTMLInputElement> = {
   thingiverseHideAds: els.thingiverseAdsSwitch,
 };
 
-type Tab = "connect" | "offline" | "history";
+type Tab = "connect" | "appearance" | "offline" | "history";
 
+// In the order they're shown.
 const TABS: Record<Tab, { tab: HTMLButtonElement; panel: HTMLElement }> = {
   connect: { tab: els.connectTab, panel: els.connectPanel },
+  appearance: { tab: els.appearanceTab, panel: els.appearancePanel },
   offline: { tab: els.offlineTab, panel: els.offlinePanel },
   history: { tab: els.historyTab, panel: els.historyPanel },
 };
 
-/** The first two tabs' names: what they hold changes once connected. */
+/** The tabs on offer: Appearance only once connected. */
+const shownTabs = (): Tab[] => (Object.keys(TABS) as Tab[]).filter((name) => !TABS[name].tab.hidden);
+
+/** What the tabs hold changes once connected: the first two are named for it, and Appearance comes in. */
 function labelTabs(connected: boolean): void {
   els.connectTab.textContent = connected ? "Providers" : "Connect";
   els.offlineTab.textContent = connected ? "Extra features" : "Offline features";
   els.offlineNote.hidden = connected;
+  els.appearanceTab.hidden = !connected;
+  const active = els.tabs.dataset.active as Tab | undefined;
+  selectTab(active && shownTabs().includes(active) ? active : "connect");
 }
 
 function selectTab(selected: Tab, { focus = false } = {}): void {
@@ -53,6 +64,10 @@ function selectTab(selected: Tab, { focus = false } = {}): void {
     tab.tabIndex = active ? 0 : -1;
     panel.hidden = !active;
   }
+  // The underline: as wide as one tab of those shown, under the one picked (styles/_tabs.scss).
+  const shown = shownTabs();
+  els.tabs.style.setProperty("--tab-count", String(shown.length));
+  els.tabs.style.setProperty("--tab-index", String(Math.max(shown.indexOf(selected), 0)));
   if (focus) TABS[selected].tab.focus();
 }
 
@@ -64,7 +79,7 @@ for (const [name, { tab }] of Object.entries(TABS) as [Tab, (typeof TABS)[Tab]][
 els.tabs.addEventListener("keydown", (event) => {
   if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
   event.preventDefault();
-  const names = Object.keys(TABS) as Tab[];
+  const names = shownTabs();
   const current = names.indexOf(els.tabs.dataset.active as Tab);
   const next =
     event.key === "Home"
@@ -88,8 +103,9 @@ function showConfiguredView(state: ExtensionState): void {
   els.setupForm.hidden = true;
   els.instanceRow.hidden = false;
   els.enabledToggle.hidden = false;
-  els.instanceUrlText.textContent = displayInstanceUrl(state.instanceUrl);
-  els.instanceUrlText.title = state.instanceUrl;
+  els.instanceLink.textContent = displayInstanceUrl(state.instanceUrl);
+  els.instanceLink.href = state.instanceUrl;
+  els.instanceLink.title = `Open ${state.instanceUrl}`;
   els.enabledSwitch.checked = !state.disabled;
   clearError(els.configuredError);
   void loadRecentImports();
@@ -138,7 +154,8 @@ function hideCredentials(): void {
 
 const PAIR_NOTE =
   "Opens Thingport in a tab to approve this browser. Nothing is saved here but the connection it hands back.";
-const PAIR_UNSUPPORTED = "This Thingport is too old to pair with -- connect it with your email and password instead.";
+const PAIR_UNSUPPORTED =
+  "This Thingport instance is too old to pair with -- connect it with your email and password instead.";
 
 // Asked of each instance typed in. Pairing leads, so the button follows the address alone and only an instance
 // that answers and says it can't pair takes it away -- one that simply doesn't answer may still be fine, and
@@ -206,6 +223,7 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
   for (const [feature, input] of Object.entries(FEATURE_SWITCHES) as [OfflineFeature, HTMLInputElement][]) {
     input.checked = res.data.offlineFeatures[feature];
   }
+  showAppearance(res.data.bubble);
   if (!res.data.configured) {
     showSetupForm();
     return;

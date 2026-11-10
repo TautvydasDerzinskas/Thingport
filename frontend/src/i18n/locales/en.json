@@ -357,7 +357,7 @@
           "writeConfirmTitle": "Let the assistant use “{{tool}}”?",
           "writeConfirmMessage": "This tool changes your library. An assistant connected with this token will be able to use it without asking you each time. Nothing it does deletes models.",
           "writeConfirm": "Turn on",
-          "adminOff": "An admin has turned MCP off on this Thingport.",
+          "adminOff": "An admin has turned MCP off on this Thingport instance.",
           "adminReadOnly": "An admin allows only the tools that read.",
           "copyCommand": "Copy command",
           "reads": "Reads your library",
@@ -397,7 +397,7 @@
             },
             "collections": {
               "title": "Collections",
-              "description": "Your collections and what's in them, and the ones others share."
+              "description": "Your collections and what's in them, and the collections and models others share."
             },
             "tags": {
               "title": "Tags",
@@ -443,7 +443,10 @@
       },
       "language": {
         "heading": "Language",
-        "subtitle": "Choose the language used throughout Thingport."
+        "subtitle": "Choose the language used throughout Thingport.",
+        "search": "Search languages",
+        "noMatch": "No language matches",
+        "translated": "{{percent}}% translated"
       },
       "slicer": {
         "failed": "Failed to save -- try again.",
@@ -539,7 +542,19 @@
       "emptyUnread": "You're all caught up.",
       "emptySystem": "No announcements from Thingport.",
       "clearUnreadConfirm": "Delete all unread notifications? This can't be undone.",
-      "clearSystemConfirm": "Delete all system notifications? They won't be sent again. This can't be undone."
+      "clearSystemConfirm": "Delete all system notifications? They won't be sent again. This can't be undone.",
+      "messages": {
+        "importFailed": "Couldn't import a model",
+        "alreadyInLibrary": "“{{name}}” is already in your library",
+        "imported": "Imported “{{name}}”",
+        "profileAdded": "Added another print profile to “{{name}}”",
+        "importedModels_one": "Imported {{count}} model",
+        "importedModels_other": "Imported {{count}} models",
+        "importRun_one": "Imported {{done}} of {{count}} model",
+        "importRun_other": "Imported {{done}} of {{count}} models",
+        "importRunFrom_one": "Imported {{done}} of {{count}} model from {{site}}",
+        "importRunFrom_other": "Imported {{done}} of {{count}} models from {{site}}"
+      }
     },
     "search": {
       "placeholder": "Search models, collections, tags…",
@@ -882,19 +897,29 @@
     "dashboard": {
       "loadError": "Failed to load your dashboard.",
       "seeMore": "See more",
-      "viewCount": "{{count}} views",
-      "printCount": "{{count}} prints",
+      "viewCount_one": "{{count}} view",
+      "viewCount_other": "{{count}} views",
+      "printCount_one": "{{count}} print",
+      "printCount_other": "{{count}} prints",
       "collectionCount": {
-        "label": "Collections"
+        "label": "Collections",
+        "count_one": "Collection",
+        "count_other": "Collections"
       },
       "modelCount": {
-        "label": "Models"
+        "label": "Models",
+        "count_one": "Model",
+        "count_other": "Models"
       },
       "authorCount": {
-        "label": "Unique authors"
+        "label": "Unique authors",
+        "count_one": "Unique author",
+        "count_other": "Unique authors"
       },
       "categoryCount": {
-        "label": "Categories & folders"
+        "label": "Categories & folders",
+        "count_one": "Category or folder",
+        "count_other": "Categories & folders"
       },
       "topViewed": {
         "title": "Top Viewed Models",
@@ -907,12 +932,14 @@
       "topAuthors": {
         "title": "Top Authors",
         "empty": "No authors yet — import a model to see your top authors here.",
-        "modelCount": "{{count}} models"
+        "modelCount_one": "{{count}} model",
+        "modelCount_other": "{{count}} models"
       },
       "topProviders": {
         "title": "Top Providers",
         "empty": "No models yet.",
-        "modelCount": "{{count}} models"
+        "modelCount_one": "{{count}} model",
+        "modelCount_other": "{{count}} models"
       },
       "recentlyAdded": {
         "title": "Recently Added",
@@ -1182,7 +1209,7 @@
         "noExport": "The script has no export default function.",
         "failed": "{{name}} stopped with an error",
         "removed": "This widget was removed.",
-        "off": "Custom widgets are turned off on this Thingport.",
+        "off": "Custom widgets are turned off on this Thingport instance.",
         "title": "Custom widgets",
         "tabs": {
           "mine": "Mine",
@@ -1211,7 +1238,7 @@
         "installed": "Installed {{name}}",
         "isInstalled": "Installed",
         "retry": "Try again",
-        "communityError": "Couldn't load the community widgets. Check that this Thingport can reach GitHub.",
+        "communityError": "Couldn't load the community widgets. Check that this Thingport instance can reach GitHub.",
         "communityEmpty": "No community widgets yet. Be the first: see Build & share.",
         "reaches_one": "Reaches {{count}} host",
         "reaches_other": "Reaches {{count}} hosts",
@@ -1306,7 +1333,7 @@
           "publish1": "Download your widget from Mine (⋮, then Download for publishing).",
           "publish2": "Fork the Thingport repository and unzip it into the <folder>community-widgets</folder> folder.",
           "publish3": "Add its folder name to community-widgets/index.json, and say what it does in its README.md.",
-          "publish4": "Open a pull request. Once it’s merged, every Thingport can install it.",
+          "publish4": "Open a pull request. Once it’s merged, every Thingport instance can install it.",
           "guide": "Read the full guide"
         },
         "ai": {
@@ -1350,7 +1377,55 @@
         "turnOn": "Turn {{name}} on",
         "disableTitle": "Turn {{name}} off?",
         "disableMessage": "Nobody can import from {{name}} until it's back on: links, Thingport Grab and the import queue are refused, its collection syncs pause, and background jobs skip it. Models already imported from it stay as they are.",
-        "disableConfirm": "Turn off"
+        "disableConfirm": "Turn off",
+        "sortOldest": "Oldest",
+        "status": {
+          "label": "Show",
+          "all": "All ({{n}})",
+          "on": "On ({{n}})",
+          "off": "Off ({{n}})"
+        },
+        "filters": {
+          "signIn": {
+            "none": "None",
+            "optional": "Optional",
+            "user": "Each user's",
+            "key": "Admin's key"
+          },
+          "grabOnly": "Grab only"
+        },
+        "chips": {
+          "profiles": "Profiles",
+          "paid": "Paid",
+          "modelsOnly": "Models only"
+        },
+        "signInLine": {
+          "none": "No sign-in needed",
+          "userOptional": "Sign-in optional",
+          "user": "Users sign in",
+          "admin": "Admin's key",
+          "adminUser": "Admin's key, users sign in"
+        },
+        "keyMissing": "Key missing",
+        "shown": "{{shown}} of {{total}} shown",
+        "noMatch": "No providers match these filters.",
+        "selection": {
+          "enter": "Select providers",
+          "toolbar": "Actions for the selected providers",
+          "turnOn": "Turn on",
+          "turnOff": "Turn off",
+          "allOn": "The selected ones are all on",
+          "allOff": "The selected ones are all off"
+        },
+        "bulkDisableTitle_one": "Turn {{count}} provider off?",
+        "bulkDisableTitle_other": "Turn {{count}} providers off?",
+        "bulkDisableMessage": "Nobody can import from {{names}} until they're back on: links, Thingport Grab and the import queue are refused, their collection syncs pause, and background jobs skip them. Models already imported from them stay as they are.",
+        "turnedOn_one": "{{count}} provider turned on",
+        "turnedOn_other": "{{count}} providers turned on",
+        "turnedOff_one": "{{count}} provider turned off",
+        "turnedOff_other": "{{count}} providers turned off",
+        "turnedOnNamed": "{{name}} turned on",
+        "turnedOffNamed": "{{name}} turned off"
       },
       "storageSettings": {
         "heading": "Storage"
@@ -1616,6 +1691,16 @@
           "failed": "Couldn't start the check. Please try again."
         }
       },
+      "licenseFiles": {
+        "heading": "Licence files",
+        "subtitle": "Keep each model's licence beside its files.",
+        "label": "Write LICENSE.txt beside model files",
+        "help": "For every model with a licence, Thingport keeps a LICENSE.txt in its folder: who made it, where it's from, its licence and what that allows, and a line to credit it with. It's rewritten when the licence changes, and moves and goes with the model. Turning this off removes them; zip downloads include one either way.",
+        "on": "Each licensed model's folder has its LICENSE.txt.",
+        "off": "No LICENSE.txt is written; zip downloads still include one.",
+        "failed": "Couldn't save the LICENSE.txt setting. Please try again.",
+        "loadFailed": "Couldn't load the LICENSE.txt setting."
+      },
       "consume": {
         "heading": "Consume Folder",
         "subtitle": "Import anything dropped into a watched folder: files, folder structures and ZIPs.",
@@ -1670,54 +1755,6 @@
         "disabledLabel": "Disabled",
         "disabledDesc": "Never generate card previews. Interactive viewing remains available by opening a model.",
         "failed": "Failed to save preview settings."
-      },
-      "triggers": {
-        "heading": "Triggers",
-        "deleteAllTitle": "Delete all models for a user",
-        "deleteAllDesc": "Permanently deletes every model a user created, uploaded, or imported — files included. Their categories and collections are left in place, just empty.",
-        "userLabel": "User",
-        "userOption": "{{name}} ({{email}}) — {{count}} models",
-        "deleteAllButton": "Delete all models…",
-        "loadFailed": "Unable to load users.",
-        "deleteSuccess": "Deleted {{count}} model(s) for {{email}}.",
-        "deleteFailed": "Failed to delete this user's models.",
-        "confirmTitle": "Delete all models for this user?",
-        "confirmWarning": "This permanently deletes all {{count}} model(s) belonging to {{email}}, including their files. This cannot be undone.",
-        "confirmInstructions": "Type {{email}} to confirm.",
-        "confirmButton": "Delete all models",
-        "deleting": "Deleting…",
-        "linkAuthorsTitle": "Link missing authors",
-        "linkAuthorsDesc": "Some imported models show their author only as a name, without the author's profile, avatar or link, because the import couldn't fetch the author at the time. This links each of them to their author: to an author already in Thingport with exactly that name from the same site, or else by looking the author up on the site the model came from. Only details are fetched, never files. It runs for the whole instance, across every user's models, in the background — MakerWorld lookups are spaced out to avoid its CAPTCHA, so they can take a few minutes.",
-        "linkAuthorsButton": "Link missing authors",
-        "linkAuthorsFailed": "Failed to link authors.",
-        "linkAuthorsLinkable": "{{count}} model(s) can be linked right away.",
-        "linkAuthorsLookup": "{{count}} model(s) need their author looked up.",
-        "linkAuthorsProgress": "Looking up authors: {{done}} of {{total}} — {{linked}} model(s) linked so far.",
-        "linkAuthorsDone": "Linked {{linked}} model(s) to their author.",
-        "linkAuthorsNotFound": "The author couldn't be found for {{count}} creator(s) — the model may have been removed from its site, or the site couldn't be reached.",
-        "linkAuthorsProblems": {
-          "thingiverse_no_token": "Thingiverse models were skipped: add a Thingiverse App Token in Administration > Providers.",
-          "thingiverse_token_rejected": "Thingiverse models were skipped: Thingiverse rejected the App Token in Administration > Providers.",
-          "thingiverse_rate_limited": "Thingiverse models were skipped: Thingiverse started blocking requests with a rate limit. It usually clears after a while — try again later.",
-          "myminifactory_no_key": "MyMiniFactory models were skipped: add a MyMiniFactory API key in Administration > Providers.",
-          "myminifactory_key_rejected": "MyMiniFactory models were skipped: MyMiniFactory rejected the API key in Administration > Providers.",
-          "myminifactory_rate_limited": "MyMiniFactory models were skipped: MyMiniFactory started blocking requests. It usually clears after a while — try again later.",
-          "makerworld_captcha": "MakerWorld models were skipped: MakerWorld asked for a CAPTCHA, and blocks further requests for about 2 hours. Try again later.",
-          "makerworld_login_rejected": "MakerWorld models were skipped: MakerWorld rejected the saved MakerWorld login. Update it in Configuration > Providers.",
-          "cults3d_no_key": "Cults3D models were skipped: their owner hasn't entered a Cults3D nickname and API key in Configuration > Providers.",
-          "cults3d_key_rejected": "Some Cults3D models were skipped: Cults3D rejected their owner's API key. They can enter a new one in Configuration > Providers.",
-          "cults3d_rate_limited": "Cults3D models were skipped: Cults3D's API rate limit was reached. It clears within a minute or so — try again then."
-        },
-        "refetchTitle": "Refetch model descriptions",
-        "refetchDesc": "Replaces the description of every model a user imported from MakerWorld, Printables, Thingiverse or MyMiniFactory with the current one from that site, with its formatting and images. Use it to bring models imported before formatted descriptions were supported up to date. Changes the user made to those descriptions are lost. Models whose source is gone keep their description. It runs in the background — MakerWorld requests are spaced out to avoid its CAPTCHA, so a large library can take a while.",
-        "refetchUserOption": "{{name}} ({{email}}) — {{count}} imported models",
-        "refetchButton": "Refetch descriptions…",
-        "refetchConfirm": "Replace the descriptions of {{count}} imported model(s) belonging to {{email}} with the ones from their source sites? Any changes made to those descriptions will be lost.",
-        "refetchConfirmButton": "Refetch",
-        "refetchFailed": "Failed to start refetching descriptions.",
-        "refetchProgress": "Refetching descriptions for {{email}}: {{done}} of {{total}} — {{updated}} updated so far.",
-        "refetchDone": "Refetched descriptions for {{email}}: {{updated}} of {{total}} changed.",
-        "refetchFailedCount": "{{count}} couldn't be read from their source and were left as they were."
       },
       "ai": {
         "heading": "AI",
@@ -2018,6 +2055,14 @@
         "deleted_one": "{{email}} deleted, with {{count}} model",
         "deleted_other": "{{email}} deleted, with {{count}} models",
         "deleteFailed": "Failed to delete the user.",
+        "deleteModels": "Delete all models",
+        "deleteModelsTitle": "Delete all of {{name}}'s models?",
+        "deleteModelsWarning_one": "This deletes their {{count}} model with every file. The account stays, with its collections and categories, just empty. It can't be undone.",
+        "deleteModelsWarning_other": "This deletes their {{count}} models with every file. The account stays, with its collections and categories, just empty. It can't be undone.",
+        "deleteModelsConfirm": "Delete models",
+        "modelsDeleted_one": "Deleted {{email}}'s {{count}} model",
+        "modelsDeleted_other": "Deleted {{email}}'s {{count}} models",
+        "deleteModelsFailed": "Failed to delete the user's models.",
         "loadFailed": "Unable to load users.",
         "columnSignIn": "Sign-in",
         "signInPassword": "Password",
@@ -2069,6 +2114,7 @@
           "descriptions_refetched": "Refetched model descriptions",
           "user_role_changed": "User role changed",
           "user_deleted": "User deleted",
+          "user_models_deleted": "Models deleted",
           "provider_toggled": "Provider switched",
           "tag_deleted": "Tag deleted",
           "ai_categorization_run": "AI categorization run",
@@ -2081,6 +2127,7 @@
           "tags_merged": "Tags merged",
           "mcp_access_changed": "Changed the MCP access",
           "file_reuse_changed": "Changed how identical files are stored",
+          "license_files_changed": "Changed whether LICENSE.txt files are written",
           "file_reuse_backfill_started": "Started checking stored files for identical content",
           "custom_widgets_changed": "Changed which custom widgets are allowed",
           "tool_installed": "Tool installed",
@@ -2090,7 +2137,18 @@
           "social_settings_changed": "Social features changed",
           "chat_room_created": "Chat room created",
           "chat_room_edited": "Chat room edited",
-          "chat_room_deleted": "Chat room deleted"
+          "chat_room_deleted": "Chat room deleted",
+          "federation_settings_changed": "Connected instances changed",
+          "federation_requested": "Asked an instance to connect",
+          "federation_approved": "Approved an instance",
+          "federation_declined": "Declined an instance",
+          "federation_paused": "Paused an instance",
+          "federation_resumed": "Resumed an instance",
+          "federation_disconnected": "Disconnected an instance",
+          "federation_blocked": "Blocked an instance",
+          "federation_unblocked": "Unblocked an instance",
+          "federation_user_requested": "Asked to reach someone elsewhere",
+          "collection_sharing_changed": "Collection sharing changed"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -2100,6 +2158,8 @@
         "userDemoted": "{{email}} made a member",
         "userDeleted_one": "{{email}} — with {{count}} model",
         "userDeleted_other": "{{email}} — with {{count}} models",
+        "userModelsDeleted_one": "{{email}} — {{count}} model",
+        "userModelsDeleted_other": "{{email}} — {{count}} models",
         "providerOn": "{{provider}} turned on",
         "providerOff": "{{provider}} turned off",
         "aiRunSummary": "{{done}} of {{total}} checked — {{suggested}} suggested, {{applied}} applied, {{failed}} failed",
@@ -2109,6 +2169,10 @@
         "repairSummary": "{{action}}: {{repaired}} repaired, {{deleted}} deleted, {{failed}} failed",
         "socialOn": "Turned on",
         "socialOff": "Turned off",
+        "federationOn": "Turned on",
+        "federationOff": "Turned off",
+        "licenseFilesOn": "Turned on",
+        "licenseFilesOff": "Turned off",
         "chatsOn": "Chats turned on",
         "chatsOff": "Chats turned off"
       },
@@ -2195,6 +2259,7 @@
         "kind": {
           "plate": "Model file",
           "file": "Supporting file",
+          "license": "Licence",
           "image": "Image",
           "description": "Description image",
           "thumb": "Thumbnail",
@@ -2459,6 +2524,8 @@
         "toolsAria": "Tools {{model}} gets"
       },
       "social": {
+        "heading": "Social",
+        "subtitle": "Sharing models and chatting between this instance's users.",
         "label": "Social features",
         "summary": "Turns on the Explore page and public collections, so this instance's users can share models with each other.",
         "infoTitle": "What social features do",
@@ -2468,20 +2535,262 @@
         "infoOff": "Turning this off hides everything shared again. Each collection keeps its Public or Private setting for when it's back on.",
         "loadFailed": "Couldn't load the social settings.",
         "saveFailed": "Couldn't save the social settings.",
-        "settingsTitle": "Social features settings",
-        "settingsOff": "Turn social features on to change their settings",
         "chats": {
           "label": "Chats",
           "summary": "Direct messages between this instance's users, and rooms that admins make.",
-          "switch": "Chats",
           "infoTitle": "What chats do",
           "infoDirect": "Chats appears in the sidebar. Anyone can find another user by name, or by their whole email, and write to them.",
           "infoRooms": "Admins make rooms: public ones anyone can read and join, and private ones for the people they pick.",
           "infoNotify": "Someone who isn't reading a chat sees its new messages in the sidebar and as a notification. Messages arrive within a few seconds, not instantly.",
           "infoOff": "Turning this off hides every chat. Nothing is deleted, and it's all back when chats are turned on again.",
-          "onHint": "On: Chats is in everyone's sidebar.",
-          "offHint": "Off by default. Turn on to let users message each other.",
-          "infoModels": "A model sent in a chat can be opened, downloaded and copied by everyone who can read that chat, for as long as the message stays."
+          "infoModels": "A model sent in a chat can be opened, downloaded and copied by everyone who can read that chat, for as long as the message stays.",
+          "needsSocial": "Turn social features on first"
+        },
+        "federation": {
+          "label": "Connected instances",
+          "summary": "Pair with other Thingport instances, so their people and what they share show up in Explore and Chats.",
+          "infoTitle": "What connecting instances does",
+          "infoPair": "Other Thingport instances you connect with become partners: their people, public collections and models show up here as if they were on this instance, and yours there.",
+          "infoApprove": "You approve every instance before it connects. Your users can ask you to connect with one.",
+          "infoShare": "Only what's public goes across: libraries, private collections and settings stay here.",
+          "infoOff": "Turning it off hides partners and stops talking to them. Nothing is deleted, and it's all back when it's on again.",
+          "settingsLoadFailed": "Couldn't load the settings for connected instances.",
+          "keyAria": "Key: {{key}}",
+          "plainHttp": "Plain HTTP",
+          "turnOnTitle": "Connect with other instances",
+          "turnOffTitle": "Turn off connected instances?",
+          "turnOffText": "Partners can't reach this instance while it's off, and their people disappear from Explore here. Nothing is deleted: it's all back when it's on again.",
+          "turnOff": "Turn off",
+          "turnedOn": "Connected instances are on",
+          "checkAgain": "Check again",
+          "thisInstance": "This instance",
+          "showOwnKey": "Show this instance's key",
+          "changePublicUrl": "Change the Public URL",
+          "status": {
+            "local": "Local network only",
+            "confirmed_one": "Reached by {{count}} partner",
+            "confirmed_other": "Reached by {{count}} partners",
+            "unconfirmed": "Public, not confirmed yet",
+            "unreachable": "Not reachable",
+            "localHelp": "Only instances on your network or VPN can reach this one. You can still connect to instances on the internet: yours keeps a link open to them.",
+            "publicHelp": "Instances on the internet can reach it if your router or proxy lets them in. A partner reaching it confirms that.",
+            "unreachableHelp": "Other instances can't reach it at its Public URL. Check again once that's fixed.",
+            "linksOnly": "Links only",
+            "linksOnlyHelp": "Other instances can't reach it at its Public URL, so it keeps a link open to each one it connects to. Check again after fixing that."
+          },
+          "check": {
+            "intro": "First, whether other Thingport instances could reach this one.",
+            "checking": "Checking…",
+            "failed": "Couldn't check.",
+            "urlSet": "The Public URL is set",
+            "urlNotSet": "There's no Public URL",
+            "leadsHere": "It leads back to this instance",
+            "leadsHereDetail": "Answered with this instance's secret",
+            "leadsElsewhere": "It doesn't lead back to this instance",
+            "leadsElsewhereDetail": "Something else answers at that address",
+            "leadsElsewhereAnswered": "Something else answers there: {{answer}}",
+            "noLoopback": "It didn't answer from here",
+            "noLoopbackDetail": "Some routers can't reach their own public address",
+            "failure": {
+              "reserved": "It's this machine or a reserved range",
+              "notFound": "Its name doesn't resolve here",
+              "notFoundDetail": "This instance can't look up {{host}}",
+              "timeout": "It doesn't answer",
+              "timeoutDetail": "Nothing answered within 8 seconds",
+              "refused": "It refuses the connection",
+              "refusedDetail": "Nothing takes connections at {{host}}",
+              "certificate": "Its certificate isn't trusted",
+              "redirect": "It answers with a redirect",
+              "failed": "It couldn't be reached"
+            },
+            "addressLocal": "Its address is on your local network",
+            "addressPublic": "Its address is public",
+            "localTitle": "Local network only",
+            "localText": "Instances on your network or VPN can connect with this one. Instances on the internet can't reach it, but you can still connect to them: yours keeps a link open.",
+            "publicTitle": "Reachable, not confirmed yet",
+            "publicText": "Instances on the internet should reach it, if your router or proxy lets them in. The first connection confirms it.",
+            "unverifiedTitle": "Public, but it didn't answer itself",
+            "unverifiedText": "Instances on the internet may still reach it. The first connection will tell.",
+            "linksOnlyTitle": "Links only",
+            "linksOnlyText": "Other instances can't reach this one at its Public URL. It can still connect to the ones it reaches, keeping a link open to each.",
+            "unreachableTitle": "Not reachable",
+            "notSetText": "Set this instance's Public URL first: other instances reach it there.",
+            "reservedText": "Its Public URL is this machine or a reserved range, which other instances never connect to: to each of them, localhost is itself. Set the address it has on your network.",
+            "publicUrlButton": "Public URL",
+            "youApprove": "You approve every instance before it connects, and can pause or block one any time.",
+            "helpApprove": "Other instances' requests wait here for an admin, and so do your users' requests to reach someone elsewhere.",
+            "helpShare": "Once connected, both instances see each other's public collections, models and profiles.",
+            "helpOff": "Turning it off later hides partners until it's back on.",
+            "again": "Check again",
+            "turnOn": "Turn on"
+          },
+          "connect": {
+            "title": "Connect to an instance",
+            "stepAddress": "Address",
+            "stepKey": "Compare the key",
+            "address": "Its address",
+            "addressHelp": "The other instance's Public URL, like http://192.168.1.30:8000",
+            "addressGuessed": "Guessed from their handle. Change it if their instance is somewhere else.",
+            "compare": "Ask {{name}}'s admin to read out the key on their Social page. If it's different, something is in between: don't send.",
+            "matches": "The keys match",
+            "linkSuggestedTitle": "{{name}} can't reach your instance",
+            "linkSuggestedText": "Yours is on your network only, so it keeps a link open to {{name}} instead. Everything works both ways while it's running.",
+            "linkUnreachableTitle": "{{name}} can't reach your instance",
+            "linkUnreachableText": "Nothing reaches yours at its Public URL, so it keeps a link open to {{name}} instead. Everything works both ways while it's running.",
+            "linkUnconfirmedTitle": "{{name}} may not reach your instance",
+            "linkUnconfirmedText": "Nothing has reached yours from the internet yet, so it keeps a link open to {{name}} to be safe. Everything works both ways while it's running.",
+            "linkOnTitle": "Keeping a link open to {{name}}",
+            "linkOnText": "For when {{name}} can't reach your instance: yours connects out to it, and everything works both ways while it's running.",
+            "linkOffTitle": "{{name}} reaches your instance directly",
+            "linkOffText": "If it can't, turn this on: your instance keeps a link open to it instead.",
+            "linkSwitch": "Keep a link open",
+            "linkHelp": "A link is a connection your instance keeps open to theirs. Whatever theirs would send yours or fetch from it comes down that link, so nothing has to reach your instance. Their admin can't check your address from there: the key you compare is how they know it's you.",
+            "note": "Note for their admin (optional)",
+            "noteHelp": "Who you are, and why.",
+            "send": "Send request",
+            "lookUp": "Look up",
+            "forPerson": "For {{who}}, to reach {{whom}}",
+            "forPersonInstance": "For {{who}}"
+          },
+          "errors": {
+            "invalid_address": "That isn't an instance's address.",
+            "no_public_url": "Set this instance's Public URL first: other instances know it by that.",
+            "reserved_address": "This instance's Public URL is this machine or a reserved range. Set the address it has on your network.",
+            "same_instance": "That's this instance.",
+            "unreachable": "That instance didn't answer. Is the address right, and can this instance reach it? If it's on someone's home network, ask its admin to connect to yours instead.",
+            "not_thingport": "That isn't a Thingport instance.",
+            "not_accepting": "That instance doesn't take connections: its admin hasn't turned them on.",
+            "key_changed": "That instance's key changed since you compared it. Compare the new one.",
+            "exists": "You're already connected with that instance, or have asked it.",
+            "blocked": "You blocked that instance. Unblock it first.",
+            "bad_signature": "That request's signature doesn't match the instance's key, so it isn't from that instance.",
+            "federation_off": "Turn connected instances on first.",
+            "social_off": "Turn social features on first.",
+            "not_found": "That's gone: it was answered or withdrawn meanwhile.",
+            "withdrawn": "That instance withdrew this request.",
+            "not_partner": "That instance isn't a partner.",
+            "not_blocked": "That instance isn't blocked.",
+            "link_closed": "Its link isn't open right now: its instance may be off.",
+            "asked_with_link": "That instance asked to connect through a link it keeps open, as this one can't reach it. Answer its request under Requests.",
+            "address_taken": "Another instance at that address is connected already."
+          },
+          "review": {
+            "title": "{{name}} wants to connect",
+            "key": "Key",
+            "keyHelp": "Ask their admin to read out the key on their Social page. It should match.",
+            "linkTitle": "It reaches you through a link it keeps open",
+            "linkText": "{{name}} is on its own network, so this instance can't reach it. Everything goes through its link, which is open now.",
+            "linkClosedTitle": "Its link isn't open right now",
+            "linkClosedText": "{{name}} reaches you through a link, and it's closed: its instance may be off. This tries again by itself; approve once it's running.",
+            "linkKey": "Its address can't be checked from here, so the key is how you know it's them. Ask their admin to read it out from their Social page.",
+            "elsewhereTitle": "A different instance answers there",
+            "elsewhereText": "{{other}} answers at {{address}} directly, with another key:",
+            "compare": "{{name}}'s admin read out the same key from their Social page",
+            "askedBy": "Asked by",
+            "personForPerson": "{{who}}, to reach {{whom}}",
+            "person": "{{who}}",
+            "theirAdmin": "Their admin",
+            "approving": "Approving connects both instances.",
+            "helpShare": "Their people and yours see each other's public collections, models and profiles.",
+            "helpLater": "You can pause, disconnect or block it any time.",
+            "block": "Block",
+            "decline": "Decline",
+            "approve": "Approve",
+            "blockTitle": "Block {{name}}?",
+            "blockText": "Its request is declined, and whatever it sends later is dropped without telling it.",
+            "declineTitle": "Decline {{name}}?",
+            "declineText": "It's told, and can ask again.",
+            "targetHere": "{{name}} ({{handle}}) is on this instance",
+            "targetMissing": "No one here is {{handle}}"
+          },
+          "keyDialog": {
+            "ours": "This instance's key",
+            "theirs": "{{name}}'s key",
+            "oursText": "Read it out to the other instance's admin when you connect: theirs should show the same.",
+            "theirsText": "What {{name}} showed when you connected. If its admin reads out something else, something is in between."
+          },
+          "instances": {
+            "tabsLabel": "Instances",
+            "tabs": {
+              "requests": "Requests",
+              "partners": "Partners",
+              "blocked": "Blocked"
+            },
+            "connect": "Connect to an instance",
+            "loadFailed": "Couldn't load the instances.",
+            "noRequests": "No requests",
+            "noRequestsHint": "Connect to an instance, or wait for one to ask.",
+            "asking": "Asking to connect",
+            "waiting": "Waiting for them",
+            "fromUsers": "From your users",
+            "askedByPerson": "{{who}} asked",
+            "askedByAdmin": "Their admin asked",
+            "hide": "Hide",
+            "review": "Review",
+            "hideNamed": "Hide {{name}}'s request",
+            "reviewNamed": "Review {{name}}'s request",
+            "noPartners": "No partners yet",
+            "noPartnersHint": "Instances you connect with show up here.",
+            "noBlocked": "Nothing blocked",
+            "noBlockedHint": "Instances you block show up here.",
+            "alreadyAnswered": "That request was already answered.",
+            "outcome": {
+              "approved": "Connected with {{name}}",
+              "declined": "Declined {{name}}",
+              "blocked": "Blocked {{name}}"
+            },
+            "sent": "Request sent to {{name}}",
+            "waitingForThem": "Sent by you, waiting for their admin",
+            "notDelivered": "not delivered yet",
+            "cancel": "Cancel request",
+            "cancelTitle": "Withdraw the request to {{name}}?",
+            "cancelText": "It's told, and its admin no longer sees it.",
+            "cancelled": "Withdrew the request to {{name}}",
+            "active": "Active",
+            "paused": "Paused",
+            "unreachable": "Can't reach it",
+            "linkOursOpen": "Your link · open",
+            "linkOursClosed": "Your link · can't reach them",
+            "linkTheirsOpen": "Their link · open",
+            "linkTheirsClosed": "Their link · closed",
+            "linkTheirsClosedSince": "Their link · closed {{when}}",
+            "linkOursHelp": "This instance keeps a link open to {{name}}, since {{name}} can't reach it. It works while this instance is running.",
+            "linkTheirsHelp": "{{name}} can't be reached from here, so it keeps a link open to this instance. While it's closed, what's said to its people waits, and Explore shows what it last shared.",
+            "addressTaken": "Address taken",
+            "addressTakenHelp": "{{name}} is already connected with another instance at this one's address. Give this instance an address of its own (its Public URL), then ask again.",
+            "connectedSince": "connected {{when}}",
+            "seen": "seen {{when}}",
+            "pending_one": "{{count}} update waiting",
+            "pending_other": "{{count}} updates waiting",
+            "more": "More",
+            "moreNamed": "More for {{name}}",
+            "check": "Check connection",
+            "checked": "Checked {{name}}",
+            "showKey": "Show key",
+            "pause": "Pause",
+            "resume": "Resume",
+            "pausedDone": "Paused {{name}}",
+            "resumedDone": "Resumed {{name}}",
+            "disconnect": "Disconnect",
+            "disconnectTitle": "Disconnect {{name}}?",
+            "disconnectText": "It's told, and what came from it disappears from Explore here. Copies people made stay.",
+            "disconnected": "Disconnected {{name}}",
+            "block": "Block",
+            "blockTitle": "Block {{name}}?",
+            "blockText": "It's disconnected, and whatever it sends later is dropped without telling it.",
+            "blocked": "Blocked {{name}}",
+            "blockedHint": "What it sends is dropped",
+            "unblock": "Unblock",
+            "unblocked": "Unblocked {{name}}",
+            "wantsToReach": "{{who}} wants to reach {{whom}}",
+            "wantsToConnect": "{{who}} wants to connect",
+            "someone": "Someone",
+            "decline": "Decline",
+            "connectFor": "Connect…",
+            "declineUserTitle": "Decline {{who}}'s request?",
+            "declineUserText": "{{who}} is told. Nothing is sent to {{host}}.",
+            "declinedUser": "Declined {{who}}'s request"
+          }
         }
       }
     },
@@ -2610,6 +2919,15 @@
         "failed": "Couldn't save the model card choice.",
         "help": "What model cards show first. Images: the pictures a model came with, or a 3D render where it has none. 3D renders: a render of every model in your render color, or its pictures where the file can't be drawn."
       },
+      "printProfiles": {
+        "heading": "Print profiles",
+        "help": "How models imported with print profiles show them: as a list, a picker or picture tiles, with each one's print time, filament and plates. Off shows them as plain files.",
+        "off": "Off",
+        "list": "List",
+        "picker": "Picker",
+        "tiles": "Tiles",
+        "failed": "Couldn't save how print profiles are shown."
+      },
       "hoverSlideshow": {
         "heading": "Hover slideshow",
         "failed": "Couldn't save the hover slideshow choice.",
@@ -2641,7 +2959,7 @@
       "connectTitle": "Connect {{name}}",
       "disconnectTitle": "Disconnect {{name}}?",
       "disconnectMessage": "Your {{name}} key is removed, and imports from {{name}} stop working until you connect it again.",
-      "disconnectMessageShared": "The {{name}} token is removed for everyone on this Thingport, and imports from {{name}} stop working until it's connected again.",
+      "disconnectMessageShared": "The {{name}} token is removed for everyone on this Thingport instance, and imports from {{name}} stop working until it's connected again.",
       "failed": "Failed to save -- try again.",
       "comingSoon": "Coming soon"
     },
@@ -2651,7 +2969,9 @@
       "notActive": "Not active",
       "activate": "Activate",
       "lastUsed": "Last used",
-      "deactivate": "Deactivate"
+      "deactivate": "Deactivate",
+      "throughBridge": "Through Thingport Bridge",
+      "throughBridgeHelp": "Thingport Bridge downloads the file and hands it to {{slicer}}, for when {{slicer}} can't download from this Thingport instance itself."
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} of {{total}} models",
@@ -2785,7 +3105,10 @@
       "empty": "No release notes for this version yet.",
       "openGithub": "Open on GitHub",
       "zoom": "Enlarge screenshot",
-      "highlight": "Highlight"
+      "highlight": "Highlight",
+      "earlier": "Earlier releases",
+      "backToLatest": "Back to latest",
+      "latest": "Latest"
     },
     "codeBlock": {
       "copy": "Copy",
@@ -2878,7 +3201,7 @@
         "emptyAdmin": "No tools yet. Install one from the repository.",
         "emptyCreate": "No tools yet. Make your own, or ask an admin to install some.",
         "install": "Install tools",
-        "noAccess": "Tools aren't available to you on this Thingport.",
+        "noAccess": "Tools aren't available to you on this Thingport instance.",
         "dropHere": "Drop a tool here",
         "layout": "Show as",
         "layoutFlat": "One grid",
@@ -3926,7 +4249,7 @@
       "modelFrom": "From {{name}}",
       "yourModel": "Your model",
       "openModel": "Open {{name}}",
-      "sentModels_one": "📎 {{name}}",
+      "sentModels_one": "📎 {{count}} model",
       "sentModels_other": "📎 {{count}} models",
       "emojiPicker": {
         "search": "Search emoji",
@@ -3942,7 +4265,11 @@
           "symbols": "Symbols",
           "flags": "Flags"
         }
-      }
+      },
+      "instances_one": "{{count}} instance",
+      "instances_other": "{{count}} instances",
+      "hostedOn": "Hosted on {{name}}",
+      "sentModel": "📎 {{name}}"
     },
     "modelPicker": {
       "search": "Search your library",
@@ -4645,6 +4972,40 @@
       "internalPlatesDivider": "{{count}} plates in this file",
       "internalPlateObjectCount_one": "{{count}} object",
       "internalPlateObjectCount_other": "{{count}} objects",
+      "profiles": {
+        "label_one": "Print profile · {{count}}",
+        "label_other": "Print profiles · {{count}}",
+        "labelOne": "Print profile",
+        "help": "Ready-to-print setups of this model, each with its own printer, settings, plates and filament. Open and Download use the one picked.",
+        "position": "{{n}} of {{count}}",
+        "designer": "Designer",
+        "community": "Community",
+        "fromDesigner": "From the designer",
+        "communityGroup": "Community",
+        "otherFiles": "Other files",
+        "otherFile": "Other file",
+        "byCreator": "by {{name}}",
+        "plates_one": "{{count}} plate",
+        "plates_other": "{{count}} plates",
+        "platesLabel": "Plates",
+        "platesInProfile_one": "{{count}} plate in this profile",
+        "platesInProfile_other": "{{count}} plates in this profile",
+        "time": "Print time",
+        "filament": "Filament",
+        "minutes": "{{m}}m",
+        "hours": "{{h}}h",
+        "hoursMinutes": "{{h}}h {{m}}m",
+        "nozzle": "{{mm}} mm nozzle",
+        "layers": "{{mm}} mm layers",
+        "infill": "{{value}} infill",
+        "walls_one": "{{count}} wall",
+        "walls_other": "{{count}} walls",
+        "supports": "supports",
+        "showMore": "Show {{count}} more",
+        "showFewer": "Show fewer",
+        "pickAria": "Print profile: {{name}}",
+        "previewPlate": "Show {{plate}} in 3D"
+      },
       "previewToolbar": {
         "label": "Preview options",
         "top": "Top",
@@ -4941,13 +5302,143 @@
       "linkConfirmLabel": "Yes, it's me",
       "linkSuccess": "Linked \"{{name}}\" to your account",
       "linkFailed": "Failed to link this author to your account",
+      "editProfile": {
+        "button": "Edit profile",
+        "title": "Edit profile",
+        "changeCover": "Change cover",
+        "cover": "Cover",
+        "coverHelp": "Pick a drawn cover, the cover of an account you linked, or upload a picture of up to 10 MB. Drag a picture to choose the part that shows.",
+        "presets": {
+          "retro": "Retro",
+          "pixel": "Pixel art",
+          "mosaic": "Mosaic",
+          "ascii": "ASCII",
+          "blueprint": "Blueprint"
+        },
+        "yourPicture": "Your picture",
+        "fromAccount": "From {{provider}}",
+        "upload": "Upload",
+        "uploadHint": "Upload a picture, up to 10 MB",
+        "uploadTooBig": "That picture is larger than 10 MB.",
+        "notAPicture": "That file isn't a picture.",
+        "drag": "Drag to reposition",
+        "position": "Cover position",
+        "bio": "Bio",
+        "bioHelp": "Shown on your profile to the other people on this instance. Markdown works.",
+        "bioPlaceholder": "A few words about you and what you make",
+        "saved": "Profile saved",
+        "saveFailed": "Couldn't save your profile.",
+        "links": "Links",
+        "linksHelp": "Up to {{count}} web addresses, shown under your bio: your page on a model site, a shop, a portfolio.",
+        "addLink": "Add link",
+        "removeLink": "Remove link",
+        "linkLabel": "Link {{n}}",
+        "linkInvalid": "Enter a web address, like https://example.com"
+      },
+      "visibility": {
+        "toggle": "Show my models on Explore",
+        "privateTip": "Private: only you see these models. Click to show them on Explore.",
+        "publicTip": "Public: everyone on this instance sees these models on Explore. Click to make them private.",
+        "confirmTitle": "Show your models on Explore?",
+        "confirmMessage": "Everyone on this instance can then see, download and copy the models on this page, from your profile on Explore. Changing or deleting them stays yours alone, and you can make them private again any time.",
+        "confirmLabel": "Make public",
+        "nowPublic": "Your models are on Explore now",
+        "nowPrivate": "Your models are private now"
+      },
       "popup": {
         "modelCount_one": "{{count}} model imported from {{provider}}",
         "modelCount_other": "{{count}} models imported from {{provider}}",
         "selfModelCount_one": "{{count}} model uploaded",
         "selfModelCount_other": "{{count}} models uploaded",
         "loadFailed": "Couldn't load this author."
+      },
+      "username": {
+        "label": "Username",
+        "why": "Your handle, username@this-instance, is how people on connected instances find and reach you.",
+        "help": "Lowercase letters, digits, dots, dashes and underscores.",
+        "invalid": "Up to 30 lowercase letters, digits, dots, dashes or underscores, starting and ending with a letter or digit.",
+        "taken": "Someone already has that one.",
+        "free": "It's free.",
+        "checking": "Checking",
+        "copy": "Copy your handle",
+        "copied": "Handle copied",
+        "copyFailed": "Couldn't copy it",
+        "change": "Change your username",
+        "saved": "Username changed",
+        "saveFailed": "Couldn't change the username"
       }
+    },
+    "avatar": {
+      "change": "Change avatar",
+      "title": "Avatar",
+      "modes": {
+        "thingport": "Thingport",
+        "picture": "Picture",
+        "auto": "Automatic"
+      },
+      "shuffle": "Shuffle",
+      "parts": {
+        "hair": "Hair",
+        "glasses": "Glasses",
+        "mouth": "Mouth",
+        "hair_color": "Hair colour",
+        "background": "Background"
+      },
+      "none": "None",
+      "hair": {
+        "spiky": "Spiky",
+        "sideSwept": "Side swept",
+        "curly": "Curly",
+        "long": "Long",
+        "topBun": "Top bun",
+        "mohawk": "Mohawk",
+        "ponytail": "Ponytail",
+        "flatTop": "Flat top",
+        "bob": "Bob",
+        "spaceBuns": "Space buns"
+      },
+      "glasses": {
+        "round": "Round",
+        "square": "Square",
+        "sunglasses": "Sunglasses",
+        "catEye": "Cat-eye",
+        "threeD": "3D"
+      },
+      "mouth": {
+        "smile": "Smile",
+        "toothy": "Toothy",
+        "wobbly": "Wobbly",
+        "surprised": "Surprised",
+        "cheeky": "Cheeky"
+      },
+      "hair_color": {
+        "black": "Black",
+        "darkBrown": "Dark brown",
+        "brown": "Brown",
+        "blonde": "Blonde",
+        "ginger": "Ginger",
+        "grey": "Grey",
+        "blue": "Blue",
+        "pink": "Pink"
+      },
+      "background": {
+        "mint": "Mint",
+        "sky": "Sky",
+        "peach": "Peach",
+        "lavender": "Lavender",
+        "sand": "Sand",
+        "teal": "Teal",
+        "stone": "Stone",
+        "rose": "Rose"
+      },
+      "upload": "Upload",
+      "uploadHint": "Upload a picture, up to 10 MB",
+      "pictureHelp": "A picture of up to 10 MB, cut to a square around what's in it, or the picture of an account you linked.",
+      "yourPicture": "Your picture",
+      "fromAccount": "From {{provider}}",
+      "autoHint": "Your Gravatar, if you have one, or else the Thingport avatar picked for you.",
+      "saved": "Avatar updated",
+      "saveFailed": "Couldn't save your avatar."
     },
     "collections": {
       "pageTitle": "Collections",
@@ -4973,7 +5464,9 @@
         "itemCount_one": "{{count}} model",
         "itemCount_other": "{{count}} models",
         "ownerAndCount_one": "{{name}} · {{count}} model",
-        "ownerAndCount_other": "{{name}} · {{count}} models"
+        "ownerAndCount_other": "{{name}} · {{count}} models",
+        "sharedWith": "Shared with {{names}}",
+        "changeSharing": "Shared with {{who}}: change who sees it"
       },
       "form": {
         "createTitle": "New Collection",
@@ -4985,23 +5478,39 @@
         "create": "Create",
         "saveFailed": "Failed to save the collection. Please try again.",
         "visibilityLabel": "Visibility",
-        "visibilityHelp": "Public collections show on Explore: the instance's other users can open, download and copy their models. Private ones are yours alone.",
+        "visibilityHelp": "Private collections are yours alone. Shared ones are seen by the people you pick, here or on connected instances, public ones by everyone, on Explore. Whoever sees one can open, download and copy its models.",
         "private": "Private",
-        "public": "Public"
+        "public": "Public",
+        "shared": "Shared",
+        "sharedCount_one": "{{count}} person can see it",
+        "sharedCount_other": "{{count}} people can see it",
+        "sharedNobody": "Nobody yet: only you can see it",
+        "sharedElsewhere_one": "{{count}} on a connected instance",
+        "sharedElsewhere_other": "{{count}} on connected instances",
+        "sharedHelp": "They see it as they would a public collection: they can open, download and copy its models, and are told when you share it with them. Who else it's shared with is yours to know. Someone on a connected instance sees it through their own instance, which shows it to them alone; that instance's admins could see it too.",
+        "keptPeople_one": "{{names}} stays on the list: pick Shared to share it again.",
+        "keptPeople_other": "{{names}} stay on the list: pick Shared to share it again.",
+        "andMore_one": "{{count}} more",
+        "andMore_other": "{{count}} more",
+        "peopleFailed": "Couldn't load who it's shared with, so who sees it can't be changed until it does.",
+        "createdNotShared": "“{{name}}” was made, but couldn't be shared. Share… in its menu tries again.",
+        "findPeopleHelp": "Any part of a name finds someone here or on a connected instance; an email finds someone here only when typed in full, and is never shown. Someone elsewhere you can't find: type their whole handle, like name@their-instance."
       },
       "detail": {
         "title": "{{name}}",
         "subtitle": "Collection",
         "empty": "No models in this collection yet.",
         "confirmDelete": "Delete \"{{name}}\"? Models in it are not deleted.",
-        "deleteFailed": "Failed to delete the collection."
+        "deleteFailed": "Failed to delete the collection.",
+        "sharedWith_one": "Shared with {{count}}",
+        "sharedWith_other": "Shared with {{count}}"
       },
       "errors": {
         "loadFailed": "Unable to load collections.",
         "notFound": "Collection not found."
       },
       "sync": {
-        "badgeOff": "{{provider}} is turned off on this Thingport, so nothing syncs until an admin turns it back on",
+        "badgeOff": "{{provider}} is turned off on this Thingport instance, so nothing syncs until an admin turns it back on",
         "menuProviderOff": "{{provider}} is turned off",
         "badge": "Synced with a {{provider}} collection",
         "menu": "Sync configuration",
@@ -5103,7 +5612,8 @@
         "openToolUnknown": "Open the tool",
         "cantSelect": "A tool's collection can't be merged or deleted"
       },
-      "publicHint": "Public: shown to others on Explore"
+      "publicHint": "Public: shown to others on Explore",
+      "share": "Share…"
     },
     "tags": {
       "pageTitle": "Tags",
@@ -5412,7 +5922,65 @@
       "noSources": "Nothing imported yet, so there are no sites to choose between.",
       "noneSelected": "No sites are turned on, so there is nothing to list.",
       "noMatch": "No models here match the filters.",
-      "clear": "Clear filters"
+      "clear": "Clear filters",
+      "licenseAllows": "Licence allows",
+      "allowsShare": "Can be shared",
+      "allowsShareHint": "Only models whose licence lets you pass the files on to others, unchanged. Sites' own personal-use licences usually don't.",
+      "allowsCommercial": "Commercial use",
+      "allowsCommercialHint": "Only models whose licence lets you use them commercially, selling prints included.",
+      "allowsRemix": "Remixing",
+      "allowsRemixHint": "Only models whose licence lets you change them.",
+      "licensed": "Only with a licence",
+      "licensedHint": "Leave out models whose source doesn't say what licence they have."
+    },
+    "license": {
+      "title": "Licence",
+      "notStated": "Not stated by {{site}}",
+      "reading": "Reading the licence",
+      "readFailed": "Couldn't read the licence from {{site}}",
+      "retry": "Retry",
+      "details": "{{license}}: licence details",
+      "summary": {
+        "credit": "Credit",
+        "nonCommercial": "Non-commercial",
+        "noRemix": "No remixing",
+        "shareAlike": "Share alike",
+        "noSharing": "No sharing the files",
+        "personalUse": "Personal use only",
+        "nothingGiven": "No rights given",
+        "noConditions": "No conditions",
+        "seeTerms": "See its terms"
+      },
+      "deed": {
+        "share": "Share the files",
+        "remix": "Remix",
+        "commercial": "Commercial use",
+        "credit": "Credit the creator",
+        "sameLicense": "Remixes under the same licence"
+      },
+      "can": {
+        "yes": "Allowed",
+        "no": "Not allowed",
+        "must": "Required"
+      },
+      "unknown": "Thingport doesn't know this licence: its terms say what's allowed.",
+      "siteAdds": "{{site}} adds",
+      "terms": "Terms",
+      "asListed": "As {{site}} lists it",
+      "pickedByOwner": "Picked by its owner",
+      "fullLicense": "Full licence",
+      "copyCredit": "Copy credit line",
+      "copied": "Credit line copied",
+      "change": "Change",
+      "creditBy": "by {{creator}}",
+      "creditUnder": "is licensed under {{license}}.",
+      "fromSource": "As {{site}} lists it",
+      "none": "None",
+      "groups": {
+        "cc": "Creative Commons",
+        "open": "Open source",
+        "reserved": "Other"
+      }
     },
     "shared": {
       "sharedBy": "Shared by {{name}}",
@@ -5428,9 +5996,9 @@
     },
     "explore": {
       "people": "People",
-      "peopleHelp": "The instance's users who share collections. Open one to see them all.",
+      "peopleHelp": "The instance's users who share their models or collections. Open one to see what they share.",
       "recentModels": "New models",
-      "recentModelsHelp": "The models most recently added to someone's public collection.",
+      "recentModelsHelp": "The models most recently added to someone's public collection or public profile.",
       "recentCollections": "Recently updated collections",
       "recentCollectionsHelp": "Public collections, the ones made public or added to most recently first.",
       "mostCollected": "Most collected",
@@ -5443,7 +6011,7 @@
       "modelCount_one": "{{count}} model",
       "modelCount_other": "{{count}} models",
       "emptyTitle": "Nothing shared yet",
-      "emptyHint": "When someone makes a collection public, it shows up here.",
+      "emptyHint": "When someone makes their models or a collection public, it shows up here.",
       "emptyAction": "Go to my collections",
       "unavailable": "Explore isn't available right now.",
       "userNotFound": "This user doesn't share anything.",
@@ -5451,7 +6019,78 @@
       "joined": "Joined {{date}}",
       "ownEmpty": "You haven't made any collection public yet.",
       "loadFailed": "Couldn't load this page.",
-      "refreshFailed": "Couldn't load the latest counts."
+      "refreshFailed": "Couldn't load the latest counts.",
+      "sections": "What they share",
+      "noModels": "No models yet.",
+      "modelsLoadFailed": "Couldn't load the models.",
+      "collectionsLoadFailed": "Couldn't load the collections.",
+      "noCollections": "{{name}} hasn't made any collection public yet.",
+      "elsewhere": {
+        "open": "Someone elsewhere",
+        "title": "Connect with someone elsewhere",
+        "intro": "Someone on another Thingport instance. Your admin approves it first, then theirs.",
+        "handle": "Their handle",
+        "handlePlaceholder": "name@their.instance",
+        "note": "Note (optional)",
+        "ask": "Ask to connect",
+        "sent": "Asked to reach {{handle}}. Your admin will see it.",
+        "withdrawn": "Withdrew the request to reach {{handle}}",
+        "failed": "Couldn't send it",
+        "loadFailed": "Couldn't load your requests.",
+        "yours": "Your requests",
+        "withdraw": "Withdraw",
+        "status": {
+          "waiting_admin": "Waiting for your admin",
+          "waiting_them": "Waiting for their admin",
+          "connected": "Connected",
+          "declined": "Declined"
+        },
+        "errors": {
+          "federation_off": "Connected instances are off.",
+          "invalid_handle": "Enter a handle like name@their.instance.",
+          "same_instance": "That's someone on this instance: they're under People.",
+          "already_connected": "Their instance is already connected: they're under People.",
+          "already_asked": "Your admin has already asked their instance to connect.",
+          "not_available": "This instance doesn't connect with theirs.",
+          "exists": "You've already asked to reach them.",
+          "request_limit": "Wait for your admin to answer the requests you've made first.",
+          "daily_limit": "You've asked to reach people elsewhere a lot today. Try again tomorrow.",
+          "copy_limit": "Wait for the copies under way to finish first.",
+          "no_files": "It has no files to copy.",
+          "files_missing": "Not every file of it can be fetched from its instance, so it can't be copied whole.",
+          "copy_too_big": "Too big to copy here: its files together are more than this instance takes in one import.",
+          "zip_busy": "Another ZIP is being made. Try again in a moment.",
+          "zip_too_big": "Too big to zip here: download its files one at a time."
+        },
+        "on": "On {{name}}",
+        "fileCount_one": "{{count}} file",
+        "fileCount_other": "{{count}} files",
+        "copyHandle": "Copy their handle",
+        "more": "Show more",
+        "gone": "This isn't shared any more, or the instance it's on is no longer connected.",
+        "noPictures": "No pictures",
+        "picture": "Picture {{number}}",
+        "inCollections": "In collections",
+        "copying": "Copying to your library…",
+        "copyFailed": "Couldn't copy it",
+        "carriesOn": "You can leave this page: it carries on.",
+        "ofSize": "{{received}} of {{size}}",
+        "filesUnavailable": "Its instance doesn't offer the files yet.",
+        "copiedFrom": "Copied from",
+        "seeOriginal": "See the original",
+        "message": "Message",
+        "messageFailed": "Couldn't open a chat"
+      },
+      "scope": {
+        "label": "Show",
+        "all": "Everywhere",
+        "here": "This instance"
+      },
+      "sharedWithYou": "Shared with you",
+      "sharedWithYouHelp": "Collections their owners shared with you and a few others. Nobody else sees them on Explore.",
+      "showMore_one": "Show {{count}} more",
+      "showMore_other": "Show {{count}} more",
+      "sharedFailed": "Couldn't load more of what's shared with you. Try again."
     }
   },
   "providers": {
@@ -5520,10 +6159,10 @@
           "Copy the App Token it shows and paste it below."
         ],
         "placeholder": "Paste the App Token",
-        "shared": "This token is shared by everyone on this Thingport."
+        "shared": "This token is shared by everyone on this Thingport instance."
       },
       "status": {
-        "adminOnly": "Only an admin of this Thingport can set this up.",
+        "adminOnly": "Only an admin of this Thingport instance can set this up.",
         "disabledReason": "Thingiverse: the admin hasn't configured an API key yet"
       },
       "about": {
@@ -5537,7 +6176,7 @@
         ]
       },
       "admin": {
-        "description": "Imports, collections and liked models, through this Thingport's App Token.",
+        "description": "Imports, collections and liked models, through this Thingport instance's App Token.",
         "keyStatus": {
           "set": "App Token set",
           "missing": "No App Token: Thingiverse imports won't work until one is set"
@@ -5559,7 +6198,7 @@
         }
       },
       "sync": {
-        "notConnected": "Thingiverse isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "notConnected": "Thingiverse isn't connected on this Thingport instance yet. An admin can connect it in Configuration > Providers.",
         "usernameHint": "Thingport lists your public Thingiverse collections. It only needs asking once.",
         "usernamePlaceholder": "Username or profile link",
         "showing": "Showing @{{user}}'s public collections.",
@@ -5591,7 +6230,7 @@
         ]
       },
       "admin": {
-        "description": "Models and public collections, through this Thingport's API key; bought models through each user's own MyMiniFactory account.",
+        "description": "Models and public collections, through this Thingport instance's API key; bought models through each user's own MyMiniFactory account.",
         "keyStatus": {
           "set": "API key set",
           "missing": "No API key: MyMiniFactory imports won't work until one is set"
@@ -5613,7 +6252,7 @@
         }
       },
       "sync": {
-        "notConnected": "MyMiniFactory isn't connected on this Thingport yet. An admin can connect it in Configuration > Providers.",
+        "notConnected": "MyMiniFactory isn't connected on this Thingport instance yet. An admin can connect it in Configuration > Providers.",
         "usernameHint": "Thingport lists your public MyMiniFactory collections. It only needs asking once.",
         "usernamePlaceholder": "Username or profile link",
         "showing": "Showing @{{user}}'s public collections.",
@@ -6076,6 +6715,105 @@
       },
       "sync": {
         "notConnected": "OwlCAD can't be reached right now."
+      }
+    },
+    "pixup3d": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open pixup3d.com while signed in. It connects your account, and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at pixup3d.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → pixup3d.com, copy the value of _phrozen_session and paste it below. The Cookie header of a signed-in pixup3d.com request works too."
+        ],
+        "placeholder": "The _phrozen_session cookie, or a signed-in request's Cookie header"
+      },
+      "status": {
+        "notConnected": "PIXUP gives its files to signed-in members only, its free models included. Connect your account to import the ones you own; anyone's wishlist and collections read without it.",
+        "expired": "Sign-in expired. Sign in on pixup3d.com with Thingport Grab, or connect PIXUP again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "PIXUP: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Phrozen's model marketplace: figures, busts and tabletop miniatures, many pre-supported for resin printing, free and paid.",
+        "signIn": "Your own sign-in, for the files of the models you own; anyone's wishlist and collections read without it.",
+        "grab": "Sends your sign-in as you visit pixup3d.com, and marks the paid models you haven't bought.",
+        "setup": [
+          "Install Thingport Grab, enable it on PIXUP and open pixup3d.com signed in.",
+          "By hand: copy the _phrozen_session cookie of a signed-in pixup3d.com tab and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, wishlists and collections. Lists read without a sign-in; the files need each user's own. A free model is put in their PIXUP library with a $0 order first; a paid one only imports once bought."
+      },
+      "sync": {
+        "notConnected": "Connect PIXUP in Configuration > Providers, or visit it with Thingport Grab, to see your wishlist and collections here."
+      },
+      "blocked": {
+        "paid": {
+          "title": "Paid model",
+          "hint": "Buy it on PIXUP first. Once it's in your library, Thingport imports it."
+        }
+      }
+    },
+    "fab365": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open fab365.net while signed in. It connects your account and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at fab365.net and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Local storage → fab365.net, copy the values of accessToken and refreshToken and paste them below, each on a line of its own after its name (accessToken: … and refreshToken: …). With the refresh token Thingport renews the sign-in itself; an accessToken on its own stops working after about 100 minutes and has to be pasted again."
+        ],
+        "placeholder": "accessToken: … and refreshToken: …, each on its own line"
+      },
+      "status": {
+        "notConnected": "Fab365 gives its files to signed-in members only, its free models included. Connect your account to import the ones you own and see your favourites.",
+        "expired": "Sign-in expired. Sign in on fab365.net with Thingport Grab, or connect Fab365 again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Fab365: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A South Korean model marketplace known for finely engineered prints — SpaceX rockets, foldable robots, Star Wars ships — most designed to print without supports.",
+        "signIn": "Your own sign-in, for the files and your favourites; its model pages read without it.",
+        "grab": "Sends your sign-in as you visit fab365.net, so Thingport can download the files and read your favourites.",
+        "setup": [
+          "Install Thingport Grab, enable it on Fab365 and open fab365.net signed in.",
+          "By hand: copy the accessToken and refreshToken values from a signed-in fab365.net tab's local storage and paste them in Configuration → Providers, each on its own line after its name."
+        ]
+      },
+      "admin": {
+        "description": "Models and your favourites. Model pages read without a sign-in; the files need each user's own. Free models and the ones you own import; a paid or ticket model you haven't got is left for you to buy or redeem on Fab365 first."
+      },
+      "sync": {
+        "notConnected": "Connect Fab365 in Configuration > Providers, or visit it signed in with Thingport Grab, to see your favourites here."
+      }
+    },
+    "threedexport": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open 3dexport.com while signed in. It connects your account, and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at 3dexport.com and open your browser's developer tools (F12).",
+          "Go to the Network tab, reload the page, click any 3dexport.com request and copy its Cookie header, then paste it below. Its nm_userid and nm_hash cookies are the sign-in, and signing out of 3dexport.com ends them."
+        ],
+        "placeholder": "The Cookie header of a signed-in 3dexport.com request"
+      },
+      "status": {
+        "notConnected": "3DExport gives its files to signed-in users only, the free models included. Connect your account to import them and your own collections; anyone's public collections read without it.",
+        "expired": "Sign-in expired: signing out of 3dexport.com ends it. Sign in there again with Thingport Grab, or connect 3DExport again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "3DExport: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "One of the oldest 3D model marketplaces, open since 2004: game and film assets, textures and a large 3D printing catalogue, some of it free.",
+        "signIn": "Your own sign-in, for the files and your own collections; anyone's public collections read without it.",
+        "grab": "Sends your sign-in as you visit 3dexport.com, and marks the paid models you haven't bought.",
+        "setup": [
+          "Install Thingport Grab, enable it on 3DExport and open 3dexport.com signed in.",
+          "By hand: copy the Cookie header of a signed-in 3dexport.com request and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, and collections: each user's own and anyone's public ones. Model pages and public collections read without a sign-in; the files need each user's own. Free models import, a paid one only once bought, and only the formats a slicer opens."
+      },
+      "sync": {
+        "notConnected": "Connect 3DExport in Configuration > Providers, or visit it signed in with Thingport Grab, to see your collections here."
       }
     }
   }

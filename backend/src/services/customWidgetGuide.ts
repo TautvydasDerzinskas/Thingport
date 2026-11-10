@@ -166,6 +166,6 @@ To share a widget with everyone, open a pull request to the Thingport repository
   someone looks at before installing it.
 - \`README.md\` saying what it does and which services it calls.
 
-Then add the slug to \`community-widgets/index.json\`. Once it's merged, every Thingport can install it from the
+Then add the slug to \`community-widgets/index.json\`. Once it's merged, every Thingport instance can install it from the
 Community tab, screenshots and all.
 `;

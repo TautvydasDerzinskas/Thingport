@@ -816,13 +816,37 @@ describe("the import worker", () => {
 
   describe("a job that stops responding", () => {
     const STALLED = "This import stopped responding, so the line moved on. If Retry isn't offered, restart the server.";
+    // The watchdog's limit for the job meant to stall, short so it's given up on quickly. A job meant to keep going
+    // mustn't be held to it on a loaded runner, where one that works can look stuck that long (200ms did, in CI): the
+    // jobs after a stuck one get the usual limit (relaxWhenGivenUp), and one that shows signs of life gets LIVELY's,
+    // watched for longer still.
+    const WATCH = { stallLimitMs: 1_000, stallCheckMs: 20 };
+    const LIVELY = { stallLimitMs: 2_000, stallCheckMs: 20 };
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    /** The usual limit again as the watchdog gives up on `stuckId`: within its own write marking the job stalled,
+     *  which the line waits on before it claims the next job, so that job is held to the usual limit from the start. */
+    const relaxWhenGivenUp = (stuckId: string) => {
+      const updateMany = prisma.importJob.updateMany.bind(prisma.importJob);
+      vi.spyOn(prisma.importJob, "updateMany").mockImplementation((async (args: Prisma.ImportJobUpdateManyArgs) => {
+        const written = await updateMany(args);
+        if (args.where?.id === stuckId && args.data.errorMessage === STALLED) Object.assign(importWorkerTuning, tuning);
+        return written;
+      }) as never);
+    };
 
     it("moves the line on and says so, though its runner may still be stuck", async () => {
-      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      Object.assign(importWorkerTuning, WATCH);
       const release = gate(base + 90);
       const stuck = await enqueueSingleImport(alice, modelUrl(base + 90), {});
+      relaxWhenGivenUp(stuck.job.id);
+      // The limit the next job starts under: the usual one, as the line moved on only once it was back.
+      let nextLimit: number | null = null;
+      onDesign = () => {
+        if (started.at(-1) === String(base + 91)) nextLimit = importWorkerTuning.stallLimitMs;
+      };
       const next = await enqueueSingleImport(bob, modelUrl(base + 91), {});
       await importWorkerIdle();
+      expect(nextLimit).toBe(tuning.stallLimitMs);
 
       expect(await reload(stuck.job.id)).toMatchObject({
         status: "ERROR",
@@ -838,7 +862,7 @@ describe("the import worker", () => {
     });
 
     it("doesn't take a job for stuck while it shows signs of life", async () => {
-      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      Object.assign(importWorkerTuning, LIVELY);
       const release = gate(base + 92);
       let beats: NodeJS.Timeout | undefined;
       // In the job's own async context, as the read loops and rawFetch are.
@@ -847,9 +871,11 @@ describe("the import worker", () => {
         beats = setInterval(noteImportActivity, 20).unref();
       };
       const busy = await enqueueSingleImport(alice, modelUrl(base + 92), {});
+      relaxWhenGivenUp(busy.job.id);
       const next = await enqueueSingleImport(bob, modelUrl(base + 93), {});
       await until(() => started.includes(String(base + 92)));
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      // Well past the limit.
+      await sleep(LIVELY.stallLimitMs * 1.5);
       expect((await reload(busy.job.id)).status).toBe("RUNNING");
       expect((await reload(next.job.id)).status).toBe("QUEUED");
 
@@ -862,12 +888,13 @@ describe("the import worker", () => {
     });
 
     it("counts what a job writes as a sign of life too", async () => {
-      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      Object.assign(importWorkerTuning, LIVELY);
       const release = gate(base + 94);
       const busy = await enqueueLinksImport(alice, [modelUrl(base + 94)], {});
       await until(() => started.includes(String(base + 94)));
-      for (let i = 0; i < 6; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+      // A write every 100ms, for well past the limit.
+      for (let i = 0, end = Date.now() + LIVELY.stallLimitMs * 1.5; Date.now() < end; i++) {
+        await sleep(100);
         await prisma.importJobItem.updateMany({ where: { jobId: busy.job.id }, data: { attempts: i } });
       }
       expect((await reload(busy.job.id)).status).toBe("RUNNING");
@@ -877,9 +904,10 @@ describe("the import worker", () => {
     });
 
     it("doesn't let a paused job's stuck link hold the line either, and leaves it paused", async () => {
-      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      Object.assign(importWorkerTuning, WATCH);
       const release = gate(base + 95);
       const stuck = await enqueueLinksImport(alice, [modelUrl(base + 95), modelUrl(base + 96)], {});
+      relaxWhenGivenUp(stuck.job.id);
       const next = await enqueueSingleImport(bob, modelUrl(base + 97), {});
       await until(() => started.includes(String(base + 95)));
       await prisma.importJob.update({ where: { id: stuck.job.id }, data: { status: "PAUSED" } });
@@ -893,7 +921,7 @@ describe("the import worker", () => {
     });
 
     it("stops a job the watchdog gave up on at its next link", async () => {
-      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      Object.assign(importWorkerTuning, WATCH);
       const release = gate(base + 98);
       const stuck = await enqueueLinksImport(alice, [modelUrl(base + 98), modelUrl(base + 99)], {});
       await importWorkerIdle();
@@ -905,7 +933,7 @@ describe("the import worker", () => {
     });
 
     it("stops a collection the watchdog gave up on at its next model, leaving it to be retried", async () => {
-      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      Object.assign(importWorkerTuning, WATCH);
       const [first, second] = [base + 120, base + 121];
       const release = gate(first);
       const { job } = await enqueueListImport(alice, "makerworld", "https://makerworld.com/en/collections/987-flock", {
@@ -939,7 +967,7 @@ describe("the import worker", () => {
     });
 
     it("stops print profiles the watchdog gave up on before the next one", async () => {
-      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      Object.assign(importWorkerTuning, WATCH);
       const id = base + 122;
       const release = gate(id);
       const { job } = await enqueueProfilesImport(alice, "makerworld", modelUrl(id), { scope: "all" });
@@ -954,7 +982,7 @@ describe("the import worker", () => {
     });
 
     it("reads as done, with nothing about stopping, when it finishes after all", async () => {
-      Object.assign(importWorkerTuning, { stallLimitMs: 200, stallCheckMs: 20 });
+      Object.assign(importWorkerTuning, WATCH);
       const release = gate(base + 123);
       const { job } = await enqueueSingleImport(alice, modelUrl(base + 123), {});
       await importWorkerIdle();

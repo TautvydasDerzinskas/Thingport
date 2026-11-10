@@ -10,12 +10,7 @@ import {
   type ImportedPageMetadata,
   type ParametricSourceInfo,
 } from "../../services/importResolvers";
-import {
-  makerworldAuthorFromDesignCreator,
-  makerworldInstanceCover,
-  makerworldInstanceTitles,
-  makerworldMetaFromDesign,
-} from "./pageData";
+import { makerworldInstanceCover, makerworldInstanceTitles, makerworldMetaFromDesign } from "./pageData";
 import { maybeSleep, sleep } from "../../utils/concurrency";
 import { HttpError } from "../../utils/fileUtils";
 import {
@@ -59,11 +54,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function cloudApiHeaders(bearerToken: string): Record<string, string> {
+// Null for a read of what anyone may see, which needs no one's session.
+function cloudApiHeaders(bearerToken: string | null): Record<string, string> {
   return {
     "User-Agent": IMPORT_BROWSER_USER_AGENT,
     Accept: "application/json,text/plain,*/*",
-    Authorization: `Bearer ${bearerToken}`,
+    ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
     Referer: REFERER,
   };
 }
@@ -72,7 +68,10 @@ function cloudApiHeaders(bearerToken: string): Record<string, string> {
 // treating it as real and triggering the hours-long captcha cooloff.
 const TRANSIENT_418_RETRY_DELAY_MS = 1500;
 
-async function fetchCloudJson(url: string, bearerToken: string): Promise<{ status: number; data: unknown } | null> {
+async function fetchCloudJson(
+  url: string,
+  bearerToken: string | null,
+): Promise<{ status: number; data: unknown } | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
@@ -248,15 +247,6 @@ export async function completeMakerworldAuthor(
   };
 }
 
-export async function fetchMakerworldDesignAuthor(
-  designId: string,
-  bearerToken: string,
-  paceMs?: number,
-): Promise<ImportedAuthorInfo | null> {
-  const design = await fetchMakerworldDesign(designId, bearerToken, paceMs);
-  return design ? completeMakerworldAuthor(makerworldAuthorFromDesignCreator(design.designCreator), paceMs) : null;
-}
-
 /** Which print profiles ("instances") to import: the linked one (else the default), the
  * designer's own, or all including community uploads. */
 export type MakerworldProfileScope = "url" | "designer" | "all";
@@ -313,6 +303,22 @@ export async function fetchMakerworldDesign(
   }
   if (result.status === 401 || result.status === 403) throw new MakerworldAuthError();
   return result.status === 200 && isRecord(result.data) ? result.data : null;
+}
+
+/** A design as anyone may read it: the cloud API answers its details, profiles included, without a sign-in. Null for a
+ *  design it doesn't know; any other refusal is thrown, so a caller can try again later. */
+export async function fetchMakerworldPublicDesign(designId: string): Promise<Record<string, unknown> | null> {
+  if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
+  const result = await fetchCloudJson(`${DESIGN_API_BASE}/design/${encodeURIComponent(designId)}`, null);
+  if (!result) throw new Error(`${manifest.name} kept refusing to answer`);
+  if (isCaptchaChallenge(result.data)) {
+    noteCaptchaChallenge();
+    throw new MakerworldCaptchaError();
+  }
+  if (result.status === 404) return null;
+  if (result.status !== 200 || !isRecord(result.data))
+    throw new Error(`${manifest.name} answered HTTP ${result.status}`);
+  return result.data.id == null ? null : result.data;
 }
 
 /** A download request's JSON body, or null; a CAPTCHA, the daily limit and a rejected login are thrown. */

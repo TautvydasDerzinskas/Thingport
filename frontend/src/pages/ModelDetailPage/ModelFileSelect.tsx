@@ -8,10 +8,12 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import PrintIcon from "@mui/icons-material/Print";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import { formatFileSize } from "../../utils/fileSize";
 import { fileRowText } from "./fileRowText";
-import type { ModelFile } from "./useOpenInSlicer";
+import { PREPARED_KEY, type ModelFile } from "./useOpenInSlicer";
 
 type Props = {
   files: ModelFile[];
@@ -19,12 +21,15 @@ type Props = {
   onSelect: (file: ModelFile) => void;
 };
 
+// Every file without a plate but the prepared print is a partner's model's, which has no thumbnails here.
+const isPrepared = (file: ModelFile) => !file.plate && file.key === PREPARED_KEY;
+
 function FileIcon({ file }: { file: ModelFile }) {
   return file.plate ? (
     <PlateThumbnail plate={file.plate} />
   ) : (
     <Box sx={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-      <PrintIcon fontSize="small" />
+      {isPrepared(file) ? <PrintIcon fontSize="small" /> : <InsertDriveFileOutlinedIcon fontSize="small" />}
     </Box>
   );
 }
@@ -33,10 +38,13 @@ function FileIcon({ file }: { file: ModelFile }) {
 export default function ModelFileSelect({ files, selected, onSelect }: Props) {
   const { t } = useTranslation(["models"]);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  const textOf = (file: ModelFile) =>
-    file.plate
-      ? fileRowText(t, file.filename, file.index)
-      : { primary: t("models:detail.preparedPrintFile"), secondary: file.filename };
+  const textOf = (file: ModelFile) => {
+    if (isPrepared(file)) return { primary: t("models:detail.preparedPrintFile"), secondary: file.filename };
+    const text = fileRowText(t, file.filename, file.index);
+    return typeof file.size === "number"
+      ? { ...text, secondary: `${text.secondary} · ${formatFileSize(file.size)}` }
+      : text;
+  };
   const current = textOf(selected);
 
   return (

@@ -38,6 +38,10 @@ const ALLOWED_FORMATS: Record<string, string> = {
 
 const REMOTE_IMAGE_RE = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
 const LOCAL_REF_RE = /\/description-image\/([a-z0-9]+)/g;
+/** A model's own image in its description, `![alt](/description-image/<id>)`. */
+export const DESCRIPTION_IMAGE = /!\[([^\]]*)\]\(\/description-image\/([a-z0-9]+)\)/g;
+/** Any other mention of one, as in an HTML image or a reference; a local one only, not some other site's path. */
+export const DESCRIPTION_IMAGE_REF = /(?<=^|[\s"'(<])\/description-image\/([a-z0-9]+)/g;
 
 /** `home` is the image's model's Print.assetsPath. */
 export function descriptionImagePath(image: { id: string; mime: string }, home: AssetHome): string {

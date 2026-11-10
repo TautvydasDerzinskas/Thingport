@@ -19,7 +19,6 @@ import type { AuthUser } from "../../api/auth";
 import type { ConfigurationTab } from "./ConfigurationDialog";
 import { COMING_SOON_PROVIDERS, ProviderLogo, type ProviderId } from "./ConfigurationDialog/providerLogos";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
-import { useGravatarUrl } from "../../hooks/useGravatarUrl";
 import type { ProviderState } from "../../api/providers";
 import { refreshProviders, useProviders } from "../../hooks/useProviders";
 import { MANIFESTS } from "../../providers/index.generated";
@@ -37,7 +36,6 @@ type Props = {
 export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const navigate = useNavigate();
-  const avatarUrl = useGravatarUrl(user?.email, 128);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const providers = useProviders();
 
@@ -84,8 +82,8 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
 
   return (
     <>
-      {/* Named here, not left to the Avatar's alt: without a Gravatar the image is dropped for the initial, and
-          the button would be called "R". */}
+      {/* Named here, not left to the Avatar's alt: an avatar that fails to load is dropped for the initial, and the
+          button would be called "R". */}
       <IconButton
         onClick={(e) => setAnchorEl(e.currentTarget)}
         size="small"
@@ -94,7 +92,7 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
       >
         <Avatar
           alt={user?.display_name}
-          src={avatarUrl}
+          src={user?.avatar_url}
           sx={{ width: 32, height: 32, bgcolor: "primary.main", fontSize: 13 }}
         >
           {user?.display_name?.[0]?.toUpperCase()}

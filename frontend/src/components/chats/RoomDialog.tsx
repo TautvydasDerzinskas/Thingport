@@ -14,7 +14,7 @@ import { chatsApi, type Chat, type ChatPerson } from "../../api/chats";
 import { UnauthorizedError } from "../../api/client";
 import Segmented from "../controls/Segmented";
 import HelpTip from "../HelpTip";
-import PeoplePicker from "./PeoplePicker";
+import PeoplePicker from "../PeoplePicker";
 
 const NAME_MAX = 80;
 const DESCRIPTION_MAX = 300;
@@ -51,23 +51,36 @@ export default function RoomDialog({ room, viewerId, onClose, onSaved, onUnautho
     setSaving(true);
     setError(null);
     const text = { name: trimmed, description: description.trim() || null, is_public: visibility === "public" };
-    const chosen = members.map((member) => member.id);
+    // People here by their accounts, partners' people (the room stays hosted here) by theirs.
+    const idsOf = (people: ChatPerson[], remote: boolean) =>
+      people.filter((person) => Boolean(person.remote) === remote).map((person) => person.id);
+    const chosen = idsOf(members, false);
+    const chosenRemote = idsOf(members, true);
     try {
       if (editing) {
         // By who's added and who's taken out, so anyone the editor didn't load stays where they are. The admin
         // editing isn't in the picker, so they stay as they were too.
-        const had = new Set((room?.members ?? []).map((member) => member.id).filter((id) => id !== viewerId));
-        const kept = new Set(chosen);
+        const before = (room?.members ?? []).filter((member) => member.id !== viewerId);
+        const had = new Set(idsOf(before, false));
+        const hadRemote = new Set(idsOf(before, true));
+        const kept = new Set([...chosen, ...chosenRemote]);
         const changes =
           visibility === "private"
             ? {
                 add_member_ids: chosen.filter((id) => !had.has(id)),
                 remove_member_ids: [...had].filter((id) => !kept.has(id)),
+                add_remote_member_ids: chosenRemote.filter((id) => !hadRemote.has(id)),
+                remove_remote_member_ids: [...hadRemote].filter((id) => !kept.has(id)),
               }
             : {};
         onSaved(await chatsApi.updateRoom(editing.id, { ...text, ...changes }));
       } else {
-        onSaved(await chatsApi.createRoom({ ...text, ...(visibility === "private" ? { member_ids: chosen } : {}) }));
+        onSaved(
+          await chatsApi.createRoom({
+            ...text,
+            ...(visibility === "private" ? { member_ids: chosen, remote_member_ids: chosenRemote } : {}),
+          }),
+        );
       }
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -123,6 +136,7 @@ export default function RoomDialog({ room, viewerId, onClose, onSaved, onUnautho
                 {t("chats.roomMembers", { count: members.length })}
               </Typography>
               <PeoplePicker
+                search={chatsApi.people}
                 selected={members}
                 onSelectedChange={setMembers}
                 excludeIds={[viewerId]}

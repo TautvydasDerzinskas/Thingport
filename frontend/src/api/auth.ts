@@ -1,4 +1,6 @@
 import type { McpAccess } from "./settings";
+import type { ProfileCoverValue } from "../constants/profileCovers";
+import type { AvatarStyle } from "../constants/avatar";
 import { authHeaders } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, EmailNotVerifiedError, UnauthorizedError } from "./client";
 import type { CaptchaAnswer } from "./captcha";
@@ -7,11 +9,24 @@ export type AuthUser = {
   id: string;
   email: string;
   display_name: string;
+  /** What people on connected instances call them, as username@this-instance. */
+  username: string | null;
   role: "ADMIN" | "MEMBER";
   pending_email: string | null;
   bio: string | null;
-  background_url: string | null;
-};
+  /** Up to five web addresses, shown under the bio. Missing from a user kept from before they came. */
+  links?: string[];
+  /** Whether the others see their own models (My models) on Explore. */
+  models_public?: boolean;
+  /** Their avatar, whichever they have: the same address everyone sees it at. */
+  avatar_url?: string;
+  /** A picture, a Thingport avatar they designed, or "auto": their Gravatar, else the one picked for them. */
+  avatar_source?: "picture" | "thingport" | "auto";
+  /** Their design, kept while a picture shows instead. */
+  avatar_style?: AvatarStyle | null;
+  /** The Thingport avatar picked for them. */
+  avatar_picked_style?: AvatarStyle;
+} & ProfileCoverValue;
 export type AuthResult = { token: string; expires_in: number; user: AuthUser };
 // When SMTP is configured, the account awaits email verification instead of signing in.
 export type RegisterResult = AuthResult | { email_verification_required: true; email: string };

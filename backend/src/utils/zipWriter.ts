@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import fsp from "node:fs/promises";
+import { Readable } from "node:stream";
 import zlib from "node:zlib";
 
 // Minimal streaming ZIP writer on node:zlib; yauzl is read-only.
@@ -36,7 +37,9 @@ function dosDateTime(date: Date): { time: number; date: number } {
   return { time, date: dateVal };
 }
 
-export type ZipEntryDescriptor = { arcname: string; filePath: string };
+/** A file on disk, or bytes made for the zip (a model's LICENSE.txt). */
+export type ZipEntryDescriptor =
+  { arcname: string; filePath: string } | { arcname: string; content: Buffer; mtime?: Date };
 
 type CentralRecord = {
   nameBuf: Buffer;
@@ -62,14 +65,18 @@ export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]):
 
   try {
     for (const entry of entries) {
-      let stat;
-      try {
-        stat = await fsp.stat(entry.filePath);
-      } catch {
-        continue;
+      let mtime: Date;
+      if ("content" in entry) {
+        mtime = entry.mtime ?? new Date();
+      } else {
+        try {
+          mtime = (await fsp.stat(entry.filePath)).mtime;
+        } catch {
+          continue;
+        }
       }
       const nameBuf = Buffer.from(entry.arcname.replace(/\\/g, "/"), "utf-8");
-      const { time, date } = dosDateTime(stat.mtime);
+      const { time, date } = dosDateTime(mtime);
       const localHeaderOffset = offset;
 
       const localHeader = Buffer.alloc(30);
@@ -92,7 +99,7 @@ export async function writeZip(destPath: string, entries: ZipEntryDescriptor[]):
       let compressedSize = 0;
 
       await new Promise<void>((resolve, reject) => {
-        const readStream = fs.createReadStream(entry.filePath);
+        const readStream = "content" in entry ? Readable.from([entry.content]) : fs.createReadStream(entry.filePath);
         const deflate = zlib.createDeflateRaw();
         readStream.on("data", (raw: string | Buffer) => {
           const chunk = Buffer.isBuffer(raw) ? raw : Buffer.from(raw);

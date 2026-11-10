@@ -1,0 +1,365 @@
+{
+  "id": 3541343,
+  "title": "Snowy Mountain Village - Mini Train Diorama",
+  "designCreator": {
+    "uid": 2984912453,
+    "name": "BamBam Design"
+  },
+  "instances": [
+    {
+      "id": 4050273,
+      "title": "[Single Plate] 0.12mm layer, 2 walls, 15% infill",
+      "summary": "<p>All in one Plate! Much color changes! Tool Changer recommend</p>",
+      "prediction": 26287,
+      "weight": 108,
+      "instanceFilaments": [
+        {
+          "type": "PLA",
+          "color": "#FFFFFF",
+          "usedM": "21.24",
+          "usedG": "65"
+        },
+        {
+          "type": "PLA",
+          "color": "#757575",
+          "usedM": "0.15",
+          "usedG": "1"
+        },
+        {
+          "type": "PLA",
+          "color": "#D3B7A7",
+          "usedM": "2.39",
+          "usedG": "8"
+        },
+        {
+          "type": "PLA",
+          "color": "#E4BD68",
+          "usedM": "1.26",
+          "usedG": "4"
+        },
+        {
+          "type": "PLA",
+          "color": "#0086D6",
+          "usedM": "1.15",
+          "usedG": "4"
+        },
+        {
+          "type": "PLA",
+          "color": "#6F5034",
+          "usedM": "4.75",
+          "usedG": "15"
+        },
+        {
+          "type": "PLA",
+          "color": "#000000",
+          "usedM": "1.54",
+          "usedG": "5"
+        },
+        {
+          "type": "PLA",
+          "color": "#3F8E43",
+          "usedM": "1.68",
+          "usedG": "6"
+        }
+      ],
+      "instanceCreator": {
+        "uid": 2984912453,
+        "name": "BamBam Design"
+      },
+      "extention": {
+        "modelInfo": {
+          "compatibility": {
+            "devModelName": "N10",
+            "devProductName": "H3C",
+            "nozzleDiameter": 0.4
+          },
+          "projectSettings": {
+            "layerHeight": "0.12",
+            "wallLoops": "2",
+            "sparseInfillDensity": "15%"
+          },
+          "plates": [
+            {
+              "index": 1,
+              "name": "Parts",
+              "prediction": 26287,
+              "weight": 108,
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#FFFFFF",
+                  "usedM": "21.24",
+                  "usedG": "65"
+                },
+                {
+                  "id": "2",
+                  "type": "PLA",
+                  "color": "#757575",
+                  "usedM": "0.15",
+                  "usedG": "1"
+                },
+                {
+                  "id": "3",
+                  "type": "PLA",
+                  "color": "#D3B7A7",
+                  "usedM": "2.39",
+                  "usedG": "8"
+                },
+                {
+                  "id": "4",
+                  "type": "PLA",
+                  "color": "#E4BD68",
+                  "usedM": "1.26",
+                  "usedG": "4"
+                },
+                {
+                  "id": "5",
+                  "type": "PLA",
+                  "color": "#0086D6",
+                  "usedM": "1.15",
+                  "usedG": "4"
+                },
+                {
+                  "id": "6",
+                  "type": "PLA",
+                  "color": "#6F5034",
+                  "usedM": "4.75",
+                  "usedG": "15"
+                },
+                {
+                  "id": "7",
+                  "type": "PLA",
+                  "color": "#000000",
+                  "usedM": "1.54",
+                  "usedG": "5"
+                },
+                {
+                  "id": "8",
+                  "type": "PLA",
+                  "color": "#3F8E43",
+                  "usedM": "1.68",
+                  "usedG": "6"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 4050294,
+      "title": "[4 Plates each max 4 colors] 0.12mm layer, 2 walls, 15% inf",
+      "summary": "",
+      "prediction": 91880,
+      "weight": 295,
+      "instanceFilaments": [
+        {
+          "type": "PLA",
+          "color": "#FFFFFF",
+          "usedM": "48.64",
+          "usedG": "149"
+        },
+        {
+          "type": "PLA",
+          "color": "#757575",
+          "usedM": "0.31",
+          "usedG": "1"
+        },
+        {
+          "type": "PLA",
+          "color": "#D3B7A7",
+          "usedM": "9.80",
+          "usedG": "32"
+        },
+        {
+          "type": "PLA",
+          "color": "#6F5034",
+          "usedM": "9.47",
+          "usedG": "30"
+        },
+        {
+          "type": "PLA",
+          "color": "#FFFF00",
+          "usedM": "9.90",
+          "usedG": "32"
+        },
+        {
+          "type": "PLA",
+          "color": "#0086D6",
+          "usedM": "7.13",
+          "usedG": "22"
+        },
+        {
+          "type": "PLA",
+          "color": "#000000",
+          "usedM": "3.54",
+          "usedG": "11"
+        },
+        {
+          "type": "PLA",
+          "color": "#3F8E43",
+          "usedM": "5.77",
+          "usedG": "18"
+        }
+      ],
+      "instanceCreator": {
+        "uid": 2984912453,
+        "name": "BamBam Design"
+      },
+      "extention": {
+        "modelInfo": {
+          "compatibility": {
+            "devModelName": "N1",
+            "devProductName": "A1 mini",
+            "nozzleDiameter": 0.4
+          },
+          "projectSettings": {
+            "layerHeight": "0.12",
+            "wallLoops": "2",
+            "sparseInfillDensity": "15%"
+          },
+          "plates": [
+            {
+              "index": 1,
+              "name": "Terrain Wheel Pins & Roofs",
+              "prediction": 32265,
+              "weight": 100,
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#FFFFFF",
+                  "usedM": "23.72",
+                  "usedG": "72"
+                },
+                {
+                  "id": "2",
+                  "type": "PLA",
+                  "color": "#757575",
+                  "usedM": "0.31",
+                  "usedG": "1"
+                },
+                {
+                  "id": "3",
+                  "type": "PLA",
+                  "color": "#D3B7A7",
+                  "usedM": "3.03",
+                  "usedG": "10"
+                },
+                {
+                  "id": "6",
+                  "type": "PLA",
+                  "color": "#6F5034",
+                  "usedM": "5.29",
+                  "usedG": "17"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "name": "Base & Train",
+              "prediction": 24380,
+              "weight": 88,
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#FFFFFF",
+                  "usedM": "14.89",
+                  "usedG": "46"
+                },
+                {
+                  "id": "4",
+                  "type": "PLA",
+                  "color": "#FFFF00",
+                  "usedM": "2.81",
+                  "usedG": "9"
+                },
+                {
+                  "id": "5",
+                  "type": "PLA",
+                  "color": "#0086D6",
+                  "usedM": "7.13",
+                  "usedG": "22"
+                },
+                {
+                  "id": "8",
+                  "type": "PLA",
+                  "color": "#000000",
+                  "usedM": "3.54",
+                  "usedG": "11"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "name": "Houses",
+              "prediction": 12496,
+              "weight": 37,
+              "filaments": [
+                {
+                  "id": "3",
+                  "type": "PLA",
+                  "color": "#D3B7A7",
+                  "usedM": "6.77",
+                  "usedG": "22"
+                },
+                {
+                  "id": "4",
+                  "type": "PLA",
+                  "color": "#FFFF00",
+                  "usedM": "2.39",
+                  "usedG": "8"
+                },
+                {
+                  "id": "6",
+                  "type": "PLA",
+                  "color": "#6F5034",
+                  "usedM": "2.31",
+                  "usedG": "7"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "name": "Trees",
+              "prediction": 22739,
+              "weight": 70,
+              "filaments": [
+                {
+                  "id": "1",
+                  "type": "PLA",
+                  "color": "#FFFFFF",
+                  "usedM": "10.03",
+                  "usedG": "31"
+                },
+                {
+                  "id": "4",
+                  "type": "PLA",
+                  "color": "#FFFF00",
+                  "usedM": "4.70",
+                  "usedG": "15"
+                },
+                {
+                  "id": "6",
+                  "type": "PLA",
+                  "color": "#6F5034",
+                  "usedM": "1.87",
+                  "usedG": "6"
+                },
+                {
+                  "id": "7",
+                  "type": "PLA",
+                  "color": "#3F8E43",
+                  "usedM": "5.77",
+                  "usedG": "18"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

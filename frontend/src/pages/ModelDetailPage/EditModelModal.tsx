@@ -28,7 +28,9 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { type Print, printsApi } from "../../api/prints";
+import { type LicenseFamily, type LicenseOption, type Print, printsApi } from "../../api/prints";
+import { printProviderInfo } from "../../constants/importProviders";
+import LicenseMarks from "../../components/license/LicenseMarks";
 import { categoriesApi, type Category } from "../../api/categories";
 import type { AuthUser } from "../../api/auth";
 import { UnauthorizedError } from "../../api/client";
@@ -60,6 +62,8 @@ function moveItem<T>(list: T[], index: number, dir: -1 | 1): T[] {
   [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
   return next;
 }
+
+const LICENSE_GROUPS: LicenseFamily[] = ["cc", "open", "reserved"];
 
 type Props = {
   print: Print;
@@ -93,6 +97,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     print.plates.map((p): PlateItem => ({ kind: "existing", id: p.id, filename: p.filename })),
   );
   const [categories, setCategories] = useState<Category[] | null>(null);
+  // "source": what its source lists; "": none, for a model with no source; otherwise a licence id the owner picks.
+  const initialLicense =
+    print.license?.source === "user" ? (print.license.id ?? "") : print.source_provider ? "source" : "";
+  const [license, setLicense] = useState(initialLicense);
+  const [licenses, setLicenses] = useState<LicenseOption[] | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +115,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       .list()
       .then(setCategories)
       .catch(() => setCategories([]));
+    printsApi
+      .listLicenses()
+      .then(setLicenses)
+      .catch(() => setLicenses([]));
   }, []);
 
   const markDirty = () => setDirty(true);
@@ -119,6 +132,17 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     [categories],
   );
   const categoryName = (c: Category) => translateCategoryDisplay(c, i18n).name;
+  // The pickable licences under a heading for each kind.
+  const licenseMenu = useMemo(() => {
+    const entries: ({ kind: "group"; family: LicenseFamily } | { kind: "option"; option: LicenseOption })[] = [];
+    for (const family of LICENSE_GROUPS) {
+      const group = (licenses ?? []).filter((option) => option.family === family);
+      if (!group.length) continue;
+      entries.push({ kind: "group", family });
+      for (const option of group) entries.push({ kind: "option", option });
+    }
+    return entries;
+  }, [licenses]);
 
   const onAddImages = (fileList: FileList | null) => {
     if (!fileList?.length) return;
@@ -192,7 +216,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     setError(null);
     let latest: Print = print;
     try {
-      const metaRes = await printsApi.updateMeta(print.id, { title, notes });
+      const metaRes = await printsApi.updateMeta(print.id, {
+        title,
+        notes,
+        ...(license !== initialLicense ? { license: license || null } : {}),
+      });
       latest = metaRes.print ?? latest;
 
       const catRes = await printsApi.updateCategory(print.id, categoryId);
@@ -340,6 +368,50 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                   {categoryName(category) || t("models:categories.untitled")}
                 </MenuItem>
               ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth disabled={saving || !licenses}>
+            <InputLabel id="edit-model-license-label">{t("models:license.title")}</InputLabel>
+            <Select
+              labelId="edit-model-license-label"
+              label={t("models:license.title")}
+              value={licenses ? license : ""}
+              onChange={(e) => {
+                setLicense(e.target.value);
+                markDirty();
+              }}
+            >
+              {print.source_provider ? (
+                <MenuItem value="source">
+                  {t("models:license.fromSource", { site: printProviderInfo(print.source_provider).label })}
+                  {print.license?.source === "provider" && (
+                    <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                      {print.license.short}
+                    </Typography>
+                  )}
+                </MenuItem>
+              ) : (
+                <MenuItem value="">{t("models:license.none")}</MenuItem>
+              )}
+              {licenseMenu.map((entry) =>
+                entry.kind === "group" ? (
+                  // A disabled MenuItem rather than ListSubheader, as for the categories above.
+                  <MenuItem
+                    key={`group-${entry.family}`}
+                    disabled
+                    divider
+                    sx={{ fontWeight: 700, opacity: "1 !important" }}
+                  >
+                    {t(`models:license.groups.${entry.family}`)}
+                  </MenuItem>
+                ) : (
+                  <MenuItem key={entry.option.id} value={entry.option.id} sx={{ pl: 3, gap: 1 }}>
+                    <LicenseMarks marks={entry.option.marks} family={entry.option.family} size={14} />
+                    {entry.option.short}
+                  </MenuItem>
+                ),
+              )}
             </Select>
           </FormControl>
 

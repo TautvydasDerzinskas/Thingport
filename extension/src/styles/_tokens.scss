@@ -30,7 +30,9 @@ $space-3: 12px;
 $space-4: 16px;
 $space-5: 20px;
 
-$z-top: 2147483000;
+// One under the highest z-index there is, which the modal (+1) takes. Chat widgets on provider pages climb that high
+// (3DExport's Chatbase bubble is at 2147483646); at a tie Grab's host, added last to the page, is painted on top.
+$z-top: 2147483646;
 
 $brand: #00b800;
 $brand-hover: #00a300;

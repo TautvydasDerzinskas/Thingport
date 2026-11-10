@@ -75,16 +75,16 @@ how lists are read. When a new site resembles one of these, copy that provider's
 
 ### Reaching the site
 
-| Approach                                          | Providers                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Official API with an instance key                 | Thingiverse (an admin's App Token), MyMiniFactory (an admin's API key as `?key=`)                                                                                                                                                                                                                                                             |
-| Official API with the user's key                  | Cults3D's GraphQL API (nickname + API key) for models, likes, printlists and orders, though never files                                                                                                                                                                                                                                       |
-| Public GraphQL API, no sign-in                    | Printables (`api.printables.com` answers unauthenticated, unlike the Cloudflare-gated site)                                                                                                                                                                                                                                                   |
-| The site's own private API (what its pages call)  | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs, eufyMake, Makerables, GrabCAD, Meshy. Most wrap answers in a `code` of their own, so check that, not the HTTP status; GrabCAD's answers with plain statuses, a visitor's `/members/me` with a 204. Creality Cloud refuses any call without its full set of `__cxy_*` headers        |
-| Model pages plus the maker's cloud API            | MakerWorld (page data, and `api.bambulab.com` with the user's cookie)                                                                                                                                                                                                                                                                         |
-| Its pages' HTML, rendered on the server           | Pinshape and Toymakr3D, read with cheerio. Pinshape's own calls answer with more HTML (`{success, html, pagination}`), and both sites' redirects are their answers: Pinshape's `/index` for a missing model, `/auth/login` for a refused sign-in; Toymakr3D's `/login` for one, and its canonical product page for a link whose name is wrong |
-| Its pages' data, as the JSON they hold or ask for | CGTrader: its listings answer JSON to a page's own script, a model page hands its React components their data as `data-react-props`, and `/products/<slug>.js`, the script the page loads to learn who's looking, says whether the user bought the model. Its redirect to `/not_found` is its 404                                             |
-| A Firebase app's public endpoints                 | OwlCAD: its gallery is a Firestore collection read over REST, its library parts are Firebase Storage objects, and its one call is a Cloud Function, all answering without a sign-in. Firestore answers a document that isn't there with 403, not 404                                                                                          |
+| Approach                                          | Providers                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Official API with an instance key                 | Thingiverse (an admin's App Token), MyMiniFactory (an admin's API key as `?key=`)                                                                                                                                                                                                                                                                                                                   |
+| Official API with the user's key                  | Cults3D's GraphQL API (nickname + API key) for models, likes, printlists and orders, though never files                                                                                                                                                                                                                                                                                             |
+| Public GraphQL API, no sign-in                    | Printables (`api.printables.com` answers unauthenticated, unlike the Cloudflare-gated site)                                                                                                                                                                                                                                                                                                         |
+| The site's own private API (what its pages call)  | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs, eufyMake, Makerables, GrabCAD, Meshy. Most wrap answers in a `code` of their own, so check that, not the HTTP status; GrabCAD's answers with plain statuses, a visitor's `/members/me` with a 204. Creality Cloud refuses any call without its full set of `__cxy_*` headers                                                              |
+| Model pages plus the maker's cloud API            | MakerWorld (page data, and `api.bambulab.com` with the user's cookie)                                                                                                                                                                                                                                                                                                                               |
+| Its pages' HTML, rendered on the server           | Pinshape, Toymakr3D and 3DExport, read with cheerio. Pinshape's own calls answer with more HTML (`{success, html, pagination}`), 3DExport's with that HTML inside JSON, and their redirects are their answers: Pinshape's `/index` for a missing model, `/auth/login` for a refused sign-in; Toymakr3D's `/login` for one; Toymakr3D's and 3DExport's canonical page for a link whose name is wrong |
+| Its pages' data, as the JSON they hold or ask for | CGTrader: its listings answer JSON to a page's own script, a model page hands its React components their data as `data-react-props`, and `/products/<slug>.js`, the script the page loads to learn who's looking, says whether the user bought the model. Its redirect to `/not_found` is its 404                                                                                                   |
+| A Firebase app's public endpoints                 | OwlCAD: its gallery is a Firestore collection read over REST, its library parts are Firebase Storage objects, and its one call is a Cloud Function, all answering without a sign-in. Firestore answers a document that isn't there with 403, not 404                                                                                                                                                |
 
 **Cloudflare:**
 
@@ -144,6 +144,7 @@ guards its pages but not the API its provider reads, so it only sends the browse
 | GrabCAD        | Rails' `_grabcad_session`, with no remember-me cookie beside it                 | Grab sends each new one, only from a signed-in page. It lasts two days from its last use, Thingport's included      |
 | OwlCAD         | Nothing                                                                         | Its gallery, its files and its one call all answer without a sign-in                                                |
 | Meshy          | Supabase's 15-minute access token and the refresh token in `sb-auth-auth-token` | **The backend renews it itself**, saving each rotated refresh token before using it, only while it's the one stored |
+| 3DExport       | Its ten-year remember-me pair, `nm_userid` and `nm_hash`                        | Any request turns it into a session of its own; signing out anywhere revokes the hash, which the site then clears   |
 
 Rules of thumb:
 
@@ -152,6 +153,9 @@ Rules of thumb:
   `connections.ts`, used by Snapmaker and MakerOnline).
 - Accept a pasted Cookie header as well as a bare value. `manifest.sessionCookies` names the cookies to pick out,
   and Grab reads the same ones.
+- Grab's sign-out (a session source's `signedOut`) carries `signed_out_of`, the value of the sign-in it last sent. A
+  connection with a `signOut` clears only while that's still the one stored, so a sign-in pasted in Thingport since
+  stays (3DExport's); without one, the sign-out goes to `save` and clears whatever is there.
 
 ### Getting files
 
@@ -208,6 +212,10 @@ Rules of thumb:
   model for the signed-in account (`asset-url`), counted against its downloads, and the provider asks for the 3MF,
   which comes print-ready where the STL is the raw mesh in metres. A community model needs a Pro or Studio plan, which
   Meshy answers with a 402, and a used-up month is `errorCodes.downloadLimit`.
+- **3DExport** links each of a model's formats separately on a signed-in user's page, a free model's and one they
+  own alike, each redirecting to a signed S3 link to that format's zip. A CG model comes in a dozen, so only the formats
+  a plate takes are fetched, its OBJ or GLB only when those brought nothing. Every POST of its pages wants the session's
+  id as a CSRF token beside the cookie; its listings page on with such a POST, answering the next page's HTML in JSON.
 - **Repairs** (`services/modelRepairService.ts`) fetch a model's lost files again through the provider's own import
   (`sourcedImport`'s `downloadModel`, or the link import) and replace only the files. A provider with a `grabQueue` has
   the model wait for Grab instead, so its `customImport.addToExisting` has to put the files back when `kit.filesMissing`
@@ -238,6 +246,36 @@ Rules of thumb:
 - **Categories a model's page doesn't say.** Toymakr3D's pages name no category either, but its category listings do,
   so its provider reads those once and keeps the model-to-category index for a few hours. Its "All Products",
   "Free Download" and "Premium" menu entries are price buckets rather than subjects, and are left out.
+
+### Licences
+
+Every provider says what licence a model has, so the model page can show it, the grid can filter by what it allows and
+a LICENSE.txt can go beside its files (`services/licenseService.ts`, `licenseFile.ts`):
+
+- **The catalogue** is `backend/src/services/licenseCatalog.ts`: each licence Thingport knows, by its SPDX id where it
+  has one (`CC-BY-NC-SA-4.0`) or an id of its own for a site's licence (`sdfl`, `cults-pu`), with what it allows of
+  `share` (pass the files on unchanged), `remix` and `commercial`, and whether it asks for credit or for remixes under
+  the same licence. What's unclear in a licence's text counts as not allowed. Add a licence there before mapping to
+  it; an owner can pick any of the standard ones in Edit model, never a site's own.
+- **The mapping** goes in `backend/src/providers/<id>/license.ts`, with the site's table of codes. Sites number their
+  licences differently (MakerOnline's 2 is BY-SA, Snapmaker's 2 is BY-NC), so each keeps its own. `ccLicenseId`,
+  `licenseIdFromUrl` and `licenseIdFromText` read the usual forms. It returns a `ProviderLicense`: the catalogue id
+  (null for one Thingport doesn't know, shown by its `label` and `terms`; a code missing from the table is kept that
+  way, allowing nothing, rather than dropped, so a mapping that adds it reads the model again), the site's own `raw`
+  value, and only where this model differs from the licence, `allows` or `requires` (MyMiniFactory's per-model
+  permissions, Toymakr3D's terms forbidding sharing what CC BY-NC-ND would allow). A site licence's own wording goes in
+  `terms` when the site sends it with each model (MakerWorld, Printables, Snapmaker); otherwise it's the catalogue's
+  `text`.
+- **At import**, the metadata builder sets `meta.license` from the response it already read: `null` when the site says
+  the model has none, absent when this read didn't look. An absent licence is read once the import settles, as for
+  MakerWorld through Grab, whose cut-down design has no licence.
+- **Older imports** are read when their owner opens them, one model at a time. `details.read`'s `license` is used,
+  unless the registry entry gives `license(userId, externalId, stored)`: for a lighter request than `details.read` makes
+  (MakerWorld's anonymous design, a page without the tags call), none at all (PIXUP, GrabCAD and Meshy's community posts
+  have one licence for every model), or what the stored description says (CGTrader's older imports). Throw when the site
+  can't be read now (it's asked again a day later, or at once when the owner retries); return `undefined` when it
+  answered without saying, such as a page without the model's data. Respect the site's pacing.
+- A licence its owner picked is never replaced by what the site lists.
 
 ### Errors and limits
 
@@ -285,6 +323,8 @@ Open an issue first, then:
    Grab hands one over. See [extension/CONTRIBUTING.md](../extension/CONTRIBUTING.md#adding-a-provider-site).
 8. **`docs/providers/<docsSlug>.md`**, its own page.
 9. If it serves a GET that a dashboard app would read, give it an API token scope (`services/apiTokenScopes.ts`).
+10. **Its licences** in `backend/src/providers/<id>/license.ts`, set on `meta.license` (see [Licences](#licences)), with
+    a test of the site's whole table in `backend/tests/providers/<id>License.test.ts`.
 
 ## What never changes
 

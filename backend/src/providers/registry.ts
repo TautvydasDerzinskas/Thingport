@@ -21,10 +21,25 @@ import cgtraderCategories from "./cgtrader/categories.json";
 import grabcadCategories from "./grabcad/categories.json";
 import owlcadCategories from "./owlcad/categories.json";
 import meshyCategories from "./meshy/categories.json";
+import pixup3dCategories from "./pixup3d/categories.json";
+import fab365Categories from "./fab365/categories.json";
+import threedexportCategories from "./threedexport/categories.json";
 import { meshyImport, meshyTrending, meshyLists, meshyDetails } from "./meshy";
 import { meshyConnection } from "./meshy/connection";
 import { meshySync } from "./meshy/sync";
 import { meshyBrowse } from "./meshy/browse";
+import { pixup3dImport, pixup3dTrending, pixup3dLists, pixup3dDetails } from "./pixup3d";
+import { pixup3dConnection } from "./pixup3d/connection";
+import { pixup3dSync } from "./pixup3d/sync";
+import { pixup3dBrowse } from "./pixup3d/browse";
+import { fab365Import, fab365Trending, fab365Lists, fab365Details } from "./fab365";
+import { fab365Connection } from "./fab365/connection";
+import { fab365Sync } from "./fab365/sync";
+import { fab365Browse } from "./fab365/browse";
+import { threedexportImport, threedexportTrending, threedexportLists, threedexportDetails } from "./threedexport";
+import { threedexportConnection } from "./threedexport/connection";
+import { threedexportSync } from "./threedexport/sync";
+import { threedexportBrowse } from "./threedexport/browse";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -136,8 +151,25 @@ import {
   withStoredMakerworldCookie,
 } from "./makerworld/session";
 import { liftCaptchaCooloffByHand } from "./makerworld/captcha";
+import { makerworldProfileFacts } from "./makerworld/profileFacts";
+import { snapmakerProfileFacts } from "./snapmaker/profileFacts";
+import { makeronlineProfileFacts } from "./makeronline/profileFacts";
+import { crealitycloudProfileFacts } from "./crealitycloud/profileFacts";
+import { nexprintProfileFacts } from "./nexprint/profileFacts";
 import type { GrabImportOptions } from "./makeronline/grabImports";
 import type { ImportCookies } from "../services/importResolvers";
+import type { ProviderProfileFactsById } from "../services/printProfileFacts";
+import { readMakerworldLicense } from "./makerworld/licenseReader";
+import { readThingiverseLicense } from "./thingiverse/licenseReader";
+import { readCrealitycloudLicense } from "./crealitycloud/license";
+import { readEufymakeLicense } from "./eufymake/license";
+import { readPixup3dLicense } from "./pixup3d/license";
+import { readFab365License } from "./fab365/license";
+import { readPinshapeLicense } from "./pinshape/license";
+import { readToymakr3dLicense } from "./toymakr3d/license";
+import { readCgtraderLicense } from "./cgtrader/license";
+import { readGrabcadLicense } from "./grabcad/license";
+import type { ProviderLicense } from "../services/licenseCatalog";
 
 /** A provider's ids for the starter categories, by their path ("Parent/Child"). */
 export type StarterCategories = Readonly<Record<string, readonly (number | string)[]>>;
@@ -173,6 +205,19 @@ export type ProviderBackend = {
   ): Promise<{ title: string | null; urls: string[] }>;
   /** A job of its own that imports a model's print profiles as one model, where they don't import the shared way. */
   profilesJob?(jobId: string, userId: string, body: ProfilesImportJobBody): Promise<void>;
+  /** Each of a model's print profiles as the provider describes it in public, by the id its plates are tagged with: what
+   *  the model page shows of them (services/printProfileService.ts). `profileIds` are the ones wanted, for a provider
+   *  that reads each profile apart. Null when the provider doesn't know the model. */
+  profileFacts?(userId: string, externalId: string, profileIds: string[]): Promise<ProviderProfileFactsById | null>;
+  /** The model's licence, read for an older import when its owner opens it (services/licenseService.ts): null when the site
+   *  says none. Where it's absent, `details.read`'s `license` is used; a provider gives this where that's heavier than it
+   *  needs to be, or needs no request at all (`stored` is what the model keeps of its import). Undefined when the site
+   *  answered without saying, so it's read again later; throws when the site can't be read now. */
+  license?(
+    userId: string,
+    externalId: string,
+    stored: { notes: string | null },
+  ): Promise<ProviderLicense | null | undefined>;
   /** Remembers its sign-in turned down, for a provider whose imports don't themselves. */
   markRejected?(userId: string): Promise<void>;
   stopTexts?: StopTexts;
@@ -247,6 +292,8 @@ export const PROVIDERS = {
     browse: makerworldBrowse,
     trending: makerworldTrending,
     details: makerworldDetails,
+    license: readMakerworldLicense,
+    profileFacts: makerworldProfileFacts,
     profileUrls: listMakerworldProfileUrls,
     // Loaded when it runs: the import runner it shares reaches this registry.
     profilesJob: async (jobId, userId, body) =>
@@ -288,6 +335,7 @@ export const PROVIDERS = {
     browse: thingiverseBrowse,
     trending: thingiverseTrending,
     details: thingiverseDetails,
+    license: readThingiverseLicense,
     instanceHealth: thingiverseInstanceHealth,
   },
   myminifactory: {
@@ -312,6 +360,7 @@ export const PROVIDERS = {
     browse: snapmakerBrowse,
     trending: snapmakerTrending,
     details: snapmakerDetails,
+    profileFacts: snapmakerProfileFacts,
   },
   makeronline: {
     starterCategories: makeronlineCategories,
@@ -329,6 +378,7 @@ export const PROVIDERS = {
     browse: makeronlineBrowse,
     trending: makeronlineTrending,
     details: makeronlineDetails,
+    profileFacts: makeronlineProfileFacts,
   },
   crealitycloud: {
     starterCategories: crealitycloudCategories,
@@ -340,6 +390,8 @@ export const PROVIDERS = {
     browse: crealitycloudBrowse,
     trending: crealitycloudTrending,
     details: crealitycloudDetails,
+    license: readCrealitycloudLicense,
+    profileFacts: crealitycloudProfileFacts,
     keptId: crealitycloudKeptId,
   },
   nexprint: {
@@ -352,6 +404,7 @@ export const PROVIDERS = {
     browse: nexprintBrowse,
     trending: nexprintTrending,
     details: nexprintDetails,
+    profileFacts: nexprintProfileFacts,
   },
   thangs: {
     starterCategories: thangsCategories,
@@ -392,6 +445,7 @@ export const PROVIDERS = {
     browse: eufymakeBrowse,
     trending: eufymakeTrending,
     details: eufymakeDetails,
+    license: readEufymakeLicense,
   },
   pinshape: {
     starterCategories: pinshapeCategories,
@@ -404,6 +458,7 @@ export const PROVIDERS = {
     browse: pinshapeBrowse,
     trending: pinshapeTrending,
     details: pinshapeDetails,
+    license: readPinshapeLicense,
   },
   toymakr3d: {
     starterCategories: toymakr3dCategories,
@@ -416,6 +471,7 @@ export const PROVIDERS = {
     browse: toymakr3dBrowse,
     trending: toymakr3dTrending,
     details: toymakr3dDetails,
+    license: readToymakr3dLicense,
   },
   makerables: {
     starterCategories: makerablesCategories,
@@ -442,6 +498,7 @@ export const PROVIDERS = {
     browse: cgtraderBrowse,
     trending: cgtraderTrending,
     details: cgtraderDetails,
+    license: readCgtraderLicense,
     // A link may name a model by its number, where it is kept under its slug.
     keptId: cgtraderKeptId,
     // AWS's bot check rather than Cloudflare's, which FlareSolverr gets a token past -- or the browser's, from Grab.
@@ -460,6 +517,7 @@ export const PROVIDERS = {
     browse: grabcadBrowse,
     trending: grabcadTrending,
     details: grabcadDetails,
+    license: readGrabcadLicense,
   },
   owlcad: {
     starterCategories: owlcadCategories,
@@ -489,6 +547,46 @@ export const PROVIDERS = {
     browse: meshyBrowse,
     trending: meshyTrending,
     details: meshyDetails,
+  },
+  pixup3d: {
+    starterCategories: pixup3dCategories,
+    connection: { default: pixup3dConnection },
+    // Only its files are read with the sign-in; its models, and anyone's wishlist and public collections, without one.
+    authStopText: grabSignInStop("pixup3d"),
+    sourcedImport: pixup3dImport,
+    lists: pixup3dLists,
+    sync: pixup3dSync,
+    browse: pixup3dBrowse,
+    trending: pixup3dTrending,
+    details: pixup3dDetails,
+    license: readPixup3dLicense,
+  },
+  fab365: {
+    starterCategories: fab365Categories,
+    connection: { default: fab365Connection },
+    // Its files and favourites are read with the sign-in; its model pages and listings read without one.
+    authStopText: grabSignInStop("fab365"),
+    sourcedImport: fab365Import,
+    lists: fab365Lists,
+    sync: fab365Sync,
+    browse: fab365Browse,
+    trending: fab365Trending,
+    details: fab365Details,
+    license: readFab365License,
+  },
+  threedexport: {
+    starterCategories: threedexportCategories,
+    connection: { default: threedexportConnection },
+    // Its files and the user's own collections are read with the sign-in; its model pages, listings and anyone's
+    // public collections without one.
+    authStopText: grabSignInStop("threedexport"),
+    sourcedImport: threedexportImport,
+    lists: threedexportLists,
+    sync: threedexportSync,
+    browse: threedexportBrowse,
+    trending: threedexportTrending,
+    // An older import's licence comes from its page's details, one request with no sign-in.
+    details: threedexportDetails,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

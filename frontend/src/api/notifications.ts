@@ -3,7 +3,7 @@ import { apiBase, assertOk } from "./client";
 
 /** Kept in sync by hand with the backend's NOTIFICATION_TYPES. Unknown types show as "general". */
 export type NotificationType =
-  "import" | "upload" | "sync" | "queue" | "consume" | "ai" | "system" | "chat" | "general";
+  "import" | "upload" | "sync" | "queue" | "consume" | "ai" | "system" | "chat" | "federation" | "share" | "general";
 
 /** The tabs. "system" holds announcements from the Thingport repo. */
 export type NotificationFilter = "all" | "unread" | "system";
@@ -12,6 +12,8 @@ export type Notification = {
   id: string;
   type: NotificationType;
   title: string;
+  /** The title as a key under `notifications.messages` and its values; null shows `title`, the English. */
+  message: { key: string; values?: Record<string, string | number> } | null;
   body: string | null;
   external_url: string | null;
   internal_path: string | null;

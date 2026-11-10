@@ -10,6 +10,7 @@ import { AnimatedTile } from "../../components/storageAnimations/parts";
 import FloatingFolderAnimation from "../../components/storageAnimations/FloatingFolderAnimation";
 import ConsumeSection from "./ConsumeSection";
 import FileReuseSection from "./FileReuseSection";
+import LicenseFilesSection from "./LicenseFilesSection";
 import StorageBrowserDialog from "./StorageBrowserDialog";
 import StorageSection from "./StorageSection";
 import StorageUsageLine from "../AdminPage/StorageUsageLine";
@@ -50,6 +51,7 @@ export default function StoragePage({ onUnauthorized }: Props) {
       </Paper>
       <StorageSection onUnauthorized={onUnauthorized} />
       <FileReuseSection onUnauthorized={onUnauthorized} />
+      <LicenseFilesSection onUnauthorized={onUnauthorized} />
       <ConsumeSection onUnauthorized={onUnauthorized} />
       {browsing && <StorageBrowserDialog onClose={() => setBrowsing(false)} onUnauthorized={onUnauthorized} />}
     </Stack>

@@ -171,7 +171,9 @@
             <path d="M9 15l6-6M11 6l1.5-1.5a4.2 4.2 0 0 1 6 6L17 12M13 18l-1.5 1.5a4.2 4.2 0 0 1-6-6L7 12" />
           </svg>
         </div>
-        <div><b>Connect</b><span>Pair with your Thingport once. No password is saved in the browser.</span></div>
+        <div>
+          <b>Connect</b><span>Pair with your Thingport instance once. No password is saved in the browser.</span>
+        </div>
       </div>
       <div class="feature">
         <div class="feature__icon">
@@ -192,7 +194,8 @@
     <script>
       // Every site on an ellipse round the hub, evenly spaced along it, the first at the top.
       const CENTER = { x: 640, y: 425 };
-      const RADIUS = { x: 470, y: 195 };
+      // Wide enough that 21 sites' names don't run under their neighbours' tiles at the sides.
+      const RADIUS = { x: 545, y: 198 };
       const SVG_NS = "http://www.w3.org/2000/svg";
 
       function ellipsePoints(count) {

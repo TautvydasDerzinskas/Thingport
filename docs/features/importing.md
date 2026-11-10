@@ -3,8 +3,9 @@
 Thingport keeps a real copy of every model you import: its files, photos, title, description, tags, author and a link
 back to where it came from. If the original page disappears, the model is still in your library.
 
-It imports from 18 sites: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
-Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD and Meshy.
+It imports from 21 sites: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
+Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP,
+Fab365 and 3DExport.
 
 ## Ways to import
 
@@ -12,18 +13,19 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
   Paste several links, one per line, and they join the [import queue](#the-import-queue) as one import. You can also
   paste a link straight into the search bar.
 - **Use Thingport Grab.** The [browser extension](../../extension/README.md) adds a Thingport button to model pages on
-  all 18 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
+  all 21 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
   click in its popup), so you can import without leaving the page, file the model into a collection or a new one, and
   import whole collections. **Pair with Thingport** in its popup connects it: you approve the browser in Thingport, and
   no password is saved in the extension. This is the recommended way to import.
 - **Or use the bookmarklet.** Without the extension, drag the [bookmarklet](../guides/bookmarklet.md) to your
   bookmarks bar: clicking it on a model's page opens Thingport with the link already in the import dialog.
 - **Import a collection or your likes.** Paste the link of a collection or another list, and pick which models to
-  bring in. Besides collections, that's anyone's likes on Thingiverse, Cults3D, Pinshape and GrabCAD, your own likes on
-  Creality Cloud, Thangs, eufyMake, Toymakr3D and CGTrader, your CGTrader wishlist and the projects you saved on
-  Makerables. MakerWorld collections, and your Snapmaker Space likes and bookmarks from your profile's Interactions
-  tab, are imported with Thingport Grab. [Providers](../PROVIDER_SETUP.md#at-a-glance) shows which lists each site
-  has.
+  bring in. Besides collections, your private ones on PIXUP and 3DExport included, that's anyone's likes on
+  Thingiverse, Cults3D, Pinshape and GrabCAD, anyone's PIXUP wishlist, your own likes on Creality Cloud, Thangs,
+  eufyMake, Toymakr3D and CGTrader, your CGTrader wishlist, your Fab365 favourites, your 3DExport Default Collection and
+  the projects you saved on Makerables. MakerWorld collections, and your Snapmaker Space likes and bookmarks from your profile's
+  Interactions tab, are imported with Thingport Grab. [Providers](../PROVIDER_SETUP.md#at-a-glance) shows which lists
+  each site has.
 - **MakerOnline, and OwlCAD's CAD projects, go through Thingport Grab.** MakerOnline hands out its files only to its
   own pages, and an OwlCAD CAD project has no file until OwlCAD's own editor builds one. So a MakerOnline link pasted
   in Thingport, a MakerOnline collection or your likes imported here, a synced MakerOnline collection and an OwlCAD
@@ -34,9 +36,21 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
 
 ## What comes with a model
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/50_model_print_profiles.png">
+  <img src="../../frontend/src/assets/screenshots/light/50_model_print_profiles.png" alt="A model's print profiles as picture tiles, the picked one with its print time, filament, plates, printer and settings" width="100%">
+</picture>
+
 - Its model files, and on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint, its print profiles:
   the one the link points to, all of the designer's, or the community's too. Each profile becomes its own file on the
-  model.
+  model. Ones left out, or that failed, can be added later: while the model in your library lacks any of the page's
+  profiles, Thingport Grab shows its icon there and adds just those. Profiles the model has aren't downloaded again,
+  though a file from before Thingport kept track of profiles may be, once, to recognise which profile it is.
+  The model page shows them as profiles, above **Open**: each one's name, whether the designer or the community made
+  it (the designer's come first), its print time, filament by colour, plates, printer and settings, from the site and
+  from the profile's own 3MF. The [3D preview](3d-previews.md) shows the picked profile's plates. A model imported
+  before Thingport kept these reads them the first time you open it. How they're shown, or whether to show them as
+  plain files instead, is in [Appearance](appearance.md).
 - The OpenSCAD script it was generated from, where its creator shared one, whichever site it came from, so it can be
   [customised and generated again](supporting-files.md#models-you-can-generate-again). MakerWorld also says when a
   creator kept the script back, and the model is marked **Script not shared**. On a MakerWorld page, Thingport Grab
@@ -44,17 +58,18 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
 - The photo gallery, the formatted description, tags and, where the site gives one, its category, which Thingport maps
   to your own [categories](organize-and-search.md).
 - The author, where the site names one, with their avatar and profile, linked to an [author page](authors.md).
+- Its [licence](licenses.md), as the site lists it, with any terms the site or creator added.
 
 If a detail couldn't be fetched at the time, such as the author, **Fetch missing details** on the model page tries
 again.
 
 ## Link a model you already have
 
-A model you uploaded yourself can be linked to its page on any of the 18 sites, without importing it again. Choose
+A model you uploaded yourself can be linked to its page on any of the 21 sites, without importing it again. Choose
 **Link to a provider** in the model page's **⋮** menu, or on the Models page with the Folders view on, in a card's **⋮**
 menu or, with exactly one model selected, the selection toolbar. Paste the model's link, check the preview, and link it.
 
-- **What it brings:** the page's pictures, description, tags and author, and the provider's badge and link. The
+- **What it brings:** the page's pictures, description, tags, author and licence, and the provider's badge and link. The
   pictures go ahead of your own, so its cover becomes the model's, and your own stay. Tags are added to yours. The
   description and author replace what's there, where the site has them, and that can't be undone. A title you set stays.
 - **What it leaves alone:** your files. Nothing is downloaded, so the page's other files and print profiles don't come.

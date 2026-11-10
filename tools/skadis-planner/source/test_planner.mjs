@@ -26,7 +26,8 @@ import {
 } from "./catalogue.js";
 import { PlanError, STRATEGIES, getStrategy, mirrorFlags, planWall, splitAxis } from "./solver.js";
 import { countNodes, hardwareFor, hardwareMarkers } from "./mounting.js";
-import { describePlan, partListText, printOrder, toBuy } from "./printlist.js";
+import { countWord, describePlan, partListText, plural, printOrder, toBuy } from "./printlist.js";
+import { translator } from "../../../frontend/src/sdk/labels.ts";
 import { partFiles } from "./parts3mf.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -34,10 +35,16 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 // The real English labels, so the text the tests read is the text the window shows — and a label that goes
 // missing from locales/en.json fails here rather than quietly showing its key to a user.
 const WORDS = JSON.parse(fs.readFileSync(path.join(here, "..", "locales", "en.json"), "utf8"));
-const t = (key, vars) => {
-  const text = WORDS[key] ?? key;
-  return vars ? text.replace(/\{(\w+)\}/g, (whole, name) => (name in vars ? String(vars[name]) : whole)) : text;
-};
+// Thingport's own t(), plural forms and all.
+const t = translator({ en: WORDS }, "en");
+const LOCALES = Object.fromEntries(
+  fs
+    .readdirSync(path.join(here, "..", "locales"))
+    .map((file) => [
+      file.slice(0, -".json".length),
+      JSON.parse(fs.readFileSync(path.join(here, "..", "locales", file), "utf8")),
+    ]),
+);
 
 const a1 = getPrinter("a1");
 const context = (over = {}) => ({
@@ -47,6 +54,48 @@ const context = (over = {}) => ({
   strategy: getStrategy("balanced"),
   t,
   ...over,
+});
+
+test("counts take each language's own plural forms, 21 included", () => {
+  const counts = (code, key, numbers) =>
+    numbers.map((count) => plural(translator(LOCALES, code), count, key)).join(", ");
+  assert.equal(
+    counts("ru", "list.boardWord", [1, 2, 5, 21, 22]),
+    "1 панель, 2 панели, 5 панелей, 21 панель, 22 панели",
+  );
+  assert.equal(counts("lt", "list.boardWord", [1, 2, 10, 21]), "1 lenta, 2 lentos, 10 lentų, 21 lenta");
+  assert.equal(counts("en", "list.partWord", [1, 2]), "1 part, 2 parts");
+  // An older Thingport's t() has no plural forms: it still gets a word rather than the key.
+  assert.equal(
+    countWord((key) => WORDS[key] ?? key, "list.boardWord", 3),
+    "boards",
+  );
+  // There the tool picks the form: two boards in Lithuanian are "lentos", not the other form's "lentų".
+  const older = (key) => LOCALES.lt[key] ?? WORDS[key] ?? key;
+  assert.equal(plural(older, 2, "list.boardWord", "lt"), "2 lentos");
+  assert.equal(plural(older, 10, "list.boardWord", "lt"), "10 lentų");
+});
+
+test("every language has the plural forms its counts need, and no stray ones", () => {
+  for (const [code, words] of Object.entries(LOCALES)) {
+    const rules = new Intl.PluralRules(code);
+    const forms = new Set(Array.from({ length: 201 }, (_, count) => rules.select(count)));
+    for (const base of ["list.boardWord", "list.partWord"])
+      for (const form of forms)
+        assert.ok(words[`${base}.${form}`] ?? words[`${base}.other`], `${code} has no ${base}.${form}`);
+  }
+});
+
+test("the user's language reaches downloaded and saved-plan text", () => {
+  const plan = planWall({ widthMm: 480, heightMm: 240, printer: a1 });
+  assert.equal(plan.boards.length, 2);
+  for (const code of ["ru", "uk", "be", "lt"]) {
+    const translate = translator(LOCALES, code);
+    const output = [partListText(plan, context({ t: translate })), describePlan(plan, context({ t: translate }))].join(
+      "\n",
+    );
+    assert.ok(output.includes(`2 ${LOCALES[code]["list.boardWord.few"]}`), `${code} output lost its few form`);
+  }
 });
 
 /* ------------------------------------------------------------ catalogue */
@@ -424,6 +473,13 @@ test("every part of the plan saves as its own 3MF a reader can open", () => {
     assert.ok(model.includes(`<metadata name="Title">`));
     assert.equal(files[index].name.startsWith(String(steps[index].step).padStart(2, "0")), true);
   }
+});
+
+test("localized part names stay in their plate filenames", () => {
+  const translate = translator(LOCALES, "ru");
+  const plan = planWall({ widthMm: 820, heightMm: 860, printer: a1 });
+  const files = partFiles(printOrder(plan, getMountSystem("wall-mounts"), 10, translate), { wallMm: 10 });
+  assert.match(files.find((file) => file.name.includes("Панель")).name, /Панель/);
 });
 
 test("a board plate is the board's true size, and says which file it stands for", () => {

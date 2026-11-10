@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
@@ -15,7 +18,21 @@ const LAST_ANNOUNCED_VERSION_KEY = "last_announced_version";
 const SEMVER = /^\d+\.\d+\.\d+$/;
 
 export const CURATED_NOTES_PATH = "release-notes/latest-release-notes.json";
+// Earlier releases' curated notes, one file per version, moved here as the next release's are written.
+export const ARCHIVE_PATH = "release-notes/archive";
 export const QUIET_RELEASES_PATH = "release-notes/quiet-releases.json";
+// Under /api: a checkout's release-notes folder, for the pictures its notes show, as a browser can't open file:// ones.
+export const LOCAL_FILES_PATH = "/release-notes/files";
+
+/** True when the notes come from a checkout on disk rather than over HTTP. */
+function isLocal(baseUrl: string): boolean {
+  return baseUrl.startsWith("file:");
+}
+
+/** The release-notes folder of the checkout the notes are read from, or null when they're fetched. */
+export function localReleaseNotesDir(baseUrl = RELEASE_NOTES_URL): string | null {
+  return isLocal(baseUrl) ? fileURLToPath(`${baseUrl}/release-notes`) : null;
+}
 
 export type ReleaseNoteKind = "breaking" | "feature" | "improvement" | "fix";
 const KIND_ORDER: ReleaseNoteKind[] = ["breaking", "feature", "improvement", "fix"];
@@ -34,6 +51,9 @@ export type ReleaseNoteItem = {
   url: string | null;
 };
 
+/** An earlier release with curated notes of its own, which What's new can open in their place. */
+export type EarlierRelease = { version: string; title: string | null };
+
 export type ReleaseNotes = {
   version: string;
   /** "curated" from the hand-written file, "changelog" from CHANGELOG.md, "none" when neither could be read. */
@@ -42,6 +62,8 @@ export type ReleaseNotes = {
   summary: string | null;
   items: ReleaseNoteItem[];
   releases_url: string;
+  /** The releases before this one that have curated notes, newest first, leaving out the ones these notes are. */
+  earlier: EarlierRelease[];
 };
 
 /** Where a notification opens the What's new dialog; a bare query keeps whichever page is open. */
@@ -196,15 +218,37 @@ const curatedSchema = z.object({
     .max(100),
 });
 
+type CuratedNotes = Omit<ReleaseNotes, "releases_url" | "earlier">;
+
+/** Why a notes file doesn't parse, for whoever is writing it. */
+function curatedProblem(text: string): string {
+  try {
+    const parsed = curatedSchema.safeParse(JSON.parse(text));
+    return parsed.success ? "unknown" : parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+/** A checkout's picture as LOCAL_FILES_PATH serves it, or null when it's outside `fileUrl`'s folder. Every notes file,
+ *  archived ones included, resolves its pictures against release-notes/, which is the folder LOCAL_FILES_PATH serves. */
+function servedLocally(url: URL, fileUrl: string): string | null {
+  const relative = path.relative(fileURLToPath(new URL(".", fileUrl)), fileURLToPath(url));
+  const parts = relative.split(path.sep);
+  if (!relative || parts[0] === ".." || path.isAbsolute(relative)) return null;
+  return `/api${LOCAL_FILES_PATH}/${parts.map(encodeURIComponent).join("/")}`;
+}
+
 /** Null when the file is malformed: the changelog is shown instead. */
-export function parseCuratedNotes(data: unknown, fileUrl: string): Omit<ReleaseNotes, "releases_url"> | null {
+export function parseCuratedNotes(data: unknown, fileUrl: string): CuratedNotes | null {
   const parsed = curatedSchema.safeParse(data);
   if (!parsed.success) return null;
   const allowed = new Set(["https:", new URL(fileUrl).protocol]);
   const resolve = (src: string): string | null => {
     try {
       const url = new URL(src, fileUrl);
-      return allowed.has(url.protocol) ? url.toString() : null;
+      if (!allowed.has(url.protocol)) return null;
+      return url.protocol === "file:" ? servedLocally(url, fileUrl) : url.toString();
     } catch {
       return null;
     }
@@ -363,6 +407,14 @@ const cache = new Map<string, { at: number; text: string | null }>();
 
 /** A failed fetch keeps the last good copy; misses are cached too, so a dialog opened offline doesn't wait each time. */
 async function fetchText(url: string, now = Date.now()): Promise<string | null> {
+  // A checkout is read afresh, so notes being written show as soon as they're saved.
+  if (isLocal(url)) {
+    return fs.promises.readFile(new URL(url), "utf8").catch((error: NodeJS.ErrnoException) => {
+      // A missing file is a release without one; anything else is worth saying while notes are being written.
+      if (error.code !== "ENOENT") console.warn(`[release-notes] couldn't read ${url}: ${error.message}`);
+      return null;
+    });
+  }
   const hit = cache.get(url);
   if (hit && now - hit.at < CACHE_TTL_MS) return hit.text;
   let text: string | null = null;
@@ -380,15 +432,61 @@ export function clearReleaseNotesCache(): void {
   cache.clear();
 }
 
+/** A curated notes file, or null when it's missing or malformed. Pictures resolve against `imagesFrom`. */
+async function readCurated(fileUrl: string, imagesFrom = fileUrl): Promise<CuratedNotes | null> {
+  const text = await fetchText(fileUrl);
+  if (!text) return null;
+  try {
+    return parseCuratedNotes(JSON.parse(text), imagesFrom);
+  } catch {
+    return null;
+  }
+}
+
+/** An archived file's pictures are named relative to release-notes/, where it was read from as the latest file. */
+function readArchived(baseUrl: string, version: string): Promise<CuratedNotes | null> {
+  return readCurated(`${baseUrl}/${ARCHIVE_PATH}/${version}.json`, `${baseUrl}/${CURATED_NOTES_PATH}`).then((notes) =>
+    notes?.version === version ? notes : null,
+  );
+}
+
+/** The releases before `version` with curated notes: the latest file's when it's behind, and the archive's, asked for
+ *  by each release the changelog lists, so the archive needs no index to keep up. Missing files are cached like any
+ *  other, so this costs the requests once per cache period. */
+async function earlierReleases(
+  baseUrl: string,
+  version: string,
+  latest: CuratedNotes | null,
+  changelog: ChangelogRelease[],
+  shownFrom: string | null,
+): Promise<EarlierRelease[]> {
+  const before = (v: string) => compareVersions(v, version) < 0 && v !== shownFrom;
+  const candidates = [...new Set(changelog.map((release) => release.version))].filter(
+    (v) => before(v) && v !== latest?.version,
+  );
+  const archived = await Promise.all(candidates.map((v) => readArchived(baseUrl, v)));
+  return [...(latest && before(latest.version) ? [latest] : []), ...archived.flatMap((notes) => notes ?? [])]
+    .toSorted((a, b) => compareVersions(b.version, a.version))
+    .map((notes) => ({ version: notes.version, title: notes.title }));
+}
+
 export async function getReleaseNotes(
   options: { version?: string | null; since?: string | null; frontendVersion?: string | null } = {},
   baseUrl = RELEASE_NOTES_URL,
 ): Promise<ReleaseNotes | null> {
-  const version = options.version ?? getBackendVersion();
-  if (!version || !SEMVER.test(version)) return null;
+  const requested = options.version ?? getBackendVersion();
+  if (!requested || !SEMVER.test(requested)) return null;
   const releases_url = `https://github.com/${GITHUB_REPO}/releases`;
-  const empty: ReleaseNotes = { version, source: "none", title: null, summary: null, items: [], releases_url };
-  if (!baseUrl) return empty;
+  const none = (version: string): ReleaseNotes => ({
+    version,
+    source: "none",
+    title: null,
+    summary: null,
+    items: [],
+    releases_url,
+    earlier: [],
+  });
+  if (!baseUrl) return none(requested);
 
   const curatedUrl = `${baseUrl}/${CURATED_NOTES_PATH}`;
   const [curatedText, backendText, frontendText] = await Promise.all([
@@ -396,6 +494,19 @@ export async function getReleaseNotes(
     fetchText(`${baseUrl}/backend/CHANGELOG.md`),
     fetchText(`${baseUrl}/frontend/CHANGELOG.md`),
   ]);
+
+  let latest: CuratedNotes | null = null;
+  try {
+    latest = curatedText ? parseCuratedNotes(JSON.parse(curatedText), curatedUrl) : null;
+  } catch {
+    // not JSON: the changelog is shown instead
+  }
+  if (isLocal(baseUrl) && curatedText && !latest) {
+    console.warn(`[release-notes] ${CURATED_NOTES_PATH} is passed over: ${curatedProblem(curatedText)}`);
+  }
+  // A checkout previews its latest notes, which are written before the release bumps package.json to their version.
+  const version = isLocal(baseUrl) && !options.version && latest ? latest.version : requested;
+  const empty = none(version);
 
   const since = options.since && SEMVER.test(options.since) ? options.since : null;
   const frontendVersion =
@@ -410,32 +521,38 @@ export async function getReleaseNotes(
         })
       : [];
 
-  let curated: ReturnType<typeof parseCuratedNotes> = null;
-  try {
-    curated = curatedText ? parseCuratedNotes(JSON.parse(curatedText), curatedUrl) : null;
-  } catch {
-    // not JSON: the changelog is shown instead
-  }
   // The curated file is the newest release's, so a quiet hotfix runs with the notes of the release it fixes still in
   // it. Those are shown to whoever hasn't seen them, but only within the same x.y line, so a lagging file can't label
   // one release's notes as another's.
   const covers =
-    curated &&
-    (curated.version === version ||
-      (minorLine(curated.version) === minorLine(version) &&
-        compareVersions(curated.version, version) < 0 &&
-        (since === null || compareVersions(curated.version, since) > 0)));
-  if (curated && covers) {
+    latest &&
+    (latest.version === version ||
+      (minorLine(latest.version) === minorLine(version) &&
+        compareVersions(latest.version, version) < 0 &&
+        (since === null || compareVersions(latest.version, since) > 0)));
+  const shownFrom = covers && latest ? latest : null;
+  const [curated, earlier] = await Promise.all([
+    // A release the latest file has moved past keeps its notes in the archive, under its own version.
+    shownFrom ?? readArchived(baseUrl, version),
+    earlierReleases(
+      baseUrl,
+      version,
+      latest,
+      backendText ? parseChangelog(backendText) : [],
+      shownFrom?.version ?? null,
+    ),
+  ]);
+  if (curated) {
     // Someone who skipped releases gets theirs from the changelog after the curated ones; commit links aren't
     // "Learn more" links.
     // A patch past the curated release brings its own changelog entries, ahead of the notes it builds on.
     const later = curated.version === version ? [] : fromChangelogs(false, version, curated.version);
-    const earlier = fromChangelogs(true, curated.version);
-    for (const item of [...later, ...earlier]) item.url = null;
+    const skipped = fromChangelogs(true, curated.version);
+    for (const item of [...later, ...skipped]) item.url = null;
     // The version the instance is actually on, so the dialog's heading matches what it updated to.
-    return { ...curated, version, items: [...later, ...curated.items, ...earlier], releases_url };
+    return { ...curated, version, items: [...later, ...curated.items, ...skipped], releases_url, earlier };
   }
 
-  if (!backendText) return empty;
-  return { ...empty, source: "changelog", items: fromChangelogs(false) };
+  if (!backendText) return { ...empty, earlier };
+  return { ...empty, source: "changelog", items: fromChangelogs(false), earlier };
 }

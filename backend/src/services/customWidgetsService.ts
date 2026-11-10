@@ -36,8 +36,8 @@ import { GITHUB_REPO, releaseBranch } from "./versionService";
 export async function assertWidgetSourceEnabled(source: WidgetSource): Promise<void> {
   if ((await getWidgetSources())[source]) return;
   if (source === "own")
-    throw new HttpError(403, "Users' own widgets are turned off on this Thingport", "USER_WIDGETS_OFF");
-  throw new HttpError(403, "Community widgets are turned off on this Thingport", "COMMUNITY_WIDGETS_OFF");
+    throw new HttpError(403, "Users' own widgets are turned off on this Thingport instance", "USER_WIDGETS_OFF");
+  throw new HttpError(403, "Community widgets are turned off on this Thingport instance", "COMMUNITY_WIDGETS_OFF");
 }
 
 /** The sources an admin hasn't turned off. */

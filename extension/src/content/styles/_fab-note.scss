@@ -1,4 +1,3 @@
-@use "sass:math";
 @use "../../styles/tokens" as t;
 @use "../../styles/mixins" as m;
 
@@ -9,17 +8,13 @@
 // own, and a second pill beside it reads as a second button. It sits under the icon and a little behind it:
 // the icon leans toward the pointer and swells on its seasonal days, and when it does it passes over this
 // rather than being pushed about by it.
-$icon-size: 56px;
-$icon-right: 24px;
-$icon-bottom: 24px;
-
 .tg-fab-note {
   @include m.isolated(flex);
   position: fixed;
-  // Centred on the icon, however much wider than it this turns out to be.
-  right: $icon-right + math.div($icon-size, 2);
-  transform: translateX(50%);
-  bottom: 4px;
+  // Centred on the icon, however much wider than it this turns out to be, wherever the icon is (_bubble.scss).
+  right: calc(var(--tg-fab-side, 24px) + var(--tg-fab-w, 56px) / 2);
+  transform: translateX(var(--tg-note-shift, 50%));
+  bottom: calc(var(--tg-fab-end, 24px) - 20px);
   // Under the icon, which keeps $z-top: its stretch and its seasonal mark pass over this.
   z-index: t.$z-top - 1;
   align-items: center;
@@ -137,11 +132,11 @@ $icon-bottom: 24px;
 @keyframes tg-note-in {
   from {
     opacity: 0;
-    transform: translateX(50%) translateY(-6px) scale(0.9);
+    transform: translateX(var(--tg-note-shift, 50%)) translateY(-6px) scale(0.9);
   }
   to {
     opacity: 1;
-    transform: translateX(50%);
+    transform: translateX(var(--tg-note-shift, 50%));
   }
 }
 
@@ -280,7 +275,7 @@ $icon-bottom: 24px;
 @media (prefers-reduced-motion: reduce) {
   .tg-fab-note {
     animation: none;
-    transform: translateX(50%);
+    transform: translateX(var(--tg-note-shift, 50%));
   }
 
   .tg-face__head,

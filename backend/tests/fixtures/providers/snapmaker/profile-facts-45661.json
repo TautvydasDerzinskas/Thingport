@@ -1,0 +1,138 @@
+{
+  "code": 200,
+  "data": {
+    "id": "45661",
+    "creatorId": "179187",
+    "creatorName": "Katona Gábor",
+    "printProfiles": [
+      {
+        "id": "49371",
+        "title": "2 color",
+        "translatedTitle": "2 color",
+        "description": "<p></p>",
+        "translatedDescription": "<p></p>",
+        "creatorId": "179187",
+        "creatorName": "Katona Gábor",
+        "secs": 16584,
+        "weight": 69.62,
+        "nozzle": [0.4, 0.4, 0.4, 0.4],
+        "filaments": [
+          {
+            "type": "PLA",
+            "color": "#FFFFFF",
+            "used_g": 24.63,
+            "used_mm": 7756.42
+          },
+          {
+            "type": "PLA",
+            "color": "#FF0000",
+            "used_g": 45,
+            "used_mm": 14172.49
+          }
+        ],
+        "partitions": [
+          {
+            "id": 1,
+            "name": "Plate 1",
+            "pics": ["https://cdn-model.snapmaker.com/snapmaker/model/20261024/179187/d7fbd6ea9ab0c4bf.png"],
+            "secs": 16584,
+            "weight": 69.62,
+            "filaments": [
+              {
+                "id": 1,
+                "type": "PLA",
+                "color": "#FFFFFF",
+                "used_g": 24.63,
+                "used_mm": 7756.42
+              },
+              {
+                "id": 2,
+                "type": "PLA",
+                "color": "#FF0000",
+                "used_g": 45,
+                "used_mm": 14172.49
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "49504",
+        "title": "4 Color",
+        "translatedTitle": "4 Color",
+        "description": "<p>4 color</p>",
+        "translatedDescription": "<p>4 color</p>",
+        "creatorId": "179187",
+        "creatorName": "Katona Gábor",
+        "secs": 20013,
+        "weight": 80.16,
+        "nozzle": [0.4, 0.4, 0.4, 0.4],
+        "filaments": [
+          {
+            "type": "PLA",
+            "color": "#FFFFFF",
+            "used_g": 20.54,
+            "used_mm": 6469.6
+          },
+          {
+            "type": "PLA",
+            "color": "#FF0000",
+            "used_g": 46.32,
+            "used_mm": 14588.11
+          },
+          {
+            "type": "PLA",
+            "color": "#E3D2BF",
+            "used_g": 6.35,
+            "used_mm": 1999.17
+          },
+          {
+            "type": "PLA",
+            "color": "#804040",
+            "used_g": 6.95,
+            "used_mm": 2190.05
+          }
+        ],
+        "partitions": [
+          {
+            "id": 1,
+            "name": "Plate 1",
+            "pics": ["https://cdn-model.snapmaker.com/snapmaker/model/20261025/179187/ce334b9707548635.png"],
+            "secs": 20013,
+            "weight": 80.16,
+            "filaments": [
+              {
+                "id": 1,
+                "type": "PLA",
+                "color": "#FFFFFF",
+                "used_g": 20.54,
+                "used_mm": 6469.6
+              },
+              {
+                "id": 2,
+                "type": "PLA",
+                "color": "#FF0000",
+                "used_g": 46.32,
+                "used_mm": 14588.11
+              },
+              {
+                "id": 3,
+                "type": "PLA",
+                "color": "#E3D2BF",
+                "used_g": 6.35,
+                "used_mm": 1999.17
+              },
+              {
+                "id": 4,
+                "type": "PLA",
+                "color": "#804040",
+                "used_g": 6.95,
+                "used_mm": 2190.05
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

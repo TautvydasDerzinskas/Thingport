@@ -39,13 +39,16 @@ import ToolsAdminPage from "./pages/ToolsAdminPage";
 import ToolsPage from "./pages/ToolsPage";
 import { useStudioEnabled } from "./hooks/useStudioEnabled";
 import UsersPage from "./pages/UsersPage";
+import SocialAdminPage from "./pages/SocialAdminPage";
 import LogsPage from "./pages/LogsPage";
 import NotificationsPage from "./pages/NotificationsPage";
-import TriggersPage from "./pages/TriggersPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import CaptchaPage from "./pages/CaptchaPage";
 import ExplorePage from "./pages/ExplorePage";
 import ExploreUserPage from "./pages/ExplorePage/ExploreUserPage";
+import ElsewhereCollectionPage from "./pages/ExplorePage/elsewhere/ElsewhereCollectionPage";
+import ElsewhereModelPage from "./pages/ExplorePage/elsewhere/ElsewhereModelPage";
+import ElsewherePersonPage from "./pages/ExplorePage/elsewhere/ElsewherePersonPage";
 import ChatsPage from "./pages/ChatsPage";
 import RenderingPage from "./pages/RenderingPage";
 import AiPage from "./pages/AiPage";
@@ -53,6 +56,7 @@ import { healthApi, type HealthInfo } from "./api/health";
 import { authApi, type AuthUser } from "./api/auth";
 import { settingsApi, type PreviewMode } from "./api/settings";
 import { UnauthorizedError } from "./api/client";
+import { profileApi } from "./api/profile";
 import {
   clearToken,
   clearUser,
@@ -66,6 +70,7 @@ import {
 import { useResolvedTheme } from "./hooks/useResolvedTheme";
 import { setCachedAccentColor, setCachedRenderColor, useAccentColor } from "./hooks/useAccentColor";
 import { resetCardPreview } from "./hooks/useCardPreview";
+import { resetPrintProfilesView } from "./hooks/usePrintProfilesView";
 import { resetStudioSettings } from "./hooks/useStudioSettings";
 import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
 import { resetCustomWidgets } from "./hooks/useCustomWidgets";
@@ -73,6 +78,7 @@ import { resetTools } from "./hooks/useTools";
 import { resetToolsView } from "./hooks/useToolsView";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
+import ScrollReset from "./components/Layout/ScrollReset";
 
 // Heavy (three.js, its gizmos, zod), so only fetched by someone who opens it.
 const StudioPage = React.lazy(() => import("./pages/StudioPage"));
@@ -292,7 +298,27 @@ function AppShell({
         />
         <Route
           path="/explore/users/:userId"
-          element={<ExploreUserPage theme={resolvedTheme} previewMode={previewMode} onUnauthorized={onUnauthorized} />}
+          element={
+            <ExploreUserPage
+              theme={resolvedTheme}
+              previewMode={previewMode}
+              onUnauthorized={onUnauthorized}
+              viewer={user}
+            />
+          }
+        />
+        {/* What partner instances' people share, read-only: from what this instance keeps of it. */}
+        <Route
+          path="/explore/elsewhere/people/:personId"
+          element={<ElsewherePersonPage onUnauthorized={onUnauthorized} />}
+        />
+        <Route
+          path="/explore/elsewhere/models/:modelId"
+          element={<ElsewhereModelPage onUnauthorized={onUnauthorized} />}
+        />
+        <Route
+          path="/explore/elsewhere/collections/:collectionId"
+          element={<ElsewhereCollectionPage onUnauthorized={onUnauthorized} />}
         />
         <Route
           path="/explore/collections/:collectionId"
@@ -332,7 +358,10 @@ function AppShell({
             />
           }
         />
-        <Route path="/profile" element={<ProfilePage user={user} onUnauthorized={onUnauthorized} />} />
+        <Route
+          path="/profile"
+          element={<ProfilePage user={user} onUserUpdated={onUserUpdated} onUnauthorized={onUnauthorized} />}
+        />
         <Route
           path="/profile/email"
           element={<ChangeEmailPage user={user} onUserUpdated={onUserUpdated} onUnauthorized={onUnauthorized} />}
@@ -390,12 +419,12 @@ function AppShell({
           element={isAdmin ? <UsersPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
-          path="/admin-logs"
-          element={isAdmin ? <LogsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
+          path="/admin-social"
+          element={isAdmin ? <SocialAdminPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
-          path="/admin-triggers"
-          element={isAdmin ? <TriggersPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
+          path="/admin-logs"
+          element={isAdmin ? <LogsPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route
           path="/admin-connections"
@@ -426,6 +455,15 @@ export default function App() {
     const stored = readToken();
     return !stored || (tokenLifetime(stored)?.expiresAt ?? 0) <= Date.now();
   });
+  // Signing in or out swaps the sign-in screen and the app outside the router, so ScrollReset doesn't see it: each
+  // opens at the top rather than where the other was scrolled to.
+  const signedIn = Boolean(token);
+  const wasSignedIn = React.useRef(signedIn);
+  React.useLayoutEffect(() => {
+    if (wasSignedIn.current === signedIn) return;
+    wasSignedIn.current = signedIn;
+    window.scrollTo(0, 0);
+  }, [signedIn]);
   // Bumped when a refused request was rescued by renewing the token, so the pages load again with it.
   const [sessionKey, setSessionKey] = React.useState(0);
   const [health, setHealth] = React.useState<HealthInfo | null>(null);
@@ -457,6 +495,26 @@ export default function App() {
         setPreviewMode((await settingsApi.getPreviews()).mode);
       } catch {}
     })();
+  }, [token]);
+  // Counts the user's own changes, so a read that started before one doesn't undo it when it lands.
+  const userRevision = React.useRef(0);
+  // The user kept from signing in can be older than a change made elsewhere, or than what this version shows of them
+  // (their avatar): read afresh once a session starts.
+  React.useEffect(() => {
+    if (!token) return;
+    let active = true;
+    const revision = userRevision.current;
+    profileApi.me().then(
+      (fresh) => {
+        if (!active || revision !== userRevision.current) return;
+        storeUser(fresh);
+        setUser(fresh);
+      },
+      () => undefined,
+    );
+    return () => {
+      active = false;
+    };
   }, [token]);
   React.useEffect(() => {
     // The accent is the account's, so another account signing in on this tab doesn't inherit it.
@@ -490,6 +548,7 @@ export default function App() {
   // The token's lifetime is read from the token itself.
   const handleLogin = (tok: string, _expiresIn: number, loggedInUser: AuthUser) => {
     resetCardPreview();
+    resetPrintProfilesView();
     resetStudioSettings();
     resetHoverSlideshowEnabled();
     resetCustomWidgets();
@@ -612,6 +671,7 @@ export default function App() {
 
   // PATCH /profile doesn't reissue a token, so only the local user object changes.
   const handleUserUpdated = (updatedUser: AuthUser) => {
+    userRevision.current += 1;
     storeUser(updatedUser);
     setUser(updatedUser);
   };
@@ -727,6 +787,7 @@ export default function App() {
   return (
     <>
       <BrowserRouter>
+        <ScrollReset />
         <AppShell
           key={sessionKey}
           isAdmin={isAdmin}

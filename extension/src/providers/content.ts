@@ -7,6 +7,8 @@ import { parseSnapmakerListUrl, snapmakerListUrl } from "../shared/urls";
 import { crealitycloudUserId, loadCrealitycloudProfiles } from "./crealitycloud/content";
 import { isUnboughtCgtraderModel } from "./cgtrader/content";
 import { isUnboughtCults3dModel } from "./cults3d/content";
+import { isUnboughtPixup3dModel } from "./pixup3d/content";
+import { isUnboughtThreedexportModel } from "./threedexport/content";
 import { meshyPlanLock, type MeshyPlanLock } from "./meshy/content";
 import { loadMakeronlineProfiles } from "./makeronline/content";
 import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } from "./makerworld/pageData";
@@ -39,6 +41,11 @@ export type ContentModule = {
    *  page alone: the list's address as the instance takes it, or null on someone else's. Undefined for a list anyone
    *  sees. */
   ownList?(url: string, kind: ListKind): Promise<string | null | undefined>;
+};
+
+const PIXUP3D_PAID: ImportBlock = {
+  title: "Paid model",
+  hint: "Buy it on PIXUP first. Once it's in your library, Thingport imports it.",
 };
 
 const MESHY_BLOCKS: Record<MeshyPlanLock, ImportBlock> = {
@@ -152,5 +159,25 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
       return lock && MESHY_BLOCKS[lock];
     },
     listBlocks: MESHY_BLOCKS,
+  },
+  // Anyone's wishlist and collections are anyone's to read. A free model is ordered for $0 by the instance, a paid
+  // one only imports once bought, so one the user hasn't bought isn't tried.
+  pixup3d: {
+    async blockReason(url) {
+      return (await isUnboughtPixup3dModel(url)) ? PIXUP3D_PAID : null;
+    },
+    listBlocks: { paid: PIXUP3D_PAID },
+  },
+  // Its only list, the favourites, is the user's own page (/my/likes), which names no one else. A paid or ticket model
+  // the user hasn't got is turned away by the import itself, with a message that says to buy or redeem it on Fab365.
+  fab365: {},
+  // Anyone's public collections are anyone's to read, and the user's own are read with their sign-in. A paid model is
+  // imported once bought, so one their page offers to sell them isn't tried.
+  threedexport: {
+    async blockReason(url) {
+      return isUnboughtThreedexportModel(url)
+        ? { title: "Paid model", hint: "Buy it on 3DExport first. Once it's yours, Thingport imports it." }
+        : null;
+    },
   },
 };

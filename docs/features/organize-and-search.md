@@ -27,6 +27,8 @@ The filter button at the top of the Models page, after the sort order, narrows t
 - **Sources** has a chip for every site your library has models from, with its logo and how many, and **Thingport** for
   the ones you added yourself. Click a chip to hide that site's models, and again to bring them back; **All sites**
   shows every one again.
+- **Licence allows** lists only the models whose [licence](licenses.md#filter-by-what-it-allows) allows what's
+  switched on: **Can be shared**, **Commercial use**, **Remixing**, and **Only with a licence**.
 
 A badge on the button counts the filters in use. Filters are kept in the page's address, so a filtered list can be
 bookmarked. What's kept is the sites you hid, so models from a site new to your library still show.
@@ -40,7 +42,9 @@ bookmarked. What's kept is the sites you hid, so models from a site new to your 
 
 - **Collections** group models however you like, and a model can be in as many as you want. Give a collection a
   description and tags, or [sync it](../guides/synced-collections.md) with a collection or a list of likes on one of the
-  sites Thingport imports from.
+  sites Thingport imports from. With [social features](social.md) on, a collection can be **Private**, **Shared** with
+  [the people you pick](social.md#share-what-you-choose), or **Public**, and the ones shared with you are under
+  **Shared with you** on Explore.
 - **Tags** come with imported models, and you can add your own. Browse every tag with a picture made from its models,
   hide tags used only once, or delete a tag from every model at once.
 - **Favourites** and your **Browsing history** are kept as collections of their own.

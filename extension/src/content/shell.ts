@@ -1,5 +1,6 @@
 // Shadow-rooted host for all in-page UI, isolated from the provider page's styles.
 
+import { DEFAULT_BUBBLE, type BubbleLook } from "../shared/bubble";
 import { createIcon } from "../shared/icon";
 import { send } from "../shared/messages";
 import { dressMark } from "../shared/seasonalMark";
@@ -14,10 +15,50 @@ let fabBodyEl: HTMLElement | null = null;
 let panelEl: HTMLDivElement | null = null;
 let contentEl: HTMLDivElement | null = null;
 let noteEl: HTMLDivElement | null = null;
+let fabEl: HTMLButtonElement | null = null;
+// The bubble's look, as the popup's Appearance tab set it; set before the first mount, and again on every change.
+let look: BubbleLook = DEFAULT_BUBBLE;
+
+/** The bubble's style and corner, on the host for the stylesheet to read (styles/_bubble.scss), and its name, which
+ *  carries the pill's word. */
+function applyLook(): void {
+  const host = document.getElementById(HOST_ID);
+  if (host) {
+    host.dataset.style = look.style;
+    host.dataset.place = look.place;
+  }
+  if (fabEl) fabEl.setAttribute("aria-label", fabName(fabEl));
+}
+
+/** Takes effect at once on the bubble already showing, if there is one. */
+export function setBubbleLook(next: BubbleLook): void {
+  look = next;
+  applyLook();
+}
+
+// The pill's word, by what clicking it does.
+const PILL_WORDS: Record<NonNullable<FabOptions["variant"]> | "import", string> = {
+  import: "Grab",
+  "in-library": "In library",
+  complete: "Imported",
+  inactive: "Set up",
+  disconnected: "Sign in",
+};
+
+/** Its name, with the pill's word in front where it shows and the name doesn't already start with it: what's
+ *  read out should hold what's seen, for anyone who says it to click it. */
+function fabName(button: HTMLButtonElement): string {
+  const name = button.dataset.name ?? "";
+  const word = button.dataset.word ?? "";
+  if (look.style !== "pill" || name.toLowerCase().startsWith(word.toLowerCase())) return name;
+  return `${word}: ${name}`;
+}
 
 export function mountHost(): ShadowRoot {
   const host = document.createElement("div");
   host.id = HOST_ID;
+  host.dataset.style = look.style;
+  host.dataset.place = look.place;
   document.documentElement.appendChild(host);
   shadowRoot = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
@@ -35,6 +76,7 @@ export function unmountHost(): void {
   shadowRoot = null;
   stackEl = null;
   fabBodyEl = null;
+  fabEl = null;
   panelOpen = false;
   window.clearTimeout(closeTimer);
   panelEl = null;
@@ -43,7 +85,7 @@ export function unmountHost(): void {
 }
 
 type FabOptions = {
-  variant?: "in-library" | "inactive" | "disconnected";
+  variant?: "in-library" | "complete" | "inactive" | "disconnected";
   label: string;
   title?: string;
   onClick: () => void;
@@ -53,7 +95,9 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
   const button = document.createElement("button");
   button.type = "button";
   button.className = variant ? `tg-fab tg-fab--${variant}` : "tg-fab";
-  button.setAttribute("aria-label", label);
+  button.dataset.name = label;
+  button.dataset.word = PILL_WORDS[variant ?? "import"];
+  button.setAttribute("aria-label", fabName(button));
   if (title) button.title = title;
   // The button stays put as the hit area; its body leans toward the pointer (see magnet.ts), the blob behind the
   // icon stretching as it goes.
@@ -65,7 +109,12 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
   const mark = document.createElement("span");
   mark.className = "tg-fab__mark";
   mark.append(createIcon());
-  body.append(blob, mark);
+  // Shown by the pill style alone; the button's name says it too (fabName).
+  const word = document.createElement("span");
+  word.className = "tg-fab__label";
+  word.setAttribute("aria-hidden", "true");
+  word.textContent = button.dataset.word;
+  body.append(blob, mark, word);
   void send("GET_SEASONAL_ICON").then(
     (res) => {
       if (res?.ok) dressMark(mark, res.data, "tg-fab__season");
@@ -74,6 +123,7 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
   );
   button.appendChild(body);
   fabBodyEl = body;
+  fabEl = button;
   button.addEventListener("click", onClick);
   root.appendChild(button);
   attachMagnet(button, body, {

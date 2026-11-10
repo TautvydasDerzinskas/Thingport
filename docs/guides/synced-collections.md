@@ -49,16 +49,21 @@ has no collections or likes; [what each one syncs](#what-each-site-syncs) is bel
 | Makerables      | Your saved projects                           | Your sign-in, for the list; the files need none                                                           |
 | CGTrader        | Your liked models and your wishlist           | Your sign-in, and Grab's token or FlareSolverr for its bot check                                          |
 | GrabCAD         | Anyone's likes                                | Your sign-in, for the files                                                                               |
+| Meshy           | Collections, and your generations             | Your sign-in, for the files; a Pro or Studio plan for community models                                    |
+| PIXUP           | Anyone's collections and wishlists            | Your sign-in, for the files                                                                               |
+| Fab365          | Your favourites                               | Your sign-in, for the list and the files                                                                  |
+| 3DExport        | Collections, your private ones too            | Your sign-in, for the files and your own collections                                                      |
 
 A few have more to know:
 
 - **Sign-ins that run out.** Snapmaker's lasts a day and only Grab renews it, so if Grab's browser stays closed that
   long, Snapmaker syncs wait until your next visit there. Creality Cloud's lasts a week from when you signed in there,
   and Grab sends the new one on your next visit. GrabCAD's lasts two days from its last use, and visiting grabcad.com
-  with Grab now and then keeps it alive; without one, a GrabCAD sync waits rather than fail every model.
-- **Left out.** A MyMiniFactory collection's paid models; on Thangs and Cults3D the paid ones you don't own, and on
-  Thangs the print-only ones too. CGTrader's paid ones aren't left out: one you haven't bought is refused when the sync
-  reaches it, and counts as failed.
+  with Grab now and then keeps it alive; without one, a GrabCAD sync waits rather than fail every model. 3DExport's
+  lasts until you sign out of 3dexport.com, in any browser, and Grab sends the new one when you sign in again.
+- **Left out.** A MyMiniFactory collection's paid models; on Thangs, Cults3D and PIXUP the paid ones you don't own, and
+  on Thangs the print-only ones too. CGTrader's and 3DExport's paid ones aren't left out: one you haven't bought is
+  refused when the sync reaches it, and counts as failed.
 - **Limits.** Once your Thangs account's daily downloads are used up, the rest come in on a later check. If Cults3D's
   Cloudflare turns Thingport away, the rest come in after your next visit to cults3d.com with Grab.
 - **Pinshape likes.** Its profiles show only 12 of someone's likes, so a likes sync brings new ones as they show up
@@ -90,19 +95,19 @@ in a browser with Grab, it imports them there and files them into the synced col
 
 Printables shows these to you alone, so Thingport can't read them on its own. With Thingport Grab installed in a browser
 where you're signed in to Printables, Grab reads them while you're on Printables, at most once an hour, and sends them to
-your Thingport. They then show up in **Browse** too, your likes as **Liked models**, and sync like any other collection,
-except that new models come in after your next visit to Printables rather than on a schedule. Sync one before Grab has
-read it, and its models come in on that next visit.
+your Thingport instance. They then show up in **Browse** too, your likes as **Liked models**, and sync like any other
+collection, except that new models come in after your next visit to Printables rather than on a schedule. Sync one
+before Grab has read it, and its models come in on that next visit.
 
 ## Turn sync on with Thingport Grab
 
 1. Open the list's page on the site, with the site switched on in Grab's popup:
-   - a collection page on MakerWorld, Printables, Thingiverse, MyMiniFactory, MakerOnline, Creality Cloud, Thangs or
-     Pinshape, or on NexPrint one open on its owner's page;
-   - anyone's likes page on Thingiverse, Cults3D, Pinshape (its **Likes** tab) or GrabCAD, or your own on MakerOnline,
-     Creality Cloud, Thangs (**Liked**), eufyMake or Toymakr3D;
-   - one of your own printlists on Cults3D, your liked models or wishlist on CGTrader, or your **Interactions** tab on
-     Snapmaker Space, where the panel's switch picks your likes or bookmarks.
+   - a collection page on MakerWorld, Printables, Thingiverse, MyMiniFactory, MakerOnline, Creality Cloud, Thangs,
+     Pinshape, Meshy, PIXUP or 3DExport (your **Default Collection** too), or on NexPrint one open on its owner's page;
+   - anyone's likes page on Thingiverse, Cults3D, Pinshape (its **Likes** tab) or GrabCAD, anyone's wishlist on PIXUP,
+     or your own likes on MakerOnline, Creality Cloud, Thangs (**Liked**), eufyMake or Toymakr3D;
+   - one of your own printlists on Cults3D, your liked models or wishlist on CGTrader, your favourites on Fab365, or
+     your **Interactions** tab on Snapmaker Space, where the panel's switch picks your likes or bookmarks.
 
    Makerables' **Saved** tab has no address of its own, so sync it from Thingport instead.
 

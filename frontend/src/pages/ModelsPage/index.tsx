@@ -22,6 +22,7 @@ import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { buildCategoryTree, subtreeIds } from "../../utils/categoryTree";
 import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import { useCategoriesView } from "../../hooks/useCategoriesView";
 import CategoriesPanel from "./CategoriesPanel";
@@ -68,10 +69,11 @@ export default function ModelsPage({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
-  const [items, setItems] = useState<Print[]>([]);
-  const [loading, setLoading] = useState(false);
+  // The category reaches the address only after it's been picked, so it's named here too: picking one is a new list.
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
+    extra: categoryId ?? "",
+  });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
   const selection = useModelSelection(items);
   const [searchParams, setSearchParams] = useSearchParams();
   const [categoriesView, setCategoriesView] = useCategoriesView();
@@ -86,7 +88,7 @@ export default function ModelsPage({
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
 
   const filters = useModelFilters();
-  const { generative, hiddenProviders } = filters;
+  const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   // Bumped when a model is removed from the list here, so the site it came from loses its chip once it holds nothing.
   const [sourcesVersion, setSourcesVersion] = useState(0);
   const refreshSources = useCallback(() => setSourcesVersion((version) => version + 1), []);
@@ -203,7 +205,9 @@ export default function ModelsPage({
 
   useEffect(() => {
     const run = ++listRun.current;
-    const background = isBackgroundReload();
+    // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
+    const kept = returning();
+    const background = isBackgroundReload() || kept !== null;
     if (!background) setLoading(true);
     (async () => {
       try {
@@ -216,8 +220,10 @@ export default function ModelsPage({
             category_id: categoryIdFilter,
             generative: generative || undefined,
             hide_providers: hiddenProviders,
+            license_allows: licenseAllows,
+            licensed: licensed || undefined,
             order_by: sortMode,
-            limit: background ? keepLoaded(PAGE_SIZE, items.length) : PAGE_SIZE,
+            limit: background ? keepLoaded(PAGE_SIZE, kept ?? items.length) : PAGE_SIZE,
             offset: 0,
           });
           if (run !== listRun.current) return;
@@ -232,7 +238,7 @@ export default function ModelsPage({
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode, generative, hiddenProviders]);
+  }, [categoryIdFilter, printsVersion, libraryVersion, sortMode, generative, hiddenProviders, licenseAllows, licensed]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -244,6 +250,8 @@ export default function ModelsPage({
         category_id: categoryIdFilter,
         generative: generative || undefined,
         hide_providers: hiddenProviders,
+        license_allows: licenseAllows,
+        licensed: licensed || undefined,
         order_by: sortMode,
         limit: PAGE_SIZE,
         // What's on screen, so models that left the list here don't make the next page skip any.

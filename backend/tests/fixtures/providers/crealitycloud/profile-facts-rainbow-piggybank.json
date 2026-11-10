@@ -1,0 +1,349 @@
+{
+  "groupItem": {
+    "id": "68fb65202f05b9e97908ca5a"
+  },
+  "profiles": [
+    {
+      "id": "68fb65202f05b9e97908ca5d",
+      "secondName": "0.2mm layer, 2 walls, 15% infill",
+      "name": "Rainbow Piggybank – No MMU & Print In Parts!",
+      "desc": "",
+      "isAuth": true,
+      "printerName": "K1C",
+      "layerHeight": "0.2",
+      "sparseInfillDensity": "15%",
+      "wallLoops": "2",
+      "nozzleDiameter": ["0.4"],
+      "printTime": 23371,
+      "filamentWeight": 247.75419999999997,
+      "colorFilament": [
+        {
+          "extruderId": "0",
+          "type": "PLA",
+          "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+          "color": "#ffffff",
+          "length": 26.2241,
+          "weight": 78.2147
+        },
+        {
+          "extruderId": "1",
+          "type": "PLA",
+          "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+          "color": "#ae96d4",
+          "length": 7.59829,
+          "weight": 22.6623
+        },
+        {
+          "extruderId": "2",
+          "type": "PLA",
+          "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+          "color": "#0078bf",
+          "length": 5.36107,
+          "weight": 15.9896
+        },
+        {
+          "extruderId": "3",
+          "type": "PLA",
+          "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+          "color": "#00b1b7",
+          "length": 6.08414,
+          "weight": 18.1462
+        },
+        {
+          "extruderId": "4",
+          "type": "PLA",
+          "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+          "color": "#becf00",
+          "length": 6.79494,
+          "weight": 20.2662
+        },
+        {
+          "extruderId": "5",
+          "type": "PLA",
+          "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+          "color": "#fecc0a",
+          "length": 7.62659,
+          "weight": 22.7467
+        },
+        {
+          "extruderId": "6",
+          "type": "PLA",
+          "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+          "color": "#ff9016",
+          "length": 8.25134,
+          "weight": 24.61
+        },
+        {
+          "extruderId": "7",
+          "type": "PLA",
+          "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+          "color": "#f72323",
+          "length": 15.1275,
+          "weight": 45.1185
+        }
+      ],
+      "plateCount": 8,
+      "userInfo": {
+        "userId": 8110653781,
+        "nickName": "Valeria Momo Mattia"
+      }
+    },
+    {
+      "id": "691b2da8ad9806c8e465548a",
+      "secondName": "0.2mm layer, 2 walls, 15% infill",
+      "name": "Rainbow Piggybank – No MMU & Print In Parts!",
+      "desc": "",
+      "isAuth": false,
+      "printerName": "K2",
+      "layerHeight": "0.2",
+      "sparseInfillDensity": "15%",
+      "wallLoops": "2",
+      "nozzleDiameter": null,
+      "printTime": 21627,
+      "filamentWeight": 198.5738,
+      "colorFilament": [
+        {
+          "extruderId": "0",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#00FF80",
+          "length": 66.59047886032485,
+          "weight": 198.60940265528959
+        }
+      ],
+      "plateCount": 7,
+      "userInfo": {
+        "userId": 9014663478,
+        "nickName": "user9014663478"
+      }
+    },
+    {
+      "id": "6a453f2e9fd80f401c15d0e2",
+      "secondName": "0.2mm layer, 2 walls, 15% infill slow and precise",
+      "name": "Rainbow Piggybank – No MMU & Print In Parts!",
+      "desc": "<p>Ready to print!<br>If you want to improve the quality even more, lower the print speed of the outer, inner, and top walls to 30 or less.</p>",
+      "isAuth": false,
+      "printerName": "K2",
+      "layerHeight": "0.2",
+      "sparseInfillDensity": "15%",
+      "wallLoops": "2",
+      "nozzleDiameter": ["0.4"],
+      "printTime": 36541,
+      "filamentWeight": 243.98299999999998,
+      "colorFilament": [
+        {
+          "extruderId": "0",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#ffffff",
+          "length": 26.25092804536408,
+          "weight": 78.29469358784117
+        },
+        {
+          "extruderId": "1",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#ae96d4",
+          "length": 7.5295718087767245,
+          "weight": 22.45732099821632
+        },
+        {
+          "extruderId": "2",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#0078bf",
+          "length": 5.217464690458075,
+          "weight": 15.561346956529283
+        },
+        {
+          "extruderId": "3",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#00b1b7",
+          "length": 5.95693306005252,
+          "weight": 17.766848008349122
+        },
+        {
+          "extruderId": "4",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#becf00",
+          "length": 6.666400820157052,
+          "weight": 19.882870755881893
+        },
+        {
+          "extruderId": "5",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#fecc0a",
+          "length": 7.489167181366829,
+          "weight": 22.336812194980038
+        },
+        {
+          "extruderId": "6",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#ff9016",
+          "length": 8.115268761598795,
+          "weight": 24.20419118037869
+        },
+        {
+          "extruderId": "7",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#f72323",
+          "length": 14.536295190504182,
+          "weight": 43.3552206564341
+        }
+      ],
+      "plateCount": 8,
+      "userInfo": {
+        "userId": 6786208103,
+        "nickName": "Dragostream"
+      }
+    }
+  ],
+  "details": {
+    "68fb65202f05b9e97908ca5d": {
+      "id": "68fb65202f05b9e97908ca5d",
+      "plateList": [
+        {
+          "index": 1,
+          "name": "Clud base",
+          "printTime": 5654,
+          "filamentWeight": 78.2147,
+          "colorFilament": [
+            {
+              "extruderId": "0",
+              "type": "PLA",
+              "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+              "color": "#ffffff",
+              "length": 26.2241,
+              "weight": 78.2147
+            }
+          ],
+          "success": true
+        },
+        {
+          "index": 2,
+          "name": "plate_2",
+          "printTime": 2222,
+          "filamentWeight": 22.6623,
+          "colorFilament": [
+            {
+              "extruderId": "1",
+              "type": "PLA",
+              "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+              "color": "#ae96d4",
+              "length": 7.59829,
+              "weight": 22.6623
+            }
+          ],
+          "success": true
+        },
+        {
+          "index": 3,
+          "name": "plate_3",
+          "printTime": 1921,
+          "filamentWeight": 15.9896,
+          "colorFilament": [
+            {
+              "extruderId": "2",
+              "type": "PLA",
+              "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+              "color": "#0078bf",
+              "length": 5.36107,
+              "weight": 15.9896
+            }
+          ],
+          "success": true
+        },
+        {
+          "index": 4,
+          "name": "plate_4",
+          "printTime": 2087,
+          "filamentWeight": 18.1462,
+          "colorFilament": [
+            {
+              "extruderId": "3",
+              "type": "PLA",
+              "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+              "color": "#00b1b7",
+              "length": 6.08414,
+              "weight": 18.1462
+            }
+          ],
+          "success": true
+        },
+        {
+          "index": 5,
+          "name": "plate_5",
+          "printTime": 2301,
+          "filamentWeight": 20.2662,
+          "colorFilament": [
+            {
+              "extruderId": "4",
+              "type": "PLA",
+              "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+              "color": "#becf00",
+              "length": 6.79494,
+              "weight": 20.2662
+            }
+          ],
+          "success": true
+        },
+        {
+          "index": 6,
+          "name": "plate_6",
+          "printTime": 2507,
+          "filamentWeight": 22.7467,
+          "colorFilament": [
+            {
+              "extruderId": "5",
+              "type": "PLA",
+              "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+              "color": "#fecc0a",
+              "length": 7.62659,
+              "weight": 22.7467
+            }
+          ],
+          "success": true
+        },
+        {
+          "index": 7,
+          "name": "plate_7",
+          "printTime": 2741,
+          "filamentWeight": 24.61,
+          "colorFilament": [
+            {
+              "extruderId": "6",
+              "type": "PLA",
+              "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+              "color": "#ff9016",
+              "length": 8.25134,
+              "weight": 24.61
+            }
+          ],
+          "success": true
+        },
+        {
+          "index": 8,
+          "name": "plate_8",
+          "printTime": 3938,
+          "filamentWeight": 45.1185,
+          "colorFilament": [
+            {
+              "extruderId": "7",
+              "type": "PLA",
+              "name": "Hyper PLA(d49cd90d367eda0e50c93d672899541f.3mf)",
+              "color": "#f72323",
+              "length": 15.1275,
+              "weight": 45.1185
+            }
+          ],
+          "success": true
+        }
+      ]
+    }
+  }
+}

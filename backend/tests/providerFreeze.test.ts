@@ -13,7 +13,6 @@ import importsRoutes from "../src/routes/imports";
 import settingsRoutes from "../src/routes/settings";
 import providerCollectionsRoutes from "../src/routes/providerCollections";
 import { identifySourceModel } from "../src/services/importService";
-import { LOOKUP_PROVIDERS } from "../src/services/authorLinkingService";
 import { MANIFESTS, PROVIDER_IDS } from "../src/providers/index.generated";
 import { PROFILE_PROVIDERS } from "../src/providers/registry";
 
@@ -41,6 +40,9 @@ describe("provider-module freeze", () => {
         "https://www.cgtrader.com/3d-print-models/jewelry/ring/lotus-ring-with-opening-and-closing-mechanism",
         "https://grabcad.com/library/arduino-uno-r3-1",
         "https://www.meshy.ai/posts/fangy-mchowl-01a1560f-f5f6-7426-80e3-4876e325f98f",
+        "https://pixup3d.com/en/posts/427",
+        "https://fab365.net/items/116",
+        "https://3dexport.com/3d-model-elephant-a001-667112",
       ].map((url) => identifySourceModel(url)?.provider),
     ).toEqual([
       "makerworld",
@@ -60,6 +62,9 @@ describe("provider-module freeze", () => {
       "cgtrader",
       "grabcad",
       "meshy",
+      "pixup3d",
+      "fab365",
+      "threedexport",
     ]);
   });
 
@@ -83,6 +88,9 @@ describe("provider-module freeze", () => {
       "cgtrader",
       "grabcad",
       "meshy",
+      "pixup3d",
+      "fab365",
+      "threedexport",
     ]);
   });
 
@@ -105,6 +113,9 @@ describe("provider-module freeze", () => {
       "cgtrader",
       "grabcad",
       "meshy",
+      "pixup3d",
+      "fab365",
+      "threedexport",
     ]);
   });
 
@@ -128,6 +139,9 @@ describe("provider-module freeze", () => {
       "cgtrader",
       "grabcad",
       "meshy",
+      "pixup3d",
+      "fab365",
+      "threedexport",
     ]);
   });
 
@@ -150,29 +164,9 @@ describe("provider-module freeze", () => {
       "cgtrader",
       "grabcad",
       "meshy",
-    ]);
-  });
-
-  it("pins author lookup provider IDs", () => {
-    expect([...LOOKUP_PROVIDERS]).toEqual([
-      "makerworld",
-      "printables",
-      "thingiverse",
-      "myminifactory",
-      "snapmaker",
-      "makeronline",
-      "crealitycloud",
-      "nexprint",
-      "thangs",
-      "cults3d",
-      "eufymake",
-      "pinshape",
-      "owlcad",
-      "toymakr3d",
-      "makerables",
-      "cgtrader",
-      "grabcad",
-      "meshy",
+      "pixup3d",
+      "fab365",
+      "threedexport",
     ]);
   });
 
@@ -212,6 +206,9 @@ describe("provider-module freeze", () => {
         "grabcad_session",
         "meshy_session",
         "MESHY_DOWNLOAD_LIMIT",
+        "pixup3d_session",
+        "fab365_session",
+        "threedexport_session",
       ].toSorted(),
     );
     // The dashboard's provider failure is a route-local literal, not a *_CODE constant.
@@ -220,37 +217,6 @@ describe("provider-module freeze", () => {
     );
     expect(readFileSync(new URL("../src/services/authorService.ts", import.meta.url), "utf8")).toContain(
       '"PROVIDER_ALREADY_LINKED"',
-    );
-  });
-
-  it("pins provider-specific author lookup problem codes sent in job results", () => {
-    // Each provider's own, in its details (providers/<id>/index.ts, MakerWorld's details.ts).
-    const codes = PROVIDER_IDS.flatMap((id) =>
-      [`../src/providers/${id}/index.ts`, `../src/providers/${id}/details.ts`].flatMap((file) => {
-        let text: string;
-        try {
-          text = readFileSync(new URL(file, import.meta.url), "utf8");
-        } catch {
-          return [];
-        }
-        const details = text.match(/Details: ProviderDetails = \{([\s\S]*?)\n\};/)?.[1] ?? "";
-        return [...details.matchAll(new RegExp(`"(${id}_[a-z_]+)"`, "g"))].map((part) => part[1]);
-      }),
-    );
-    expect([...new Set(codes)].toSorted()).toEqual(
-      [
-        "thingiverse_no_token",
-        "thingiverse_token_rejected",
-        "thingiverse_rate_limited",
-        "myminifactory_no_key",
-        "myminifactory_key_rejected",
-        "myminifactory_rate_limited",
-        "makerworld_captcha",
-        "makerworld_login_rejected",
-        "cults3d_no_key",
-        "cults3d_key_rejected",
-        "cults3d_rate_limited",
-      ].toSorted(),
     );
   });
 
@@ -286,7 +252,10 @@ describe("provider-module freeze", () => {
           ? "/api"
           : mount.regexp.test("/api/admin/__freeze__")
             ? "/api/admin"
-            : null;
+            : // Connected instances' ActivityPub routes, ahead of the JSON body parser.
+              mount.regexp.test("/api/ap/__freeze__")
+              ? "/api/ap"
+              : null;
         if (!prefix) throw new Error(`Unknown Express mount: ${mount.regexp}`);
         const wholeRouter = [importsRoutes, settingsRoutes, providerCollectionsRoutes].includes(mount.handle as never);
         // Providers' own routers are mounted inside one router of theirs (providers/routes.ts).
@@ -355,6 +324,9 @@ describe("provider-module freeze", () => {
           "cgtrader_cat_ids",
           "grabcad_cat_ids",
           "meshy_cat_ids",
+          "pixup3d_cat_ids",
+          "fab365_cat_ids",
+          "threedexport_cat_ids",
         ].toSorted(),
       );
     } finally {

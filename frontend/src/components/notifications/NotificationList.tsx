@@ -19,8 +19,11 @@ import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
+import FolderSharedOutlinedIcon from "@mui/icons-material/FolderSharedOutlined";
 import type { Notification, NotificationType } from "../../api/notifications";
 import { isNew } from "./useNotificationFeed";
+import { notificationTitle } from "./notificationTitle";
 
 type Palette = "primary" | "info" | "warning" | "secondary" | "success" | "error";
 
@@ -33,6 +36,8 @@ const TYPE_STYLE: Record<NotificationType, { Icon: typeof SyncIcon; color: Palet
   ai: { Icon: AutoAwesomeOutlinedIcon, color: "secondary" },
   system: { Icon: CampaignOutlinedIcon, color: "error" },
   chat: { Icon: ChatBubbleOutlineIcon, color: "info" },
+  federation: { Icon: HubOutlinedIcon, color: "success" },
+  share: { Icon: FolderSharedOutlinedIcon, color: "primary" },
   general: { Icon: NotificationsNoneIcon, color: null },
 };
 
@@ -164,7 +169,7 @@ function NotificationRow({
         </Box>
         <Stack spacing={0.25} sx={{ minWidth: 0, flex: 1 }}>
           <Typography variant="body2" fontWeight={highlighted ? 700 : 500} sx={{ wordBreak: "break-word" }}>
-            {notification.title}
+            {notificationTitle(notification, t)}
           </Typography>
           {notification.body && (
             <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-word" }}>

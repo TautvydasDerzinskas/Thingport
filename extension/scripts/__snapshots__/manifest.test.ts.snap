@@ -36,7 +36,7 @@ exports[`browser manifests > chrome manifest 1`] = `
       "run_at": "document_start",
     },
   ],
-  "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
+  "description": "Import models into Thingport from MakerWorld, Printables, Thingiverse and 18 more sites. Converts MakerWorld 3MFs for other slicers.",
   "host_permissions": [
     "*://*.makerworld.com/*",
     "*://*.printables.com/*",
@@ -99,7 +99,7 @@ exports[`browser manifests > edge manifest 1`] = `
       "run_at": "document_start",
     },
   ],
-  "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
+  "description": "Import models into Thingport from MakerWorld, Printables, Thingiverse and 18 more sites. Converts MakerWorld 3MFs for other slicers.",
   "host_permissions": [
     "*://*.makerworld.com/*",
     "*://*.printables.com/*",
@@ -178,7 +178,7 @@ exports[`browser manifests > firefox manifest 1`] = `
   "content_security_policy": {
     "extension_pages": "script-src 'self'",
   },
-  "description": "Import MakerWorld, Thingiverse, Printables and MyMiniFactory models into Thingport, and convert MakerWorld 3MFs for other slicers.",
+  "description": "Import models into Thingport from MakerWorld, Printables, Thingiverse and 18 more sites. Converts MakerWorld 3MFs for other slicers.",
   "host_permissions": [
     "*://*.makerworld.com/*",
     "*://*.printables.com/*",

@@ -8,7 +8,13 @@ import { createLogger } from "../logger";
 import { createKeyedLock } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { createLog } from "./auditLog";
-import { descriptionImagePath, saveDescriptionImage } from "./descriptionImageService";
+import { categoryRefOf, matchingCategoryId } from "./categoryService";
+import {
+  DESCRIPTION_IMAGE,
+  DESCRIPTION_IMAGE_REF,
+  descriptionImagePath,
+  saveDescriptionImage,
+} from "./descriptionImageService";
 import { createPrint, discardPrint, resolvePlateFilePath } from "./printCreation";
 import { managedPrintFilePath, saveFileFromTemp } from "./printFileService";
 import { plateThumbExists, plateThumbPath, plateThumbReplaceable, saveThumbFromFile } from "./printService";
@@ -16,14 +22,11 @@ import { addPreviewImage, preferImageOverRenders, previewImagePath } from "./pre
 import { libraryCopyOf, readablePrintWhere } from "./socialService";
 
 // Copying another user's model, from one of their public collections, into the user's own library: its files, pictures,
-// description and tags, as a model of the user's that nothing of the original's later changes, privacy or deletion
-// touches. Its category isn't copied, being the owner's own sorting; AI categorization sorts it as an import, when on.
+// description, tags, source and print profiles, as a model of the user's that nothing of the original's later changes,
+// privacy or deletion touches. Its category is the user's own that matches the original's starter category, if they
+// have one; otherwise AI categorization sorts it as an import, when on. The owner's folders are theirs alone.
 
 const log = createLogger("model-copy");
-
-const DESCRIPTION_IMAGE = /!\[([^\]]*)\]\(\/description-image\/([a-z0-9]+)\)/g;
-// A local one only: what a reference to some other site's /description-image/ path is, it isn't the model's.
-const DESCRIPTION_IMAGE_REF = /(?<=^|[\s"'(<])\/description-image\/([a-z0-9]+)/g;
 
 // One copy of a model at a time for each user, so a second request for it waits for the first to finish and finds a
 // whole copy, rather than the first's row while its files are still coming (or one about to be discarded). Copies of
@@ -71,7 +74,10 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
   const plates = source.plates.map((plate) => ({ plate, from: resolvePlateFilePath(plate) }));
   const missing = [
     ...plates.flatMap(({ plate, from }) => (from ? [] : [plate.filename])),
-    ...source.files.flatMap((file) => (fsSync.existsSync(managedPrintFilePath(file)) ? [] : [file.filename])),
+    // Not its LICENSE.txt, which the copy writes for itself.
+    ...source.files.flatMap((file) =>
+      file.role === "LICENSE" || fsSync.existsSync(managedPrintFilePath(file)) ? [] : [file.filename],
+    ),
   ];
   if (missing.length) {
     throw new HttpError(
@@ -81,6 +87,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
     );
   }
 
+  const categoryId = await matchingCategoryId(userId, await categoryRefOf(source.categoryId));
   let created: Awaited<ReturnType<typeof createPrint>>;
   try {
     created = await createPrint(
@@ -94,9 +101,20 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
         authorId: source.authorId,
         sourceProvider: source.sourceProvider,
         sourceExternalId: source.sourceExternalId,
+        unfillableGaps: source.unfillableGaps,
         generatorScriptWithheld: source.generatorScriptWithheld,
+        categoryId,
+        categorySource: categoryId ? "RULE" : null,
         copiedFromId: source.id,
         originalId: source.originalId ?? source.id,
+        // A copy of a partner's model says so too, and stands for it as the copier's own.
+        remoteSource: (source.remoteSource as Prisma.InputJsonValue | null) ?? undefined,
+        // As its owner had it, picked or read: the copier can pick another.
+        licenseColumns: {
+          license: (source.license as Prisma.InputJsonValue | null) ?? Prisma.DbNull,
+          licenseAllows: source.licenseAllows,
+          licenseReadAt: source.licenseReadAt,
+        },
       },
       source.name,
       plates.flatMap(({ plate, from }) =>
@@ -107,6 +125,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
                 mime: plate.mime,
                 copyFromPath: from,
                 sourceInstanceId: plate.sourceInstanceId,
+                profile: plate.profile,
               },
             ]
           : [],
@@ -125,7 +144,12 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
 
   // Supporting files and the prepared print: what the model is, so a copy without them would be a different one.
   try {
-    await copyFiles(userId, print.id, source.files);
+    // Its LICENSE.txt is written from the licence the copy carries, not copied.
+    await copyFiles(
+      userId,
+      print.id,
+      source.files.flatMap((file) => (file.role === "LICENSE" ? [] : [{ ...file, role: file.role }])),
+    );
   } catch (err) {
     await discardPrint(print.id);
     throw err;
@@ -151,7 +175,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
 async function copyFiles(
   userId: string,
   printId: string,
-  files: Pick<PrintFile, "storagePath" | "filename" | "mime" | "role">[],
+  files: (Pick<PrintFile, "storagePath" | "filename" | "mime"> & { role: "SUPPORTING" | "PREPARED" })[],
 ) {
   if (!files.length) return;
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "thingport-copy-"));

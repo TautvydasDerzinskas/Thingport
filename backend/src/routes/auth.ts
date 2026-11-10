@@ -27,6 +27,8 @@ import { getMcpAccess, type McpAccess } from "../services/settingsService";
 import { toUserOut } from "../dto";
 import { endOtherSessions, endSession, refreshSession, startSession } from "../services/sessionService";
 import type { Prisma, Role } from "@prisma/client";
+import { ensureUsername } from "../services/usernames";
+import { deleteAccountRow } from "../services/userAdminService";
 
 // Any number, as long as only the first sign-up takes it.
 const BOOTSTRAP_LOCK = 74_210_302;
@@ -122,12 +124,15 @@ router.post(
       },
       { timeout: 15000 },
     ); // ~80 sequential inserts; Prisma's 5s default is too tight
+    // Picked after, not in the transaction: two sign-ups at once may want the same one, and the second picks again.
+    user.username = await ensureUsername(user.id).catch(() => null);
 
     if (smtpConfigured && verification) {
       try {
         await sendVerificationEmail(user.email, user.displayName, verification.token);
       } catch {
-        await prisma.user.delete({ where: { id: user.id } });
+        // Verified meanwhile by a resend, it may have shared something already: told as any account deleted is.
+        await deleteAccountRow(user.id);
         throw new HttpError(500, "Failed to send verification email. Please try again.");
       }
       res.json({ email_verification_required: true, email: user.email });

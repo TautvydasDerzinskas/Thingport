@@ -11,6 +11,7 @@ import {
   parseNexprintModelUrl,
 } from "./urls.generated";
 import manifest from "./manifest.generated";
+import { nexprintLicenseFrom } from "./license";
 export { nexprintCollectionUrl, nexprintModelUrl, parseNexprintCollectionUrl, parseNexprintModelUrl };
 
 // NexPrint (Elegoo's model site) has no public API, so this is the one its own pages call, under /gateway: answers are
@@ -213,6 +214,7 @@ export function nexprintMetaFromDetail(data: Record<string, unknown>): NexprintM
     meta.siteCategoryIds = categoryIds;
     meta.categorySite = PROVIDER;
   }
+  meta.license = nexprintLicenseFrom(data);
   const authorId = id(data.authorId);
   const profiles = records(data.settingInfoList).flatMap((setting): NexprintProfile[] => {
     const profileId = outId(setting.settingOutId, "G");
@@ -249,8 +251,9 @@ export function nexprintMetaFromDetail(data: Record<string, unknown>): NexprintM
   };
 }
 
-/** By its "G" id. Null for a model that doesn't exist, was deleted or isn't public. */
-export async function resolveNexprintModel(modelId: string): Promise<NexprintModelResolution | null> {
+/** The model's public details as the site answers them, profiles included, by its "G" id. Null for a model that
+ *  doesn't exist, was deleted or isn't public. */
+export async function fetchNexprintDetail(modelId: string): Promise<Record<string, unknown> | null> {
   const { code, message, data } = await fetchApi(
     "/model-library-server/model-base-info/get",
     { query: { id: modelId, loadGeneratorInfo: "true", loadSupportPrintProfile: "true" } },
@@ -258,7 +261,13 @@ export async function resolveNexprintModel(modelId: string): Promise<NexprintMod
   );
   if (code !== CODE_OK) throw failure("this model", code, message);
   // A model that isn't there comes back as one with every field null.
-  return isRecord(data) ? nexprintMetaFromDetail(data) : null;
+  return isRecord(data) && outId(data.modelId, "G") ? data : null;
+}
+
+/** By its "G" id. Null for a model that doesn't exist, was deleted or isn't public. */
+export async function resolveNexprintModel(modelId: string): Promise<NexprintModelResolution | null> {
+  const detail = await fetchNexprintDetail(modelId);
+  return detail ? nexprintMetaFromDetail(detail) : null;
 }
 
 export type NexprintProfileScope = "url" | "designer" | "all";

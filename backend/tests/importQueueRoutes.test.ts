@@ -750,6 +750,16 @@ describe("the import queue's routes", () => {
       expect((await reload(started.body.job_id)).status).toBe("QUEUED");
     });
 
+    it("takes a new print profile scope for a link that's already waiting, keeping its other choices", async () => {
+      const first = await post(alice, "/import/queue", { url: modelUrl(base), title: "A page" });
+      // Every missing print profile, after just the page's own.
+      const again = await post(alice, "/import/queue", { url: modelUrl(base), scope: "all" });
+      expect(again.body).toMatchObject({ item_id: first.body.item_id, duplicate: true, waiting: 1 });
+
+      const item = await prisma.importJobItem.findUniqueOrThrow({ where: { id: first.body.item_id } });
+      expect(item.payload).toEqual({ collection_id: null, scope: "all", title: "A page" });
+    });
+
     it("says the instance has it, to anyone", async () => {
       const res = await request(app).get("/api/health").set("Origin", "chrome-extension://abcdefgh");
       expect(res.status).toBe(200);
@@ -1441,7 +1451,10 @@ describe("the import queue's routes", () => {
       expect(finished_by_owner).not.toHaveProperty(admin.id);
       const counts = Object.values(finished_by_owner) as number[];
       expect(finished_total).toBe(counts.reduce((sum, count) => sum + count, 0));
-      expect(jobs.length).toBeLessThan(finished_total);
+      // Far past what's listed of hers, whatever else is on the instance: other tests' jobs, made meanwhile, are listed
+      // and counted too, so the whole list says nothing against the whole count.
+      const listedOfAlice = (jobs as { owner: { id: string } }[]).filter((job) => job.owner.id === alice.id).length;
+      expect(listedOfAlice).toBeLessThan(finished_by_owner[alice.id]);
 
       const old = (await get(admin, "/admin/import-queue")).body;
       expect(old).not.toHaveProperty("finished_total");

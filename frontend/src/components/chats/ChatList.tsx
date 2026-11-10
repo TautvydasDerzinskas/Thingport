@@ -92,7 +92,9 @@ function ChatRow({
   // A message that's only models says which.
   const said =
     last && !last.body && last.attachments.length
-      ? t("chats.sentModels", { count: last.attachments.length, name: last.attachments[0].name })
+      ? last.attachments.length === 1
+        ? t("chats.sentModel", { name: last.attachments[0].name })
+        : t("chats.sentModels", { count: last.attachments.length })
       : (last?.body ?? "");
   const preview = !last
     ? chat.kind === "room"
@@ -210,7 +212,7 @@ export default function ChatList({ onUnauthorized, onNavigate }: Props) {
   };
   const openPerson = async (person: ChatPerson) => {
     try {
-      const chat = await chatsApi.openDirect(person.id);
+      const chat = await chatsApi.openDirect(person);
       putChat(chat);
       setQuery("");
       open(chat.id);

@@ -1,0 +1,77 @@
+{
+  "data": {
+    "id": 11033,
+    "url": "https://pixup3d.com/posts/11033",
+    "path": "/posts/11033",
+    "creator": {
+      "id": 58281,
+      "username": "ToonStudios",
+      "display_name": "Toon Studios",
+      "brand_name": "Toon Studios",
+      "is_admin_user": false,
+      "post_count": 74,
+      "avatar_url": "https://file.pixup3d.com/uploads/profile/avatar/58281/x1_thumb.jpg",
+      "public_path": "/p/ToonStudios",
+      "created_at": "2026-03-12T00:13:12+08:00",
+      "read_pv_disclaimer": null
+    },
+    "title": "FOURARMS STL",
+    "cover_image_src": "https://file.pixup3d.com/uploads/post_img/file/183204/webp_x1_00_cover.webp",
+    "adv_post": false,
+    "state": "published",
+    "price": "25.0",
+    "original_price": "0.0",
+    "phrozen_verified": false,
+    "verified_state": "draft",
+    "category": "Fan Art",
+    "tag_list": [
+      "four arms",
+      "fourarms",
+      "ben 10",
+      "Cartoon Network",
+      "cartoon",
+      "fanart",
+      "figurine",
+      "statue",
+      "3D print",
+      "presupported",
+      "resin",
+      "toon studios",
+      "nostalgic cartoons",
+      "stl"
+    ],
+    "visible": true,
+    "unread": false,
+    "variants": [
+      {
+        "id": 11862,
+        "name": "STL From Designer",
+        "post_id": 11033,
+        "price": "25.0",
+        "original_price": "0.0",
+        "content": "",
+        "phrozen_verified": false,
+        "file_type": "pre_supported",
+        "include_pre_supported": false,
+        "include_non_supported": false,
+        "include_sliced": false,
+        "printer_type": [],
+        "file_groups": [
+          {
+            "id": 17423,
+            "name": "Default name"
+          }
+        ]
+      }
+    ],
+    "views_count": 122,
+    "saved_count": 0,
+    "likes_count": 0,
+    "downloads_count": 0,
+    "created_at": "2026-11-06T00:39:23+08:00",
+    "updated_at": "2026-11-06T00:43:05+08:00",
+    "submitted_verified_at": null,
+    "verified_accepted_at": null,
+    "verified_completed_at": null
+  }
+}

@@ -15,6 +15,7 @@ import { deletePlateFiles } from "./printCreation";
 import { deleteAuthorIfOrphaned } from "./authorService";
 import { removeTagBookmark } from "./bookmarkService";
 import { removeTagMosaics } from "./tagMosaicService";
+import { afterLicenseChange, assertLicenseChoice, setOwnerLicense } from "./licenseService";
 
 // Editing and deleting a model, shared by the model page's routes and the MCP tools.
 
@@ -87,6 +88,8 @@ export type PrintMetaUpdate = {
   name?: string;
   notes?: string;
   creator?: string;
+  /** A licence id, "source" for what its source lists, or null for none (services/licenseService.ts). */
+  license?: string | null;
   /** A category to move it to with the rename, so the name is checked there and both change together. */
   categoryId?: string | null;
 };
@@ -94,6 +97,7 @@ export type PrintMetaUpdate = {
 /** Renames the model (409 when the name is taken in its category), or changes its description or creator. */
 export async function updatePrintMeta(userId: string, printId: string, meta: PrintMetaUpdate): Promise<Print> {
   const print = await ownPrint(userId, printId);
+  if (meta.license !== undefined) assertLicenseChoice(print, meta.license);
   const data: Prisma.PrintUpdateInput = {};
   const moving = meta.categoryId !== undefined && meta.categoryId !== print.categoryId;
   const categoryId = moving ? (meta.categoryId ?? null) : print.categoryId;
@@ -118,13 +122,19 @@ export async function updatePrintMeta(userId: string, printId: string, meta: Pri
 
   const updated = await prisma.print.update({ where: { id: print.id }, data });
   await relocate(updated);
+  if (meta.license !== undefined) await setOwnerLicense(print, meta.license);
+  // LICENSE.txt names the model and its creator.
+  else if (data.name !== undefined || data.creator !== undefined) await afterLicenseChange(print.id);
   if (meta.notes !== undefined) {
     if (meta.notes !== (print.notes ?? "")) await forgetAiDescription(print.id);
     await pruneDescriptionImages(print.id);
     // Images pasted in by URL are fetched in the background: slow hosts mustn't hold up the save.
     void localizeDescriptionImages(print.id);
   }
-  for (const field of moving ? ["meta", "category"] : ["meta"]) {
+  for (const field of [
+    ...(moving ? ["meta", "category"] : ["meta"]),
+    ...(meta.license !== undefined ? ["license"] : []),
+  ]) {
     void createLog({ userId, action: "model_edited", targetId: print.id, details: { field, name: updated.name } });
   }
   return updated;

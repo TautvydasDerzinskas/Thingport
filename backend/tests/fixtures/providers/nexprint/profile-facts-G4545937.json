@@ -1,0 +1,59 @@
+{
+  "code": 0,
+  "data": {
+    "id": "2106011695499288576",
+    "modelId": "G4545937",
+    "authorId": "2101501984518934528",
+    "settingInfoList": [
+      {
+        "settingOutId": "G4684460",
+        "id": "2106821393295192064",
+        "settingName": "0.2mm layer, 2 walls, 15% infill",
+        "settingContent": "",
+        "isCreator": true,
+        "userId": "2101501984518934528",
+        "filamentType": ["PLA"],
+        "filamentColour": ["#36A8E1"],
+        "author": {
+          "userId": "U0074198746",
+          "nickname": "MakerWorks3D"
+        },
+        "settingParamList": [
+          {
+            "printTime": 61.0,
+            "filamentWeightG": 28.84,
+            "layerHeightMm": 0.2,
+            "nozzleDiameterMm": 0.4,
+            "wallLoops": 2,
+            "infillDensity": 15.0,
+            "supportEnabled": false,
+            "printerModel": null,
+            "materialList": [
+              {
+                "materialName": "PLA",
+                "materialColor": "#36A8E1",
+                "materialWeight": null
+              }
+            ]
+          }
+        ],
+        "plateList": [
+          {
+            "plateIndex": 0,
+            "plateName": "Plate 1",
+            "printTime": 61.0,
+            "filamentWeightG": 28.84,
+            "materialList": [
+              {
+                "materialName": "PLA",
+                "materialColor": "#36A8E1",
+                "materialWeight": 28.84,
+                "filamentColourIndex": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

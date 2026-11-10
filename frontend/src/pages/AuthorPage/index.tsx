@@ -1,42 +1,57 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import { alpha } from "@mui/material/styles";
 import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
 import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonIcon from "@mui/icons-material/Person";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { authorsApi, type Author } from "../../api/authors";
-import { type Print, printsApi } from "../../api/prints";
+import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
-import { useGravatarUrl } from "../../hooks/useGravatarUrl";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 import { importProviderInfo, printProviderInfo, providerChipSx } from "../../constants/importProviders";
 import { authorProfileUrl } from "../../utils/authorProfileUrl";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import ModelCard from "../ModelsPage/ModelCard";
-import Skeleton from "@mui/material/Skeleton";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
 import { cardGridSx } from "../../components/media/cardGrid";
 import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectionToolbar";
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
 import { useFinishedVersion } from "../../components/importQueue/ImportQueueContext";
 import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload";
+import { profileApi } from "../../api/profile";
+import ProfileLayout, { ProfileLayoutSkeleton } from "../../components/profile/ProfileLayout";
+import { useSocialStatus } from "../../hooks/useSocialStatus";
+import SortTabs from "../ModelsPage/SortTabs";
+import EditProfileDialog from "./EditProfileDialog";
+import HandleChip from "../../components/profile/HandleChip";
+import ModelsVisibilityToggle from "./ModelsVisibilityToggle";
+import AvatarDialog from "../../components/profile/AvatarDialog";
+import EditableAvatar from "../../components/profile/EditableAvatar";
 
 const PAGE_SIZE = 24;
-const COVER_HEIGHT = 184;
+// What the page shows beside the grid, put back with it on the way back.
+type AuthorAlongside = { author: Author | null; myLinks: Author[] };
 
 type Props = {
   theme: ResolvedTheme;
@@ -57,24 +72,46 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
   const showToast = useToast();
   const isSelf = authorId === SELF_AUTHOR_ID;
   const filters = useModelFilters();
-  const { generative, hiddenProviders } = filters;
+  const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
   const finishedVersion = useFinishedVersion();
   const isBackgroundReload = useBackgroundReload(finishedVersion);
   // A page on its way when the list reloads belongs to the old list, and is dropped.
   const listRun = useRef(0);
-  const viewerAvatarUrl = useGravatarUrl(viewer?.email, 112);
-  const [author, setAuthor] = useState<Author | null>(null);
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning, restored } = useRememberedList<
+    Print,
+    AuthorAlongside
+  >({ loadingAtFirst: true, alongside: (): AuthorAlongside => ({ author, myLinks }) });
+  const [author, setAuthor] = useState<Author | null>(restored?.author ?? null);
   const [notFound, setNotFound] = useState(false);
-  const [items, setItems] = useState<Print[]>([]);
-  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(items.length);
   const selection = useModelSelection(items);
   // Authors the viewer has claimed: self-mode provider chips, and whether "It's me!" shows.
-  const [myLinks, setMyLinks] = useState<Author[]>([]);
+  const [myLinks, setMyLinks] = useState<Author[]>(restored?.myLinks ?? []);
   const [linking, setLinking] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [changingAvatar, setChangingAvatar] = useState(false);
+  const [changingVisibility, setChangingVisibility] = useState(false);
+  // Whether their models can be public at all: there's no Explore to show them on while social features are off.
+  const social = useSocialStatus();
+  const socialOn = social?.enabled === true;
+  // Handles mean something once this instance connects with others.
+  const handleHost = social?.federation ? social.instance_host : null;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sortModeParam = searchParams.get("orderBy");
+  const sortMode: PrintSortMode =
+    sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
+  const setSortMode = (mode: PrintSortMode) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (mode === "newest") next.delete("orderBy");
+        else next.set("orderBy", mode);
+        return next;
+      },
+      { replace: true },
+    );
 
   const displayName = isSelf
     ? viewer?.display_name || t("models:card.unknownAuthor")
@@ -95,7 +132,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
       return true;
     }
     console.error(err);
-    if (message) alert(message);
+    if (message) showToast({ message, severity: "error" });
     return false;
   };
 
@@ -103,8 +140,11 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
     if (!authorId) return;
     let cancelled = false;
     listRun.current += 1;
-    const background = isBackgroundReload();
-    const limit = background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE;
+    // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
+    const kept = returning();
+    if (kept !== null) setOffset(kept);
+    const background = isBackgroundReload() || kept !== null;
+    const limit = background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE;
     if (!background) {
       setLoading(true);
       setNotFound(false);
@@ -117,6 +157,9 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
               author_id: SELF_AUTHOR_ID,
               generative: generative || undefined,
               hide_providers: hiddenProviders,
+              license_allows: licenseAllows,
+              licensed: licensed || undefined,
+              order_by: sortMode,
               limit,
               offset: 0,
             }),
@@ -136,6 +179,9 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
             author_id: authorId,
             generative: generative || undefined,
             hide_providers: hiddenProviders,
+            license_allows: licenseAllows,
+            licensed: licensed || undefined,
+            order_by: sortMode,
             limit,
             offset: 0,
           }),
@@ -159,7 +205,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authorId, isSelf, generative, hiddenProviders, finishedVersion]);
+  }, [authorId, isSelf, generative, hiddenProviders, licenseAllows, licensed, sortMode, finishedVersion]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !authorId) return;
@@ -170,6 +216,9 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
         author_id: isSelf ? SELF_AUTHOR_ID : authorId,
         generative: generative || undefined,
         hide_providers: hiddenProviders,
+        license_allows: licenseAllows,
+        licensed: licensed || undefined,
+        order_by: sortMode,
         limit: PAGE_SIZE,
         offset,
       });
@@ -210,30 +259,38 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
         onUnauthorized?.();
         return;
       }
-      alert(err instanceof Error ? err.message : t("models:author.linkFailed"));
+      showToast({ message: err instanceof Error ? err.message : t("models:author.linkFailed"), severity: "error" });
     } finally {
       setLinking(false);
     }
   };
 
+  // Going public asks first: everyone on the instance can then download and copy them. Going private doesn't need to.
+  const toggleModelsPublic = async () => {
+    if (!viewer) return;
+    const next = !viewer.models_public;
+    if (next) {
+      const confirmed = await confirmDialog({
+        title: t("models:author.visibility.confirmTitle"),
+        message: t("models:author.visibility.confirmMessage"),
+        confirmLabel: t("models:author.visibility.confirmLabel"),
+      });
+      if (!confirmed) return;
+    }
+    setChangingVisibility(true);
+    try {
+      onUserUpdated?.(await profileApi.update({ models_public: next }));
+      showToast({ message: t(next ? "models:author.visibility.nowPublic" : "models:author.visibility.nowPrivate") });
+    } catch (err) {
+      handleError(err, err instanceof Error ? err.message : t("models:author.editProfile.saveFailed"));
+    } finally {
+      setChangingVisibility(false);
+    }
+  };
+
   if (loading) {
-    return (
-      <Box
-        sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "320px 1fr" }, gap: "32px", pt: 3, pb: 3 }}
-        aria-hidden
-      >
-        <Stack spacing={1.5} alignItems={{ xs: "center", md: "flex-start" }}>
-          <Skeleton variant="circular" width={112} height={112} />
-          <Skeleton variant="text" sx={{ fontSize: "1.5rem", width: "60%" }} />
-          <Skeleton variant="text" sx={{ width: "40%" }} />
-          <Skeleton variant="text" sx={{ width: "90%" }} />
-          <Skeleton variant="text" sx={{ width: "80%" }} />
-        </Stack>
-        <Box sx={cardGridSx(5)}>
-          <CardSkeletons count={10} />
-        </Box>
-      </Box>
-    );
+    // Whose page it is is known already for the user's own, and so is their cover.
+    return <ProfileLayoutSkeleton cover={isSelf ? viewer : undefined} />;
   }
 
   if (notFound || (!isSelf && !author)) {
@@ -247,178 +304,227 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
   const providerInfo = isSelf ? null : importProviderInfo(author?.provider);
   const profileUrl = isSelf || !author ? null : authorProfileUrl(author);
   const bioText = isSelf ? viewer?.bio || null : author?.bio || author?.bio_translated;
-  const avatarUrl = isSelf ? viewerAvatarUrl : (author?.avatar_url ?? undefined);
-  const backgroundUrl = isSelf ? viewer?.background_url || null : author?.background_url;
+  const avatarUrl = isSelf ? viewer?.avatar_url : (author?.avatar_url ?? undefined);
+
+  const chips = isSelf
+    ? myLinks.length > 0 && (
+        <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1} sx={{ mt: 1.5 }}>
+          {myLinks.map((linked) => {
+            const info = printProviderInfo(linked.provider);
+            return (
+              <Chip
+                key={linked.id}
+                label={info.label}
+                size="small"
+                clickable
+                onClick={() => navigate(`/authors/${linked.id}`)}
+                sx={{ ...providerChipSx(info), fontWeight: 600 }}
+              />
+            );
+          })}
+        </Stack>
+      )
+    : (providerInfo || linkedToMe || canClaim) && (
+        <Stack direction="row" flexWrap="wrap" alignItems="center" spacing={1} sx={{ mt: 1.5 }}>
+          {providerInfo && profileUrl && (
+            <Box
+              component="a"
+              href={profileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t("models:author.viewOnProvider", { provider: providerInfo.label })}
+              sx={{
+                display: "inline-block",
+                px: 1.25,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: 12,
+                fontWeight: 600,
+                lineHeight: 1.6,
+                textDecoration: "none",
+                ...providerChipSx(providerInfo),
+              }}
+            >
+              {providerInfo.label}
+            </Box>
+          )}
+          {linkedToMe && (
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: "success.main" }}>
+              <CheckCircleIcon sx={{ fontSize: 16 }} />
+              <Typography variant="caption" fontWeight={600} color="inherit">
+                {t("models:author.linkedBadge")}
+              </Typography>
+            </Stack>
+          )}
+          {canClaim && (
+            <Button size="small" variant="outlined" disabled={linking} onClick={handleClaim}>
+              {t("models:author.itsMe")}
+            </Button>
+          )}
+        </Stack>
+      );
 
   return (
-    <Box sx={{ maxWidth: "1920px", mx: "auto", bgcolor: "background.paper", borderRadius: "12px", overflow: "hidden" }}>
-      <Box
-        sx={{
-          height: `${COVER_HEIGHT}px`,
-          bgcolor: "action.hover",
-          ...(backgroundUrl && {
-            // Quoted: an unquoted url() ends at the first ")", which a data: URI can contain.
-            backgroundImage: `url("${backgroundUrl}")`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }),
-        }}
-      />
-
-      <Box sx={{ pl: 3, pr: 3 }}>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "320px 1fr" },
-            gap: "32px",
-            // Stretch so the profile column's border runs the grid's full height.
-            alignItems: "stretch",
-            pt: 3,
-            pb: 3,
-          }}
-        >
-          <Box
-            sx={{
-              borderRight: { xs: "none", md: "1px solid" },
-              // Unlike dividerBorderColor, this stays visible in dark mode.
-              borderColor: "divider",
-              pr: { xs: 0, md: 4 },
-            }}
-          >
+    <>
+      <ProfileLayout
+        cover={isSelf ? viewer : { background_url: author?.background_url }}
+        coverAction={
+          isSelf &&
+          viewer && (
+            <Tooltip title={t("models:author.editProfile.changeCover")}>
+              <IconButton
+                aria-label={t("models:author.editProfile.changeCover")}
+                onClick={() => setEditing(true)}
+                sx={(muiTheme) => ({
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  bgcolor: alpha(muiTheme.palette.common.black, 0.45),
+                  color: muiTheme.palette.common.white,
+                  "&:hover": { bgcolor: alpha(muiTheme.palette.common.black, 0.65) },
+                })}
+              >
+                <PhotoCameraOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )
+        }
+        avatar={
+          isSelf && viewer ? (
+            <EditableAvatar
+              src={avatarUrl}
+              name={displayName}
+              size={112}
+              label={t("models:avatar.change")}
+              onClick={() => setChangingAvatar(true)}
+            />
+          ) : (
             <Avatar src={avatarUrl} sx={{ width: 112, height: 112, fontSize: 40 }}>
               <PersonIcon fontSize="large" />
             </Avatar>
-            <Typography variant="h5" fontWeight={700} sx={{ mt: 2 }}>
-              {displayName}
-            </Typography>
-            {!isSelf && author?.handle && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-                @{author.handle}
-              </Typography>
-            )}
-            {isSelf
-              ? myLinks.length > 0 && (
-                  <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1} sx={{ mt: 1.5 }}>
-                    {myLinks.map((linked) => {
-                      const info = printProviderInfo(linked.provider);
-                      return (
-                        <Chip
-                          key={linked.id}
-                          label={info.label}
-                          size="small"
-                          clickable
-                          onClick={() => navigate(`/authors/${linked.id}`)}
-                          sx={{ ...providerChipSx(info), fontWeight: 600 }}
-                        />
-                      );
-                    })}
-                  </Stack>
-                )
-              : (providerInfo || linkedToMe || canClaim) && (
-                  <Stack direction="row" flexWrap="wrap" alignItems="center" spacing={1} sx={{ mt: 1.5 }}>
-                    {providerInfo && profileUrl && (
-                      <Box
-                        component="a"
-                        href={profileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={t("models:author.viewOnProvider", { provider: providerInfo.label })}
-                        sx={{
-                          display: "inline-block",
-                          px: 1.25,
-                          py: 0.5,
-                          borderRadius: 1,
-                          fontSize: 12,
-                          fontWeight: 600,
-                          lineHeight: 1.6,
-                          textDecoration: "none",
-                          ...providerChipSx(providerInfo),
-                        }}
-                      >
-                        {providerInfo.label}
-                      </Box>
-                    )}
-                    {linkedToMe && (
-                      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: "success.main" }}>
-                        <CheckCircleIcon sx={{ fontSize: 16 }} />
-                        <Typography variant="caption" fontWeight={600} color="inherit">
-                          {t("models:author.linkedBadge")}
-                        </Typography>
-                      </Stack>
-                    )}
-                    {canClaim && (
-                      <Button size="small" variant="outlined" disabled={linking} onClick={handleClaim}>
-                        {t("models:author.itsMe")}
-                      </Button>
-                    )}
-                  </Stack>
+          )
+        }
+        name={displayName}
+        subtitle={
+          isSelf && viewer && handleHost ? (
+            <HandleChip
+              user={viewer}
+              host={handleHost}
+              onSaved={(user) => onUserUpdated?.(user)}
+              onUnauthorized={onUnauthorized}
+            />
+          ) : !isSelf && author?.handle ? (
+            `@${author.handle}`
+          ) : undefined
+        }
+        actions={
+          <>
+            {chips}
+            {isSelf && viewer && (
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2 }}>
+                {socialOn && (
+                  <ModelsVisibilityToggle
+                    isPublic={Boolean(viewer.models_public)}
+                    busy={changingVisibility}
+                    onToggle={toggleModelsPublic}
+                  />
                 )}
-
-            <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 3, mb: 1 }}>
-              {t("models:author.bio")}
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{ whiteSpace: "pre-wrap", color: bioText ? "text.primary" : "text.disabled" }}
-            >
-              {bioText || t("models:author.noBio")}
-            </Typography>
-          </Box>
-
-          <Box sx={{ minWidth: 0, pt: 3, pb: 3 }}>
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-              <Typography variant="h6" fontWeight={700}>
-                {t("models:pageTitle")}
-              </Typography>
-              <ModelSelectionToolbar
-                selection={selection}
-                total={items.length}
-                hasMore={hasMore}
-                onDeleted={(ids) => setItems((prev) => prev.filter((i) => !ids.includes(i.id)))}
-                onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
-                onUnauthorized={onUnauthorized}
-              />
-              <Box sx={{ ml: "auto" }}>
-                <ModelFiltersButton filters={filters} sources={sources} />
-              </Box>
-            </Stack>
-            {items.length ? (
-              <Stack spacing={2}>
-                <Box sx={cardGridSx(5)}>
-                  {items.map((item) => (
-                    <ModelCard
-                      key={item.id}
-                      item={item}
-                      theme={theme}
-                      previewMode={previewMode}
-                      onDeleted={(deletedId) => setItems((prev) => prev.filter((i) => i.id !== deletedId))}
-                      onFavoriteChange={(updated) =>
-                        setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
-                      }
-                      onUpdated={(updated) => setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))}
-                      onUnauthorized={onUnauthorized}
-                      viewer={viewer}
-                      selectMode={selection.active}
-                      selected={selection.isSelected(item.id)}
-                      onToggleSelect={(range) => selection.toggle(item.id, range)}
-                    />
-                  ))}
-                  {loadingMore && <CardSkeletons count={5} />}
-                </Box>
-                {hasMore && <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />}
-              </Stack>
-            ) : (
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "text.secondary" }}>
-                {filters.active ? (
-                  <FiltersEmptyNote filters={filters} />
-                ) : (
-                  <Typography variant="body2">{t("models:author.noModels")}</Typography>
-                )}
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<EditOutlinedIcon />}
+                  onClick={() => setEditing(true)}
+                >
+                  {t("models:author.editProfile.button")}
+                </Button>
               </Stack>
             )}
+          </>
+        }
+        bio={bioText}
+        // A user's bio is shown as the other users see it on Explore.
+        bioMarkdown={isSelf}
+        links={isSelf ? viewer?.links : undefined}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ color: (muiTheme) => muiTheme.thingport.headingText }}>
+            {t("models:pageTitle")}
+          </Typography>
+          <ModelSelectionToolbar
+            selection={selection}
+            total={items.length}
+            hasMore={hasMore}
+            onDeleted={(ids) => setItems((prev) => prev.filter((i) => !ids.includes(i.id)))}
+            onUpdated={(updated) => setItems((prev) => replacePrints(prev, updated))}
+            onUnauthorized={onUnauthorized}
+          />
+          <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
+            <SortTabs value={sortMode} onChange={setSortMode} />
+            <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+            <ModelFiltersButton filters={filters} sources={sources} />
           </Box>
         </Box>
-      </Box>
-    </Box>
+        {items.length ? (
+          <Stack spacing={2}>
+            <Box sx={cardGridSx(5)}>
+              {items.map((item) => (
+                <ModelCard
+                  key={item.id}
+                  item={item}
+                  theme={theme}
+                  previewMode={previewMode}
+                  onDeleted={(deletedId) => setItems((prev) => prev.filter((i) => i.id !== deletedId))}
+                  onFavoriteChange={(updated) =>
+                    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))
+                  }
+                  onUpdated={(updated) => setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))}
+                  onUnauthorized={onUnauthorized}
+                  viewer={viewer}
+                  selectMode={selection.active}
+                  selected={selection.isSelected(item.id)}
+                  onToggleSelect={(range) => selection.toggle(item.id, range)}
+                />
+              ))}
+              {loadingMore && <CardSkeletons count={5} />}
+            </Box>
+            {hasMore && <Box ref={loadMoreSentinelRef} sx={{ height: 1 }} />}
+          </Stack>
+        ) : (
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ color: "text.secondary" }}>
+            {filters.active ? (
+              <FiltersEmptyNote filters={filters} />
+            ) : (
+              <Typography variant="body2">{t("models:author.noModels")}</Typography>
+            )}
+          </Stack>
+        )}
+      </ProfileLayout>
+      {changingAvatar && viewer && (
+        <AvatarDialog
+          user={viewer}
+          onClose={() => setChangingAvatar(false)}
+          onSaved={(saved) => {
+            onUserUpdated?.(saved);
+            setChangingAvatar(false);
+            showToast({ message: t("models:avatar.saved") });
+          }}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
+      {editing && viewer && (
+        <EditProfileDialog
+          user={viewer}
+          linkedAuthors={myLinks}
+          onClose={() => setEditing(false)}
+          onSaved={(saved) => {
+            onUserUpdated?.(saved);
+            setEditing(false);
+            showToast({ message: t("models:author.editProfile.saved") });
+          }}
+          onUpdated={onUserUpdated}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
+    </>
   );
 }

@@ -30,6 +30,12 @@ Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next won't open a link from 
 [Thingport Bridge](../../bridge/README.md) is a small helper app for Windows, macOS and Linux that takes the link from
 Thingport and opens the file in the slicer. Download it from Thingport's **Downloads** page.
 
+OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca and eufyMake Studio download the link themselves. When one
+can't, for instance because it doesn't trust your instance's certificate, send it through the Bridge too: right-click
+it under **Configuration → Slicer** and switch on **Through Thingport Bridge**. Every way of opening a model in that
+slicer then goes through the Bridge, which downloads the file and hands it over. Slicers that open through the Bridge
+show its cable on their tile.
+
 ## Models generated in colour
 
 A model generated in colour from its script, in the [customizer](supporting-files.md#models-you-can-generate-again)

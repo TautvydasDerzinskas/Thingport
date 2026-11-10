@@ -23,8 +23,8 @@ export type PageId =
   | "adminTools"
   | "adminAi"
   | "adminUsers"
+  | "adminSocial"
   | "adminLogs"
-  | "adminTriggers"
   | "adminConnections"
   | "adminCaptcha";
 
@@ -89,7 +89,7 @@ export const SEARCH_PAGES: SearchPage[] = [
     id: "myModels",
     path: `/authors/${SELF_AUTHOR_ID}`,
     labelKey: "app:userMenu.myModels",
-    terms: ["my models", "my uploads", "uploads", "mine"],
+    terms: ["my models", "my uploads", "uploads", "mine", "cover", "bio"],
   },
   {
     id: "profile",
@@ -164,19 +164,21 @@ export const SEARCH_PAGES: SearchPage[] = [
     "roles",
     "accounts",
     "invite",
+    "delete models",
+  ]),
+  adminPage("adminSocial", "/admin-social", "app:adminSettings.social.heading", [
     "social",
+    "social features",
     "explore",
     "public collections",
     "sharing",
     "chats",
     "rooms",
+    "connected instances",
+    "federation",
+    "partners",
   ]),
   adminPage("adminLogs", "/admin-logs", "app:adminSettings.logs.heading", ["logs", "audit", "events"]),
-  adminPage("adminTriggers", "/admin-triggers", "app:adminSettings.triggers.heading", [
-    "triggers",
-    "automation",
-    "rules",
-  ]),
   adminPage("adminConnections", "/admin-connections", "app:adminSettings.connections.heading", [
     "connections",
     "integrations",

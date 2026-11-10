@@ -1,0 +1,108 @@
+{
+  "groupItem": {
+    "id": "6ae7ecf4ea9180a70f3c7193",
+    "urlAlias": "3d-crystal-dragon-articulated",
+    "userInfo": {
+      "userId": 8055857330,
+      "nickName": "StatexKiller24"
+    }
+  },
+  "profiles": [
+    {
+      "id": "6aee2640ae8da4658880aa03",
+      "secondName": "CFS Ready - Dual color",
+      "name": "Crystal dragon Articulated",
+      "desc": "",
+      "isAuth": true,
+      "printerName": "Ender-3 V3 KE",
+      "layerHeight": "0.16",
+      "sparseInfillDensity": "20%",
+      "wallLoops": "3",
+      "nozzleDiameter": ["0.4"],
+      "printTime": 72595,
+      "filamentWeight": 217.63739999999999,
+      "colorFilament": [
+        {
+          "extruderId": "0",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#FFFFFFFF",
+          "length": 55.0157,
+          "weight": 164.087
+        },
+        {
+          "extruderId": "1",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#6667ABFF",
+          "length": 17.9546,
+          "weight": 53.5504
+        }
+      ],
+      "plateCount": 1,
+      "userInfo": {
+        "userId": 8055857330,
+        "nickName": "StatexKiller24"
+      }
+    },
+    {
+      "id": "6aee1e30b51f292bc860bcee",
+      "secondName": "Dual color, - No CFS Pause at layer 162, 0.16 layer.",
+      "name": "Crystal dragon Articulated",
+      "desc": "",
+      "isAuth": true,
+      "printerName": "Ender-3 V3 KE",
+      "layerHeight": "0.16",
+      "sparseInfillDensity": "20%",
+      "wallLoops": "3",
+      "nozzleDiameter": ["0.4"],
+      "printTime": 40602,
+      "filamentWeight": 125.244,
+      "colorFilament": [
+        {
+          "extruderId": "0",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#FFFFFF",
+          "length": 41.9922869272742,
+          "weight": 125.2440764129199
+        }
+      ],
+      "plateCount": 1,
+      "userInfo": {
+        "userId": 8055857330,
+        "nickName": "StatexKiller24"
+      }
+    },
+    {
+      "id": "6ae7ecf4ea9180a70f3c7199",
+      "secondName": "0.16mm layer, 3 walls, 20% infill",
+      "name": "Crystal dragon Articulated",
+      "desc": "<p>0.16 layer height</p>\n<p>3 walls</p>\n<p>no supports</p>\n<p>20% Gyroid infill</p>",
+      "isAuth": true,
+      "printerName": "Ender-3 V3 KE",
+      "layerHeight": "0.16",
+      "sparseInfillDensity": "20%",
+      "wallLoops": "3",
+      "nozzleDiameter": ["0.4"],
+      "printTime": 40666,
+      "filamentWeight": 125.352,
+      "colorFilament": [
+        {
+          "extruderId": "0",
+          "type": "PLA",
+          "name": "Hyper PLA ",
+          "color": "#FFFFFF",
+          "length": 42.02846379943873,
+          "weight": 125.35197572665822
+        }
+      ],
+      "plateCount": 1,
+      "userInfo": {
+        "userId": 8055857330,
+        "nickName": "StatexKiller24"
+      }
+    }
+  ],
+  "details": {}
+}

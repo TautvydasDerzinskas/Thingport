@@ -18,6 +18,7 @@ import {
   parseMyminifactoryObjectUrl,
   urls,
 } from "./urls.generated";
+import { myminifactoryLicenseFrom } from "./license";
 import manifest from "./manifest.generated";
 export {
   myminifactoryCollectionKey,
@@ -237,7 +238,10 @@ export function myminifactoryMetaFromObject(object: Record<string, unknown>): My
     url: image.url,
     filename: image.url.split("/").pop()?.split("?")[0] || `image-${index}.jpg`,
   }));
-  return { meta, galleryImages, paid: isPaid(object), archives: object.file_mode === 1 };
+  const paid = isPaid(object);
+  const license = myminifactoryLicenseFrom(object, paid);
+  if (license !== undefined) meta.license = license;
+  return { meta, galleryImages, paid, archives: object.file_mode === 1 };
 }
 
 /** Null for an object that doesn't exist or isn't public; throws MyminifactoryAuthError for a rejected key. */

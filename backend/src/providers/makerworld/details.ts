@@ -3,15 +3,8 @@ import { makerworldMetaFromDesign, resolveMakerworldCookie } from "./pageData";
 import { HttpError } from "../../utils/fileUtils";
 import manifest from "./manifest.generated";
 import type { ProviderDetails } from "../types";
-import {
-  extractMakerworldBearerToken,
-  fetchMakerworldDesignAuthor,
-  MAKERWORLD_AUTH_CODE,
-  makerworldCaptchaCooloffActive,
-  MakerworldAuthError,
-  MakerworldCaptchaError,
-} from "./api";
-import { fetchMakerworldDesignForImport, fetchMakerworldPageAuthor } from "./pages";
+import { MAKERWORLD_AUTH_CODE, MakerworldAuthError, MakerworldCaptchaError } from "./api";
+import { fetchMakerworldDesignForImport } from "./pages";
 import { getUserMakerworldCookie } from "./session";
 
 /** Read with the user's cookie where they gave one, its page otherwise; each read paces itself against the CAPTCHA. */
@@ -22,13 +15,6 @@ export const makerworldDetails: ProviderDetails = {
     if (!design) throw new HttpError(400, `Couldn't read this model from ${manifest.name}`);
     return makerworldMetaFromDesign(design);
   },
-  async author(userId, designId) {
-    const cookie = await getUserMakerworldCookie(userId);
-    const bearer = extractMakerworldBearerToken(cookie);
-    return bearer
-      ? fetchMakerworldDesignAuthor(designId, bearer, IMPORT_MAKERWORLD_CALL_DELAY_MS)
-      : fetchMakerworldPageAuthor(designId, cookie, IMPORT_MAKERWORLD_CALL_DELAY_MS);
-  },
   missingMessage: `This ${manifest.name} model could not be found, or isn't public.`,
   async mapError(_userId, err) {
     if (err instanceof MakerworldCaptchaError) return new HttpError(429, err.message);
@@ -36,11 +22,4 @@ export const makerworldDetails: ProviderDetails = {
     if (err instanceof MakerworldAuthError) return new HttpError(400, err.message, MAKERWORLD_AUTH_CODE);
     return err;
   },
-  unavailable: { check: async () => (makerworldCaptchaCooloffActive() ? "makerworld_captcha" : null) },
-  problemOf(err) {
-    if (err instanceof MakerworldCaptchaError) return { problem: "makerworld_captcha" };
-    if (err instanceof MakerworldAuthError) return { problem: "makerworld_login_rejected" };
-    return null;
-  },
-  pacesItself: true,
 };

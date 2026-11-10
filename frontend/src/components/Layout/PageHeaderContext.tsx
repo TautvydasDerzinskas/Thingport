@@ -3,8 +3,8 @@ import type React from "react";
 
 export type PageHeader = {
   title?: string;
-  /** The entity kind, shown under the title. */
-  subtitle?: string;
+  /** The entity kind, shown under the title; an element (memoized, like `actions`) where it's more than words. */
+  subtitle?: React.ReactNode;
   actions?: React.ReactNode;
   onBack?: () => void;
 } | null;

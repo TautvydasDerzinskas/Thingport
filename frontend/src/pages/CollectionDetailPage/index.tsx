@@ -13,13 +13,16 @@ import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
+import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import { collectionDisplayName } from "../../utils/collectionDisplay";
 import ModelCard from "../ModelsPage/ModelCard";
 import SortTabs from "../ModelsPage/SortTabs";
 import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
 import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
-import CollectionActionsMenu from "./CollectionActionsMenu";
+import CollectionActionsMenu, { type CollectionActionsHandle } from "./CollectionActionsMenu";
+import SharedWithChip from "./SharedWithChip";
+import { useSocialStatus } from "../../hooks/useSocialStatus";
 import CollectionBookmarkButton from "./CollectionBookmarkButton";
 import CollectionSyncDialog from "./CollectionSyncDialog";
 import SharedCollectionActions from "./SharedCollectionActions";
@@ -52,14 +55,15 @@ export default function CollectionDetailPage({
   const { collectionId } = useParams<{ collectionId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation(["models", "common"]);
-  const [collection, setCollection] = useState<Collection | null>(null);
+  const { items, setItems, hasMore, setHasMore, loading, setLoading, returning, restored } = useRememberedList<
+    Print,
+    Collection | null
+  >({ loadingAtFirst: true, alongside: (): Collection | null => collection });
+  const [collection, setCollection] = useState<Collection | null>(restored ?? null);
   const [syncOpen, setSyncOpen] = useState(false);
   const [notFound, setNotFound] = useState(false);
-  const [items, setItems] = useState<Print[]>([]);
-  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(items.length);
   const finishedVersion = useFinishedVersion();
   const isBackgroundReload = useBackgroundReload(finishedVersion);
   // A page on its way when the list reloads belongs to the old list, and is dropped.
@@ -71,7 +75,7 @@ export default function CollectionDetailPage({
     sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
 
   const filters = useModelFilters();
-  const { generative, hiddenProviders } = filters;
+  const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
 
   const setSortMode = (mode: PrintSortMode) => {
@@ -87,6 +91,11 @@ export default function CollectionDetailPage({
   // Another user's public collection: theirs to change. Its models can be opened, downloaded and filed into the
   // user's own collections, which copies them.
   const owner = collection?.owner ?? null;
+  const menuRef = useRef<CollectionActionsHandle>(null);
+  const socialOn = useSocialStatus()?.enabled === true;
+  // Who sees the user's own shared one, beside its menu.
+  const sharedWith =
+    socialOn && collection && !owner && collection.visibility === "shared" ? (collection.shared_with ?? null) : null;
   const ownCollectionId =
     collection && !collection.system_key && !collection.tool_id && !owner ? collection.id : undefined;
 
@@ -104,6 +113,9 @@ export default function CollectionDetailPage({
         <SharedCollectionActions collection={collection} owner={owner} onUnauthorized={onUnauthorized} />
       ) : collection && !collection.system_key ? (
         <Stack direction="row" alignItems="center" spacing={0.5}>
+          {sharedWith && !collection.tool_id && (
+            <SharedWithChip sharedWith={sharedWith} onClick={() => menuRef.current?.openShare()} />
+          )}
           <CollectionBookmarkButton
             collectionId={collection.id}
             bookmarked={collection.bookmarked}
@@ -114,6 +126,7 @@ export default function CollectionDetailPage({
           {/* A tool's collection can be bookmarked, nothing more. */}
           {!collection.tool_id && (
             <CollectionActionsMenu
+              ref={menuRef}
               collection={collection}
               onUpdated={setCollection}
               onUnauthorized={onUnauthorized}
@@ -139,7 +152,10 @@ export default function CollectionDetailPage({
     if (!collectionId) return;
     let cancelled = false;
     listRun.current += 1;
-    const background = isBackgroundReload();
+    // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
+    const kept = returning();
+    if (kept !== null) setOffset(kept);
+    const background = isBackgroundReload() || kept !== null;
     if (!background) {
       setLoading(true);
       setNotFound(false);
@@ -152,8 +168,10 @@ export default function CollectionDetailPage({
             collection_id: collectionId,
             generative: generative || undefined,
             hide_providers: hiddenProviders,
+            license_allows: licenseAllows,
+            licensed: licensed || undefined,
             order_by: sortMode,
-            limit: background ? keepLoaded(PAGE_SIZE, offset) : PAGE_SIZE,
+            limit: background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
             offset: 0,
           }),
         ]);
@@ -174,7 +192,7 @@ export default function CollectionDetailPage({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionId, sortMode, generative, hiddenProviders, finishedVersion]);
+  }, [collectionId, sortMode, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || !collectionId) return;
@@ -185,6 +203,8 @@ export default function CollectionDetailPage({
         collection_id: collectionId,
         generative: generative || undefined,
         hide_providers: hiddenProviders,
+        license_allows: licenseAllows,
+        licensed: licensed || undefined,
         order_by: sortMode,
         limit: PAGE_SIZE,
         offset,

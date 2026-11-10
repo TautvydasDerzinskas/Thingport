@@ -6,7 +6,7 @@ import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
-import type { PrintSource } from "../../api/prints";
+import type { LicenseAction, PrintSource } from "../../api/prints";
 import HelpTip from "../HelpTip";
 import { printProviderInfo } from "../../constants/importProviders";
 import { hasProviderLogo, ProviderLogo } from "../Layout/ConfigurationDialog/providerLogos";
@@ -21,7 +21,52 @@ type Props = {
   onHiddenChange: (next: string[]) => void;
   generative: boolean;
   onGenerativeChange: (on: boolean) => void;
+  /** What the licence must allow. */
+  licenseAllows: LicenseAction[];
+  onLicenseAllowsChange: (next: LicenseAction[]) => void;
+  /** Only models with a licence. */
+  licensed: boolean;
+  onLicensedChange: (on: boolean) => void;
 };
+
+/** One "Licence allows" switch, labelled, with what it means behind a ?. */
+function SwitchRow({
+  id,
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  hint: string;
+  checked: boolean;
+  onChange: (on: boolean) => void;
+}) {
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography component="label" htmlFor={id} sx={{ fontSize: 14 }}>
+          {label}
+          <HelpTip text={hint} />
+        </Typography>
+      </Box>
+      <Switch
+        id={id}
+        size="small"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        inputProps={{ "aria-label": label }}
+      />
+    </Box>
+  );
+}
+
+const ALLOWS_ROWS: { action: LicenseAction; label: string; hint: string }[] = [
+  { action: "share", label: "filters.allowsShare", hint: "filters.allowsShareHint" },
+  { action: "commercial", label: "filters.allowsCommercial", hint: "filters.allowsCommercialHint" },
+  { action: "remix", label: "filters.allowsRemix", hint: "filters.allowsRemixHint" },
+];
 
 /** One site, as a chip carrying its logo. Every site is on to begin with, so it's the ones turned off that are
  *  marked -- faded, with a dashed edge and a grey logo -- rather than the ones left alone, which would otherwise
@@ -83,8 +128,8 @@ function SourceChip({
 }
 
 /**
- * The listing's filters, behind the toolbar's filter button: which sites to list models from, and whether to list
- * only the generative ones.
+ * The listing's filters, behind the toolbar's filter button: which sites to list models from, whether to list only the
+ * generative ones, and what their licence must allow.
  *
  * Every site is on until it is turned off, so what's kept is the sites hidden rather than the sites shown -- one the
  * library gains later is then in the listing from the start, instead of arriving already filtered out.
@@ -97,6 +142,10 @@ export default function ModelFiltersPopover({
   onHiddenChange,
   generative,
   onGenerativeChange,
+  licenseAllows,
+  onLicenseAllowsChange,
+  licensed,
+  onLicensedChange,
 }: Props) {
   const { t } = useTranslation("models");
   const isOn = (provider: string) => !hidden.includes(provider);
@@ -157,6 +206,33 @@ export default function ModelFiltersPopover({
             {t("filters.noSources")}
           </Typography>
         )}
+
+        <Divider />
+
+        <Typography variant="overline" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
+          {t("filters.licenseAllows")}
+        </Typography>
+        {ALLOWS_ROWS.map((row) => (
+          <SwitchRow
+            key={row.action}
+            id={`license-allows-${row.action}`}
+            label={t(row.label)}
+            hint={t(row.hint)}
+            checked={licenseAllows.includes(row.action)}
+            onChange={(on) =>
+              onLicenseAllowsChange(
+                on ? [...licenseAllows, row.action] : licenseAllows.filter((action) => action !== row.action),
+              )
+            }
+          />
+        ))}
+        <SwitchRow
+          id="license-stated"
+          label={t("filters.licensed")}
+          hint={t("filters.licensedHint")}
+          checked={licensed}
+          onChange={onLicensedChange}
+        />
       </Stack>
     </Popover>
   );

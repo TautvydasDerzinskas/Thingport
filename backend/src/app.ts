@@ -8,6 +8,7 @@ import { pathToken, requireAuth } from "./auth";
 import healthRoutes from "./routes/health";
 import mcpRoutes from "./routes/mcp";
 import iconRoutes from "./routes/icons";
+import profileRoutes from "./routes/profile";
 import captchaRoutes from "./routes/captcha";
 import authRoutes from "./routes/auth";
 import oidcRoutes from "./routes/oidc";
@@ -27,12 +28,14 @@ import providerRoutes, { providerBodyLimits } from "./providers/routes";
 import collectionsRoutes from "./routes/collections";
 import socialRoutes from "./routes/social";
 import chatRoutes from "./routes/chats";
+import federationRoutes, { federationProbeRoutes } from "./routes/federation";
+import apRoutes from "./federation/apRoutes";
 import collectionSyncsRoutes from "./routes/collectionSyncs";
 import providerCollectionsRoutes from "./routes/providerCollections";
 import bookmarksRoutes from "./routes/bookmarks";
 import searchRoutes from "./routes/search";
 import notificationsRoutes from "./routes/notifications";
-import releaseNotesRoutes from "./routes/releaseNotes";
+import releaseNotesRoutes, { localFilesRoutes as releaseNotesFilesRoutes } from "./routes/releaseNotes";
 import adminRoutes from "./routes/admin";
 import dashboardRoutes from "./routes/dashboard";
 import widgetRoutes from "./routes/widgets";
@@ -55,6 +58,9 @@ export function createApp(): Express {
     }),
   );
 
+  // Other instances' ActivityPub requests, before any JSON parsing: their signatures cover the body as it came.
+  app.use("/api/ap", apRoutes);
+
   app.use(pathToken);
   // A widget's script, HTML and fetch body are larger than the default 100 kB; their own validation sets the limits.
   app.use("/api/widgets", express.json({ limit: "8mb" }));
@@ -73,10 +79,15 @@ export function createApp(): Express {
 
   // The frontend's nginx proxies /api/* here unmodified.
   app.use("/api", healthRoutes);
+  app.use("/api", federationProbeRoutes);
   // Before the routers that apply requireAuth to every path: see routes/mcp.ts.
   app.use("/api", mcpRoutes);
   // Also before them: an icon's file is public.
   app.use("/api", iconRoutes);
+  // And a cover's.
+  app.use("/api", profileRoutes);
+  // And the pictures of release notes read from a checkout.
+  app.use("/api", releaseNotesFilesRoutes);
   app.use("/api", captchaRoutes);
   app.use("/api", authRoutes);
   app.use("/api", oidcRoutes);
@@ -98,6 +109,7 @@ export function createApp(): Express {
   app.use("/api", collectionsRoutes);
   app.use("/api", socialRoutes);
   app.use("/api", chatRoutes);
+  app.use("/api", federationRoutes);
   app.use("/api", collectionSyncsRoutes);
   app.use("/api", providerCollectionsRoutes);
   app.use("/api", bookmarksRoutes);

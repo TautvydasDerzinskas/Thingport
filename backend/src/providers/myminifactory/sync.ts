@@ -4,8 +4,8 @@ import type { ProviderSync } from "../types";
 import { checkMyminifactoryCollection, fetchMyminifactoryCollectionObjects } from "./api";
 
 const DISCONNECTED: SyncProblem = {
-  error: "MyMiniFactory isn't connected on this Thingport",
-  reason: "MyMiniFactory isn't connected on this Thingport.",
+  error: "MyMiniFactory isn't connected on this Thingport instance",
+  reason: "MyMiniFactory isn't connected on this Thingport instance.",
   fix: "an admin connects it again",
 };
 

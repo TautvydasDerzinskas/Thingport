@@ -151,7 +151,7 @@ its ⋮ menu has **About**, **Edit** and **Delete**. To change a tool, read what
 
 ## Sharing it
 
-To offer a tool to every Thingport, open a pull request to the Thingport repository: a folder \`tools/<slug>/\` with
+To offer a tool to every Thingport instance, open a pull request to the Thingport repository: a folder \`tools/<slug>/\` with
 \`tool.json\` (or \`tool.yml\`), \`tool.js\`, optionally \`tool.html\`, \`locales/<code>.json\` for each language its
 metadata names, a \`README.md\` saying what it does and what it reaches, and optional \`screenshots/\`. Add the slug
 to \`tools/index.json\`. A maintainer reads the code before it is merged; see \`docs/guides/tools.md\` and

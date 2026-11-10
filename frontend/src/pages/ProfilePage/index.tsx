@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
-import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import type { AuthUser } from "../../api/auth";
-import { useGravatarUrl } from "../../hooks/useGravatarUrl";
+import AvatarDialog from "../../components/profile/AvatarDialog";
+import EditableAvatar from "../../components/profile/EditableAvatar";
+import { useToast } from "../../components/ToastProvider";
 import ActivitySection from "./activity/ActivitySection";
 import ApiTokenSection from "./ApiTokenSection";
 import GrabConnectionsSection from "./GrabConnectionsSection";
@@ -15,13 +17,15 @@ import { useSignInMethods } from "./useSignInMethods";
 
 type Props = {
   user: AuthUser | null;
+  onUserUpdated?: (user: AuthUser) => void;
   onUnauthorized?: () => void;
 };
 
-export default function ProfilePage({ user, onUnauthorized }: Props) {
-  const { t } = useTranslation("app");
+export default function ProfilePage({ user, onUserUpdated, onUnauthorized }: Props) {
+  const { t } = useTranslation(["app", "models"]);
   const navigate = useNavigate();
-  const avatarUrl = useGravatarUrl(user?.email, 128);
+  const showToast = useToast();
+  const [changingAvatar, setChangingAvatar] = useState(false);
   const { info: signIn, reload: reloadSignIn } = useSignInMethods(onUnauthorized);
   // Until it's known, as it was: most accounts have one.
   const hasPassword = signIn?.has_password ?? true;
@@ -31,13 +35,13 @@ export default function ProfilePage({ user, onUnauthorized }: Props) {
     <Stack spacing={4} sx={{ width: "fit-content", maxWidth: "100%", mx: "auto" }}>
       <Stack spacing={4}>
         <Stack direction="row" spacing={2} alignItems="center">
-          <Avatar
-            alt={user?.display_name}
-            src={avatarUrl}
-            sx={{ width: 64, height: 64, bgcolor: "primary.main", fontSize: 24 }}
-          >
-            {user?.display_name?.[0]?.toUpperCase()}
-          </Avatar>
+          <EditableAvatar
+            src={user?.avatar_url}
+            name={user?.display_name ?? ""}
+            size={64}
+            label={t("models:avatar.change")}
+            onClick={() => setChangingAvatar(true)}
+          />
           <Box>
             <Typography
               variant="subtitle1"
@@ -90,6 +94,18 @@ export default function ProfilePage({ user, onUnauthorized }: Props) {
         </Stack>
       </Stack>
       <ActivitySection onUnauthorized={onUnauthorized} />
+      {changingAvatar && user && (
+        <AvatarDialog
+          user={user}
+          onClose={() => setChangingAvatar(false)}
+          onSaved={(saved) => {
+            onUserUpdated?.(saved);
+            setChangingAvatar(false);
+            showToast({ message: t("models:avatar.saved") });
+          }}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
     </Stack>
   );
 }

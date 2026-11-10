@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { escapeHtml } from "../utils/htmlEntities";
 import { getPublicUrl, getSmtpSettings } from "./settingsService";
 
 /** Throws without a host rather than silently dropping the email. */
@@ -13,13 +14,6 @@ async function sendMail(message: { to: string; subject: string; text: string; ht
     auth: smtp.user ? { user: smtp.user, pass: smtp.pass ?? undefined } : undefined,
   });
   await transporter.sendMail({ from: smtp.from, ...message });
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
 }
 
 export async function sendVerificationEmail(to: string, displayName: string, token: string): Promise<void> {
@@ -52,7 +46,7 @@ export async function sendInvitationEmail(
   await sendMail({
     to,
     subject: "You're invited to Thingport",
-    text: `${inviterName} invited you to create an account on their Thingport, a library for 3D-printing models.\n\nCreate your account here:\n${link}\n\nThe link works for ${expiresInDays} days, for this email address only.`,
-    html: `<p>${escapeHtml(inviterName)} invited you to create an account on their Thingport, a library for 3D-printing models.</p><p><a href="${link}">Create your account</a></p><p>Or open this link: ${link}</p><p>The link works for ${expiresInDays} days, for this email address only.</p>`,
+    text: `${inviterName} invited you to create an account on their Thingport instance, a library for 3D-printing models.\n\nCreate your account here:\n${link}\n\nThe link works for ${expiresInDays} days, for this email address only.`,
+    html: `<p>${escapeHtml(inviterName)} invited you to create an account on their Thingport instance, a library for 3D-printing models.</p><p><a href="${link}">Create your account</a></p><p>Or open this link: ${link}</p><p>The link works for ${expiresInDays} days, for this email address only.</p>`,
   });
 }

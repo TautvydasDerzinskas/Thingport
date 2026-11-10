@@ -6,6 +6,8 @@ browser, so there's nothing to install.
 - **Formats:** STL, 3MF, OBJ, STEP and glTF (`.glb`, or a `.gltf` with its files), glTF with its own materials and
   textures. LightBurn projects get a picture of their design.
 - **Multi-plate 3MF projects** show a thumbnail for every plate, with how many objects each one holds.
+- **Models with print profiles** list the profiles, the designer's first, and the picked one's plates with each
+  plate's print time, filament and colours, rather than each profile as a file.
 - **Model colour:** pick the colour the preview is shown in. It's greyed out for a file that carries colours of its
   own.
 - **Multicolour models** -- a painted 3MF project, one the

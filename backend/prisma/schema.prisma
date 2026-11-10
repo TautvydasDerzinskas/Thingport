@@ -35,39 +35,45 @@ enum AiProviderKind {
 }
 
 model User {
-  id                       String               @id @default(cuid())
-  email                    String               @unique
+  id                       String                   @id @default(cuid())
+  email                    String                   @unique
   // Null for someone who has only ever signed in through an OIDC provider.
   passwordHash             String?
   displayName              String
-  role                     Role                 @default(MEMBER)
+  /// What people on connected instances call them, as username@this-instance: lower case, unique, editable.
+  /// Made from the display name; null only until something reads it (ensureUsername).
+  username                 String?                  @unique
+  role                     Role                     @default(MEMBER)
   // The first admin: may demote and delete other admins, and can be neither demoted nor deleted.
-  isOwner                  Boolean              @default(false)
+  isOwner                  Boolean                  @default(false)
   // Defaults true so existing accounts aren't locked out; registration sets false when SMTP is on.
-  emailVerified            Boolean              @default(true)
-  emailVerificationToken   String?              @unique
+  emailVerified            Boolean                  @default(true)
+  emailVerificationToken   String?                  @unique
   emailVerificationExpires DateTime?
   // Awaiting confirmation of an email change.
   pendingEmail             String?
   // SHA-256 of the emailed token, so a database leak can't be used to take over accounts.
-  passwordResetTokenHash   String?              @unique
+  passwordResetTokenHash   String?                  @unique
   passwordResetExpires     DateTime?
   // A read-only token other apps use to call the API as this user. Only its SHA-256
   // is stored; the token itself is shown once, when generated. One per user: generating replaces it.
-  apiTokenHash             String?              @unique
+  apiTokenHash             String?                  @unique
   // The token's last four characters, so the profile can show which one is in use.
   apiTokenHint             String?
   apiTokenCreatedAt        DateTime?
   apiTokenLastUsedAt       DateTime?
   // The MCP tools the token may call at /api/mcp (see mcp/tools.ts). Chosen per token, so a tool
   // that writes is only ever reachable if the user ticked it.
-  apiTokenMcpTools         String[]             @default([])
+  apiTokenMcpTools         String[]                 @default([])
   // What the token may read over the REST API, by scope (see services/apiTokenScopes.ts).
-  apiTokenRestScopes       String[]             @default([])
+  apiTokenRestScopes       String[]                 @default([])
   // The slicer a model's "Open in" button opens: the last one used. Always one of `slicers`.
   slicer                   String?
   // The slicers the user has installed, offered in a model's "Open in" menu.
-  slicers                  String[]             @default([])
+  slicers                  String[]                 @default([])
+  // The slicers with a link handler of their own that open through Thingport Bridge instead, for when one can't
+  // download from this instance. Kept while a slicer is switched off.
+  bridgedSlicers           String[]                 @default([])
   // "light" | "dark" | "system"; null means never set.
   themePreference          String?
   // One of ACCENT_COLORS; null means Thingport green.
@@ -88,6 +94,9 @@ model User {
   dashboardTemplates       Json?
   // What model cards lead with, one of CARD_PREVIEWS; null means "images".
   cardPreview              String?
+  // How a model page shows the print profiles a model was imported with, one of PRINT_PROFILES_VIEWS ("off" shows
+  // them as plain files); null means "picker".
+  printProfilesView        String?
   // Where Studio's assistant shows its conversation, one of STUDIO_PROMPT_LAYOUTS; null means "bar".
   studioPromptLayout       String?
   // The units a new Studio design starts in, one of STUDIO_UNITS; null means "mm".
@@ -96,14 +105,30 @@ model User {
   studioGrid               Json?
   // Where the dashboard's weather is for: { lat, lon, name, source }. Null until the user sets one.
   weatherLocation          Json?
-  authorPreviewEnabled     Boolean              @default(true)
+  authorPreviewEnabled     Boolean                  @default(true)
   // Model cards cycle through a model's pictures while hovered.
-  hoverSlideshowEnabled    Boolean              @default(true)
+  hoverSlideshowEnabled    Boolean                  @default(true)
   // Links sent from Thingport Grab's "Add to the queue" join the line by themselves instead of waiting on hold.
-  startGrabLinks           Boolean              @default(false)
-  // Filled from the first linked Author with this data; later links never overwrite it.
+  startGrabLinks           Boolean                  @default(false)
+  // Set on My models, or filled from the first linked Author with this data while still empty.
   bio                      String?
+  // The cover picture: one uploaded (/api/covers/...) or a linked Author's. Null shows a drawn cover, coverPreset.
   backgroundUrl            String?
+  // One of COVER_PRESETS (profileCoverService.ts); null is the one their id picks.
+  coverPreset              String?
+  // Where the cover is cropped, 0 (its top) to 100 (its bottom); null is the middle.
+  coverPositionY           Int?
+  // Up to five web addresses of theirs, shown under the bio.
+  profileLinks             String[]                 @default([])
+  // Their own models, as My models lists them, shown to the other users on Explore while social features are on.
+  modelsPublic             Boolean                  @default(false)
+  // When they last made them public: on Explore, sharing them counts as recent then, however old the models are.
+  modelsPublicAt           DateTime?
+  // Their avatar: a picture (one uploaded, /api/avatars/..., or a linked Author's). Null shows avatarStyle's design.
+  avatarUrl                String?
+  // The Thingport avatar they designed (avatarArt.ts's AvatarStyle), kept while a picture is shown. Null with no
+  // picture either: their Gravatar, else a design picked from their id.
+  avatarStyle              Json?
   // When they last had Thingport in front of them, as Chats' unread poll says: what shows them online to the others.
   lastSeenAt               DateTime?
   categories               Category[]
@@ -130,10 +155,13 @@ model User {
   providerConnections      ProviderConnection[]
   sessions                 Session[]
   chatMemberships          ChatMember[]
+  collectionShares         CollectionShare[]
+  remoteCollectionViews    RemoteCollectionViewer[]
   chatMessages             ChatMessage[]
-  chatsCreated             Chat[]               @relation("ChatCreatedBy")
-  createdAt                DateTime             @default(now())
-  updatedAt                DateTime             @updatedAt
+  chatsCreated             Chat[]                   @relation("ChatCreatedBy")
+  peerRequests             PeerRequest[]
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
 }
 
 // Lets one email register while registrations are closed. Re-inviting replaces the token.
@@ -199,6 +227,14 @@ model Print {
   // beside it and no way to customize it. The site says so only at import, and answers the request for a withheld
   // one with an empty download rather than a refusal.
   generatorScriptWithheld  Boolean                  @default(false)
+  // The model's licence (services/licenseService.ts): what its source lists, or what its owner picked. Null when nothing
+  // says.
+  license                  Json?
+  // What that licence allows, of LICENSE_ACTIONS (services/licenseCatalog.ts), for the "Licence allows" filter.
+  licenseAllows            String[]                 @default([])
+  // When the source was last read for it, or the owner picked one. Null on an import from before licences were
+  // kept, read when its owner next opens it.
+  licenseReadAt            DateTime?
   categoryId               String?
   category                 Category?                @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   categorySource           CategorySource?
@@ -236,6 +272,9 @@ model Print {
   // The model this one was copied from, out of another user's public collection (services/modelCopyService.ts). The
   // copy is the user's own: the original changing, going private or being deleted leaves it as it is.
   copiedFromId             String?
+  /// A copy of a partner instance's model: `{ apId, origin, instance, ownerName, ownerHandle }`, kept so the copy says
+  /// where it came from and the original's page offers it again (federation/remoteCopy.ts).
+  remoteSource             Json?
   copiedFrom               Print?                   @relation("PrintCopies", fields: [copiedFromId], references: [id], onDelete: SetNull)
   copies                   Print[]                  @relation("PrintCopies")
   // The first original of that chain: what a copy of a copy is a copy of. No relation, so it outlasts the original's
@@ -277,9 +316,11 @@ model Collection {
   // Set on the collection a tool keeps its models in: fixed, listed last, and gone with the tool.
   toolId         String?
   tool           Tool?                    @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  // Shown to the instance's other users, on Explore, while an admin has social features on (services/socialService.ts):
-  // its models can then be opened, downloaded and copied by them. Private unless its owner says otherwise.
-  isPublic       Boolean                  @default(false)
+  // Who besides its owner sees it, while an admin has social features on (services/socialService.ts): nobody, the
+  // people in `shares`, or everyone (on Explore). Those who see it can open, download and copy its models.
+  visibility     CollectionVisibility     @default(PRIVATE)
+  // Who it's shared with. Kept while it's private or public too, so sharing it again needs no picking.
+  shares         CollectionShare[]
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
   // Generated column (name A, tags B, description C); see Print.searchVector.
@@ -288,7 +329,31 @@ model Collection {
   @@unique([userId, nameNormalized])
   @@index([tags], type: Gin)
   @@index([toolId])
-  @@index([isPublic])
+  @@index([visibility])
+}
+
+enum CollectionVisibility {
+  PRIVATE
+  SHARED
+  PUBLIC
+}
+
+/// One person a collection is shared with: someone here (`userId`) or on a partner instance (`remotePersonId`),
+/// never both. They see it while it's SHARED, as they would a public one.
+model CollectionShare {
+  id             String        @id @default(cuid())
+  collectionId   String
+  collection     Collection    @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  remotePersonId String?
+  remotePerson   RemotePerson? @relation(fields: [remotePersonId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+
+  @@unique([collectionId, userId])
+  @@unique([collectionId, remotePersonId])
+  @@index([userId])
+  @@index([remotePersonId])
 }
 
 /// Keeps a collection in step with one on a provider: models added there later are imported into
@@ -498,6 +563,9 @@ model Notification {
   /// Set on notifications later ones may fold into, e.g. { key: "single-import", items: [...] }.
   group        Json?
   title        String
+  /// The title as the app translates it, { key, values }: `title` stays the English, for anything else that reads it.
+  /// Null on a kind not translated yet, and on those written before.
+  message      Json?
   body         String?
   externalUrl  String?
   internalPath String?
@@ -568,9 +636,12 @@ model Plate {
   size             Int      @default(0)
   storagePath      String   @unique
   sourcePath       String?
-  // The MakerWorld profile ("instance") this file came from. Each profile's 3MF has its own print
+  // The print profile ("instance" on MakerWorld) this file came from. Each profile's 3MF has its own print
   // settings, so each gets its own Plate.
   sourceInstanceId String?
+  // What the model page shows of that profile -- its name, time, filament, plates, printer and settings -- read from
+  // its provider and its 3MF (services/printProfileService.ts StoredProfile). Null until first read.
+  profile          Json?
   // SHA-256 of the file, recorded when it's stored (with file reuse on) or when first needed. The file may be edited
   // outside Thingport, so this is checked against the file before it's relied on.
   contentSha256    String?
@@ -621,6 +692,8 @@ model PreviewImage {
 enum PrintFileRole {
   SUPPORTING
   PREPARED
+  // The LICENSE.txt Thingport writes beside a model's files (services/licenseFile.ts).
+  LICENSE
 }
 
 // Images embedded in a print's Markdown notes, stored locally so the description survives the
@@ -995,24 +1068,49 @@ enum ChatKind {
 /// Chats (services/chatService.ts), while an admin has them on under social features: two users' direct messages, or
 /// a room an admin made.
 model Chat {
-  id            String        @id @default(cuid())
+  id            String             @id @default(cuid())
   kind          ChatKind
   /// A room's. Direct messages are named after the other person.
   name          String?
   description   String?
   /// A room anyone may read and join. A private one's members are the users an admin picked.
-  isPublic      Boolean       @default(false)
+  isPublic      Boolean            @default(false)
   /// Direct messages only: the two users' ids, sorted and joined, so a pair only ever has the one.
-  directKey     String?       @unique
+  directKey     String?            @unique
   createdById   String?
-  createdBy     User?         @relation("ChatCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdBy     User?              @relation("ChatCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   /// The latest message's time, for ordering the list; when it was made until there's one.
-  lastMessageAt DateTime      @default(now())
-  createdAt     DateTime      @default(now())
+  lastMessageAt DateTime           @default(now())
+  createdAt     DateTime           @default(now())
   members       ChatMember[]
   messages      ChatMessage[]
+  /// People on partner instances in a chat hosted here: the other side of direct messages, or a room's members.
+  remoteMembers ChatRemoteMember[]
+  /// A room hosted on a partner instance (federation/chats.ts): its Group's id there, and the partner. Null for one
+  /// hosted here.
+  remoteApId    String?            @unique
+  hostPeerId    String?
+  hostPeer      Peer?              @relation(fields: [hostPeerId], references: [id], onDelete: Cascade)
+  /// A room hosted elsewhere: all its members, wherever they are, as the host last said
+  /// (`[{ id, name, handle, instance, origin }]`).
+  hostMembers   Json?
+  /// When the host last changed it, as its last update applied here said: an older one, retried late, is ignored.
+  hostUpdatedAt DateTime?
 
   @@index([kind])
+  @@index([hostPeerId])
+}
+
+/// Someone on a partner instance in a chat hosted here.
+model ChatRemoteMember {
+  chatId   String
+  chat     Chat         @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  personId String
+  person   RemotePerson @relation(fields: [personId], references: [id], onDelete: Cascade)
+  joinedAt DateTime     @default(now())
+
+  @@id([chatId, personId])
+  @@index([personId])
 }
 
 model ChatMember {
@@ -1036,17 +1134,24 @@ model ChatMember {
 }
 
 model ChatMessage {
-  id          String           @id @default(cuid())
-  chatId      String
-  chat        Chat             @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  id               String           @id @default(cuid())
+  chatId           String
+  chat             Chat             @relation(fields: [chatId], references: [id], onDelete: Cascade)
   /// Null once the sender's account is gone: what they said stays, from a deleted user.
-  senderId    String?
-  sender      User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  senderId         String?
+  sender           User?            @relation(fields: [senderId], references: [id], onDelete: SetNull)
   /// Emptied when it's deleted.
-  body        String
-  deletedAt   DateTime?
-  createdAt   DateTime         @default(now())
-  attachments ChatAttachment[]
+  body             String
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  attachments      ChatAttachment[]
+  /// From someone on another instance: who, while they're known here, and as the message said
+  /// (`{ id, name, handle, instance, origin }`), which stays when they aren't.
+  remoteSenderId   String?
+  remoteSender     RemotePerson?    @relation(fields: [remoteSenderId], references: [id], onDelete: SetNull)
+  remoteSenderCard Json?
+  /// Its id across instances: the sender's for one from elsewhere, ours once one written here is sent on.
+  apId             String?          @unique
 
   @@index([chatId, createdAt])
   // For polls asking what was deleted since they last looked.
@@ -1057,16 +1162,277 @@ model ChatMessage {
 /// A model of the sender's own, sent in a chat message. Whoever can read the chat can open, download and copy it while
 /// the message stays.
 model ChatAttachment {
-  id        String      @id @default(cuid())
-  messageId String
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  id              String      @id @default(cuid())
+  messageId       String
+  message         ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
   /// Null once the model's deleted: the message still says what was sent.
-  printId   String?
-  print     Print?      @relation(fields: [printId], references: [id], onDelete: SetNull)
+  printId         String?
+  print           Print?      @relation(fields: [printId], references: [id], onDelete: SetNull)
   /// The model's name when it was sent.
-  name      String
-  position  Int         @default(0)
+  name            String
+  position        Int         @default(0)
+  /// A partner's model, sent from there, by its id there: opened from the index while it's in it.
+  remoteModelApId String?
 
   @@index([messageId])
   @@index([printId])
+}
+
+// Connected instances (src/federation): other Thingport instances this one is paired with over ActivityPub.
+
+enum PeerStatus {
+  /// We asked; their admin hasn't answered yet.
+  OUTGOING
+  ACTIVE
+  /// Ours to pause: nothing is sent to it, and what it sends is turned away to be retried later.
+  PAUSED
+  /// Whatever it sends is dropped without a word.
+  BLOCKED
+}
+
+/// Another instance: asked by us, connected, paused or blocked. One asking us is a PeerRequest until an admin approves.
+model Peer {
+  id            String               @id @default(cuid())
+  /// Scheme, host and port, as all of its addresses start: who it is here.
+  origin        String               @unique
+  name          String?
+  version       String?
+  /// Its instance actor and shared inbox, as it published them.
+  actorUrl      String?
+  inboxUrl      String?
+  /// Its public keys as JWKs, kept from when an admin compared their fingerprint.
+  publicKeys    Json?
+  fingerprint   String?
+  status        PeerStatus
+  /// The Follow that paired us, ours or theirs: what an Undo or a Reject refers to.
+  followId      String?
+  /// "us" when we asked, "them" when they did.
+  initiatedBy   String               @default("us")
+  /// Ours, sent with our request.
+  note          String?
+  connectedAt   DateTime?
+  /// When it last answered us, and when it last reached us: the second proves it can.
+  lastSeenAt    DateTime?
+  lastInboundAt DateTime?
+  lastError     String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  deliveries    FederationDelivery[]
+  /// When what it shares was last read into the index below, and why the last try failed.
+  syncedAt      DateTime?
+  syncError     String?
+  /// One that can't reach the other keeps a link open to it instead: "ours" when this instance keeps it, "theirs"
+  /// when the partner does. Everything for the side that can't be reached then goes through it (links.ts).
+  link          String?
+  /// The secret the link is opened with: as it is for "ours", its SHA-256 for "theirs".
+  linkToken     String?              @unique
+  /// When the link was last open.
+  linkSeenAt    DateTime?
+  /// "theirs": its actor document from when an admin compared its key, so its signatures are checked without asking it.
+  actorDocument Json?
+  people        RemotePerson[]
+  models        RemoteModel[]
+  collections   RemoteCollection[]
+  withdrawn     RemoteGone[]
+  rooms         Chat[]
+
+  @@index([status])
+}
+
+/// A partner's person who shares something, as its directory last said: what Explore here shows of them. Read again
+/// on every sync; gone with the partner.
+model RemotePerson {
+  id               String             @id @default(cuid())
+  peerId           String
+  peer             Peer               @relation(fields: [peerId], references: [id], onDelete: Cascade)
+  /// Their Person actor's id, on the partner's origin.
+  apId             String             @unique
+  username         String?
+  displayName      String
+  bio              String?
+  links            String[]
+  /// Pictures, at the partner: fetched through this instance (federation/media.ts), never by a viewer's browser.
+  avatarUrl        String?
+  coverUrl         String?
+  coverPreset      String?
+  coverPositionY   Int                @default(50)
+  modelCount       Int                @default(0)
+  collectionCount  Int                @default(0)
+  /// When they last shared something there: how Explore orders people.
+  sharedAt         DateTime?
+  joinedAt         DateTime?
+  syncedAt         DateTime           @default(now())
+  /// In its instance's directory: shown on Explore. Someone known only from a chat (they share nothing there, or no
+  /// longer do) is kept unlisted while a chat still names them.
+  listed           Boolean            @default(true)
+  models           RemoteModel[]
+  collections      RemoteCollection[]
+  chats            ChatRemoteMember[]
+  collectionShares CollectionShare[]
+  messages         ChatMessage[]
+
+  @@index([peerId])
+  @@index([sharedAt])
+}
+
+/// A model a partner's person shares: read-only here until downloading and copying come.
+model RemoteModel {
+  id          String       @id @default(cuid())
+  peerId      String
+  peer        Peer         @relation(fields: [peerId], references: [id], onDelete: Cascade)
+  personId    String
+  person      RemotePerson @relation(fields: [personId], references: [id], onDelete: Cascade)
+  apId        String       @unique
+  title       String
+  /// Markdown, as its owner wrote it.
+  description String?
+  images      String[]
+  /// `{ name, size, mediaType, url }` per file, with what a copy needs of each: `kind` ("plate" or "file"), `role`,
+  /// `profileId`, `profile` and `thumb`.
+  files       Json         @default("[]")
+  /// What a copy needs to be the same model (federation/remoteCopy.ts): its tags, creator, source, category and the
+  /// rest, as remoteIndex.ts read them. Null from a partner that doesn't say.
+  details     Json?
+  /// Known only from a collection its owner shared with people here (`RemoteCollection.limited`): off Explore, and
+  /// opened only by those people. A model that's also shared openly there is read as not limited.
+  limited     Boolean      @default(false)
+  sharedAt    DateTime?
+  updatedAt   DateTime?
+  syncedAt    DateTime     @default(now())
+
+  @@index([peerId])
+  @@index([personId])
+  @@index([sharedAt])
+  /// Which models a picture is of, for the proxy that serves it (federation/media.ts).
+  @@index([images], type: Gin)
+}
+
+/// A partner's person's public collection, and the models in it by their ids there.
+model RemoteCollection {
+  id          String                   @id @default(cuid())
+  peerId      String
+  peer        Peer                     @relation(fields: [peerId], references: [id], onDelete: Cascade)
+  personId    String
+  person      RemotePerson             @relation(fields: [personId], references: [id], onDelete: Cascade)
+  apId        String                   @unique
+  name        String
+  description String?
+  modelApIds  String[]
+  updatedAt   DateTime?
+  syncedAt    DateTime                 @default(now())
+  /// Shared by its owner with some of this instance's people (`viewers`), sent to them rather than listed: off
+  /// Explore, and opened only by them. Kept until its owner's instance says it's gone, or no longer answers for it.
+  limited     Boolean                  @default(false)
+  viewers     RemoteCollectionViewer[]
+  /// When what's kept of it was asked of its partner, by its index or by a read of it as shared: the later of two
+  /// reads is what's kept, whichever finishes last.
+  fetchedAt   DateTime?
+
+  @@index([peerId])
+  @@index([personId])
+  @@index([updatedAt])
+}
+
+/// A collection or model kept for people here that's gone, and as of when (what told this instance so was asked for,
+/// or the model's last read as shared): a read of the partner's index asked for before then can't bring it back as
+/// public. Kept until a read of the index begun after it is stored.
+model RemoteGone {
+  apId   String   @id
+  peerId String
+  peer   Peer     @relation(fields: [peerId], references: [id], onDelete: Cascade)
+  at     DateTime
+
+  @@index([peerId])
+}
+
+/// One of this instance's people a partner's person shared a collection with.
+model RemoteCollectionViewer {
+  collectionId String
+  collection   RemoteCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// When it was shared with them: how Shared with you orders it.
+  createdAt    DateTime         @default(now())
+
+  @@id([collectionId, userId])
+  @@index([userId])
+}
+
+enum PeerRequestKind {
+  /// Another instance asking to connect.
+  INCOMING
+  /// One of our users asking to reach someone on an instance we aren't connected with.
+  LOCAL
+}
+
+enum PeerRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+/// A request waiting for an admin here.
+model PeerRequest {
+  id              String            @id @default(cuid())
+  kind            PeerRequestKind
+  status          PeerRequestStatus @default(PENDING)
+  origin          String
+  /// Who on the asking side asked, and whom they want to reach, as the request named them.
+  requesterName   String?
+  requesterHandle String?
+  requesterUrl    String?
+  targetHandle    String?
+  note            String?
+  /// INCOMING: the signed Follow exactly as it came, checked only once an admin approves, so a stranger can't make
+  /// this instance fetch anything.
+  activity        Json?
+  headers         Json?
+  url             String?
+  /// INCOMING, from an instance that can't be reached from here: the SHA-256 of the secret its link is opened with.
+  linkToken       String?           @unique
+  /// LOCAL: our user who asked.
+  userId          String?
+  user            User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decidedById     String?
+  decidedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([status, kind])
+  @@index([origin])
+  @@index([userId])
+}
+
+/// An activity on its way to another instance. Our own queue: Fedify's refuses addresses on a local network.
+model FederationDelivery {
+  id            String   @id @default(cuid())
+  peerId        String?
+  peer          Peer?    @relation(fields: [peerId], references: [id], onDelete: SetNull)
+  /// The one origin it may go to, which also lets a goodbye reach an instance no longer connected.
+  origin        String
+  inboxUrl      String
+  /// Who signs it: "instance", or a user's id.
+  actor         String
+  activity      Json
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime @default(now())
+  lastError     String?
+  /// What it's one of (a chat: its room, or the person it's with): one waits for those before it, so a partner reads
+  /// them in the order they happened.
+  orderKey      String?
+  createdAt     DateTime @default(now())
+
+  @@index([nextAttemptAt])
+  @@index([peerId])
+  @@index([peerId, orderKey, createdAt])
+}
+
+/// Fedify's key-value store: public keys it fetched and activities it handled, each with an expiry.
+model FederationKv {
+  key       String    @id
+  value     Json
+  expiresAt DateTime?
+
+  @@index([expiresAt])
 }

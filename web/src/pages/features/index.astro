@@ -15,6 +15,8 @@ import studio from "../../../../frontend/src/assets/screenshots/light/41_studio.
 import studioDark from "../../../../frontend/src/assets/screenshots/dark/41_studio.png";
 import explore from "../../../../frontend/src/assets/screenshots/light/42_explore.png";
 import exploreDark from "../../../../frontend/src/assets/screenshots/dark/42_explore.png";
+import exploreEverywhere from "../../../../frontend/src/assets/screenshots/light/43_explore_everywhere.png";
+import exploreEverywhereDark from "../../../../frontend/src/assets/screenshots/dark/43_explore_everywhere.png";
 import tags from "../../../../frontend/src/assets/screenshots/light/11_tags.png";
 import tagsDark from "../../../../frontend/src/assets/screenshots/dark/11_tags.png";
 import downloads from "../../../../frontend/src/assets/screenshots/light/13_downloads.png";
@@ -49,7 +51,8 @@ const SECTIONS: FeatureSection[] = [
       "Import whole collections and your likes in one go. What you add in Thingport takes turns in one line that survives a restart, with synced collections in a lane of their own; everyone follows theirs from Add in the top bar, and a notification says when they finish.",
       "A model you already have is never imported twice, so running a collection import again only brings in what's new.",
       "Sync a collection, and models added to it later are imported on their own.",
-      "Bring in a MakerWorld model's print profiles too: the designer's own, or all of them. Models with only STL/CAD files come in too.",
+      "Bring in a model's print profiles too, from MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint: the designer's own, or all of them. Models with only STL/CAD files come in too.",
+      "The model page shows each profile's print time, filament and plates, in a Picker, a List or Tiles as each person picks in their Appearance settings, or Off for plain files.",
       "Title, description, tags, photos, author and source link come with the files.",
       "Printables, eufyMake, Makerables and OwlCAD's library parts import with no setup. Most other sites need a key or your own sign-in, which Thingport Grab mostly hands over for you (see provider setup), and admins can turn off any provider they don't want used.",
     ],
@@ -67,7 +70,7 @@ const SECTIONS: FeatureSection[] = [
       "Link a collection or a list of likes to Thingport once, on MakerWorld, Printables, Thingiverse or almost any other site it imports from, and it keeps up with the list from then on.",
     points: [
       "Keep saving models to collections on the sites you browse, even from your phone. They turn up in your library on their own.",
-      "Follow someone else's public collection, or their likes on Thingiverse, Cults3D, Pinshape or GrabCAD, and get each model they add.",
+      "Follow someone else's public collection, their likes on Thingiverse, Cults3D, Pinshape or GrabCAD, or their PIXUP wishlist, and get each model they add.",
       "Checked once a day, or every 6 hours or every hour, with a notification saying what came in, and Sync now for when you can't wait.",
       "New models are imported one at a time, a minute apart, so the provider's limits aren't hit.",
       "Sync only adds: removing a model on the provider never deletes it from Thingport, and a model you deleted isn't brought back.",
@@ -104,11 +107,11 @@ const SECTIONS: FeatureSection[] = [
       "A browser extension for Chrome, Edge and Firefox that adds a Thingport button to the model pages you're already on.",
     points: [
       `Works on all ${PROVIDER_NAMES.length} sites, on model pages and on the collections and likes they have. MakerWorld, Printables and Thingiverse from the start, the rest once you allow each with one click in its popup.`,
-      "Pair it with your Thingport from its popup: you approve the browser in Thingport, and no password is saved.",
-      "Choose which MakerWorld print profiles to import, right from the model page.",
+      "Pair it with your Thingport instance from its popup: you approve the browser in Thingport, and no password is saved.",
+      "Choose which print profiles to import, right from the model page, and on a model you already have, add just the ones it's missing.",
       "File the model into a collection, or a new one you name as you type, then jump straight to it with Open in Thingport.",
       "Hands Thingport your sign-in on the sites that need one, MakerWorld's included, so there's no cookie to paste.",
-      "Hides itself on models you already have, and keeps your last few imports one click away in its toolbar popup.",
+      "On a model you already have, its button shows a ✓ with a green ring, or a + while something is still missing, such as a print profile. Pick the button's look and corner under Appearance in its popup, where History keeps your last few imports.",
       "Useful on its own too: a Download normalized button on MakerWorld converts Bambu Studio projects in your browser, so PrusaSlicer, Cura and other slicers open them with their colours and settings. No Thingport instance needed.",
       "Talks only to your own Thingport instance. Nothing goes anywhere else.",
     ],
@@ -194,6 +197,7 @@ const SECTIONS: FeatureSection[] = [
       "A dashboard with library stats, recently added models, your most viewed and most used models, and top authors.",
       "Full-text search across model names, tags, notes and authors.",
       "Filter the models list by site, each with its logo and a count, or show only the generative models you can customize.",
+      "Each model keeps the licence it was published under, shown on its page with a credit line to copy, and Licence allows lists only the models you may share, use commercially or remix.",
       "Author pages with their cover, details and every model of theirs you've saved, plus a preview card when you hover an author's name.",
       "Link an author to your own account so your own designs show up under My models.",
     ],
@@ -287,6 +291,7 @@ const SECTIONS: FeatureSection[] = [
       "Renaming a model renames its file too, so the folders stay readable.",
       "See how much disk space models, pictures and previews take, and browse the storage folder from the browser.",
       "Back up the storage folder with whatever tool you already use.",
+      "A model with a licence gets a LICENSE.txt beside its files, saying what it allows and how to credit it, unless an admin turns them off, and every ZIP download carries one either way.",
       "If models lose their files, say after a move without the storage volume, Thingport offers to fetch them again from their sites, keeping names, tags and collections, or to delete those models.",
     ],
     link: { label: "Plain files on your disk", href: url("docs/features/storage/") },
@@ -302,18 +307,39 @@ const SECTIONS: FeatureSection[] = [
     intro: "One server, separate libraries for everyone who prints, and as much sharing between them as you like.",
     points: [
       "Multiple user accounts. The first person to sign up becomes the admin.",
-      "Share collections with each other once an admin turns on social features: a collection can be public, and Explore shows who shares and what they've added.",
-      "Add someone else's model to a collection of yours and it's your own copy, which stays if theirs goes.",
+      "Share collections with each other once an admin turns on social features: a collection can be private, shared with the people you pick, or public, and Explore shows who shares and what they've added, with what's shared with you at the top.",
+      "Add someone else's model to a collection of yours and it's your own copy, with its source, print profiles and pictures, in your own category of the same name when you have one, and it stays if theirs goes.",
       "Chats: direct messages and rooms, with models sent in them, all on your own server.",
+      "Everyone's profile has a cover, a bio and links, and an avatar they design, upload or take from Gravatar.",
       "Open sign-up, or invite-only with email invitations. Optional email verification and captcha.",
       "Single sign-on with Authentik, Pocket ID, Keycloak or any other OpenID Connect provider, next to email and password.",
-      "Light and dark themes, an accent colour of your own, in English, Spanish, French and Lithuanian.",
+      "Light and dark themes, an accent colour of your own, in English, Spanish, French, Lithuanian, Russian, Ukrainian and Belarusian.",
       "On a phone, the menu, the top bar and the model filters fit the narrow screen.",
     ],
     link: { label: "Multi-user", href: url("docs/features/multi-user/") },
     image: explore,
     dark: exploreDark,
     alt: "Explore, with the people who share and the newest models they've shared",
+  },
+  {
+    id: "connected",
+    short: "Connected instances",
+    icon: "globe",
+    title: "Connect with other Thingport instances",
+    intro:
+      "Pair your Thingport instance with a friend's, your makerspace's or the one at work, and their people's shared models show up on your Explore, as if you were all on one instance.",
+    points: [
+      "One Explore: partners' people, public collections and newest models beside your own, each marked with the instance it's on.",
+      "Open a partner's model as if it were yours: download its files or a ZIP, open it in your slicer, or copy it to your library.",
+      "Chats across instances: write to a partner's person directly, or add them to a private room.",
+      "Your home instance can connect too: from behind its router, with no port forwarding, domain or certificate, it keeps a link open to an instance on the internet, and everything comes down that link.",
+      "Admins approve every partner after comparing keys, nothing private leaves an instance, and it's off until an admin turns it on.",
+      "Built on ActivityPub, between Thingport instances an admin approved.",
+    ],
+    link: { label: "Connected instances", href: url("docs/features/connected-instances/") },
+    image: exploreEverywhere,
+    dark: exploreEverywhereDark,
+    alt: "Explore with people, models and collections from this instance and a connected one, each marked with its instance",
   },
   {
     id: "admin",
@@ -324,10 +350,10 @@ const SECTIONS: FeatureSection[] = [
       "Every instance-wide setting lives in Administration, a page per area, so admins can see and change everything from the browser.",
     points: [
       "System Health checks the database, storage, memory, internet, FlareSolverr, Thingiverse, MyMiniFactory, Thingport Grab, AI and email on demand, and says what to fix.",
-      "Choose which providers this Thingport imports from. Turn one off and nothing new comes from it for anyone.",
+      "Choose which providers this Thingport instance imports from. Turn one off and nothing new comes from it for anyone.",
       "Manage users and roles, see how each person signs in, and follow imports and changes in the logs.",
       "Change the storage folder layout and let Thingport reorganize existing files in the background.",
-      "An update check says when newer Thingport images are out, and What's new shows everyone what changed after an update.",
+      "An update check says when newer Thingport images are out, and What's new shows everyone what changed after an update, with earlier releases' notes a click away.",
       "Turn print quality checks on or off, or choose which problems they look for.",
     ],
     link: { label: "Tour the administration", href: url("features/administration/") },

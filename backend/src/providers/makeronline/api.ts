@@ -15,6 +15,7 @@ import {
   parseMakeronlineModelUrl,
 } from "./urls.generated";
 import manifest from "./manifest.generated";
+import { makeronlineLicenseFrom } from "./license";
 export {
   isMakeronlineLikesUrl,
   MAKERONLINE_LIKES_KEY,
@@ -174,6 +175,7 @@ export function makeronlineMetaFromDetail(detail: Record<string, unknown>): Make
     meta.siteCategoryIds = categoryIds;
     meta.categorySite = PROVIDER;
   }
+  meta.license = makeronlineLicenseFrom(detail);
   const profiles = (Array.isArray(detail.print_profiles) ? detail.print_profiles.filter(isRecord) : []).flatMap(
     (profile) => {
       const profileId = id(profile.id);
@@ -203,15 +205,25 @@ export function makeronlineMetaFromDetail(detail: Record<string, unknown>): Make
   };
 }
 
+/** The model's details as the site answers them, profiles included. Null for a model that doesn't exist, was deleted
+ *  or isn't public. */
+export async function fetchMakeronlineDetail(
+  modelId: string,
+  token: string | null = null,
+): Promise<Record<string, unknown> | null> {
+  const { code, message, data } = await fetchApi(`/mold/detail?id=${encodeURIComponent(modelId)}`, token);
+  if (code === CODE_OK && isRecord(data) && id(data.id)) return data;
+  if (code !== null && code > 0) return null;
+  throw new Error(`Couldn't read this MakerOnline model${message ? `: ${message}` : ""}`);
+}
+
 /** Null for a model that doesn't exist, was deleted or isn't public. */
 export async function resolveMakeronlineModel(
   modelId: string,
   token: string | null = null,
 ): Promise<MakeronlineModelResolution | null> {
-  const { code, message, data } = await fetchApi(`/mold/detail?id=${encodeURIComponent(modelId)}`, token);
-  if (code === CODE_OK && isRecord(data) && id(data.id)) return makeronlineMetaFromDetail(data);
-  if (code !== null && code > 0) return null;
-  throw new Error(`Couldn't read this MakerOnline model${message ? `: ${message}` : ""}`);
+  const detail = await fetchMakeronlineDetail(modelId, token);
+  return detail ? makeronlineMetaFromDetail(detail) : null;
 }
 
 export type MakeronlineProfileScope = "url" | "designer" | "all";

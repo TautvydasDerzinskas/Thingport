@@ -1,6 +1,6 @@
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
-import type { UserCard } from "./social";
+import type { RemoteOrigin, UserCard } from "./social";
 
 export type PreparedPrint = {
   printer?: string | null;
@@ -25,6 +25,53 @@ export type Plate = {
   preview_glb_url?: string | null; // /plate/{plateId}/preview.glb?v=... once background pre-render finishes
   render_url?: string | null; // /plate/{plateId}/render.png[?v=...]: grey shading for cards to tint; null if undrawable
   own_colors?: boolean; // the file carries colours of its own, so our picture of it is a colour render
+  /** The provider's id of the print profile this file is; null or absent for any other file (and from an older
+   *  backend). */
+  profile_id?: string | null;
+  /** That profile as the model page shows it, from the detail fetch only. */
+  profile?: PrintProfile | null;
+};
+
+export type ProfileFilament = { type: string | null; color: string | null; grams: number | null };
+
+export type ProfilePlate = {
+  /** Numbered from 1, as slicers number build plates. */
+  index: number;
+  name: string | null;
+  seconds: number | null;
+  grams: number | null;
+  filaments: ProfileFilament[];
+  objects: number | null;
+  /** /plate/{plateId}/profile-plate/{index}.png?v=...: the plate's picture from the 3MF. */
+  thumb_url: string | null;
+};
+
+/** A print profile a model was imported with, as its provider and its 3MF describe it. Unknown facts are null or
+ *  empty; without a title, the file's name stands in. */
+export type PrintProfile = {
+  title: string | null;
+  description: string | null;
+  origin: "designer" | "community" | null;
+  creator: string | null;
+  seconds: number | null;
+  grams: number | null;
+  filaments: ProfileFilament[];
+  plates: ProfilePlate[];
+  printer: string | null;
+  nozzle_mm: number | null;
+  layer_mm: number | null;
+  infill: string | null;
+  walls: number | null;
+  supports: boolean | null;
+};
+
+export type PrintProfiles = {
+  /** Reading them now would find something new: the owner's page starts it. */
+  pending: boolean;
+  /** A read is waiting or running. */
+  filling: boolean;
+  /** By plate id. */
+  profiles: Record<string, PrintProfile>;
 };
 
 export type PrintFile = {
@@ -120,7 +167,52 @@ export type Print = {
   owner?: UserCard | null;
   /** On another user's model: the viewer's own copy of it, once they have one. */
   library_copy_id?: string | null;
+  /** On a copy of a partner instance's model, from the detail fetch: where it came from. */
+  copied_from_remote?: RemoteOrigin | null;
+  /** From the detail fetch of a model with print profiles: reading them now would find something new, and one is
+   *  already waiting or running. */
+  profiles_pending?: boolean;
+  profiles_filling?: boolean;
+  /** Its licence: what its source lists, or what its owner picked. Null when nothing says; absent from an older
+   *  backend. */
+  license?: License | null;
+  /** From the detail fetch: its source hasn't been read for its licence yet, and one is already waiting or running. */
+  license_pending?: boolean;
+  license_filling?: boolean;
+  /** The last read of its source failed: its owner can retry. */
+  license_failed?: boolean;
 };
+
+/** What a licence may allow: pass the files on unchanged, change them, use them commercially. */
+export type LicenseAction = "share" | "remix" | "commercial";
+export const LICENSE_ACTIONS: readonly LicenseAction[] = ["share", "remix", "commercial"];
+export type LicenseMark = "cc" | "by" | "nc" | "sa" | "nd" | "zero" | "pd";
+export type LicenseFamily = "cc" | "open" | "site" | "reserved";
+
+/** One a model can have, as GET /licenses lists them. */
+export type LicenseOption = {
+  id: string;
+  short: string;
+  name: string;
+  url: string | null;
+  family: LicenseFamily;
+  marks: LicenseMark[];
+  allows: LicenseAction[];
+  requires: { credit: boolean; same_license: boolean };
+};
+
+export type License = Omit<LicenseOption, "id" | "family"> & {
+  id: string | null;
+  /** Null for one Thingport doesn't know: its terms are all there is to go by. */
+  family: LicenseFamily | null;
+  /** The site's or creator's own words. */
+  terms: string | null;
+  /** "user": its owner picked it; "provider": its source lists it. */
+  source: "provider" | "user";
+  provider: string | null;
+};
+
+export type PrintLicense = { license: License | null; pending: boolean; filling: boolean; failed: boolean };
 
 export type ListPrintsResult = {
   items: Print[];
@@ -240,6 +332,10 @@ export const printsApi = {
       /** Sites to leave out, by provider id ("thingport" for the ones uploaded here). Named as what to hide, so a
        *  site the library gains later is listed from the start. */
       hide_providers?: string[];
+      /** Only models whose licence allows every one of these. */
+      license_allows?: LicenseAction[];
+      /** Only models with a licence. */
+      licensed?: boolean;
       order_by?: PrintSortMode;
       limit?: number;
       offset?: number;
@@ -250,6 +346,8 @@ export const printsApi = {
     if (params.tags && params.tags.length) qs.set("tags", params.tags.join(","));
     if (params.generative) qs.set("generative", "1");
     if (params.hide_providers?.length) qs.set("hide_providers", params.hide_providers.join(","));
+    if (params.license_allows?.length) qs.set("license_allows", params.license_allows.join(","));
+    if (params.licensed) qs.set("licensed", "1");
     if (params.category_id && params.category_id.length) {
       qs.set("category_id", Array.isArray(params.category_id) ? params.category_id.join(",") : params.category_id);
     }
@@ -297,6 +395,49 @@ export const printsApi = {
     const res = await fetch(`${apiBase()}/print/${id}/quality`, { method: "POST", headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to start the quality check");
+    return res.json();
+  },
+
+  getLicense: async (id: string): Promise<PrintLicense> => {
+    const res = await fetch(`${apiBase()}/print/${id}/license`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the licence");
+    return res.json();
+  },
+
+  /** Starts reading the model's licence from its source; returns at once, `filling` while it runs. */
+  /** `retry` reads it now even when a read failed a moment ago. */
+  fillLicense: async (id: string, opts: { retry?: boolean } = {}): Promise<PrintLicense> => {
+    const res = await fetch(`${apiBase()}/print/${id}/license/fill`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(opts.retry ? { retry: true } : {}),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to read the licence");
+    return res.json();
+  },
+
+  /** The licences an owner can pick for a model. */
+  listLicenses: async (): Promise<LicenseOption[]> => {
+    const res = await fetch(`${apiBase()}/licenses`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the licences");
+    return res.json();
+  },
+
+  getProfiles: async (id: string): Promise<PrintProfiles> => {
+    const res = await fetch(`${apiBase()}/print/${id}/profiles`, { headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to load the print profiles");
+    return res.json();
+  },
+
+  /** Starts reading what's missing of the model's print profiles; returns at once, `filling` while it runs. */
+  fillProfiles: async (id: string): Promise<PrintProfiles> => {
+    const res = await fetch(`${apiBase()}/print/${id}/profiles/fill`, { method: "POST", headers: authHeaders() });
+    if (res.status === 401) throw new UnauthorizedError();
+    assertOk(res, "Failed to read the print profiles");
     return res.json();
   },
 
@@ -510,6 +651,8 @@ export const printsApi = {
       title?: string | null;
       notes?: string | null;
       creator?: string | null;
+      /** A licence id, "source" for what its source lists, or null for none (a model with no source). */
+      license?: string | null;
     },
   ) => {
     const res = await fetch(`${apiBase()}/print/${id}/meta`, {

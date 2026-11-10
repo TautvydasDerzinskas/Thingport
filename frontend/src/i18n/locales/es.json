@@ -100,7 +100,8 @@
       "explore": "Explorar",
       "chats": "Chats",
       "chatsUnread_one": "Chats, {{count}} mensaje sin leer",
-      "chatsUnread_other": "Chats, {{count}} mensajes sin leer"
+      "chatsUnread_other": "Chats, {{count}} mensajes sin leer",
+      "chatsUnread_many": "Chats, {{count}} mensajes sin leer"
     },
     "uploadBar": {
       "uploading": "Subiendo…",
@@ -116,7 +117,8 @@
       "uploadedMultiple": "Subidos {{count}} modelos",
       "makeronlineWaiting": "Esperando a Thingport Grab: abre makeronline.com con la extensión y el modelo se importará",
       "makeronlineListWaiting_one": "{{count}} modelo espera a Thingport Grab: abre makeronline.com con la extensión y se importará",
-      "makeronlineListWaiting_other": "{{count}} modelos esperan a Thingport Grab: abre makeronline.com con la extensión y se importarán"
+      "makeronlineListWaiting_other": "{{count}} modelos esperan a Thingport Grab: abre makeronline.com con la extensión y se importarán",
+      "makeronlineListWaiting_many": "{{count}} modelos esperan a Thingport Grab: abre makeronline.com con la extensión y se importarán"
     },
     "zipImport": {
       "title": "Importar archivo ZIP",
@@ -215,7 +217,7 @@
         "copied": "Copiado",
         "failed": "Algo ha salido mal con tu token de API. Inténtalo de nuevo.",
         "mcp": {
-          "adminOff": "Un administrador ha desactivado MCP en este Thingport.",
+          "adminOff": "Un administrador ha desactivado MCP en esta instancia de Thingport.",
           "adminReadOnly": "Un administrador solo permite las herramientas de lectura.",
           "copyCommand": "Copiar comando",
           "heading": "MCP",
@@ -397,7 +399,7 @@
             },
             "collections": {
               "title": "Colecciones",
-              "description": "Tus colecciones y lo que contienen, y las que comparten otros."
+              "description": "Tus colecciones y lo que contienen, y las colecciones y modelos que comparten otros."
             },
             "tags": {
               "title": "Etiquetas",
@@ -443,7 +445,10 @@
       },
       "language": {
         "heading": "Idioma",
-        "subtitle": "Elige el idioma que se usa en todo Thingport."
+        "subtitle": "Elige el idioma que se usa en todo Thingport.",
+        "search": "Buscar idiomas",
+        "noMatch": "Ningún idioma coincide",
+        "translated": "{{percent}} % traducido"
       },
       "slicer": {
         "failed": "No se pudo guardar. Inténtalo de nuevo.",
@@ -539,7 +544,25 @@
       "emptyUnread": "Estás al día.",
       "emptySystem": "No hay anuncios de Thingport.",
       "clearUnreadConfirm": "¿Eliminar todas las notificaciones no leídas? Esta acción no se puede deshacer.",
-      "clearSystemConfirm": "¿Eliminar todas las notificaciones del sistema? No volverán a enviarse. Esta acción no se puede deshacer."
+      "clearSystemConfirm": "¿Eliminar todas las notificaciones del sistema? No volverán a enviarse. Esta acción no se puede deshacer.",
+      "messages": {
+        "importFailed": "No se pudo importar un modelo",
+        "alreadyInLibrary": "«{{name}}» ya está en tu biblioteca",
+        "imported": "Importado «{{name}}»",
+        "profileAdded": "Se añadió otro perfil de impresión a «{{name}}»",
+        "importedModels_one": "Importado {{count}} modelo",
+        "importedModels_many": "Importados {{count}} de modelos",
+        "importedModels_other": "Importados {{count}} modelos",
+        "importRun_one": "{{done}} de {{count}} modelo importado",
+        "importRun_many": "{{done}} de {{count}} de modelos importados",
+        "importRun_other": "{{done}} de {{count}} modelos importados",
+        "importRunFrom_one": "{{done}} de {{count}} modelo importado desde {{site}}",
+        "importRunFrom_many": "{{done}} de {{count}} de modelos importados desde {{site}}",
+        "importRunFrom_other": "{{done}} de {{count}} modelos importados desde {{site}}"
+      },
+      "minutesAgo_many": "hace {{count}} minutos",
+      "hoursAgo_many": "hace {{count}} horas",
+      "daysAgo_many": "hace {{count}} días"
     },
     "search": {
       "placeholder": "Buscar modelos, colecciones, etiquetas…",
@@ -591,7 +614,8 @@
       "keepTyping": "Sigue escribiendo para buscar modelos, colecciones y etiquetas, o escribe ! para ver los comandos.",
       "noCommand": "No hay ningún comando con ese nombre. Escribe ! solo para verlos todos.",
       "builtInCollection": "Colección integrada",
-      "sectionPages": "Páginas"
+      "sectionPages": "Páginas",
+      "modelCount_many": "{{count}} modelos"
     },
     "aiRunProgress": {
       "starting": "Iniciando la categorización con IA…",
@@ -902,19 +926,29 @@
     "dashboard": {
       "loadError": "No se pudo cargar tu panel.",
       "seeMore": "Ver más",
-      "viewCount": "{{count}} visualizaciones",
-      "printCount": "{{count}} impresiones",
       "collectionCount": {
-        "label": "Colecciones"
+        "label": "Colecciones",
+        "count_one": "Colección",
+        "count_many": "Colecciones",
+        "count_other": "Colecciones"
       },
       "modelCount": {
-        "label": "Modelos"
+        "label": "Modelos",
+        "count_one": "Modelo",
+        "count_many": "Modelos",
+        "count_other": "Modelos"
       },
       "authorCount": {
-        "label": "Autores únicos"
+        "label": "Autores únicos",
+        "count_one": "Autor único",
+        "count_many": "Autores únicos",
+        "count_other": "Autores únicos"
       },
       "categoryCount": {
-        "label": "Categorías y carpetas"
+        "label": "Categorías y carpetas",
+        "count_one": "Categoría o carpeta",
+        "count_many": "Categorías y carpetas",
+        "count_other": "Categorías y carpetas"
       },
       "topViewed": {
         "title": "Modelos más vistos",
@@ -927,12 +961,16 @@
       "topAuthors": {
         "title": "Principales autores",
         "empty": "Aún no hay autores: importa un modelo para ver aquí tus principales autores.",
-        "modelCount": "{{count}} modelos"
+        "modelCount_one": "{{count}} modelo",
+        "modelCount_many": "{{count}} de modelos",
+        "modelCount_other": "{{count}} modelos"
       },
       "topProviders": {
         "title": "Principales proveedores",
         "empty": "Aún no hay modelos.",
-        "modelCount": "{{count}} modelos"
+        "modelCount_one": "{{count}} modelo",
+        "modelCount_many": "{{count}} de modelos",
+        "modelCount_other": "{{count}} modelos"
       },
       "recentlyAdded": {
         "title": "Añadidos recientemente",
@@ -985,7 +1023,8 @@
       "activityHeatmap": {
         "title": "Actividad",
         "total_one": "{{count}} actividad",
-        "total_other": "{{count}} actividades"
+        "total_other": "{{count}} actividades",
+        "total_many": "{{count}} actividades"
       },
       "widgets": {
         "title": "Personalizar panel",
@@ -1208,7 +1247,7 @@
         "noExport": "El script no tiene una función export default.",
         "failed": "{{name}} se detuvo con un error",
         "removed": "Este widget se eliminó.",
-        "off": "Los widgets personalizados están desactivados en este Thingport.",
+        "off": "Los widgets personalizados están desactivados en esta instancia de Thingport.",
         "title": "Widgets personalizados",
         "tabs": {
           "mine": "Míos",
@@ -1237,7 +1276,7 @@
         "installed": "{{name}} instalado",
         "isInstalled": "Instalado",
         "retry": "Reintentar",
-        "communityError": "No se pudieron cargar los widgets de la comunidad. Comprueba que este Thingport puede acceder a GitHub.",
+        "communityError": "No se pudieron cargar los widgets de la comunidad. Comprueba que esta instancia de Thingport puede acceder a GitHub.",
         "communityEmpty": "Aún no hay widgets de la comunidad. Sé el primero: mira Crear y compartir.",
         "reaches_one": "Accede a {{count}} host",
         "reaches_other": "Accede a {{count}} hosts",
@@ -1320,7 +1359,8 @@
             "label": "Ponle una etiqueta",
             "number": "No es un número",
             "options": "Al menos dos opciones, cada una con etiqueta y un valor distinto"
-          }
+          },
+          "settingsCount_many": "Ajustes ({{count}})"
         },
         "share": {
           "aiTitle": "Créalo con IA",
@@ -1333,7 +1373,7 @@
           "publish1": "Descarga tu widget desde Míos (⋮ y luego Descargar para publicar).",
           "publish2": "Haz un fork del repositorio de Thingport y descomprímelo en la carpeta <folder>community-widgets</folder>.",
           "publish3": "Añade el nombre de su carpeta a community-widgets/index.json y explica qué hace en su README.md.",
-          "publish4": "Abre un pull request. Cuando se fusione, cualquier Thingport podrá instalarlo.",
+          "publish4": "Abre un pull request. Cuando se fusione, cualquier instancia de Thingport podrá instalarlo.",
           "guide": "Leer la guía completa"
         },
         "ai": {
@@ -1367,7 +1407,13 @@
           "help": "Las palabras que muestra tu widget, un archivo por idioma. El script las pide por clave con t(\"clave\"), así que quedan fuera de la lógica y se traducen sin tocarla.",
           "empty": "Tu widget aún no tiene textos. Guarda las palabras que muestra en un archivo por idioma, y el script las pedirá por clave con t(\"clave\"): quien traduzca nunca tendrá que abrir el script."
         }
-      }
+      },
+      "viewCount_one": "{{count}} visualización",
+      "viewCount_many": "{{count}} de visualizaciones",
+      "viewCount_other": "{{count}} visualizaciones",
+      "printCount_one": "{{count}} impresión",
+      "printCount_many": "{{count}} de impresiones",
+      "printCount_other": "{{count}} impresiones"
     },
     "adminSettings": {
       "providers": {
@@ -1377,7 +1423,58 @@
         "turnOn": "Activar {{name}}",
         "disableTitle": "¿Desactivar {{name}}?",
         "disableMessage": "Nadie podrá importar desde {{name}} hasta que vuelva a estar activado: se rechazarán los enlaces, Thingport Grab y la cola de importación, se pausarán las sincronizaciones de sus colecciones y las tareas en segundo plano lo omitirán. Los modelos ya importados de él se conservan tal cual.",
-        "disableConfirm": "Desactivar"
+        "disableConfirm": "Desactivar",
+        "sortOldest": "Más antiguos",
+        "status": {
+          "label": "Mostrar",
+          "all": "Todos ({{n}})",
+          "on": "Activados ({{n}})",
+          "off": "Desactivados ({{n}})"
+        },
+        "filters": {
+          "signIn": {
+            "none": "Ninguno",
+            "optional": "Opcional",
+            "user": "De cada usuario",
+            "key": "Clave del administrador"
+          },
+          "grabOnly": "Solo con Grab"
+        },
+        "chips": {
+          "profiles": "Perfiles",
+          "paid": "De pago",
+          "modelsOnly": "Solo modelos"
+        },
+        "signInLine": {
+          "none": "Sin inicio de sesión",
+          "userOptional": "Inicio de sesión opcional",
+          "user": "Cada usuario inicia sesión",
+          "admin": "Clave del administrador",
+          "adminUser": "Clave del administrador y sesión de cada usuario"
+        },
+        "keyMissing": "Falta la clave",
+        "shown": "{{shown}} de {{total}} mostrados",
+        "noMatch": "Ningún proveedor coincide con estos filtros.",
+        "selection": {
+          "enter": "Seleccionar proveedores",
+          "toolbar": "Acciones para los proveedores seleccionados",
+          "turnOn": "Activar",
+          "turnOff": "Desactivar",
+          "allOn": "Los seleccionados ya están todos activados",
+          "allOff": "Los seleccionados ya están todos desactivados"
+        },
+        "bulkDisableTitle_one": "¿Desactivar {{count}} proveedor?",
+        "bulkDisableTitle_many": "¿Desactivar {{count}} proveedores?",
+        "bulkDisableTitle_other": "¿Desactivar {{count}} proveedores?",
+        "bulkDisableMessage": "Nadie podrá importar desde {{names}} hasta que vuelvan a estar activados: se rechazarán los enlaces, Thingport Grab y la cola de importación, se pausarán las sincronizaciones de sus colecciones y las tareas en segundo plano los omitirán. Los modelos ya importados de ellos se conservan tal cual.",
+        "turnedOn_one": "{{count}} proveedor activado",
+        "turnedOn_many": "{{count}} proveedores activados",
+        "turnedOn_other": "{{count}} proveedores activados",
+        "turnedOff_one": "{{count}} proveedor desactivado",
+        "turnedOff_many": "{{count}} proveedores desactivados",
+        "turnedOff_other": "{{count}} proveedores desactivados",
+        "turnedOnNamed": "{{name}} activado",
+        "turnedOffNamed": "{{name}} desactivado"
       },
       "storageSettings": {
         "heading": "Almacenamiento"
@@ -1390,7 +1487,8 @@
         "subtitle": "Espacio en disco que ocupan los archivos de Thingport: modelos, sus imágenes y vistas previas.",
         "summary_one": "{{total}} en disco en total: {{models}} ocupados por {{count}} modelo y {{pictures}} por imágenes y vistas previas",
         "summary_other": "{{total}} en disco en total: {{models}} ocupados por {{count}} modelos y {{pictures}} por imágenes y vistas previas",
-        "totalHint": "Todo lo que hay en la carpeta de almacenamiento de Thingport: archivos de modelos ({{models}}), imágenes y vistas previas (miniaturas, imágenes de galería y descripción, vistas previas 3D, imágenes de etiquetas: {{pictures}}) y otros archivos generados (copias listas para el slicer y paquetes de descarga: {{other}}). Se mide como mucho cada pocos minutos."
+        "totalHint": "Todo lo que hay en la carpeta de almacenamiento de Thingport: archivos de modelos ({{models}}), imágenes y vistas previas (miniaturas, imágenes de galería y descripción, vistas previas 3D, imágenes de etiquetas: {{pictures}}) y otros archivos generados (copias listas para el slicer y paquetes de descarga: {{other}}). Se mide como mucho cada pocos minutos.",
+        "summary_many": "{{total}} en disco en total: {{models}} ocupados por {{count}} modelos y {{pictures}} por imágenes y vistas previas"
       },
       "website": {
         "link": "Sitio web y documentación de Thingport",
@@ -1608,7 +1706,10 @@
         "outOfPlace_one": "{{count}} archivo de {{models}} sigue en una estructura anterior.",
         "outOfPlace_other": "{{count}} archivos de {{models}} siguen en una estructura anterior.",
         "moveThem": "Moverlos",
-        "pathLabel": "Ruta"
+        "pathLabel": "Ruta",
+        "moveConfirmMessage_many": "Al guardar, se mueven en segundo plano {{count}} archivos de {{models}} a esta estructura. Los enlaces a los modelos seguirán funcionando, pero las copias de seguridad y las carpetas compartidas verán los archivos movidos como nuevos.",
+        "modelCount_many": "{{count}} modelos",
+        "outOfPlace_many": "{{count}} archivos de {{models}} siguen en una estructura anterior."
       },
       "fileReuse": {
         "heading": "Archivos idénticos",
@@ -1640,8 +1741,19 @@
           "confirmTitle": "¿Comprobar los archivos existentes?",
           "confirmMessage": "Thingport repasará todos los archivos guardados y sustituirá los idénticos por clones. Se ejecuta en segundo plano y puede tardar en una biblioteca grande.",
           "confirmAction": "Comprobar",
-          "failed": "No se pudo iniciar la comprobación. Inténtalo de nuevo."
+          "failed": "No se pudo iniciar la comprobación. Inténtalo de nuevo.",
+          "result_many": "{{count}} archivos clonados, hasta {{size}} liberados"
         }
+      },
+      "licenseFiles": {
+        "heading": "Archivos de licencia",
+        "subtitle": "Guardar la licencia de cada modelo junto a sus archivos.",
+        "label": "Escribir LICENSE.txt junto a los archivos del modelo",
+        "help": "Para cada modelo con licencia, Thingport guarda un LICENSE.txt en su carpeta: quién lo creó, de dónde viene, su licencia y lo que permite, y una línea de atribución. Se reescribe cuando cambia la licencia y se mueve y se elimina con el modelo. Al desactivarlo se eliminan; las descargas ZIP lo incluyen de todos modos.",
+        "on": "La carpeta de cada modelo con licencia tiene su LICENSE.txt.",
+        "off": "No se escribe ningún LICENSE.txt; las descargas ZIP lo siguen incluyendo.",
+        "failed": "No se pudo guardar el ajuste de LICENSE.txt. Inténtalo de nuevo.",
+        "loadFailed": "No se pudo cargar el ajuste de LICENSE.txt."
       },
       "consume": {
         "heading": "Carpeta de importación automática",
@@ -1678,7 +1790,8 @@
           "close": "Cerrar",
           "sent_one": "Invitación enviada a {{email}}. El enlace funciona durante {{count}} día.",
           "sent_other": "Invitación enviada a {{email}}. El enlace funciona durante {{count}} días.",
-          "failed": "No se pudo enviar la invitación"
+          "failed": "No se pudo enviar la invitación",
+          "sent_many": "Invitación enviada a {{email}}. El enlace funciona durante {{count}} días."
         }
       },
       "previews": {
@@ -1697,54 +1810,6 @@
         "disabledLabel": "Desactivado",
         "disabledDesc": "No genera nunca vistas previas en las tarjetas. La visualización interactiva sigue disponible al abrir un modelo.",
         "failed": "No se pudieron guardar los ajustes de vista previa."
-      },
-      "triggers": {
-        "heading": "Disparadores",
-        "deleteAllTitle": "Eliminar todos los modelos de un usuario",
-        "deleteAllDesc": "Elimina de forma permanente todos los modelos que un usuario haya creado, subido o importado, incluidos sus archivos. Sus categorías y colecciones se conservan, pero vacías.",
-        "userLabel": "Usuario",
-        "userOption": "{{name}} ({{email}}) — {{count}} modelos",
-        "deleteAllButton": "Eliminar todos los modelos…",
-        "loadFailed": "No se pudieron cargar los usuarios.",
-        "deleteSuccess": "Se han eliminado {{count}} modelo(s) de {{email}}.",
-        "deleteFailed": "No se pudieron eliminar los modelos de este usuario.",
-        "confirmTitle": "¿Eliminar todos los modelos de este usuario?",
-        "confirmWarning": "Esto elimina de forma permanente los {{count}} modelo(s) de {{email}}, incluidos sus archivos. Esta acción no se puede deshacer.",
-        "confirmInstructions": "Escribe {{email}} para confirmar.",
-        "confirmButton": "Eliminar todos los modelos",
-        "deleting": "Eliminando…",
-        "linkAuthorsTitle": "Vincular autores que faltan",
-        "linkAuthorsDesc": "Algunos modelos importados muestran su autor solo como nombre, sin el perfil, el avatar ni el enlace del autor, porque en la importación no se pudo obtener el autor en ese momento. Esta acción vincula cada uno de ellos con su autor: con un autor que ya esté en Thingport con ese mismo nombre y procedente del mismo sitio, o bien buscando al autor en el sitio del que procede el modelo. Solo se obtienen datos, nunca archivos. Se ejecuta para toda la instancia, en los modelos de todos los usuarios, en segundo plano; las consultas a MakerWorld se espacian para evitar su CAPTCHA, así que pueden tardar unos minutos.",
-        "linkAuthorsButton": "Vincular autores que faltan",
-        "linkAuthorsFailed": "No se pudieron vincular los autores.",
-        "linkAuthorsLinkable": "{{count}} modelo(s) se pueden vincular de inmediato.",
-        "linkAuthorsLookup": "{{count}} modelo(s) necesitan que se busque su autor.",
-        "linkAuthorsProgress": "Buscando autores: {{done}} de {{total}}; {{linked}} modelo(s) vinculado(s) hasta ahora.",
-        "linkAuthorsDone": "Se han vinculado {{linked}} modelo(s) con su autor.",
-        "linkAuthorsNotFound": "No se encontró el autor de {{count}} creador(es): es posible que el modelo se haya eliminado de su sitio o que no se haya podido acceder al sitio.",
-        "linkAuthorsProblems": {
-          "thingiverse_no_token": "Se omitieron los modelos de Thingiverse: añade un token de aplicación de Thingiverse en Administración > Proveedores.",
-          "thingiverse_token_rejected": "Se omitieron los modelos de Thingiverse: Thingiverse ha rechazado el token de aplicación en Administración > Proveedores.",
-          "thingiverse_rate_limited": "Se omitieron los modelos de Thingiverse: Thingiverse ha empezado a bloquear peticiones por límite de frecuencia. Suele resolverse al cabo de un rato; inténtalo más tarde.",
-          "myminifactory_no_key": "Se omitieron los modelos de MyMiniFactory: añade una clave de API de MyMiniFactory en Administración > Proveedores.",
-          "myminifactory_key_rejected": "Se omitieron los modelos de MyMiniFactory: MyMiniFactory ha rechazado la clave de API en Administración > Proveedores.",
-          "myminifactory_rate_limited": "Se omitieron los modelos de MyMiniFactory: MyMiniFactory ha empezado a bloquear peticiones. Suele resolverse al cabo de un rato; inténtalo más tarde.",
-          "makerworld_captcha": "Se omitieron los modelos de MakerWorld: MakerWorld pidió un CAPTCHA y bloquea nuevas peticiones durante unas 2 horas. Inténtalo más tarde.",
-          "makerworld_login_rejected": "Se omitieron los modelos de MakerWorld: MakerWorld ha rechazado el inicio de sesión guardado. Actualízalo en Configuración > Proveedores.",
-          "cults3d_no_key": "Se omitieron los modelos de Cults3D: su propietario no ha introducido un nombre de usuario y una clave de API de Cults3D en Configuración > Proveedores.",
-          "cults3d_key_rejected": "Se omitieron algunos modelos de Cults3D: Cults3D ha rechazado la clave de API de su propietario. Puede introducir una nueva en Configuración > Proveedores.",
-          "cults3d_rate_limited": "Se omitieron los modelos de Cults3D: se alcanzó el límite de frecuencia de la API de Cults3D. Se libera en un minuto más o menos; inténtalo entonces."
-        },
-        "refetchTitle": "Volver a obtener las descripciones de los modelos",
-        "refetchDesc": "Sustituye la descripción de cada modelo que un usuario haya importado desde MakerWorld, Printables, Thingiverse o MyMiniFactory por la actual de ese sitio, con su formato e imágenes. Sirve para actualizar los modelos importados antes de que se admitieran las descripciones con formato. Se pierden los cambios que el usuario haya hecho en esas descripciones. Los modelos cuyo origen ya no existe conservan su descripción. Se ejecuta en segundo plano; las peticiones a MakerWorld se espacian para evitar su CAPTCHA, así que una biblioteca grande puede tardar un rato.",
-        "refetchUserOption": "{{name}} ({{email}}) — {{count}} modelos importados",
-        "refetchButton": "Volver a obtener descripciones…",
-        "refetchConfirm": "¿Sustituir las descripciones de {{count}} modelo(s) importado(s) de {{email}} por las de sus sitios de origen? Se perderán los cambios hechos en esas descripciones.",
-        "refetchConfirmButton": "Volver a obtener",
-        "refetchFailed": "No se pudo iniciar la recuperación de las descripciones.",
-        "refetchProgress": "Volviendo a obtener las descripciones de {{email}}: {{done}} de {{total}}; {{updated}} actualizadas hasta ahora.",
-        "refetchDone": "Descripciones de {{email}} obtenidas de nuevo: {{updated}} de {{total}} modificadas.",
-        "refetchFailedCount": "{{count}} no se pudieron leer desde su origen y se dejaron como estaban."
       },
       "ai": {
         "heading": "IA",
@@ -1808,7 +1873,8 @@
           "effortClaudeHint": "Cuánto piensa Claude antes de responder. Menos es más rápido y barato, y estas tareas rara vez necesitan más que Bajo.",
           "effortClaudeDefault": "Predeterminado del modelo (no enviar nada)",
           "vision": "Ve imágenes",
-          "visionHelp": "Si este modelo admite imágenes en una petición. El asistente de Studio solo ofrece adjuntar imágenes a una IA que las admite. Una IA nueva empieza según lo que indica el nombre de su modelo (Claude, GPT-4o y posteriores, Gemini, Qwen-VL, LLaVA, Gemma 3…): cámbialo para que coincida con el modelo."
+          "visionHelp": "Si este modelo admite imágenes en una petición. El asistente de Studio solo ofrece adjuntar imágenes a una IA que las admite. Una IA nueva empieza según lo que indica el nombre de su modelo (Claude, GPT-4o y posteriores, Gemini, Qwen-VL, LLaVA, Gemma 3…): cámbialo para que coincida con el modelo.",
+          "modelsAvailable_many": "{{count}} modelos disponibles con este proveedor. También puedes escribir cualquier nombre."
         }
       },
       "aiFeatures": {
@@ -1887,7 +1953,9 @@
         "original": "Original",
         "suggested": "Sugerida",
         "current": "Actual",
-        "empty": "Sin descripción."
+        "empty": "Sin descripción.",
+        "acceptDone_many": "{{count}} descripciones actualizadas.",
+        "rejectDone_many": "{{count}} sugerencias rechazadas."
       },
       "session": {
         "heading": "Sesiones",
@@ -1908,7 +1976,12 @@
           "weeks_one": "{{count}} semana",
           "weeks_other": "{{count}} semanas",
           "months_one": "{{count}} mes",
-          "months_other": "{{count}} meses"
+          "months_other": "{{count}} meses",
+          "minutes_many": "{{count}} minutos",
+          "hours_many": "{{count}} horas",
+          "days_many": "{{count}} días",
+          "weeks_many": "{{count}} semanas",
+          "months_many": "{{count}} meses"
         },
         "save": "Guardar",
         "saving": "Guardando…",
@@ -2045,12 +2118,24 @@
         "deleted_one": "{{email}} eliminado, con {{count}} modelo",
         "deleted_other": "{{email}} eliminado, con {{count}} modelos",
         "deleteFailed": "No se pudo eliminar el usuario.",
+        "deleteModels": "Eliminar todos los modelos",
+        "deleteModelsTitle": "¿Eliminar todos los modelos de {{name}}?",
+        "deleteModelsWarning_one": "Esto elimina su modelo ({{count}}) con todos sus archivos. La cuenta se conserva, con sus colecciones y categorías, pero vacías. Esta acción no se puede deshacer.",
+        "deleteModelsWarning_other": "Esto elimina sus {{count}} modelos con todos sus archivos. La cuenta se conserva, con sus colecciones y categorías, pero vacías. Esta acción no se puede deshacer.",
+        "deleteModelsWarning_many": "Esto elimina sus {{count}} modelos con todos sus archivos. La cuenta se conserva, con sus colecciones y categorías, pero vacías. Esta acción no se puede deshacer.",
+        "deleteModelsConfirm": "Eliminar modelos",
+        "modelsDeleted_one": "Se ha eliminado {{count}} modelo de {{email}}",
+        "modelsDeleted_other": "Se han eliminado {{count}} modelos de {{email}}",
+        "modelsDeleted_many": "Se han eliminado {{count}} modelos de {{email}}",
+        "deleteModelsFailed": "No se pudieron eliminar los modelos del usuario.",
         "loadFailed": "No se pudieron cargar los usuarios.",
         "columnSignIn": "Inicio de sesión",
         "signInPassword": "Contraseña",
         "signInProviderOff": "{{name}} está desactivado, así que de momento no funciona.",
         "signInNone": "Sin forma de entrar",
-        "signInNoneHint": "Sin contraseña y sin ningún proveedor de inicio de sesión único activo: no pueden iniciar sesión."
+        "signInNoneHint": "Sin contraseña y sin ningún proveedor de inicio de sesión único activo: no pueden iniciar sesión.",
+        "deleteWarning_many": "Esto elimina la cuenta, sus {{count}} modelos con todos sus archivos, así como sus colecciones, categorías y marcadores. Esta acción no se puede deshacer.",
+        "deleted_many": "{{email}} eliminado, con {{count}} modelos"
       },
       "logs": {
         "heading": "Registros",
@@ -2094,6 +2179,7 @@
           "descriptions_refetched": "Descripciones de modelos obtenidas de nuevo",
           "user_role_changed": "Rol de usuario cambiado",
           "user_deleted": "Usuario eliminado",
+          "user_models_deleted": "Modelos eliminados",
           "provider_toggled": "Proveedor cambiado",
           "tag_deleted": "Etiqueta eliminada",
           "ai_categorization_run": "Ejecución de categorización por IA",
@@ -2108,6 +2194,7 @@
           "api_token_mcp_tools_changed": "Cambió las herramientas MCP de su token de API",
           "api_token_rest_scopes_changed": "Cambió los permisos de su token de API",
           "file_reuse_changed": "Cambió cómo se guardan los archivos idénticos",
+          "license_files_changed": "Cambió si se escriben archivos LICENSE.txt",
           "file_reuse_backfill_started": "Empezó a comprobar si hay archivos guardados con contenido idéntico",
           "custom_widgets_changed": "Cambió qué widgets personalizados se permiten",
           "tool_installed": "Herramienta instalada",
@@ -2117,7 +2204,18 @@
           "social_settings_changed": "Funciones sociales cambiadas",
           "chat_room_created": "Sala de chat creada",
           "chat_room_edited": "Sala de chat editada",
-          "chat_room_deleted": "Sala de chat eliminada"
+          "chat_room_deleted": "Sala de chat eliminada",
+          "federation_settings_changed": "Instancias conectadas cambiadas",
+          "federation_requested": "Solicitud de conexión a una instancia",
+          "federation_approved": "Instancia aprobada",
+          "federation_declined": "Instancia rechazada",
+          "federation_paused": "Instancia pausada",
+          "federation_resumed": "Instancia reanudada",
+          "federation_disconnected": "Instancia desconectada",
+          "federation_blocked": "Instancia bloqueada",
+          "federation_unblocked": "Instancia desbloqueada",
+          "federation_user_requested": "Pidió llegar a alguien de otra instancia",
+          "collection_sharing_changed": "Uso compartido de colección cambiado"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -2127,6 +2225,9 @@
         "userDemoted": "{{email}} pasó a ser miembro",
         "userDeleted_one": "{{email}} — con {{count}} modelo",
         "userDeleted_other": "{{email}} — con {{count}} modelos",
+        "userModelsDeleted_one": "{{email}} — {{count}} modelo",
+        "userModelsDeleted_many": "{{email}} — {{count}} modelos",
+        "userModelsDeleted_other": "{{email}} — {{count}} modelos",
         "providerOn": "{{provider}} activado",
         "providerOff": "{{provider}} desactivado",
         "aiRunSummary": "{{done}} de {{total}} revisados — {{suggested}} sugeridos, {{applied}} aplicados, {{failed}} con error",
@@ -2136,8 +2237,14 @@
         "repairSummary": "{{action}}: {{repaired}} reparados, {{deleted}} eliminados, {{failed}} fallidos",
         "socialOn": "Activadas",
         "socialOff": "Desactivadas",
+        "federationOn": "Activadas",
+        "federationOff": "Desactivadas",
+        "licenseFilesOn": "Activados",
+        "licenseFilesOff": "Desactivados",
         "chatsOn": "Chats activados",
-        "chatsOff": "Chats desactivados"
+        "chatsOff": "Chats desactivados",
+        "tagDeleted_many": "{{name}} — quitada de {{count}} modelos",
+        "userDeleted_many": "{{email}} — con {{count}} modelos"
       },
       "rendering": {
         "heading": "Renderizado",
@@ -2222,6 +2329,7 @@
         "kind": {
           "plate": "Archivo del modelo",
           "file": "Archivo adjunto",
+          "license": "Licencia",
           "image": "Imagen",
           "description": "Imagen de la descripción",
           "thumb": "Miniatura",
@@ -2234,7 +2342,8 @@
         "locationHint": {
           "source": "Se conserva donde se recogió, fuera de la carpeta de almacenamiento",
           "missing": "Ni en el almacenamiento ni en el lugar donde se recogió"
-        }
+        },
+        "folderSummary_many": "{{count}} archivos · {{size}}"
       },
       "signIn": {
         "heading": "Métodos de inicio de sesión",
@@ -2306,7 +2415,10 @@
           "save": "Guardar",
           "saving": "Guardando…",
           "failed": "No se pudo guardar el proveedor."
-        }
+        },
+        "userCount_many": "{{count}} personas han iniciado sesión con él",
+        "disableMessage_many": "{{count}} personas han iniciado sesión con {{name}}. Quienes no hayan establecido una contraseña no podrán iniciar sesión hasta que vuelva a estar activado.",
+        "deleteUsedMessage_many": "{{count}} personas han iniciado sesión con {{name}}. Sus cuentas se conservan, pero quienes no tengan contraseña no podrán iniciar sesión. Volver a añadir el proveedor no las volverá a conectar automáticamente."
       },
       "publicUrl": {
         "heading": "URL pública",
@@ -2493,6 +2605,8 @@
         "toolsAria": "Herramientas que recibe {{model}}"
       },
       "social": {
+        "heading": "Social",
+        "subtitle": "Compartir modelos y chatear entre los usuarios de esta instancia.",
         "label": "Funciones sociales",
         "summary": "Activa la página Explorar y las colecciones públicas, para que los usuarios de esta instancia compartan modelos entre sí.",
         "infoTitle": "Qué hacen las funciones sociales",
@@ -2502,20 +2616,264 @@
         "infoOff": "Al desactivarlo, todo lo compartido vuelve a ocultarse. Cada colección conserva su ajuste Pública o Privada para cuando se vuelva a activar.",
         "loadFailed": "No se pudieron cargar los ajustes sociales.",
         "saveFailed": "No se pudieron guardar los ajustes sociales.",
-        "settingsTitle": "Ajustes de las funciones sociales",
-        "settingsOff": "Activa las funciones sociales para cambiar sus ajustes",
         "chats": {
           "label": "Chats",
           "summary": "Mensajes directos entre los usuarios de esta instancia, y salas que crean los administradores.",
-          "switch": "Chats",
           "infoTitle": "Qué hacen los chats",
           "infoDirect": "Chats aparece en la barra lateral. Cualquiera puede encontrar a otro usuario por su nombre, o por su correo completo, y escribirle.",
           "infoRooms": "Los administradores crean salas: públicas, que cualquiera puede leer y unirse, y privadas, para las personas que elijan.",
           "infoNotify": "Quien no está leyendo un chat ve sus mensajes nuevos en la barra lateral y como notificación. Los mensajes llegan en unos segundos, no al instante.",
           "infoOff": "Al desactivarlo se ocultan todos los chats. No se elimina nada, y todo vuelve cuando se reactivan.",
-          "onHint": "Activado: Chats está en la barra lateral de todos.",
-          "offHint": "Desactivado por defecto. Actívalo para que los usuarios se escriban.",
-          "infoModels": "Un modelo enviado en un chat lo puede abrir, descargar y copiar cualquiera que pueda leer ese chat, mientras el mensaje siga ahí."
+          "infoModels": "Un modelo enviado en un chat lo puede abrir, descargar y copiar cualquiera que pueda leer ese chat, mientras el mensaje siga ahí.",
+          "needsSocial": "Activa primero las funciones sociales"
+        },
+        "federation": {
+          "label": "Instancias conectadas",
+          "summary": "Conéctate con otras instancias de Thingport, para que sus usuarios y lo que comparten aparezcan en Explorar y en Chats.",
+          "infoTitle": "Qué hace conectar instancias",
+          "infoPair": "Las instancias de Thingport con las que te conectas pasan a ser asociadas: sus usuarios, colecciones públicas y modelos aparecen aquí como si estuvieran en esta instancia, y los tuyos allí.",
+          "infoApprove": "Apruebas cada instancia antes de que se conecte. Tus usuarios pueden pedirte que te conectes con una.",
+          "infoShare": "Solo pasa lo público: las bibliotecas, las colecciones privadas y los ajustes se quedan aquí.",
+          "infoOff": "Desactivarlo oculta las asociadas y deja de hablar con ellas. No se borra nada, y todo vuelve al activarlo de nuevo.",
+          "settingsLoadFailed": "No se pudieron cargar los ajustes de las instancias conectadas.",
+          "keyAria": "Clave: {{key}}",
+          "plainHttp": "HTTP sin cifrar",
+          "turnOnTitle": "Conectar con otras instancias",
+          "turnOffTitle": "¿Desactivar las instancias conectadas?",
+          "turnOffText": "Mientras está desactivado, las asociadas no pueden llegar a esta instancia y sus usuarios desaparecen de Explorar. No se borra nada: todo vuelve al activarlo de nuevo.",
+          "turnOff": "Desactivar",
+          "turnedOn": "Instancias conectadas activadas",
+          "checkAgain": "Comprobar de nuevo",
+          "thisInstance": "Esta instancia",
+          "showOwnKey": "Mostrar la clave de esta instancia",
+          "changePublicUrl": "Cambiar la URL pública",
+          "status": {
+            "local": "Solo red local",
+            "confirmed_one": "Alcanzada por {{count}} asociada",
+            "confirmed_many": "Alcanzada por {{count}} de asociadas",
+            "confirmed_other": "Alcanzada por {{count}} asociadas",
+            "unconfirmed": "Pública, sin confirmar",
+            "unreachable": "Inalcanzable",
+            "localHelp": "Solo las instancias de tu red o VPN pueden llegar a esta. Aun así puedes conectarte a las de internet: la tuya mantiene un enlace abierto con ellas.",
+            "publicHelp": "Las instancias de internet pueden llegar a ella si tu router o proxy las deja pasar. Lo confirma una asociada que llegue.",
+            "unreachableHelp": "Otras instancias no pueden llegar a ella en su URL pública. Comprueba de nuevo cuando esté arreglado.",
+            "linksOnly": "Solo enlaces",
+            "linksOnlyHelp": "Otras instancias no pueden llegar a ella en su URL pública, así que mantiene un enlace abierto con cada una a la que se conecta. Comprueba de nuevo cuando esté arreglado."
+          },
+          "check": {
+            "intro": "Primero, si otras instancias de Thingport podrían llegar a esta.",
+            "checking": "Comprobando…",
+            "failed": "No se pudo comprobar.",
+            "urlSet": "La URL pública está definida",
+            "urlNotSet": "No hay URL pública",
+            "leadsHere": "Lleva de vuelta a esta instancia",
+            "leadsHereDetail": "Respondió con el secreto de esta instancia",
+            "leadsElsewhere": "No lleva a esta instancia",
+            "leadsElsewhereDetail": "En esa dirección responde otra cosa",
+            "leadsElsewhereAnswered": "En esa dirección responde otra cosa: {{answer}}",
+            "noLoopback": "No respondió desde aquí",
+            "noLoopbackDetail": "Algunos routers no alcanzan su propia dirección pública",
+            "failure": {
+              "reserved": "Es esta máquina o un rango reservado",
+              "notFound": "Su nombre no se resuelve aquí",
+              "notFoundDetail": "Esta instancia no encuentra {{host}}",
+              "timeout": "No responde",
+              "timeoutDetail": "Nada respondió en 8 segundos",
+              "refused": "Rechaza la conexión",
+              "refusedDetail": "Nada acepta conexiones en {{host}}",
+              "certificate": "Su certificado no es de confianza",
+              "redirect": "Responde con una redirección",
+              "failed": "No se pudo llegar a ella"
+            },
+            "addressLocal": "Su dirección está en tu red local",
+            "addressPublic": "Su dirección es pública",
+            "localTitle": "Solo red local",
+            "localText": "Las instancias de tu red o VPN pueden conectarse con esta. Las de internet no pueden llegar a ella, pero aun así puedes conectarte a ellas: la tuya mantiene un enlace abierto.",
+            "publicTitle": "Alcanzable, sin confirmar",
+            "publicText": "Las instancias de internet deberían llegar a ella, si tu router o proxy las deja pasar. La primera conexión lo confirma.",
+            "unverifiedTitle": "Pública, pero no se respondió a sí misma",
+            "unverifiedText": "Puede que las instancias de internet sí lleguen. La primera conexión lo dirá.",
+            "linksOnlyTitle": "Solo enlaces",
+            "linksOnlyText": "Otras instancias no pueden llegar a esta en su URL pública. Aun así puede conectarse a las que alcanza, manteniendo un enlace abierto con cada una.",
+            "unreachableTitle": "Inalcanzable",
+            "notSetText": "Define primero la URL pública de esta instancia: allí la alcanzan las demás.",
+            "reservedText": "Su URL pública es esta máquina o un rango reservado, al que otras instancias nunca se conectan: para cada una, localhost es ella misma. Define la dirección que tiene en tu red.",
+            "publicUrlButton": "URL pública",
+            "youApprove": "Apruebas cada instancia antes de que se conecte, y puedes pausarla o bloquearla cuando quieras.",
+            "helpApprove": "Las solicitudes de otras instancias esperan aquí a un administrador, igual que las de tus usuarios para llegar a alguien de fuera.",
+            "helpShare": "Una vez conectadas, ambas instancias ven las colecciones públicas, los modelos y los perfiles de la otra.",
+            "helpOff": "Si lo desactivas más tarde, las asociadas quedan ocultas hasta que lo vuelvas a activar.",
+            "again": "Comprobar de nuevo",
+            "turnOn": "Activar"
+          },
+          "connect": {
+            "title": "Conectar con una instancia",
+            "stepAddress": "Dirección",
+            "stepKey": "Comparar la clave",
+            "address": "Su dirección",
+            "addressHelp": "La URL pública de la otra instancia, como http://192.168.1.30:8000",
+            "addressGuessed": "Deducida de su dirección. Cámbiala si su instancia está en otro sitio.",
+            "compare": "Pide al administrador de {{name}} que lea la clave de su página Social. Si es distinta, hay algo en medio: no la envíes.",
+            "matches": "Las claves coinciden",
+            "linkSuggestedTitle": "{{name}} no puede llegar a tu instancia",
+            "linkSuggestedText": "La tuya solo está en tu red, así que mantiene un enlace abierto con {{name}}. Todo funciona en ambos sentidos mientras esté en marcha.",
+            "linkUnreachableTitle": "{{name}} no puede llegar a tu instancia",
+            "linkUnreachableText": "Nada llega a la tuya en su URL pública, así que mantiene un enlace abierto con {{name}}. Todo funciona en ambos sentidos mientras esté en marcha.",
+            "linkUnconfirmedTitle": "Puede que {{name}} no llegue a tu instancia",
+            "linkUnconfirmedText": "Nada ha llegado aún a la tuya desde internet, así que mantiene un enlace abierto con {{name}} por si acaso. Todo funciona en ambos sentidos mientras esté en marcha.",
+            "linkOnTitle": "Manteniendo un enlace abierto con {{name}}",
+            "linkOnText": "Para cuando {{name}} no puede llegar a tu instancia: la tuya se conecta a ella, y todo funciona en ambos sentidos mientras esté en marcha.",
+            "linkOffTitle": "{{name}} llega a tu instancia directamente",
+            "linkOffText": "Si no puede, actívalo: tu instancia mantendrá un enlace abierto con ella.",
+            "linkSwitch": "Mantener un enlace abierto",
+            "linkHelp": "Un enlace es una conexión que tu instancia mantiene abierta con la suya. Todo lo que la suya enviaría a la tuya o le pediría pasa por ese enlace, así que nadie tiene que llegar a tu instancia. Su administrador no puede comprobar tu dirección desde allí: la clave que comparas es lo que le dice que eres tú.",
+            "note": "Nota para su administrador (opcional)",
+            "noteHelp": "Quién eres y por qué.",
+            "send": "Enviar solicitud",
+            "lookUp": "Buscar",
+            "forPerson": "Para {{who}}, para llegar a {{whom}}",
+            "forPersonInstance": "Para {{who}}"
+          },
+          "errors": {
+            "invalid_address": "Esa no es la dirección de una instancia.",
+            "no_public_url": "Define primero la URL pública de esta instancia: las demás la conocen por ella.",
+            "reserved_address": "La URL pública de esta instancia es esta máquina o un rango reservado. Define la dirección que tiene en tu red.",
+            "same_instance": "Esa es esta instancia.",
+            "unreachable": "Esa instancia no respondió. ¿Es correcta la dirección y puede esta instancia llegar a ella? Si está en la red doméstica de alguien, pide a su administrador que se conecte a la tuya.",
+            "not_thingport": "Esa no es una instancia de Thingport.",
+            "not_accepting": "Esa instancia no acepta conexiones: su administrador no las ha activado.",
+            "key_changed": "La clave de esa instancia cambió desde que la comparaste. Compara la nueva.",
+            "exists": "Ya estás conectado con esa instancia, o ya se lo pediste.",
+            "blocked": "Bloqueaste esa instancia. Desbloquéala primero.",
+            "bad_signature": "La firma de esa solicitud no coincide con la clave de la instancia, así que no viene de ella.",
+            "federation_off": "Activa primero las instancias conectadas.",
+            "social_off": "Activa primero las funciones sociales.",
+            "not_found": "Ya no está: se respondió o se retiró mientras tanto.",
+            "withdrawn": "Esa instancia retiró esta solicitud.",
+            "not_partner": "Esa instancia no es asociada.",
+            "not_blocked": "Esa instancia no está bloqueada.",
+            "link_closed": "Su enlace no está abierto ahora: puede que su instancia esté apagada.",
+            "asked_with_link": "Esa instancia pidió conectarse a través de un enlace que mantiene abierto, porque esta no puede llegar a ella. Responde a su solicitud en «Solicitudes».",
+            "address_taken": "Ya hay otra instancia conectada en esa dirección."
+          },
+          "review": {
+            "title": "{{name}} quiere conectarse",
+            "key": "Clave",
+            "keyHelp": "Pide a su administrador que lea la clave de su página Social. Debe coincidir.",
+            "linkTitle": "Llega a ti por un enlace que mantiene abierto",
+            "linkText": "{{name}} está en su propia red, así que esta instancia no puede llegar a ella. Todo pasa por su enlace, abierto ahora.",
+            "linkClosedTitle": "Su enlace no está abierto ahora",
+            "linkClosedText": "{{name}} llega a ti por un enlace, y está cerrado: puede que su instancia esté apagada. Se vuelve a intentar solo; apruébala cuando esté en marcha.",
+            "linkKey": "Su dirección no se puede comprobar desde aquí, así que la clave es lo que te dice que son ellos. Pide a su administrador que la lea desde su página Social.",
+            "elsewhereTitle": "Otra instancia responde en esa dirección",
+            "elsewhereText": "{{other}} responde directamente en {{address}}, con otra clave:",
+            "compare": "El administrador de {{name}} leyó la misma clave en su página Social",
+            "askedBy": "Lo pidió",
+            "personForPerson": "{{who}}, para llegar a {{whom}}",
+            "person": "{{who}}",
+            "theirAdmin": "Su administrador",
+            "approving": "Aprobarla conecta ambas instancias.",
+            "helpShare": "Sus usuarios y los tuyos ven las colecciones públicas, los modelos y los perfiles de los otros.",
+            "helpLater": "Puedes pausarla, desconectarla o bloquearla cuando quieras.",
+            "block": "Bloquear",
+            "decline": "Rechazar",
+            "approve": "Aprobar",
+            "blockTitle": "¿Bloquear {{name}}?",
+            "blockText": "Su solicitud se rechaza, y lo que envíe después se descarta sin avisarle.",
+            "declineTitle": "¿Rechazar {{name}}?",
+            "declineText": "Se le avisa, y puede volver a pedirlo.",
+            "targetHere": "{{name}} ({{handle}}) está en esta instancia",
+            "targetMissing": "Aquí no hay nadie llamado {{handle}}"
+          },
+          "keyDialog": {
+            "ours": "Clave de esta instancia",
+            "theirs": "Clave de {{name}}",
+            "oursText": "Léela al administrador de la otra instancia al conectaros: la suya debe mostrar la misma.",
+            "theirsText": "Lo que mostró {{name}} al conectaros. Si su administrador lee otra cosa, hay algo en medio."
+          },
+          "instances": {
+            "tabsLabel": "Instancias",
+            "tabs": {
+              "requests": "Solicitudes",
+              "partners": "Asociadas",
+              "blocked": "Bloqueadas"
+            },
+            "connect": "Conectar con una instancia",
+            "loadFailed": "No se pudieron cargar las instancias.",
+            "noRequests": "Sin solicitudes",
+            "noRequestsHint": "Conéctate con una instancia o espera a que alguna lo pida.",
+            "asking": "Piden conectarse",
+            "waiting": "Esperando su respuesta",
+            "fromUsers": "De tus usuarios",
+            "askedByPerson": "Lo pidió {{who}}",
+            "askedByAdmin": "Lo pidió su administrador",
+            "hide": "Ocultar",
+            "review": "Revisar",
+            "hideNamed": "Ocultar la solicitud de {{name}}",
+            "reviewNamed": "Revisar la solicitud de {{name}}",
+            "noPartners": "Aún no hay asociadas",
+            "noPartnersHint": "Aquí aparecen las instancias con las que te conectes.",
+            "noBlocked": "Nada bloqueado",
+            "noBlockedHint": "Aquí aparecen las instancias que bloquees.",
+            "alreadyAnswered": "Esa solicitud ya se respondió.",
+            "outcome": {
+              "approved": "Conectado con {{name}}",
+              "declined": "{{name}} rechazada",
+              "blocked": "{{name}} bloqueada"
+            },
+            "sent": "Solicitud enviada a {{name}}",
+            "waitingForThem": "Enviada por ti, esperando a su administrador",
+            "notDelivered": "aún sin entregar",
+            "cancel": "Cancelar solicitud",
+            "cancelTitle": "¿Retirar la solicitud a {{name}}?",
+            "cancelText": "Se le avisa, y su administrador deja de verla.",
+            "cancelled": "Solicitud a {{name}} retirada",
+            "active": "Activa",
+            "paused": "Pausada",
+            "unreachable": "Inalcanzable",
+            "linkOursOpen": "Tu enlace · abierto",
+            "linkOursClosed": "Tu enlace · no llega",
+            "linkTheirsOpen": "Su enlace · abierto",
+            "linkTheirsClosed": "Su enlace · cerrado",
+            "linkTheirsClosedSince": "Su enlace · cerrado {{when}}",
+            "linkOursHelp": "Esta instancia mantiene un enlace abierto con {{name}}, ya que {{name}} no puede llegar a ella. Funciona mientras esta instancia esté en marcha.",
+            "linkTheirsHelp": "No se puede llegar a {{name}} desde aquí, así que mantiene un enlace abierto con esta instancia. Mientras esté cerrado, lo que se dice a su gente espera, y Explorar muestra lo último que compartió.",
+            "addressTaken": "Dirección ocupada",
+            "addressTakenHelp": "{{name}} ya está conectada con otra instancia en la dirección de esta. Dale a esta instancia una dirección propia (su URL pública) y vuelve a pedirlo.",
+            "connectedSince": "conectada {{when}}",
+            "seen": "vista {{when}}",
+            "pending_one": "{{count}} actualización pendiente",
+            "pending_many": "{{count}} de actualizaciones pendientes",
+            "pending_other": "{{count}} actualizaciones pendientes",
+            "more": "Más",
+            "moreNamed": "Más de {{name}}",
+            "check": "Comprobar la conexión",
+            "checked": "{{name}} comprobada",
+            "showKey": "Mostrar la clave",
+            "pause": "Pausar",
+            "resume": "Reanudar",
+            "pausedDone": "{{name}} pausada",
+            "resumedDone": "{{name}} reanudada",
+            "disconnect": "Desconectar",
+            "disconnectTitle": "¿Desconectar {{name}}?",
+            "disconnectText": "Se le avisa, y lo que llegó de ella desaparece de Explorar. Las copias que hizo la gente se quedan.",
+            "disconnected": "{{name}} desconectada",
+            "block": "Bloquear",
+            "blockTitle": "¿Bloquear {{name}}?",
+            "blockText": "Se desconecta, y lo que envíe después se descarta sin avisarle.",
+            "blocked": "{{name}} bloqueada",
+            "blockedHint": "Lo que envía se descarta",
+            "unblock": "Desbloquear",
+            "unblocked": "{{name}} desbloqueada",
+            "wantsToReach": "{{who}} quiere llegar a {{whom}}",
+            "wantsToConnect": "{{who}} quiere conectarse",
+            "someone": "Alguien",
+            "decline": "Rechazar",
+            "connectFor": "Conectar…",
+            "declineUserTitle": "¿Rechazar la solicitud de {{who}}?",
+            "declineUserText": "Se le avisa a {{who}}. No se envía nada a {{host}}.",
+            "declinedUser": "Solicitud de {{who}} rechazada"
+          }
         }
       }
     },
@@ -2607,8 +2965,20 @@
         "showLess": "Mostrar menos",
         "unknownModel": "Modelos de una tarea de importación",
         "fromDay": "Del {{date}}",
-        "emptyUntil": "No hay actividad este mes hasta ese día."
-      }
+        "emptyUntil": "No hay actividad este mes hasta ese día.",
+        "import_many": "Importados {{count}} modelos",
+        "upload_many": "Subidos {{count}} modelos",
+        "download_many": "Descargados {{count}} modelos",
+        "slicer_many": "Abiertos {{count}} modelos en un slicer",
+        "delete_many": "Eliminados {{count}} modelos",
+        "times_many": "{{count}} veces",
+        "count_many": "{{count}}×",
+        "showMore_many": "Mostrar {{count}} más"
+      },
+      "totalLastYear_many": "{{count}} actividades en el último año",
+      "totalInYear_many": "{{count}} actividades en {{year}}",
+      "dayTotal_many": "{{count}} actividades el {{date}}",
+      "dayLabel_many": "{{count}} actividades el {{date}}"
     },
     "appearance": {
       "title": "Apariencia",
@@ -2644,6 +3014,15 @@
         "failed": "No se pudo guardar la opción de las tarjetas de modelos.",
         "help": "Lo que muestran primero las tarjetas de modelos. Imágenes: las imágenes que trae el modelo, o un render 3D si no tiene ninguna. Renders 3D: un render de cada modelo en tu color del render, o sus imágenes si el archivo no se puede dibujar."
       },
+      "printProfiles": {
+        "heading": "Perfiles de impresión",
+        "help": "Cómo se muestran los perfiles de impresión de los modelos importados con ellos: en lista, en un selector o como mosaicos con imagen, con el tiempo de impresión, el filamento y las placas de cada uno. Desactivado los muestra como simples archivos.",
+        "off": "Desactivado",
+        "list": "Lista",
+        "picker": "Selector",
+        "tiles": "Mosaico",
+        "failed": "No se pudo guardar cómo se muestran los perfiles de impresión."
+      },
       "hoverSlideshow": {
         "heading": "Presentación al pasar el cursor",
         "failed": "No se pudo guardar la opción de la presentación al pasar el cursor.",
@@ -2675,7 +3054,7 @@
       "connectTitle": "Conectar {{name}}",
       "disconnectTitle": "¿Desconectar {{name}}?",
       "disconnectMessage": "Se elimina tu clave de {{name}} y las importaciones desde {{name}} dejan de funcionar hasta que vuelvas a conectarlo.",
-      "disconnectMessageShared": "El token de {{name}} se elimina para todos en este Thingport, y las importaciones desde {{name}} dejan de funcionar hasta que se vuelva a conectar.",
+      "disconnectMessageShared": "El token de {{name}} se elimina para todos en esta instancia de Thingport, y las importaciones desde {{name}} dejan de funcionar hasta que se vuelva a conectar.",
       "failed": "No se pudo guardar. Inténtalo de nuevo.",
       "comingSoon": "Próximamente"
     },
@@ -2685,7 +3064,9 @@
       "notActive": "No activo",
       "activate": "Activar",
       "lastUsed": "Último usado",
-      "deactivate": "Desactivar"
+      "deactivate": "Desactivar",
+      "throughBridge": "A través de Thingport Bridge",
+      "throughBridgeHelp": "Thingport Bridge descarga el archivo y se lo pasa a {{slicer}}, para cuando {{slicer}} no puede descargarlo por sí mismo de esta instancia de Thingport."
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} de {{total}} modelos",
@@ -2819,7 +3200,10 @@
       "empty": "Aún no hay notas para esta versión.",
       "openGithub": "Abrir en GitHub",
       "zoom": "Ampliar captura",
-      "highlight": "Destacado"
+      "highlight": "Destacado",
+      "earlier": "Versiones anteriores",
+      "backToLatest": "Volver a la más reciente",
+      "latest": "La más reciente"
     },
     "codeBlock": {
       "copy": "Copiar",
@@ -2912,7 +3296,7 @@
         "emptyAdmin": "Aún no hay herramientas. Instala alguna desde el repositorio.",
         "emptyCreate": "Aún no hay herramientas. Crea la tuya o pide a un administrador que instale alguna.",
         "install": "Instalar herramientas",
-        "noAccess": "Las herramientas no están disponibles para ti en este Thingport.",
+        "noAccess": "Las herramientas no están disponibles para ti en esta instancia de Thingport.",
         "dropHere": "Suelta una herramienta aquí",
         "layout": "Mostrar como",
         "layoutFlat": "Una cuadrícula",
@@ -3099,7 +3483,8 @@
       "badJson": "Esto todavía no es JSON válido, así que no se guardará.",
       "badShape": "Las etiquetas son un objeto plano de claves a texto, como { \"save\": \"Guardar\" }.",
       "removeTitle": "¿Quitar las etiquetas en {{name}}?",
-      "removeBody": "El archivo y sus palabras desaparecen. Los demás idiomas se quedan."
+      "removeBody": "El archivo y sus palabras desaparecen. Los demás idiomas se quedan.",
+      "untranslated_many": "{{count}} etiquetas siguen sin texto en este idioma."
     },
     "missingFiles": {
       "title": "Algunos modelos han perdido sus archivos",
@@ -3133,12 +3518,15 @@
           "detail_other": "Vuelve a descargar los archivos de {{count}} modelos de los sitios de los que vinieron. Nombres, etiquetas, colecciones y favoritos se mantienen.",
           "grabOnly_one": "Solo Thingport Grab puede descargar los archivos de este modelo. Esperará a su próxima visita al sitio.",
           "grabOnly_other": "Solo Thingport Grab puede descargar estos archivos. {{count}} modelos esperarán a su próxima visita a los sitios de los que vinieron.",
-          "none": "Ninguno de estos modelos tiene un sitio del que descargar."
+          "none": "Ninguno de estos modelos tiene un sitio del que descargar.",
+          "detail_many": "Vuelve a descargar los archivos de {{count}} modelos de los sitios de los que vinieron. Nombres, etiquetas, colecciones y favoritos se mantienen.",
+          "grabOnly_many": "Solo Thingport Grab puede descargar estos archivos. {{count}} modelos esperarán a su próxima visita a los sitios de los que vinieron."
         },
         "delete": {
           "title": "Eliminar estos modelos",
           "detail_one": "Elimina 1 modelo de la biblioteca para siempre, con sus datos, etiquetas y entradas en colecciones.",
-          "detail_other": "Elimina {{count}} modelos de la biblioteca para siempre, con sus datos, etiquetas y entradas en colecciones."
+          "detail_other": "Elimina {{count}} modelos de la biblioteca para siempre, con sus datos, etiquetas y entradas en colecciones.",
+          "detail_many": "Elimina {{count}} modelos de la biblioteca para siempre, con sus datos, etiquetas y entradas en colecciones."
         }
       },
       "confirm": {
@@ -3153,16 +3541,25 @@
           "grabTitle": "¿Dejarlo en manos de Thingport Grab?",
           "grabMessage_one": "Thingport no puede descargar los archivos de este modelo por sí mismo: solo Thingport Grab puede, en las propias páginas del sitio. El modelo esperará a la próxima visita de Grab, y los archivos que traiga ocuparán el lugar de los que faltan.",
           "grabMessage_other": "Thingport no puede descargar estos archivos por sí mismo: solo Thingport Grab puede, en las propias páginas de los sitios. Los {{count}} modelos esperarán a la próxima visita de Grab, y los archivos que traiga ocuparán el lugar de los que faltan.",
-          "grabConfirm": "Esperar a Grab"
+          "grabConfirm": "Esperar a Grab",
+          "title_many": "¿Descargar los archivos de {{count}} modelos?",
+          "message_many": "Thingport descargará los archivos de cada modelo del sitio del que vino, uno a uno. No cambia nada más, y cualquier modelo cuyo sitio no se pueda alcanzar queda exactamente como está ahora.",
+          "queued_many": "{{count}} modelos más esperarán a que Thingport Grab visite los sitios de los que vienen sus archivos.",
+          "grabMessage_many": "Thingport no puede descargar estos archivos por sí mismo: solo Thingport Grab puede, en las propias páginas de los sitios. Los {{count}} modelos esperarán a la próxima visita de Grab, y los archivos que traiga ocuparán el lugar de los que faltan."
         },
         "delete": {
           "title_one": "¿Eliminar 1 modelo?",
           "title_other": "¿Eliminar {{count}} modelos?",
           "message_one": "Esto no se puede deshacer. El modelo, sus datos, etiquetas y entradas en colecciones se eliminan para siempre. Solo se toca el modelo sin archivos.",
           "message_other": "Esto no se puede deshacer. Los {{count}} modelos, sus datos, etiquetas y entradas en colecciones se eliminan para siempre. Solo se tocan los modelos sin archivos.",
-          "confirm": "Eliminar los modelos"
+          "confirm": "Eliminar los modelos",
+          "title_many": "¿Eliminar {{count}} modelos?",
+          "message_many": "Esto no se puede deshacer. Los {{count}} modelos, sus datos, etiquetas y entradas en colecciones se eliminan para siempre. Solo se tocan los modelos sin archivos."
         }
-      }
+      },
+      "lead_many": "{{count}} modelos de tu biblioteca ya no tienen archivos en el disco: ni los archivos del modelo ni las imágenes. No se pueden abrir, imprimir ni descargar hasta que vuelvan.",
+      "allWellDetail_many": "Se revisaron {{count}} modelos.",
+      "manyWarning_many": "{{count}} modelos de una vez son muchos: los sitios pueden pedir a Thingport que vaya más despacio o que espere, así que puede tardar. Se ejecuta en segundo plano y puedes detenerlo cuando quieras."
     },
     "modelRepairProgress": {
       "stop": "Detener la reparación",
@@ -3977,7 +4374,7 @@
       "modelFrom": "De {{name}}",
       "yourModel": "Tu modelo",
       "openModel": "Abrir {{name}}",
-      "sentModels_one": "📎 {{name}}",
+      "sentModels_one": "📎 {{count}} modelo",
       "sentModels_other": "📎 {{count}} modelos",
       "emojiPicker": {
         "search": "Buscar emoji",
@@ -3993,7 +4390,15 @@
           "symbols": "Símbolos",
           "flags": "Banderas"
         }
-      }
+      },
+      "instances_one": "{{count}} instancia",
+      "instances_many": "{{count}} instancias",
+      "instances_other": "{{count}} instancias",
+      "hostedOn": "Alojada en {{name}}",
+      "sentModel": "📎 {{name}}",
+      "publicRoomMembers_many": "Sala pública · {{count}} miembros",
+      "privateRoomMembers_many": "Sala privada · {{count}} miembros",
+      "sentModels_many": "📎 {{count}} modelos"
     },
     "modelPicker": {
       "search": "Buscar en tu biblioteca",
@@ -4001,7 +4406,8 @@
       "limit_other": "Elige hasta {{count}}",
       "noMatch": "Ningún modelo coincide.",
       "emptyLibrary": "Tu biblioteca aún no tiene modelos.",
-      "loadFailed": "No se pudieron cargar tus modelos."
+      "loadFailed": "No se pudieron cargar tus modelos.",
+      "limit_many": "Elige hasta {{count}}"
     }
   },
   "common": {
@@ -4066,7 +4472,8 @@
       "groupUngrouped": "Sin asignar",
       "groupUntitled": "Sin título",
       "groupOther": "Otros",
-      "allItems": "Todos los elementos"
+      "allItems": "Todos los elementos",
+      "groupItemCount_many": "{{count}} elementos"
     },
     "dropOverlay": {
       "uploading": "Subiendo a {{target}}...",
@@ -4625,7 +5032,9 @@
       "linkedWithSuggestion": "Vinculado a {{provider}}. Categoría sugerida: {{category}}.",
       "failed": "No se pudo vincular este modelo. Inténtalo de nuevo.",
       "alreadyLinked": "Ya está vinculado a un proveedor",
-      "selectOne": "Selecciona un modelo para vincularlo"
+      "selectOne": "Selecciona un modelo para vincularlo",
+      "pictures_many": "{{count}} imágenes",
+      "tags_many": "{{count}} etiquetas"
     },
     "aiCategorization": {
       "suggestionPending": "Acepta o rechaza primero la sugerencia",
@@ -4696,6 +5105,44 @@
       "internalPlatesDivider": "{{count}} placas en este archivo",
       "internalPlateObjectCount_one": "{{count}} objeto",
       "internalPlateObjectCount_other": "{{count}} objetos",
+      "profiles": {
+        "label_one": "Perfil de impresión · {{count}}",
+        "label_other": "Perfiles de impresión · {{count}}",
+        "labelOne": "Perfil de impresión",
+        "help": "Configuraciones de este modelo listas para imprimir, cada una con su impresora, ajustes, placas y filamento. Abrir y Descargar usan la elegida.",
+        "position": "{{n}} de {{count}}",
+        "designer": "Diseñador",
+        "community": "Comunidad",
+        "fromDesigner": "Del diseñador",
+        "communityGroup": "Comunidad",
+        "otherFiles": "Otros archivos",
+        "otherFile": "Otro archivo",
+        "byCreator": "de {{name}}",
+        "plates_one": "{{count}} placa",
+        "plates_other": "{{count}} placas",
+        "platesLabel": "Placas",
+        "platesInProfile_one": "{{count}} placa en este perfil",
+        "platesInProfile_other": "{{count}} placas en este perfil",
+        "time": "Tiempo de impresión",
+        "filament": "Filamento",
+        "minutes": "{{m}} min",
+        "hours": "{{h}} h",
+        "hoursMinutes": "{{h}} h {{m}} min",
+        "nozzle": "boquilla de {{mm}} mm",
+        "layers": "capas de {{mm}} mm",
+        "infill": "{{value}} de relleno",
+        "walls_one": "{{count}} pared",
+        "walls_other": "{{count}} paredes",
+        "supports": "soportes",
+        "showMore": "Mostrar {{count}} más",
+        "showFewer": "Mostrar menos",
+        "pickAria": "Perfil de impresión: {{name}}",
+        "previewPlate": "Ver {{plate}} en 3D",
+        "label_many": "Perfiles de impresión · {{count}}",
+        "plates_many": "{{count}} placas",
+        "platesInProfile_many": "{{count}} placas en este perfil",
+        "walls_many": "{{count}} paredes"
+      },
       "previewToolbar": {
         "label": "Opciones de vista previa",
         "top": "Superior",
@@ -4801,22 +5248,26 @@
           "missingParts": {
             "title_one": "Falta {{count}} pieza",
             "title_other": "Faltan {{count}} piezas",
-            "desc": "El modelo hace referencia a archivos de piezas que no contiene, así que faltarán partes."
+            "desc": "El modelo hace referencia a archivos de piezas que no contiene, así que faltarán partes.",
+            "title_many": "Faltan {{count}} piezas"
           },
           "openEdges": {
             "title": "Agujeros en la superficie",
             "desc_one": "{{count}} arista abierta: la superficie no está cerrada, así que el slicer tiene que adivinar qué hay dentro.",
-            "desc_other": "{{count}} aristas abiertas: la superficie no está cerrada, así que el slicer tiene que adivinar qué hay dentro."
+            "desc_other": "{{count}} aristas abiertas: la superficie no está cerrada, así que el slicer tiene que adivinar qué hay dentro.",
+            "desc_many": "{{count}} aristas abiertas: la superficie no está cerrada, así que el slicer tiene que adivinar qué hay dentro."
           },
           "nonManifoldEdges": {
             "title": "Aristas no múltiples",
             "desc_one": "{{count}} arista la comparten más de dos caras, algo que los slicers pueden interpretar mal.",
-            "desc_other": "{{count}} aristas las comparten más de dos caras, algo que los slicers pueden interpretar mal."
+            "desc_other": "{{count}} aristas las comparten más de dos caras, algo que los slicers pueden interpretar mal.",
+            "desc_many": "{{count}} aristas las comparten más de dos caras, algo que los slicers pueden interpretar mal."
           },
           "flippedFaces": {
             "title": "Caras invertidas",
             "desc_one": "{{count}} arista separa caras orientadas en sentidos opuestos, así que algunas partes pueden salir huecas o faltar.",
-            "desc_other": "{{count}} aristas separan caras orientadas en sentidos opuestos, así que algunas partes pueden salir huecas o faltar."
+            "desc_other": "{{count}} aristas separan caras orientadas en sentidos opuestos, así que algunas partes pueden salir huecas o faltar.",
+            "desc_many": "{{count}} aristas separan caras orientadas en sentidos opuestos, así que algunas partes pueden salir huecas o faltar."
           },
           "insideOut": {
             "title": "Del revés",
@@ -4825,7 +5276,8 @@
           "fragments": {
             "title_one": "{{count}} fragmento suelto",
             "title_other": "{{count}} fragmentos sueltos",
-            "desc": "Pequeñas piezas separadas flotan lejos del modelo. Se imprimen como gotas o no se imprimen."
+            "desc": "Pequeñas piezas separadas flotan lejos del modelo. Se imprimen como gotas o no se imprimen.",
+            "title_many": "{{count}} fragmentos sueltos"
           },
           "tooSmall": {
             "title": "Muy pequeño",
@@ -4845,7 +5297,9 @@
           "minor": "Leve",
           "minorHint": "Los slicers suelen resolverlo, o se corrige rápido en uno."
         },
-        "manageSettings": "Gestionar la comprobación de calidad"
+        "manageSettings": "Gestionar la comprobación de calidad",
+        "triangles_many": "{{formatted}} triángulos",
+        "bodies_many": "{{count}} cuerpos"
       },
       "fileSelectLabel": "Archivos ({{count}})",
       "fileSelectAria": "Archivo: {{file}}. Elegir otro",
@@ -4857,7 +5311,8 @@
       "toolOwnedHint": "No se puede editar ni eliminar",
       "customize": "Personalizar…",
       "scriptWithheld": "Script no compartido",
-      "scriptWithheldHint": "Este modelo se creó a partir de un script, pero su autor decidió no compartirlo, así que aquí no hay nada que personalizar. Solo él puede cambiarlo."
+      "scriptWithheldHint": "Este modelo se creó a partir de un script, pero su autor decidió no compartirlo, así que aquí no hay nada que personalizar. Solo él puede cambiarlo.",
+      "internalPlateObjectCount_many": "{{count}} objetos"
     },
     "customizer": {
       "title": "Personalizando {{model}}",
@@ -4992,13 +5447,145 @@
       "linkConfirmLabel": "Sí, soy yo",
       "linkSuccess": "«{{name}}» vinculado a tu cuenta",
       "linkFailed": "No se pudo vincular este autor a tu cuenta",
+      "editProfile": {
+        "button": "Editar perfil",
+        "title": "Editar perfil",
+        "changeCover": "Cambiar portada",
+        "cover": "Portada",
+        "coverHelp": "Elige una portada dibujada, la de una cuenta que hayas vinculado o sube una imagen de hasta 10 MB. Arrastra una imagen para elegir la parte que se ve.",
+        "presets": {
+          "retro": "Retro",
+          "pixel": "Pixel art",
+          "mosaic": "Mosaico",
+          "ascii": "ASCII",
+          "blueprint": "Plano"
+        },
+        "yourPicture": "Tu imagen",
+        "fromAccount": "De {{provider}}",
+        "upload": "Subir",
+        "uploadHint": "Subir una imagen de hasta 10 MB",
+        "uploadTooBig": "Esa imagen pesa más de 10 MB.",
+        "notAPicture": "Ese archivo no es una imagen.",
+        "drag": "Arrastra para recolocar",
+        "position": "Posición de la portada",
+        "bio": "Biografía",
+        "bioHelp": "Se muestra en tu perfil a las demás personas de esta instancia. Admite Markdown.",
+        "bioPlaceholder": "Unas palabras sobre ti y lo que creas",
+        "saved": "Perfil guardado",
+        "saveFailed": "No se pudo guardar tu perfil.",
+        "links": "Enlaces",
+        "linksHelp": "Hasta {{count}} direcciones web, mostradas bajo tu biografía: tu página en un sitio de modelos, una tienda, un portafolio.",
+        "addLink": "Añadir enlace",
+        "removeLink": "Quitar enlace",
+        "linkLabel": "Enlace {{n}}",
+        "linkInvalid": "Escribe una dirección web, como https://example.com"
+      },
+      "visibility": {
+        "toggle": "Mostrar mis modelos en Explorar",
+        "privateTip": "Privados: solo tú ves estos modelos. Haz clic para mostrarlos en Explorar.",
+        "publicTip": "Públicos: todos en esta instancia ven estos modelos en Explorar. Haz clic para hacerlos privados.",
+        "confirmTitle": "¿Mostrar tus modelos en Explorar?",
+        "confirmMessage": "Todos en esta instancia podrán ver, descargar y copiar los modelos de esta página desde tu perfil en Explorar. Cambiarlos o eliminarlos sigue siendo solo cosa tuya, y puedes volver a hacerlos privados cuando quieras.",
+        "confirmLabel": "Hacer públicos",
+        "nowPublic": "Tus modelos ya están en Explorar",
+        "nowPrivate": "Tus modelos ahora son privados"
+      },
       "popup": {
         "modelCount_one": "{{count}} modelo importado de {{provider}}",
         "modelCount_other": "{{count}} modelos importados de {{provider}}",
         "selfModelCount_one": "{{count}} modelo subido",
         "selfModelCount_other": "{{count}} modelos subidos",
-        "loadFailed": "No se pudo cargar este autor."
+        "loadFailed": "No se pudo cargar este autor.",
+        "modelCount_many": "{{count}} modelos importados de {{provider}}",
+        "selfModelCount_many": "{{count}} modelos subidos"
+      },
+      "username": {
+        "label": "Nombre de usuario",
+        "why": "Tu dirección, usuario@esta-instancia, es cómo te encuentran y te contactan las personas de instancias conectadas.",
+        "help": "Minúsculas, dígitos, puntos, guiones y guiones bajos.",
+        "invalid": "Hasta 30 minúsculas, dígitos, puntos, guiones o guiones bajos, empezando y terminando con una letra o un dígito.",
+        "taken": "Alguien ya lo tiene.",
+        "free": "Está libre.",
+        "checking": "Comprobando",
+        "copy": "Copiar tu dirección",
+        "copied": "Dirección copiada",
+        "copyFailed": "No se pudo copiar",
+        "change": "Cambiar tu nombre de usuario",
+        "saved": "Nombre de usuario cambiado",
+        "saveFailed": "No se pudo cambiar el nombre de usuario"
       }
+    },
+    "avatar": {
+      "change": "Cambiar avatar",
+      "title": "Avatar",
+      "modes": {
+        "thingport": "Thingport",
+        "picture": "Imagen",
+        "auto": "Automático"
+      },
+      "shuffle": "Mezclar",
+      "parts": {
+        "hair": "Pelo",
+        "glasses": "Gafas",
+        "mouth": "Boca",
+        "hair_color": "Color de pelo",
+        "background": "Fondo"
+      },
+      "none": "Ninguno",
+      "hair": {
+        "spiky": "De punta",
+        "sideSwept": "Peinado de lado",
+        "curly": "Rizado",
+        "long": "Largo",
+        "topBun": "Moño",
+        "mohawk": "Cresta",
+        "ponytail": "Coleta",
+        "flatTop": "Plano",
+        "bob": "Bob",
+        "spaceBuns": "Dos moños"
+      },
+      "glasses": {
+        "round": "Redondas",
+        "square": "Cuadradas",
+        "sunglasses": "Gafas de sol",
+        "catEye": "Ojo de gato",
+        "threeD": "3D"
+      },
+      "mouth": {
+        "smile": "Sonrisa",
+        "toothy": "Dientes de conejo",
+        "wobbly": "Nervioso",
+        "surprised": "Sorprendido",
+        "cheeky": "Pícaro"
+      },
+      "hair_color": {
+        "black": "Negro",
+        "darkBrown": "Castaño oscuro",
+        "brown": "Castaño",
+        "blonde": "Rubio",
+        "ginger": "Pelirrojo",
+        "grey": "Gris",
+        "blue": "Azul",
+        "pink": "Rosa"
+      },
+      "background": {
+        "mint": "Menta",
+        "sky": "Cielo",
+        "peach": "Melocotón",
+        "lavender": "Lavanda",
+        "sand": "Arena",
+        "teal": "Turquesa",
+        "stone": "Piedra",
+        "rose": "Rosa"
+      },
+      "upload": "Subir",
+      "uploadHint": "Subir una imagen de hasta 10 MB",
+      "pictureHelp": "Una imagen de hasta 10 MB, recortada en un cuadrado alrededor de lo que contiene, o la imagen de una cuenta que hayas vinculado.",
+      "yourPicture": "Tu imagen",
+      "fromAccount": "De {{provider}}",
+      "autoHint": "Tu Gravatar si tienes uno, o si no, el avatar de Thingport elegido para ti.",
+      "saved": "Avatar actualizado",
+      "saveFailed": "No se pudo guardar tu avatar."
     },
     "collections": {
       "pageTitle": "Colecciones",
@@ -5024,7 +5611,11 @@
         "itemCount_one": "{{count}} modelo",
         "itemCount_other": "{{count}} modelos",
         "ownerAndCount_one": "{{name}} · {{count}} modelo",
-        "ownerAndCount_other": "{{name}} · {{count}} modelos"
+        "ownerAndCount_other": "{{name}} · {{count}} modelos",
+        "sharedWith": "Compartida con {{names}}",
+        "changeSharing": "Compartida con {{who}}: cambiar quién la ve",
+        "itemCount_many": "{{count}} modelos",
+        "ownerAndCount_many": "{{name}} · {{count}} modelos"
       },
       "form": {
         "createTitle": "Nueva colección",
@@ -5036,23 +5627,44 @@
         "create": "Crear",
         "saveFailed": "No se pudo guardar la colección. Inténtalo de nuevo.",
         "visibilityLabel": "Visibilidad",
-        "visibilityHelp": "Las colecciones públicas aparecen en Explorar: los demás usuarios de la instancia pueden abrir, descargar y copiar sus modelos. Las privadas son solo tuyas.",
+        "visibilityHelp": "Las colecciones privadas son solo tuyas. Las compartidas las ven las personas que elijas, aquí o en instancias conectadas, y las públicas, todo el mundo, en Explorar. Quien ve una puede abrir, descargar y copiar sus modelos.",
         "private": "Privada",
-        "public": "Pública"
+        "public": "Pública",
+        "shared": "Compartida",
+        "sharedCount_one": "{{count}} persona puede verla",
+        "sharedCount_other": "{{count}} personas pueden verla",
+        "sharedNobody": "Nadie todavía: solo tú puedes verla",
+        "sharedElsewhere_one": "{{count}} en una instancia conectada",
+        "sharedElsewhere_other": "{{count}} en instancias conectadas",
+        "sharedHelp": "La ven como verían una colección pública: pueden abrir, descargar y copiar sus modelos, y reciben un aviso cuando la compartes con ellos. Con quién más está compartida solo lo sabes tú. Alguien en una instancia conectada la ve a través de su propia instancia, que solo se la muestra a esa persona; los administradores de esa instancia también podrían verla.",
+        "keptPeople_one": "{{names}} sigue en la lista: elige Compartida para volver a compartirla.",
+        "keptPeople_other": "{{names}} siguen en la lista: elige Compartida para volver a compartirla.",
+        "andMore_one": "{{count}} más",
+        "andMore_other": "{{count}} más",
+        "peopleFailed": "No se pudo cargar con quién está compartida, así que no se puede cambiar quién la ve hasta que se cargue.",
+        "createdNotShared": "Se creó «{{name}}», pero no se pudo compartir. Compartir… en su menú lo vuelve a intentar.",
+        "findPeopleHelp": "Cualquier parte de un nombre encuentra a alguien aquí o en una instancia conectada; un correo encuentra a alguien de aquí solo si se escribe completo, y nunca se muestra. Si no encuentras a alguien de otra instancia, escribe su identificador completo, como nombre@su-instancia.",
+        "sharedCount_many": "{{count}} personas pueden verla",
+        "sharedElsewhere_many": "{{count}} en instancias conectadas",
+        "keptPeople_many": "{{names}} siguen en la lista: elige Compartida para volver a compartirla.",
+        "andMore_many": "{{count}} más"
       },
       "detail": {
         "title": "{{name}}",
         "subtitle": "Colección",
         "empty": "Aún no hay modelos en esta colección.",
         "confirmDelete": "¿Eliminar «{{name}}»? Los modelos que contiene no se eliminan.",
-        "deleteFailed": "No se pudo eliminar la colección."
+        "deleteFailed": "No se pudo eliminar la colección.",
+        "sharedWith_one": "Compartida con {{count}}",
+        "sharedWith_other": "Compartida con {{count}}",
+        "sharedWith_many": "Compartida con {{count}}"
       },
       "errors": {
         "loadFailed": "No se pudieron cargar las colecciones.",
         "notFound": "Colección no encontrada."
       },
       "sync": {
-        "badgeOff": "{{provider}} está desactivado en este Thingport, así que no se sincroniza nada hasta que un administrador lo vuelva a activar",
+        "badgeOff": "{{provider}} está desactivado en esta instancia de Thingport, así que no se sincroniza nada hasta que un administrador lo vuelva a activar",
         "menuProviderOff": "{{provider}} está desactivado",
         "badge": "Sincronizada con una colección de {{provider}}",
         "menu": "Configuración de sincronización",
@@ -5124,8 +5736,15 @@
           "startNothing": "Sincronizar",
           "makerworldHelp": "MakerWorld limita rápidamente las importaciones masivas, así que los modelos de esta colección no se importan ahora. Los que ya estén en tu biblioteca se añaden a «{{name}}».",
           "forget": "Olvidar",
-          "forgetTitle": "¿Olvidar tu cuenta de {{provider}}?"
-        }
+          "forgetTitle": "¿Olvidar tu cuenta de {{provider}}?",
+          "models_many": "{{count}} modelos",
+          "things_many": "{{count}} modelos",
+          "objects_many": "{{count}} objetos",
+          "confirmImport_many": "Importará ahora sus {{count}} modelos, y los nuevos a medida que se añadan."
+        },
+        "intro_many": "Los modelos añadidos a la colección de {{provider}} se importan aquí cada {{count}} horas.",
+        "intervalOption_many": "{{count}} Horas",
+        "introLikes_many": "Los modelos que a @{{user}} le gustan en {{provider}} se importan aquí cada {{count}} horas."
       },
       "sortByModels": "Más modelos",
       "selection": {
@@ -5143,7 +5762,13 @@
         "deleted_one": "{{count}} colección eliminada",
         "deleted_other": "{{count}} colecciones eliminadas",
         "merged_one": "{{count}} colección fusionada en «{{name}}»",
-        "merged_other": "{{count}} colecciones fusionadas en «{{name}}»"
+        "merged_other": "{{count}} colecciones fusionadas en «{{name}}»",
+        "bookmarked_many": "{{count}} colecciones añadidas a marcadores",
+        "unbookmarked_many": "{{count}} colecciones quitadas de marcadores",
+        "deleteTitle_many": "¿Eliminar {{count}} colecciones?",
+        "deleteMessage_many": "Sus modelos se conservan. No se puede deshacer.",
+        "deleted_many": "{{count}} colecciones eliminadas",
+        "merged_many": "{{count}} colecciones fusionadas en «{{name}}»"
       },
       "tool": {
         "badge": "Pertenece a la herramienta {{tool}}: no se puede editar ni eliminar, y desaparece al desinstalarla",
@@ -5154,7 +5779,8 @@
         "openToolUnknown": "Abrir la herramienta",
         "cantSelect": "La colección de una herramienta no se puede combinar ni eliminar"
       },
-      "publicHint": "Pública: se muestra a los demás en Explorar"
+      "publicHint": "Pública: se muestra a los demás en Explorar",
+      "share": "Compartir…"
     },
     "tags": {
       "pageTitle": "Etiquetas",
@@ -5197,8 +5823,16 @@
         "deleted_one": "{{count}} etiqueta eliminada",
         "deleted_other": "{{count}} etiquetas eliminadas",
         "merged_one": "{{count}} etiqueta fusionada en «{{name}}»",
-        "merged_other": "{{count}} etiquetas fusionadas en «{{name}}»"
-      }
+        "merged_other": "{{count}} etiquetas fusionadas en «{{name}}»",
+        "bookmarked_many": "{{count}} etiquetas añadidas a marcadores",
+        "unbookmarked_many": "{{count}} etiquetas quitadas de marcadores",
+        "deleteTitle_many": "¿Eliminar {{count}} etiquetas?",
+        "deleteMessage_many": "Se quitan de todos los modelos que las tienen. Los modelos se conservan.",
+        "deleteConfirm_many": "Eliminar etiquetas",
+        "deleted_many": "{{count}} etiquetas eliminadas",
+        "merged_many": "{{count}} etiquetas fusionadas en «{{name}}»"
+      },
+      "deleted_many": "Etiqueta «{{name}}» quitada de {{count}} modelos"
     },
     "downloadZip": {
       "loading": "Calculando…",
@@ -5209,7 +5843,9 @@
       "summaryFailed": "No se pudo calcular el tamaño de la descarga. Inténtalo de nuevo.",
       "empty": "No se han encontrado archivos de modelos descargables.",
       "downloading": "Descargando…",
-      "failed": "No se pudo descargar el archivo ZIP. Inténtalo de nuevo."
+      "failed": "No se pudo descargar el archivo ZIP. Inténtalo de nuevo.",
+      "summary_many": "{{count}} modelos (~{{size}})",
+      "summaryNoSize_many": "{{count}} modelos"
     },
     "errors": {
       "loadFailed": "No se pudieron cargar los modelos.",
@@ -5246,7 +5882,11 @@
         "modelCount_other": "{{count}} modelos",
         "noop": "Tus categorías ya coinciden con las predeterminadas.",
         "foldersKept": "Las carpetas no cambian.",
-        "previewFailed": "No se pudo calcular qué cambiaría el restablecimiento."
+        "previewFailed": "No se pudo calcular qué cambiaría el restablecimiento.",
+        "modelsUncategorized_many": "{{count}} modelos se quedarán sin categoría.",
+        "modelsMoved_many": "{{count}} modelos pasan a la categoría superior conservada más cercana.",
+        "modelsRenamed_many": "{{count}} modelos movidos se renombran para evitar nombres repetidos.",
+        "modelCount_many": "{{count}} modelos"
       },
       "manager": {
         "title": "Gestionar categorías",
@@ -5323,7 +5963,11 @@
       "partlyFailed_one": "No se pudo cambiar {{count}} modelo.",
       "partlyFailed_other": "No se pudieron cambiar {{count}} modelos.",
       "failed": "No se pudo asignar la categoría. Inténtalo de nuevo.",
-      "loadFailed": "No se pudieron cargar tus categorías. Inténtalo de nuevo."
+      "loadFailed": "No se pudieron cargar tus categorías. Inténtalo de nuevo.",
+      "title_many": "Asignar una categoría a {{count}} modelos",
+      "replaces_many": "{{count}} modelos seleccionados ya tienen una categoría, que se sustituirá.",
+      "done_many": "«{{name}}» asignada a {{count}} modelos.",
+      "partlyFailed_many": "No se pudieron cambiar {{count}} modelos."
     },
     "selection": {
       "skipped_one": "{{count}} modelo seleccionado queda fuera: se importó o pertenece a una herramienta.",
@@ -5394,7 +6038,27 @@
       "notFiled_one": "No se pudo añadir {{count}} modelo: ya no se comparte",
       "notFiled_other": "No se pudieron añadir {{count}} modelos: ya no se comparten",
       "notFiledNames_one": "No se pudo añadir {{names}}: ya no se comparte",
-      "notFiledNames_other": "No se pudieron añadir {{names}}: ya no se comparten"
+      "notFiledNames_other": "No se pudieron añadir {{names}}: ya no se comparten",
+      "count_many": "{{count}} seleccionados",
+      "skipped_many": "{{count}} modelos seleccionados quedan fuera: se importaron o pertenecen a una herramienta.",
+      "downloadTitle_many": "Descargar {{count}} modelos",
+      "favorited_many": "Se añadieron {{count}} modelos a Favoritos",
+      "unfavorited_many": "Se quitaron {{count}} modelos de Favoritos",
+      "confirmDelete_many": "¿Eliminar {{count}} modelos? No se puede deshacer.",
+      "deleted_many": "Se eliminaron {{count}} modelos",
+      "deletePartlyFailed_many": "No se pudieron eliminar {{count}} modelos",
+      "confirmManual_many": "{{count}} de los modelos seleccionados tienen una categoría que elegiste tú. ¿Dejar que la IA también los recategorice?",
+      "categorizeQueued_many": "Categorizando {{count}} modelos con IA. El progreso se muestra en la parte inferior de la página.",
+      "improveQueued_many": "Mejorando {{count}} descripciones con IA. El progreso se muestra en la parte inferior de la página.",
+      "confirmRemoveFromCollection_many": "¿Quitar {{count}} modelos de esta colección? Los modelos en sí se conservan.",
+      "removedFromCollection_many": "Se quitaron {{count}} modelos de la colección",
+      "editTagsTitle_many": "Etiquetas de {{count}} modelos",
+      "tagsUpdated_many": "Se actualizaron las etiquetas de {{count}} modelos",
+      "editCollectionsTitle_many": "Colecciones de {{count}} modelos",
+      "collectionsUpdated_many": "Se actualizaron {{count}} colecciones",
+      "tagsPartlyUpdated_many": "Se actualizaron las etiquetas de {{count}} modelos, pero el resto falló. Inténtalo de nuevo.",
+      "notFiled_many": "No se pudieron añadir {{count}} modelos: ya no se comparten",
+      "notFiledNames_many": "No se pudieron añadir {{names}}: ya no se comparten"
     },
     "merge": {
       "action": "Fusionar",
@@ -5424,7 +6088,10 @@
         "othersGo_other": "{{names}} se eliminan. Sus modelos no: pasan a «{{name}}».",
         "keepsOwn": "«{{name}}» conserva su nombre, descripción, etiquetas y sincronización.",
         "syncStops_one": "{{names}} se sincroniza con una colección de un proveedor, y esa sincronización se detiene. Consérvala a ella para seguir sincronizando.",
-        "syncStops_other": "{{names}} se sincronizan con colecciones de proveedores, y esas sincronizaciones se detienen. Conserva una de ellas para seguir sincronizándola."
+        "syncStops_other": "{{names}} se sincronizan con colecciones de proveedores, y esas sincronizaciones se detienen. Conserva una de ellas para seguir sincronizándola.",
+        "title_many": "Fusionar {{count}} colecciones",
+        "othersGo_many": "{{names}} se eliminan. Sus modelos no: pasan a «{{name}}».",
+        "syncStops_many": "{{names}} se sincronizan con colecciones de proveedores, y esas sincronizaciones se detienen. Conserva una de ellas para seguir sincronizándola."
       },
       "tags": {
         "title_one": "Fusionar {{count}} etiqueta",
@@ -5433,7 +6100,9 @@
         "goes": "Se quita",
         "othersGo_one": "{{names}} se quita. Sus modelos pasan a tener «{{name}}».",
         "othersGo_other": "{{names}} se quitan. Sus modelos pasan a tener «{{name}}».",
-        "keepsOwn": "Los modelos que ya tienen «{{name}}» no cambian."
+        "keepsOwn": "Los modelos que ya tienen «{{name}}» no cambian.",
+        "title_many": "Fusionar {{count}} etiquetas",
+        "othersGo_many": "{{names}} se quitan. Sus modelos pasan a tener «{{name}}»."
       },
       "models": {
         "action": "Fusionar modelos",
@@ -5453,8 +6122,17 @@
         "fileUnit_one": "archivo",
         "fileUnit_other": "archivos",
         "merged_one": "{{count}} modelo fusionado en «{{name}}».",
-        "merged_other": "{{count}} modelos fusionados en «{{name}}»."
-      }
+        "merged_other": "{{count}} modelos fusionados en «{{name}}».",
+        "title_many": "Fusionar {{count}} modelos",
+        "othersGo_many": "{{names}} se eliminan. Sus archivos, imágenes y descripciones pasan a «{{name}}».",
+        "fileCount_many": "{{count}} archivos",
+        "pictureCount_many": "{{count}} imágenes",
+        "fileUnit_many": "archivos",
+        "merged_many": "{{count}} modelos fusionados en «{{name}}»."
+      },
+      "modelUnit_many": "modelos",
+      "new_many": "nuevos",
+      "andMore_many": "{{count}} más"
     },
     "filters": {
       "title": "Filtros",
@@ -5465,7 +6143,65 @@
       "noSources": "Aún no has importado nada, así que no hay sitios entre los que elegir.",
       "noneSelected": "No hay ningún sitio activado, así que no hay nada que mostrar.",
       "noMatch": "Ningún modelo de aquí coincide con los filtros.",
-      "clear": "Quitar filtros"
+      "clear": "Quitar filtros",
+      "licenseAllows": "La licencia permite",
+      "allowsShare": "Se puede compartir",
+      "allowsShareHint": "Solo modelos cuya licencia permite pasar los archivos a otros, sin cambios. Las licencias de uso personal de los sitios no suelen permitirlo.",
+      "allowsCommercial": "Uso comercial",
+      "allowsCommercialHint": "Solo modelos cuya licencia permite usarlos comercialmente, incluida la venta de impresiones.",
+      "allowsRemix": "Remezclas",
+      "allowsRemixHint": "Solo modelos cuya licencia permite modificarlos.",
+      "licensed": "Solo con licencia",
+      "licensedHint": "Omitir los modelos cuyo origen no indica su licencia."
+    },
+    "license": {
+      "title": "Licencia",
+      "notStated": "{{site}} no indica la licencia",
+      "reading": "Leyendo la licencia",
+      "readFailed": "No se pudo leer la licencia de {{site}}",
+      "retry": "Reintentar",
+      "details": "{{license}}: detalles de la licencia",
+      "summary": {
+        "credit": "Atribución",
+        "nonCommercial": "No comercial",
+        "noRemix": "Sin remezclas",
+        "shareAlike": "Compartir igual",
+        "noSharing": "Sin compartir los archivos",
+        "personalUse": "Solo uso personal",
+        "nothingGiven": "No concede ningún derecho",
+        "noConditions": "Sin condiciones",
+        "seeTerms": "Consulta sus condiciones"
+      },
+      "deed": {
+        "share": "Compartir los archivos",
+        "remix": "Remezclar",
+        "commercial": "Uso comercial",
+        "credit": "Citar al autor",
+        "sameLicense": "Remezclas con la misma licencia"
+      },
+      "can": {
+        "yes": "Permitido",
+        "no": "No permitido",
+        "must": "Obligatorio"
+      },
+      "unknown": "Thingport no conoce esta licencia: sus condiciones indican qué está permitido.",
+      "siteAdds": "{{site}} añade",
+      "terms": "Condiciones",
+      "asListed": "Según {{site}}",
+      "pickedByOwner": "Elegida por su propietario",
+      "fullLicense": "Licencia completa",
+      "copyCredit": "Copiar la atribución",
+      "copied": "Atribución copiada",
+      "change": "Cambiar",
+      "creditBy": "de {{creator}}",
+      "creditUnder": "tiene la licencia {{license}}.",
+      "fromSource": "Según {{site}}",
+      "none": "Ninguna",
+      "groups": {
+        "cc": "Creative Commons",
+        "open": "Código abierto",
+        "reserved": "Otra"
+      }
     },
     "shared": {
       "sharedBy": "Compartido por {{name}}",
@@ -5481,9 +6217,9 @@
     },
     "explore": {
       "people": "Personas",
-      "peopleHelp": "Los usuarios de la instancia que comparten colecciones. Abre uno para verlas todas.",
+      "peopleHelp": "Los usuarios de la instancia que comparten sus modelos o colecciones. Abre uno para ver lo que comparte.",
       "recentModels": "Modelos nuevos",
-      "recentModelsHelp": "Los modelos añadidos más recientemente a la colección pública de alguien.",
+      "recentModelsHelp": "Los modelos añadidos más recientemente a la colección pública o al perfil público de alguien.",
       "recentCollections": "Colecciones actualizadas recientemente",
       "recentCollectionsHelp": "Colecciones públicas, primero las que se hicieron públicas o se ampliaron más recientemente.",
       "mostCollected": "Más coleccionados",
@@ -5496,7 +6232,7 @@
       "modelCount_one": "{{count}} modelo",
       "modelCount_other": "{{count}} modelos",
       "emptyTitle": "Aún no se comparte nada",
-      "emptyHint": "Cuando alguien haga pública una colección, aparecerá aquí.",
+      "emptyHint": "Cuando alguien haga públicos sus modelos o una colección, aparecerán aquí.",
       "emptyAction": "Ir a mis colecciones",
       "unavailable": "Explorar no está disponible ahora mismo.",
       "userNotFound": "Este usuario no comparte nada.",
@@ -5504,7 +6240,83 @@
       "joined": "Se unió en {{date}}",
       "ownEmpty": "Aún no has hecho pública ninguna colección.",
       "loadFailed": "No se pudo cargar esta página.",
-      "refreshFailed": "No se pudieron cargar los recuentos más recientes."
+      "refreshFailed": "No se pudieron cargar los recuentos más recientes.",
+      "sections": "Lo que comparte",
+      "noModels": "Aún no hay modelos.",
+      "modelsLoadFailed": "No se pudieron cargar los modelos.",
+      "collectionsLoadFailed": "No se pudieron cargar las colecciones.",
+      "noCollections": "{{name}} aún no ha hecho pública ninguna colección.",
+      "elsewhere": {
+        "open": "Alguien en otro sitio",
+        "title": "Conectar con alguien de otra instancia",
+        "intro": "Alguien en otra instancia de Thingport. Primero lo aprueba tu administrador, luego el suyo.",
+        "handle": "Su dirección",
+        "handlePlaceholder": "nombre@su.instancia",
+        "note": "Nota (opcional)",
+        "ask": "Pedir conectar",
+        "sent": "Has pedido llegar a {{handle}}. Tu administrador lo verá.",
+        "withdrawn": "Retiraste la solicitud para llegar a {{handle}}",
+        "failed": "No se pudo enviar",
+        "loadFailed": "No se pudieron cargar tus solicitudes.",
+        "yours": "Tus solicitudes",
+        "withdraw": "Retirar",
+        "status": {
+          "waiting_admin": "Esperando a tu administrador",
+          "waiting_them": "Esperando a su administrador",
+          "connected": "Conectado",
+          "declined": "Rechazada"
+        },
+        "errors": {
+          "federation_off": "Las instancias conectadas están desactivadas.",
+          "invalid_handle": "Escribe una dirección como nombre@su.instancia.",
+          "same_instance": "Es alguien de esta instancia: está en Personas.",
+          "already_connected": "Su instancia ya está conectada: está en Personas.",
+          "already_asked": "Tu administrador ya pidió conectar con su instancia.",
+          "not_available": "Esta instancia no se conecta con la suya.",
+          "exists": "Ya pediste llegar a esa persona.",
+          "request_limit": "Espera a que tu administrador responda primero a tus solicitudes.",
+          "daily_limit": "Hoy ya has pedido llegar a personas de otras instancias muchas veces. Inténtalo mañana.",
+          "copy_limit": "Espera primero a que terminen las copias en curso.",
+          "no_files": "No tiene archivos que copiar.",
+          "files_missing": "No todos sus archivos se pueden obtener de su instancia, así que no se puede copiar entero.",
+          "copy_too_big": "Demasiado grande para copiarlo aquí: sus archivos juntos superan lo que esta instancia acepta en una importación.",
+          "zip_busy": "Ya se está creando otro ZIP. Inténtalo de nuevo en un momento.",
+          "zip_too_big": "Demasiado grande para comprimirlo aquí: descarga sus archivos uno a uno."
+        },
+        "on": "En {{name}}",
+        "fileCount_one": "{{count}} archivo",
+        "fileCount_many": "{{count}} archivos",
+        "fileCount_other": "{{count}} archivos",
+        "copyHandle": "Copiar su dirección",
+        "more": "Mostrar más",
+        "gone": "Esto ya no se comparte, o la instancia donde está ya no está conectada.",
+        "noPictures": "Sin imágenes",
+        "picture": "Imagen {{number}}",
+        "inCollections": "En colecciones",
+        "copying": "Copiando a tu biblioteca…",
+        "copyFailed": "No se pudo copiar",
+        "carriesOn": "Puedes salir de esta página: seguirá copiándose.",
+        "ofSize": "{{received}} de {{size}}",
+        "filesUnavailable": "Su instancia todavía no ofrece los archivos.",
+        "copiedFrom": "Copiado de",
+        "seeOriginal": "Ver el original",
+        "message": "Escribir",
+        "messageFailed": "No se pudo abrir el chat"
+      },
+      "scope": {
+        "label": "Mostrar",
+        "all": "Todo",
+        "here": "Esta instancia"
+      },
+      "sharedWithYou": "Compartidas contigo",
+      "sharedWithYouHelp": "Colecciones que sus dueños compartieron contigo y con unas pocas personas más. Nadie más las ve en Explorar.",
+      "showMore_one": "Mostrar {{count}} más",
+      "showMore_other": "Mostrar {{count}} más",
+      "sharedFailed": "No se pudo cargar más de lo compartido contigo. Inténtalo de nuevo.",
+      "copies_many": "Coleccionado por {{count}} personas",
+      "collectionCount_many": "{{count}} colecciones",
+      "modelCount_many": "{{count}} modelos",
+      "showMore_many": "Mostrar {{count}} más"
     }
   },
   "providers": {
@@ -5573,10 +6385,10 @@
           "Copia el token de aplicación que aparece y pégalo abajo."
         ],
         "placeholder": "Pega el token de aplicación",
-        "shared": "Este token lo comparten todos los usuarios de este Thingport."
+        "shared": "Este token lo comparten todos los usuarios de esta instancia de Thingport."
       },
       "status": {
-        "adminOnly": "Solo un administrador de este Thingport puede configurar esto.",
+        "adminOnly": "Solo un administrador de esta instancia de Thingport puede configurar esto.",
         "disabledReason": "Thingiverse: el administrador aún no ha configurado una clave de API"
       },
       "about": {
@@ -5590,7 +6402,7 @@
         ]
       },
       "admin": {
-        "description": "Importaciones, colecciones y modelos que te gustan, mediante el token de aplicación de este Thingport.",
+        "description": "Importaciones, colecciones y modelos que te gustan, mediante el token de aplicación de esta instancia de Thingport.",
         "keyStatus": {
           "set": "Token de aplicación configurado",
           "missing": "Sin token de aplicación: las importaciones de Thingiverse no funcionarán hasta que se configure uno"
@@ -5612,7 +6424,7 @@
         }
       },
       "sync": {
-        "notConnected": "Thingiverse aún no está conectado en este Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
+        "notConnected": "Thingiverse aún no está conectado en esta instancia de Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
         "usernameHint": "Thingport muestra tus colecciones públicas de Thingiverse. Solo hace falta pedirlo una vez.",
         "usernamePlaceholder": "Nombre de usuario o enlace del perfil",
         "showing": "Mostrando las colecciones públicas de @{{user}}.",
@@ -5644,7 +6456,7 @@
         ]
       },
       "admin": {
-        "description": "Modelos y colecciones públicas, mediante la clave de API de este Thingport; los modelos comprados, mediante la cuenta de MyMiniFactory de cada usuario.",
+        "description": "Modelos y colecciones públicas, mediante la clave de API de esta instancia de Thingport; los modelos comprados, mediante la cuenta de MyMiniFactory de cada usuario.",
         "keyStatus": {
           "set": "Clave de API configurada",
           "missing": "Sin clave de API: las importaciones de MyMiniFactory no funcionarán hasta que se configure una"
@@ -5666,7 +6478,7 @@
         }
       },
       "sync": {
-        "notConnected": "MyMiniFactory aún no está conectado en este Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
+        "notConnected": "MyMiniFactory aún no está conectado en esta instancia de Thingport. Un administrador puede conectarlo en Configuración > Proveedores.",
         "usernameHint": "Thingport muestra tus colecciones públicas de MyMiniFactory. Solo hace falta pedirlo una vez.",
         "usernamePlaceholder": "Nombre de usuario o enlace del perfil",
         "showing": "Mostrando las colecciones públicas de @{{user}}.",
@@ -6129,6 +6941,105 @@
       },
       "sync": {
         "notConnected": "Ahora mismo no se puede acceder a OwlCAD."
+      }
+    },
+    "pixup3d": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir pixup3d.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que el tuyo cambie allí.",
+          "O manualmente: inicia sesión en pixup3d.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En Application (Chrome, Edge) o Storage (Firefox) → Cookies → pixup3d.com, copia el valor de _phrozen_session y pégalo abajo. También sirve la cabecera Cookie de una petición a pixup3d.com con la sesión iniciada."
+        ],
+        "placeholder": "La cookie _phrozen_session, o la cabecera Cookie de una petición con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "PIXUP solo entrega sus archivos a miembros con sesión iniciada, incluso los de sus modelos gratuitos. Conecta tu cuenta para importar los tuyos; la lista de deseos y las colecciones de cualquiera se leen sin ella.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en pixup3d.com con Thingport Grab o vuelve a conectar PIXUP en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "PIXUP: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "La tienda de modelos de Phrozen: figuras, bustos y miniaturas de juegos de mesa, muchas con soportes para impresión en resina, gratuitas y de pago.",
+        "signIn": "Tu propio inicio de sesión, para los archivos de los modelos que tienes; la lista de deseos y las colecciones de cualquiera se leen sin él.",
+        "grab": "Envía tu inicio de sesión cuando visitas pixup3d.com y marca los modelos de pago que no has comprado.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en PIXUP y abre pixup3d.com con la sesión iniciada.",
+          "Manualmente: copia la cookie _phrozen_session de una pestaña de pixup3d.com con la sesión iniciada y pégala en Configuración → Proveedores."
+        ]
+      },
+      "admin": {
+        "description": "Modelos, listas de deseos y colecciones. Las listas se leen sin iniciar sesión; los archivos necesitan la del propio usuario. Un modelo gratuito se añade antes a su biblioteca de PIXUP con un pedido de 0 $; uno de pago solo se importa una vez comprado."
+      },
+      "sync": {
+        "notConnected": "Conecta PIXUP en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tu lista de deseos y tus colecciones."
+      },
+      "blocked": {
+        "paid": {
+          "title": "Modelo de pago",
+          "hint": "Cómpralo antes en PIXUP. Cuando esté en tu biblioteca, Thingport lo importa."
+        }
+      }
+    },
+    "fab365": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, solo abre fab365.net con la sesión iniciada. Conecta tu cuenta y envía una sesión nueva cada vez que cambie allí.",
+          "O a mano: inicia sesión en fab365.net y abre las herramientas de desarrollo del navegador (F12).",
+          "En Application (Chrome, Edge) o Almacenamiento (Firefox) → Almacenamiento local → fab365.net, copia los valores de accessToken y refreshToken y pégalos abajo, cada uno en su propia línea tras su nombre (accessToken: … y refreshToken: …). Con el refreshToken, Thingport renueva la sesión por sí mismo; un accessToken solo deja de funcionar al cabo de unos 100 minutos y hay que volver a pegarlo."
+        ],
+        "placeholder": "accessToken: … y refreshToken: …, cada uno en su línea"
+      },
+      "status": {
+        "notConnected": "Fab365 solo da sus archivos a miembros con sesión iniciada, incluidos los modelos gratuitos. Conecta tu cuenta para importar los que tengas y ver tus favoritos.",
+        "expired": "Sesión caducada. Inicia sesión en fab365.net con Thingport Grab, o vuelve a conectar Fab365 en Configuración → Proveedores.",
+        "expiredStatus": "Sesión caducada",
+        "disabledReason": "Fab365: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Un mercado surcoreano de modelos conocido por impresiones de ingeniería cuidada — cohetes de SpaceX, robots plegables, naves de Star Wars — la mayoría diseñados para imprimirse sin soportes.",
+        "signIn": "Tu propia sesión, para los archivos y tus favoritos; las páginas de los modelos se leen sin ella.",
+        "grab": "Envía tu sesión cuando visitas fab365.net, para que Thingport pueda descargar los archivos y leer tus favoritos.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en Fab365 y abre fab365.net con la sesión iniciada.",
+          "A mano: copia los valores de accessToken y refreshToken del almacenamiento local de una pestaña de fab365.net con sesión iniciada y pégalos en Configuración → Proveedores, cada uno en su línea tras su nombre."
+        ]
+      },
+      "admin": {
+        "description": "Modelos y tus favoritos. Las páginas de los modelos se leen sin sesión; los archivos necesitan la de cada usuario. Se importan los modelos gratuitos y los que posees; un modelo de pago o por ticket que no tengas queda para que lo compres o lo canjees antes en Fab365."
+      },
+      "sync": {
+        "notConnected": "Conecta Fab365 en Configuración > Proveedores, o visítalo con la sesión iniciada con Thingport Grab, para ver aquí tus favoritos."
+      }
+    },
+    "threedexport": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir 3dexport.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que cambie allí.",
+          "O manualmente: inicia sesión en 3dexport.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En la pestaña Red, recarga la página, haz clic en cualquier petición a 3dexport.com, copia su cabecera Cookie y pégala abajo. Sus cookies nm_userid y nm_hash son el inicio de sesión, y cerrar la sesión en 3dexport.com las anula."
+        ],
+        "placeholder": "La cabecera Cookie de una petición a 3dexport.com con la sesión iniciada"
+      },
+      "status": {
+        "notConnected": "3DExport solo entrega sus archivos a usuarios con sesión iniciada, también los modelos gratuitos. Conecta tu cuenta para importarlos junto con tus colecciones; las colecciones públicas de cualquiera se leen sin ella.",
+        "expired": "El inicio de sesión ha caducado: cerrar la sesión en 3dexport.com lo anula. Vuelve a iniciar sesión allí con Thingport Grab o vuelve a conectar 3DExport en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "3DExport: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Uno de los mercados de modelos 3D más antiguos, abierto desde 2004: recursos para juegos y cine, texturas y un gran catálogo de impresión 3D, en parte gratuito.",
+        "signIn": "Tu propio inicio de sesión, para los archivos y tus propias colecciones; las colecciones públicas de cualquiera se leen sin él.",
+        "grab": "Envía tu inicio de sesión cuando visitas 3dexport.com y marca los modelos de pago que no has comprado.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en 3DExport y abre 3dexport.com con la sesión iniciada.",
+          "Manualmente: copia la cabecera Cookie de una petición a 3dexport.com con la sesión iniciada y pégala en Configuración → Proveedores."
+        ]
+      },
+      "admin": {
+        "description": "Modelos y colecciones: las de cada usuario y las públicas de cualquiera. Las páginas de los modelos y las colecciones públicas se leen sin iniciar sesión; los archivos necesitan la del propio usuario. Se importan los modelos gratuitos, uno de pago solo una vez comprado, y solo los formatos que abre un laminador."
+      },
+      "sync": {
+        "notConnected": "Conecta 3DExport en Configuración > Proveedores, o visítalo con la sesión iniciada y Thingport Grab, para ver aquí tus colecciones."
       }
     }
   }

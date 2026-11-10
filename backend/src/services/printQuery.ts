@@ -1,4 +1,5 @@
-import type { Prisma } from "@prisma/client";
+import { LICENSE_ACTIONS, type LicenseAction } from "./licenseCatalog";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { toPrintOut, type PrintOut } from "../dto";
 import { getLinkedAuthorIds } from "./authorService";
@@ -25,7 +26,16 @@ export type PrintFilters = {
   /** Sites to leave out, by provider id; UPLOADED_PROVIDER for the ones uploaded here rather than imported. Kept
    *  as what to hide rather than what to show, so a site the library gains later is listed from the start. */
   excludeProviders?: string[];
+  /** Only models whose licence allows every one of these (services/licenseCatalog.ts). */
+  licenseAllows?: LicenseAction[];
+  /** Only models with a licence, whatever it allows. */
+  licensed?: boolean;
 };
+
+/** A query string's `license_allows` (comma-separated) as the actions the listing filters by; unknown ones dropped. */
+export function licenseAllowsFromQuery(values: string[]): LicenseAction[] {
+  return LICENSE_ACTIONS.filter((action) => values.includes(action));
+}
 
 /** What a model with no source provider -- uploaded here rather than imported -- is listed under. The dashboard's
  *  sources count them the same way. */
@@ -54,6 +64,20 @@ export function matchesTagList(printTags: string[], tagList: string[]): boolean 
   return tagList.every((t) => printTagsLower.has(t.toLowerCase()));
 }
 
+/** "My models", which Explore shows the other users when they're public: what the user uploaded here, and what an
+ *  author they linked as themselves made. Not a copy of another user's model they collected, which keeps its
+ *  original's author, nor a tool's parts. */
+export function ownDesignsWhere(linkedAuthorIds: string[]): Prisma.PrintWhereInput {
+  return {
+    originalId: null,
+    toolId: null,
+    OR: [
+      { authorId: null, creator: null, sourceProvider: null },
+      ...(linkedAuthorIds.length ? [{ authorId: { in: linkedAuthorIds } }] : []),
+    ],
+  };
+}
+
 /** `rankedIds` is set when `q` is: the matches, best first, for orderBy=relevance. Tags aren't in
  *  `where`: see matchesTagList. */
 export async function buildPrintWhere(
@@ -71,14 +95,7 @@ export async function buildPrintWhere(
   if (categoryIds.length === 1) where.categoryId = categoryIds[0];
   else if (categoryIds.length > 1) where.categoryId = { in: categoryIds };
   if (authorId === SELF_AUTHOR_ID) {
-    // "My models": prints with no author at all, or by an Author the user linked as themselves.
-    const linkedAuthorIds = await getLinkedAuthorIds(userId);
-    andClauses.push({
-      OR: [
-        { authorId: null, creator: null, sourceProvider: null },
-        ...(linkedAuthorIds.length ? [{ authorId: { in: linkedAuthorIds } }] : []),
-      ],
-    });
+    andClauses.push(ownDesignsWhere(await getLinkedAuthorIds(userId)));
   } else if (authorId) {
     where.authorId = authorId;
   }
@@ -102,6 +119,8 @@ export async function buildPrintWhere(
     }
     if (hidden.includes(UPLOADED_PROVIDER)) andClauses.push({ NOT: { sourceProvider: null } });
   }
+  if (filters.licenseAllows?.length) andClauses.push({ licenseAllows: { hasEvery: filters.licenseAllows } });
+  if (filters.licensed) andClauses.push({ license: { not: Prisma.DbNull } });
   if (filters.generative) {
     // A generator script is kept beside a model, never as one of its plates, so this is what marks one as
     // generated rather than only printed. `.scad` is the only kind so far; config.ts's set is the list.

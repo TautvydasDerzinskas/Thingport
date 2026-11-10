@@ -30,7 +30,6 @@ import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import SettingsBrightnessOutlinedIcon from "@mui/icons-material/SettingsBrightnessOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LinkIcon from "@mui/icons-material/Link";
-import TranslateIcon from "@mui/icons-material/Translate";
 import PaletteIcon from "@mui/icons-material/Palette";
 import SettingsIcon from "@mui/icons-material/Settings";
 import HubIcon from "@mui/icons-material/Hub";
@@ -44,11 +43,11 @@ import WebAssetIcon from "@mui/icons-material/WebAsset";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import BoltIcon from "@mui/icons-material/Bolt";
 import CableIcon from "@mui/icons-material/Cable";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import HistoryIcon from "@mui/icons-material/History";
+import ShareIcon from "@mui/icons-material/Share";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PeopleIcon from "@mui/icons-material/People";
 import PublicIcon from "@mui/icons-material/Public";
@@ -59,6 +58,7 @@ import { type SearchResult, searchApi } from "../../../api/search";
 import { printsApi } from "../../../api/prints";
 import { IMPORT_PROVIDER_INFO } from "../../../constants/importProviders";
 import { SUPPORTED_LANGUAGES } from "../../../constants/languages";
+import LanguageFlag from "../../LanguageFlag";
 import { copyText } from "../../../utils/clipboard";
 import { detectImportProvider } from "../../../utils/importLinkDetection";
 import type { ThemeSelection } from "../../../constants/settingsOptions";
@@ -155,8 +155,8 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   adminTools: <HandymanOutlinedIcon />,
   adminAi: <AutoAwesomeIcon />,
   adminUsers: <PeopleIcon />,
+  adminSocial: <ShareIcon />,
   adminLogs: <HistoryIcon />,
-  adminTriggers: <BoltIcon />,
   adminConnections: <CableIcon />,
   adminCaptcha: <VerifiedUserIcon />,
 };
@@ -417,7 +417,7 @@ export default function GlobalSearch({
       // Named in itself, as in the profile's picker, so it's findable from any UI language.
       label: t("app:search.commands.language", { name: label }),
       keywords: ["language", "kalba", ...`${englishName} ${label}`.toLowerCase().split(" ")],
-      icon: <TranslateIcon />,
+      icon: <LanguageFlag code={code} height={12} />,
       run: () => void i18n.changeLanguage(code),
     })),
     {

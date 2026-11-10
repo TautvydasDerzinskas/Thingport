@@ -19,6 +19,9 @@ import { isToymakr3dLikesUrl } from "../src/providers/toymakr3d/api";
 import { parseMakerablesSavedUrl } from "../src/providers/makerables/api";
 import { parseCgtraderListUrl } from "../src/providers/cgtrader/api";
 import { parseGrabcadLikesUrl } from "../src/providers/grabcad/api";
+import { parsePixup3dWishlistUrl } from "../src/providers/pixup3d/api";
+import { isFab365LikesUrl } from "../src/providers/fab365/api";
+import { isThreedexportDefaultUrl } from "../src/providers/threedexport/api";
 
 type Expected = {
   provider: string | null;
@@ -52,6 +55,7 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
   if (provider === "snapmaker") return parseSnapmakerListUrl(url)?.list ?? "collection";
   if (provider === "makerables" && parseMakerablesSavedUrl(url)) return "bookmarks";
   if (provider === "cgtrader" && parseCgtraderListUrl(url) === "wishlist") return "bookmarks";
+  if (provider === "threedexport" && isThreedexportDefaultUrl(url)) return "bookmarks";
   if (
     (provider === "thingiverse" && parseThingiverseLikesUrl(url)) ||
     (provider === "printables" && parsePrintablesLikesUrl(url)) ||
@@ -63,7 +67,9 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
     (provider === "pinshape" && parsePinshapeLikesUrl(url)) ||
     (provider === "toymakr3d" && isToymakr3dLikesUrl(url)) ||
     (provider === "cgtrader" && parseCgtraderListUrl(url) === "likes") ||
-    (provider === "grabcad" && parseGrabcadLikesUrl(url))
+    (provider === "grabcad" && parseGrabcadLikesUrl(url)) ||
+    (provider === "pixup3d" && parsePixup3dWishlistUrl(url)) ||
+    (provider === "fab365" && isFab365LikesUrl(url))
   )
     return "likes";
   return "collection";
@@ -71,8 +77,8 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
 
 describe("provider URL corpus (backend)", () => {
   it("contains every provider and both positive and negative cases", () => {
-    expect(cases).toHaveLength(130);
-    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(18);
+    expect(cases).toHaveLength(168);
+    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(21);
   });
 
   it.each(cases)("$url", ({ url, expect: common, divergent }) => {

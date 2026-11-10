@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import dotenv from "dotenv";
 
 // Load .env before any export below reads process.env. Without this, values only worked when
@@ -48,6 +49,10 @@ export const STUDIO_ASSETS = path.join(STORAGE, "studio");
 export const TAG_MOSAICS = path.join(STORAGE, "tag-mosaics");
 // Icons users uploaded, by id; see services/iconService.ts.
 export const ICONS = path.join(STORAGE, "icons");
+// Profile cover pictures people upload, public like icons.
+export const COVERS = path.join(STORAGE, "covers");
+// Avatars people upload, and in gravatar/ the Gravatars fetched for the others to see.
+export const AVATARS = path.join(STORAGE, "avatars");
 // Slicer-compatible copies of MakerWorld 3MFs, rebuilt when the source plate changes.
 export const NORMALIZED_3MFS = path.join(STORAGE, "normalized-3mf");
 // Large multi-part projects take minutes on a slow CPU; the page waits for it, not the request.
@@ -140,6 +145,14 @@ export const IMPORT_HTML_MAX_BYTES = Math.max(64, IMPORT_HTML_MAX_KB) * 1024;
 export const IMPORT_COLLECTION_DELAY_MS = envInt("IMPORT_COLLECTION_DELAY_MS", 1000);
 // Wait before retrying a file download Cloudflare challenged or rate-limited.
 export const IMPORT_DOWNLOAD_RETRY_DELAY_MS = envInt("IMPORT_DOWNLOAD_RETRY_DELAY_MS", 2000);
+// How long after an import adds a print profile its facts are read (services/printProfileService.ts), so a model's
+// profiles coming in one by one are read together. Negative leaves it to the model page, as the tests do.
+export const PROFILE_FILL_AFTER_IMPORT_MS = envInt("PROFILE_FILL_AFTER_IMPORT_MS", 4000);
+// How long one model's licence read may take: reads run one at a time, so a site that never finishes answering would
+// otherwise hold up every other model's.
+const licenseReadTimeoutMs = envInt("LICENSE_READ_TIMEOUT_MS", 3 * 60_000);
+// None or a negative one would give every read up at once.
+export const LICENSE_READ_TIMEOUT_MS = licenseReadTimeoutMs > 0 ? licenseReadTimeoutMs : 3 * 60_000;
 // MakerWorld's CAPTCHA trips on bursts, so in collection imports this delay precedes every
 // MakerWorld request (listing pages, each resolution step, each image), not just each model.
 // MakerWorld's pacing against its CAPTCHA, here with the other settings an admin can set by environment variable.
@@ -171,8 +184,12 @@ export const SYSTEM_NOTIFICATIONS_URL = (
 
 export const DEFAULT_RELEASE_NOTES_URL = "https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main";
 // The repo files "What's new" reads: the CHANGELOG.md files and release-notes/latest-release-notes.json. Set to an
-// empty value to stop fetching them.
-export const RELEASE_NOTES_URL = (process.env.RELEASE_NOTES_URL ?? DEFAULT_RELEASE_NOTES_URL)
+// empty value to stop fetching them, or to a file:// URL to read a checkout. `npm run dev` reads the one it runs
+// from, so notes can be previewed before they're pushed.
+export const RELEASE_NOTES_URL = (
+  process.env.RELEASE_NOTES_URL ??
+  (process.env.npm_lifecycle_event === "dev" ? pathToFileURL(path.resolve("..")).href : DEFAULT_RELEASE_NOTES_URL)
+)
   .trim()
   .replace(/\/+$/, "");
 

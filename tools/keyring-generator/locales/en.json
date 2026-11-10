@@ -1,8 +1,8 @@
 {
   "bar.download": "Download",
   "bar.more": "More",
-  "bar.piece": "piece",
-  "bar.pieces": "pieces",
+  "bar.pieces.one": "piece",
+  "bar.pieces.other": "pieces",
   "bar.piecesHint": "How many separate pieces it comes out as",
   "bar.redo": "Redo",
   "bar.redoHint": "Redo (Ctrl+Shift+Z)",

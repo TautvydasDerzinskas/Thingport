@@ -67,7 +67,8 @@ export type ProviderContractSpec = {
     title: string;
     notesIncludes: string;
     author: string;
-    /** The model's tags as the library keeps them, sorted. */
+    /** The model's tags as the library keeps them, sorted. Empty for a provider whose models carry no tags, so
+     *  fill-gaps has nothing to fill one from and leaves it among the gaps that remain. */
     tags: string[];
     /** The seeded category the model's site category ids map to; null for a provider whose models don't say their
      *  category (manifest `categoryIds: "none"`), so the import comes uncategorized and fill-gaps leaves it. */
@@ -437,19 +438,24 @@ export function describeProviderContract(spec: ProviderContractSpec): ContractCo
         const res = await fill();
         expectStatus(res, 200);
         const describes = spec.expected.description !== false;
+        const tagged = spec.expected.tags.length > 0;
         expect(res.body.filled.toSorted()).toEqual([
           "author",
           ...(category ? ["category"] : []),
           "creator",
           ...(describes ? ["description"] : []),
           "images",
-          "tags",
+          ...(tagged ? ["tags"] : []),
           "title",
         ]);
-        // A provider whose models don't say their category, or carry no description, leaves that gap: there's
-        // nothing to fill it from.
+        // A provider whose models don't say their category, carry no description, or have no tags, leaves that gap:
+        // there's nothing to fill it from.
         expect(res.body.remaining.toSorted()).toEqual(
-          [...(category ? [] : ["category"]), ...(describes ? [] : ["description"])].toSorted(),
+          [
+            ...(category ? [] : ["category"]),
+            ...(describes ? [] : ["description"]),
+            ...(tagged ? [] : ["tags"]),
+          ].toSorted(),
         );
         const filled = await prisma.print.findUniqueOrThrow({ where: { id: print.id }, include: { author: true } });
         expect(filled.title).toBe(spec.expected.title);
