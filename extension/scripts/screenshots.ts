@@ -26,6 +26,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, type BrowserContext, type Page, type Worker } from "playwright";
 import type { BatchEntriesResult } from "../src/shared/api";
+import { MANIFESTS, PROVIDER_IDS } from "../src/providers/index.generated";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const EXTENSION_DIR = path.join(ROOT, "dist", "chrome");
@@ -368,7 +369,8 @@ async function screenshotPopup(
   await page.close();
 }
 
-// The other sites Grab works on, for --corners: a model linked from the front page, else `fixed`.
+// The other sites Grab works on, for --corners: a model linked from the front page, else `fixed`. A site with no entry
+// here, such as one added since, uses the example model page its manifest names.
 const CORNER_SITES: { id: string; home?: string; modelLink?: RegExp; fixed?: string }[] = [
   {
     id: "snapmaker",
@@ -407,6 +409,8 @@ const CORNER_SITES: { id: string; home?: string; modelLink?: RegExp; fixed?: str
     fixed: "https://www.cgtrader.com/3d-print-models/jewelry/ring/lotus-ring-with-opening-and-closing-mechanism",
   },
   { id: "grabcad", fixed: "https://grabcad.com/library/arduino-uno-r3-1" },
+  // Its one free model, the manifest's example, is a Star Wars walker, and most of its catalogue is licensed characters.
+  { id: "fab365", fixed: "https://fab365.net/items/235" },
 ];
 const CORNER = { width: 640, height: 512 };
 
@@ -444,6 +448,21 @@ async function clearCorner(page: Page): Promise<void> {
     });
 }
 
+/** Hides the banners a site runs for a sale, which would date a store picture within weeks. */
+async function hidePromotions(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const promo = /black.?friday|cyber.?monday|sale|promo|banner/i;
+    for (const img of document.querySelectorAll<HTMLImageElement>("img")) {
+      const link = img.closest("a");
+      const text = `${img.src} ${img.alt} ${link?.href ?? ""}`;
+      if (!promo.test(text)) continue;
+      const box = img.getBoundingClientRect();
+      // Banners only: wide, short pictures, never a model's own.
+      if (box.width > 300 && box.width > box.height * 2.5) (link ?? img).style.visibility = "hidden";
+    }
+  });
+}
+
 /** Each site's bottom-right corner, where Grab's button sits: once alone, once with the panel open. A site that
  *  turns the browser away, or where the button doesn't come up, is reported and left out. --only=corner-<site>,...
  *  takes just those. */
@@ -453,9 +472,14 @@ async function captureCorners(page: Page, models: Map<ProviderName, ModelInfo>, 
   await page.emulateMedia({ colorScheme: "light" });
   const clip = { x: PAGE_VIEWPORT.width - CORNER.width, y: PAGE_VIEWPORT.height - CORNER.height, ...CORNER };
   const only = ONLY.filter((name) => name.startsWith("corner-"));
+  const listed = new Set<string>([...PROVIDERS.map((p) => p.name), ...CORNER_SITES.map((s) => s.id)]);
+  const fromManifests = PROVIDER_IDS.filter((id) => !listed.has(id) && MANIFESTS[id].examples?.model).map((id) => ({
+    id: id as string,
+    fixed: MANIFESTS[id].examples!.model!,
+  }));
   const sites = [
     ...PROVIDERS.map((p) => ({ id: p.name as string, provider: p })),
-    ...CORNER_SITES.map((s) => ({ id: s.id, site: s })),
+    ...[...CORNER_SITES, ...fromManifests].map((s) => ({ id: s.id, site: s })),
   ].filter((entry) => !only.length || only.includes(`corner-${entry.id}`));
   for (const entry of sites) {
     try {
@@ -472,6 +496,8 @@ async function captureCorners(page: Page, models: Map<ProviderName, ModelInfo>, 
       await dismissBanners(page);
       await page.waitForTimeout(1500);
       await clearCorner(page);
+      // A store picture outlives a site's seasonal promotion, such as the Prusa sale banner on every Printables page.
+      await hidePromotions(page);
       await undressSeason(page);
       await page.screenshot({ path: path.join(dir, `${entry.id}.jpg`), type: "jpeg", quality: 85, clip });
       await fab.click();
