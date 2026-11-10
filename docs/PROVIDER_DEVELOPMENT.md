@@ -153,6 +153,9 @@ Rules of thumb:
   `connections.ts`, used by Snapmaker and MakerOnline).
 - Accept a pasted Cookie header as well as a bare value. `manifest.sessionCookies` names the cookies to pick out,
   and Grab reads the same ones.
+- Grab's sign-out (a session source's `signedOut`) carries `signed_out_of`, the value of the sign-in it last sent. A
+  connection with a `signOut` clears only while that's still the one stored, so a sign-in pasted in Thingport since
+  stays (3DExport's); without one, the sign-out goes to `save` and clears whatever is there.
 
 ### Getting files
 

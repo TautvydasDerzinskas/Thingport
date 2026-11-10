@@ -70,7 +70,11 @@ describe("syncSession", () => {
     await syncSession("nexprint");
     cookies.clear();
     await syncSession("nexprint");
-    expect(apiCall).toHaveBeenLastCalledWith("PATCH", "/settings/nexprint-session", { token: null });
+    // With what it sent, so the instance can leave a sign-in pasted there since.
+    expect(apiCall).toHaveBeenLastCalledWith("PATCH", "/settings/nexprint-session", {
+      token: null,
+      signed_out_of: NEXPRINT_TOKEN,
+    });
     expect(store.lastSyncedSessions).toEqual({});
   });
 

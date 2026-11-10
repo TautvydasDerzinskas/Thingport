@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../db";
 import { HttpError } from "../../utils/fileUtils";
 import { connectionState, readConnection, usableSecret, writeConnection, type ConnectionState } from "../connections";
@@ -63,6 +63,16 @@ export async function markThreedexportSessionRejected(userId: string, used: stri
   const { count } = await prisma.providerConnection.updateMany({
     where: { ...ROW(userId), secret: { path: ["hash"], equals: used } },
     data: { rejectedAt: new Date() },
+  });
+  return count > 0;
+}
+
+/** Clears the sign-in whose hash is `hash`, only while it's still the one stored; whether it was. Who it was is kept,
+ *  as on any disconnect. */
+export async function clearThreedexportSessionIf(userId: string, hash: string): Promise<boolean> {
+  const { count } = await prisma.providerConnection.updateMany({
+    where: { ...ROW(userId), secret: { path: ["hash"], equals: hash } },
+    data: { secret: Prisma.DbNull, expiresAt: null, rejectedAt: null },
   });
   return count > 0;
 }

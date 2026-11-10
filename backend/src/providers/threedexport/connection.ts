@@ -3,7 +3,12 @@ import { HttpError } from "../../utils/fileUtils";
 import { parseBody } from "../../utils/validate";
 import type { ConnectionSlot } from "../types";
 import { checkThreedexportAuth, type ThreedexportAccount } from "./api";
-import { getThreedexportConnection, normalizeThreedexportSession, setUserThreedexportSession } from "./session";
+import {
+  clearThreedexportSessionIf,
+  getThreedexportConnection,
+  normalizeThreedexportSession,
+  setUserThreedexportSession,
+} from "./session";
 
 const schema = z.object({
   session: z.string().max(20_000).nullable(),
@@ -44,5 +49,12 @@ export const threedexportConnection: ConnectionSlot = {
       if (typeof check === "object") account = check;
     }
     return { configured: await setUserThreedexportSession(userId, session, account) };
+  },
+  // Grab saw the browser sign out: the sign-in it sent goes, while it's still the one stored. Signing out there revokes
+  // it anyway, but one pasted in Thingport since is someone's own choice, and stays.
+  async signOut(userId, lastSent) {
+    const sent = normalizeThreedexportSession(lastSent);
+    if (sent) await clearThreedexportSessionIf(userId, sent.hash);
+    return { configured: (await getThreedexportConnection(userId)).state !== "disconnected" };
   },
 };

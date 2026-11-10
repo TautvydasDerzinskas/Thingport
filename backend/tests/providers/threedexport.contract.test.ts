@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import request from "supertest";
+import { createApp } from "../../src/app";
+import { prisma } from "../../src/db";
 import {
   fetchThreedexportCollection,
   fetchThreedexportTrending,
@@ -545,5 +548,39 @@ describe("3DExport pages", () => {
 
   it("keeps a page's user signed out when it's a visitor's", () => {
     expect(threedexportModelFrom(loadFixtureHtml("threedexport", "page-visitor"))?.signedIn).toBe(false);
+  });
+});
+
+describe("3DExport sign-outs from Grab", () => {
+  const app = createApp();
+
+  it("clears the sign-in Grab sent, but not one pasted in Thingport since", async () => {
+    const res = await request(app)
+      .post("/api/register")
+      .send({ displayName: "Grab sign-out", email: `3dx-signout-${Date.now()}@example.com`, password: "password123" });
+    const userId: string = res.body.user.id;
+    const auth = { Authorization: `Bearer ${res.body.token}` };
+    const patch = (body: Record<string, unknown>) =>
+      request(app).patch("/api/providers/threedexport/connection").set(auth).send(body);
+    const sent = `nm_userid=${USER_ID}; nm_hash=${HASH}`;
+    try {
+      ctx.stub("ok");
+      await connect(userId);
+      expect((await patch({ session: null, signed_out_of: sent })).body).toEqual({ configured: false });
+      const cleared = await getThreedexportConnection(userId);
+      // Who it was stays, as on any disconnect.
+      expect(cleared).toEqual({ state: "disconnected", account: { username: ME } });
+
+      // Another sign-in pasted since isn't the one Grab saw signed out.
+      await connect(userId, OTHER_HASH);
+      expect((await patch({ session: null, signed_out_of: sent })).body).toEqual({ configured: true });
+      const kept = await prisma.providerConnection.findFirstOrThrow({ where: { userId, provider: "threedexport" } });
+      expect(kept.secret).toEqual({ userId: USER_ID, hash: OTHER_HASH });
+
+      // Disconnecting in Thingport clears whatever is there.
+      expect((await patch({ session: null })).body).toEqual({ configured: false });
+    } finally {
+      await prisma.user.delete({ where: { id: userId } }).catch(() => undefined);
+    }
   });
 });

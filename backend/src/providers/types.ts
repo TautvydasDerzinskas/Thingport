@@ -272,6 +272,11 @@ export type ConnectionSlot = {
   save(userId: string, body: unknown): Promise<Record<string, unknown>>;
   /** What the legacy endpoint's GET answered, where that was more than `configured` and `expired`. */
   legacyStatus?(userId: string): Promise<Record<string, unknown>>;
+  /** Thingport Grab's word that the browser signed out, with `lastSent`, the sign-in it last sent (its own value for
+   *  it): clears the stored sign-in only while it's still that one, at once, so one saved since -- pasted in
+   *  Thingport, say -- stays. Answers as `save` does. Without it, Grab's sign-out goes to `save` and clears whatever is
+   *  stored. */
+  signOut?(userId: string, lastSent: string): Promise<Record<string, unknown>>;
 };
 
 /** A model's details read without its files, for filling a print's gaps (services/fillGapsService.ts). */
