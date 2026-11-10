@@ -1,5 +1,34 @@
 # Thingport frontend changelog
 
+# [thingport-frontend-v1.6.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.5.0...thingport-frontend-v1.6.0) (2026-11-10)
+
+
+### Bug Fixes
+
+* act on the five review comments [#271](https://github.com/TautvydasDerzinskas/Thingport/issues/271) resolved without a change ([#272](https://github.com/TautvydasDerzinskas/Thingport/issues/272)) ([edd5e45](https://github.com/TautvydasDerzinskas/Thingport/commit/edd5e45d310f0130224d4e3339331ecbdd9d9151)), closes [#anchor](https://github.com/TautvydasDerzinskas/Thingport/issues/anchor)
+* let connected instances turn on when nothing reaches the Public URL, connecting through links ([#270](https://github.com/TautvydasDerzinskas/Thingport/issues/270)) ([223772f](https://github.com/TautvydasDerzinskas/Thingport/commit/223772f4b473d1bb08690aa40704b558c2274aa5))
+* offer Creality Print Bridge fallback for HTTPS model imports ([#287](https://github.com/TautvydasDerzinskas/Thingport/issues/287)) ([b1b6a8e](https://github.com/TautvydasDerzinskas/Thingport/commit/b1b6a8e1a625ba0942ffafae9271e0ee6a746e55))
+* open each page at the top, and shorten the README with picture links ([#271](https://github.com/TautvydasDerzinskas/Thingport/issues/271)) ([1c8ef04](https://github.com/TautvydasDerzinskas/Thingport/commit/1c8ef0467c2fa9dfde3b372e79897d969479f683))
+* stop the licence popover scrolling, as its hidden screen-reader words filled the whole popover ([#295](https://github.com/TautvydasDerzinskas/Thingport/issues/295)) ([4458e5a](https://github.com/TautvydasDerzinskas/Thingport/commit/4458e5a146ff7501dd149e472bca2b0ff0ba5cb6))
+
+
+### Features
+
+* add Russian, Ukrainian and Belarusian translations ([#280](https://github.com/TautvydasDerzinskas/Thingport/issues/280)) ([1f6d151](https://github.com/TautvydasDerzinskas/Thingport/commit/1f6d151a89cd28f61a4d11547111391ab3728cea))
+* connected instances, so partners' people and models show on Explore and can be copied ([#257](https://github.com/TautvydasDerzinskas/Thingport/issues/257)) ([ce51428](https://github.com/TautvydasDerzinskas/Thingport/commit/ce51428116b18c24e81afcca35164d554a8eccd2))
+* delete a user's models from the Users page, and drop Administration → Triggers ([#250](https://github.com/TautvydasDerzinskas/Thingport/issues/250)) ([b82ff70](https://github.com/TautvydasDerzinskas/Thingport/commit/b82ff702e3f30afcf0452e8a60c69a33ab0e1ca6))
+* import from 3DExport, its free and bought models, and your own or anyone's collections ([#291](https://github.com/TautvydasDerzinskas/Thingport/issues/291)) ([67ce520](https://github.com/TautvydasDerzinskas/Thingport/commit/67ce5209bfa475a2572816aeed043eb9982acc7c))
+* import from Fab365, its free and owned models, and your favourites ([#288](https://github.com/TautvydasDerzinskas/Thingport/issues/288)) ([1cc138f](https://github.com/TautvydasDerzinskas/Thingport/commit/1cc138f06b9ca82f1d1daa772f8e6b9b5ffbe3a6))
+* import from PIXUP, its free and bought models, and anyone's wishlists and collections ([#284](https://github.com/TautvydasDerzinskas/Thingport/issues/284)) ([ee96edf](https://github.com/TautvydasDerzinskas/Thingport/commit/ee96edf95b13e1523346f920a05b53b4b1ae58be))
+* keep each model's licence, filter by what it allows, and write LICENSE.txt beside its files ([#286](https://github.com/TautvydasDerzinskas/Thingport/issues/286)) ([f12074a](https://github.com/TautvydasDerzinskas/Thingport/commit/f12074ae04ea54acd452f67cadf42e32639908ad)), closes [#285](https://github.com/TautvydasDerzinskas/Thingport/issues/285)
+* move the social switches to their own Administration → Social page ([#252](https://github.com/TautvydasDerzinskas/Thingport/issues/252)) ([c10abda](https://github.com/TautvydasDerzinskas/Thingport/commit/c10abda9580a33038cefe8adcc225f88a56988c0))
+* open earlier releases' notes from What's new, and go back to the latest ([#274](https://github.com/TautvydasDerzinskas/Thingport/issues/274)) ([8f53587](https://github.com/TautvydasDerzinskas/Thingport/commit/8f535874b0cc11face072b79161a2e926a380088))
+* profiles with avatars, covers, links and public models on Explore ([#251](https://github.com/TautvydasDerzinskas/Thingport/issues/251)) ([5fe0d7d](https://github.com/TautvydasDerzinskas/Thingport/commit/5fe0d7d7ca5020a322120ecb989c9758caf8750a))
+* share a collection with the people you pick, beside private and public ([#281](https://github.com/TautvydasDerzinskas/Thingport/issues/281)) ([c0ced05](https://github.com/TautvydasDerzinskas/Thingport/commit/c0ced05c8e9f5ef5090b25e7e49b5f322b306148)), closes [#282](https://github.com/TautvydasDerzinskas/Thingport/issues/282)
+* show Administration → Providers as cards, with sort, filters and bulk on/off ([#249](https://github.com/TautvydasDerzinskas/Thingport/issues/249)) ([34f3b6a](https://github.com/TautvydasDerzinskas/Thingport/commit/34f3b6ae4e5b5552dba9433a013ba35f459e0456))
+* show print profiles on the model page, with their times, filament and plates ([#277](https://github.com/TautvydasDerzinskas/Thingport/issues/277)) ([7641678](https://github.com/TautvydasDerzinskas/Thingport/commit/7641678d880d1978f2819bdf9891ae023f2c61b3))
+* **web:** a landing page built around the demo video, and "Thingport instance" wherever a server is meant ([#276](https://github.com/TautvydasDerzinskas/Thingport/issues/276)) ([104cfe6](https://github.com/TautvydasDerzinskas/Thingport/commit/104cfe6f74ffc65bb8ab0dbbdd69bc9072ae464f))
+
 # [thingport-frontend-v1.5.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.4.0...thingport-frontend-v1.5.0) (2026-11-05)
 
 
