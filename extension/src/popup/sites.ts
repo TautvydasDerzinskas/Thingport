@@ -7,7 +7,7 @@
 import { OPTIONAL_SITES, siteEnabled, type OptionalSite } from "../shared/optionalSites";
 import { send } from "../shared/messages";
 import type { Provider } from "../shared/urls";
-import { clearError, els, showError } from "./dom";
+import { clearError, els, opensInTab, showError } from "./dom";
 import { ABOUT, MANIFESTS, PROVIDER_IDS, type Logo } from "../providers/index.generated";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -145,8 +145,18 @@ function fillRow<T extends HTMLElement>(el: T, site: Site, status: Element): T {
   return el;
 }
 
-/** One site of the grid: its name with a tick, or the whole row as the button that turns it on. `appeared` pops the
- *  tick in where the button was. */
+/** An enabled site's row: a link to its home page, opened in a new tab. */
+function siteLink(site: Site): HTMLAnchorElement {
+  const { site: url } = MANIFESTS[site.id];
+  const link = document.createElement("a");
+  link.href = url;
+  link.title = `Open ${new URL(url).hostname}`;
+  link.setAttribute("aria-label", `${site.name}, enabled: open its site`);
+  return opensInTab(link);
+}
+
+/** One site of the grid: a link to its site with a tick once it's on, or the whole row as the button that turns it on.
+ *  `appeared` pops the tick in where the button was. */
 function siteRow(site: Site, appeared = false): HTMLLIElement {
   const row = document.createElement("li");
   row.className = "site";
@@ -154,7 +164,7 @@ function siteRow(site: Site, appeared = false): HTMLLIElement {
     row.classList.add("site--soon");
     row.append(fillRow(document.createElement("div"), site, comingSoonButton(site)));
   } else if (enabled.has(site.id) || !site.optional) {
-    row.append(fillRow(document.createElement("div"), site, tick(site, appeared)));
+    row.append(fillRow(siteLink(site), site, tick(site, appeared)));
   } else {
     row.classList.add("site--off");
     const btn = document.createElement("button");

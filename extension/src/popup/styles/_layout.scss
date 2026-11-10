@@ -77,13 +77,24 @@ body {
   gap: t.$space-1;
   min-width: 0;
 
+  // A link to the instance, quiet until pointed at.
   &__url {
     min-width: 0;
     overflow: hidden;
+    border-radius: 4px;
     font-size: t.$font-size-sm;
     white-space: nowrap;
     text-overflow: ellipsis;
+    text-decoration: none;
     color: t.c("text-muted");
+    transition: color 0.15s ease;
+    @include m.focus-ring;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+      color: t.c("text");
+    }
   }
 }
 
@@ -190,7 +201,7 @@ body {
 .site {
   min-width: 0;
 
-  // A plain row when the site is on; the button that turns it on when it isn't.
+  // A link to the site once it's on; the button that turns it on when it isn't.
   &__row {
     display: flex;
     align-items: center;
@@ -212,8 +223,10 @@ body {
     }
   }
 
-  button.site__row {
+  button.site__row,
+  a.site__row {
     cursor: pointer;
+    text-decoration: none;
     transition: background 0.15s ease;
     @include m.focus-ring;
 

@@ -6,8 +6,10 @@
 .tg-panel-stack {
   @include m.isolated;
   position: fixed;
+  // Above the icon, 10px clear of it, wherever its corner and however tall its style (_bubble.scss turns this
+  // round for the other corners).
   right: 24px;
-  bottom: 90px;
+  bottom: calc(var(--tg-fab-end, 24px) + var(--tg-fab-h, 56px) + 10px);
   z-index: t.$z-top;
   display: flex;
   flex-direction: column;
@@ -20,10 +22,11 @@
     display: none;
   }
 
-  // The floating icon's centre: 28px in from this column's right edge (both sit 24px from the window's, and the
-  // icon is 56px wide) and 38px below its bottom (the column stands at 90px, the icon's centre at 52px). Scaling
-  // from there makes the panel come out of the icon and go back into it.
-  transform-origin: calc(100% - 28px) calc(100% + 38px);
+  // The floating icon's centre, so scaling from there makes the panel come out of the icon and go back into it.
+  // By default 28px in from this column's right edge (both sit 24px from the window's, and the icon is 56px wide)
+  // and 38px below its bottom (the column stands at 90px, the icon's centre at 52px); _bubble.scss works it out for
+  // the other styles and corners.
+  transform-origin: var(--tg-stack-x, calc(100% - 28px)) var(--tg-stack-y, calc(100% + 38px));
 
   &--opening {
     animation: tg-panel-spit 0.36s cubic-bezier(0.22, 1.4, 0.4, 1) both;

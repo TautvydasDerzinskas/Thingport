@@ -8,8 +8,9 @@
 .tg-fab {
   @include m.isolated(block);
   position: fixed;
-  right: 24px;
-  bottom: 24px;
+  // Its corner and distance from it follow the Appearance tab's pick (_bubble.scss); bottom right otherwise.
+  right: var(--tg-fab-side, 24px);
+  bottom: var(--tg-fab-end, 24px);
   z-index: t.$z-top;
   width: 56px;
   height: 56px;
@@ -71,6 +72,11 @@
     @include s.overlay;
   }
 
+  // The pill style's word (styles/_bubble-looks.scss); the others have none.
+  &__label {
+    display: none;
+  }
+
   // Following the pointer: quick and smooth, no bounce.
   &--near {
     .tg-fab__body,
@@ -93,10 +99,11 @@
     --tg-press: 0.92;
   }
 
-  // The model's already in the library, only this page's MakerWorld print profile might not be
-  // (see panels/single.ts's addProfileHtml). A checkmark badge rather than a different icon, so it
-  // still reads as Thingport but not as "you don't have this yet".
+  // The model's in the library: a badge rather than a different icon, so it still reads as Thingport but not as
+  // "you don't have this yet". A plus while there's something to add to it (another print profile, details its copy
+  // lacks: panels/single.ts's addProfileHtml), a tick once everything's in.
   &--in-library .tg-fab__body::after,
+  &--complete .tg-fab__body::after,
   &--disconnected .tg-fab__body::after {
     position: absolute;
     top: -2px;
@@ -112,8 +119,21 @@
   }
 
   &--in-library .tg-fab__body::after {
+    content: "+";
+    background: t.c("accent");
+    font-size: 15px;
+  }
+
+  &--complete .tg-fab__body::after {
     content: "\2713";
     background: t.c("accent");
+  }
+
+  // And a green ring round the bubble, so done can't be taken for the plus. An outline, which follows the bubble's
+  // shape whatever its style and leaves its shadow to the style.
+  &--complete .tg-fab__blob {
+    outline: 2.5px solid t.c("accent");
+    outline-offset: 2px;
   }
 
   // Supported page, extension not configured yet (see setupModal.ts). Grayed out so it doesn't

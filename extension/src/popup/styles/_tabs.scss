@@ -34,18 +34,12 @@
     position: absolute;
     bottom: -1px;
     left: 0;
-    width: calc(100% / 3);
+    // One tab wide, under the one picked, of however many are shown (popup/index.ts sets both).
+    width: calc(100% / var(--tab-count, 3));
     height: 2px;
     background: t.c("accent");
+    transform: translateX(calc(100% * var(--tab-index, 0)));
     transition: transform 0.2s ease;
-  }
-
-  &[data-active="offline"] &__indicator {
-    transform: translateX(100%);
-  }
-
-  &[data-active="history"] &__indicator {
-    transform: translateX(200%);
   }
 
   @media (prefers-reduced-motion: reduce) {
