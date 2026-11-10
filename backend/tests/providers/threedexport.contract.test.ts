@@ -400,6 +400,36 @@ describe("3DExport specifics", () => {
     expect(await fetchThreedexportCollection("99999999", threedexportVisit())).toBeNull();
   });
 
+  it("won't pass a collection longer than it reads off as whole to a sync, nor stop a list import at it", async () => {
+    // A collection whose count runs on, with a new model on every page it's asked for.
+    const endless: FetchHandler = async (call) => {
+      if (call.url.hostname !== "3dexport.com" || call.url.pathname !== "/bookmarks/3d-collection-7777")
+        return undefined;
+      const at = call.url.searchParams.get("page") ?? "1";
+      const page = loadFixtureHtml("threedexport", "collection-2")
+        .replaceAll("117590", String(800000 + Number(at)))
+        .replace("4 item(s)", "500000 item(s)");
+      return html(page);
+    };
+    ctx.install(endless);
+    await expect(fetchThreedexportCollection("7777", threedexportVisit(), Number.POSITIVE_INFINITY)).rejects.toThrow(
+      /runs past the 20000 models/,
+    );
+    const listed = await fetchThreedexportCollection("7777", threedexportVisit());
+    expect(listed).toMatchObject({ total: 500000, truncated: true });
+    expect(listed?.entries).toHaveLength(200);
+
+    // One whose count takes in models gone from the site ends on a page with nothing new, read whole all the same.
+    const overcounted: FetchHandler = async (call) => {
+      const res = await handlerFor("ok")(call);
+      if (!res || call.url.pathname !== `/bookmarks/3d-collection-${COLLECTION}`) return res;
+      return html((await res.text()).replace("4 item(s)", "5 item(s)"));
+    };
+    ctx.install(overcounted);
+    const whole = await fetchThreedexportCollection(COLLECTION, threedexportVisit(), Number.POSITIVE_INFINITY);
+    expect(whole?.entries.map((entry) => entry.itemId)).toEqual([RING, ITEM, "633844", "117590"]);
+  });
+
   it("syncs the user's Default Collection with their sign-in, and holds rather than unsyncs when it's refused", async () => {
     await connect(ctx.userId);
     ctx.stub("ok");

@@ -48,8 +48,10 @@ const RATE_LIMIT_WAIT_MS = 2000;
 const { user: USER_COOKIE, hash: HASH_COOKIE } = manifest.sessionCookies;
 const SESSION_COOKIE = "sessionid";
 
+// What its collection pages show at once.
+const PAGE_SIZE = 100;
 const LISTING_MAX_ENTRIES = 600;
-// Past these there are surely no more.
+// Past these there are surely no more: a guard against a listing that never ends, not a limit on what's read.
 const MAX_PAGES = 200;
 const CARD_THUMBNAILS = 4;
 
@@ -618,7 +620,8 @@ function collectionTitleOf($: cheerio.CheerioAPI): string | null {
 
 /** A collection read from `url`, a hundred to a page, up to `maxItems`. Null for one that isn't there, or can't be seen:
  *  a private one answers anyone but its owner with a 404, and a numbered one that's gone shows an empty "Default
- *  Collection" -- which the user's own Default Collection (`numbered` false) may well be. */
+ *  Collection" -- which the user's own Default Collection (`numbered` false) may well be. Read whole (`maxItems`
+ *  infinite, as a sync reads it), one that still has pages past MAX_PAGES throws rather than pass for complete. */
 async function readCollection(
   url: string,
   visit: ThreedexportVisit,
@@ -629,6 +632,7 @@ async function readCollection(
   const seen = new Set<string>();
   let total: number | null = null;
   let title: string | null = null;
+  let more = true;
   for (let at = 1; at <= MAX_PAGES && entries.length < maxItems; at++) {
     const res = await page(at === 1 ? url : `${url}?page=${at}`, visit);
     // Only the first page says it isn't there: a later 404 is it going mid-read, and no answer either way.
@@ -642,9 +646,16 @@ async function readCollection(
     }
     const found = threedexportTilesFrom(res.body).filter((entry) => !seen.has(entry.itemId));
     found.forEach((entry) => seen.add(entry.itemId));
-    if (!found.length) break;
+    // A page with nothing new is the end, though the count said more: it counts models that are gone from the site.
+    more = found.length > 0 && (total === null || entries.length + found.length < total);
     entries.push(...found);
-    if (total !== null && entries.length >= total) break;
+    if (!more) break;
+  }
+  if (more && maxItems === Number.POSITIVE_INFINITY && entries.length < (total ?? Number.POSITIVE_INFINITY)) {
+    throw new Error(
+      `This 3DExport collection runs past the ${MAX_PAGES * PAGE_SIZE} models Thingport reads of one, so a sync ` +
+        "can't tell what's new in it.",
+    );
   }
   const all = Math.max(total ?? 0, entries.length);
   return {
