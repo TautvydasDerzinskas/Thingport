@@ -195,7 +195,8 @@ export default function OpenInSlicerButton({
             </MenuItem>
           ))}
         {normalizedOptions.map(({ option, target }) => {
-          const preparing = normalizedStateOf?.(target) === "preparing";
+          const state = normalizedStateOf?.(target) ?? "idle";
+          const preparing = state === "preparing";
           return (
             <MenuItem
               key={`normalized-${option.id}`}
@@ -214,9 +215,12 @@ export default function OpenInSlicerButton({
                 {preparing ? <CircularProgress size={16} color="inherit" /> : <LogoTile id={option.id} size={16} />}
               </ListItemIcon>
               <ListItemText primaryTypographyProps={{ variant: "body2" }}>
+                {/* A slow copy is still launched by a second click, which this tells the user to make. */}
                 {preparing
                   ? t("models:detail.normalizePreparing")
-                  : t("models:detail.openNormalizedInSlicer", { slicer: option.label })}
+                  : state === "ready"
+                    ? t("models:detail.normalizeReady", { slicer: option.label })
+                    : t("models:detail.openNormalizedInSlicer", { slicer: option.label })}
               </ListItemText>
               {!preparing && (
                 <Box component="span" sx={{ display: "inline-flex", ml: 1.5, color: "warning.main" }}>
