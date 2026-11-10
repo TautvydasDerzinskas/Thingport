@@ -10717,5 +10717,67 @@
       "name": "Education",
       "parent": null
     }
+  ],
+  "fab365": [
+    {
+      "id": "1009",
+      "name": "Vehicles & Machinery",
+      "parent": null
+    },
+    {
+      "id": "1011",
+      "name": "Military",
+      "parent": null
+    },
+    {
+      "id": "1012",
+      "name": "Space",
+      "parent": null
+    },
+    {
+      "id": "1013",
+      "name": "Robot",
+      "parent": null
+    },
+    {
+      "id": "1008",
+      "name": "Toys & Games",
+      "parent": null
+    },
+    {
+      "id": "1007",
+      "name": "Characters",
+      "parent": null
+    },
+    {
+      "id": "1006",
+      "name": "Creatures",
+      "parent": null
+    },
+    {
+      "id": "1005",
+      "name": "Household",
+      "parent": null
+    },
+    {
+      "id": "1004",
+      "name": "Fashion & Costume & Props",
+      "parent": null
+    },
+    {
+      "id": "1003",
+      "name": "Landscape & Buildings",
+      "parent": null
+    },
+    {
+      "id": "1002",
+      "name": "Hobby & Tools & Gadget",
+      "parent": null
+    },
+    {
+      "id": "1010",
+      "name": "Art & Design",
+      "parent": null
+    }
   ]
 }

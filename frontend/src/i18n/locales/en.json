@@ -6751,6 +6751,37 @@
           "hint": "Buy it on PIXUP first. Once it's in your library, Thingport imports it."
         }
       }
+    },
+    "fab365": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open fab365.net while signed in. It connects your account and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at fab365.net and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Local storage → fab365.net, copy the values of accessToken and refreshToken and paste them below, each on a line of its own after its name (accessToken: … and refreshToken: …). With the refresh token Thingport renews the sign-in itself; an accessToken on its own stops working after about 100 minutes and has to be pasted again."
+        ],
+        "placeholder": "accessToken: … and refreshToken: …, each on its own line"
+      },
+      "status": {
+        "notConnected": "Fab365 gives its files to signed-in members only, its free models included. Connect your account to import the ones you own and see your favourites.",
+        "expired": "Sign-in expired. Sign in on fab365.net with Thingport Grab, or connect Fab365 again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "Fab365: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "A South Korean model marketplace known for finely engineered prints — SpaceX rockets, foldable robots, Star Wars ships — most designed to print without supports.",
+        "signIn": "Your own sign-in, for the files and your favourites; its model pages read without it.",
+        "grab": "Sends your sign-in as you visit fab365.net, so Thingport can download the files and read your favourites.",
+        "setup": [
+          "Install Thingport Grab, enable it on Fab365 and open fab365.net signed in.",
+          "By hand: copy the accessToken and refreshToken values from a signed-in fab365.net tab's local storage and paste them in Configuration → Providers, each on its own line after its name."
+        ]
+      },
+      "admin": {
+        "description": "Models and your favourites. Model pages read without a sign-in; the files need each user's own. Free models and the ones you own import; a paid or ticket model you haven't got is left for you to buy or redeem on Fab365 first."
+      },
+      "sync": {
+        "notConnected": "Connect Fab365 in Configuration > Providers, or visit it signed in with Thingport Grab, to see your favourites here."
+      }
     }
   }
 }

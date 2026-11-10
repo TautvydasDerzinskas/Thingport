@@ -7070,6 +7070,37 @@
           "hint": "Pirmiausia nusipirkite jį PIXUP. Kai jis bus jūsų bibliotekoje, Thingport jį importuos."
         }
       }
+    },
+    "fab365": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite fab365.net būdami prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą, kai tik jis ten pasikeis.",
+          "Arba rankiniu būdu: prisijunkite fab365.net ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Local storage → fab365.net nukopijuokite accessToken ir refreshToken reikšmes ir įklijuokite žemiau, kiekvieną atskiroje eilutėje po jos pavadinimo (accessToken: … ir refreshToken: …). Su refreshToken Thingport prisijungimą atnaujina pats; vien accessToken nustoja veikti maždaug po 100 minučių, tada jį reikia įklijuoti iš naujo."
+        ],
+        "placeholder": "accessToken: … ir refreshToken: …, kiekvienas atskiroje eilutėje"
+      },
+      "status": {
+        "notConnected": "Fab365 failus duoda tik prisijungusiems nariams, įskaitant nemokamus modelius. Prijunkite paskyrą, kad importuotumėte turimus ir matytumėte mėgstamus.",
+        "expired": "Prisijungimas nebegalioja. Prisijunkite fab365.net su Thingport Grab arba iš naujo prijunkite Fab365 Konfigūracija → Tiekėjai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "Fab365: prijunkite paskyrą Konfigūracija → Tiekėjai"
+      },
+      "about": {
+        "summary": "Pietų Korėjos modelių parduotuvė, garsėjanti kruopščiai suprojektuotais spaudiniais — SpaceX raketomis, sulankstomais robotais, „Star Wars“ laivais — dauguma jų pritaikyti spausdinti be atramų.",
+        "signIn": "Jūsų pačių prisijungimas failams ir mėgstamiems; modelių puslapiai skaitomi ir be jo.",
+        "grab": "Siunčia jūsų prisijungimą, kai apsilankote fab365.net, kad Thingport galėtų atsisiųsti failus ir perskaityti jūsų mėgstamus.",
+        "setup": [
+          "Įdiekite Thingport Grab, įjunkite jį Fab365 ir atverkite fab365.net prisijungę.",
+          "Rankiniu būdu: nukopijuokite accessToken ir refreshToken reikšmes iš prisijungusios fab365.net kortelės vietinės saugyklos ir įklijuokite Konfigūracija → Tiekėjai, kiekvieną atskiroje eilutėje po jos pavadinimo."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai ir jūsų mėgstami. Modelių puslapiai skaitomi be prisijungimo; failams reikia kiekvieno vartotojo prisijungimo. Nemokami ir turimi modeliai importuojami; mokamą ar bilietu gaunamą modelį, kurio neturite, pirma reikia nusipirkti ar iškeisti Fab365."
+      },
+      "sync": {
+        "notConnected": "Prijunkite Fab365 Konfigūracija > Tiekėjai arba apsilankykite prisijungę su Thingport Grab, kad čia matytumėte mėgstamus."
+      }
     }
   }
 }

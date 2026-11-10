@@ -6977,6 +6977,37 @@
           "hint": "Cómpralo antes en PIXUP. Cuando esté en tu biblioteca, Thingport lo importa."
         }
       }
+    },
+    "fab365": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, solo abre fab365.net con la sesión iniciada. Conecta tu cuenta y envía una sesión nueva cada vez que cambie allí.",
+          "O a mano: inicia sesión en fab365.net y abre las herramientas de desarrollo del navegador (F12).",
+          "En Application (Chrome, Edge) o Almacenamiento (Firefox) → Almacenamiento local → fab365.net, copia los valores de accessToken y refreshToken y pégalos abajo, cada uno en su propia línea tras su nombre (accessToken: … y refreshToken: …). Con el refreshToken, Thingport renueva la sesión por sí mismo; un accessToken solo deja de funcionar al cabo de unos 100 minutos y hay que volver a pegarlo."
+        ],
+        "placeholder": "accessToken: … y refreshToken: …, cada uno en su línea"
+      },
+      "status": {
+        "notConnected": "Fab365 solo da sus archivos a miembros con sesión iniciada, incluidos los modelos gratuitos. Conecta tu cuenta para importar los que tengas y ver tus favoritos.",
+        "expired": "Sesión caducada. Inicia sesión en fab365.net con Thingport Grab, o vuelve a conectar Fab365 en Configuración → Proveedores.",
+        "expiredStatus": "Sesión caducada",
+        "disabledReason": "Fab365: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "Un mercado surcoreano de modelos conocido por impresiones de ingeniería cuidada — cohetes de SpaceX, robots plegables, naves de Star Wars — la mayoría diseñados para imprimirse sin soportes.",
+        "signIn": "Tu propia sesión, para los archivos y tus favoritos; las páginas de los modelos se leen sin ella.",
+        "grab": "Envía tu sesión cuando visitas fab365.net, para que Thingport pueda descargar los archivos y leer tus favoritos.",
+        "setup": [
+          "Instala Thingport Grab, actívalo en Fab365 y abre fab365.net con la sesión iniciada.",
+          "A mano: copia los valores de accessToken y refreshToken del almacenamiento local de una pestaña de fab365.net con sesión iniciada y pégalos en Configuración → Proveedores, cada uno en su línea tras su nombre."
+        ]
+      },
+      "admin": {
+        "description": "Modelos y tus favoritos. Las páginas de los modelos se leen sin sesión; los archivos necesitan la de cada usuario. Se importan los modelos gratuitos y los que posees; un modelo de pago o por ticket que no tengas queda para que lo compres o lo canjees antes en Fab365."
+      },
+      "sync": {
+        "notConnected": "Conecta Fab365 en Configuración > Proveedores, o visítalo con la sesión iniciada con Thingport Grab, para ver aquí tus favoritos."
+      }
     }
   }
 }

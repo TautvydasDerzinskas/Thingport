@@ -84,5 +84,8 @@ export const CREDENTIAL_HOSTS = {
   "pixup3d-session": {
     exact: ["pixup3d.com"],
   },
+  "fab365-token": {
+    exact: ["fab365.net"],
+  },
 } as const;
 export type CredentialDestination = keyof typeof CREDENTIAL_HOSTS;

@@ -48,6 +48,7 @@ body:
         - GrabCAD
         - Meshy
         - PIXUP
+        - Fab365
         # /providers:bug-form
   - type: input
     id: backend_version

@@ -21,6 +21,7 @@ import * as cgtrader from "./cgtrader/CollectionTile";
 import * as grabcad from "./grabcad/CollectionTile";
 import * as meshy from "./meshy/CollectionTile";
 import * as pixup3d from "./pixup3d/CollectionTile";
+import * as fab365 from "./fab365/CollectionTile";
 
 type Own = { Tile: (props: TileProps) => JSX.Element; TileSkeleton: (props: SkeletonProps) => JSX.Element };
 
@@ -43,4 +44,5 @@ export const COLLECTION_TILES: Partial<Record<BrowsableProvider, Own>> = {
   grabcad,
   meshy,
   pixup3d,
+  fab365,
 };
