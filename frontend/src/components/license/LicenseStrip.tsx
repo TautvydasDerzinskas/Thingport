@@ -24,6 +24,7 @@ import type { License } from "../../api/prints";
 import { printProviderInfo } from "../../constants/importProviders";
 import { neutralTint } from "../../theme";
 import { copyText } from "../../utils/clipboard";
+import { visuallyHiddenSx } from "../importQueue/queueParts";
 import { hasProviderLogo, ProviderLogo } from "../Layout/ConfigurationDialog/providerLogos";
 import { useToast } from "../ToastProvider";
 import LicenseMarks from "./LicenseMarks";
@@ -241,7 +242,7 @@ export default function LicenseStrip({
                   </Box>
                   <Typography variant="body2">
                     {row.label}
-                    <Box component="span" sx={visuallyHidden}>
+                    <Box component="span" sx={visuallyHiddenSx}>
                       {`: ${t(CAN_WORD[row.can])}`}
                     </Box>
                   </Typography>
@@ -317,12 +318,3 @@ export default function LicenseStrip({
     </>,
   );
 }
-
-const visuallyHidden = {
-  position: "absolute",
-  width: 1,
-  height: 1,
-  overflow: "hidden",
-  clip: "rect(0 0 0 0)",
-  whiteSpace: "nowrap",
-} as const;
