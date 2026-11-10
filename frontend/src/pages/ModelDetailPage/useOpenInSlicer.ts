@@ -108,6 +108,7 @@ export function useOpenInSlicer(print: Print) {
             slicerId,
             printsApi.slicerFileUrl(`${url}?normalize=${normalizeTarget === "orca" ? "orca" : "1"}`),
             filename,
+            bridged,
           ),
         }));
     },
