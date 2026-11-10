@@ -38,13 +38,15 @@ export type FileReuseBackfill = {
 /** Null when none has run since the server started. */
 export type FileReuseSettings = { mode: FileReuse; backfill: FileReuseBackfill | null };
 
-/** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed. */
-export type SlicerSettings = { slicer: string | null; slicers: string[] };
+/** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed, `bridged` those
+ *  with a protocol of their own the user sends through Thingport Bridge instead. */
+export type SlicerSettings = { slicer: string | null; slicers: string[]; bridged: string[] };
 
-/** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. */
+/** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. One
+ *  older than `bridged` sends none through the Bridge. */
 function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
   const slicer = body.slicer ?? null;
-  return { slicer, slicers: body.slicers ?? (slicer ? [slicer] : []) };
+  return { slicer, slicers: body.slicers ?? (slicer ? [slicer] : []), bridged: body.bridged ?? [] };
 }
 
 export type StorageToken =
@@ -715,9 +717,15 @@ export const settingsApi = {
     return toSlicerSettings(await res.json());
   },
 
-  /** A field left out keeps its value. `enable`/`disable` switch one slicer in the list as the server has it. */
+  /** A field left out keeps its value. `enable`/`disable` switch one slicer in the list as the server has it, and
+   *  `bridge`/`unbridge` send one through the Bridge or back to its own protocol. */
   updateSlicer: async (
-    patch: Partial<SlicerSettings> & { enable?: string; disable?: string },
+    patch: Partial<Omit<SlicerSettings, "bridged">> & {
+      enable?: string;
+      disable?: string;
+      bridge?: string;
+      unbridge?: string;
+    },
   ): Promise<SlicerSettings> => {
     const res = await fetch(`${apiBase()}/settings/slicer`, {
       method: "PATCH",

@@ -18,7 +18,8 @@ import FolderZipIcon from "@mui/icons-material/FolderZip";
 import TuneIcon from "@mui/icons-material/Tune";
 import type { SlicerOption } from "../../constants/settingsOptions";
 import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLogos";
-import { slicerBridgeHref, slicerHref, type ModelFile } from "./useOpenInSlicer";
+import { useSlicerSettings } from "../../hooks/useSlicerPreference";
+import { slicerHref, type ModelFile } from "./useOpenInSlicer";
 
 type Props = {
   /** The file every action but the zip applies to. */
@@ -83,6 +84,8 @@ export default function OpenInSlicerButton({
   openingInStudio,
 }: Props) {
   const { t } = useTranslation(["models"]);
+  // Those the user sends through the Bridge, picked in the Slicer settings.
+  const { bridged } = useSlicerSettings();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const group = anchor?.parentElement ?? null;
   const customizes = Boolean(onCustomize);
@@ -93,9 +96,7 @@ export default function OpenInSlicerButton({
   const offersSlicers = canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
   // Likewise the download: in the menu unless it is the main button.
   const offersDownload = customizes || opensSlicer;
-  // Bridge is opt-in: Creality Print's native protocol remains usable without the helper installed.
-  const offersCrealityBridge = canOpen && slicerOptions.some((option) => option.id === "crealityprintlink");
-  const hasMenu = offersSlicers || offersCrealityBridge || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
+  const hasMenu = offersSlicers || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
   const close = () => setAnchor(null);
   const downloadIcon = downloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon fontSize="small" />;
 
@@ -111,7 +112,7 @@ export default function OpenInSlicerButton({
         ) : opensSlicer && slicerOption ? (
           <Button
             component="a"
-            href={slicerHref(slicerOption.id, file)}
+            href={slicerHref(slicerOption.id, file, bridged)}
             onClick={() => onOpened(slicerOption.id)}
             startIcon={<LogoTile id={slicerOption.id} size={14} />}
             sx={{ flex: 1, minWidth: 0 }}
@@ -160,7 +161,7 @@ export default function OpenInSlicerButton({
             <MenuItem
               key={option.id}
               component="a"
-              href={slicerHref(option.id, file)}
+              href={slicerHref(option.id, file, bridged)}
               selected={option.id === slicerOption?.id}
               onClick={() => {
                 onOpened(option.id);
@@ -173,24 +174,6 @@ export default function OpenInSlicerButton({
               <ListItemText primaryTypographyProps={{ variant: "body2" }}>{option.label}</ListItemText>
             </MenuItem>
           ))}
-        {offersCrealityBridge && (
-          <MenuItem
-            component="a"
-            href={slicerBridgeHref("crealityprintlink", file)}
-            onClick={() => {
-              onOpened("crealityprintlink");
-              close();
-            }}
-          >
-            <ListItemIcon>
-              <LogoTile id="crealityprintlink" size={16} />
-            </ListItemIcon>
-            <ListItemText
-              primaryTypographyProps={{ variant: "body2" }}
-              primary={t("models:detail.openInSlicer", { slicer: "Creality Print (Thingport Bridge)" })}
-            />
-          </MenuItem>
-        )}
         {onOpenInStudio && (
           <MenuItem
             disabled={openingInStudio}
@@ -209,7 +192,7 @@ export default function OpenInSlicerButton({
             <ListItemText primaryTypographyProps={{ variant: "body2" }}>{t("models:detail.openInStudio")}</ListItemText>
           </MenuItem>
         )}
-        {(offersSlicers || offersCrealityBridge || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
+        {(offersSlicers || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
         {offersDownload && (
           <MenuItem
             disabled={downloading}

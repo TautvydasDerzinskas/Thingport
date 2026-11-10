@@ -2969,7 +2969,9 @@
       "notActive": "Not active",
       "activate": "Activate",
       "lastUsed": "Last used",
-      "deactivate": "Deactivate"
+      "deactivate": "Deactivate",
+      "throughBridge": "Through Thingport Bridge",
+      "throughBridgeHelp": "Thingport Bridge downloads the file and hands it to {{slicer}}, for when {{slicer}} can't download from this Thingport instance itself."
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} of {{total}} models",

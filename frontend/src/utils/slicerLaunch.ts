@@ -7,8 +7,30 @@ const BRIDGE_SCHEME = "thingport";
 // one would get the link; the Bridge launches it by path instead.
 const BRIDGED_SLICERS = new Set(["bambustudio", "prusaslicer", "cura", "anycubicslicernext"]);
 
-export function isBridgedSlicer(slicerId: string): boolean {
+// The rest download the link themselves. Each can go through the Bridge instead, for when it can't download from this
+// instance (a certificate it doesn't trust, say): the user picks which in the Slicer settings. The backend's
+// BRIDGEABLE_SLICER_IDS.
+const BRIDGEABLE_SLICERS = new Set([
+  "orcaslicer",
+  "crealityprintlink",
+  "elegooslicer",
+  "snapmaker-orca",
+  "eufystudio3d",
+]);
+
+/** True for a slicer that always goes through the Bridge. */
+export function alwaysBridged(slicerId: string): boolean {
   return BRIDGED_SLICERS.has(slicerId);
+}
+
+/** True for a slicer that may go through the Bridge or its own protocol. */
+export function isBridgeable(slicerId: string): boolean {
+  return BRIDGEABLE_SLICERS.has(slicerId);
+}
+
+/** Whether a slicer opens through the Bridge, given those the user sends through it. */
+export function isBridgedSlicer(slicerId: string, bridged: readonly string[] = []): boolean {
+  return BRIDGED_SLICERS.has(slicerId) || (BRIDGEABLE_SLICERS.has(slicerId) && bridged.includes(slicerId));
 }
 
 // Elegoo Slicer and Snapmaker Orca launch directly like OrcaSlicer, but name the file after the
@@ -25,16 +47,19 @@ function withFilenameHint(slicerId: string, fileUrl: string, filename: string): 
   return { fileUrl, extra: "" };
 }
 
-/** Explicit Bridge alternative for slicers whose native URL download can fail (for example Creality Print over HTTPS). */
-export function slicerBridgeLaunchUrl(slicerId: string, fileUrl: string, filename?: string): string {
-  const params = new URLSearchParams({ url: fileUrl, slicer: slicerId });
-  if (filename) params.set("filename", filename);
-  return `${BRIDGE_SCHEME}://open?${params.toString()}`;
-}
-
-// Only for SLICER_OPTIONS ids that register a protocol; never "other".
-export function slicerLaunchUrl(slicerId: string, fileUrl: string, filename?: string): string {
-  if (BRIDGED_SLICERS.has(slicerId)) return slicerBridgeLaunchUrl(slicerId, fileUrl, filename);
+// Only for SLICER_OPTIONS ids that register a protocol; never "other". `bridged` are the slicers the user sends through
+// the Bridge.
+export function slicerLaunchUrl(
+  slicerId: string,
+  fileUrl: string,
+  filename?: string,
+  bridged: readonly string[] = [],
+): string {
+  if (isBridgedSlicer(slicerId, bridged)) {
+    const params = new URLSearchParams({ url: fileUrl, slicer: slicerId });
+    if (filename) params.set("filename", filename);
+    return `${BRIDGE_SCHEME}://open?${params.toString()}`;
+  }
   // eufyMake Studio is a PrusaSlicer fork without its Printables-only check; its link is the one its site's own
   // "Open in slicer" button makes, the file named after the link's last segment or `name`.
   if (slicerId === "eufystudio3d") {

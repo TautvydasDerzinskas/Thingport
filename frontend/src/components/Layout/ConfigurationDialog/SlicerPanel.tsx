@@ -2,19 +2,24 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
+import CableIcon from "@mui/icons-material/Cable";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { SLICER_OPTIONS } from "../../../constants/settingsOptions";
 import { UnauthorizedError } from "../../../api/client";
 import { settingsApi, type SlicerSettings } from "../../../api/settings";
 import { setCachedSlicerSettings } from "../../../hooks/useSlicerPreference";
-import { isBridgedSlicer } from "../../../utils/slicerLaunch";
+import { isBridgeable, isBridgedSlicer } from "../../../utils/slicerLaunch";
+import HelpTip from "../../HelpTip";
 import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader } from "./AppTiles";
 import { PanelHeader } from "./parts";
 import { SlicerLogo } from "./slicerLogos";
@@ -28,10 +33,11 @@ type Props = {
 };
 
 /** The slicers installed on this computer, as app icons: double-click one, or right-click it, to switch it on or
- *  off. A model's "Open in" menu offers the ones on; its button opens the last one used. */
+ *  off. A model's "Open in" menu offers the ones on; its button opens the last one used. A slicer with a protocol of
+ *  its own can be sent through Thingport Bridge from its right-click menu; those that go through it wear its cable. */
 export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
-  const [value, setValue] = React.useState<SlicerSettings>({ slicer: null, slicers: [] });
+  const [value, setValue] = React.useState<SlicerSettings>({ slicer: null, slicers: [], bridged: [] });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [menu, setMenu] = React.useState<{ id: string; top: number; left: number } | null>(null);
@@ -40,7 +46,7 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
   // save is back, then the server's answer to it, which also puts back any that failed.
   const saves = React.useRef<Promise<void>>(Promise.resolve());
   const pendingSaves = React.useRef(0);
-  const saved = React.useRef<SlicerSettings>({ slicer: null, slicers: [] });
+  const saved = React.useRef<SlicerSettings>({ slicer: null, slicers: [], bridged: [] });
 
   React.useEffect(() => {
     let active = true;
@@ -62,19 +68,17 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
     };
   }, [onUnauthorized]);
 
-  const toggle = (id: string) => {
-    if (loading) return;
-    const on = value.slicers.includes(id);
-    setValue((shown) => ({
-      ...shown,
-      slicers: on ? shown.slicers.filter((other) => other !== id) : [...shown.slicers, id],
-    }));
+  // Shown at once; `patch` names just the one slicer, so a change made on another device in the meantime stays.
+  const save = (
+    show: (shown: SlicerSettings) => SlicerSettings,
+    patch: Parameters<typeof settingsApi.updateSlicer>[0],
+  ) => {
+    setValue(show);
     setError(null);
     pendingSaves.current += 1;
     saves.current = saves.current.then(async () => {
       try {
-        // Just this slicer, so a toggle made on another device in the meantime stays.
-        const res = await settingsApi.updateSlicer(on ? { disable: id } : { enable: id });
+        const res = await settingsApi.updateSlicer(patch);
         saved.current = res;
         setCachedSlicerSettings(res);
       } catch (err) {
@@ -87,10 +91,34 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
     });
   };
 
+  const without = (list: string[], id: string) => list.filter((other) => other !== id);
+
+  const toggle = (id: string) => {
+    if (loading) return;
+    const on = value.slicers.includes(id);
+    save(
+      (shown) => ({ ...shown, slicers: on ? without(shown.slicers, id) : [...shown.slicers, id] }),
+      on ? { disable: id } : { enable: id },
+    );
+  };
+
+  const toggleBridge = (id: string) => {
+    if (loading) return;
+    const through = value.bridged.includes(id);
+    save(
+      (shown) => ({ ...shown, bridged: through ? without(shown.bridged, id) : [...shown.bridged, id] }),
+      through ? { unbridge: id } : { bridge: id },
+    );
+  };
+
   const isOn = (id: string) => value.slicers.includes(id);
-  const statusOf = (id: string) => (isOn(id) ? t("slicer.active") : t("slicer.notActive"));
+  const viaBridge = (id: string) => isBridgedSlicer(id, value.bridged);
+  const statusOf = (id: string) => {
+    const status = isOn(id) ? t("slicer.active") : t("slicer.notActive");
+    return viaBridge(id) ? `${status} · ${t("slicer.throughBridge")}` : status;
+  };
   const menuId = menu?.id;
-  const bridged = value.slicers.filter(isBridgedSlicer).map(labelOf);
+  const needBridge = value.slicers.filter(viaBridge).map(labelOf);
 
   return (
     <>
@@ -104,6 +132,7 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
             logo={<SlicerLogo id={id} size={26} />}
             on={isOn(id)}
             badge={isOn(id) ? true : undefined}
+            cornerIcon={isOn(id) && viaBridge(id) ? <CableIcon /> : undefined}
             highlighted={menuId === id}
             tooltip={loading ? undefined : `${label}: ${statusOf(id)}`}
             ariaLabel={`${label}: ${statusOf(id)}`}
@@ -146,11 +175,41 @@ export default function SlicerPanel({ onNavigate, onUnauthorized }: Props) {
             <ListItemText>{isOn(menuId) ? t("slicer.deactivate") : t("slicer.activate")}</ListItemText>
           </MenuItem>
         )}
+        {menuId && isBridgeable(menuId) && <Divider />}
+        {menuId && isBridgeable(menuId) && (
+          // Stays open, so the switch is seen to move.
+          <MenuItem
+            role="menuitemcheckbox"
+            aria-checked={value.bridged.includes(menuId)}
+            disabled={loading}
+            onClick={() => toggleBridge(menuId)}
+          >
+            <ListItemIcon>
+              <CableIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>
+              {t("slicer.throughBridge")}
+              {/* Reading it doesn't flip the switch. */}
+              <Box component="span" onClick={(event) => event.stopPropagation()}>
+                <HelpTip text={t("slicer.throughBridgeHelp", { slicer: labelOf(menuId) })} />
+              </Box>
+            </ListItemText>
+            <Switch
+              size="small"
+              edge="end"
+              checked={value.bridged.includes(menuId)}
+              disableRipple
+              tabIndex={-1}
+              inputProps={{ readOnly: true, tabIndex: -1, "aria-hidden": true }}
+              sx={{ ml: 1.5 }}
+            />
+          </MenuItem>
+        )}
       </Menu>
 
-      {bridged.length > 0 && (
+      {needBridge.length > 0 && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
-          {t("profile.slicer.bridgeRequiredPrefix", { slicer: bridged.join(", ") })}{" "}
+          {t("profile.slicer.bridgeRequiredPrefix", { slicer: needBridge.join(", ") })}{" "}
           <Link component={RouterLink} to="/downloads" onClick={onNavigate}>
             {t("profile.slicer.bridgeRequiredLink")}
           </Link>

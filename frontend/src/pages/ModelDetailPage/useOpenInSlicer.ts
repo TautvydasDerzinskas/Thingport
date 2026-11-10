@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { type Plate, type Print, printsApi } from "../../api/prints";
 import { NORMALIZE_3MF_SLICER_IDS, SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
-import { slicerBridgeLaunchUrl, slicerLaunchUrl } from "../../utils/slicerLaunch";
+import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 import { isProviderId, manifestOf } from "../../providers/index.generated";
 
 /** A file of the model a slicer can open or the user can download: a plate, or the prepared print when it
@@ -43,24 +43,21 @@ export function modelFiles(print: Print): ModelFile[] {
   return out;
 }
 
-export function slicerHref(slicerId: string, file: ModelFile): string {
-  return slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename);
+/** `bridged` are the slicers the user sends through the Bridge. */
+export function slicerHref(slicerId: string, file: ModelFile, bridged: readonly string[]): string {
+  return slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename, bridged);
 }
 
-/** An explicit local-download Bridge alternative, preserving the existing native slicer link. */
-export function slicerBridgeHref(slicerId: string, file: ModelFile): string {
-  return slicerBridgeLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename);
-}
-
-/** The installed slicers that can be launched, and the one to open with: the last one used. */
+/** The installed slicers that can be launched, and the one to open with: the last one used. `bridged` are those sent
+ *  through the Bridge. */
 export function useSlicerChoice() {
-  const { slicer, slicers } = useSlicerSettings();
+  const { slicer, slicers, bridged } = useSlicerSettings();
   const slicerOptions = useMemo(
     () => SLICER_OPTIONS.filter((opt) => opt.id !== "other" && slicers.includes(opt.id)),
     [slicers],
   );
   const slicerOption = slicerOptions.find((opt) => opt.id === slicer) ?? slicerOptions[0] ?? null;
-  return { slicerOption, slicerOptions };
+  return { slicerOption, slicerOptions, bridged };
 }
 
 /** `slicerOptions` are the installed slicers that can be launched, `slicerOption` the one the main button opens
@@ -68,14 +65,17 @@ export function useSlicerChoice() {
  *  several, the caller offers a pick rather than opening the first. `normalizedTargets` is empty unless the
  *  slicer needs MakerWorld 3MFs converted. */
 export function useOpenInSlicer(print: Print) {
-  const { slicerOption, slicerOptions } = useSlicerChoice();
+  const { slicerOption, slicerOptions, bridged } = useSlicerChoice();
 
   const files = useMemo(() => modelFiles(print), [print]);
   const canOpen = Boolean(print.slicer_url) && files.length > 0;
 
   const targets = useMemo<SlicerTarget[]>(
-    () => (slicerOption && canOpen ? files.map((file) => ({ ...file, href: slicerHref(slicerOption.id, file) })) : []),
-    [files, canOpen, slicerOption],
+    () =>
+      slicerOption && canOpen
+        ? files.map((file) => ({ ...file, href: slicerHref(slicerOption.id, file, bridged) }))
+        : [],
+    [files, canOpen, slicerOption, bridged],
   );
 
   const normalizedTargets = useMemo<SlicerTarget[]>(() => {
@@ -95,9 +95,9 @@ export function useOpenInSlicer(print: Print) {
         launchFilename,
         index,
         plate,
-        href: slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(`${url}?normalize=1`), filename),
+        href: slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(`${url}?normalize=1`), filename, bridged),
       }));
-  }, [files, print.source_provider, print.prepared_print, slicerOption]);
+  }, [files, print.source_provider, print.prepared_print, slicerOption, bridged]);
 
   /** The normalized counterpart of `file`, if the current slicer offers one. */
   const normalizedTargetFor = useCallback(
