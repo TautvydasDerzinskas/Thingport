@@ -1,7 +1,7 @@
 {
   "name": "Skadis planner",
   "description": "Plans a wall of 3D-printed IKEA Skadis boards: the fewest boards that fill it, sized to your bed, with the mounts, the print order and the plan saved as a model.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {

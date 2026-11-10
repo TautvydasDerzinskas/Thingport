@@ -705,7 +705,7 @@ export default async function mount(thingport) {
         collectionId: collection.id,
         files: [{ name: `${name}.3mf`, data: bytes }],
       });
-      ui.toast(t("saved", { name: model.name }), "success");
+      ui.toast(t("saved", { name: model.name }), "success", { openModel: model.id });
     } catch (error) {
       // A cancelled render rejects too; the user asked for that, so it needs no explaining.
       output.textContent = running?.signal.aborted ? "" : t("failed", { reason: error.message });

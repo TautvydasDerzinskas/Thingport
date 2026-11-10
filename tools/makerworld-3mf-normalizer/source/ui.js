@@ -407,7 +407,7 @@ export default async function mount(thingport) {
     if (mode === "add") {
       await models.addFiles(item.source.modelId, [file]);
       item.saved = { modelId: item.source.modelId, name: item.source.modelName };
-      ui.toast(`Added ${file.name} to ${item.source.modelName}`, "success");
+      ui.toast(`Added ${file.name} to ${item.source.modelName}`, "success", { openModel: item.source.modelId });
     } else {
       const model = await models.create({
         name: baseName(item.name),
@@ -416,7 +416,7 @@ export default async function mount(thingport) {
         files: [file],
       });
       item.saved = { modelId: model.id, name: model.name };
-      ui.toast(`Saved ${model.name}`, "success");
+      ui.toast(`Saved ${model.name}`, "success", { openModel: model.id });
     }
     renderList();
     if (item.id === selectedId) renderDetail();

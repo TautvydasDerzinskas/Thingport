@@ -4446,7 +4446,8 @@
     "retry": "Reintentar",
     "language": "Idioma",
     "more": "Más",
-    "moreActions": "Más acciones"
+    "moreActions": "Más acciones",
+    "open": "Abrir"
   },
   "library": {
     "grid": {

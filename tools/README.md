@@ -26,7 +26,8 @@ A tool's script runs in its users' pages with their access to Thingport, so it's
 
 - It draws only inside `thingport.root`, scopes its styles to its own class, and cleans up its timers and listeners.
 - It reaches outside services only through `thingport.fetch`, to the `hosts` its metadata lists, and its README says why.
-- It changes the user's library only when they ask it to, and says what it did.
+- It changes the user's library only when they ask it to, and says what it did. A toast about a model it saved has
+  an Open button (`ui.toast(message, "success", { openModel: model.id })`).
 - No minified or obfuscated code, and nothing loaded at run time that the review can't see. A built `tool.js` comes with
   the source it's built from.
 - The models it brings are ones it may: their licence allows what `files` or `source` does with them.

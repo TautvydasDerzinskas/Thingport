@@ -4501,7 +4501,8 @@
     "retry": "Bandyti dar kartą",
     "language": "Kalba",
     "more": "Daugiau",
-    "moreActions": "Daugiau veiksmų"
+    "moreActions": "Daugiau veiksmų",
+    "open": "Atidaryti"
   },
   "library": {
     "grid": {

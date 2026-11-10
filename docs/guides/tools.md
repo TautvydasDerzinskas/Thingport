@@ -168,8 +168,12 @@ export default async function mount(thingport) {
   root.querySelector("#save").addEventListener("click", async () => {
     const collection = await ui.pickCollection({ title: "Save the bin to" });
     if (!collection) return;
-    await models.create({ name: "Bin 2×3", collectionId: collection.id, files: [{ name: "bin.stl", data: stl }] });
-    ui.toast("Saved", "success");
+    const model = await models.create({
+      name: "Bin 2×3",
+      collectionId: collection.id,
+      files: [{ name: "bin.stl", data: stl }],
+    });
+    ui.toast("Saved", "success", { openModel: model.id }); // with an Open button for the model
   });
   return () => {}; // stop timers and remove window listeners here
 }
