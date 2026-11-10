@@ -75,7 +75,10 @@ against the full stack, isn't run on pull requests. It runs weekly on `main`.
 
 Nothing is published from a pull request. A merge into `develop` publishes a `:dev` image for testers who want
 changes early, but only for the project it touches: the backend's when it changes `backend/**`, the frontend's
-when it changes `frontend/**`. Only a release, merged into `main`, gets a version and `:latest`.
+when it changes `frontend/**`, once any backend build still running has finished. Only a release, merged into
+`main`, gets a version and `:latest`. It isn't tested
+again there, since its pull request was, and when it changes both projects their images go out together, the
+backend's first, so nobody pulls a new frontend for an old backend.
 
 If you're a brand-new GitHub account, your first PR's workflows wait for a maintainer to approve
 them before running. That's a GitHub setting, not something wrong with your PR.

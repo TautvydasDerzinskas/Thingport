@@ -3,6 +3,10 @@ name: Backend image
 # Runs when backend/ or the build workflow changes. Use "Manual image publish" to force a build.
 # Pull requests into develop only run the checks; the image build (~6 min, arm64 under QEMU) waits for the
 # merge, which publishes :dev for testers, and the develop -> main pull request builds it again before a release.
+# A merge into main isn't tested again, its pull request was, and when it changes the frontend too the two images go
+# out together, the backend's first: it's tagged once the frontend's image has built (build-image.yml's publish).
+# The update checker (backend/src/services/versionService.ts) reads this workflow's runs on main and develop, in
+# installs of every version, so a release has to stay a run of this file that succeeds only once the image is out.
 on:
   push:
     branches: [main, develop]
@@ -25,10 +29,11 @@ concurrency:
 
 jobs:
   # The full backend suite against real Postgres, including end-to-end provider imports. The image
-  # is only built and published if this passes.
+  # is only built and published if this passes, on main if it passed in the pull request.
   test:
-    # A main -> develop back-merge only brings release commits main already tested.
-    if: github.head_ref != 'main'
+    # Not on main, whose pull requests ran this, nor for a main -> develop back-merge, which only brings those and the
+    # release commits.
+    if: github.head_ref != 'main' && github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -69,7 +74,6 @@ jobs:
 
   # A merge into main may give the backend a new version (release-project.yml); the image is built from it.
   release:
-    needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
@@ -81,11 +85,14 @@ jobs:
 
   build:
     needs: [test, release]
-    # Also when the release was skipped, as on pull requests; never after a failed one.
+    # After the tests, or on main without them; also when the release was skipped, as on pull requests, never after
+    # a failed one.
     if: >-
-      ${{ !cancelled() && needs.test.result == 'success' && needs.release.result != 'failure'
+      ${{ !cancelled() && (needs.test.result == 'success' || github.ref == 'refs/heads/main')
+      && needs.release.result != 'failure'
       && !(github.event_name == 'pull_request' && github.base_ref == 'develop') }}
     permissions:
+      actions: read # publish reads the frontend's run
       contents: read
       packages: write
     uses: ./.github/workflows/build-image.yml
@@ -98,4 +105,7 @@ jobs:
       dockerfile: backend/Dockerfile
       cache_scope: backend
       push: ${{ github.event_name != 'pull_request' }}
+      # The frontend's job waits for this one's "build / publish": don't rename either.
+      wait_for_workflow: ${{ github.ref == 'refs/heads/main' && 'frontend-image.yml' || '' }}
+      wait_for_job: build / build
     secrets: inherit
