@@ -20,11 +20,12 @@ Fab365 and 3DExport.
 - **Or use the bookmarklet.** Without the extension, drag the [bookmarklet](../guides/bookmarklet.md) to your
   bookmarks bar: clicking it on a model's page opens Thingport with the link already in the import dialog.
 - **Import a collection or your likes.** Paste the link of a collection or another list, and pick which models to
-  bring in. Besides collections, that's anyone's likes on Thingiverse, Cults3D, Pinshape and GrabCAD, your own likes on
-  Creality Cloud, Thangs, eufyMake, Toymakr3D and CGTrader, your CGTrader wishlist and the projects you saved on
-  Makerables. MakerWorld collections, and your Snapmaker Space likes and bookmarks from your profile's Interactions
-  tab, are imported with Thingport Grab. [Providers](../PROVIDER_SETUP.md#at-a-glance) shows which lists each site
-  has.
+  bring in. Besides collections, your private ones on PIXUP and 3DExport included, that's anyone's likes on
+  Thingiverse, Cults3D, Pinshape and GrabCAD, anyone's PIXUP wishlist, your own likes on Creality Cloud, Thangs,
+  eufyMake, Toymakr3D and CGTrader, your CGTrader wishlist, your Fab365 favourites, your 3DExport Default Collection and
+  the projects you saved on Makerables. MakerWorld collections, and your Snapmaker Space likes and bookmarks from your profile's
+  Interactions tab, are imported with Thingport Grab. [Providers](../PROVIDER_SETUP.md#at-a-glance) shows which lists
+  each site has.
 - **MakerOnline, and OwlCAD's CAD projects, go through Thingport Grab.** MakerOnline hands out its files only to its
   own pages, and an OwlCAD CAD project has no file until OwlCAD's own editor builds one. So a MakerOnline link pasted
   in Thingport, a MakerOnline collection or your likes imported here, a synced MakerOnline collection and an OwlCAD
@@ -34,6 +35,11 @@ Fab365 and 3DExport.
   the provider later, on its own.
 
 ## What comes with a model
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/50_model_print_profiles.png">
+  <img src="../../frontend/src/assets/screenshots/light/50_model_print_profiles.png" alt="A model's print profiles as picture tiles, the picked one with its print time, filament, plates, printer and settings" width="100%">
+</picture>
 
 - Its model files, and on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint, its print profiles:
   the one the link points to, all of the designer's, or the community's too. Each profile becomes its own file on the

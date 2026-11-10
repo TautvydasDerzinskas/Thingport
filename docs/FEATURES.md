@@ -19,6 +19,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Author pages](features/authors.md)**
 - **[Open in your slicer](features/slicers.md)**
 - **[Normalized MakerWorld 3MFs](features/normalized-3mf.md)**
+- **[Print profiles on the model page, with their print time, filament and plates](features/importing.md#what-comes-with-a-model)**
 - **[Everything to print it](features/supporting-files.md)**
 - **[Licences: what each model lets you do, filters by it, and LICENSE.txt beside the files](features/licenses.md)**
 - **[Customize models that came with their OpenSCAD script](features/supporting-files.md#models-you-can-generate-again)**
@@ -26,7 +27,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Plain files on your disk](features/storage.md)**
 - **[Repair models whose files are gone](features/storage.md#when-the-files-are-gone)**
 - **[Multi-user](features/multi-user.md)**
-- **[Social: public collections and models, Explore, profiles and chats](features/social.md)**
+- **[Social: collections shared with the people you pick or with everyone, public models, Explore, profiles and chats](features/social.md)**
 - **[Connected instances: pair with other Thingport instances, even from a home network](features/connected-instances.md)**
 - **[Single sign-on](guides/single-sign-on.md)**
 - **[Administration](features/administration.md)**
@@ -36,5 +37,5 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Custom dashboard widgets](guides/custom-widgets.md)**
 - **[Tools: planners, generators, calculators and a 3MF normalizer](guides/tools.md)**
 - **[Make your own tools, or have an AI write them](guides/tools.md#have-an-ai-write-one)**
-- **[Light and dark themes, accent colours, in English, Spanish, French and Lithuanian](features/appearance.md)**
+- **[Light and dark themes, accent colours, in English, Spanish, French, Lithuanian, Russian, Ukrainian and Belarusian](features/appearance.md)**
 - **[Self-hosted](../README.md#installation)**

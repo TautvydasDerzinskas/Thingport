@@ -374,7 +374,8 @@ too, import the listed models and can keep them in sync.
 - A single model page on any of the sites. Once the model is in your library the icon wears a badge: a **+** while
   the panel has something to add (another print profile of a model you have, or details Thingport's copy is missing,
   which **Fetch missing details** brings over), and a **✓** with a green ring once everything's in, when the panel
-  just offers **Open in Thingport**.
+  just offers **Open in Thingport**. If some of the print profiles you picked fail, the panel says **Partly imported**,
+  ending with the last error, such as a CAPTCHA or the daily download limit.
 - A MakerWorld, Printables, MyMiniFactory, MakerOnline, Creality Cloud, NexPrint, Thangs, Pinshape, Meshy, PIXUP or
   3DExport collection, a Thingiverse Collection, one of your Cults3D printlists, your 3DExport Default Collection;
   anyone's Thingiverse, Cults3D, Pinshape or GrabCAD likes or PIXUP wishlist; your own MakerOnline, Creality Cloud,

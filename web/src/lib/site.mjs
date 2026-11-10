@@ -213,7 +213,8 @@ export const DOCS = [
     group: "Features",
     title: "Profile and activity",
     nav: "Profile and activity",
-    description: "A year-long activity heatmap and timeline of everything you've done with your library.",
+    description:
+      "A profile with your cover, avatar, bio and links, and a year-long activity heatmap and timeline of everything you've done with your library.",
   },
   {
     slug: "features/authors",
@@ -250,6 +251,15 @@ export const DOCS = [
       "Keep instructions, notes and a ready-to-print sliced file next to each model, and customize one that came with its OpenSCAD script right in your browser.",
   },
   {
+    slug: "features/licenses",
+    source: "docs/features/licenses.md",
+    group: "Features",
+    title: "Licences",
+    nav: "Licences",
+    description:
+      "The licence each model was published under, shown on its page with a credit line, filtered by what it allows, and written beside its files as LICENSE.txt.",
+  },
+  {
     slug: "features/downloads",
     source: "docs/features/downloads.md",
     group: "Features",
@@ -282,7 +292,7 @@ export const DOCS = [
     title: "Social features",
     nav: "Social features",
     description:
-      "Public collections and models, found by everyone on Explore, profiles to show them on, and chats with models in them, across connected instances too.",
+      "Collections that are private, shared with the people you pick or public, found on Explore and under Shared with you, profiles to show them on, and chats with models in them, across connected instances too.",
   },
   {
     slug: "features/connected-instances",
@@ -309,7 +319,7 @@ export const DOCS = [
     title: "Themes, colours and languages",
     nav: "Themes and languages",
     description:
-      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French or Lithuanian.",
+      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French, Lithuanian, Russian, Ukrainian or Belarusian.",
   },
   {
     slug: "guides/system-health",
