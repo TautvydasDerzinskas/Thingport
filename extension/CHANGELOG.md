@@ -1,5 +1,23 @@
 # Thingport Grab changelog
 
+# [thingport-grab-v1.11.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.10.0...thingport-grab-v1.11.0) (2026-11-10)
+
+
+### Bug Fixes
+
+* **extension:** name the sites Grab imports from as 21 in its store summary ([#294](https://github.com/TautvydasDerzinskas/Thingport/issues/294)) ([145a617](https://github.com/TautvydasDerzinskas/Thingport/commit/145a617e0c727dd678f47b953086fa1906a290ce))
+* **extension:** show why a partial profile import failed ([#279](https://github.com/TautvydasDerzinskas/Thingport/issues/279)) ([a8723d6](https://github.com/TautvydasDerzinskas/Thingport/commit/a8723d660a9b95d0c75e03cff3540798cf804d31))
+* offer the print profiles a library model still lacks in Grab, adding only those ([#273](https://github.com/TautvydasDerzinskas/Thingport/issues/273)) ([e5aa078](https://github.com/TautvydasDerzinskas/Thingport/commit/e5aa07869f1ccaf855615fa17b0ee47d60aba410))
+
+
+### Features
+
+* **extension:** pick Grab's bubble look and corner, and show it on models already imported ([#290](https://github.com/TautvydasDerzinskas/Thingport/issues/290)) ([9bd7729](https://github.com/TautvydasDerzinskas/Thingport/commit/9bd77299767042da77a402b7c99f81db72c488ef))
+* import from 3DExport, its free and bought models, and your own or anyone's collections ([#291](https://github.com/TautvydasDerzinskas/Thingport/issues/291)) ([67ce520](https://github.com/TautvydasDerzinskas/Thingport/commit/67ce5209bfa475a2572816aeed043eb9982acc7c))
+* import from Fab365, its free and owned models, and your favourites ([#288](https://github.com/TautvydasDerzinskas/Thingport/issues/288)) ([1cc138f](https://github.com/TautvydasDerzinskas/Thingport/commit/1cc138f06b9ca82f1d1daa772f8e6b9b5ffbe3a6))
+* import from PIXUP, its free and bought models, and anyone's wishlists and collections ([#284](https://github.com/TautvydasDerzinskas/Thingport/issues/284)) ([ee96edf](https://github.com/TautvydasDerzinskas/Thingport/commit/ee96edf95b13e1523346f920a05b53b4b1ae58be))
+* **web:** a landing page built around the demo video, and "Thingport instance" wherever a server is meant ([#276](https://github.com/TautvydasDerzinskas/Thingport/issues/276)) ([104cfe6](https://github.com/TautvydasDerzinskas/Thingport/commit/104cfe6f74ffc65bb8ab0dbbdd69bc9072ae464f))
+
 # [thingport-grab-v1.10.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.9.0...thingport-grab-v1.10.0) (2026-11-05)
 
 
