@@ -49,6 +49,7 @@ body:
         - Meshy
         - PIXUP
         - Fab365
+        - 3DExport
         # /providers:bug-form
   - type: input
     id: backend_version

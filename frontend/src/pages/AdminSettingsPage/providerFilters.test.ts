@@ -26,6 +26,7 @@ describe("provider filters", () => {
       "cgtrader",
       "pixup3d",
       "fab365",
+      "threedexport",
     ]);
   });
 

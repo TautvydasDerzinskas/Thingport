@@ -220,8 +220,22 @@ function requireAdminFor(scope: () => AuthSlot["scope"]) {
     scope() === "instance" ? requireAdmin(req, res, next) : next();
 }
 
+/** Thingport Grab's sign-out: every field of the sign-in empty, and `signed_out_of`, the one Grab last sent. */
+function grabSignOut(body: unknown): string | null {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const { signed_out_of: lastSent, ...fields } = body as Record<string, unknown>;
+  const valid = typeof lastSent === "string" && lastSent.length > 0 && lastSent.length <= 20_000;
+  return valid && Object.values(fields).every((value) => value == null) ? lastSent : null;
+}
+
 async function saveConnection(req: Request, res: Response, provider: ProviderId, slot: Slot) {
-  res.json(await PROVIDER_BACKENDS[provider].connection[slot]!.save(req.userId!, req.body));
+  const connection = PROVIDER_BACKENDS[provider].connection[slot]!;
+  const lastSent = connection.signOut ? grabSignOut(req.body) : null;
+  if (lastSent && connection.signOut) {
+    res.json(await connection.signOut(req.userId!, lastSent));
+    return;
+  }
+  res.json(await connection.save(req.userId!, req.body));
 }
 
 router.get(

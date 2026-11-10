@@ -108,4 +108,7 @@
 - name: "provider: Fab365"
   color: "00c300"
   description: "About Fab365, from the bug form's Provider answer"
+- name: "provider: 3DExport"
+  color: "ee1111"
+  description: "About 3DExport, from the bug form's Provider answer"
 # /providers:labels

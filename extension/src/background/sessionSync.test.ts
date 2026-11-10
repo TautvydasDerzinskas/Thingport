@@ -62,7 +62,7 @@ describe("syncSession", () => {
     expect(apiCall).toHaveBeenCalledTimes(2);
   });
 
-  it("clears on signing out the sign-in Grab sent, and only that one", async () => {
+  it("clears on signing out, naming the sign-in Grab sent", async () => {
     await syncSession("nexprint");
     expect(apiCall).not.toHaveBeenCalled();
 
@@ -70,7 +70,11 @@ describe("syncSession", () => {
     await syncSession("nexprint");
     cookies.clear();
     await syncSession("nexprint");
-    expect(apiCall).toHaveBeenLastCalledWith("PATCH", "/settings/nexprint-session", { token: null });
+    // Only what's sent: an instance that compares it (3DExport's) leaves a sign-in pasted since, as its tests show.
+    expect(apiCall).toHaveBeenLastCalledWith("PATCH", "/settings/nexprint-session", {
+      token: null,
+      signed_out_of: NEXPRINT_TOKEN,
+    });
     expect(store.lastSyncedSessions).toEqual({});
   });
 

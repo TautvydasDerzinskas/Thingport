@@ -69,6 +69,10 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   fab365: (id) => {
     if (fab365SignedIn()) syncSession(id);
   },
+  // Its sign-in downloads the files and reads the user's own collections. Its cookies alone say whether anyone is
+  // signed in, so they're read on every visit: a signed-out one clears the sign-in Grab sent, as signing out there
+  // revokes it.
+  threedexport: syncSession,
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,

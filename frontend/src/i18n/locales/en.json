@@ -6784,6 +6784,37 @@
       "sync": {
         "notConnected": "Connect Fab365 in Configuration > Providers, or visit it signed in with Thingport Grab, to see your favourites here."
       }
+    },
+    "threedexport": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open 3dexport.com while signed in. It connects your account, and sends a new sign-in whenever yours changes there.",
+          "Or by hand: sign in at 3dexport.com and open your browser's developer tools (F12).",
+          "Go to the Network tab, reload the page, click any 3dexport.com request and copy its Cookie header, then paste it below. Its nm_userid and nm_hash cookies are the sign-in, and signing out of 3dexport.com ends them."
+        ],
+        "placeholder": "The Cookie header of a signed-in 3dexport.com request"
+      },
+      "status": {
+        "notConnected": "3DExport gives its files to signed-in users only, the free models included. Connect your account to import them and your own collections; anyone's public collections read without it.",
+        "expired": "Sign-in expired: signing out of 3dexport.com ends it. Sign in there again with Thingport Grab, or connect 3DExport again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "3DExport: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "One of the oldest 3D model marketplaces, open since 2004: game and film assets, textures and a large 3D printing catalogue, some of it free.",
+        "signIn": "Your own sign-in, for the files and your own collections; anyone's public collections read without it.",
+        "grab": "Sends your sign-in as you visit 3dexport.com, and marks the paid models you haven't bought.",
+        "setup": [
+          "Install Thingport Grab, enable it on 3DExport and open 3dexport.com signed in.",
+          "By hand: copy the Cookie header of a signed-in 3dexport.com request and paste it in Configuration → Providers."
+        ]
+      },
+      "admin": {
+        "description": "Models, and collections: each user's own and anyone's public ones. Model pages and public collections read without a sign-in; the files need each user's own. Free models import, a paid one only once bought, and only the formats a slicer opens."
+      },
+      "sync": {
+        "notConnected": "Connect 3DExport in Configuration > Providers, or visit it signed in with Thingport Grab, to see your collections here."
+      }
     }
   }
 }

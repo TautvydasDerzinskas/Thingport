@@ -54,9 +54,10 @@ export async function syncSession(provider: ProviderId): Promise<{ userId: strin
   const last = config.lastSyncedSessions?.[provider];
   try {
     if (!session) {
-      // Clear the sign-in Grab sent, but not one pasted in Thingport.
+      // Clear the sign-in Grab sent, but not one pasted in Thingport: it says which one it sent, so an instance that
+      // can tell clears it only while it's still the one stored. Older instances ignore that, and clear what's there.
       if (source.signedOut && last?.account === account) {
-        await apiCall(method, path, source.signedOut);
+        await apiCall(method, path, { ...source.signedOut, signed_out_of: last.value });
         await remember(provider, null);
       }
     } else if (last?.account !== account || last.value !== session.value) {

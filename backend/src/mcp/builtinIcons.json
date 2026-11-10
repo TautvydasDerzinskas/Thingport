@@ -132,6 +132,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/threedexport",
+    "name": "3DExport",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"
