@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { downloadTarget, forgetSlicer, knownSlicer, lookUpSlicer } from "./slicerTarget";
 
 // The "Download normalized" button's slicer: a click made while the instance is still answering waits for it, so a
@@ -49,5 +49,34 @@ describe("slicerTarget", () => {
     await late.promise;
     expect(knownSlicer()).toBeNull();
     await expect(downloadTarget()).resolves.toBe("flat");
+  });
+
+  describe("when the instance is slow", () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it("makes the flat copy once 5 s pass without an answer", async () => {
+      void lookUpSlicer(() => new Promise<string | null>(() => {}));
+      const target = downloadTarget();
+      await vi.advanceTimersByTimeAsync(4999);
+      let settled = false;
+      void target.then(() => (settled = true));
+      await Promise.resolve();
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await expect(target).resolves.toBe("flat");
+      expect(knownSlicer()).toBeNull();
+    });
+
+    it("takes the target from an answer that comes before 5 s, and clears the timer", async () => {
+      const answer = deferred<string | null>();
+      void lookUpSlicer(() => answer.promise);
+      const target = downloadTarget();
+      await vi.advanceTimersByTimeAsync(4000);
+      answer.resolve("snapmaker-orca");
+      await expect(target).resolves.toBe("orca");
+      expect(vi.getTimerCount()).toBe(0);
+      expect(knownSlicer()).toBe("snapmaker-orca");
+    });
   });
 });

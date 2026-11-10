@@ -4,8 +4,8 @@ Models on MakerWorld are Bambu Studio projects. Bambu Studio and OrcaSlicer open
 lose the painted colours, the filament colours, the plates or the designer's print settings, or don't import some
 parts at all.
 
-For a MakerWorld 3MF, Thingport offers **Open normalized in &lt;slicer&gt;** next to the regular **Open** button when
-your slicer is one of:
+For a MakerWorld 3MF, Thingport offers **Open normalized in &lt;slicer&gt;** in the **Open in** menu next to the regular **Open**
+button, and in the **⋮** menu, when your slicer is one of:
 
 - PrusaSlicer
 - Cura

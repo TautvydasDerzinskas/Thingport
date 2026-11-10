@@ -1,9 +1,12 @@
 // The instance's slicer for the "Download normalized" button, asked for once per mounted button. The button shows
 // before the answer and its explanation uses whatever is known, but a click waits for it: the slicer decides which copy
 // is made, and taking the flat one just because the answer hadn't come yet would hand a Snapmaker Orca user the wrong
-// file.
+// file. The wait is capped at SLICER_ANSWER_TIMEOUT_MS: an instance that never answers counts as no slicer (the
+// flat copy), so the local download never hangs on it.
 
 import { normalizeTargetFor } from "../../shared/slicers";
+
+const SLICER_ANSWER_TIMEOUT_MS = 5000;
 
 let known: string | null = null;
 let pending: Promise<string | null> = Promise.resolve(null);
@@ -14,8 +17,12 @@ let generation = 0;
 export function lookUpSlicer(ask: () => Promise<string | null>): Promise<string | null> {
   const mine = ++generation;
   known = null;
-  pending = ask()
-    .catch(() => null)
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timedOut = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), SLICER_ANSWER_TIMEOUT_MS);
+  });
+  pending = Promise.race([ask().catch(() => null), timedOut])
+    .finally(() => clearTimeout(timer))
     .then((slicer) => {
       if (mine !== generation) return null;
       known = slicer;
