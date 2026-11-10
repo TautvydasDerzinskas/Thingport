@@ -660,8 +660,8 @@ export const PROVIDER_PAGES = [
     docsSlug: "3dexport",
     accent: "#EE1111",
     highlight: {
-      title: "Only the formats a printer takes",
-      text: "3DExport packs each of a model's formats into a zip of its own, often a dozen for one CG model. Thingport downloads the ones a slicer opens, STL, 3MF and STEP, and an OBJ or GLB only when there's nothing else.",
+      title: "Only the formats Thingport opens",
+      text: "3DExport packs each format into a zip of its own, often a dozen for one CG model. Thingport fetches the ones a slicer or LightBurn opens (STL, 3MF, STEP, LightBurn), and an OBJ or GLB only when there's nothing else.",
     },
     facts: {
       signIn: "user",

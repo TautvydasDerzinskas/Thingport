@@ -20,8 +20,9 @@ model's only once it's theirs.
   Thingport, or import it from the model page with Grab. Only the number counts: the site sends any other name to the
   model's own.
 - **Formats.** 3DExport packs each of a model's formats into a zip of its own, and a CG model often comes in a dozen,
-  scenes and textures among them. Thingport downloads the ones a slicer opens -- STL, 3MF, STEP -- and an OBJ or GLB
-  only when there's none of those. A model with none of them has nothing to import.
+  scenes and textures among them. Thingport downloads the ones a slicer or LightBurn opens -- STL, 3MF, STEP (`.step`
+  or `.stp`) and LightBurn projects (`.lbrn`, `.lbrn2`) -- and an OBJ or GLB only when there's none of those, or a
+  download whose format the page doesn't say. A model with none of them has nothing to import.
 - **Free models.** Signed in, a free model's page lists each format's download, which is what Thingport fetches. No
   cart or checkout is involved.
 - **Paid models.** Buy them on 3DExport first; once a model is yours, Thingport imports it, and never buys anything.

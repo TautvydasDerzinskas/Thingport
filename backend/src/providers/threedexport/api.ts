@@ -369,15 +369,22 @@ function extensionOf(label: string): string | null {
   return label.match(/\(\.([a-z0-9_]{1,12})\)/i)?.[1]?.toLowerCase() ?? null;
 }
 
+/** Whether a link is the site's own download endpoint, the only place its download links go. */
+function isDownloadLink(href: string): boolean {
+  const url = new URL(href);
+  return url.origin === SITE_ORIGIN && url.pathname === "/download" && url.searchParams.has("link");
+}
+
 /** The downloads a signed-in user's page links, one per format. A model in more than one lists them by format; one in
  *  a single format has a plain "Download free" button instead, which names none, so its format is the one the page's
- *  panel lists. */
+ *  panel lists. Links its author put in the description aren't the site's, whatever they look like. */
 export function threedexportFilesFrom($: cheerio.CheerioAPI): ThreedexportFile[] {
   const files = $('a[href*="download?link="]')
+    .not('[itemprop="description"] a')
     .toArray()
     .flatMap((el) => {
       const href = absolute($(el).attr("href"));
-      if (!href) return [];
+      if (!href || !isDownloadLink(href)) return [];
       const copy = $(el).clone();
       copy.find("b").remove();
       const label = clean(copy.text()) ?? "";

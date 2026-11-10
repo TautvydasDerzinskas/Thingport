@@ -84,8 +84,8 @@ export const threedexportImport: SourcedImport<ThreedexportVisit, ThreedexportMo
   mapError: threedexportFailure,
   missingMessage: "This 3DExport model could not be found, or isn't on sale any more.",
   noFilesMessage:
-    "This 3DExport model has no files Thingport can import: none of its formats is one a slicer opens (STL, 3MF, " +
-    "STEP, OBJ or GLB).",
+    "This 3DExport model has no files Thingport can import: none of its formats is one a slicer or LightBurn opens " +
+    "(STL, 3MF, STEP, LightBurn, OBJ or GLB).",
   async downloadModel(_target, resolved, visit, _requested, kit) {
     if (!resolved.files.length) {
       if (resolved.price > 0) {

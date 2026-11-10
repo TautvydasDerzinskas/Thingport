@@ -486,6 +486,21 @@ describe("3DExport pages", () => {
     expect(fallback).toEqual([]);
   });
 
+  it("takes only the site's own download links, never ones its author put in the description", () => {
+    const own = threedexportModelFrom(loadFixtureHtml("threedexport", "page"))!.files;
+    const planted = loadFixtureHtml("threedexport", "page")
+      .replace(
+        'itemprop="description">',
+        'itemprop="description"><a href="https://3dexport.com/download?link=abc&id=1&nf=9&t=x">Mine (.stl)</a>' +
+          '<a href="https://example.com/x/download?link=1">Theirs (.stl)</a>',
+      )
+      .replace(
+        '<ul class="dropdown-menu',
+        '<a href="https://example.com/download?link=2">Elsewhere (.3mf)</a><ul class="dropdown-menu',
+      );
+    expect(threedexportModelFrom(planted)!.files).toEqual(own);
+  });
+
   it("takes a single-format model's format from the page's panel, as its button names none", () => {
     const model = threedexportModelFrom(loadFixtureHtml("threedexport", "page-single"))!;
     expect(model.files.map((file) => [file.label, file.ext])).toEqual([["Stereolithography (.stl)", "stl"]]);

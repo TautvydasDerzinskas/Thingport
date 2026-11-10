@@ -11,7 +11,6 @@ import { captureMyminifactoryAccount } from "./myminifactory/account";
 import { pinshapeSignedIn } from "./pinshape/content";
 import { pixup3dSignedIn } from "./pixup3d/content";
 import { fab365SignedIn } from "./fab365/content";
-import { threedexportSignedIn } from "./threedexport/content";
 import { toymakr3dSignedIn } from "./toymakr3d/content";
 import { syncPrintables } from "./printables/content";
 import { captureThingiverseAccount } from "./thingiverse/account";
@@ -70,11 +69,10 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   fab365: (id) => {
     if (fab365SignedIn()) syncSession(id);
   },
-  // Its sign-in downloads the files and reads the user's own collections. Its cookies say whether anyone is signed in,
-  // so a visit is only the cue to read them; a signed-in page's is the one worth reading.
-  threedexport: (id) => {
-    if (threedexportSignedIn()) syncSession(id);
-  },
+  // Its sign-in downloads the files and reads the user's own collections. Its cookies alone say whether anyone is
+  // signed in, so they're read on every visit: a signed-out one clears the sign-in Grab sent, as signing out there
+  // revokes it.
+  threedexport: syncSession,
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,
