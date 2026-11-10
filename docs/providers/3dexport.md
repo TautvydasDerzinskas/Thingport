@@ -33,8 +33,9 @@ model's only once it's theirs.
   `https://3dexport.com/mybookmarks/default`. Any other collection, yours or anyone's, is at
   `https://3dexport.com/bookmarks/3d-collection-<number>`: a public one, as its **Bookmarks** page lists them, needs no
   sign-in, and a private one shows only to its owner, so Thingport reads it with your sign-in. Import one, or sync it so
-  new models come in as they're added. A sync keeps paid models too, as the pages don't say which you bought; their
-  imports wait until you do.
+  new models come in as they're added. A sync takes paid models in too, as the pages don't say which you bought: one
+  you haven't bought is refused and counts as failed, and later checks don't try it again. Once you've bought it,
+  **Retry** it under **Needs attention** in the import queue.
 - **Browse tab.** With your sign-in, the sync dialog lists your own collections.
 - **Categories.** A 3D print model's category is the path its breadcrumb names (`characters/animals`), mapped to
   Thingport's own. A CG model's comes from 3DExport's other catalogue, which isn't mapped, so its category is left to

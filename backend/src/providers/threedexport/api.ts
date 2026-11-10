@@ -51,7 +51,8 @@ const SESSION_COOKIE = "sessionid";
 // What its collection pages show at once.
 const PAGE_SIZE = 100;
 const LISTING_MAX_ENTRIES = 600;
-// Past these there are surely no more: a guard against a listing that never ends, not a limit on what's read.
+// The most of a collection read, against a listing that never ends: a bounded read stops here and says it's truncated,
+// and a whole one (a sync's) with pages left past it throws, so it never passes for complete.
 const MAX_PAGES = 200;
 const CARD_THUMBNAILS = 4;
 
