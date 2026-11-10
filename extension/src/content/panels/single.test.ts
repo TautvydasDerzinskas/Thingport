@@ -350,6 +350,32 @@ describe("the single-model panel", () => {
       expect(html).toContain(">Add profile</button>");
     });
 
+    it("opens a model that has everything in Thingport, with nothing to add", async () => {
+      const html = await openInLibrary({ ...held("complete", ["1", "2", "3", "4"]), profiles: 4 });
+
+      expect(html).toContain("Everything here is in your library: the model, its 4 print profiles and its details.");
+      expect(html).toContain(`href="${INSTANCE}/models/print1"`);
+      expect(html).toContain(">Open in Thingport</a>");
+      expect(html).not.toContain("data-action");
+    });
+
+    it("draws that panel at once, asking the site nothing more", async () => {
+      // A site that never answers: the panel must not be waiting on it.
+      contentModules.snapmaker = { loadProfiles: () => new Promise(() => undefined) };
+      atProvider("snapmaker", { canQueue: false, importQueue: false }, { ...held("complete", ["1"]), profiles: 1 });
+      await loadSingleItem();
+
+      expect(last()).toContain("Everything here is in your library: the model, its print profile and its details.");
+    });
+
+    it("opens the library where the instance only says it has the model, not which it is", async () => {
+      const html = await openInLibrary({ ...held("complete", null), printId: null });
+
+      expect(html).toContain("This model is in your library.");
+      expect(html).toContain(`href="${INSTANCE}/models"`);
+      expect(html).not.toContain("data-action");
+    });
+
     it("only fills in details when the model has every profile", async () => {
       const html = await openInLibrary({ ...held("imported", ["1", "2", "3", "4"]), gaps: ["tags"] });
 

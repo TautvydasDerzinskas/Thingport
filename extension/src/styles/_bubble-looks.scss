@@ -1,0 +1,206 @@
+@use "tokens" as t;
+
+// The floating bubble's other styles (shared/bubble.ts), each included where it's picked: by the page's own bubble
+// (content/styles/_bubble.scss) and by its preview in the popup's Appearance tab (popup/styles/_appearance.scss).
+// Each goes on the `.tg-fab` element and restyles its parts (content/styles/_fab.scss). The plain white bubble is
+// the default and needs none.
+
+$spring: cubic-bezier(0.34, 1.8, 0.5, 1);
+
+// The icon with a word, so it says what it does. Sized by its word, which follows the state (content/shell.ts).
+@mixin pill {
+  width: auto;
+  height: 44px;
+  border-radius: 22px;
+
+  .tg-fab__body {
+    position: relative;
+    inset: auto;
+    box-sizing: border-box;
+    height: 100%;
+    gap: 6px;
+    padding: 0 16px 0 7px;
+  }
+
+  .tg-fab__blob {
+    border-radius: 22px;
+  }
+
+  .tg-fab__mark {
+    width: 30px;
+    height: 30px;
+  }
+
+  .tg-fab__label {
+    display: block;
+    position: relative;
+    font: 600 14px/1 t.$font-stack;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    color: t.c("text");
+    transform: translate(calc(var(--tg-x) * 0.3), calc(var(--tg-y) * 0.3)) scale(var(--tg-press));
+    transition: transform 0.55s $spring;
+  }
+
+  &.tg-fab--near .tg-fab__label {
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out;
+  }
+
+  &.tg-fab--inactive .tg-fab__label,
+  &.tg-fab--disconnected .tg-fab__label {
+    color: t.c("text-muted");
+  }
+}
+
+// Smaller, and half see-through until the pointer comes near.
+@mixin mini {
+  width: 40px;
+  height: 40px;
+
+  .tg-fab__mark {
+    width: 24px;
+    height: 24px;
+  }
+
+  .tg-fab__blob {
+    box-shadow: 0 2px 8px t.c("shadow");
+  }
+
+  .tg-fab__body {
+    opacity: 0.7;
+    transition:
+      transform 0.55s $spring,
+      opacity 0.2s ease;
+  }
+
+  &:hover .tg-fab__body,
+  &:focus-visible .tg-fab__body,
+  &.tg-fab--near .tg-fab__body {
+    opacity: 1;
+  }
+
+  .tg-fab__body::after {
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+    line-height: 12px;
+  }
+
+  &.tg-fab--in-library .tg-fab__body::after {
+    font-size: 12px;
+  }
+}
+
+// Solid Thingport green, the icon in white; greyed like the others while Grab can't import.
+@mixin brand {
+  .tg-fab__blob {
+    background: t.c("accent");
+    box-shadow: 0 4px 16px rgba(0, 110, 0, 0.35);
+  }
+
+  .tg-fab__mark svg path[stroke] {
+    stroke: #fff;
+  }
+
+  .tg-fab__mark svg path[fill] {
+    fill: #fff;
+  }
+
+  &:hover .tg-fab__blob {
+    background: t.c("accent-hover");
+    box-shadow: 0 6px 20px rgba(0, 110, 0, 0.4);
+  }
+
+  &.tg-fab--inactive,
+  &.tg-fab--disconnected {
+    .tg-fab__blob {
+      background: t.c("surface-sunken");
+      box-shadow: 0 2px 10px t.c("shadow");
+    }
+
+    .tg-fab__mark svg path[stroke] {
+      stroke: t.c("text");
+    }
+
+    .tg-fab__mark svg path[fill] {
+      fill: t.c("accent");
+    }
+  }
+
+  // The badge would vanish into the green: white with a green plus or tick instead.
+  &.tg-fab--in-library .tg-fab__body::after,
+  &.tg-fab--complete .tg-fab__body::after {
+    border-color: t.c("accent");
+    background: t.c("surface");
+    color: t.c("accent");
+  }
+}
+
+// Frosted: the page shows through it.
+@mixin glass {
+  .tg-fab__blob {
+    background: color-mix(in srgb, #{t.c("surface")} 55%, transparent);
+    -webkit-backdrop-filter: blur(10px) saturate(1.5);
+    backdrop-filter: blur(10px) saturate(1.5);
+    box-shadow:
+      0 4px 16px color-mix(in srgb, #{t.c("shadow")} 70%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, #fff 45%, transparent);
+  }
+}
+
+// Docked to the window's side, sliding out toward the pointer rather than leaning every way. `$side` is the side
+// it's docked to; its blob reaches past that edge, so sliding out never shows a gap behind it.
+@mixin edge($side: right) {
+  $out: 1;
+  $round: 0 14px 14px 0;
+  @if $side == right {
+    $out: -1;
+    $round: 14px 0 0 14px;
+  }
+  width: 46px;
+  height: 52px;
+  border-radius: $round;
+
+  .tg-fab__body {
+    @if $side == right {
+      transform: translateX(min(0px, calc(var(--tg-x) * 0.35)));
+    } @else {
+      transform: translateX(max(0px, calc(var(--tg-x) * 0.35)));
+    }
+  }
+
+  &:hover .tg-fab__body {
+    transform: translateX($out * 6px);
+  }
+
+  .tg-fab__blob {
+    @if $side == right {
+      inset: 0 -24px 0 0;
+    } @else {
+      inset: 0 0 0 -24px;
+    }
+    border-radius: $round;
+    box-shadow: ($out * 2px) 2px 12px t.c("shadow");
+    transform: scale(var(--tg-press));
+  }
+
+  .tg-fab__mark {
+    width: 28px;
+    height: 28px;
+    transform: translateX($out * 2px) scale(var(--tg-press));
+  }
+
+  // The badge on the corner facing the page.
+  .tg-fab__body::after {
+    @if $side == right {
+      right: auto;
+      left: -6px;
+    } @else {
+      left: auto;
+      right: -6px;
+    }
+  }
+}

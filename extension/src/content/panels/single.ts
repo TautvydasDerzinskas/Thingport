@@ -155,6 +155,10 @@ export async function loadSingleItem(): Promise<void> {
   const { library } = ctx();
   startScriptNote();
   // A MakerWorld profile is always one 3MF, so inspecting would only cost a download resolution.
+  if (library?.state === "complete") {
+    renderPanel(completeHtml());
+    return;
+  }
   if (library) {
     const ids = library.heldProfiles ? await profileIdsFor() : null;
     const missing = ids && library.heldProfiles ? missingOf(ids, library.heldProfiles) : null;
@@ -273,6 +277,26 @@ function fillGapsButtonHtml(variant = ""): string {
 function libraryModelLink(): string {
   const { library, instanceUrl } = ctx();
   return library?.printId ? `${instanceUrl}/models/${library.printId}` : `${instanceUrl}/models`;
+}
+
+/** Everything's in the library: the model, the page's print profiles and its details, so all there is to do is open
+ *  it. Where the instance didn't say which model it is, only that it has it, the button opens the library. Drawn at
+ *  once, from the count taken when the model was found complete: nothing more is asked of the site first. */
+function completeHtml(): string {
+  const { library } = ctx();
+  const profiles = library?.printId ? (library.profiles ?? 0) : 0;
+  const what =
+    profiles > 1
+      ? `the model, its ${profiles} print profiles and its details`
+      : profiles === 1
+        ? "the model, its print profile and its details"
+        : "the model and its details";
+  const hint = library?.printId ? `Everything here is in your library: ${what}.` : "This model is in your library.";
+  return `
+    ${modelHeadHtml("In your library")}
+    <div class="tg-hint">${hint}</div>
+    <a class="tg-btn" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">Open in Thingport</a>
+  `;
 }
 
 /** Everything's imported, but the library model has empty details the source can fill. */

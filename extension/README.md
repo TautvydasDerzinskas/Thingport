@@ -184,10 +184,18 @@ import button. Reopen the popup any time to change the instance (the pencil next
 **Extension enabled** off, after a confirmation too, to pause it everywhere without losing the saved setup. Disconnecting signs Grab out on the instance and,
 for a connection approved in Thingport, removes it from your Thingport profile too.
 
-Once connected, the popup's tabs are **Providers** (the sites Grab runs on), **Extra features** (the
-[ones that need no Thingport](#download-normalized-no-thingport-needed)) and **History**: your last imports, and the
-last 10 models you opened on any of those sites, each with its site's logo. Recently viewed models are listed before
-you connect too, and they stay in this browser.
+Once connected, the popup's tabs are **Providers** (the sites Grab runs on; click one to open it), **Appearance**,
+**Extra features** (the [ones that need no Thingport](#download-normalized-no-thingport-needed)) and **History**: your
+last imports, and the last 10 models you opened on any of those sites, each with its site's logo. Recently viewed
+models are listed before you connect too, and they stay in this browser. Click the instance's address under the title
+to open it.
+
+**Appearance** sets how the floating icon on model pages looks and where it sits. Its styles are the white
+**Bubble** (the default), **Pill** (the icon with a word: "Grab", or what clicking it does), **Mini** (smaller, and
+half see-through until the mouse comes near), **Brand** (solid green), **Glass** (frosted, the page showing through)
+and **Edge tab** (docked to the window's side). It can sit in any corner: bottom right (the default), bottom left, or
+the top ones, which sit below a site's own header. A change shows at once, on pages already open too, and the import
+panel opens from wherever the icon is.
 
 The extension re-authenticates automatically as its session token nears expiry -- there's nothing
 to keep re-entering day to day. A paired connection keeps working until you remove it in Thingport,
@@ -363,9 +371,10 @@ too, import the listed models and can keep them in sync.
 
 ## What counts as "importable"
 
-- A single model page on any of the sites -- hidden once that exact page is in your library, unless the panel has
-  something to add: another print profile of a model you have, or details Thingport's copy is missing, which
-  **Fetch missing details** brings over.
+- A single model page on any of the sites. Once the model is in your library the icon wears a badge: a **+** while
+  the panel has something to add (another print profile of a model you have, or details Thingport's copy is missing,
+  which **Fetch missing details** brings over), and a **✓** with a green ring once everything's in, when the panel
+  just offers **Open in Thingport**.
 - A MakerWorld, Printables, MyMiniFactory, MakerOnline, Creality Cloud, NexPrint, Thangs, Pinshape, Meshy, PIXUP or
   3DExport collection, a Thingiverse Collection, one of your Cults3D printlists, your 3DExport Default Collection;
   anyone's Thingiverse, Cults3D, Pinshape or GrabCAD likes or PIXUP wishlist; your own MakerOnline, Creality Cloud,
