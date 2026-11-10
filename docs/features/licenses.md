@@ -23,7 +23,9 @@ A model whose site says nothing shows **Not stated by** the site. One whose site
 Every site Thingport imports from says what licence a model has, and the import keeps it: Creative Commons licences, CC0,
 open-source licences such as GPL and MIT, and each site's own, such as the Standard Digital File License, Cults' Private
 Use or CGTrader's Royalty Free. PIXUP, Fab365, GrabCAD and Meshy's community have one licence for everything on them,
-from their terms. A Thangs model's licence is the file its designer uploaded, shown as written.
+from their terms. 3DExport's goes by the price: Royalty Free for a free model, Basic for a bought one, as its page
+doesn't say whether you paid for the Extended one. A Thangs model's licence is the file its designer uploaded, shown as
+written.
 
 A model imported before Thingport kept licences reads its licence the first time you open it.
 [Linking a model](importing.md#link-a-model-you-already-have) to its page brings the page's licence too.
