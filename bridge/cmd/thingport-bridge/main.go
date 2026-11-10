@@ -1,14 +1,11 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,9 +30,10 @@ type Config struct {
 	Slicers     map[string]SlicerConfig `json:"slicers,omitempty"`
 }
 
-// Only for slicers Thingport can't hand off to directly: bambustudio:// and prusaslicer:// only
-// accept allowlisted domains, and Cura's cura:// registration is unreliable. OrcaSlicer accepts
-// any URL, so it never reaches here.
+// For slicers Thingport can't hand off to directly: bambustudio:// and prusaslicer:// only accept
+// allowlisted domains, and Cura's cura:// registration is unreliable. OrcaSlicer and the others with
+// a handler of their own come here only when the user sends them through the Bridge (Configuration >
+// Slicer in Thingport), for when one can't download from the instance itself.
 const scheme = "thingport"
 
 // Release builds set it with -ldflags "-X main.version=...".
@@ -89,7 +88,7 @@ func runInstallAndReport() {
 func handleProtocol(raw string, cfg Config) error {
 	parsed, err := url.Parse(raw)
 	if err != nil {
-		return fmt.Errorf("parse url: %w", err)
+		return fmt.Errorf("parse url: %w", scrubURL(err))
 	}
 	if parsed.Scheme != scheme {
 		return fmt.Errorf("unexpected scheme: %s", parsed.Scheme)
@@ -122,10 +121,14 @@ func handleProtocol(raw string, cfg Config) error {
 		}
 	}
 	filename = sanitizeFilename(filename)
+	// Any website can make a thingport:// link, and a file that isn't a model may be a program the OS
+	// runs when it's opened. Thingport only ever hands over models, so refuse the rest before fetching.
+	if !isModelFile(filename) {
+		return fmt.Errorf("refused %q: not a model file", filename)
+	}
 
 	slicerID := strings.ToLower(strings.TrimSpace(q.Get("slicer")))
-	// Never write a signed /api/t/<session>/ URL to the log: it is a bearer credential.
-	log.Printf("open request slicer=%s filename=%s", slicerID, filename)
+	log.Printf("open request slicer=%s url=%s filename=%s", slicerID, redactURL(downloadURL), filename)
 
 	downloadDir := resolveDownloadDir(cfg)
 	if err := os.MkdirAll(downloadDir, 0755); err != nil {
@@ -236,9 +239,8 @@ func uniquePath(dir, name string) string {
 	return p
 }
 
-// isSafeDefaultFileExtension limits a protocol-triggered default-open to
-// supported 3D/laser model files. Never execute arbitrary downloaded programs.
-func isSafeDefaultFileExtension(filePath string) bool {
+// isModelFile is true for the files Thingport hands to a slicer: models, laser projects and sliced prints.
+func isModelFile(filePath string) bool {
 	switch strings.ToLower(filepath.Ext(filePath)) {
 	case ".stl", ".3mf", ".step", ".stp", ".obj", ".glb", ".gltf",
 		".f3d", ".lbrn", ".lbrn2", ".gcode", ".bgcode":
@@ -253,19 +255,15 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
-// downloadFile fetches a remote model without exposing signed download credentials in errors.
 func downloadFile(downloadURL, targetPath string) error {
 	client := &http.Client{Timeout: 5 * time.Minute}
 	req, err := http.NewRequest(http.MethodGet, downloadURL, nil)
 	if err != nil {
-		// URL parsing errors can echo the complete signed URL.
-		return errors.New("invalid download URL")
+		return fmt.Errorf("request: %w", scrubURL(err))
 	}
 	res, err := client.Do(req)
 	if err != nil {
-		// url.Error contains the complete URL, including an embedded session token.
-		// Never return or log the raw error; classify it without leaking its URL.
-		return safeDownloadError(err)
+		return fmt.Errorf("download: %w", scrubURL(err))
 	}
 	defer res.Body.Close()
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
@@ -282,35 +280,15 @@ func downloadFile(downloadURL, targetPath string) error {
 	return nil
 }
 
-// safeDownloadError keeps useful connection diagnostics without disclosing bearer credentials.
-func safeDownloadError(err error) error {
-	var dnsErr *net.DNSError
-	if errors.As(err, &dnsErr) {
-		return errors.New("download request failed: DNS resolution error")
-	}
-	var netErr net.Error
-	if errors.As(err, &netErr) && netErr.Timeout() {
-		return errors.New("download request failed: connection timed out")
-	}
-	var tlsErr *tls.CertificateVerificationError
-	var unknownCA x509.UnknownAuthorityError
-	var invalidCert x509.CertificateInvalidError
-	var wrongHost x509.HostnameError
-	var tlsRecord tls.RecordHeaderError
-	var tlsAlert tls.AlertError
-	if errors.As(err, &tlsAlert) || errors.As(err, &tlsErr) || errors.As(err, &unknownCA) ||
-		errors.As(err, &invalidCert) || errors.As(err, &wrongHost) ||
-		errors.As(err, &tlsRecord) {
-		return errors.New("download request failed: TLS certificate or handshake error")
-	}
-	// Go's TLS stack can return remote alerts as an unexported error type.
-	// Inspect only the underlying error's fixed prefix, never its full message or URL.
+// scrubURL redacts the URL a *url.Error repeats (net/http's and url.Parse's errors do), so a
+// /api/t/<session>/ sign-in doesn't reach the log, while the cause itself (a certificate the system
+// doesn't trust, say) still does.
+func scrubURL(err error) error {
 	var urlErr *url.Error
-	if errors.As(err, &urlErr) && urlErr.Err != nil &&
-		strings.HasPrefix(urlErr.Err.Error(), "remote error: tls: ") {
-		return errors.New("download request failed: TLS certificate or handshake error")
+	if errors.As(err, &urlErr) {
+		urlErr.URL = redactURL(urlErr.URL)
 	}
-	return errors.New("download request failed: connection error")
+	return err
 }
 
 func resolveSlicerCommand(id string, cfg Config) (string, []string) {
@@ -364,11 +342,10 @@ func findWindowsCommand(id string, candidates map[string][]string) string {
 		}
 		for _, base := range bases {
 			full := filepath.Join(base, rel)
-			// Cura's install directory embeds its version, so its candidate is a glob.
+			// Some install directories embed the version, so their candidates are globs.
 			if strings.Contains(rel, "*") {
 				if matches, err := filepath.Glob(full); err == nil && len(matches) > 0 {
-					sort.Strings(matches)
-					return matches[len(matches)-1]
+					return newestVersion(matches)
 				}
 				continue
 			}
@@ -380,10 +357,59 @@ func findWindowsCommand(id string, candidates map[string][]string) string {
 	return ""
 }
 
+// newestVersion picks the newest of several versioned installs: "Cura 5.10" over "Cura 5.9", which a
+// plain sort gets the wrong way round.
+func newestVersion(paths []string) string {
+	sorted := append([]string(nil), paths...)
+	sort.SliceStable(sorted, func(i, j int) bool { return versionLess(sorted[i], sorted[j]) })
+	return sorted[len(sorted)-1]
+}
+
+// versionLess compares runs of digits as numbers and everything else as text.
+func versionLess(a, b string) bool {
+	for a != "" && b != "" {
+		ca, cb := a[:runEnd(a)], b[:runEnd(b)]
+		if ca != cb {
+			na, errA := strconv.Atoi(ca)
+			nb, errB := strconv.Atoi(cb)
+			if errA != nil || errB != nil {
+				return ca < cb
+			}
+			if na != nb {
+				return na < nb
+			}
+		}
+		a, b = a[len(ca):], b[len(cb):]
+	}
+	return len(a) < len(b)
+}
+
+// runEnd is the length of the run of digits, or of non-digits, that s starts with.
+func runEnd(s string) int {
+	isDigit := func(c byte) bool { return c >= '0' && c <= '9' }
+	digits := isDigit(s[0])
+	i := 1
+	for i < len(s) && isDigit(s[i]) == digits {
+		i++
+	}
+	return i
+}
+
+// Also looks where Flatpak exports its apps' commands, which a desktop session may not have on PATH.
 func findLinuxCommand(id string, candidates map[string][]string) string {
+	var dirs []string
+	if home, err := os.UserHomeDir(); err == nil {
+		dirs = append(dirs, filepath.Join(home, ".local/share/flatpak/exports/bin"))
+	}
+	dirs = append(dirs, "/var/lib/flatpak/exports/bin")
 	for _, name := range candidates[id] {
 		if p, err := exec.LookPath(name); err == nil {
 			return p
+		}
+		for _, dir := range dirs {
+			if p, err := exec.LookPath(filepath.Join(dir, name)); err == nil {
+				return p
+			}
 		}
 	}
 	return ""
@@ -410,13 +436,19 @@ func windowsCandidates() map[string][]string {
 		// The installer ships bambu-studio.exe; BambuStudio.exe is kept in case a build names it that.
 		// "/" so the test runs on any OS; Windows accepts it.
 		"bambustudio": {"Bambu Studio/bambu-studio.exe", "Bambu Studio/BambuStudio.exe"},
-		"orcaslicer":  {"OrcaSlicer\\OrcaSlicer.exe"},
+		"orcaslicer":  {"OrcaSlicer/orca-slicer.exe"},
 		"prusaslicer": {"PrusaSlicer\\PrusaSlicer.exe"},
-		// Creality Print uses a versioned directory (e.g. Creality Print 7.3).
+		// The folder carries the version: Creality\Creality Print 7.3 for 6.x and 7.x, Creality Print 5.1
+		// for 5.x.
 		"crealityprintlink": {
 			"Creality/Creality Print */CrealityPrint.exe",
-			"Creality/Creality Print/CrealityPrint.exe",
+			"Creality Print */CrealityPrint.exe",
 		},
+		"elegooslicer":   {"ElegooSlicer/elegoo-slicer.exe"},
+		"snapmaker-orca": {"Snapmaker_Orca/snapmaker-orca.exe"},
+		// Under LOCALAPPDATA. Not "eufyMake Studio\eufyMake Studio.exe": 1.5.26 used it, but so does
+		// eufyMake's separate app for its UV printer.
+		"eufystudio3d": {"eufyMake Studio 3D/eufymake studio.exe", "AnkerMake Studio/AnkerMake Studio.exe"},
 		// Globs because the dir embeds the version; renamed "Ultimaker" -> "UltiMaker" around 5.7.
 		"cura": {
 			"UltiMaker Cura */UltiMaker-Cura.exe",
@@ -436,11 +468,16 @@ func windowsCandidates() map[string][]string {
 func linuxCandidates() map[string][]string {
 	return map[string][]string{
 		"bambustudio": {"bambu-studio", "BambuStudio"},
-		"orcaslicer":  {"orca-slicer", "OrcaSlicer"},
+		// Flatpak app ids are the commands Flatpak exports; each of these has the home folder, where the
+		// downloads are. The old OrcaSlicer id is its GitHub builds' up to 2.3.1.
+		"orcaslicer":  {"orca-slicer", "OrcaSlicer", "com.orcaslicer.OrcaSlicer", "io.github.softfever.OrcaSlicer"},
 		"prusaslicer": {"prusa-slicer", "PrusaSlicer"},
 		// PATH only: AppImage and Flatpak builds need a config.json entry (see bridge/README.md).
 		"cura":               {"cura", "UltiMaker-Cura"},
 		"anycubicslicernext": {"AnycubicSlicerNext", "anycubicslicernext", "anycubic-slicer-next"},
+		"crealityprintlink":  {"CrealityPrint", "creality-print", "io.github.crealityofficial.CrealityPrint"},
+		"elegooslicer":       {"elegoo-slicer"},
+		"snapmaker-orca":     {"snapmaker-orca", "io.github.Snapmaker.Snapmaker_Orca"},
 	}
 }
 
@@ -451,6 +488,15 @@ func macCandidates() map[string][]string {
 		"prusaslicer":        {"/Applications/PrusaSlicer.app", "/Applications/Original Prusa Drivers/PrusaSlicer.app"},
 		"cura":               {"/Applications/UltiMaker Cura.app", "/Applications/Ultimaker Cura.app"},
 		"anycubicslicernext": {"/Applications/AnycubicSlicerNext.app", "/Applications/Anycubic Slicer Next.app"},
+		"crealityprintlink":  {"/Applications/Creality Print.app"},
+		"elegooslicer":       {"/Applications/ElegooSlicer.app"},
+		"snapmaker-orca":     {"/Applications/Snapmaker Orca.app"},
+		// Its earlier names after them. Its UV printer's app is "Anker Make Studio.app", with a space.
+		"eufystudio3d": {
+			"/Applications/eufyMake Studio 3D.app",
+			"/Applications/eufyMake Studio.app",
+			"/Applications/AnkerMake Studio.app",
+		},
 	}
 }
 

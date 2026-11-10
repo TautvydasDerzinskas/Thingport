@@ -2,13 +2,13 @@ package main
 
 import (
 	"bytes"
-	"crypto/tls"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -67,16 +67,41 @@ func TestRedactURLHidesURLUserInfo(t *testing.T) {
 	}
 }
 
-func TestWindowsDefaultOpenFileExtensionAllowlist(t *testing.T) {
-	for _, name := range []string{"model.stl", "MODEL.3MF", "model.step", "model.stp", "model.obj", "model.glb", "model.gltf", "model.f3d", "model.lbrn", "model.lbrn2", "print.gcode", "print.bgcode"} {
-		if !isSafeDefaultFileExtension(name) {
+func TestIsModelFile(t *testing.T) {
+	for _, name := range []string{"model.stl", "MODEL.3MF", "plate.gcode.3mf", "model.step", "model.stp", "model.obj", "model.glb", "model.gltf", "model.f3d", "model.lbrn", "model.lbrn2", "print.gcode", "print.bgcode"} {
+		if !isModelFile(name) {
 			t.Errorf("valid model file rejected: %q", name)
 		}
 	}
-	for _, name := range []string{"evil.exe", "evil.bat", "evil.cmd", "evil.ps1", "evil.lnk", "evil.url", "evil.stl.exe", "model", "script.sh", "archive.zip"} {
-		if isSafeDefaultFileExtension(name) {
+	for _, name := range []string{"evil.exe", "evil.bat", "evil.cmd", "evil.ps1", "evil.lnk", "evil.url", "evil.stl.exe", "evil.command", "evil.terminal", "evil.desktop", "model", "script.sh", "archive.zip"} {
+		if isModelFile(name) {
 			t.Errorf("unsupported file accepted: %q", name)
 		}
+	}
+}
+
+func TestHandleProtocolRefusesWhatIsntAModelBeforeDownload(t *testing.T) {
+	hits := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte("MZ"))
+	}))
+	defer server.Close()
+
+	links := []string{
+		// Named by the filename parameter, or else by the URL.
+		"thingport://open?url=" + url.QueryEscape(server.URL+"/model.stl") + "&filename=evil.exe&slicer=other",
+		"thingport://open?url=" + url.QueryEscape(server.URL+"/evil.exe") + "&slicer=other",
+		"thingport://open?url=" + url.QueryEscape(server.URL+"/x") + "&filename=evil.terminal&slicer=orcaslicer",
+	}
+	for _, link := range links {
+		err := handleProtocol(link, Config{DownloadDir: t.TempDir()})
+		if err == nil || !strings.Contains(err.Error(), "not a model file") {
+			t.Errorf("handleProtocol(%q) = %v, expected a refusal", link, err)
+		}
+	}
+	if hits != 0 {
+		t.Fatalf("downloaded %d refused files", hits)
 	}
 }
 
@@ -105,29 +130,12 @@ func TestDownloadTLSErrorDoesNotLeakSignedURL(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected TLS verification failure")
 	}
-	if !strings.Contains(err.Error(), "TLS") {
-		t.Fatalf("expected a safe TLS failure category, got %v", err)
+	// The cause stays, for whoever reads the log; only the URL's sign-in goes.
+	if !strings.Contains(err.Error(), "certificate") || !strings.Contains(err.Error(), "/api/t/REDACTED/") {
+		t.Fatalf("expected the certificate error with the URL redacted, got %v", err)
 	}
 	if strings.Contains(err.Error(), token) || strings.Contains(logs.String(), token) {
 		t.Fatalf("signed URL credential leaked in error or log: error=%v logs=%q", err, logs.String())
-	}
-}
-
-func TestSafeDownloadErrorClassifiesRemoteTLSAlert(t *testing.T) {
-	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	server.TLS = &tls.Config{ClientAuth: tls.RequireAnyClientCert}
-	server.StartTLS()
-	defer server.Close()
-
-	// Trust the test server certificate, but don't supply a client certificate.
-	_, err := server.Client().Get(server.URL)
-	if err == nil {
-		t.Fatal("expected a TLS client-certificate alert")
-	}
-	if got := safeDownloadError(err).Error(); !strings.Contains(got, "TLS") {
-		t.Fatalf("TLS alert was not classified as TLS: %q", got)
 	}
 }
 
@@ -205,6 +213,16 @@ func TestHandleProtocolRejectsUntrustedShapesBeforeDownload(t *testing.T) {
 	}
 }
 
+func TestNewestVersionCountsVersionsAsNumbers(t *testing.T) {
+	got := newestVersion([]string{"Creality Print 7.10", "Creality Print 7.9", "Creality Print 6.2"})
+	if got != "Creality Print 7.10" {
+		t.Fatalf("newestVersion = %q, expected Creality Print 7.10", got)
+	}
+	if got := newestVersion([]string{"UltiMaker Cura 5.10.0", "UltiMaker Cura 5.9.1"}); got != "UltiMaker Cura 5.10.0" {
+		t.Fatalf("newestVersion = %q, expected UltiMaker Cura 5.10.0", got)
+	}
+}
+
 func TestFindWindowsCommandResolvesCrealityPrint(t *testing.T) {
 	base := t.TempDir()
 	t.Setenv("ProgramFiles", base)
@@ -221,6 +239,75 @@ func TestFindWindowsCommandResolvesCrealityPrint(t *testing.T) {
 	}
 	if got := findWindowsCommand("crealityprintlink", windowsCandidates()); got != exePath {
 		t.Fatalf("findWindowsCommand(crealityprintlink) = %q, expected %q", got, exePath)
+	}
+}
+
+// The layouts the official installers write, read from their NSIS headers.
+func TestFindWindowsCommandResolvesBridgeableSlicers(t *testing.T) {
+	tests := []struct {
+		id, base, rel string
+	}{
+		{"orcaslicer", "ProgramFiles", "OrcaSlicer/orca-slicer.exe"},
+		{"crealityprintlink", "ProgramFiles", "Creality Print 5.1/CrealityPrint.exe"},
+		{"elegooslicer", "ProgramFiles", "ElegooSlicer/elegoo-slicer.exe"},
+		{"snapmaker-orca", "ProgramFiles", "Snapmaker_Orca/snapmaker-orca.exe"},
+		{"eufystudio3d", "LOCALAPPDATA", "eufyMake Studio 3D/eufymake studio.exe"},
+		{"eufystudio3d", "LOCALAPPDATA", "AnkerMake Studio/AnkerMake Studio.exe"},
+	}
+	for _, tt := range tests {
+		base := t.TempDir()
+		for _, key := range []string{"ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"} {
+			t.Setenv(key, "")
+		}
+		t.Setenv(tt.base, base)
+		exePath := filepath.Join(base, filepath.FromSlash(tt.rel))
+		if err := os.MkdirAll(filepath.Dir(exePath), 0755); err != nil {
+			t.Fatalf("mkdir: %v", err)
+		}
+		if err := os.WriteFile(exePath, nil, 0644); err != nil {
+			t.Fatalf("write exe: %v", err)
+		}
+		if got := findWindowsCommand(tt.id, windowsCandidates()); filepath.Clean(got) != exePath {
+			t.Errorf("findWindowsCommand(%s) = %q, expected %q", tt.id, got, exePath)
+		}
+	}
+}
+
+func TestFindWindowsCommandLeavesEufyMakesUVAppAlone(t *testing.T) {
+	base := t.TempDir()
+	t.Setenv("ProgramFiles", "")
+	t.Setenv("ProgramFiles(x86)", "")
+	t.Setenv("LOCALAPPDATA", base)
+	// eufyMake's app for its UV printer installs here too.
+	dir := filepath.Join(base, "eufyMake Studio")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "eufyMake Studio.exe"), nil, 0644); err != nil {
+		t.Fatalf("write exe: %v", err)
+	}
+	if got := findWindowsCommand("eufystudio3d", windowsCandidates()); got != "" {
+		t.Fatalf("findWindowsCommand(eufystudio3d) = %q, expected none", got)
+	}
+}
+
+func TestFindLinuxCommandLooksInFlatpakExports(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Linux lookup")
+	}
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("PATH", "")
+	dir := filepath.Join(home, ".local/share/flatpak/exports/bin")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	launcher := filepath.Join(dir, "io.github.Snapmaker.Snapmaker_Orca")
+	if err := os.WriteFile(launcher, []byte("#!/bin/sh\n"), 0755); err != nil {
+		t.Fatalf("write launcher: %v", err)
+	}
+	if got := findLinuxCommand("snapmaker-orca", linuxCandidates()); got != launcher {
+		t.Fatalf("findLinuxCommand(snapmaker-orca) = %q, expected %q", got, launcher)
 	}
 }
 

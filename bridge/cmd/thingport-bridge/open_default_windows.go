@@ -10,12 +10,10 @@ import (
 
 var shellExecuteW = syscall.NewLazyDLL("shell32.dll").NewProc("ShellExecuteW")
 
-// openWithDefaultWindows opens a model through the Windows file association API,
-// without allowing an untrusted filename to be interpreted by cmd.exe.
+// openWithDefaultWindows opens a file with the app Windows associates with its type. Not through
+// `cmd /c start`: cmd.exe would read a & in the filename as the start of another command.
+// handleProtocol has already refused anything but a model file.
 func openWithDefaultWindows(filePath string) error {
-	if !isSafeDefaultFileExtension(filePath) {
-		return fmt.Errorf("Windows default-open refused unsupported model file type")
-	}
 	verb, err := syscall.UTF16PtrFromString("open")
 	if err != nil {
 		return fmt.Errorf("invalid open verb")

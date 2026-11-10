@@ -15,13 +15,11 @@ handlers won't take a link straight from a self-hosted Thingport instance:
   OrcaSlicer's own `orcaslicer://` protocol instead of one of its own -- with both installed, only
   one of them gets those links. The Bridge launches it by path, so the slicer you picked opens.
 
-Creality Print also has a native `crealityprintlink://` handler. If that handler fails to import
-models from a self-hosted HTTPS Thingport, choose **Open in Creality Print (Thingport Bridge)**
-from the model's slicer-button menu. Bridge downloads the model first and passes a local file
-to Creality Print. Native launch remains the default, so Bridge is optional.
-
-OrcaSlicer's protocol handler accepts any HTTP(S) URL directly with no such restriction, so it's
-launched straight from the browser and never needs this bridge.
+OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca and eufyMake Studio take a link from any
+address and download it themselves, so Thingport hands them the link directly. When one can't
+download from your instance (it doesn't trust the instance's certificate, say), the user can send
+it through the Bridge instead: right-click it in Thingport's **Configuration → Slicer** and switch
+on **Through Thingport Bridge**.
 
 Protocol format:
 `thingport://open?url=<download-url>&slicer=<id>&filename=<name>`
@@ -184,15 +182,20 @@ Environment override (per slicer): `THINGPORT_SLICER_BAMBUSTUDIO=/path/to/BambuS
 ## Slicer IDs
 
 - bambustudio
-- orcaslicer (not actually routed through the Bridge -- see above -- but still a valid `slicer=`
-  value and `config.json`/env-var override key)
 - prusaslicer
 - cura
 - anycubicslicernext (Anycubic Slicer Next -- an OrcaSlicer fork that registers OrcaSlicer's own
   `orcaslicer://` protocol, so it's launched by path to avoid opening OrcaSlicer instead when both
   are installed)
-- crealityprintlink (Creality Print; optional local-file alternative to the native handler)
 - other (opens with the OS default app)
+
+Only when sent through the Bridge (see above):
+
+- orcaslicer
+- crealityprintlink (Creality Print)
+- elegooslicer (Elegoo Slicer)
+- snapmaker-orca (Snapmaker Orca)
+- eufystudio3d (eufyMake Studio)
 
 Cura's AppImage and Flatpak builds aren't on `PATH` and won't be auto-detected. If "Open in Cura"
 falls back to opening with your OS default app, add a `cura` entry to `config.json` (see
@@ -203,12 +206,21 @@ Anycubic Slicer Next is looked for as `AnycubicSlicerNext.app` or `Anycubic Slic
 on Linux. If yours is elsewhere (e.g. an AppImage), add an `anycubicslicernext` entry to
 `config.json` or set `THINGPORT_SLICER_ANYCUBICSLICERNEXT=/path/to/it`.
 
-On Windows, Bridge automatically discovers Creality Print in a versioned
-`Program Files/Creality/Creality Print <version>/CrealityPrint.exe` directory (such
-as Creality Print 7.3). If it is installed elsewhere, set
-`THINGPORT_SLICER_CREALITYPRINTLINK` to the executable or add a `crealityprintlink`
-entry to `config.json`. On macOS/Linux, use an explicit override until platform
-installation paths are supported.
+Where the others are looked for, as their official installers put them:
+
+| Slicer          | Windows                                                                                                                                                                 | macOS                                                                   | Linux (`PATH`, or Flatpak's exported commands)                                        |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| OrcaSlicer      | `Program Files\OrcaSlicer\orca-slicer.exe`                                                                                                                              | `OrcaSlicer.app`                                                        | `orca-slicer`, Flatpak `com.orcaslicer.OrcaSlicer`                                    |
+| Creality Print  | `Program Files\Creality\Creality Print <version>\CrealityPrint.exe` (6 and 7), `Program Files\Creality Print <version>\CrealityPrint.exe` (5); the newest version found | `Creality Print.app`                                                    | `CrealityPrint`, `creality-print`, Flatpak `io.github.crealityofficial.CrealityPrint` |
+| Elegoo Slicer   | `Program Files\ElegooSlicer\elegoo-slicer.exe`                                                                                                                          | `ElegooSlicer.app`                                                      | `elegoo-slicer`                                                                       |
+| Snapmaker Orca  | `Program Files\Snapmaker_Orca\snapmaker-orca.exe`                                                                                                                       | `Snapmaker Orca.app`                                                    | `snapmaker-orca`, Flatpak `io.github.Snapmaker.Snapmaker_Orca`                        |
+| eufyMake Studio | `%LOCALAPPDATA%\eufyMake Studio 3D\eufymake studio.exe`, or `AnkerMake Studio` before it was renamed                                                                    | `eufyMake Studio 3D.app`, `eufyMake Studio.app`, `AnkerMake Studio.app` | none (no Linux build)                                                                 |
+
+eufyMake Studio 1.5.26 for Windows installed to `%LOCALAPPDATA%\eufyMake Studio`, which is also
+where eufyMake's app for its UV printer goes, so that folder isn't used. With that version, set
+`THINGPORT_SLICER_EUFYSTUDIO3D` or add an `eufystudio3d` entry to `config.json`, as for any slicer
+installed somewhere else. AppImages are only found once they're on `PATH` under one of the names
+above.
 
 On macOS, apps are looked for in both `/Applications` and your own `~/Applications`.
 
@@ -225,15 +237,15 @@ After install, paste this into your browser's address bar (replace the URL):
 
 ## Notes
 
-- Bridge avoids logging signed download URLs, which can embed session credentials in
-  `/api/t/<token>/` paths. Older versions may have logged them; delete old logs
-  and revoke exposed sessions before sharing diagnostics.
+- Only model files are fetched: `.stl`, `.3mf`, `.step`, `.stp`, `.obj`, `.glb`, `.gltf`, `.f3d`,
+  `.lbrn`, `.lbrn2`, `.gcode` and `.bgcode`. Any website can make a `thingport://` link, and
+  anything else could be a program the OS runs when it's opened.
+- The download URL carries your Thingport session in its `/api/t/<token>/` path. The log shows it
+  as `/api/t/REDACTED/`. Version 1.0.0 wrote it in full, so delete a `bridge.log` it wrote before
+  sharing it. Each token in it stops working when it expires: 12 hours after it was issued, unless
+  an admin changed that.
 - The bridge downloads files into the user cache directory unless configured otherwise.
-- If a slicer isn't found, the file opens with the OS default app instead. On Windows,
-  only supported model and slicer file extensions are allowed for default-open
-  (`.stl`, `.3mf`, `.step`, `.stp`, `.obj`, `.glb`, `.gltf`, `.f3d`,
-  `.lbrn`, `.lbrn2`, `.gcode`, `.bgcode`). This prevents protocol links from
-  running downloaded executables through Windows file associations.
+- If a slicer isn't found, the file opens with the OS default app instead.
 - On macOS, the installed app keeps running in the background (no Dock icon) so repeat opens
   don't pay the app-launch cost every time -- this mirrors how macOS delivers custom URL schemes
   to already-registered apps via Apple Events rather than a fresh process per open, unlike
