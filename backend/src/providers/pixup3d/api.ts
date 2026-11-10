@@ -460,7 +460,9 @@ async function fetchCart(session: Pixup3dSession): Promise<Cart> {
   const data = asRecord(res.data);
   const items = asRecord(data?.cart)?.variants;
   const variants = Array.isArray(items) ? items.flatMap((item) => cartItemOf(item) ?? []) : [];
-  const finalPrice = statedPrice(asRecord(data?.order)?.final_price);
+  // An empty cart has no order to price: PIXUP answers `order: null` for it.
+  const empty = Array.isArray(items) && !items.length && data?.order === null;
+  const finalPrice = empty ? 0 : statedPrice(asRecord(data?.order)?.final_price);
   // Only a cart it states the contents, each one's price and the total of: anything else can't be shown to be free,
   // so isn't checked out.
   if (!Array.isArray(items) || variants.length < items.length || finalPrice === null) throw failure("your cart", res);
@@ -481,6 +483,21 @@ async function cartToken(session: Pixup3dSession): Promise<string> {
   return token;
 }
 
+// A checkout's redirects followed, at most.
+const CHECKOUT_HOPS = 3;
+
+/** Its own pages a checkout sends the member to, opened as a browser does: a $0 one goes to its success page
+ *  (`/order/checkout_succeeded?…`), and opening that is what finishes the order. Where they end: the last of them, or
+ *  the first that's off the site or the sign-in, which isn't opened. */
+async function followSitePages(to: URL | null, session: Pixup3dSession): Promise<URL | null> {
+  for (let hop = 0; to && hop < CHECKOUT_HOPS && isSitePage(to) && !toSignIn(to); hop++) {
+    const next = redirectedTo(await requestPaced(to.href, { accept: HTML, session }));
+    if (!next) break;
+    to = next;
+  }
+  return to;
+}
+
 /** Free variants the user doesn't own yet, put in their library as the site's own Download button does it: into the
  *  cart and through a $0 checkout. The checkout takes the whole cart, so it isn't placed while anything in the cart
  *  costs money (Pixup3dCartError), or while the cart can't be read. Throws unless all of them are owned after it, and
@@ -497,7 +514,9 @@ export async function placePixup3dFreeOrder(variantIds: string[], session: Pixup
       added.push(id);
       const res = await api(`/cart/variants/${encodeURIComponent(id)}`, { session, method: "POST", csrf: token });
       if (res.status === 401) throw new Pixup3dAuthError();
-      if (res.status !== 200 || asText(asRecord(res.data)?.status) !== "ok") throw failure("its cart", res);
+      // Put in, it answers 201.
+      const took = res.status === 200 || res.status === 201;
+      if (!took || asText(asRecord(res.data)?.status) !== "ok") throw failure("its cart", res);
     }
     // Asked again, as what was put in is priced by the cart, not by the model's page.
     const cart = await fetchCart(session);
@@ -511,10 +530,10 @@ export async function placePixup3dFreeOrder(variantIds: string[], session: Pixup
       method: "POST",
       form: { authenticity_token: token },
     });
-    const after = redirectedTo(checkout);
+    const after = await followSitePages(redirectedTo(checkout), session);
     if (toSignIn(after)) throw new Pixup3dAuthError();
-    // A $0 cart is checked out at once, landing on the library; one sent anywhere else, its payment page among them,
-    // wasn't, and has nothing for the check below to find.
+    // A $0 cart stays on its pages, from the success page to the library; one sent anywhere else, its payment page
+    // among them, wasn't checked out, and has nothing for the check below to find.
     if (after && !isSitePage(after)) {
       throw new Error(`PIXUP asked for payment instead of taking the free order (sent to ${after.hostname})`);
     }
