@@ -43,6 +43,10 @@ export default function ModelFiltersButton({ filters, sources }: Props) {
         onHiddenChange={filters.setHiddenProviders}
         generative={filters.generative}
         onGenerativeChange={filters.setGenerative}
+        licenseAllows={filters.licenseAllows}
+        onLicenseAllowsChange={filters.setLicenseAllows}
+        licensed={filters.licensed}
+        onLicensedChange={filters.setLicensed}
       />
     </>
   );

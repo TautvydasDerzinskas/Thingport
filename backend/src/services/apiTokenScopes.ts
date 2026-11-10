@@ -35,6 +35,8 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/print/:id",
       "/print/:id/quality",
       "/print/:id/profiles",
+      "/print/:id/license",
+      "/licenses",
     ],
   },
   {

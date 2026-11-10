@@ -2,6 +2,7 @@ import { browserCredentialRequest, assertCredentialDestination } from "../creden
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { cleanThingiverseMarkdown } from "./markdown";
+import { thingiverseLicenseFrom } from "./license";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import {
   isCloudflareChallenge,
@@ -107,6 +108,17 @@ async function fetchThingiverseApi(
   return { ok: res.ok, status: res.status, data };
 }
 
+/** A Thing as the API gives it, and nothing else of it: null for one it doesn't have; any other refusal is thrown. */
+export async function fetchThingiverseThing(
+  thingId: string,
+  accessToken: string,
+): Promise<Record<string, unknown> | null> {
+  const { ok, status, data } = await fetchThingiverseApi(`/things/${encodeURIComponent(thingId)}`, accessToken);
+  if (status === 404) return null;
+  if (!ok || !isRecord(data)) throw new Error(`Thingiverse answered HTTP ${status}`);
+  return data;
+}
+
 /** Checks /users/me. A rate-limit counts as invalid, since the token can't be confirmed. */
 export async function verifyThingiverseAccessToken(accessToken: string): Promise<boolean> {
   try {
@@ -204,6 +216,8 @@ export async function resolveThingiverseThing(
     if (creator) meta.creator = creator;
     if (author) meta.author = author;
   }
+  const license = thingiverseLicenseFrom(detail);
+  if (license !== undefined) meta.license = license;
 
   // Best-effort: categories aren't inlined on the Thing resource.
   const categoriesUrl = typeof detail.categories_url === "string" ? detail.categories_url : null;

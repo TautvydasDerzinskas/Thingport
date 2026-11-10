@@ -16,6 +16,7 @@ import { useToast } from "../ToastProvider";
 import HelpTip from "../HelpTip";
 import NewCollectionField from "../NewCollectionField";
 import MixedStateChip, { type MixedState, nextMixedState, startMixedState } from "../controls/MixedStateChip";
+import { oneOrSeveral } from "../../utils/oneOrSeveral";
 
 type Props = {
   open: boolean;
@@ -107,7 +108,7 @@ export default function BulkEditCollectionsDialog({
     const shown =
       quoted.length > 3 ? [...quoted.slice(0, 2), t("models:merge.andMore", { count: quoted.length - 2 })] : quoted;
     const list = new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(shown);
-    return t("models:selection.notFiledNames", { names: list, count: ids.length });
+    return t("models:selection.notFiledNames", { names: list, count: oneOrSeveral(ids.length) });
   };
 
   const save = async () => {

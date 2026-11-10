@@ -1,0 +1,7 @@
+{
+  "returnCode": "C00000",
+  "data": {
+    "url": "https://fab-model-v2.s3.ap-northeast-2.amazonaws.com/item-file-v2/116/Fab365_JetPack.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261109T190557Z&X-Amz-SignedHeaders=host&X-Amz-Expires=50&X-Amz-Signature=abc"
+  },
+  "description": "OK"
+}

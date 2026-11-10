@@ -3,8 +3,9 @@
 Thingport keeps a real copy of every model you import: its files, photos, title, description, tags, author and a link
 back to where it came from. If the original page disappears, the model is still in your library.
 
-It imports from 18 sites: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
-Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD and Meshy.
+It imports from 20 sites: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
+Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP
+and Fab365.
 
 ## Ways to import
 
@@ -12,7 +13,7 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
   Paste several links, one per line, and they join the [import queue](#the-import-queue) as one import. You can also
   paste a link straight into the search bar.
 - **Use Thingport Grab.** The [browser extension](../../extension/README.md) adds a Thingport button to model pages on
-  all 18 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
+  all 20 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
   click in its popup), so you can import without leaving the page, file the model into a collection or a new one, and
   import whole collections. **Pair with Thingport** in its popup connects it: you approve the browser in Thingport, and
   no password is saved in the extension. This is the recommended way to import.
@@ -51,17 +52,18 @@ Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerab
 - The photo gallery, the formatted description, tags and, where the site gives one, its category, which Thingport maps
   to your own [categories](organize-and-search.md).
 - The author, where the site names one, with their avatar and profile, linked to an [author page](authors.md).
+- Its [licence](licenses.md), as the site lists it, with any terms the site or creator added.
 
 If a detail couldn't be fetched at the time, such as the author, **Fetch missing details** on the model page tries
 again.
 
 ## Link a model you already have
 
-A model you uploaded yourself can be linked to its page on any of the 18 sites, without importing it again. Choose
+A model you uploaded yourself can be linked to its page on any of the 20 sites, without importing it again. Choose
 **Link to a provider** in the model page's **⋮** menu, or on the Models page with the Folders view on, in a card's **⋮**
 menu or, with exactly one model selected, the selection toolbar. Paste the model's link, check the preview, and link it.
 
-- **What it brings:** the page's pictures, description, tags and author, and the provider's badge and link. The
+- **What it brings:** the page's pictures, description, tags, author and licence, and the provider's badge and link. The
   pictures go ahead of your own, so its cover becomes the model's, and your own stay. Tags are added to yours. The
   description and author replace what's there, where the site has them, and that can't be undone. A title you set stays.
 - **What it leaves alone:** your files. Nothing is downloaded, so the page's other files and print profiles don't come.

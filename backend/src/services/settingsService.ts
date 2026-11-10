@@ -233,6 +233,23 @@ export async function setFileReuse(value: FileReuse): Promise<void> {
   });
 }
 
+// Whether a LICENSE.txt is written beside the files of each model with a licence (services/licenseFile.ts). On unless an
+// admin turns it off, for a storage folder they want to hold only what they put there.
+const LICENSE_FILES_KEY = "license_files";
+
+export async function getLicenseFiles(): Promise<boolean> {
+  const row = await prisma.setting.findUnique({ where: { key: LICENSE_FILES_KEY } });
+  return row?.value !== false;
+}
+
+export async function setLicenseFiles(on: boolean): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: LICENSE_FILES_KEY },
+    create: { key: LICENSE_FILES_KEY, value: on },
+    update: { value: on },
+  });
+}
+
 // What API tokens may do at /api/mcp, instance-wide. "read" also keeps a write tool off for a token
 // whose user ticked it, without forgetting the choice.
 export type McpAccess = "off" | "read" | "write";

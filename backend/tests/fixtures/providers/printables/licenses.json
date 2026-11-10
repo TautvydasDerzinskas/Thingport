@@ -1,0 +1,144 @@
+{
+  "data": {
+    "licenses": [
+      {
+        "id": "7",
+        "name": "Creative Commons — Public Domain",
+        "abbreviation": "CC0",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://creativecommons.org/publicdomain/zero/1.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://licensebuttons.net/p/zero/1.0/88x31.png\" align=\"right\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"https://creativecommons.org/publicdomain/zero/1.0/\">Creative Commons (International License)<br><h6>Public Domain</h6></a>\r\n<hr>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Sharing without ATTRIBUTION  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial Use  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Free Cultural Works  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Meets Open Definition  </div>"
+      },
+      {
+        "id": "1",
+        "name": "Creative Commons — Attribution",
+        "abbreviation": "CC-BY",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by/4.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by/4.0/88x31.png\" align=\"right\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by/4.0/\">Creative Commons (4.0 International License)<br><h6>Attribution</h6></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial Use  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Free Cultural Works  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Meets Open Definition  </div>"
+      },
+      {
+        "id": "2",
+        "name": "Creative Commons — Attribution  — Share Alike",
+        "abbreviation": "CC-BY-SA",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-sa/4.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by-sa/4.0/88x31.png\" align=\"right\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons (4.0 International License)<br><h6>Attribution-ShareAlike</h6></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial Use  </div> \r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Free Cultural Works  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Meets Open Definition  </div>"
+      },
+      {
+        "id": "8",
+        "name": "Creative Commons — Attribution — NoDerivatives",
+        "abbreviation": "CC-BY-ND",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-nd/4.0/\"><img alt=\"Licence Creative Commons\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by-nd/4.0/88x31.png\" align=\"right\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-nd/4.0/\">Creative Commons (4.0 International License)<br><h6> Attribution—NoDerivatives</h6></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial Use  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Free Cultural Works  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Meets Open Definition  </div>"
+      },
+      {
+        "id": "3",
+        "name": "Creative Commons — Attribution  — Noncommercial",
+        "abbreviation": "CC-BY-NC",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-nc/4.0/\">\r\n<img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by-nc/4.0/88x31.png\"  align=\"right\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-nc/4.0/\">Creative Commons (4.0 International License)<br><h6> Attribution-NonCommercial </h6></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial Use  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Free Cultural Works  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Meets Open Definition  </div>"
+      },
+      {
+        "id": "4",
+        "name": "Creative Commons — Attribution  — Noncommercial  —  Share Alike",
+        "abbreviation": "CC-BY-NC-SA",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-nc-sa/4.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png\" align=\"right\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-nc-sa/4.0/\">Creative Commons (4.0 International License)<br><h6>Attribution—Noncommercial—Share Alike</h6></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial Use  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Free Cultural Works  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Meets Open Definition  </div>"
+      },
+      {
+        "id": "6",
+        "name": "Creative Commons — Attribution  — Noncommercial  —  NoDerivatives",
+        "abbreviation": "CC-BY-NC-ND",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-nc-nd/4.0/\"><img alt=\"Creative Commons License\" style=\"border-width:0\" src=\"https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png\" align=\"right\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"http://creativecommons.org/licenses/by-nc-nd/4.0/\">Creative Commons (4.0 International License)<br><h6>Attribution—Noncommercial—No Derivatives</h6></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial Use  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Free Cultural Works  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Meets Open Definition  </div>"
+      },
+      {
+        "id": "9",
+        "name": "GNU General Public License v2.0",
+        "abbreviation": "GPL 2.0",
+        "content": "<a class=\"dark-mode-invert\" rel=\"license\" target=\"_blank\" href=\"http://www.gnu.org/licenses/old-licenses/gpl-2.0.html\"><img alt=\"GNU General Public License v2.0\" style=\"border-width:0\" src=\"https://www.gnu.org/graphics/heckert_gnu.transp.small.png\" align=\"right\" width=\"55\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"http://www.gnu.org/licenses/old-licenses/gpl-2.0.html\">GNU <h6>General Public License v2.0</h3></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial Use  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Meets Open Definition  </div>\r\n&nbspℹ&nbsp&nbsp| Share under the same license  </div>"
+      },
+      {
+        "id": "12",
+        "name": "GNU General Public License v3.0",
+        "abbreviation": "GPL 3.0",
+        "content": "<a class=\"dark-mode-invert\" rel=\"license\" target=\"_blank\" href=\"https://www.gnu.org/licenses/gpl-3.0.html\"><img alt=\"GNU General Public License v3.0\" style=\"border-width:0\" src=\"https://www.gnu.org/graphics/heckert_gnu.transp.small.png\" align=\"right\" width=\"55\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"https://www.gnu.org/licenses/gpl-3.0.html\">GNU <h6>General Public License v3.0</h6></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial Use  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Meets Open Definition  </div>\r\n&nbspℹ&nbsp&nbsp| Share under the same license  </div>"
+      },
+      {
+        "id": "10",
+        "name": "GNU Lesser General Public License",
+        "abbreviation": "LGPL",
+        "content": "<a class=\"dark-mode-invert\" rel=\"license\" target=\"_blank\" href=\"https://www.gnu.org/licenses/lgpl-3.0.html\"><img alt=\"GNU Lesser General Public License v2.0\" style=\"border-width:0\" src=\"https://www.gnu.org/graphics/heckert_gnu.transp.small.png\" align=\"right\" width=\"55\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"https://www.gnu.org/licenses/lgpl-3.0.html\">GNU <h6>Lesser General Public License</h3></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION</div> \r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span>| Remix Culture allowed</div>\r\n<div><span style=\"color:#5daf0b;\">✔ </span>| Commercial Use</div>\r\n<div><span style=\"color:#5daf0b;\">✔</span> | Meets Open Definition</div>"
+      },
+      {
+        "id": "11",
+        "name": "BSD License",
+        "abbreviation": "BSD",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://opensource.org/licenses/BSD-2-Clause\"><img alt=\"BSD License\" style=\"border-width:0\" src=\"https://upload.wikimedia.org/wikipedia/commons/d/d5/License_icon-bsd-88x31.svg\" align=\"right\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"https://opensource.org/licenses/BSD-2-Clause\">BSD License<br></a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix Culture allowed  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial Use  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Free Cultural Works  </div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Meets Open Definition  </div>"
+      },
+      {
+        "id": "13",
+        "name": "Standard Digital File License",
+        "abbreviation": "Standard Digital File",
+        "content": "This work is licensed under a <b>Standard Digital File License</b>.\r\n</br>\r\n<div>Digital files have a strict non-commercial, personal use only license.</div></br>\r\n<div>You shall not share, sub-license, sell, rent, host, transfer, or distribute in any way the digital file or 3D printed versions of this object, nor any other derivative work of this object in its digital or physical format (including remixes of this object).</div></br>\r\n\r\n<div>You can not host these files on other digital platforms, web stores or cloud repositories.</div>\r\n<div>The objects may not be used in any way whatsoever in which you charge money, collect fees.</div>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> |  No sharing or redistributing in any way of the 3D files or derivatives</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | No remixing  </div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Non-commercial Use (only for personal use)  </div>"
+      },
+      {
+        "id": "14",
+        "name": "Commercial Use - No Derivative",
+        "abbreviation": "Comm. - No Derivative",
+        "content": "This work is licensed under a <b>Commercial Use - No Derivative</b> license.\r\n</br>\r\n<div>You can print, sell, and distribute as many 3D prints of the model as you want for commercial use.</div></br>\r\n\r\n<div>You are NOT allowed to modify (remix) the 3D model files.</div></br>\r\n<div>It is forbidden to distribute 3D model digital files in any way, such as sale, exchange, reupload, donation, etc.</div>\r\n<hr>\r\n\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial use of physical 3D prints of the model</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | No commercial use of physical 3D prints of the model that have been modified</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | No sharing or redistributing of the 3D files or derivatives in any way</div>"
+      },
+      {
+        "id": "15",
+        "name": "Commercial Use",
+        "abbreviation": "Commercial Use",
+        "content": "This work is licensed under a <b>Commercial Use</b> license.\r\n</br>\r\n<div>You can print, sell, and distribute as many 3D prints of the model as you want for commercial use.</div></br>\r\n<div>You are allowed to modify (remix) the 3D model files.</div></br>\r\n<div>It is forbidden to distribute original or modified 3D model digital files in any way, such as sale, exchange, reupload, donation, etc.</div>\r\n<hr>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial use of physical 3D prints of the model</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial use of physical 3D prints of the model that have been modified</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | No sharing or redistributing of the 3D files or derivatives in any way</div>"
+      },
+      {
+        "id": "16",
+        "name": "Open Community License v1",
+        "abbreviation": "OCL v1",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence/tree/main\">\r\n</a>\r\n<br>\r\nThis work is licensed under the\r\n<br>\r\n<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence/tree/main\">\r\n    Open Community License (OCL v1)\r\n</a>\r\n\r\n<hr>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix culture allowed</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Patent license included</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Right-to-repair protected</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Internal commercial use</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial reselling</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Share under the same license</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | No attribution necessary</div>"
+      },
+      {
+        "id": "17",
+        "name": "Open Community License v1.1",
+        "abbreviation": "OCL v1.1",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n</a>\r\n<br>\r\nThis work is licensed under the\r\n<br>\r\n<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n    Open Community License (OCL v1.1)\r\n</a>\r\n<hr>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix culture allowed</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Patent license included</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Right-to-repair protected</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Internal commercial use</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial reselling</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Share under the same license</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | No attribution necessary</div>"
+      },
+      {
+        "id": "19",
+        "name": "Open Community License v1.1 + General Attribution v1",
+        "abbreviation": "OCL v1.1 + GAtt v1",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n</a>\r\n<br>\r\nThis work is licensed under the\r\n<br>\r\n<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n    Open Community License v1.1 + General Attribution v1 (OCL v1.1 + GAtt v1)\r\n</a>\r\n<hr>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix culture allowed</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Patent license included</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Right-to-repair protected</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Internal commercial use</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial reselling</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Share under the same license</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Attribution required</div>"
+      },
+      {
+        "id": "20",
+        "name": "Open Community License v1.1 + Research & Development v1",
+        "abbreviation": "OCL v1.1 + RnD v1",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n</a>\r\n<br>\r\nThis work is licensed under the\r\n<br>\r\n<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n    Open Community License v1.1 + Research & Development v1\r\n (OCL v1.1 + RnD v1)\r\n</a>\r\n<hr>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix culture allowed</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Patent license included</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Right-to-repair protected</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Internal commercial use</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial reselling</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Share under the same license</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | No attribution necessary</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Research & Development only</div>"
+      },
+      {
+        "id": "21",
+        "name": "Open Community License v1.1 + Micro Business v1",
+        "abbreviation": "OCL v1.1 + Micro v1",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n</a>\r\n<br>\r\nThis work is licensed under the\r\n<br>\r\n<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n    Open Community License v1.1 + Micro Business v1\r\n (OCL v1.1 + Micro v1)\r\n</a>\r\n<hr>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix culture allowed</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Patent license included</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Right-to-repair protected</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Internal commercial use</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial reselling</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Share under the same license</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | No attribution necessary</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Commercial use by small business only</div>"
+      },
+      {
+        "id": "22",
+        "name": "Open Community License v1.1 + GAtt v1 + Micro v1",
+        "abbreviation": "OCL v1.1 + GAtt v1 + Micro v1",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n</a>\r\n<br>\r\nThis work is licensed under the\r\n<br>\r\n<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n    Open Community License v1.1 + GAtt v1 + Micro v1\r\n (OCL v1.1 + GAtt v1 + Micro v1)\r\n</a>\r\n<hr>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix culture allowed</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Patent license included</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Right-to-repair protected</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Internal commercial use</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial reselling</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Share under the same license</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Attribution required</div><div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Commercial use by small business only</div>"
+      },
+      {
+        "id": "23",
+        "name": "Open Community License v1.1 + GAtt v1 + RnD v1",
+        "abbreviation": "OCL v1.1 + GAtt v1 + RnD v1",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n</a>\r\n<br>\r\nThis work is licensed under the\r\n<br>\r\n<a rel=\"license\" target=\"_blank\" href=\"https://github.com/OpenCommunityLicence/OpenCommunityLicence\">\r\n    Open Community License v1.1 + GAtt v1 + RnD v1\r\n (OCL v1.1 + GAtt v1 + RnD v1)\r\n</a>\r\n<hr>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix culture allowed</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Patent license included</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Right-to-repair protected</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Internal commercial use</div>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Commercial reselling</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Share under the same license</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Attribution required</div><div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Research & Development only</div>"
+      },
+      {
+        "id": "18",
+        "name": "CERN Open Hardware Licence Version 2 - Strongly Reciprocal",
+        "abbreviation": "CERN-OHL-S v2",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://ohwr.org/cern_ohl_s_v2.txt\">\r\n</a>\r\n<br>\r\nThis work is licensed under the\r\n<br>\r\n<a rel=\"license\" target=\"_blank\" href=\"https://ohwr.org/cern_ohl_s_v2.txt\">\r\n    CERN Open Hardware Licence Version 2 - Strongly Reciprocal\r\n</a>\r\n<hr>\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Removing original notices and source info</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Sharing remixes allowed</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial use allowed</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Patent license included</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Share under the same license</div>\r\n<div><span style=\"color:#6c757d; font-weight:bold;\">ℹ </span> | Distributing products requires linking source files</div>"
+      },
+      {
+        "id": "24",
+        "name": "Apache License 2.0",
+        "abbreviation": "Apache-2.0",
+        "content": "<a rel=\"license\" target=\"_blank\" href=\"https://www.apache.org/licenses/LICENSE-2.0\"><img alt=\"Apache License 2.0\" style=\"border-width:0\" src=\"https://apache.org/foundation/press/kit/asf_logo_wide.svg\" align=\"right\" width=\"55\"/></a>\r\n<br>\r\nThis work is licensed under a \r\n</br>\r\n <a rel=\"license\" target=\"_blank\" href=\"https://www.apache.org/licenses/LICENSE-2.0\">Apache License 2.0<br></a>\r\n<hr>\r\n\r\n<div><span style=\"color:#cb2c2c; font-weight:bold;\">✖ </span> | Sharing without ATTRIBUTION</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Remix culture allowed. License copy required with distribution.</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Commercial Use</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Free Cultural Works</div>\r\n<div><span style=\"color:#5daf0b; font-weight:bold;\">✔ </span> | Meets Open Definition</div>"
+      }
+    ]
+  }
+}

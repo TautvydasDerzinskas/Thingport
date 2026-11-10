@@ -1,0 +1,23 @@
+{
+  "returnCode": "C00000",
+  "item": {
+    "imgs": [
+      {
+        "img": "https://st.fab365.net/img/detail_resize/116_bb697389-624a-8479-c982-863d635921b9.jpg",
+        "thumbnail": "https://st.fab365.net/img/detail_thumb/116_bb697389.jpg",
+        "id_data": "1"
+      },
+      {
+        "img": "https://st.fab365.net/img/detail_resize/116_d311b18e-7ad8-a241-b547-e7c5169852eb.jpg",
+        "thumbnail": "https://st.fab365.net/img/detail_thumb/116_d311b18e.jpg",
+        "id_data": "2"
+      },
+      {
+        "img": "https://st.fab365.net/img/detail_resize/116_71d057a2-08c4-a268-414a-b644537f5f9c.jpg",
+        "thumbnail": "https://st.fab365.net/img/detail_thumb/116_71d057a2.jpg",
+        "id_data": "3"
+      }
+    ]
+  },
+  "description": "OK"
+}

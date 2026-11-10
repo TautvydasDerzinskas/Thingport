@@ -2,6 +2,7 @@
 // `{ ok, data } | { ok: false, error }` envelope: `send` returns it, `request` throws on error.
 
 import type { Print, QueueImportResult } from "./api";
+import type { BubbleLook } from "./bubble";
 import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
 import type { Provider } from "./urls";
@@ -21,6 +22,8 @@ export type ExtensionState = {
   connectedByApproval: boolean;
   /** Work without a Thingport instance. */
   offlineFeatures: Record<OfflineFeature, boolean>;
+  /** How the floating bubble on model pages looks and where it sits. */
+  bubble: BubbleLook;
 };
 
 /** Whether the saved instance URL, email and password still sign in. */
@@ -147,6 +150,8 @@ export type BackgroundMessages = {
   /** Forgets the Thingport connection. `approvalKept`: still listed in the user's Thingport profile. */
   DISCONNECT: { payload: void; result: { approvalKept: boolean } };
   SET_OFFLINE_FEATURE: { payload: { feature: OfflineFeature; enabled: boolean }; result: null };
+  /** Changes the floating bubble's style, its place, or both. */
+  SET_BUBBLE: { payload: Partial<BubbleLook>; result: null };
   /** Opens Thingport to approve this browser's Grab; it finishes in the background once approved. */
   START_PAIRING: { payload: { instanceUrl: string }; result: null };
   GET_RECENT_IMPORTS: { payload: void; result: RecentImport[] };

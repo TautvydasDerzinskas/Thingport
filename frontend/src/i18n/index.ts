@@ -6,11 +6,18 @@ import {
   FALLBACK_LANGUAGE,
   LANGUAGE_STORAGE_KEY,
   LOCALES,
+  matchLanguage,
   NAMESPACES,
   SUPPORTED_LANGUAGES,
 } from "../constants/languages";
 
-i18n
+function syncDocumentLanguage(language: string) {
+  if (typeof document !== "undefined") document.documentElement.lang = matchLanguage(language);
+}
+
+i18n.on("languageChanged", syncDocumentLanguage);
+
+void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({

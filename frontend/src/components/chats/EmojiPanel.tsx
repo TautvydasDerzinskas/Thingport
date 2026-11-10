@@ -15,6 +15,8 @@ const NAMES: Partial<Record<string, () => Promise<{ default: unknown }>>> = {
   lt: () => import("emoji-picker-react/dist/data/emojis-lt.json"),
   es: () => import("emoji-picker-react/dist/data/emojis-es.json"),
   fr: () => import("emoji-picker-react/dist/data/emojis-fr.json"),
+  ru: () => import("emoji-picker-react/dist/data/emojis-ru.json"),
+  uk: () => import("emoji-picker-react/dist/data/emojis-uk.json"),
 };
 
 const WIDTH = 340;
@@ -41,7 +43,11 @@ export default function EmojiPanel({ onPick }: { onPick: (emoji: string) => void
   const [data, setData] = React.useState<EmojiData | null | undefined>(load ? null : undefined);
 
   React.useEffect(() => {
-    if (!load) return;
+    if (!load) {
+      setData(undefined);
+      return;
+    }
+    setData(null);
     let current = true;
     load().then(
       (module) => {

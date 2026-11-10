@@ -239,6 +239,36 @@ Rules of thumb:
   so its provider reads those once and keeps the model-to-category index for a few hours. Its "All Products",
   "Free Download" and "Premium" menu entries are price buckets rather than subjects, and are left out.
 
+### Licences
+
+Every provider says what licence a model has, so the model page can show it, the grid can filter by what it allows and
+a LICENSE.txt can go beside its files (`services/licenseService.ts`, `licenseFile.ts`):
+
+- **The catalogue** is `backend/src/services/licenseCatalog.ts`: each licence Thingport knows, by its SPDX id where it
+  has one (`CC-BY-NC-SA-4.0`) or an id of its own for a site's licence (`sdfl`, `cults-pu`), with what it allows of
+  `share` (pass the files on unchanged), `remix` and `commercial`, and whether it asks for credit or for remixes under
+  the same licence. What's unclear in a licence's text counts as not allowed. Add a licence there before mapping to
+  it; an owner can pick any of the standard ones in Edit model, never a site's own.
+- **The mapping** goes in `backend/src/providers/<id>/license.ts`, with the site's table of codes. Sites number their
+  licences differently (MakerOnline's 2 is BY-SA, Snapmaker's 2 is BY-NC), so each keeps its own. `ccLicenseId`,
+  `licenseIdFromUrl` and `licenseIdFromText` read the usual forms. It returns a `ProviderLicense`: the catalogue id
+  (null for one Thingport doesn't know, shown by its `label` and `terms`; a code missing from the table is kept that
+  way, allowing nothing, rather than dropped, so a mapping that adds it reads the model again), the site's own `raw`
+  value, and only where this model differs from the licence, `allows` or `requires` (MyMiniFactory's per-model
+  permissions, Toymakr3D's terms forbidding sharing what CC BY-NC-ND would allow). A site licence's own wording goes in
+  `terms` when the site sends it with each model (MakerWorld, Printables, Snapmaker); otherwise it's the catalogue's
+  `text`.
+- **At import**, the metadata builder sets `meta.license` from the response it already read: `null` when the site says
+  the model has none, absent when this read didn't look. An absent licence is read once the import settles, as for
+  MakerWorld through Grab, whose cut-down design has no licence.
+- **Older imports** are read when their owner opens them, one model at a time. `details.read`'s `license` is used,
+  unless the registry entry gives `license(userId, externalId, stored)`: for a lighter request than `details.read` makes
+  (MakerWorld's anonymous design, a page without the tags call), none at all (PIXUP, GrabCAD and Meshy's community posts
+  have one licence for every model), or what the stored description says (CGTrader's older imports). Throw when the site
+  can't be read now (it's asked again a day later, or at once when the owner retries); return `undefined` when it
+  answered without saying, such as a page without the model's data. Respect the site's pacing.
+- A licence its owner picked is never replaced by what the site lists.
+
 ### Errors and limits
 
 `errorCodes` names the codes clients act on:
@@ -285,6 +315,8 @@ Open an issue first, then:
    Grab hands one over. See [extension/CONTRIBUTING.md](../extension/CONTRIBUTING.md#adding-a-provider-site).
 8. **`docs/providers/<docsSlug>.md`**, its own page.
 9. If it serves a GET that a dashboard app would read, give it an API token scope (`services/apiTokenScopes.ts`).
+10. **Its licences** in `backend/src/providers/<id>/license.ts`, set on `meta.license` (see [Licences](#licences)), with
+    a test of the site's whole table in `backend/tests/providers/<id>License.test.ts`.
 
 ## What never changes
 

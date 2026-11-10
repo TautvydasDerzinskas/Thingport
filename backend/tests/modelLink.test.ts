@@ -15,7 +15,10 @@ vi.mock("node:dns/promises", () => ({
   },
 }));
 
+import fs from "node:fs";
+import path from "node:path";
 import { createApp } from "../src/app";
+import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { setProviderEnabled } from "../src/services/providerSettingsService";
 
@@ -138,6 +141,17 @@ describe("linking a model to its page on a provider", () => {
     const after = await prisma.plate.findMany({ where: { printId: model.id } });
     expect(after.map((plate) => [plate.id, plate.filename])).toEqual(before.map((plate) => [plate.id, plate.filename]));
     expect(asked.filter((url) => url.includes("/f3mf"))).toEqual([]);
+  });
+
+  it("rewrites LICENSE.txt with its new source and creator, under a licence its owner picked", async () => {
+    const design = newDesign();
+    const model = await upload();
+    await request(app).post(`/api/print/${model.id}/meta`).set(auth()).send({ license: "CC-BY-4.0" });
+    expect((await link(model.id, design.url)).status).toBe(200);
+    const file = await prisma.printFile.findFirstOrThrow({ where: { printId: model.id, role: "LICENSE" } });
+    const text = fs.readFileSync(path.join(STORAGE, file.storagePath), "utf8");
+    expect(text).toContain("by Deus Cat");
+    expect(text).toContain(`Source: https://makerworld.com/`);
   });
 
   it("puts the source's pictures ahead of the owner's own and keeps those", async () => {

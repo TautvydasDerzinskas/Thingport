@@ -1,3 +1,6 @@
+import { licenseOut, type LicenseOut } from "../services/licenseService";
+import type { RemoteModelDetails } from "./remoteIndex";
+import { buildImportSourceUrl } from "../services/importService";
 import type { Peer, Prisma, RemoteCollection, RemoteModel, RemotePerson } from "@prisma/client";
 import { canSeeRemoteModel } from "./sharedCollections";
 import type { RemoteOriginOut } from "../dto";
@@ -332,6 +335,11 @@ export async function remotePersonModels(
 }
 
 export type RemoteModelOut = RemoteModelCardOut & {
+  /** As its owner's library has it; absent when its partner doesn't say. */
+  license?: LicenseOut | null;
+  creator?: string | null;
+  source_provider?: string | null;
+  source_url?: string | null;
   description: string | null;
   images: string[];
   /** `url` is API-relative, through this instance; null when the partner gave no address for it. */
@@ -378,6 +386,21 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
     owner_handle: row.person.username ? `${row.person.username}@${new URL(row.peer.origin).host}` : null,
     collections,
     library_copy_id: await libraryCopyOfRemote(viewerId, row),
+    ...detailsOut(row.details),
+  };
+}
+
+/** What its partner said of its licence and source, for the strip on its page. Nothing from a partner too old to
+ *  say, so the page shows none rather than "not stated". */
+function detailsOut(value: Prisma.JsonValue | null) {
+  const details = value && typeof value === "object" && !Array.isArray(value) ? (value as RemoteModelDetails) : null;
+  if (!details || details.license === undefined) return {};
+  const from = details.importedFrom;
+  return {
+    license: details.license ? licenseOut({ license: details.license as unknown as Prisma.JsonValue }) : null,
+    creator: details.creator,
+    source_provider: from?.provider ?? null,
+    source_url: from ? buildImportSourceUrl(from.provider, from.externalId) : null,
   };
 }
 

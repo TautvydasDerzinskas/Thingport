@@ -224,6 +224,14 @@ model Print {
   // beside it and no way to customize it. The site says so only at import, and answers the request for a withheld
   // one with an empty download rather than a refusal.
   generatorScriptWithheld  Boolean                  @default(false)
+  // The model's licence (services/licenseService.ts): what its source lists, or what its owner picked. Null when nothing
+  // says.
+  license                  Json?
+  // What that licence allows, of LICENSE_ACTIONS (services/licenseCatalog.ts), for the "Licence allows" filter.
+  licenseAllows            String[]                 @default([])
+  // When the source was last read for it, or the owner picked one. Null on an import from before licences were
+  // kept, read when its owner next opens it.
+  licenseReadAt            DateTime?
   categoryId               String?
   category                 Category?                @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   categorySource           CategorySource?
@@ -552,6 +560,9 @@ model Notification {
   /// Set on notifications later ones may fold into, e.g. { key: "single-import", items: [...] }.
   group        Json?
   title        String
+  /// The title as the app translates it, { key, values }: `title` stays the English, for anything else that reads it.
+  /// Null on a kind not translated yet, and on those written before.
+  message      Json?
   body         String?
   externalUrl  String?
   internalPath String?
@@ -678,6 +689,8 @@ model PreviewImage {
 enum PrintFileRole {
   SUPPORTING
   PREPARED
+  // The LICENSE.txt Thingport writes beside a model's files (services/licenseFile.ts).
+  LICENSE
 }
 
 // Images embedded in a print's Markdown notes, stored locally so the description survives the

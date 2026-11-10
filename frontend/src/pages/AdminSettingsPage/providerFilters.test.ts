@@ -25,6 +25,7 @@ describe("provider filters", () => {
       "toymakr3d",
       "cgtrader",
       "pixup3d",
+      "fab365",
     ]);
   });
 

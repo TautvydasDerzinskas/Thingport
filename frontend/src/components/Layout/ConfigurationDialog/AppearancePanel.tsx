@@ -2,8 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import Button from "@mui/material/Button";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { UnauthorizedError } from "../../../api/client";
@@ -13,7 +11,7 @@ import {
   type CardPreview,
   type PrintProfilesView,
 } from "../../../api/settings";
-import { matchLanguage, SUPPORTED_LANGUAGES } from "../../../constants/languages";
+import { matchLanguage } from "../../../constants/languages";
 import {
   ACCENT_COLORS,
   DEFAULT_ACCENT,
@@ -38,6 +36,7 @@ import { accentSwatch, renderSwatch } from "../../../theme";
 import { useConfirm } from "../../ConfirmProvider";
 import ColorSwatches from "../../controls/ColorSwatches";
 import Segmented from "../../controls/Segmented";
+import LanguagePicker from "../../LanguagePicker";
 import HelpTip from "../../HelpTip";
 import { PanelHeader, SectionLabel } from "./parts";
 
@@ -45,8 +44,6 @@ const THEMES: ThemeSelection[] = ["light", "dark", "system"];
 const DEFAULT_THEME: ThemeSelection = "system";
 const DEFAULT_CARD_PREVIEW: CardPreview = "images";
 const PRINT_PROFILES_VIEWS: PrintProfilesView[] = ["off", "list", "picker", "tiles"];
-// More languages than this no longer fit a segmented control comfortably.
-const MAX_SEGMENTED_LANGUAGES = 4;
 
 type Props = {
   theme: ThemeSelection;
@@ -220,28 +217,11 @@ export default function AppearancePanel({ theme, onThemeChange, onUnauthorized }
       <Stack spacing={2.5}>
         <div>
           <SectionLabel>{t("profile.language.heading")}</SectionLabel>
-          {SUPPORTED_LANGUAGES.length > MAX_SEGMENTED_LANGUAGES ? (
-            <Select
-              size="small"
-              value={language}
-              onChange={(e) => void i18n.changeLanguage(e.target.value)}
-              inputProps={{ "aria-label": t("profile.language.heading") }}
-              sx={{ minWidth: 200 }}
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <MenuItem key={lang.code} value={lang.code} lang={lang.code}>
-                  {lang.label}
-                </MenuItem>
-              ))}
-            </Select>
-          ) : (
-            <Segmented
-              label={t("profile.language.heading")}
-              value={language}
-              onChange={(code) => void i18n.changeLanguage(code)}
-              options={SUPPORTED_LANGUAGES.map((lang) => ({ value: lang.code, label: lang.label }))}
-            />
-          )}
+          <LanguagePicker
+            label={t("profile.language.heading")}
+            value={language}
+            onChange={(code) => void i18n.changeLanguage(code)}
+          />
         </div>
         <div>
           <SectionLabel>{t("userMenu.theme")}</SectionLabel>

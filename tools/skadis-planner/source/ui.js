@@ -15,7 +15,7 @@ import {
 } from "./catalogue.js";
 import { PlanError, STRATEGIES, getStrategy, planWall } from "./solver.js";
 import { hardwareMarkers } from "./mounting.js";
-import { describePlan, partListText, planTitle, printOrder, toBuy } from "./printlist.js";
+import { countWord, describePlan, partListText, planTitle, plural, printOrder, toBuy } from "./printlist.js";
 import { partFiles } from "./parts3mf.js";
 import { drawMeasurements, drawPlan, fit, planImage } from "./plan2d.js";
 
@@ -55,7 +55,7 @@ const START = {
 };
 
 export default async function mount(thingport) {
-  const { root, theme, models, storage, ui, download, collections, t, labels } = thingport;
+  const { root, theme, models, storage, ui, download, collections, t, labels, language } = thingport;
   const shell = root.querySelector(".skp");
   const $ = (id) => root.querySelector(`#skp-${id}`);
 
@@ -138,7 +138,11 @@ export default async function mount(thingport) {
     clearTimeout(formTimer);
     formTimer = setTimeout(() => storage.set("form", form).catch(() => {}), 600);
   };
-  const keepProjects = () => storage.set("projects", projects.slice(0, PROJECT_LIMIT)).catch(() => {});
+  // One write at a time, each of the list as it is when its turn comes: a background stats write that started first
+  // can't land after a deletion and bring the project back.
+  let writing = Promise.resolve();
+  const keepProjects = () =>
+    (writing = writing.then(() => storage.set("projects", projects.slice(0, PROJECT_LIMIT)).catch(() => {})));
 
   /** The model this tool brought under that key, once Thingport has fetched it. */
   const broughtModel = (key) => brought.find((entry) => entry.key === key) ?? null;
@@ -148,18 +152,28 @@ export default async function mount(thingport) {
   const printer = () => getPrinter(form.printerId, { x: clean(form.bedX, 256), y: clean(form.bedY, 256) });
   const system = () => getMountSystem(form.mountId);
   const strategy = () => getStrategy(form.strategyId);
-  const context = () => ({ printer: printer(), system: system(), wallMm: form.wallMm, strategy: strategy(), t });
+  const context = () => ({
+    printer: printer(),
+    system: system(),
+    wallMm: form.wallMm,
+    strategy: strategy(),
+    t,
+    language,
+  });
+
+  /** What the solver takes from a form: the open one, or a saved project's. */
+  const planInput = (from) => ({
+    widthMm: clean(from.widthMm, 0),
+    heightMm: clean(from.heightMm, 0),
+    printer: getPrinter(from.printerId, { x: clean(from.bedX, 256), y: clean(from.bedY, 256) }),
+    strategyId: from.strategyId,
+    maxGapMm: clean(from.maxGapMm, 40),
+  });
 
   function replan() {
     planError = null;
     try {
-      plan = planWall({
-        widthMm: clean(form.widthMm, 0),
-        heightMm: clean(form.heightMm, 0),
-        printer: printer(),
-        strategyId: form.strategyId,
-        maxGapMm: clean(form.maxGapMm, 40),
-      });
+      plan = planWall(planInput(form));
       markers = hardwareMarkers(plan, system());
     } catch (error) {
       plan = null;
@@ -407,7 +421,7 @@ export default async function mount(thingport) {
 
     into.innerHTML = `
       <ol class="skp-steps">${steps.map(stepRow).join("")}</ol>
-      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(t("plan.boardsCount", { boards: plan.boards.length }))}</b></div>
+      <div class="skp-total"><span>${escapeHtml(t("plan.partsToPrint", { parts }))}</span><b>${escapeHtml(plural(t, plan.boards.length, "list.boardWord", language))}</b></div>
       ${
         buy.length
           ? `<h3 class="skp-sub">${escapeHtml(t("plan.buy"))}</h3><ul class="skp-buy">${buy
@@ -436,7 +450,7 @@ export default async function mount(thingport) {
     status.textContent = `${t("plan.covered", { width: Math.round(plan.coveredWidthMm), height: Math.round(plan.coveredHeightMm) })}${left}`;
     const summary = $("summary");
     summary.hidden = false;
-    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(t("plan.boardsWord"))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
+    summary.innerHTML = `<b>${plan.boards.length}</b><span>${escapeHtml(countWord(t, "list.boardWord", plan.boards.length, language))}</span><span>·</span><b>${plan.columns.length} × ${plan.rows.length}</b>`;
   }
 
   function update() {
@@ -485,16 +499,51 @@ export default async function mount(thingport) {
 
   /* ---- projects ---- */
 
+  /** A saved project keeps its plan's numbers, so the list can say them in any language without solving it again. */
+  const statsOf = (solved) => ({
+    boards: solved.boards.length,
+    widthMm: Math.round(solved.widthMm),
+    heightMm: Math.round(solved.heightMm),
+  });
+
+  function projectSummary(project) {
+    const { stats } = project;
+    if (!stats) return project.summary ?? "";
+    return `${plural(t, stats.boards, "list.boardWord", language)}, ${stats.widthMm} × ${stats.heightMm} mm`;
+  }
+
+  // A project saved before the numbers were kept has only English words: its plan is solved again in the background,
+  // one project at a time, so the list never waits on the solver.
+  const unsolvable = new Set();
+  let filling = null;
+  function fillMissingStats() {
+    if (filling || closed) return;
+    const next = projects.find((project) => !project.stats && !unsolvable.has(project.id));
+    if (!next) return;
+    filling = setTimeout(async () => {
+      filling = null;
+      if (closed) return;
+      try {
+        next.stats = statsOf(planWall(planInput({ ...START, ...next.form })));
+        await keepProjects();
+      } catch {
+        unsolvable.add(next.id);
+      }
+      renderProjects();
+    }, 0);
+  }
+
   function renderProjects() {
     const list = $("projects-list");
     if (!projects.length) {
       list.innerHTML = `<li class="skp-empty">${escapeHtml(t("plans.empty"))}</li>`;
       return;
     }
+    fillMissingStats();
     list.replaceChildren(
       ...projects.map((project) => {
         const row = document.createElement("li");
-        row.innerHTML = `<div><b>${escapeHtml(project.name)}</b><div class="skp-dim">${escapeHtml(project.summary)} · ${escapeHtml(project.at.slice(0, 10))}</div></div><div class="skp-row-actions"></div>`;
+        row.innerHTML = `<div><b>${escapeHtml(project.name)}</b><div class="skp-dim">${escapeHtml(projectSummary(project))} · ${escapeHtml(project.at.slice(0, 10))}</div></div><div class="skp-row-actions"></div>`;
         const actions = row.querySelector(".skp-row-actions");
         const button = (label, html, run, danger) => {
           const element = document.createElement("button");
@@ -553,8 +602,8 @@ export default async function mount(thingport) {
       id: `${Date.now()}`,
       name,
       at: new Date().toISOString(),
-      summary: `${plan.boards.length} boards, ${Math.round(plan.widthMm)} × ${Math.round(plan.heightMm)} mm`,
       form: { ...form },
+      stats: statsOf(plan),
     });
     projects = projects.slice(0, PROJECT_LIMIT);
     await keepProjects();
@@ -685,6 +734,7 @@ export default async function mount(thingport) {
   return () => {
     closed = true;
     clearTimeout(formTimer);
+    clearTimeout(filling);
     stopResize?.();
     canvas.removeEventListener("pointerdown", onPointerDown);
     canvas.removeEventListener("pointermove", onPointerMove);

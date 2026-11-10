@@ -14,6 +14,7 @@ import {
   parseGrabcadLikesUrl,
   parseGrabcadModelUrl,
 } from "./urls.generated";
+import { grabcadLicense } from "./license";
 import manifest from "./manifest.generated";
 export { grabcadLikesKey, grabcadLikesUrl, grabcadModelUrl, parseGrabcadLikesUrl, parseGrabcadModelUrl };
 
@@ -225,6 +226,7 @@ export function grabcadModelFrom(data: unknown, gallery: unknown): GrabcadModelR
     (Array.isArray(model.tags) ? model.tags : []).map((tag) => clean(typeof tag === "string" ? tag : null)),
   );
   if (tags.length) meta.tags = tags;
+  meta.license = grabcadLicense();
 
   const images = grabcadGalleryFrom(gallery) ?? [];
   const cover = images[0]?.url ?? ownPicture(model.preview_image);

@@ -167,4 +167,7 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
     },
     listBlocks: { paid: PIXUP3D_PAID },
   },
+  // Its only list, the favourites, is the user's own page (/my/likes), which names no one else. A paid or ticket model
+  // the user hasn't got is turned away by the import itself, with a message that says to buy or redeem it on Fab365.
+  fab365: {},
 };

@@ -26,6 +26,7 @@ how to connect it:
 - <img src="assets/providers/grabcad.svg" alt="" width="18" height="18" align="absmiddle"> [GrabCAD](providers/grabcad.md) -- your own sign-in, for the files; anyone's likes read without it.
 - <img src="assets/providers/meshy.svg" alt="" width="18" height="18" align="absmiddle"> [Meshy](providers/meshy.md) -- your own sign-in; community models also need a Meshy Pro or Studio plan.
 - <img src="assets/providers/pixup3d.svg" alt="" width="18" height="18" align="absmiddle"> [PIXUP](providers/pixup3d.md) -- your own sign-in, for the files of the models you own; anyone's wishlist and collections read without it.
+- <img src="assets/providers/fab365.svg" alt="" width="18" height="18" align="absmiddle"> [Fab365](providers/fab365.md) -- your own sign-in, for the files and your favourites; its models read without one.
 
 <!-- /providers:list -->
 
@@ -58,6 +59,7 @@ badge, shows the same in short.
 | <img src="assets/providers/grabcad.svg" alt="" width="18" height="18" align="absmiddle"> [GrabCAD](providers/grabcad.md)                         | Yours, for the files            | Recommended    |              |                        | ✓     | ✓    |                |
 | <img src="assets/providers/meshy.svg" alt="" width="18" height="18" align="absmiddle"> [Meshy](providers/meshy.md)                               | Yours; Pro for community models | Recommended    |              | ✓                      |       | ✓    |                |
 | <img src="assets/providers/pixup3d.svg" alt="" width="18" height="18" align="absmiddle"> [PIXUP](providers/pixup3d.md)                           | Yours, for the files            | Recommended    |              | Collections, wishlists | ✓     | ✓    |                |
+| <img src="assets/providers/fab365.svg" alt="" width="18" height="18" align="absmiddle"> [Fab365](providers/fab365.md)                            | Yours, for the files            | Recommended    |              |                        | ✓⁷    | ✓    |                |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.
@@ -65,6 +67,7 @@ badge, shows the same in short.
 4. A gallery item that is a CAD project, rather than a library part, has no stored mesh: OwlCAD's editor builds its file, so Thingport Grab exports it on owlcad.com.
 5. Toymakr3D hands a model's files to signed-in users only, the free ones included, and shows your likes to you alone.
 6. CGTrader shows your likes and wishlist to you alone, and its downloads sit behind AWS's bot check, which Thingport passes with Grab's token from your browser or FlareSolverr's own.
+7. Fab365 hands a model's files to signed-in members only, the free ones included, and shows your favourites to you alone.
 
 <!-- /providers:table -->
 

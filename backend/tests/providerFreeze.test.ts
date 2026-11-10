@@ -41,6 +41,7 @@ describe("provider-module freeze", () => {
         "https://grabcad.com/library/arduino-uno-r3-1",
         "https://www.meshy.ai/posts/fangy-mchowl-01a1560f-f5f6-7426-80e3-4876e325f98f",
         "https://pixup3d.com/en/posts/427",
+        "https://fab365.net/items/116",
       ].map((url) => identifySourceModel(url)?.provider),
     ).toEqual([
       "makerworld",
@@ -61,6 +62,7 @@ describe("provider-module freeze", () => {
       "grabcad",
       "meshy",
       "pixup3d",
+      "fab365",
     ]);
   });
 
@@ -85,6 +87,7 @@ describe("provider-module freeze", () => {
       "grabcad",
       "meshy",
       "pixup3d",
+      "fab365",
     ]);
   });
 
@@ -108,6 +111,7 @@ describe("provider-module freeze", () => {
       "grabcad",
       "meshy",
       "pixup3d",
+      "fab365",
     ]);
   });
 
@@ -132,6 +136,7 @@ describe("provider-module freeze", () => {
       "grabcad",
       "meshy",
       "pixup3d",
+      "fab365",
     ]);
   });
 
@@ -155,6 +160,7 @@ describe("provider-module freeze", () => {
       "grabcad",
       "meshy",
       "pixup3d",
+      "fab365",
     ]);
   });
 
@@ -195,6 +201,7 @@ describe("provider-module freeze", () => {
         "meshy_session",
         "MESHY_DOWNLOAD_LIMIT",
         "pixup3d_session",
+        "fab365_session",
       ].toSorted(),
     );
     // The dashboard's provider failure is a route-local literal, not a *_CODE constant.
@@ -311,6 +318,7 @@ describe("provider-module freeze", () => {
           "grabcad_cat_ids",
           "meshy_cat_ids",
           "pixup3d_cat_ids",
+          "fab365_cat_ids",
         ].toSorted(),
       );
     } finally {

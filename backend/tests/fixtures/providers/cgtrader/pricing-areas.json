@@ -1,0 +1,18 @@
+{
+  "royaltyFree": {
+    "productId": 5681870,
+    "title": "LINK  ZELDA 3D print model",
+    "price": "$15.00",
+    "free": false,
+    "license": "royalty_free",
+    "customLicense": "<p>Content published with the <form rel=\"nofollow\" class=\"license-form\" method=\"get\" action=\"/items/5681870/license\" data-remote=\"true\"><input class=\"js-auto-disable-link js-license license button button--transparent\" rel=\"nofollow\" type=\"submit\" value=\"Royalty Free License\" /></form> label may not be sold, given, or assigned to another person or entity in the form it is downloaded from the site.</p>"
+  },
+  "editorialNoAi": {
+    "productId": 4584541,
+    "title": "Goofy 3D print model",
+    "price": "$5.00",
+    "free": false,
+    "license": "editorial_no_ai",
+    "customLicense": "<p><span class=\"translation_missing\" title=\"translation missing: en.licenses_new.summary.editorial_no_ai_html, link: &lt;form rel=&quot;nofollow&quot; class=&quot;license-form&quot; method=&quot;get&quot; action=&quot;/items/4584541/license&quot; data-remote=&quot;true&quot;&gt;&lt;input class=&quot;js-auto-disable-link js-license license button button--transparent&quot; rel=&quot;nofollow&quot; type=&quot;submit&quot; value=&quot;Editorial No Ai License&quot; /&gt;&lt;/form&gt;\">Editorial No Ai Html</span></p>"
+  }
+}

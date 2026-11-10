@@ -141,10 +141,10 @@ function part3mf({ name, description, x, y, z }) {
   ]);
 }
 
-/** A file name that survives any file system: no slashes, no doubled spaces, and the order kept at the front. */
+/** A file name that survives any file system without throwing away localized part names. */
 const fileName = (step, label) =>
   `${String(step).padStart(2, "0")} ${label}`
-    .replace(/[^A-Za-z0-9 ()×x+-]/g, " ")
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 70);

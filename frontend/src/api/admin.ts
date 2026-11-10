@@ -57,6 +57,7 @@ export type LogAction =
   | "api_token_rest_scopes_changed"
   | "mcp_access_changed"
   | "file_reuse_changed"
+  | "license_files_changed"
   | "file_reuse_backfill_started"
   | "custom_widgets_changed"
   | "tool_installed"
@@ -146,7 +147,7 @@ export type StorageFolder = {
 };
 
 /** "plate" is a model file, "file" a supporting or prepared one; the rest are the model's pictures. */
-export type StorageFileKind = "plate" | "file" | "image" | "description" | "thumb" | "render";
+export type StorageFileKind = "plate" | "file" | "license" | "image" | "description" | "thumb" | "render";
 
 export type StorageFile = {
   name: string;

@@ -168,7 +168,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
       <CountCard
         icon={<CollectionsIcon sx={{ fontSize: 32 }} />}
         count={summary.collection_count}
-        label={t("dashboard.collectionCount.label")}
+        label={t("dashboard.collectionCount.count", { count: summary.collection_count })}
         onClick={() => navigate("/models/collections")}
       />
     ),
@@ -184,7 +184,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
       <CountCard
         icon={<ViewInArIcon sx={{ fontSize: 32 }} />}
         count={summary.model_count}
-        label={t("dashboard.modelCount.label")}
+        label={t("dashboard.modelCount.count", { count: summary.model_count })}
         onClick={() => navigate("/models")}
       />
     ),
@@ -200,7 +200,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
       <CountCard
         icon={<PersonIcon sx={{ fontSize: 32 }} />}
         count={summary.author_count}
-        label={t("dashboard.authorCount.label")}
+        label={t("dashboard.authorCount.count", { count: summary.author_count })}
       />
     ),
   },
@@ -215,7 +215,7 @@ export const DASHBOARD_WIDGETS: DashboardWidget[] = [
       <CountCard
         icon={<FolderIcon sx={{ fontSize: 32 }} />}
         count={summary.category_count}
-        label={t("dashboard.categoryCount.label")}
+        label={t("dashboard.categoryCount.count", { count: summary.category_count })}
         onClick={() => navigate("/models")}
       />
     ),

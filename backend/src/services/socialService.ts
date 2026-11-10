@@ -627,7 +627,7 @@ export async function exploreUserCollections(
 export async function exploreUserModels(
   viewerId: string,
   userId: string,
-  filters: Pick<PrintFilters, "generative" | "excludeProviders">,
+  filters: Pick<PrintFilters, "generative" | "excludeProviders" | "licenseAllows" | "licensed">,
   options: { sort: PrintSortMode; limit: number; offset: number },
 ): Promise<PrintListPage | null> {
   const owner = await prisma.user.findUnique({ where: { id: userId }, select: { modelsPublic: true } });

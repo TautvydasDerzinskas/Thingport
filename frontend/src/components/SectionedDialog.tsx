@@ -330,7 +330,7 @@ export default function SectionedDialog<T extends string>({
           {sections.map((s) => sectionButton(s, "side"))}
           {railFooter}
         </Box>
-        <Box sx={{ flex: 1, minWidth: 0, overflowY: "auto", px: { xs: 2, md: 2.5 }, pt: 1.75, pb: 2.5 }}>
+        <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: "auto", px: { xs: 2, md: 2.5 }, pt: 1.75, pb: 2.5 }}>
           {children}
         </Box>
       </Box>

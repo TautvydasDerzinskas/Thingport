@@ -12,6 +12,7 @@ import {
   SLUG,
   localeFile,
   parseManifest,
+  strayLabels,
   validateCode,
   validateLocale,
 } from "../src/services/customWidgetFormat";
@@ -77,7 +78,7 @@ for (const slug of slugs) {
       const words = validateLocale(code, parsed);
       // English is the fallback, so a key only another language has can never be reached.
       if (english && code !== "en") {
-        const stray = Object.keys(words).filter((key) => !(key in english));
+        const stray = strayLabels(words, english);
         if (stray.length)
           throw new Error(`${file} has ${stray.length} label(s) English hasn't, starting with ${stray[0]}`);
       }

@@ -4,7 +4,7 @@
 import { listen, senderTabId, type BackgroundMessages } from "../shared/messages";
 import { LEGACY_SESSION_KEYS } from "../shared/storage";
 import { apiCall, checkConnection, disconnect } from "./api";
-import { getState, saveConfig, setDisabled, setOfflineFeature } from "./config";
+import { getState, saveConfig, setBubble, setDisabled, setOfflineFeature } from "./config";
 import { armDownloadCapture, awaitDownloadCapture, disarmDownloadCapture } from "./downloadCapture";
 import { importSingle, queueImport } from "./importJobs";
 import {
@@ -37,6 +37,7 @@ listen<BackgroundMessages>({
   SET_DISABLED: ({ disabled }) => setDisabled(disabled),
   DISCONNECT: () => disconnect(),
   SET_OFFLINE_FEATURE: ({ feature, enabled }) => setOfflineFeature(feature, enabled),
+  SET_BUBBLE: (pick) => setBubble(pick),
   START_PAIRING: ({ instanceUrl }) => startPairing(instanceUrl),
   GET_RECENT_IMPORTS: () => getRecentImports(),
   GET_SEASONAL_ICON: () => seasonalIcon(),

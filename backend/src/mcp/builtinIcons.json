@@ -127,6 +127,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/fab365",
+    "name": "Fab365",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

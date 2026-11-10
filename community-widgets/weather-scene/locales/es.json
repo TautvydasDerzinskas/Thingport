@@ -36,6 +36,8 @@
   "settings.units": "Unidades",
   "settings.metric": "°C, km/h",
   "settings.imperial": "°F, mph",
+  "unit.kmh.other": "km/h",
+  "unit.mph.other": "mph",
   "settings.refresh": "Actualizar",
   "settings.every15": "15 min",
   "settings.every30": "30 min",

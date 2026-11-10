@@ -24,6 +24,24 @@ export function profileFormat(t: TFunction, language: string): ProfileFormat {
     }
     return formatter.format(value);
   };
+  // Cyrillic text takes "г" and "кг". Chromium's ICU has no Belarusian, whose units read as Russian's do.
+  const cyrillic = /^(ru|uk|be)(-|$)/i.test(language);
+  const unitLanguage = Intl.NumberFormat.supportedLocalesOf([language]).length ? language : "ru";
+  const units = new Map<string, Intl.NumberFormat>();
+  const unit = (value: number, name: "gram" | "kilogram", digits: number) => {
+    let formatter = units.get(`${name}:${digits}`);
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(unitLanguage, {
+        style: "unit",
+        unit: name,
+        unitDisplay: "short",
+        maximumFractionDigits: digits,
+        minimumFractionDigits: name === "kilogram" ? digits : 0,
+      });
+      units.set(`${name}:${digits}`, formatter);
+    }
+    return formatter.format(value);
+  };
   return {
     duration(seconds) {
       if (seconds == null || seconds <= 0) return null;
@@ -35,8 +53,10 @@ export function profileFormat(t: TFunction, language: string): ProfileFormat {
     },
     grams(grams) {
       if (grams == null || grams <= 0) return null;
-      if (grams >= 1000) return `${number(grams / 1000, 2, true)} kg`;
-      return `${number(grams, grams < 10 ? 1 : 0)} g`;
+      const value = grams >= 1000 ? grams / 1000 : grams;
+      const digits = grams >= 1000 ? 2 : grams < 10 ? 1 : 0;
+      if (cyrillic) return unit(value, grams >= 1000 ? "kilogram" : "gram", digits);
+      return `${number(value, digits, grams >= 1000)} ${grams >= 1000 ? "kg" : "g"}`;
     },
     number,
   };

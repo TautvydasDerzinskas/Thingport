@@ -19,6 +19,7 @@ import { cgtraderSession } from "./cgtrader/session";
 import { grabcadSession } from "./grabcad/session";
 import { meshySession } from "./meshy/session";
 import { pixup3dSession } from "./pixup3d/session";
+import { fab365Session } from "./fab365/session";
 
 export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   myminifactory: myminifactorySession,
@@ -36,4 +37,5 @@ export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   grabcad: grabcadSession,
   meshy: meshySession,
   pixup3d: pixup3dSession,
+  fab365: fab365Session,
 };
