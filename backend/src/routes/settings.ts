@@ -71,7 +71,12 @@ import {
   setStorageTemplate,
   validateStorageTemplate,
 } from "../services/printService";
-import { SLICER_IDS, getUserSlicerSettings, setUserSlicerSettings } from "../services/slicerPreferenceService";
+import {
+  BRIDGEABLE_SLICER_IDS,
+  SLICER_IDS,
+  getUserSlicerSettings,
+  setUserSlicerSettings,
+} from "../services/slicerPreferenceService";
 import { CATEGORIES_VIEWS, getCategoriesView, setCategoriesView } from "../services/categoriesViewService";
 import { getToolsView, setToolsView, toolsViewSchema } from "../services/toolsViewService";
 import {
@@ -795,6 +800,9 @@ const slicerSettingsSchema = z.object({
   slicers: z.array(z.enum(SLICER_IDS)).max(SLICER_IDS.length).optional(),
   enable: z.enum(SLICER_IDS).optional(),
   disable: z.enum(SLICER_IDS).optional(),
+  // The others always go through the Bridge, so there's nothing to choose for them.
+  bridge: z.enum(BRIDGEABLE_SLICER_IDS).optional(),
+  unbridge: z.enum(BRIDGEABLE_SLICER_IDS).optional(),
 });
 router.patch(
   "/settings/slicer",

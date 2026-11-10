@@ -3113,7 +3113,9 @@
       "notActive": "Neaktyvi",
       "activate": "Aktyvuoti",
       "lastUsed": "Paskutinė naudota",
-      "deactivate": "Išjungti"
+      "deactivate": "Išjungti",
+      "throughBridge": "Per Thingport Bridge",
+      "throughBridgeHelp": "Thingport Bridge atsisiunčia failą ir perduoda jį į {{slicer}} – kai {{slicer}} negali jo atsisiųsti iš šio Thingport serverio."
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} iš {{total}} modelių",

@@ -32,6 +32,8 @@ type TileProps = {
   on: boolean;
   /** A tick or a cross in the corner; none when undefined. */
   badge?: boolean;
+  /** A small icon in the opposite corner, for something about how the app is used (Thingport Bridge's cable). */
+  cornerIcon?: React.ReactNode;
   /** Shown as if hovered, while its menu or box is open. */
   highlighted?: boolean;
   tooltip?: string;
@@ -54,6 +56,7 @@ export function AppTile({
   logo,
   on,
   badge,
+  cornerIcon,
   highlighted,
   tooltip,
   ariaLabel,
@@ -105,6 +108,7 @@ export function AppTile({
             {logo}
           </Box>
           {badge !== undefined && <StatusBadge ok={badge} />}
+          {cornerIcon && <IconBadge icon={cornerIcon} />}
         </Box>
         <Typography
           variant="caption"
@@ -182,6 +186,37 @@ function StatusBadge({ ok }: { ok: boolean }) {
       ) : (
         <path d="M5.5 5.5l5 5m0-5-5 5" fill="none" stroke="#fff" strokeWidth="1.75" strokeLinecap="round" />
       )}
+    </Box>
+  );
+}
+
+/** An icon on a dark disc at the bottom-right corner. The disc is SVG, like StatusBadge's, so it stays round. */
+function IconBadge({ icon }: { icon: React.ReactNode }) {
+  return (
+    <Box
+      aria-hidden="true"
+      sx={{
+        position: "absolute",
+        right: -BADGE / 3,
+        bottom: -BADGE / 3,
+        width: BADGE,
+        height: BADGE,
+        color: "common.white",
+        "& > .MuiSvgIcon-root": { position: "absolute", inset: 3, width: BADGE - 6, height: BADGE - 6 },
+      }}
+    >
+      <Box component="svg" viewBox="0 0 16 16" sx={{ position: "absolute", inset: 0, color: "background.paper" }}>
+        <Box
+          component="circle"
+          cx="8"
+          cy="8"
+          r="7.25"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          sx={{ fill: (theme) => theme.palette.grey[800] }}
+        />
+      </Box>
+      {icon}
     </Box>
   );
 }

@@ -71,6 +71,9 @@ model User {
   slicer                   String?
   // The slicers the user has installed, offered in a model's "Open in" menu.
   slicers                  String[]                 @default([])
+  // The slicers with a link handler of their own that open through Thingport Bridge instead, for when one can't
+  // download from this instance. Kept while a slicer is switched off.
+  bridgedSlicers           String[]                 @default([])
   // "light" | "dark" | "system"; null means never set.
   themePreference          String?
   // One of ACCENT_COLORS; null means Thingport green.

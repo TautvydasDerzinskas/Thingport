@@ -2989,7 +2989,9 @@
       "notActive": "Неактыўны",
       "activate": "Уключыць",
       "lastUsed": "Выкарыстоўваўся апошнім",
-      "deactivate": "Выключыць"
+      "deactivate": "Выключыць",
+      "throughBridge": "Праз Thingport Bridge",
+      "throughBridgeHelp": "Thingport Bridge спампоўвае файл і перадае яго ў {{slicer}} — на выпадак, калі {{slicer}} не можа сам спампаваць яго з гэтага асобніка Thingport."
     },
     "modelPicker": {
       "search": "Пошук у бібліятэцы",

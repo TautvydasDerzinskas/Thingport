@@ -18,6 +18,7 @@ import FolderZipIcon from "@mui/icons-material/FolderZip";
 import TuneIcon from "@mui/icons-material/Tune";
 import type { SlicerOption } from "../../constants/settingsOptions";
 import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLogos";
+import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerHref, type ModelFile } from "./useOpenInSlicer";
 
 type Props = {
@@ -83,6 +84,8 @@ export default function OpenInSlicerButton({
   openingInStudio,
 }: Props) {
   const { t } = useTranslation(["models"]);
+  // Those the user sends through the Bridge, picked in the Slicer settings.
+  const { bridged } = useSlicerSettings();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const group = anchor?.parentElement ?? null;
   const customizes = Boolean(onCustomize);
@@ -109,7 +112,7 @@ export default function OpenInSlicerButton({
         ) : opensSlicer && slicerOption ? (
           <Button
             component="a"
-            href={slicerHref(slicerOption.id, file)}
+            href={slicerHref(slicerOption.id, file, bridged)}
             onClick={() => onOpened(slicerOption.id)}
             startIcon={<LogoTile id={slicerOption.id} size={14} />}
             sx={{ flex: 1, minWidth: 0 }}
@@ -158,7 +161,7 @@ export default function OpenInSlicerButton({
             <MenuItem
               key={option.id}
               component="a"
-              href={slicerHref(option.id, file)}
+              href={slicerHref(option.id, file, bridged)}
               selected={option.id === slicerOption?.id}
               onClick={() => {
                 onOpened(option.id);

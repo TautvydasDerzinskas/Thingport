@@ -2990,7 +2990,9 @@
       "notActive": "Неактивний",
       "activate": "Увімкнути",
       "lastUsed": "Використовувався останнім",
-      "deactivate": "Вимкнути"
+      "deactivate": "Вимкнути",
+      "throughBridge": "Через Thingport Bridge",
+      "throughBridgeHelp": "Thingport Bridge завантажує файл і передає його в {{slicer}} — на випадок, коли {{slicer}} не може сам завантажити його з цього примірника Thingport."
     },
     "modelPicker": {
       "search": "Пошук у бібліотеці",
