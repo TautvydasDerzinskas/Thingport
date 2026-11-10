@@ -1,5 +1,12 @@
 # Thingport Bridge changelog
 
+# [thingport-bridge-v1.0.1](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-bridge-v1.0.0...thingport-bridge-v1.0.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* offer Creality Print Bridge fallback for HTTPS model imports ([#287](https://github.com/TautvydasDerzinskas/Thingport/issues/287)) ([b1b6a8e](https://github.com/TautvydasDerzinskas/Thingport/commit/b1b6a8e1a625ba0942ffafae9271e0ee6a746e55))
+
 # thingport-bridge-v1.0.0 (2026-10-25)
 
 
