@@ -409,7 +409,8 @@ const CORNER_SITES: { id: string; home?: string; modelLink?: RegExp; fixed?: str
     fixed: "https://www.cgtrader.com/3d-print-models/jewelry/ring/lotus-ring-with-opening-and-closing-mechanism",
   },
   { id: "grabcad", fixed: "https://grabcad.com/library/arduino-uno-r3-1" },
-  // Its one free model, the manifest's example, is a Star Wars walker, and most of its catalogue is licensed characters.
+  // Not the manifest's example, items/428: that's its one free model, a Star Wars walker, and most of the rest are
+  // licensed characters too, so a paid excavator stands in. Grab's button and panel look the same on either.
   { id: "fab365", fixed: "https://fab365.net/items/235" },
 ];
 const CORNER = { width: 640, height: 512 };
