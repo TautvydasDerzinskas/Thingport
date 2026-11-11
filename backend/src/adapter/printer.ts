@@ -331,10 +331,12 @@ export function retargetSettings(config: Settings, recipe: PrinterRecipe): Retar
   // Filaments on an extruder the printer doesn't have go on its first.
   if (config.filament_map !== undefined)
     out.filament_map = strings(config.filament_map).map((v) => (Number(v) > recipe.extruders ? "1" : v));
-  // Snapmaker Orca 2.4 drops tool changes when this is shorter than the filament list (its issue #1124).
-  const adhesion = strings(config.filament_adhesiveness_category);
-  if (adhesion.length && adhesion.length < count)
-    out.filament_adhesiveness_category = sized(adhesion, count).map((v) => v || adhesion[adhesion.length - 1]);
+  // Snapmaker Orca 2.4 drops tool changes when this is shorter than the filament list (its issue #1124). A colour
+  // list shorter than the presets gets the same: the last colour for the filaments it doesn't name.
+  for (const key of ["filament_adhesiveness_category", "filament_colour"]) {
+    const list = strings(config[key]);
+    if (list.length && list.length < count) out[key] = sized(list, count).map((v) => v || list[list.length - 1]);
+  }
 
   const from = bedBoxOf(config.printable_area);
   if (from && recipe.bed) {
