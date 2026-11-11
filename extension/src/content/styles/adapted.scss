@@ -1,5 +1,5 @@
-// The "Download normalized" button next to MakerWorld's own download/open button (see
-// makerworld/normalizedDownload.ts). Its own shadow root, so it sits in the page's layout without
+// The "Download adapted" button next to MakerWorld's own download/open button (see
+// makerworld/adaptedDownload.ts). Its own shadow root, so it sits in the page's layout without
 // sharing styles either way.
 @use "../../styles/tokens" as t;
 @use "../../styles/mixins" as m;

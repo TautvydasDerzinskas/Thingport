@@ -14,7 +14,7 @@ import {
   resolveMakerworldDownloadUrl,
   resolveMakerworldProfileDownload,
 } from "../providers/makerworld/downloadResolver";
-import { offerNormalizedDownload, unmountNormalizedDownload } from "../providers/makerworld/normalizedDownload";
+import { offerAdaptedDownload, unmountAdaptedDownload } from "../providers/makerworld/adaptedDownload";
 import { mountJobOverlay, mountPausedJobOverlay } from "./overlays";
 import { loadPanel } from "./panels";
 import { profileGap } from "./profiles";
@@ -67,7 +67,7 @@ function reportProviderSite(): void {
 
 function unmount(): void {
   closeSetupModal();
-  unmountNormalizedDownload();
+  unmountAdaptedDownload();
   unmountHost();
   setContext(null);
 }
@@ -112,7 +112,7 @@ async function init(): Promise<void> {
     manifestOf(classification.provider).capabilities.bambuProjects &&
     stateRes.data.offlineFeatures.normalizeMakerworld
   ) {
-    void offerNormalizedDownload(url, stateRes.data.configured, isStale);
+    void offerAdaptedDownload(url, stateRes.data.configured, isStale);
   }
 
   // Not set up: still show a grayed-out icon on importable pages so the extension is discoverable.

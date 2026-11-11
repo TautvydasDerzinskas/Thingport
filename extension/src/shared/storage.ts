@@ -78,7 +78,7 @@ export type ProviderTabs = Partial<Record<number, ProviderId>>;
 
 /** What works without a Thingport instance, and whether each is on until the user says otherwise. */
 export const OFFLINE_FEATURE_DEFAULTS = {
-  // The "Download normalized" button on MakerWorld.
+  // The "Download adapted" button on MakerWorld.
   normalizeMakerworld: true,
   // Restyles Thingiverse, which has no dark theme of its own, while the system theme is dark.
   thingiverseDark: true,

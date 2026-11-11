@@ -1,5 +1,6 @@
 // Copies the 3MF adapter, backend/src/adapter/, where else it runs, as <file>.generated.ts: the server makes the
-// adapted copies, and the web app needs the same plan to know which slicers get one. Each package builds on its own
+// adapted copies, the web app needs the same plan to know which slicers get one, and Thingport Grab makes copies in
+// the browser for people without an instance. Each package builds on its own
 // (its own Docker context and lockfile), which is why it's a copy. Only *.generated.ts files are ever written or
 // removed there. The copies are committed:
 //
@@ -15,17 +16,23 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = "backend/src/adapter";
 const GENERATED = /\.generated\.ts$/;
 
-// What each copy takes: the web app plans but makes no copies, so it has no writers (nor JSZip).
-const TARGETS = [{ dir: "frontend/src/adapter", files: ["format.ts", "plan.ts", "settings.ts", "slicers/"] }];
+// What each copy takes: the web app plans but makes no copies, so it has no writers (nor JSZip); Grab takes it all.
+const TARGETS = [
+  { dir: "frontend/src/adapter", files: ["format.ts", "plan.ts", "settings.ts", "slicers/"] },
+  { dir: "extension/src/adapter", files: ["/"] },
+];
 
 const check = process.argv.includes("--check");
 
-/** Every .ts file under `rel` (a file, or a folder ending in /), relative to SOURCE. */
+/** Every .ts file of `rel`, relative to SOURCE: a file, a folder's own ("slicers/"), or the whole tree ("/"). */
 function sourceFiles(rel) {
   if (!rel.endsWith("/")) return [rel];
-  return readdirSync(path.join(ROOT, SOURCE, rel))
+  const recursive = rel === "/";
+  const dir = recursive ? "" : rel;
+  return readdirSync(path.join(ROOT, SOURCE, dir), { recursive })
+    .map(String)
     .filter((file) => file.endsWith(".ts") && !file.endsWith(".test.ts"))
-    .map((file) => `${rel}${file}`);
+    .map((file) => path.posix.join(dir, file.split(path.sep).join("/")));
 }
 
 /** A copied file's relative imports, which are all of other copies, by their copies' names. */

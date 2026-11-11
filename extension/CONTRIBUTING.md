@@ -37,9 +37,10 @@ src/
   content/      content script -- the floating icon and the note under it, its panel flows
                 (panels/), the setup dialog, overlays, and the model's picture and name read off
                 the page (pageModel.ts); MakerWorld's page data, download-URL resolution, guided
-                collection import and Download normalized button are in providers/makerworld/
+                collection import and Download adapted button are in providers/makerworld/
     styles/     its SCSS, compiled into the bundle and injected into its shadow root
-  normalizer/   the Bambu 3MF normalizer and the worker that runs it
+  adapter/      the 3MF adapter, copied from the backend (*.generated.ts)
+  adapting/     what Grab makes of a MakerWorld 3MF with it, and the worker that runs it
   providers/    each provider's own code in <id>/, beside the copies of its manifest and links
                 (*.generated.ts), and the tables that wire them in (content, sessions, accounts,
                 background); Thingiverse's dark mode and hidden ads are thingiverse/index.ts, a
@@ -59,16 +60,15 @@ message and its reply is typed in `src/shared/messages.ts`.
 
 On the web app's special days, Grab's icon in the popup and on pages wears the sidebar logo's seasonal overlay
 (`src/shared/seasonalMark.ts`). `src/shared/season.ts` and `src/assets/seasonal/` are copies of
-`frontend/src/utils/season.ts` and `frontend/src/assets/logos/seasonal/`, for the same reason as the normalizer below:
+`frontend/src/utils/season.ts` and `frontend/src/assets/logos/seasonal/`, for the same reason as the adapter below:
 change them together. Each overlay's main prop is brought in as a badge from where it sits past the end of the logo's
 name; `PROPS` in `seasonalMark.ts` moves that box for the seasons whose prop sits elsewhere. `npm run
 preview:seasonal -- out.html` renders every edition, in the popup and on a page, light and dark, to check them.
 
-`src/normalizer/threeMfNormalizer.ts` is a copy of the backend's
-`backend/src/services/threeMfNormalizer.ts` (the Mozilla source zip can only hold this folder), and
-`src/shared/slicers.ts` mirrors the web app's list of slicers that need it. Change them together.
-The normalizer runs in a worker, bundled into the content script as a string through the build's
-`?worker` imports; where a page's CSP blocks that worker, it runs on the page's main thread instead.
+`src/adapter/` is the backend's `backend/src/adapter/`, copied by `npm run adapter:sync` at the repository's root (the
+Mozilla source zip can only hold this folder): change it there. `src/shared/slicers.ts` mirrors the web app's slicer
+names. The adapter runs in a worker, bundled into the content script as a string through the build's `?worker`
+imports; where a page's CSP blocks that worker, it runs on the page's main thread instead.
 
 Colors, spacing and type live in `src/styles/_tokens.scss`. Colors are CSS custom properties with a
 light and a dark palette (the dark one is Thingport's navy): the popup and the in-page UI both follow

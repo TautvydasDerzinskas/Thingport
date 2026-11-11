@@ -1,23 +1,25 @@
-// "Download normalized" next to MakerWorld's own download/open button, for people whose slicer mis-reads
-// Bambu Studio projects. Whether it is offered is the popup's "Normalize MakerWorld 3MFs" switch alone
-// (content/index.ts): the slicer the instance has picked only words the explanation, since plenty of people slice
-// with something other than the one Thingport knows about. The file is downloaded and converted in this tab; it
+// "Download adapted" next to MakerWorld's own download/open button: the model's 3MF as a copy made for the slicer
+// the instance has picked (the one the web app's "Open adapted" opens), or, with no instance, for PrusaSlicer and
+// the other slicers that mis-read Bambu Studio projects. Offered where the popup's "Adapt MakerWorld 3MFs" switch is on
+// and that slicer doesn't open MakerWorld's files as they are. The file is downloaded and converted in this tab; it
 // never goes anywhere else.
 
+import { FORMAT_VERSION, type AdaptPlan, type ThreeMfFormat } from "../../adapter/index.generated";
+import { planFor } from "../../adapting/run";
 import { createIcon } from "../../shared/icon";
-import { NORMALIZE_3MF_SLICERS } from "../../shared/slicers";
+import { SLICER_LABELS } from "../../shared/slicers";
 import { api } from "../../content/runtime";
-import css from "../../content/styles/normalized.scss?inline";
-import { gettingFilePhrases, normalizingPhrases, rotatePhrases } from "../../content/panels/funStatus";
+import css from "../../content/styles/adapted.scss?inline";
+import { adaptingPhrases, gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { resolveMakerworldDownloadUrl } from "./downloadResolver";
 import { DOWNLOAD_3MF, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
-import { normalizeBambu3mf } from "./normalize";
+import { adaptMakerworld3mf } from "./adapt";
 
 // Converting holds the file, its unzipped model XML and the result in memory at once.
 const MAX_BYTES = 50 * 1024 * 1024;
 const MB = 1024 * 1024;
-const HOST_ID = "thingport-grab-normalized";
-const LABEL = "Download normalized";
+const HOST_ID = "thingport-grab-adapted";
+const LABEL = "Download adapted";
 const DONE_RESET_MS = 3000;
 const ERROR_SHOW_MS = 10000;
 
@@ -39,23 +41,49 @@ let host: HTMLElement | null = null;
 let observer: MutationObserver | null = null;
 let themeObserver: MutationObserver | null = null;
 let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
-// The instance's slicer for the explanation, once it has answered; the button doesn't wait for it.
-let slicerLabel: string | null = null;
 
-function explanation(slicer: string | null): string {
-  const slicers = slicer ? `${slicer} often opens` : "PrusaSlicer, Cura and other slicers often open";
+// What MakerWorld's files are, for deciding before one is downloaded: Bambu Studio projects from a recent version,
+// with its names for settings. The downloaded file itself decides what its copy is.
+const MAKERWORLD_FORMAT: ThreeMfFormat = {
+  v: FORMAT_VERSION,
+  kind: "bambu",
+  app: "BambuStudio",
+  appVersion: "02.08.00.00",
+  orcaTag: null,
+  printer: null,
+  nozzle: null,
+  filaments: null,
+  plates: null,
+  dialect: "bambu",
+};
+
+function explanation(slicer: string | null, output: AdaptPlan["output"]): string {
+  const name = slicer ? (SLICER_LABELS[slicer] ?? null) : null;
+  const made = "Made in your browser by Thingport Grab.";
+  if (output === "bambu") {
+    return (
+      `This downloads a copy ${name ?? "your slicer"} opens as its own project: parts, plates, painting and the ` +
+      `designer's settings as they are, with no questions about the file's version or settings it names differently. ${made}`
+    );
+  }
+  if (output === "cura") {
+    return (
+      "MakerWorld files are Bambu Studio projects, which Cura opens without their parts' filaments or the designer's " +
+      "settings. This downloads a copy whose multi-part objects keep their parts, each on its own extruder, with the " +
+      `designer's walls, layers, infill and supports set on each object. Cura doesn't read painted colors. ${made}`
+    );
+  }
+  const slicers = name ? `${name} often opens` : "PrusaSlicer, Cura and other slicers often open";
   return (
-    `MakerWorld files are Bambu Studio projects, which ${slicers} without their colors or print ` +
-    "settings. This downloads a converted copy that keeps painted colors, filament colors, plates and the " +
-    "designer's settings (walls, layer height, infill, supports). Heads up: multi-part objects may be merged into " +
-    "one, per-object overrides and layer color changes are dropped, and you pick your own printer profile. " +
-    "Converted in your browser by Thingport Grab."
+    `MakerWorld files are Bambu Studio projects, which ${slicers} without their colors or print settings. This ` +
+    "downloads a copy that goes into your own printer, filament and print settings, with the designer's layer " +
+    `height, walls, infill and supports set on each object and the painted colors on your extruders. ${made}`
   );
 }
 
 function tooBig(bytes: number): Error {
   return new Error(
-    `This file is ${Math.round(bytes / MB)} MB, too big to normalize in the browser (the limit is ${MAX_BYTES / MB} MB). ` +
+    `This file is ${Math.round(bytes / MB)} MB, too big to adapt in the browser (the limit is ${MAX_BYTES / MB} MB). ` +
       "Use MakerWorld's regular Download instead.",
   );
 }
@@ -98,8 +126,8 @@ function sourceFilename(res: Response, url: string): string {
   return name.replace(/[\\/:*?"<>|]+/g, "_").trim() || "model.3mf";
 }
 
-function normalizedFilename(source: string): string {
-  return `${source.replace(/\.3mf$/i, "")}-normalized.3mf`;
+function adaptedFilename(source: string): string {
+  return `${source.replace(/\.3mf$/i, "")}-adapted.3mf`;
 }
 
 function saveFile(bytes: Uint8Array, filename: string): void {
@@ -114,9 +142,13 @@ function saveFile(bytes: Uint8Array, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-async function downloadNormalized(pageUrl: string, onProgress: (text: string) => void): Promise<void> {
+async function downloadAdapted(
+  pageUrl: string,
+  slicer: string | null,
+  onProgress: (text: string) => void,
+): Promise<void> {
   let stopRotation = rotatePhrases(gettingFilePhrases, onProgress);
-  // The normalizer reads the 3MF project, never the raw-files zip.
+  // The adapter reads the 3MF project, never the raw-files zip.
   const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stopRotation);
   if (!resolved) {
     throw new Error(
@@ -131,19 +163,20 @@ async function downloadNormalized(pageUrl: string, onProgress: (text: string) =>
     throw tooBig(declared);
   }
   const input = await readBody(res, declared, onProgress);
-  stopRotation = rotatePhrases(normalizingPhrases, onProgress);
-  let output: Uint8Array;
+  stopRotation = rotatePhrases(adaptingPhrases, onProgress);
+  let adapted: Awaited<ReturnType<typeof adaptMakerworld3mf>>;
   try {
-    output = await normalizeBambu3mf(input).finally(stopRotation);
+    adapted = await adaptMakerworld3mf(input, slicer).finally(stopRotation);
   } catch (err) {
-    throw new Error("Couldn't normalize this file: it doesn't look like a 3MF project MakerWorld's Download gives.", {
+    throw new Error("Couldn't adapt this file: it doesn't look like a 3MF project MakerWorld's Download gives.", {
       cause: err,
     });
   }
-  saveFile(output, normalizedFilename(sourceFilename(res, resolved.downloadUrl)));
+  const source = sourceFilename(res, resolved.downloadUrl);
+  saveFile(adapted.bytes, adapted.output ? adaptedFilename(source) : source);
 }
 
-function buildHost(pageUrl: string): HTMLElement {
+function buildHost(pageUrl: string, slicer: string | null, output: AdaptPlan["output"]): HTMLElement {
   const el = document.createElement("span");
   el.id = HOST_ID;
   const root = el.attachShadow({ mode: "open" });
@@ -184,7 +217,7 @@ function buildHost(pageUrl: string): HTMLElement {
     bubble.hidden = true;
   };
   const showInfo = () => {
-    if (bubble.hidden) showBubble(explanation(slicerLabel));
+    if (bubble.hidden) showBubble(explanation(slicer, output));
   };
   icon.addEventListener("mouseenter", showInfo);
   icon.addEventListener("mouseleave", () => !bubble.classList.contains("tg-nd-bubble--error") && hideBubble());
@@ -196,7 +229,7 @@ function buildHost(pageUrl: string): HTMLElement {
     button.disabled = true;
     icon.replaceChildren(element("span", "tg-nd__spinner"));
     try {
-      await downloadNormalized(pageUrl, (text) => (label.textContent = text));
+      await downloadAdapted(pageUrl, slicer, (text) => (label.textContent = text));
       label.textContent = "Downloaded";
       await new Promise((resolve) => setTimeout(resolve, DONE_RESET_MS));
     } catch (err) {
@@ -278,9 +311,9 @@ function place(): void {
   host.toggleAttribute("data-gapped", Boolean(gap) && gap !== "normal" && gap !== "0px");
 }
 
-function mount(pageUrl: string): void {
-  unmountNormalizedDownload();
-  host = buildHost(pageUrl);
+function mount(pageUrl: string, slicer: string | null, output: AdaptPlan["output"]): void {
+  unmountAdaptedDownload();
+  host = buildHost(pageUrl, slicer, output);
   let scheduled = false;
   const schedule = () => {
     if (scheduled) return;
@@ -300,7 +333,7 @@ function mount(pageUrl: string): void {
   place();
 }
 
-export function unmountNormalizedDownload(): void {
+export function unmountAdaptedDownload(): void {
   observer?.disconnect();
   observer = null;
   themeObserver?.disconnect();
@@ -308,23 +341,31 @@ export function unmountNormalizedDownload(): void {
   host?.remove();
   host = null;
   anchor = null;
-  slicerLabel = null;
   clearTimeout(bubbleTimer);
 }
 
-/** Offered wherever the popup's switch is on. The instance's slicer, where it can be asked for and is one Thingport
- *  knows mis-reads these files, only names it in the explanation. */
-export async function offerNormalizedDownload(
+// Long enough for an instance that's up, short enough that the button doesn't seem missing.
+const SLICER_LOOKUP_MS = 5000;
+
+/** The instance's slicer, or null when it can't say in time. */
+async function instanceSlicer(): Promise<string | null> {
+  const lookup = api<{ slicer: string | null }>("GET", "/settings/slicer")
+    .then((res) => res.slicer)
+    .catch(() => null);
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), SLICER_LOOKUP_MS));
+  return Promise.race([lookup, timeout]);
+}
+
+/** Offered where the popup's switch is on, unless the instance's slicer opens MakerWorld's files as they are. */
+export async function offerAdaptedDownload(
   pageUrl: string,
   configured: boolean,
   isStale: () => boolean,
 ): Promise<void> {
   if (isStale()) return;
-  mount(pageUrl);
-  if (!configured) return;
-  const mounted = host;
-  const slicer = await api<{ slicer: string | null }>("GET", "/settings/slicer")
-    .then((res) => res.slicer)
-    .catch(() => null);
-  if (host === mounted) slicerLabel = slicer ? (NORMALIZE_3MF_SLICERS[slicer] ?? null) : null;
+  const slicer = configured ? await instanceSlicer() : null;
+  if (isStale()) return;
+  const plan = planFor(MAKERWORLD_FORMAT, slicer);
+  if (!plan) return;
+  mount(pageUrl, slicer, plan.output);
 }

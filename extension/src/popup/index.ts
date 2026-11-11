@@ -379,7 +379,7 @@ els.enabledSwitch.addEventListener("change", () => {
   confirmAction({
     title: "Turn Thingport Grab off?",
     text:
-      "It stops on every site until you turn it back on: no import button, no Download normalized, and Thingiverse " +
+      "It stops on every site until you turn it back on: no import button, no Download adapted, and Thingiverse " +
       "looks as it does without Grab. Your connection and settings stay.",
     confirmLabel: "Turn off",
     busyLabel: "Turning off…",
