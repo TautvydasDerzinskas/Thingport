@@ -5069,6 +5069,7 @@
       "downloadPickerTitle": "Download",
       "downloadAllZip": "Download all {{count}} files (.zip)",
       "orDownloadOne": "or download one file",
+      "downloadFolderZip": "Download “{{folder}}” (.zip)",
       "tags": "Tags",
       "noTags": "No tags yet.",
       "previousImage": "Previous image",

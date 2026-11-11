@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import type { Response } from "express";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
+import { folderPath, isInFolder } from "../utils/fileFolder";
 import { writeZip, type ZipEntryDescriptor } from "../utils/zipWriter";
 import { resolvePlateFilePath } from "./printCreation";
 import { managedPrintFilePath } from "./printFileService";
@@ -64,24 +65,31 @@ export async function estimateDownloadSize(prints: PrintWithPlatesAndCategory[])
   return plateBytes + (supporting._sum.size ?? 0);
 }
 
+type ZipOptions = {
+  /** Drops the category folder, for downloads that span categories. */
+  flatten?: boolean;
+  /** Only the files in this folder and the folders in it (Plate.folder); the rest are left out. */
+  folder?: string | null;
+};
+
 /**
- * `{category-or-folder}/{print.name}/{plate.filename}`, with supporting files under `.../supporting/` and the model's
- * LICENSE.txt beside its plates.
- * `flatten` drops the category folder, for downloads that span categories.
+ * `{category-or-folder}/{print.name}/{plate.folder}/{plate.filename}`, with supporting files under `.../supporting/`
+ * (in their folders too) and the model's LICENSE.txt beside its plates.
  */
 export async function buildZipEntries(
   prints: PrintWithPlatesAndCategory[],
-  opts: { flatten?: boolean } = {},
+  opts: ZipOptions = {},
 ): Promise<ZipEntryDescriptor[]> {
   const printIds = prints.map((p) => p.id);
-  const supportingByPrint = new Map<string, { filename: string; storagePath: string }[]>();
+  const supportingByPrint = new Map<string, { filename: string; folder: string | null; storagePath: string }[]>();
   if (printIds.length) {
     const supporting = await prisma.printFile.findMany({
       where: { printId: { in: printIds }, role: "SUPPORTING" },
     });
     for (const file of supporting) {
+      if (!isInFolder(file.folder, opts.folder)) continue;
       const list = supportingByPrint.get(file.printId) ?? [];
-      list.push({ filename: file.filename, storagePath: file.storagePath });
+      list.push({ filename: file.filename, folder: file.folder, storagePath: file.storagePath });
       supportingByPrint.set(file.printId, list);
     }
   }
@@ -102,10 +110,12 @@ export async function buildZipEntries(
   const entries: ZipEntryDescriptor[] = [];
   for (const print of prints) {
     const prefix = opts.flatten ? print.name : `${print.category?.name || "unassigned"}/${print.name}`;
-    const sortedPlates = print.plates.toSorted((a, b) => a.position - b.position);
+    const sortedPlates = print.plates
+      .filter((plate) => isInFolder(plate.folder, opts.folder))
+      .toSorted((a, b) => a.position - b.position);
     for (const plate of sortedPlates) {
       const filePath = resolvePlateFilePath(plate);
-      if (filePath) entries.push({ arcname: `${prefix}/${plate.filename}`, filePath });
+      if (filePath) entries.push({ arcname: `${prefix}/${folderPath(plate.folder, plate.filename)}`, filePath });
     }
     // Made now rather than read from disk: it's then there whether or not LICENSE.txt files are written beside them.
     const license = licenseFileText({ ...print, author: print.authorId ? authors.get(print.authorId) : null });
@@ -119,7 +129,7 @@ export async function buildZipEntries(
     for (const file of supportingByPrint.get(print.id) ?? []) {
       const filePath = managedPrintFilePath(file);
       if (fs.existsSync(filePath)) {
-        entries.push({ arcname: `${prefix}/supporting/${file.filename}`, filePath });
+        entries.push({ arcname: `${prefix}/supporting/${folderPath(file.folder, file.filename)}`, filePath });
       }
     }
   }
@@ -130,7 +140,7 @@ export async function sendPrintsZip(
   res: Response,
   prints: PrintWithPlatesAndCategory[],
   downloadName: string,
-  opts: { flatten?: boolean } = {},
+  opts: ZipOptions = {},
 ): Promise<void> {
   const entries = await buildZipEntries(prints, opts);
   if (!entries.some((entry) => "filePath" in entry)) throw new HttpError(404, "No files available for download");

@@ -421,14 +421,15 @@ describe("Explore with partners", () => {
     expect(remoteFiles.body.files).toEqual([
       {
         name: "bin.3mf",
+        folder: null,
         size: 1800,
         media_type: "model/3mf",
         // By a key from its address at the partner, so a reordered list never serves another file.
         url: `/explore/elsewhere/model/${filesModelId}/files/${fileKey(`${PARTNER}/api/ap/files/plate/p1/bin.3mf`)}/bin.3mf`,
       },
-      { name: "notes.pdf", size: 20, media_type: "application/pdf", url: null },
+      { name: "notes.pdf", folder: null, size: 20, media_type: "application/pdf", url: null },
       // Somewhere other than the partner's own origin: never fetched.
-      { name: "elsewhere.stl", size: 30, media_type: null, url: null },
+      { name: "elsewhere.stl", folder: null, size: 30, media_type: null, url: null },
     ]);
     // A key for no file it shares, or for one that isn't on its origin, is never fetched.
     for (const key of ["0", "x", fileKey("http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl")]) {

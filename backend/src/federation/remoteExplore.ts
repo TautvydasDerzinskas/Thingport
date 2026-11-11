@@ -378,6 +378,7 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
     images: row.images.flatMap((url) => mediaAddress(url) ?? []),
     files: filesOf(row, row.peer.origin).map((file) => ({
       name: file.name,
+      folder: file.folder ?? null,
       size: file.size,
       media_type: file.mediaType,
       url: file.url ? remoteFileRoute(row.id, file.url, file.name) : null,

@@ -1,5 +1,6 @@
 import { browserCredentialRequest, assertCredentialDestination } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
+import { joinFolders, normalizeFolder } from "../../utils/fileFolder";
 import { browserFetch } from "../../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
@@ -318,8 +319,9 @@ export async function checkMyminifactorySession(cookie: string): Promise<"ok" | 
   }
 }
 
-/** A file in the user's library, and where its download starts. */
-export type MyminifactoryLibraryFile = { name: string; path: string };
+/** A file in the user's library, where its download starts, and the folder it's in within its archive (with the
+ *  archive's name above it when the object has several), or null. */
+export type MyminifactoryLibraryFile = { name: string; path: string; folder?: string | null };
 
 /** What's in an archive's MyMiniFactory unpacked, or the archive itself when it wasn't. */
 type LibraryArchive = { id: string | null; name: string; files: { id: string; path: string }[] };
@@ -367,16 +369,33 @@ export async function listMyminifactoryLibraryFiles(
   const archives = Array.isArray(data.archives) ? data.archives.flatMap((a) => libraryArchive(a) ?? []) : [];
   const unpacked = archives.flatMap((archive) =>
     archive.files.flatMap((file) => {
-      const name = file.path.split("/").pop()!;
+      const levels = file.path.split(/[\\/]+/).filter(Boolean);
+      const name = levels.pop() ?? file.path;
+      const folder = archives.length > 1 ? joinFolders(archive.name.replace(/\.[^.]+$/, ""), levels.join("/")) : levels;
       return isModelFile(name)
-        ? [{ name, path: `/api/data-library/archive-file-contents/${encodeURIComponent(file.id)}/download` }]
+        ? [
+            {
+              name,
+              path: `/api/data-library/archive-file-contents/${encodeURIComponent(file.id)}/download`,
+              folder: normalizeFolder(folder),
+            },
+          ]
         : [];
     }),
   );
   if (unpacked.length) return unpacked;
   // Not unpacked by MyMiniFactory: the archive itself, for the caller to open if it can.
   return archives.flatMap((archive) =>
-    archive.id ? [{ name: archive.name, path: `/download/${id}?archive_id=${encodeURIComponent(archive.id)}` }] : [],
+    archive.id
+      ? [
+          {
+            name: archive.name,
+            path: `/download/${id}?archive_id=${encodeURIComponent(archive.id)}`,
+            // Several archives' files kept apart by theirs, as the unpacked ones above are.
+            folder: archives.length > 1 ? normalizeFolder(archive.name.replace(/\.[^.]+$/, "")) : null,
+          },
+        ]
+      : [],
   );
 }
 

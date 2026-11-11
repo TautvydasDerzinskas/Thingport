@@ -13,6 +13,7 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import type { NewPlateInput } from "../../services/printCreation";
 import { HttpError } from "../../utils/fileUtils";
+import { joinFolders } from "../../utils/fileFolder";
 import { MANIFESTS } from "../index.generated";
 import { detailsOf } from "../details";
 import type {
@@ -82,7 +83,9 @@ async function download(
 ): Promise<void> {
   for (const file of files) {
     const url = await resolveGrabcadFileUrl(file, session);
-    into.push(...((await kit.downloadSignedFile({ url, name: file.name }, isGrabcadFileHost, RATE_LIMITED)) ?? []));
+    const inputs = (await kit.downloadSignedFile({ url, name: file.name }, isGrabcadFileHost, RATE_LIMITED)) ?? [];
+    // A zip's own folders go inside the one it was in.
+    into.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
   }
 }
 

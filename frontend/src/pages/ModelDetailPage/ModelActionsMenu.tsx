@@ -570,7 +570,8 @@ export default function ModelActionsMenu({
         onClose={() => setPickerOpen(false)}
         downloading={downloading}
         sortedPlates={sortedPlates}
-        downloadAllZip={downloadAllZip}
+        downloadAllZip={() => void downloadAllZip()}
+        downloadFolderZip={(folder) => void downloadAllZip(folder)}
         downloadPlate={downloadPlate}
       />
 

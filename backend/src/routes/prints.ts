@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
 import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -407,7 +408,11 @@ const downloadFilterSchema = z.object({
   category_id: z.string().optional(),
   collection_id: z.string().optional(),
 });
-const downloadSchema = downloadFilterSchema.extend({ filename: z.string().optional() });
+const downloadSchema = downloadFilterSchema.extend({
+  filename: z.string().optional(),
+  // Only the models' files in this folder and the folders in it (PlateOut.folder), as one folder of a model downloads.
+  folder: z.string().max(1000).optional(),
+});
 
 function assertDownloadFilterGiven(body: z.infer<typeof downloadFilterSchema>): void {
   if (!(body.print_ids?.length || body.tag || body.category_id || body.collection_id)) {
@@ -455,7 +460,7 @@ router.post(
         downloadName = `${safeName}.zip`;
       }
     }
-    await sendPrintsZip(res, prints, downloadName, { flatten });
+    await sendPrintsZip(res, prints, downloadName, { flatten, folder: normalizeFolder(body.folder) });
   }),
 );
 

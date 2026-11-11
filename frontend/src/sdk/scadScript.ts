@@ -253,9 +253,9 @@ const MAX_INCLUDED_FILES = 256;
 
 /**
  * The `.scad` files a script includes or uses, and what those include in turn, as `render()` wants them in `files`:
- * each at the path it was asked for by, relative to whatever asked, since that's where the engine looks. A model's
- * files keep no folders, so `read` is asked by file name alone, and once for each. The libraries Thingport carries are
- * left to the engine.
+ * each at the path it was asked for by, relative to whatever asked, since that's where the engine looks. `read` is
+ * asked by file name alone, and once for each: which of a model's files of that name it is, the caller decides. The
+ * libraries Thingport carries are left to the engine.
  */
 export async function scadIncludedFiles(
   source: string,

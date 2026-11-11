@@ -5206,6 +5206,7 @@
       "downloadPickerTitle": "Descargar",
       "downloadAllZip": "Descargar los {{count}} archivos (.zip)",
       "orDownloadOne": "o descarga un solo archivo",
+      "downloadFolderZip": "Descargar «{{folder}}» (.zip)",
       "tags": "Etiquetas",
       "noTags": "Aún no hay etiquetas.",
       "previousImage": "Imagen anterior",

@@ -167,6 +167,12 @@ Rules of thumb:
   a model's creator kept its script back, report it in `meta.parametricSource` with `withheld: true`, as MakerWorld
   does for a design whose `.scad` files are all `protected`: the model then shows "Script not shared" rather than
   looking as if Thingport lost the script.
+- **Folders**: where the site keeps a model's files in folders, set each file's `folder` on the `NewPlateInput` it
+  gives back (levels joined by "/"), as Printables (`stls { folder }`), GrabCAD (`folder_path`), MyMiniFactory (an
+  archive's paths) and PIXUP (its variants and file groups) do; a zip's own folders are kept by `kit.downloadSignedFile`
+  already, so join a file's folder to theirs (`joinFolders`). Anything a source says is cleaned by
+  `normalizeFolder` (`utils/fileFolder.ts`), and the folders every file of a model shares are dropped. A file's name is
+  then unique within its folder, not the model.
 - **MakerWorld** imports through the shared link import in `services/importService.ts`, which every page link of no
   provider's goes through too (`LINK_PROVIDER`). It pauses after a CAPTCHA until a manual retry (`liftHolds`), paces
   its calls (`IMPORT_MAKERWORLD_CALL_DELAY_MS`), and downloads a model with no print profiles as a zip of its raw

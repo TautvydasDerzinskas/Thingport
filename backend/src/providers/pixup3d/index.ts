@@ -13,6 +13,7 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import type { NewPlateInput } from "../../services/printCreation";
 import { HttpError } from "../../utils/fileUtils";
+import { joinFolders } from "../../utils/fileFolder";
 import { detailsOf } from "../details";
 import { MANIFESTS } from "../index.generated";
 import type {
@@ -58,6 +59,8 @@ import {
 
 const SESSION_CODE = MANIFESTS.pixup3d.errorCodes.session;
 const RATE_LIMITED = "PIXUP rate-limited Thingport. Wait a while, then try again.";
+/** The name PIXUP gives a file group its designer left unnamed. */
+const UNNAMED_GROUP = /^default name$/i;
 
 /** PIXUP's errors as the HttpErrors an import reports. A rejected sign-in was remembered where it was turned down
  *  (`pixup3dRejection`), so the app can say so. */
@@ -126,7 +129,15 @@ export const pixup3dImport: SourcedImport<Pixup3dSession, Pixup3dModelResolution
           const url = await resolvePixup3dDownload(resolved.postId, variant.id, group.id, session);
           const name = `pixup3d-${resolved.postId}-${variant.id}-${group.id}.zip`;
           const files = (await kit.downloadSignedFile({ url, name }, isPixup3dFileHost, RATE_LIMITED)) ?? [];
-          downloaded.push(...withoutUploadNumbers(files));
+          // Each variant and file group a folder of its own ("STL_Pre-supported"), as the post lists them, where
+          // there are several to tell apart. A group the designer never named is called "Default name".
+          const folder = joinFolders(
+            owned.length > 1 ? variant.name : null,
+            variant.fileGroups.length > 1 && !UNNAMED_GROUP.test(group.name) ? group.name : null,
+          );
+          downloaded.push(
+            ...withoutUploadNumbers(files).map((input) => ({ ...input, folder: joinFolders(folder, input.folder) })),
+          );
         }
       }
       return downloaded;

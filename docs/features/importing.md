@@ -51,6 +51,11 @@ Fab365 and 3DExport.
   from the profile's own 3MF. The [3D preview](3d-previews.md) shows the picked profile's plates. A model imported
   before Thingport kept these reads them the first time you open it. How they're shown, or whether to show them as
   plain files instead, is in [Appearance](appearance.md).
+- The folders its files are in, where the designer sorted them into some: on Printables and GrabCAD, MyMiniFactory's
+  and Cults3D's archives, PIXUP's file groups, a zip of any site's, or a model copied from a
+  [connected instance](connected-instances.md). They are often its variants (sizes, supported or not), so the model
+  page lists the files under a heading for each folder, and a folder that every file is in, such as one named after the
+  model, is left out. Files in different folders may share a name.
 - The OpenSCAD script it was generated from, where its creator shared one, whichever site it came from, so it can be
   [customised and generated again](supporting-files.md#models-you-can-generate-again). MakerWorld also says when a
   creator kept the script back, and the model is marked **Script not shared**. On a MakerWorld page, Thingport Grab

@@ -64,11 +64,11 @@ describe("parametric sources in a raw-files zip", () => {
     expect(IMPORT_EXT_PRIORITY).not.toContain(".scad");
   });
 
-  it("names files alike in different folders after their folder, as plates are", async () => {
+  it("keeps files alike in different folders in their folders, as plates are", async () => {
     const zipPath = await zipOf({ "v1/box.scad": "a = 1;\n", "v2/box.scad": "a = 2;\n" });
 
     const sources = await parametricSourcesFromZip(zipPath);
-    expect(sources.map((s) => s.filename).toSorted()).toEqual(["v1 - box.scad", "v2 - box.scad"]);
+    expect(sources.map((s) => `${s.folder}/${s.filename}`).toSorted()).toEqual(["v1/box.scad", "v2/box.scad"]);
   });
 
   // The plates of an archive that only wraps the designer's own are a level deeper, and so is the script beside

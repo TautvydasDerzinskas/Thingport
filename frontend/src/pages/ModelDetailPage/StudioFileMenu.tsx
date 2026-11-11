@@ -41,7 +41,7 @@ export default function StudioFileMenu({ anchorEl, onClose, files, onOpen }: Pro
             <PlateThumbnail plate={plate} />
           </ListItemIcon>
           <ListItemText
-            {...fileRowText(t, plate.filename, plate.position)}
+            {...fileRowText(t, plate.filename, plate.position, plate.folder)}
             primaryTypographyProps={{ variant: "body2", noWrap: true }}
             secondaryTypographyProps={{ variant: "caption", noWrap: true }}
           />

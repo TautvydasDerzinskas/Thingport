@@ -111,9 +111,10 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   `tags`, `creator`, `importedFrom` and `author` (provider and id), `category` (a starter category's names from the top
   and its providers' ids; never a folder, which is its owner's own), `generatorScriptWithheld`, `unfillableGaps` and
   `descriptionImages`; on each picture `generated` (a render) or `plate` (a plate's thumbnail standing in for none); on
-  each file `kind` (plate or file), a file's `role`, and a plate's `profileId`, `profile` (what its site said, with
-  the reader's version), `thumb` and `thumbGenerated` (the thumb is a render, which a copy takes only where its
-  instance won't render one). A model past 256 KB leaves its profiles' facts out (`fitModel`), and a copy asks their
+  each file `kind` (plate or file), a file's `role`, `path` (its folder and real name, "Supported/Arm.stl", for a file
+  in a folder; its `name` is then named after the folder too where another file has the same name, as an older
+  partner shows one list), and a plate's `profileId`, `profile` (what its site said, with the reader's version),
+  `thumb` and `thumbGenerated` (the thumb is a render, which a copy takes only where its instance won't render one). A model past 256 KB leaves its profiles' facts out (`fitModel`), and a copy asks their
   site instead; still past it, its category, description's images and plates' thumbs, then the names at the end of
   its files' addresses, then its description is shortened.
 - **Keeping the copy** (`remoteIndex.ts`): `RemotePerson`, `RemoteModel`, `RemoteCollection`, read on connecting, by

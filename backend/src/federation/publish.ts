@@ -15,6 +15,7 @@ import { storedProfile } from "../services/printProfileService";
 import { plateThumbPath } from "../services/printService";
 import { coverOut, coverPath } from "../services/publicProfileService";
 import { sharedAtOf, sharedModelCounts, sharedModelsWhere, sharers } from "../services/socialService";
+import { FOLDER_MAX, folderLevels, folderPath } from "../utils/fileFolder";
 import { originOf } from "./addresses";
 import { canonicalHeaders, keyIdOf } from "./edge";
 import { AP_PREFIX, getRuntime, type Runtime } from "./runtime";
@@ -42,6 +43,7 @@ const MODEL_NAME_MAX = 300;
 const MODEL_DESCRIPTION_MAX = 20_000;
 const MODEL_FILES_MAX = 100;
 const FILE_NAME_MAX = 255;
+const FILE_PATH_MAX = FOLDER_MAX + 1 + FILE_NAME_MAX;
 const MEDIA_TYPE_MAX = 120;
 const MODEL_IMAGES_MAX = 20;
 const MODEL_TAGS_MAX = 50;
@@ -272,6 +274,7 @@ const MODEL_SELECT = {
     select: {
       id: true,
       filename: true,
+      folder: true,
       mime: true,
       size: true,
       sourceInstanceId: true,
@@ -283,7 +286,7 @@ const MODEL_SELECT = {
   // A partner's copy writes its own LICENSE.txt from the licence.
   files: {
     where: { role: { not: "LICENSE" } },
-    select: { id: true, filename: true, mime: true, size: true, role: true },
+    select: { id: true, filename: true, folder: true, mime: true, size: true, role: true },
   },
   descriptionImages: { select: { id: true, mime: true } },
   license: true,
@@ -334,9 +337,13 @@ function modelDoc(
       const version = mtime(descriptionImagePath(image, print.assetsPath));
       return version === null ? [] : [{ id: image.id, url: mediaUrl(runtime, "description", image.id, version) }];
     });
-  const document = (kind: "plate" | "file", file: { id: string; filename: string; mime: string; size: number }) => {
+  const nameOf = partnerNames([...print.plates, ...print.files]);
+  const document = (
+    kind: "plate" | "file",
+    file: { id: string; filename: string; folder: string | null; mime: string; size: number },
+  ) => {
     // The address's name is only a slicer's.
-    const name = shortName(file.filename, FILE_NAME_MAX);
+    const name = shortName(nameOf(file), FILE_NAME_MAX);
     return {
       type: "Document",
       name,
@@ -344,6 +351,8 @@ function modelDoc(
       url: `${runtime.origin}${AP_PREFIX}/files/${kind}/${file.id}/${encodeURIComponent(name)}`,
       "thingport:size": file.size,
       "thingport:kind": kind,
+      // Where it is in the model, for a partner that keeps folders; `name` is for one that doesn't.
+      "thingport:path": file.folder ? shortName(folderPath(file.folder, file.filename), FILE_PATH_MAX) : undefined,
     };
   };
   // Each file where a partner fetches it, signed: to download, open in a slicer or copy.
@@ -419,6 +428,18 @@ function licenseTerm(print: Pick<PublishedPrint, "license" | "licenseReadAt" | "
 
 /** `name` no longer than `max`, cut before its extension (`.gcode.3mf` whole), which says what the file is, and with
  *  no half of a character left at the cut, which encodeURIComponent refuses. */
+/** Each file's name for a partner too old to know folders, which shows a model's files as one list: its own, unless
+ *  another file has it too, when it's named after its folder as well ("Supported - Arm.stl"), as a zip's files were
+ *  named before folders were kept. */
+function partnerNames(files: { id: string; filename: string; folder: string | null }[]) {
+  const count = new Map<string, number>();
+  for (const file of files) count.set(file.filename.toLowerCase(), (count.get(file.filename.toLowerCase()) ?? 0) + 1);
+  return (file: { filename: string; folder: string | null }) =>
+    file.folder && (count.get(file.filename.toLowerCase()) ?? 0) > 1
+      ? [...folderLevels(file.folder), file.filename].join(" - ")
+      : file.filename;
+}
+
 function shortName(name: string, max: number): string {
   if (name.length <= max) return name;
   const extension = /(?:\.[A-Za-z0-9]{1,10}){1,2}$/.exec(name)?.[0] ?? "";

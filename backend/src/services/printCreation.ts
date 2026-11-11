@@ -5,6 +5,7 @@ import { prisma } from "../db";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
 import { inspectPreparedPrint } from "./preparedPrint";
 import {
@@ -51,6 +52,8 @@ export type NewPlateInput = {
   sourceInstanceId?: string | null;
   /** What was read of the print profile it is (Plate.profile), carried over by a copy so it isn't read again. */
   profile?: Prisma.JsonValue | null;
+  /** The folder its source kept it in (Plate.folder); untrusted, normalized here. */
+  folder?: string | null;
 };
 
 /** A file that is a script a model can be generated from, rather than geometry to print. */
@@ -188,8 +191,9 @@ async function createPlateAtPosition(
   position: number,
 ): Promise<CreatedPlate> {
   const sanitized = sanitizeFilename(input.filename);
-  const desiredFilename = await availablePlateFilename(print.id, sanitized);
-  const storagePath = await renderPlateStoragePath(print, desiredFilename, position);
+  const folder = normalizeFolder(input.folder);
+  const desiredFilename = await availablePlateFilename(print.id, sanitized, undefined, folder);
+  const storagePath = await renderPlateStoragePath(print, desiredFilename, position, folder);
   const destAbsPath = path.join(STORAGE, storagePath);
   const { effectivePath, contentSha256, marker } = await placePlateFile(input, destAbsPath);
   const size = await resolveSize(input, effectivePath);
@@ -202,6 +206,7 @@ async function createPlateAtPosition(
         printId: print.id,
         position,
         filename: desiredFilename,
+        folder,
         mime,
         size,
         storagePath,
@@ -237,9 +242,11 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
   if (!inputs.length) return;
   // A model's own script comes down again with every profile imported after the first (see importService's
   // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
+  const keyOf = (filename: string, folder: string | null | undefined) =>
+    `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
   const stored = new Set(
-    (await prisma.printFile.findMany({ where: { printId }, select: { filename: true } })).map((file) =>
-      file.filename.toLowerCase(),
+    (await prisma.printFile.findMany({ where: { printId }, select: { filename: true, folder: true } })).map((file) =>
+      keyOf(file.filename, file.folder),
     ),
   );
   for (const input of inputs) {
@@ -250,12 +257,14 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
       continue;
     }
     // Compared as it will be stored, since that is the name a second copy would collide with.
-    const safeName = sanitizeFilename(input.filename).toLowerCase();
-    if (stored.has(safeName)) continue;
+    const key = keyOf(sanitizeFilename(input.filename), input.folder);
+    if (stored.has(key)) continue;
     try {
       // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
-      await saveFileFromTemp(userId, printId, input.tempFilePath, input.filename, "text/plain");
-      stored.add(safeName);
+      await saveFileFromTemp(userId, printId, input.tempFilePath, input.filename, "text/plain", {
+        folder: input.folder,
+      });
+      stored.add(key);
     } catch (err) {
       console.warn(`Couldn't keep the generator script ${input.filename}:`, err);
     }
@@ -431,7 +440,7 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
 export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
   const plate = await prisma.plate.findUnique({ where: { id: plateId } });
   if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
-  const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id);
+  const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id, plate.folder);
   if (nextFilename !== plate.filename) {
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
     await relocatePrint(print, [{ ...plate, filename: nextFilename }]);

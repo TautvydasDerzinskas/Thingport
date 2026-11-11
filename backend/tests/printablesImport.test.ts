@@ -136,6 +136,43 @@ describe("importPrintFromUrl -- Printables", () => {
     expect(result.previewImages.length).toBeGreaterThanOrEqual(2);
   });
 
+  // A designer can put a model's files in folders on its Files tab, often its variants: each file keeps its own.
+  it("keeps the folder each file is in on Printables", async () => {
+    const folderModel = "1482294";
+    const url = `https://www.printables.com/model/${folderModel}-charger-cable-organizer`;
+    const stls = [
+      { id: "11", name: "Lid.stl", folder: "USB C version  20mm" },
+      { id: "12", name: "Lid.stl", folder: "USB A+B version 30mm" },
+      { id: "13", name: "Box.stl", folder: null },
+    ];
+    global.fetch = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async (input, init) => {
+      const target = String(input);
+      if (target === "https://api.printables.com/graphql/") {
+        const body = JSON.parse(String(init?.body ?? "{}"));
+        if (body.query.includes("getDownloadLink")) {
+          const files = stls.map((file) => ({
+            id: file.id,
+            link: `https://files.printables.com/media/${file.id}.stl`,
+          }));
+          return jsonResponse(200, { data: { getDownloadLink: { ok: true, errors: null, output: { files } } } });
+        }
+        return jsonResponse(200, {
+          data: { print: { ...MODEL_RESPONSE.data.print, id: folderModel, name: "Charger Cable Organizer", stls } },
+        });
+      }
+      if (target.startsWith("https://files.printables.com/media/")) return new Response("solid x endsolid");
+      if (target.startsWith("https://media.printables.com/")) return pngResponse();
+      throw new Error(`Unexpected fetch to ${target}`);
+    }) as unknown as typeof fetch;
+
+    const result = await importPrintFromUrl(userId, url, { url, tags: [] });
+    expect(result.plates.map((plate) => [plate.folder, plate.filename])).toEqual([
+      ["USB C version 20mm", "Lid.stl"],
+      ["USB A+B version 30mm", "Lid.stl"],
+      [null, "Box.stl"],
+    ]);
+  });
+
   it("dedupes a re-import of the same model instead of hitting the API again", async () => {
     const fetchMock = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async () => {
       throw new Error("No network call should happen for an already-imported model");

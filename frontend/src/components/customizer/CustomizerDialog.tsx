@@ -52,7 +52,7 @@ import { useValueHistory } from "./useValueHistory";
 /** The left column's width on a window wide enough to float it over the model. */
 const COLUMN_WIDTH = 348;
 
-type Script = { id: string; filename: string };
+type Script = { id: string; filename: string; folder?: string | null };
 
 /** `files` is the other scripts this one includes, as the engine wants them. */
 type Loaded = { script: Script; source: string; parameters: ScadParameter[]; files: Record<string, string> };
@@ -230,7 +230,10 @@ export default function CustomizerDialog({ print, scriptId, onClose, onUnauthori
         // there, and the render names it either way.
         const files = await scadIncludedFiles(source, async (fileName) => {
           const wanted = fileName.toLowerCase();
-          const sibling = scriptsRef.current.find((candidate) => candidate.filename.toLowerCase() === wanted);
+          const named = scriptsRef.current.filter((candidate) => candidate.filename.toLowerCase() === wanted);
+          // Files of one name in several of the model's folders (a variant's own "config.scad" each): the script's
+          // own folder's first.
+          const sibling = named.find((candidate) => (candidate.folder ?? null) === (script.folder ?? null)) ?? named[0];
           return sibling ? printsApi.supportingText(printId, sibling.id).catch(() => null) : null;
         });
         if (token !== run.current) return;

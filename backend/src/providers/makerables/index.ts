@@ -11,6 +11,7 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import type { NewPlateInput } from "../../services/printCreation";
 import { HttpError } from "../../utils/fileUtils";
+import { joinFolders } from "../../utils/fileFolder";
 import { detailsOf } from "../details";
 import { MANIFESTS } from "../index.generated";
 import type { ProviderDetails, ProviderLists, ProviderTrending, SourcedImport } from "../types";
@@ -68,7 +69,11 @@ export const makerablesImport: SourcedImport<null, MakerablesModelResolution> = 
     const downloaded: NewPlateInput[] = [];
     try {
       for (const file of wanted) {
-        downloaded.push(...((await kit.downloadSignedFile(file, isMakerablesFileHost, BLOCKED)) ?? []));
+        const inputs = (await kit.downloadSignedFile(file, isMakerablesFileHost, BLOCKED)) ?? [];
+        // A designer's uploads are often zips named for what's in them ("Replacement Jaws"): with more than one file
+        // on the tab, each zip's files keep its name as their folder.
+        const folder = wanted.length > 1 && /\.zip$/i.test(file.name) ? file.name.replace(/\.zip$/i, "") : null;
+        downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(folder, input.folder) })));
       }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));

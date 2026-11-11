@@ -11,6 +11,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { HttpError } from "../../utils/fileUtils";
 import { maybeSleep } from "../../utils/concurrency";
+import { joinFolders } from "../../utils/fileFolder";
 import type { NewPlateInput } from "../../services/printCreation";
 import { getMyminifactoryApiKey } from "./apiKey";
 import type {
@@ -89,7 +90,10 @@ async function downloadFromLibrary(
     for (const file of files) {
       await maybeSleep(FILE_DELAY_MS);
       const url = await resolveMyminifactoryLibraryDownload(file.path, cookie);
-      if (url) downloaded.push(...(await downloadFile(url, kit, file.name)));
+      if (url) {
+        const inputs = await downloadFile(url, kit, file.name);
+        downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
+      }
     }
     if (!downloaded.length && files.length) {
       throw new HttpError(

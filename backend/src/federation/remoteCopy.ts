@@ -236,6 +236,7 @@ async function makeCopy(
     if (profileId) profiles.add(profileId);
     return {
       filename,
+      folder: file.folder,
       mime: mimeFromContentType(file.mediaType, filename),
       tempFilePath,
       sourceInstanceId: profileId,
@@ -311,7 +312,7 @@ async function makeCopy(
       const said = file.role ?? (isPreparedPrintFilename(sanitizeFilename(file.name)) ? "PREPARED" : "SUPPORTING");
       const role: typeof said = said === "PREPARED" && prepared ? "SUPPORTING" : said;
       prepared ||= role === "PREPARED";
-      await saveFileFromTemp(userId, printId, tempPath, file.name, file.mediaType, { role });
+      await saveFileFromTemp(userId, printId, tempPath, file.name, file.mediaType, { role, folder: file.folder });
     }
   } catch (err) {
     await discardPrint(printId);

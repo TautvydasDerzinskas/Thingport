@@ -226,6 +226,37 @@ describe("GrabCAD specifics", () => {
     expect(zipPlates.map((plate) => plate.filename)).toEqual(["frame.step"]);
   });
 
+  // Each folder's answer says where it is from the top, which starts with the model itself.
+  it("keeps the folder each file is in, below the model's own", async () => {
+    await connect(ctx.userId);
+    const at = (...names: string[]) => [
+      { id: 1, name: "Arduino Uno R3" },
+      ...names.map((name, i) => ({ id: i + 7, name })),
+    ];
+    const folders = {
+      root: {
+        folder_path: at(),
+        files: [fileRow("top.stl", "STL", "4".repeat(32))],
+        folders: [{ id: 7, name: "rev. 4" }],
+      },
+      7: {
+        folder_path: at("rev. 4"),
+        files: [fileRow("frame.stl", "STL", "5".repeat(32))],
+        folders: [{ id: 8, name: "STL" }],
+      },
+      8: { folder_path: at("rev. 4", "STL"), files: [fileRow("part.stl", "STL", "6".repeat(32))], folders: [] },
+    } as Record<string, Folder>;
+    ctx.install(handlerFor("ok", { folders }));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => [plate.folder, plate.filename])).toEqual([
+      [null, "top.stl"],
+      ["rev. 4", "frame.stl"],
+      ["rev. 4/STL", "part.stl"],
+    ]);
+  });
+
   it("lists every page of someone's likes, without a sign-in", async () => {
     await setUserGrabcadSession(ctx.userId, null);
     ctx.stub("ok");

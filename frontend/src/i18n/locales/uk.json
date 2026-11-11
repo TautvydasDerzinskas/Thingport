@@ -4779,6 +4779,7 @@
       "downloadPickerTitle": "Завантажити",
       "downloadAllZip": "Завантажити всі {{count}} файлів (.zip)",
       "orDownloadOne": "або завантажити один файл",
+      "downloadFolderZip": "Завантажити «{{folder}}» (.zip)",
       "tags": "Мітки",
       "noTags": "Міток ще немає.",
       "previousImage": "Попереднє зображення",
