@@ -1,0 +1,139 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "structur3dio",
+  "name": "Structur3d.io"
+ },
+ "printers": [
+  {
+   "id": "structur3dio-discov3rycomplete",
+   "brand": "structur3dio",
+   "model": "Discov3ry Complete",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -12.5,
+      -10
+     ],
+     [
+      24.5,
+      -10
+     ],
+     [
+      22.5,
+      0
+     ],
+     [
+      -12.5,
+      0
+     ]
+    ],
+    [
+     [
+      217.5,
+      -10
+     ],
+     [
+      217.5,
+      0
+     ],
+     [
+      207.5,
+      0
+     ],
+     [
+      205.5,
+      -10
+     ]
+    ],
+    [
+     [
+      -12.5,
+      215
+     ],
+     [
+      -12.5,
+      207
+     ],
+     [
+      18.5,
+      207
+     ],
+     [
+      20.5,
+      215
+     ]
+    ],
+    [
+     [
+      217.5,
+      215
+     ],
+     [
+      210.5,
+      215
+     ],
+     [
+      212.5,
+      207
+     ],
+     [
+      217.5,
+      207
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.2",
+    "0.25",
+    "0.41",
+    "0.58",
+    "0.84",
+    "1.19",
+    "1.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "structur3d_discov3ry1_complete_um2plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "structur3d_discov3ry1_complete_um2plus",
+      "nozzles": [
+       "0.20mm (Clear)",
+       "0.25mm (Red)",
+       "0.41mm (Blue)",
+       "0.58mm (Pink)",
+       "0.84mm (Green)",
+       "1.19mm (Grey)",
+       "1.60mm (Olive)"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

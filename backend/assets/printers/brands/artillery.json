@@ -1,0 +1,2680 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "artillery",
+  "name": "Artillery"
+ },
+ "printers": [
+  {
+   "id": "artillery-genius",
+   "brand": "artillery",
+   "model": "Genius",
+   "aliases": [
+    "artillerygenius"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Genius",
+    "prusa": "Genius",
+    "cura": "artillery_genius"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ],
+         "renamedFrom": [
+          "Genius"
+         ]
+        },
+        {
+         "name": "Artillery Genius BL-TOUCH",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ],
+         "renamedFrom": [
+          "Genius BL-TOUCH"
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "artillery_genius",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-geniuspro",
+   "brand": "artillery",
+   "model": "Genius Pro",
+   "aliases": [
+    "artillerygeniuspro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Genius-Pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-hornet",
+   "brand": "artillery",
+   "model": "Hornet",
+   "aliases": [
+    "artilleryhornet"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Hornet",
+    "prusa": "Hornet",
+    "cura": "artillery_hornet"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "artillery_hornet",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-m1pro",
+   "brand": "artillery",
+   "model": "M1 Pro",
+   "aliases": [
+    "artillerym1pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 260,
+    "y": 260,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-M1-Pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery M1 Pro",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Artillery M1 Pro 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.06mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Artillery M1 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Artillery M1 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.18mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Artillery M1 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery M1 Pro",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Artillery M1 Pro 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.06mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Artillery M1 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Artillery M1 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.18mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Artillery M1 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery M1 Pro",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Artillery M1 Pro 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.06mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Artillery M1 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Artillery M1 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.18mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Artillery M1 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx1",
+   "brand": "artillery",
+   "model": "Sidewinder X1",
+   "aliases": [
+    "artillerysidewinderx1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X1",
+    "prusa": "X1",
+    "cura": "artillery_sidewinder_x1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ],
+         "renamedFrom": [
+          "Sidewinder X1"
+         ]
+        },
+        {
+         "name": "Artillery Sidewinder X1 BL-TOUCH",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ],
+         "renamedFrom": [
+          "Sidewinder X1 BL-TOUCH"
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "artillery_sidewinder_x1",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx2",
+   "brand": "artillery",
+   "model": "Sidewinder X2",
+   "aliases": [
+    "artillerysidewinderx2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx3plus",
+   "brand": "artillery",
+   "model": "Sidewinder X3 Plus",
+   "aliases": [
+    "artillerysidewinderx3plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 305,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X3-Plus",
+    "prusa": "X3 Plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus",
+         "defaultProcess": "X3 Default (0.20mm) @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X3 TPU @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "X3 Default (0.20mm) @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx3pro",
+   "brand": "artillery",
+   "model": "Sidewinder X3 Pro",
+   "aliases": [
+    "artillerysidewinderx3pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 245,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": false,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X3-Pro",
+    "prusa": "X3 Pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro",
+         "defaultProcess": "X3 Default (0.20mm) @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X3 TPU @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "X3 Default (0.20mm) @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx4max",
+   "brand": "artillery",
+   "model": "Sidewinder X4 Max",
+   "aliases": [
+    "artillerysidewinderx4max"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "prusa": "X4 Max"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Max",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Max",
+         "defaultProcess": "ArtillerySlicer X4 Max PETG & PLA & PLA+ @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X4 Max ABS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Max PETG & PLA & PLA+ @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Max PLA HS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Max PLA Silk @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Max TPU @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx4plus",
+   "brand": "artillery",
+   "model": "Sidewinder X4 Plus",
+   "aliases": [
+    "artillerysidewinderx4plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X4-Plus",
+    "prusa": "X4 Plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus",
+         "defaultProcess": "ArtillerySlicer X4 Plus PETG & PLA & PLA+ @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X4 Plus ABS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Plus PETG & PLA & PLA+ @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Plus PLA HS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Plus PLA Silk @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Plus TPU @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx4pro",
+   "brand": "artillery",
+   "model": "Sidewinder X4 Pro",
+   "aliases": [
+    "artillerysidewinderx4pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X4-Pro",
+    "prusa": "X4 Pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro",
+         "defaultProcess": "ArtillerySlicer X4 Pro PETG & PLA & PLA+ @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X4 Pro ABS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Pro PETG & PLA & PLA+ @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Pro PLA HS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Pro PLA Silk @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Pro TPU @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

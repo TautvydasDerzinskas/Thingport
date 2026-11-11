@@ -1,0 +1,254 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "makerbot",
+  "name": "MakerBot"
+ },
+ "printers": [
+  {
+   "id": "makerbot-makerbotreplicator",
+   "brand": "makerbot",
+   "model": "MakerBotReplicator",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 145,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "makerbot",
+   "relativeE": false,
+   "codes": {
+    "cura": "makerbotreplicator"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "makerbotreplicator",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "makerbot-replicatorplus",
+   "brand": "makerbot",
+   "model": "Replicator+",
+   "aliases": [
+    "makerbotreplicatorplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 295,
+    "y": 195,
+    "origin": [
+     -147.5,
+     -97.5
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 165,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 250,
+    "bed": 120
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_replicator_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_replicator_plus",
+      "nozzles": [
+       "Smart Extruder+",
+       "Smart Extruder+ Experimental",
+       "Smart Extruder+ Tough"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "makerbot-sketch",
+   "brand": "makerbot",
+   "model": "Sketch",
+   "aliases": [
+    "makerbotsketch"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     -75,
+     -75
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 240,
+    "bed": 100
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_sketch"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_sketch",
+      "nozzles": [
+       "0.4mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "makerbot-sketchlarge",
+   "brand": "makerbot",
+   "model": "Sketch Large",
+   "aliases": [
+    "makerbotsketchlarge"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 200,
+    "origin": [
+     -110,
+     -100
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 240,
+    "bed": 100
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_sketch_large"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_sketch_large",
+      "nozzles": [
+       "0.4mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "makerbot-sketchsprint",
+   "brand": "makerbot",
+   "model": "Sketch Sprint",
+   "aliases": [
+    "makerbotsketchsprint"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 221.5,
+    "y": 221.5,
+    "origin": [
+     -110.75,
+     -110.75
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 220.4,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 260,
+    "bed": 100
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_sketch_sprint"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_sketch_sprint",
+      "nozzles": [
+       "0.4mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

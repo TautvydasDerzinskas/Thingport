@@ -1,0 +1,77 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "maukcc",
+  "name": "MaukCC"
+ },
+ "printers": [
+  {
+   "id": "maukcc-cartesio",
+   "brand": "maukcc",
+   "model": "Cartesio",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 430,
+    "y": 270,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      430,
+      0
+     ],
+     [
+      0,
+      0
+     ],
+     [
+      0,
+      60
+     ],
+     [
+      430,
+      60
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "cartesio"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cartesio",
+      "nozzles": [
+       "0.25mm thermoplastic extruder",
+       "0.4mm thermoplastic extruder",
+       "0.8mm thermoplastic extruder"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

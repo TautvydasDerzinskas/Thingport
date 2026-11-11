@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "3dmaker",
+  "name": "3DMaker"
+ },
+ "printers": [
+  {
+   "id": "3dmaker-starter",
+   "brand": "3dmaker",
+   "model": "Starter",
+   "aliases": [
+    "3dmakerstarter"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 210,
+    "y": 185,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "maker_starter"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "maker_starter",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,57 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "toybox",
+  "name": "Toybox"
+ },
+ "printers": [
+  {
+   "id": "toybox-alphaone",
+   "brand": "toybox",
+   "model": "Alpha One",
+   "aliases": [
+    "alphaonetwothree",
+    "three",
+    "toyboxalphaonetwothree",
+    "two"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 70,
+    "y": 80,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 90,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "toybox_alpha_one_two"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "toybox_alpha_one_two",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,111 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "farm3d",
+  "name": "Farm3D"
+ },
+ "printers": [
+  {
+   "id": "farm3d-farm2",
+   "brand": "farm3d",
+   "model": "Farm 2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 203,
+    "y": 199,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 197,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "farm2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "farm2",
+      "nozzles": [
+       "PrintHead 0.2 mm",
+       "PrintHead 0.3 mm",
+       "PrintHead 0.4 mm",
+       "PrintHead 0.5 mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "farm3d-farm2ce",
+   "brand": "farm3d",
+   "model": "Farm 2CE",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 209,
+    "y": 199,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 213,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "farm2_ce"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "farm2_ce",
+      "nozzles": [
+       "PrintHead 0.2 mm",
+       "PrintHead 0.3 mm",
+       "PrintHead 0.4 mm",
+       "PrintHead 0.5 mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

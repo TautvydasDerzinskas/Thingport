@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "pbrresearch",
+  "name": "PBR Research"
+ },
+ "printers": [
+  {
+   "id": "pbrresearch-pbr3dgeni",
+   "brand": "pbrresearch",
+   "model": "PBR 3D Gen-I",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "pbr3d_g1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "pbr3d_g1",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

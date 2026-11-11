@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "gutenberg",
+  "name": "Gutenberg"
+ },
+ "printers": [
+  {
+   "id": "gutenberg-gzero",
+   "brand": "gutenberg",
+   "model": "G-ZERO",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 201,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "gutenberg_gzero"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "gutenberg_gzero",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,95 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "syndaver3d",
+  "name": "Syndaver3D"
+ },
+ "printers": [
+  {
+   "id": "syndaver3d-syndaveraxi",
+   "brand": "syndaver3d",
+   "model": "SyndaverAxi",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 285,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "syndaveraxi"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "syndaveraxi",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "syndaver3d-syndaveraxi2",
+   "brand": "syndaver3d",
+   "model": "SyndaverAxi2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 280,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "syndaveraxi2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "syndaveraxi2",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

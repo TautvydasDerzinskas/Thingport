@@ -1,0 +1,511 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "dagoma",
+  "name": "Dagoma"
+ },
+ "printers": [
+  {
+   "id": "dagoma-discoeasy200",
+   "brand": "dagoma",
+   "model": "DiscoEasy200",
+   "aliases": [
+    "dagomadiscoeasy200"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dagoma_discoeasy200"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dagoma_discoeasy200",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "dagoma-discoeasy200bicolor",
+   "brand": "dagoma",
+   "model": "DiscoEasy200 Bicolor",
+   "aliases": [
+    "dagomadiscoeasy200bicolor"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dagoma_discoeasy200_bicolor"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dagoma_discoeasy200_bicolor",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "dagoma-discoultimate",
+   "brand": "dagoma",
+   "model": "DiscoUltimate",
+   "aliases": [
+    "dagomadiscoultimate"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dagoma_discoultimate"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dagoma_discoultimate",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "dagoma-discoultimatebicolor",
+   "brand": "dagoma",
+   "model": "DiscoUltimate Bicolor",
+   "aliases": [
+    "dagomadiscoultimatebicolor"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dagoma_discoultimate_bicolor"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dagoma_discoultimate_bicolor",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "dagoma-magis",
+   "brand": "dagoma",
+   "model": "Magis",
+   "aliases": [
+    "dagomamagis"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 195.55,
+    "y": 195.55,
+    "origin": [
+     -97.775,
+     -97.775
+    ],
+    "diameter": 195.55
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dagoma_magis"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dagoma_magis",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "dagoma-neva",
+   "brand": "dagoma",
+   "model": "Neva",
+   "aliases": [
+    "dagomaneva"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 195.55,
+    "y": 195.55,
+    "origin": [
+     -97.775,
+     -97.775
+    ],
+    "diameter": 195.55
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dagoma_neva"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dagoma_neva",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "dagoma-pro430",
+   "brand": "dagoma",
+   "model": "PRO 430",
+   "aliases": [
+    "dagomapro430bowden",
+    "dagomapro430directdrive",
+    "dagomapro430dual",
+    "pro430bowden",
+    "pro430directdrive",
+    "pro430dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 430,
+    "y": 320,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": {
+    "nozzle": 430
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "config": "Bowden",
+      "definition": "dagoma_pro_430_bowden",
+      "nozzles": [
+       "Brass 0.4mm",
+       "Brass 0.8mm",
+       "Brass 1.0mm",
+       "Serie 0.2mm",
+       "Serie 0.4mm",
+       "Serie 0.6mm",
+       "Serie 0.8mm",
+       "Serie 1.0mm",
+       "Serie 1.2mm",
+       "Steel 0.4mm",
+       "Steel 0.8mm"
+      ]
+     },
+     {
+      "config": "Direct Drive",
+      "definition": "dagoma_pro_430_directdrive",
+      "nozzles": [
+       "Brass 0.4mm",
+       "Brass 0.8mm",
+       "Brass 1.0mm",
+       "Serie 0.2mm",
+       "Serie 0.4mm",
+       "Serie 0.6mm",
+       "Serie 0.8mm",
+       "Serie 1.0mm",
+       "Serie 1.2mm",
+       "Steel 0.4mm",
+       "Steel 0.8mm"
+      ]
+     },
+     {
+      "config": "Dual",
+      "definition": "dagoma_pro_430_dual",
+      "nozzles": [
+       "Brass 0.4mm",
+       "Brass 0.8mm",
+       "Brass 1.0mm",
+       "Serie 0.2mm",
+       "Serie 0.4mm",
+       "Serie 0.6mm",
+       "Serie 0.8mm",
+       "Serie 1.0mm",
+       "Serie 1.2mm",
+       "Steel 0.4mm",
+       "Steel 0.8mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "dagoma-sigma",
+   "brand": "dagoma",
+   "model": "Sigma",
+   "aliases": [
+    "dagomasigma"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 195.55,
+    "y": 195.55,
+    "origin": [
+     -97.775,
+     -97.775
+    ],
+    "diameter": 195.55
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dagoma_sigma"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dagoma_sigma",
+      "nozzles": [
+       "0.4mm",
+       "0.8mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "dagoma-sigmapro500z",
+   "brand": "dagoma",
+   "model": "Sigma Pro 500Z",
+   "aliases": [
+    "dagomasigmapro500z",
+    "dagomasigmapro500zdual",
+    "sigmapro500zdual"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     -100,
+     -100
+    ],
+    "diameter": 200
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 501,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dagoma_sigma_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dagoma_sigma_pro",
+      "nozzles": [
+       "Brass 0.4mm",
+       "Brass 0.8mm",
+       "Steel 0.4mm",
+       "Steel 0.8mm"
+      ]
+     },
+     {
+      "config": "Dual",
+      "definition": "dagoma_sigma_pro_dual",
+      "nozzles": [
+       "Brass 0.4mm",
+       "Brass 0.8mm",
+       "Steel 0.4mm",
+       "Steel 0.8mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

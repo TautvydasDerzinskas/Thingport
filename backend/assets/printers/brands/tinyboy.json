@@ -1,0 +1,196 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "tinyboy",
+  "name": "TinyBoy"
+ },
+ "printers": [
+  {
+   "id": "tinyboy-e10",
+   "brand": "tinyboy",
+   "model": "E10",
+   "aliases": [
+    "e10j10l10m10",
+    "j10",
+    "l10",
+    "m10",
+    "tinyboye10j10l10m10"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 100,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 105,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tinyboy_e10"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tinyboy_e10",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "tinyboy-e16",
+   "brand": "tinyboy",
+   "model": "E16",
+   "aliases": [
+    "e16l16m16",
+    "l16",
+    "m16",
+    "tinyboye16l16m16"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 100,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 165,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tinyboy_e16"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tinyboy_e16",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "tinyboy-fabrikatormini15",
+   "brand": "tinyboy",
+   "model": "Fabrikator Mini 1.5",
+   "aliases": [
+    "tinyboyfabrikatormini15"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 80,
+    "y": 80,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 80,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tinyboy_fabrikator15"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tinyboy_fabrikator15",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "tinyboy-ra20",
+   "brand": "tinyboy",
+   "model": "RA20",
+   "aliases": [
+    "tinyboyra20"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 120,
+    "y": 120,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tinyboy_ra20"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tinyboy_ra20",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,53 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "deltaprintr",
+  "name": "Deltaprintr"
+ },
+ "printers": [
+  {
+   "id": "deltaprintr-deltago",
+   "brand": "deltaprintr",
+   "model": "Delta Go",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 115,
+    "y": 115,
+    "origin": [
+     -57.5,
+     -57.5
+    ],
+    "diameter": 115
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 154,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "delta_go"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "delta_go",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

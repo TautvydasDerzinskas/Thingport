@@ -1,0 +1,142 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "cocooncreate",
+  "name": "Cocoon Create"
+ },
+ "printers": [
+  {
+   "id": "cocooncreate-cocooncreate",
+   "brand": "cocooncreate",
+   "model": "Cocoon Create",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "cocoon_create"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cocoon_create",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "cocooncreate-modelmaker",
+   "brand": "cocooncreate",
+   "model": "ModelMaker",
+   "aliases": [
+    "cocooncreatemodelmaker"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 120,
+    "y": 135,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "cocoon_create_modelmaker"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cocoon_create_modelmaker",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "cocooncreate-touch",
+   "brand": "cocooncreate",
+   "model": "Touch",
+   "aliases": [
+    "cocooncreatetouch"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "cocoon_create_touch"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cocoon_create_touch",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

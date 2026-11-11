@@ -1,0 +1,95 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "snakeoilxy",
+  "name": "SnakeOilXY"
+ },
+ "printers": [
+  {
+   "id": "snakeoilxy-snakeoilstandard180",
+   "brand": "snakeoilxy",
+   "model": "SnakeOil Standard 180",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "snakeoil_standard_180"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "snakeoil_standard_180",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "snakeoilxy-snakeoilstandard250",
+   "brand": "snakeoilxy",
+   "model": "SnakeOil Standard 250",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 230,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "snakeoil_standard_250"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "snakeoil_standard_250",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

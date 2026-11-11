@@ -1,0 +1,86 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "jubilee",
+  "name": "Jubilee"
+ },
+ "printers": [
+  {
+   "id": "jubilee-jubilee",
+   "brand": "jubilee",
+   "model": "Jubilee",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "Jubilee"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Jubilee",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Jubilee",
+         "defaultProcess": "0.2mm V6, aesthetic @Jubilee",
+         "processes": [
+          {
+           "name": "0.2mm V6, aesthetic @Jubilee",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm V6, functional @Jubilee",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "Volcano 0.4": [
+        {
+         "name": "Jubilee Volcano 0.4mm",
+         "defaultProcess": "0.2mm Volcano, aesthetic @Jubilee",
+         "processes": [
+          {
+           "name": "0.2mm Volcano, aesthetic @Jubilee",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Volcano, functional @Jubilee",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -1,0 +1,280 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "coprint",
+  "name": "Co Print"
+ },
+ "printers": [
+  {
+   "id": "coprint-chromaset",
+   "brand": "coprint",
+   "model": "ChromaSet",
+   "aliases": [
+    "coprintchromaset"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 290,
+    "y": 283,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 330,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Co_Print_ChromaSet"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Co Print ChromaSet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3 Plus",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle fast",
+         "defaultProcess": "0.2mm Fast @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Co Print ChromaSet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3 Plus",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle fast",
+         "defaultProcess": "0.2mm Fast @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Co Print ChromaSet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3 Plus",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle fast",
+         "defaultProcess": "0.2mm Fast @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Co Print ChromaSet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3 Plus",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle fast",
+         "defaultProcess": "0.2mm Fast @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Fast @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Co Print ChromaSet 0.4 nozzle",
+         "defaultProcess": "0.2mm Standard @Co Print ChromaSet 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Standard @Co Print ChromaSet 0.4",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

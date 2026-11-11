@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "easyarts",
+  "name": "EasyArts"
+ },
+ "printers": [
+  {
+   "id": "easyarts-ares",
+   "brand": "easyarts",
+   "model": "Ares",
+   "aliases": [
+    "easyartsares"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     -90,
+     -90
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "easyarts_ares"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "easyarts_ares",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

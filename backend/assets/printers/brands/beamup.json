@@ -1,0 +1,99 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "beamup",
+  "name": "BeamUp"
+ },
+ "printers": [
+  {
+   "id": "beamup-l",
+   "brand": "beamup",
+   "model": "L",
+   "aliases": [
+    "beamupl"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 320,
+    "y": 320,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "beamup_l"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "beamup_l",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "beamup-s",
+   "brand": "beamup",
+   "model": "S",
+   "aliases": [
+    "beamups"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 130,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "beamup_s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "beamup_s",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

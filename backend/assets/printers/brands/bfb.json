@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "bfb",
+  "name": "BFB"
+ },
+ "printers": [
+  {
+   "id": "bfb-bfb",
+   "brand": "bfb",
+   "model": "BFB",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 275,
+    "y": 265,
+    "origin": [
+     -137.5,
+     -132.5
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "bfb",
+   "relativeE": false,
+   "codes": {
+    "cura": "bfb"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "bfb",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

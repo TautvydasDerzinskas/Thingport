@@ -1,0 +1,138 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "katihalarge",
+  "name": "Kati Hal ARGE"
+ },
+ "printers": [
+  {
+   "id": "katihalarge-alya",
+   "brand": "katihalarge",
+   "model": "Alya",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 100,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 133,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "alya3dp"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "alya3dp",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "katihalarge-alyanx",
+   "brand": "katihalarge",
+   "model": "Alya NX",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 160,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 170,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "alyanx3dp"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "alyanx3dp",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "katihalarge-kupido",
+   "brand": "katihalarge",
+   "model": "Kupido",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 195,
+    "y": 195,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 190,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "kupido"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "kupido",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

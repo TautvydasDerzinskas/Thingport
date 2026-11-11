@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "matterhackers",
+  "name": "MatterHackers"
+ },
+ "printers": [
+  {
+   "id": "matterhackers-pulsexee444m",
+   "brand": "matterhackers",
+   "model": "Pulse XE E-444M",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 215,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "matterhackers_pulsexe_e444m"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "matterhackers_pulsexe_e444m",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

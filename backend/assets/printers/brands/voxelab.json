@@ -1,0 +1,192 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "voxelab",
+  "name": "Voxelab"
+ },
+ "printers": [
+  {
+   "id": "voxelab-aquilax2",
+   "brand": "voxelab",
+   "model": "Aquila X2",
+   "aliases": [
+    "voxelabaquilax2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Voxelab-Aquila-X2"
+   },
+   "device": null,
+   "sources": [
+    "bambustudio",
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Voxelab Aquila X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Voxelab Aquila X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Voxelab AquilaX2",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Voxelab AquilaX2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Voxelab AquilaX2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Voxelab Aquila X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Voxelab Aquila X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Voxelab AquilaX2",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Voxelab AquilaX2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Voxelab AquilaX2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Voxelab Aquila X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Voxelab Aquila X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Voxelab AquilaX2",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Voxelab AquilaX2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Voxelab AquilaX2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Voxelab Aquila X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Voxelab Aquila X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Voxelab AquilaX2",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Voxelab AquilaX2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Voxelab AquilaX2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Voxelab Aquila X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Voxelab Aquila X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Voxelab AquilaX2",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Voxelab AquilaX2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Voxelab AquilaX2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "bambustudio": [
+     {
+      "model": "Voxelab Aquila X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Voxelab Aquila X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Voxelab AquilaX2",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Voxelab AquilaX2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Voxelab AquilaX2",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}
