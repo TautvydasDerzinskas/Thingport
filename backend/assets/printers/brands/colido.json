@@ -77,7 +77,22 @@
            "name": "0.28mm Extra Draft @CoLiDo 160 V2",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoLiDo X16",
+           "PETG": "Generic PETG @CoLiDo X16",
+           "PLA": "Generic PLA @CoLiDo X16",
+           "TPU": "Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoLiDo X16",
+           "generic petg": "Generic PETG @CoLiDo X16",
+           "generic pla": "Generic PLA @CoLiDo X16",
+           "generic tpu": "Generic TPU @CoLiDo X16"
+          }
+         }
         }
        ]
       }
@@ -116,7 +131,22 @@
            "name": "0.28mm Extra Draft @CoLiDo 160 V2",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo X16",
+           "PETG": "CoLiDo Generic PETG @CoLiDo X16",
+           "PLA": "CoLiDo Generic PLA @CoLiDo X16",
+           "TPU": "CoLiDo Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo X16",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo X16",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo X16",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo X16"
+          }
+         }
         }
        ]
       }
@@ -155,7 +185,22 @@
            "name": "0.28mm Extra Draft @CoLiDo 160 V2",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo X16",
+           "PETG": "CoLiDo Generic PETG @CoLiDo X16",
+           "PLA": "CoLiDo Generic PLA @CoLiDo X16",
+           "TPU": "CoLiDo Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo X16",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo X16",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo X16",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo X16"
+          }
+         }
         }
        ]
       }
@@ -236,7 +281,22 @@
            "name": "0.28mm Extra Draft @CoLiDo DIY 4.0",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @CoLiDo DIY 4.0",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoLiDo DIY 4.0",
+           "PETG": "Generic PETG @CoLiDo DIY 4.0",
+           "PLA": "Generic PLA @CoLiDo DIY 4.0",
+           "TPU": "Generic TPU @CoLiDo DIY 4.0"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoLiDo DIY 4.0",
+           "generic petg": "Generic PETG @CoLiDo DIY 4.0",
+           "generic pla": "Generic PLA @CoLiDo DIY 4.0",
+           "generic tpu": "Generic TPU @CoLiDo DIY 4.0"
+          }
+         }
         }
        ]
       }
@@ -275,7 +335,22 @@
            "name": "0.28mm Extra Draft @CoLiDo DIY 4.0",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo DIY 4.0",
+           "PETG": "CoLiDo Generic PETG @CoLiDo DIY 4.0",
+           "PLA": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+           "TPU": "CoLiDo Generic TPU @CoLiDo DIY 4.0"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo DIY 4.0",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo DIY 4.0",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo DIY 4.0"
+          }
+         }
         }
        ]
       }
@@ -314,7 +389,22 @@
            "name": "0.28mm Extra Draft @CoLiDo DIY 4.0",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo DIY 4.0",
+           "PETG": "CoLiDo Generic PETG @CoLiDo DIY 4.0",
+           "PLA": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+           "TPU": "CoLiDo Generic TPU @CoLiDo DIY 4.0"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo DIY 4.0",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo DIY 4.0",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo DIY 4.0"
+          }
+         }
         }
        ]
       }
@@ -375,7 +465,16 @@
            "name": "0.20mm Standard @CoLiDo DIY 4.0 V2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2",
+         "filaments": {
+          "types": {
+           "PLA": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          },
+          "products": {
+           "colido pla+": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          }
+         }
         }
        ]
       }
@@ -394,7 +493,16 @@
            "name": "0.20mm Standard @CoLiDo DIY 4.0 V2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2",
+         "filaments": {
+          "types": {
+           "PLA": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          },
+          "products": {
+           "colido pla+": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          }
+         }
         }
        ]
       }
@@ -413,7 +521,16 @@
            "name": "0.20mm Standard @CoLiDo DIY 4.0 V2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2",
+         "filaments": {
+          "types": {
+           "PLA": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          },
+          "products": {
+           "colido pla+": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          }
+         }
         }
        ]
       }
@@ -502,7 +619,21 @@
            "name": "0.32mm Standard @CoLiDo SR1",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo PLA @CoLiDo SR1",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo ABS @CoLiDo SR1",
+           "PETG": "CoLiDo PETG @CoLiDo SR1",
+           "PLA": "CoLiDo PLA @CoLiDo SR1"
+          },
+          "products": {
+           "colido abs": "CoLiDo ABS @CoLiDo SR1",
+           "colido petg": "CoLiDo PETG @CoLiDo SR1",
+           "colido pla": "CoLiDo PLA @CoLiDo SR1",
+           "colido pla silk": "CoLiDo PLA Silk @CoLiDo SR1"
+          }
+         }
         }
        ]
       }
@@ -549,7 +680,21 @@
            "name": "0.32mm Standard @CoLiDo SR1",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo PLA @CoLiDo SR1",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo ABS @CoLiDo SR1",
+           "PETG": "CoLiDo PETG @CoLiDo SR1",
+           "PLA": "CoLiDo PLA @CoLiDo SR1"
+          },
+          "products": {
+           "colido abs": "CoLiDo ABS @CoLiDo SR1",
+           "colido petg": "CoLiDo PETG @CoLiDo SR1",
+           "colido pla": "CoLiDo PLA @CoLiDo SR1",
+           "colido pla silk": "CoLiDo PLA Silk @CoLiDo SR1"
+          }
+         }
         }
        ]
       }
@@ -596,7 +741,21 @@
            "name": "0.32mm Standard @CoLiDo SR1",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo PLA @CoLiDo SR1",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo ABS @CoLiDo SR1",
+           "PETG": "CoLiDo PETG @CoLiDo SR1",
+           "PLA": "CoLiDo PLA @CoLiDo SR1"
+          },
+          "products": {
+           "colido abs": "CoLiDo ABS @CoLiDo SR1",
+           "colido petg": "CoLiDo PETG @CoLiDo SR1",
+           "colido pla": "CoLiDo PLA @CoLiDo SR1",
+           "colido pla silk": "CoLiDo PLA Silk @CoLiDo SR1"
+          }
+         }
         }
        ]
       }
@@ -677,7 +836,22 @@
            "name": "0.28mm Extra Draft @CoLiDo X16",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoLiDo X16",
+           "PETG": "Generic PETG @CoLiDo X16",
+           "PLA": "Generic PLA @CoLiDo X16",
+           "TPU": "Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoLiDo X16",
+           "generic petg": "Generic PETG @CoLiDo X16",
+           "generic pla": "Generic PLA @CoLiDo X16",
+           "generic tpu": "Generic TPU @CoLiDo X16"
+          }
+         }
         }
        ]
       }
@@ -716,7 +890,22 @@
            "name": "0.28mm Extra Draft @CoLiDo X16",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo X16",
+           "PETG": "CoLiDo Generic PETG @CoLiDo X16",
+           "PLA": "CoLiDo Generic PLA @CoLiDo X16",
+           "TPU": "CoLiDo Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo X16",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo X16",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo X16",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo X16"
+          }
+         }
         }
        ]
       }
@@ -755,7 +944,22 @@
            "name": "0.28mm Extra Draft @CoLiDo X16",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo X16",
+           "PETG": "CoLiDo Generic PETG @CoLiDo X16",
+           "PLA": "CoLiDo Generic PLA @CoLiDo X16",
+           "TPU": "CoLiDo Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo X16",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo X16",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo X16",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo X16"
+          }
+         }
         }
        ]
       }

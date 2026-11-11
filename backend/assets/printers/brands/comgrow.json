@@ -58,7 +58,16 @@
            "name": "0.20mm Optimal @Comgrow T300 0.4 - official",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PETG @Comgrow",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Comgrow T300"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Comgrow T300"
+          }
+         }
         }
        ]
       }
@@ -77,7 +86,16 @@
            "name": "0.20mm Optimal @Comgrow T300 0.4 - official",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "PLA": "Comgrow T300 PLA"
+          },
+          "products": {
+           "comgrow t300 pla": "Comgrow T300 PLA"
+          }
+         }
         }
        ]
       }
@@ -96,7 +114,16 @@
            "name": "0.20mm Optimal @Comgrow T300 0.4 - official",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "PLA": "Comgrow T300 PLA"
+          },
+          "products": {
+           "comgrow t300 pla": "Comgrow T300 PLA"
+          }
+         }
         }
        ]
       }
@@ -115,7 +142,16 @@
            "name": "0.20mm Optimal @Comgrow T300 0.4 - official",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "PLA": "Comgrow T300 PLA"
+          },
+          "products": {
+           "comgrow t300 pla": "Comgrow T300 PLA"
+          }
+         }
         }
        ]
       }
@@ -200,7 +236,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.4",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PETG @Comgrow",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Comgrow",
+           "PETG": "Generic PETG @Comgrow",
+           "PLA": "Generic PLA @Comgrow"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Comgrow",
+           "generic petg": "Generic PETG @Comgrow",
+           "generic pla": "Generic PLA @Comgrow"
+          }
+         }
         }
        ],
        "0.6": [
@@ -224,7 +273,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.6",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PETG @Comgrow",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Comgrow",
+           "PETG": "Generic PETG @Comgrow",
+           "PLA": "Generic PLA @Comgrow"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Comgrow",
+           "generic petg": "Generic PETG @Comgrow",
+           "generic pla": "Generic PLA @Comgrow"
+          }
+         }
         }
        ],
        "0.8": [
@@ -252,7 +314,20 @@
            "name": "0.56mm SuperChunky @Comgrow T500 0.8",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PETG @Comgrow",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Comgrow",
+           "PETG": "Generic PETG @Comgrow",
+           "PLA": "Generic PLA @Comgrow"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Comgrow",
+           "generic petg": "Generic PETG @Comgrow",
+           "generic pla": "Generic PLA @Comgrow"
+          }
+         }
         }
        ]
       }
@@ -291,7 +366,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.4",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ],
        "0.6": [
@@ -315,7 +403,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.6",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ],
        "0.8": [
@@ -343,7 +444,20 @@
            "name": "0.56mm SuperChunky @Comgrow T500 0.8",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -382,7 +496,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.4",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ],
        "0.6": [
@@ -406,7 +533,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.6",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ],
        "0.8": [
@@ -434,7 +574,20 @@
            "name": "0.56mm SuperChunky @Comgrow T500 0.8",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -473,7 +626,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.4",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ],
        "0.6": [
@@ -497,7 +663,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.6",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ],
        "0.8": [
@@ -525,7 +704,20 @@
            "name": "0.56mm SuperChunky @Comgrow T500 0.8",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -564,7 +756,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.4",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ],
        "0.6": [
@@ -588,7 +793,20 @@
            "name": "0.28mm SuperDraft @Comgrow T500 0.6",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ],
        "0.8": [
@@ -616,7 +834,20 @@
            "name": "0.56mm SuperChunky @Comgrow T500 0.8",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
         }
        ]
       }

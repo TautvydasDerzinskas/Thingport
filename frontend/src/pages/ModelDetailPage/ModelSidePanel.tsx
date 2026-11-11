@@ -556,6 +556,7 @@ export default function ModelSidePanel({
             onPick={() => {}}
           />
         )}
+        {adapted.dialog}
 
         {/* Another user's model counts their views and prints, not the viewer's: its collections sit by the copy. */}
         {!owner && (

@@ -92,7 +92,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @DeltaMaker",
+           "PLA": "Generic PLA @DeltaMaker",
+           "TPU": "Generic TPU @DeltaMaker"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "generic petg": "Generic PETG @DeltaMaker",
+           "generic pla": "Generic PLA @DeltaMaker",
+           "generic tpu": "Generic TPU @DeltaMaker"
+          }
+         }
         }
        ]
       }
@@ -119,7 +133,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -146,7 +174,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -173,7 +215,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -269,7 +325,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @DeltaMaker",
+           "PLA": "Generic PLA @DeltaMaker",
+           "TPU": "Generic TPU @DeltaMaker"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "generic petg": "Generic PETG @DeltaMaker",
+           "generic pla": "Generic PLA @DeltaMaker",
+           "generic tpu": "Generic TPU @DeltaMaker"
+          }
+         }
         }
        ]
       }
@@ -296,7 +366,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -323,7 +407,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -350,7 +448,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -446,7 +558,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @DeltaMaker",
+           "PLA": "Generic PLA @DeltaMaker",
+           "TPU": "Generic TPU @DeltaMaker"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "generic petg": "Generic PETG @DeltaMaker",
+           "generic pla": "Generic PLA @DeltaMaker",
+           "generic tpu": "Generic TPU @DeltaMaker"
+          }
+         }
         }
        ]
       }
@@ -473,7 +599,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -500,7 +640,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -527,7 +681,21 @@
            "name": "0.25mm Draft @DeltaMaker",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
         }
        ]
       }

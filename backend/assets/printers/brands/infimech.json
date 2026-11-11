@@ -91,7 +91,27 @@
            "name": "0.24mm Draft @InfiMech EX",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech PLA Basic @EX",
+         "filaments": {
+          "types": {
+           "ABS": "InfiMech ABS @EX",
+           "PA-CF": "InfiMech PA-CF @EX",
+           "PC": "InfiMech PC @EX",
+           "PETG": "InfiMech PETG @EX",
+           "PLA": "InfiMech PLA Basic @EX",
+           "TPU": "InfiMech TPU Basic @EX"
+          },
+          "products": {
+           "infimech abs": "InfiMech ABS @EX",
+           "infimech pa-cf": "InfiMech PA-CF @EX",
+           "infimech pc": "InfiMech PC @EX",
+           "infimech petg": "InfiMech PETG @EX",
+           "infimech pla basic": "InfiMech PLA Basic @EX",
+           "infimech pla hyper": "InfiMech PLA Hyper @EX",
+           "infimech tpu basic": "InfiMech TPU Basic @EX"
+          }
+         }
         }
        ]
       }
@@ -126,7 +146,27 @@
            "name": "0.24mm Draft @InfiMech EX",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech PLA Basic @EX",
+         "filaments": {
+          "types": {
+           "ABS": "InfiMech ABS @EX",
+           "PA-CF": "InfiMech PA-CF @EX",
+           "PC": "InfiMech PC @EX",
+           "PETG Basic": "InfiMech PETG @EX",
+           "PLA": "InfiMech PLA Basic @EX",
+           "TPU": "InfiMech TPU Basic @EX"
+          },
+          "products": {
+           "infimech abs": "InfiMech ABS @EX",
+           "infimech pa-cf": "InfiMech PA-CF @EX",
+           "infimech pc": "InfiMech PC @EX",
+           "infimech petg": "InfiMech PETG @EX",
+           "infimech pla basic": "InfiMech PLA Basic @EX",
+           "infimech pla hyper": "InfiMech PLA Hyper @EX",
+           "infimech tpu basic": "InfiMech TPU Basic @EX"
+          }
+         }
         }
        ]
       }
@@ -221,7 +261,27 @@
            "name": "0.24mm Draft @InfiMech EX+APS",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech PLA Basic @EX+APS",
+         "filaments": {
+          "types": {
+           "ABS": "InfiMech ABS @EX+APS",
+           "PA-CF": "InfiMech PA-CF @EX+APS",
+           "PC": "InfiMech PC @EX+APS",
+           "PETG": "InfiMech PETG @EX+APS",
+           "PLA": "InfiMech PLA Basic @EX+APS",
+           "TPU": "InfiMech TPU Basic @EX+APS"
+          },
+          "products": {
+           "infimech abs": "InfiMech ABS @EX+APS",
+           "infimech pa-cf": "InfiMech PA-CF @EX+APS",
+           "infimech pc": "InfiMech PC @EX+APS",
+           "infimech petg": "InfiMech PETG @EX+APS",
+           "infimech pla basic": "InfiMech PLA Basic @EX+APS",
+           "infimech pla hyper": "InfiMech PLA Hyper @EX+APS",
+           "infimech tpu basic": "InfiMech TPU Basic @EX+APS"
+          }
+         }
         }
        ]
       }
@@ -256,7 +316,27 @@
            "name": "0.24mm Draft @InfiMech EX+APS",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech PLA Basic @EX+APS",
+         "filaments": {
+          "types": {
+           "ABS": "InfiMech ABS @EX+APS",
+           "PA-CF": "InfiMech PA-CF @EX+APS",
+           "PC": "InfiMech PC @EX+APS",
+           "PETG Basic": "InfiMech PETG @EX+APS",
+           "PLA": "InfiMech PLA Basic @EX+APS",
+           "TPU": "InfiMech TPU Basic @EX+APS"
+          },
+          "products": {
+           "infimech abs": "InfiMech ABS @EX+APS",
+           "infimech pa-cf": "InfiMech PA-CF @EX+APS",
+           "infimech pc": "InfiMech PC @EX+APS",
+           "infimech petg": "InfiMech PETG @EX+APS",
+           "infimech pla basic": "InfiMech PLA Basic @EX+APS",
+           "infimech pla hyper": "InfiMech PLA Hyper @EX+APS",
+           "infimech tpu basic": "InfiMech TPU Basic @EX+APS"
+          }
+         }
         }
        ]
       }
@@ -335,7 +415,34 @@
            "name": "0.24mm Draft @InfiMech TX",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @InfiMech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @InfiMech",
+           "PA-CF": "Generic PA-CF @InfiMech",
+           "PC": "Generic PC @InfiMech",
+           "PETG": "Generic PETG @InfiMech",
+           "PLA": "Generic PLA @InfiMech",
+           "TPU": "Generic TPU @InfiMech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @InfiMech",
+           "generic pa-cf": "Generic PA-CF @InfiMech",
+           "generic pc": "Generic PC @InfiMech",
+           "generic petg": "Generic PETG @InfiMech",
+           "generic pla": "Generic PLA @InfiMech",
+           "generic tpu": "Generic TPU @InfiMech",
+           "infimech pla hyper": "InfiMech PLA Hyper",
+           "other abs": "Other ABS",
+           "other pa-cf": "Other PA-CF",
+           "other pc": "Other PC",
+           "other petg": "Other PETG",
+           "other pla": "Other PLA",
+           "other pla hyper": "Other PLA Hyper",
+           "other tpu": "Other TPU"
+          }
+         }
         }
        ]
       }
@@ -370,7 +477,34 @@
            "name": "0.24mm Draft @InfiMech TX",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech PLA",
+         "filaments": {
+          "types": {
+           "ABS": "InfiMech Generic ABS",
+           "PA-CF": "InfiMech Generic PA-CF",
+           "PC": "InfiMech Generic PC",
+           "PETG": "InfiMech Generic PETG",
+           "PLA": "InfiMech Generic PLA",
+           "TPU": "InfiMech Generic TPU"
+          },
+          "products": {
+           "infimech generic abs": "InfiMech Generic ABS",
+           "infimech generic pa-cf": "InfiMech Generic PA-CF",
+           "infimech generic pc": "InfiMech Generic PC",
+           "infimech generic petg": "InfiMech Generic PETG",
+           "infimech generic pla": "InfiMech Generic PLA",
+           "infimech generic tpu": "InfiMech Generic TPU",
+           "infimech pla hyper": "InfiMech PLA Hyper",
+           "other abs": "Other ABS",
+           "other pa-cf": "Other PA-CF",
+           "other pc": "Other PC",
+           "other petg": "Other PETG",
+           "other pla": "Other PLA",
+           "other pla hyper": "Other PLA Hyper",
+           "other tpu": "Other TPU"
+          }
+         }
         }
        ]
       }
@@ -405,7 +539,34 @@
            "name": "0.24mm Draft @InfiMech TX",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "InfiMech Generic ABS",
+           "PA-CF": "InfiMech Generic PA-CF",
+           "PC": "InfiMech Generic PC",
+           "PETG": "InfiMech Generic PETG",
+           "PLA": "InfiMech Generic PLA",
+           "TPU": "InfiMech Generic TPU"
+          },
+          "products": {
+           "infimech generic abs": "InfiMech Generic ABS",
+           "infimech generic pa-cf": "InfiMech Generic PA-CF",
+           "infimech generic pc": "InfiMech Generic PC",
+           "infimech generic petg": "InfiMech Generic PETG",
+           "infimech generic pla": "InfiMech Generic PLA",
+           "infimech generic tpu": "InfiMech Generic TPU",
+           "infimech pla hyper": "InfiMech PLA Hyper",
+           "other abs": "Other ABS",
+           "other pa-cf": "Other PA-CF",
+           "other pc": "Other PC",
+           "other petg": "Other PETG",
+           "other pla": "Other PLA",
+           "other pla hyper": "Other PLA Hyper",
+           "other tpu": "Other TPU"
+          }
+         }
         }
        ]
       }
@@ -440,7 +601,34 @@
            "name": "0.24mm Draft @InfiMech TX",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "InfiMech Generic ABS",
+           "PA-CF": "InfiMech Generic PA-CF",
+           "PC": "InfiMech Generic PC",
+           "PETG": "InfiMech Generic PETG",
+           "PLA": "InfiMech Generic PLA",
+           "TPU": "InfiMech Generic TPU"
+          },
+          "products": {
+           "infimech generic abs": "InfiMech Generic ABS",
+           "infimech generic pa-cf": "InfiMech Generic PA-CF",
+           "infimech generic pc": "InfiMech Generic PC",
+           "infimech generic petg": "InfiMech Generic PETG",
+           "infimech generic pla": "InfiMech Generic PLA",
+           "infimech generic tpu": "InfiMech Generic TPU",
+           "infimech pla hyper": "InfiMech PLA Hyper",
+           "other abs": "Other ABS",
+           "other pa-cf": "Other PA-CF",
+           "other pc": "Other PC",
+           "other petg": "Other PETG",
+           "other pla": "Other PLA",
+           "other pla hyper": "Other PLA Hyper",
+           "other tpu": "Other TPU"
+          }
+         }
         }
        ]
       }
@@ -475,7 +663,34 @@
            "name": "0.24mm Draft @InfiMech TX",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "InfiMech Generic ABS",
+           "PA-CF": "InfiMech Generic PA-CF",
+           "PC": "InfiMech Generic PC",
+           "PETG": "InfiMech Generic PETG",
+           "PLA": "InfiMech Generic PLA",
+           "TPU": "InfiMech Generic TPU"
+          },
+          "products": {
+           "infimech generic abs": "InfiMech Generic ABS",
+           "infimech generic pa-cf": "InfiMech Generic PA-CF",
+           "infimech generic pc": "InfiMech Generic PC",
+           "infimech generic petg": "InfiMech Generic PETG",
+           "infimech generic pla": "InfiMech Generic PLA",
+           "infimech generic tpu": "InfiMech Generic TPU",
+           "infimech pla hyper": "InfiMech PLA Hyper",
+           "other abs": "Other ABS",
+           "other pa-cf": "Other PA-CF",
+           "other pc": "Other PC",
+           "other petg": "Other PETG",
+           "other pla": "Other PLA",
+           "other pla hyper": "Other PLA Hyper",
+           "other tpu": "Other TPU"
+          }
+         }
         }
        ]
       }
@@ -553,7 +768,34 @@
            "name": "0.24mm Draft @InfiMech TX HSN",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @InfiMech",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @HSN",
+           "PA-CF": "Other PA-CF @HSN",
+           "PC": "Other PC @HSN",
+           "PETG": "Other PETG @HSN",
+           "PLA": "Other PLA @HSN",
+           "TPU": "Other TPU @HSN"
+          },
+          "products": {
+           "infimech abs": "InfiMech ABS @HSN",
+           "infimech pa-cf": "InfiMech PA-CF @HSN",
+           "infimech pc": "InfiMech PC @HSN",
+           "infimech petg": "InfiMech PETG @HSN",
+           "infimech pla": "InfiMech PLA @HSN",
+           "infimech pla hyper": "InfiMech PLA Hyper @HSN",
+           "infimech tpu": "InfiMech TPU @HSN",
+           "other abs": "Other ABS @HSN",
+           "other pa-cf": "Other PA-CF @HSN",
+           "other pc": "Other PC @HSN",
+           "other petg": "Other PETG @HSN",
+           "other pla": "Other PLA @HSN",
+           "other pla hyper": "Other PLA Hyper @HSN",
+           "other tpu": "Other TPU @HSN"
+          }
+         }
         }
        ]
       }
@@ -588,7 +830,34 @@
            "name": "0.24mm Draft @InfiMech TX HSN",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @HSN",
+           "PA-CF": "Other PA-CF @HSN",
+           "PC": "Other PC @HSN",
+           "PETG": "Other PETG @HSN",
+           "PLA": "Other PLA @HSN",
+           "TPU": "Other TPU @HSN"
+          },
+          "products": {
+           "infimech abs": "InfiMech ABS @HSN",
+           "infimech pa-cf": "InfiMech PA-CF @HSN",
+           "infimech pc": "InfiMech PC @HSN",
+           "infimech petg": "InfiMech PETG @HSN",
+           "infimech pla": "InfiMech PLA @HSN",
+           "infimech pla hyper": "InfiMech PLA Hyper @HSN",
+           "infimech tpu": "InfiMech TPU @HSN",
+           "other abs": "Other ABS @HSN",
+           "other pa-cf": "Other PA-CF @HSN",
+           "other pc": "Other PC @HSN",
+           "other petg": "Other PETG @HSN",
+           "other pla": "Other PLA @HSN",
+           "other pla hyper": "Other PLA Hyper @HSN",
+           "other tpu": "Other TPU @HSN"
+          }
+         }
         }
        ]
       }
@@ -623,7 +892,34 @@
            "name": "0.24mm Draft @InfiMech TX HSN",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @HSN",
+           "PA-CF": "Other PA-CF @HSN",
+           "PC": "Other PC @HSN",
+           "PETG": "Other PETG @HSN",
+           "PLA": "Other PLA @HSN",
+           "TPU": "Other TPU @HSN"
+          },
+          "products": {
+           "infimech abs": "InfiMech ABS @HSN",
+           "infimech pa-cf": "InfiMech PA-CF @HSN",
+           "infimech pc": "InfiMech PC @HSN",
+           "infimech petg": "InfiMech PETG @HSN",
+           "infimech pla": "InfiMech PLA @HSN",
+           "infimech pla hyper": "InfiMech PLA Hyper @HSN",
+           "infimech tpu": "InfiMech TPU @HSN",
+           "other abs": "Other ABS @HSN",
+           "other pa-cf": "Other PA-CF @HSN",
+           "other pc": "Other PC @HSN",
+           "other petg": "Other PETG @HSN",
+           "other pla": "Other PLA @HSN",
+           "other pla hyper": "Other PLA Hyper @HSN",
+           "other tpu": "Other TPU @HSN"
+          }
+         }
         }
        ]
       }
@@ -658,7 +954,34 @@
            "name": "0.24mm Draft @InfiMech TX HSN",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "InfiMech Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @HSN",
+           "PA-CF": "Other PA-CF @HSN",
+           "PC": "Other PC @HSN",
+           "PETG": "Other PETG @HSN",
+           "PLA": "Other PLA @HSN",
+           "TPU": "Other TPU @HSN"
+          },
+          "products": {
+           "infimech abs": "InfiMech ABS @HSN",
+           "infimech pa-cf": "InfiMech PA-CF @HSN",
+           "infimech pc": "InfiMech PC @HSN",
+           "infimech petg": "InfiMech PETG @HSN",
+           "infimech pla": "InfiMech PLA @HSN",
+           "infimech pla hyper": "InfiMech PLA Hyper @HSN",
+           "infimech tpu": "InfiMech TPU @HSN",
+           "other abs": "Other ABS @HSN",
+           "other pa-cf": "Other PA-CF @HSN",
+           "other pc": "Other PC @HSN",
+           "other petg": "Other PETG @HSN",
+           "other pla": "Other PLA @HSN",
+           "other pla hyper": "Other PLA Hyper @HSN",
+           "other tpu": "Other TPU @HSN"
+          }
+         }
         }
        ]
       }

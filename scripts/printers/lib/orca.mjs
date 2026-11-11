@@ -70,15 +70,120 @@ export function readDevices(dir) {
   return out;
 }
 
+// The vendor whose filaments OrcaSlicer 2.3+ and its forks install for every printer, and whose bases other vendors'
+// filaments may inherit from.
+const LIBRARY = "OrcaFilamentLibrary";
+
+/**
+ * Every vendor's instantiated filament presets: name, type and the printer presets it goes with (a list or a
+ * condition; neither means every printer, as the library's do).
+ */
+function readFilaments(profiles, bundles, problems) {
+  const byVendor = new Map();
+  for (const bundle of bundles) {
+    const dir = bundle.slice(0, -5);
+    const presets = new Map();
+    for (const file of jsonFiles(path.join(profiles, dir, "filament"))) {
+      try {
+        const json = readJson(file);
+        if (json && typeof json === "object" && json.name) presets.set(json.name, json);
+      } catch (err) {
+        problems.push(`${path.relative(profiles, file)}: ${err.message}`);
+      }
+    }
+    if (presets.size) byVendor.set(dir, presets);
+  }
+  const library = byVendor.get(LIBRARY) ?? new Map();
+  const out = [];
+  for (const [dir, presets] of byVendor) {
+    const resolved = new Map();
+    const resolve = (name, seen) => {
+      if (resolved.has(name)) return resolved.get(name);
+      const own = presets.get(name) ?? library.get(name);
+      if (!own || seen.has(name)) return null;
+      const base = own.inherits ? (resolve(own.inherits, new Set(seen).add(name)) ?? {}) : {};
+      const merged = { ...base, ...own };
+      resolved.set(name, merged);
+      return merged;
+    };
+    for (const [name, own] of presets) {
+      if (String(own.instantiation ?? "true").toLowerCase() !== "true") continue;
+      const r = resolve(name, new Set());
+      if (!r) continue;
+      const type = String(first(r.filament_type) ?? "").trim();
+      if (!type) continue;
+      const printers = asList(r.compatible_printers);
+      let condition = null;
+      if (!printers.length && r.compatible_printers_condition) {
+        try {
+          condition = new Condition(String(first(r.compatible_printers_condition)));
+        } catch (err) {
+          problems.push(`${dir}: condition of filament ${name} not read: ${err.message}`);
+          continue;
+        }
+      }
+      out.push({
+        name,
+        type,
+        printers: new Set(printers),
+        condition,
+        universal: !printers.length && !condition,
+      });
+    }
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * The product a filament preset is for: its name without the printer it's tuned for ("Bambu PLA Basic @BBL A1M",
+ * "Anker Generic PLA 0.2 nozzle"), lower case. Slicers give one product different ids (Bambu Studio's GFA00 is
+ * OrcaSlicer's OFoiVqVM) but the same name. backend/src/adapter/filaments.ts reads names the same way.
+ */
+export function filamentProduct(name) {
+  return String(name)
+    .replace(/\s+@.*$/, "")
+    .replace(/\s+\d+(?:\.\d+)?\s*(?:mm\s*)?nozzle$/i, "")
+    .trim()
+    .toLowerCase();
+}
+
+/** The pick among filaments for one printer: a filament type's generic preset where there is one, else the shortest
+ *  name; a product its shortest name. */
+function better(a, b) {
+  const generic = (f) => (/\bgeneric\b/i.test(f.name) ? 0 : 1);
+  return generic(a) - generic(b) || a.name.length - b.name.length || a.name.localeCompare(b.name);
+}
+
+/** The filaments to name for a printer, by type ("PLA") and by product ("bambu pla basic"). */
+export function filamentChoices(filaments) {
+  const types = new Map();
+  const products = new Map();
+  for (const f of filaments) {
+    const t = types.get(f.type);
+    if (!t || better(f, t) < 0) types.set(f.type, f);
+    const key = filamentProduct(f.name);
+    const p = products.get(key);
+    if (key && (!p || better(f, p) < 0)) products.set(key, f);
+  }
+  const named = (map) =>
+    Object.fromEntries([...map].sort(([a], [b]) => a.localeCompare(b)).map(([k, f]) => [k, f.name]));
+  return { types: named(types), products: named(products) };
+}
+
 export function readOrcaProfiles(sourceDir, source) {
   const profiles = existsSync(path.join(sourceDir, "resources", "profiles"))
     ? path.join(sourceDir, "resources", "profiles")
     : sourceDir;
   const result = { vendors: [], problems: [] };
-
-  for (const bundle of readdirSync(profiles)
+  const bundles = readdirSync(profiles)
     .filter((f) => f.endsWith(".json"))
-    .sort()) {
+    .sort();
+  const filaments = readFilaments(profiles, bundles, result.problems);
+  const universal = filaments.filter((f) => f.universal);
+  const listed = filaments.filter((f) => !f.universal);
+  result.filaments = filamentChoices(universal);
+
+  for (const bundle of bundles) {
     const vendorDir = bundle.slice(0, -5);
     if (SKIP_VENDORS.has(vendorDir)) continue;
     const vendorPath = path.join(profiles, vendorDir);
@@ -198,7 +303,7 @@ export function readOrcaProfiles(sourceDir, source) {
       const extruderBeds = asList(r.extruder_printable_area)
         .map((a) => bedGeometry(parsePoints(a)))
         .filter(Boolean);
-      const fits = processes.filter((p) => {
+      const goesWith = (p) => {
         if (p.printers.has(name)) return true;
         if (!p.condition) return false;
         try {
@@ -206,7 +311,8 @@ export function readOrcaProfiles(sourceDir, source) {
         } catch {
           return false;
         }
-      });
+      };
+      const fits = processes.filter(goesWith);
       model.variants.push({
         preset: name,
         nozzle: nozzleName(r.printer_variant ?? nozzles[0]),
@@ -222,6 +328,8 @@ export function readOrcaProfiles(sourceDir, source) {
         processes: fits
           .map((p) => ({ name: p.name, layerHeight: p.layerHeight }))
           .sort((a, b) => (a.layerHeight ?? 0) - (b.layerHeight ?? 0) || a.name.localeCompare(b.name)),
+        defaultFilament: first(r.default_filament_profile) ?? null,
+        filaments: filamentChoices(listed.filter(goesWith)),
         multiMaterial: [
           String(r.is_support_multi_box) === "1" && "QIDI Box",
           String(r.support_multi_filament) === "1" && "multi-filament unit",

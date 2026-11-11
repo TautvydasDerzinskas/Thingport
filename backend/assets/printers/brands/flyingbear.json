@@ -191,7 +191,27 @@
            "name": "0.24mm Draft @FlyingBear Ghost 6 0.4 nozzle",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @FlyingBear",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FlyingBear",
+           "PA-CF": "Generic PA-CF @FlyingBear",
+           "PC": "Generic PC @FlyingBear",
+           "PETG": "Generic PETG @FlyingBear",
+           "PLA": "Generic PLA @FlyingBear",
+           "TPU": "Generic TPU @FlyingBear"
+          },
+          "products": {
+           "flyingbear pla hyper": "FlyingBear PLA Hyper",
+           "generic abs": "Generic ABS @FlyingBear",
+           "generic pa-cf": "Generic PA-CF @FlyingBear",
+           "generic pc": "Generic PC @FlyingBear",
+           "generic petg": "Generic PETG @FlyingBear",
+           "generic pla": "Generic PLA @FlyingBear",
+           "generic tpu": "Generic TPU @FlyingBear"
+          }
+         }
         }
        ]
       }
@@ -222,7 +242,27 @@
            "name": "0.24mm Draft @FlyingBear Ghost 6 0.4 nozzle",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
         }
        ]
       }
@@ -253,7 +293,27 @@
            "name": "0.24mm Draft @FlyingBear Ghost 6 0.4 nozzle",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
         }
        ]
       }
@@ -284,7 +344,27 @@
            "name": "0.24mm Draft @FlyingBear Ghost 6 0.4 nozzle",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
         }
        ]
       }
@@ -393,7 +473,27 @@
            "name": "0.24mm Draft @FlyingBear Ghost7",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear PLA Basic @Ghost7",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear ABS @Ghost7",
+           "PA-CF": "FlyingBear PA-CF @Ghost7",
+           "PC": "FlyingBear PC @Ghost7",
+           "PETG Basic": "FlyingBear PETG Basic @Ghost7",
+           "PLA": "FlyingBear PLA Basic @Ghost7",
+           "TPU": "FlyingBear TPU Basic @Ghost7"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @Ghost7",
+           "flyingbear pa-cf": "FlyingBear PA-CF @Ghost7",
+           "flyingbear pc": "FlyingBear PC @Ghost7",
+           "flyingbear petg basic": "FlyingBear PETG Basic @Ghost7",
+           "flyingbear pla basic": "FlyingBear PLA Basic @Ghost7",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @Ghost7",
+           "flyingbear tpu basic": "FlyingBear TPU Basic @Ghost7"
+          }
+         }
         }
        ]
       }
@@ -428,7 +528,27 @@
            "name": "0.24mm Draft @FlyingBear Ghost7",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear PLA Basic @Ghost7",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear ABS @Ghost7",
+           "PA-CF": "FlyingBear PA-CF @Ghost7",
+           "PC": "FlyingBear PC @Ghost7",
+           "PETG Basic": "FlyingBear PETG Basic @Ghost7",
+           "PLA": "FlyingBear PLA Basic @Ghost7",
+           "TPU": "FlyingBear TPU Basic @Ghost7"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @Ghost7",
+           "flyingbear pa-cf": "FlyingBear PA-CF @Ghost7",
+           "flyingbear pc": "FlyingBear PC @Ghost7",
+           "flyingbear petg basic": "FlyingBear PETG Basic @Ghost7",
+           "flyingbear pla basic": "FlyingBear PLA Basic @Ghost7",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @Ghost7",
+           "flyingbear tpu basic": "FlyingBear TPU Basic @Ghost7"
+          }
+         }
         }
        ]
       }
@@ -463,7 +583,16 @@
            "name": "0.24mm Draft @FlyingBear Ghost7",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear PLA @Ghost7",
+         "filaments": {
+          "types": {
+           "PLA": "FlyingBear PLA @Ghost7"
+          },
+          "products": {
+           "flyingbear pla": "FlyingBear PLA @Ghost7"
+          }
+         }
         }
        ]
       }
@@ -542,7 +671,27 @@
            "name": "0.24mm Draft @FlyingBear Reborn3",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @FlyingBear",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FlyingBear",
+           "PA-CF": "Generic PA-CF @FlyingBear",
+           "PC": "Generic PC @FlyingBear",
+           "PETG": "Generic PETG @FlyingBear",
+           "PLA": "Generic PLA @FlyingBear",
+           "TPU": "Generic TPU @FlyingBear"
+          },
+          "products": {
+           "flyingbear pla hyper": "FlyingBear PLA Hyper",
+           "generic abs": "Generic ABS @FlyingBear",
+           "generic pa-cf": "Generic PA-CF @FlyingBear",
+           "generic pc": "Generic PC @FlyingBear",
+           "generic petg": "Generic PETG @FlyingBear",
+           "generic pla": "Generic PLA @FlyingBear",
+           "generic tpu": "Generic TPU @FlyingBear"
+          }
+         }
         }
        ]
       }
@@ -577,7 +726,27 @@
            "name": "0.24mm Draft @FlyingBear Reborn3",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
         }
        ]
       }
@@ -612,7 +781,27 @@
            "name": "0.24mm Draft @FlyingBear Reborn3",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
         }
        ]
       }
@@ -647,7 +836,27 @@
            "name": "0.24mm Draft @FlyingBear Reborn3",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
         }
        ]
       }
@@ -682,7 +891,27 @@
            "name": "0.24mm Draft @FlyingBear Reborn3",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
         }
        ]
       }
@@ -761,7 +990,34 @@
            "name": "0.24mm Draft @FlyingBear S1",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
         }
        ]
       }
@@ -796,7 +1052,34 @@
            "name": "0.24mm Draft @FlyingBear S1",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
         }
        ]
       }
@@ -831,7 +1114,34 @@
            "name": "0.24mm Draft @FlyingBear S1",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
         }
        ]
       }
@@ -866,7 +1176,34 @@
            "name": "0.24mm Draft @FlyingBear S1",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
         }
        ]
       }
@@ -901,7 +1238,34 @@
            "name": "0.24mm Draft @FlyingBear S1",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
         }
        ]
       }

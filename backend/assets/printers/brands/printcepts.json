@@ -53,7 +53,19 @@
            "name": "0.20mm Standard @BabyBelt Pro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @BabyBelt Pro",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @BabyBelt Pro",
+           "PLA": "Generic PLA @BabyBelt Pro"
+          },
+          "products": {
+           "esun pla": "eSUN PLA @BabyBelt Pro",
+           "generic petg": "Generic PETG @BabyBelt Pro",
+           "generic pla": "Generic PLA @BabyBelt Pro"
+          }
+         }
         }
        ]
       }

@@ -187,7 +187,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Left)",
@@ -205,7 +206,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Right)",
@@ -223,7 +225,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -250,7 +253,24 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Left)",
@@ -268,7 +288,24 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Right)",
@@ -286,7 +323,24 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -313,7 +367,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Left)",
@@ -331,7 +386,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Right)",
@@ -349,7 +405,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -376,7 +433,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Left)",
@@ -394,7 +452,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Right)",
@@ -412,7 +471,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -439,7 +499,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Left)",
@@ -457,7 +518,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 0.4 nozzle (Right)",
@@ -475,7 +537,8 @@
            "name": "0.25mm Draft @Raise3D Pro3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -546,7 +609,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
@@ -564,7 +628,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
@@ -582,7 +647,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -609,7 +675,24 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
@@ -627,7 +710,24 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
@@ -645,7 +745,24 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -672,7 +789,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
@@ -690,7 +808,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
@@ -708,7 +827,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -735,7 +855,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
@@ -753,7 +874,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
@@ -771,7 +893,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -798,7 +921,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
@@ -816,7 +940,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
@@ -834,7 +959,8 @@
            "name": "0.25mm Draft @Raise3D Pro3Plus",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }

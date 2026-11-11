@@ -370,7 +370,28 @@
            "name": "cubicon default @Cubicon xCeler-I 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-I 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-I 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-I 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-I 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-I 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -389,7 +410,28 @@
            "name": "cubicon default @Cubicon xCeler-I 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-I",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @base",
+           "PA": "Cubicon PA-CF @base",
+           "PC": "Cubicon PC @base",
+           "PETG": "Cubicon PETG @base",
+           "PLA": "Cubicon PLA @base"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @base",
+           "cubicon abs-a100": "Cubicon ABS-A100 @base",
+           "cubicon absk": "Cubicon ABSk @base",
+           "cubicon pa-cf": "Cubicon PA-CF @base",
+           "cubicon pc": "Cubicon PC @base",
+           "cubicon petg": "Cubicon PETG @base",
+           "cubicon pla": "Cubicon PLA @base",
+           "cubicon pla+": "Cubicon PLA+ @base",
+           "cubicon plai21": "Cubicon PLAi21 @base"
+          }
+         }
         }
        ]
       }
@@ -408,7 +450,28 @@
            "name": "cubicon default @Cubicon xCeler-I 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Cubicon PLA @base",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-I 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-I 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-I 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-I 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-I 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -466,7 +529,28 @@
            "name": "cubicon default @Cubicon xCeler-Mini 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-Mini 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-Mini 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-Mini 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-Mini 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-Mini 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -485,7 +569,28 @@
            "name": "cubicon default @Cubicon xCeler-Mini 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-Mini",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-Mini 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-Mini 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-Mini 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-Mini 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-Mini 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -543,7 +648,28 @@
            "name": "cubicon default @Cubicon xCeler-Plus 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-Plus 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-Plus 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-Plus 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-Plus 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-Plus 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-Plus 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-Plus 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -562,7 +688,28 @@
            "name": "cubicon default @Cubicon xCeler-Plus 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-Plus",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @base",
+           "PA": "Cubicon PA-CF @base",
+           "PC": "Cubicon PC @base",
+           "PETG": "Cubicon PETG @base",
+           "PLA": "Cubicon PLA @base"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @base",
+           "cubicon abs-a100": "Cubicon ABS-A100 @base",
+           "cubicon absk": "Cubicon ABSk @base",
+           "cubicon pa-cf": "Cubicon PA-CF @base",
+           "cubicon pc": "Cubicon PC @base",
+           "cubicon petg": "Cubicon PETG @base",
+           "cubicon pla": "Cubicon PLA @base",
+           "cubicon pla+": "Cubicon PLA+ @base",
+           "cubicon plai21": "Cubicon PLAi21 @base"
+          }
+         }
         }
        ]
       }

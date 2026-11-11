@@ -132,7 +132,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -227,7 +255,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -322,7 +378,34 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -417,7 +500,32 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -552,7 +660,43 @@
            "name": "Normal performance DUAL - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Désactivé",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "désactivé": "Désactivé",
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO42 IDRE COPY MODE (0.4 nozzle)",
@@ -638,7 +782,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO42 IDRE MIRROR MODE (0.4 nozzle)",
@@ -724,7 +903,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -819,7 +1033,43 @@
            "name": "Normal performance DUAL - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Désactivé",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "désactivé": "Désactivé",
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO42 IDRE COPY MODE (0.4 nozzle)",
@@ -905,7 +1155,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO42 IDRE MIRROR MODE (0.4 nozzle)",
@@ -991,7 +1276,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -1086,7 +1406,35 @@
            "name": "Normal performance DUAL - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Désactivé",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "désactivé": "Désactivé",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO42 IDRE COPY MODE (0.4 nozzle)",
@@ -1172,7 +1520,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO42 IDRE MIRROR MODE (0.4 nozzle)",
@@ -1258,7 +1633,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -1394,7 +1796,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -1489,7 +1926,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -1584,7 +2056,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -1679,7 +2178,32 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -1814,7 +2338,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -1909,7 +2461,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -2004,7 +2584,34 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -2140,7 +2747,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -2235,7 +2870,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -2330,7 +2993,34 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -2425,7 +3115,32 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -2560,7 +3275,43 @@
            "name": "Normal performance DUAL - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Désactivé",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "désactivé": "Désactivé",
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO65 IDRE COPY MODE (0.4 nozzle)",
@@ -2646,7 +3397,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO65 IDRE MIRROR MODE (0.4 nozzle)",
@@ -2732,7 +3518,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -2827,7 +3648,43 @@
            "name": "Normal performance DUAL - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Désactivé",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "désactivé": "Désactivé",
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO65 IDRE COPY MODE (0.4 nozzle)",
@@ -2913,7 +3770,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO65 IDRE MIRROR MODE (0.4 nozzle)",
@@ -2999,7 +3891,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -3094,7 +4021,35 @@
            "name": "Normal performance DUAL - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Désactivé",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "désactivé": "Désactivé",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO65 IDRE COPY MODE (0.4 nozzle)",
@@ -3180,7 +4135,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "EXO65 IDRE MIRROR MODE (0.4 nozzle)",
@@ -3266,7 +4248,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -3404,7 +4413,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3492,7 +4536,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3580,7 +4659,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -3675,7 +4789,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3763,7 +4912,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3851,7 +5035,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -3946,7 +5165,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ],
        "0.6": [
@@ -4034,7 +5280,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ],
        "0.8": [
@@ -4122,7 +5395,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -4217,7 +5517,32 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -4352,7 +5677,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -4447,7 +5800,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -4542,7 +5923,34 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -4682,7 +6090,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -4777,7 +6213,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -4872,7 +6336,34 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -4967,7 +6458,32 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -5108,7 +6624,43 @@
            "name": "Normal performance DUAL - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Désactivé",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "désactivé": "Désactivé",
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "SH65 IDRE COPY MODE (0.4 nozzle)",
@@ -5194,7 +6746,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "SH65 IDRE MIRROR MODE (0.4 nozzle)",
@@ -5280,7 +6867,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -5375,7 +6997,43 @@
            "name": "Normal performance DUAL - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Désactivé",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "désactivé": "Désactivé",
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "SH65 IDRE COPY MODE (0.4 nozzle)",
@@ -5461,7 +7119,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "SH65 IDRE MIRROR MODE (0.4 nozzle)",
@@ -5547,7 +7240,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -5642,7 +7370,35 @@
            "name": "Normal performance DUAL - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Désactivé",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "désactivé": "Désactivé",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "SH65 IDRE COPY MODE (0.4 nozzle)",
@@ -5728,7 +7484,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         },
         {
          "name": "SH65 IDRE MIRROR MODE (0.4 nozzle)",
@@ -5814,7 +7597,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -5950,7 +7760,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -6045,7 +7890,42 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -6140,7 +8020,34 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PETG Ultra (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)"
+          },
+          "products": {
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -6235,7 +8142,32 @@
            "name": "Normal performance - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -6370,7 +8302,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -6465,7 +8425,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -6560,7 +8548,34 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -6996,7 +9011,35 @@
            "name": "Compatible speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7031,7 +9074,35 @@
            "name": "Compatible speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7066,7 +9137,34 @@
            "name": "Compatible speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7101,7 +9199,32 @@
            "name": "Compatible speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7177,7 +9300,35 @@
            "name": "Compatible speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7212,7 +9363,35 @@
            "name": "Compatible speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7247,7 +9426,34 @@
            "name": "Compatible speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7282,7 +9488,32 @@
            "name": "Compatible speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7398,7 +9629,35 @@
            "name": "Normal speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7473,7 +9732,35 @@
            "name": "Normal speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7548,7 +9835,34 @@
            "name": "Normal speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7623,7 +9937,32 @@
            "name": "Normal speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7758,7 +10097,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7853,7 +10220,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -7948,7 +10343,34 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -8084,7 +10506,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -8179,7 +10629,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -8274,7 +10752,34 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -8369,7 +10874,32 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -8505,7 +11035,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -8600,7 +11158,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -8695,7 +11281,34 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -8790,7 +11403,32 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -8904,7 +11542,42 @@
            "name": "Normal performance VS30 - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -8979,7 +11652,42 @@
            "name": "Normal performance VS30 - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra (Performance)",
+           "ASA": "Volumic ASA Ultra (Performance)",
+           "PA": "Volumic NYLON Ultra (Performance)",
+           "PA6-CF": "PA6 CF20 (Performance)",
+           "PC": "Volumic PC (Performance)",
+           "PETG": "Volumic PCTG Ultra (Performance)",
+           "PETG-ESD": "PETG ESD (Performance)",
+           "PLA": "Volumic PLA Ultra (Performance)",
+           "PP": "Volumic PP Ultra (Performance)",
+           "PPS-CF": "PPS Carbone (Performance)",
+           "PVA": "Volumic PVA-BVOH (Performance)",
+           "TPU": "Volumic FLEX93 Ultra (Performance)",
+           "UNIV": "Volumic UNIVERSAL Ultra (Performance)"
+          },
+          "products": {
+           "pa6 cf20 (performance)": "PA6 CF20 (Performance)",
+           "petg esd (performance)": "PETG ESD (Performance)",
+           "pps carbone (performance)": "PPS Carbone (Performance)",
+           "volumic abs ultra (performance)": "Volumic ABS Ultra (Performance)",
+           "volumic asa ultra (performance)": "Volumic ASA Ultra (Performance)",
+           "volumic flex93 ultra (performance)": "Volumic FLEX93 Ultra (Performance)",
+           "volumic nylon ultra (performance)": "Volumic NYLON Ultra (Performance)",
+           "volumic pc (performance)": "Volumic PC (Performance)",
+           "volumic pctg ultra (performance)": "Volumic PCTG Ultra (Performance)",
+           "volumic petg ultra (performance)": "Volumic PETG Ultra (Performance)",
+           "volumic petg ultra carbone (performance)": "Volumic PETG Ultra carbone (Performance)",
+           "volumic pla ultra (performance)": "Volumic PLA Ultra (Performance)",
+           "volumic pp ultra (performance)": "Volumic PP Ultra (Performance)",
+           "volumic pva-bvoh (performance)": "Volumic PVA-BVOH (Performance)",
+           "volumic universal ultra (performance)": "Volumic UNIVERSAL Ultra (Performance)"
+          }
+         }
         }
        ]
       }
@@ -9114,7 +11822,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -9209,7 +11945,35 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -9304,7 +12068,34 @@
            "name": "Very high speed (Stage 2) - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -9440,7 +12231,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -9535,7 +12354,35 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra",
+           "UNIV": "Volumic UNIVERSAL Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -9630,7 +12477,34 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PP": "Volumic PP Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pp ultra": "Volumic PP Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }
@@ -9725,7 +12599,32 @@
            "name": "Very high speed - 0.30mm",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Volumic UNIVERSAL Ultra",
+         "filaments": {
+          "types": {
+           "ABS": "Volumic ABS Ultra",
+           "ASA": "Volumic ASA Ultra",
+           "PA": "Volumic NYLON Ultra",
+           "PC": "Volumic PC",
+           "PETG": "Volumic PETG Ultra",
+           "PLA": "Volumic PLA Ultra",
+           "PVA": "Volumic PVA",
+           "TPU": "Volumic FLEX93 Ultra"
+          },
+          "products": {
+           "volumic abs ultra": "Volumic ABS Ultra",
+           "volumic asa ultra": "Volumic ASA Ultra",
+           "volumic flex93 ultra": "Volumic FLEX93 Ultra",
+           "volumic nylon ultra": "Volumic NYLON Ultra",
+           "volumic pc": "Volumic PC",
+           "volumic petg ultra": "Volumic PETG Ultra",
+           "volumic petg ultra carbone": "Volumic PETG Ultra carbone",
+           "volumic pla ultra": "Volumic PLA Ultra",
+           "volumic pva": "Volumic PVA",
+           "volumic universal ultra": "Volumic UNIVERSAL Ultra"
+          }
+         }
         }
        ]
       }

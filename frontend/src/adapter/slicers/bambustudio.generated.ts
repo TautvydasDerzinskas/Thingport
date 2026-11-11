@@ -8,4 +8,5 @@ export const bambustudio: SlicerProfile = {
   reads: "bambu",
   ownApps: ["BambuStudio"],
   dialect: "bambu",
+  targetsPrinter: true,
 };

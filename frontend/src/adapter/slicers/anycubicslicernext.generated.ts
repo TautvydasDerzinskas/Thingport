@@ -10,4 +10,5 @@ export const anycubicslicernext: SlicerProfile = {
   ownApps: ["BambuStudio"],
   quietUpTo: { BambuStudio: "2.3.1" },
   dialect: "orca",
+  targetsPrinter: true,
 };

@@ -67,7 +67,8 @@
            "name": "0.12mm Balanced Quality @OpenEYE Peacock V2 0.2 nozzle",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -103,7 +104,8 @@
            "name": "0.24mm Standard @OpenEYE Peacock V2",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -123,7 +125,8 @@
            "name": "0.30mm Standard @OpenEYE Peacock V2 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -143,7 +146,8 @@
            "name": "0.40mm Standard @OpenEYE Peacock V2 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -170,7 +174,8 @@
            "name": "0.12mm Balanced Quality @OpenEYE Peacock V2 0.2 nozzle",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -206,7 +211,8 @@
            "name": "0.24mm Standard @OpenEYE Peacock V2",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -226,7 +232,8 @@
            "name": "0.30mm Standard @OpenEYE Peacock V2 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -246,7 +253,8 @@
            "name": "0.40mm Standard @OpenEYE Peacock V2 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }

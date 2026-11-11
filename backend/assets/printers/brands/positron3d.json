@@ -68,7 +68,8 @@
            "name": "0.16mm Optimal @The Positron",
            "layerHeight": 0.16
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -104,7 +105,8 @@
            "name": "0.32mm Standard @The Positron",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -144,7 +146,8 @@
            "name": "0.40mm Standard @The Positron",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -180,7 +183,8 @@
            "name": "0.56mm Standard @The Positron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -207,7 +211,34 @@
            "name": "0.16mm Optimal @The Positron",
            "layerHeight": 0.16
           }
-         ]
+         ],
+         "defaultFilament": "Positron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Positron Generic ABS",
+           "ASA": "Positron Generic ASA",
+           "PA": "Positron Generic PA",
+           "PA-CF": "Positron Generic PA-CF",
+           "PC": "Positron Generic PC",
+           "PETG": "Positron Generic PETG",
+           "PLA": "Positron Generic PLA",
+           "PLA-CF": "Positron Generic PLA-CF",
+           "PVA": "Positron Generic PVA",
+           "TPU": "Positron Generic TPU"
+          },
+          "products": {
+           "positron generic abs": "Positron Generic ABS",
+           "positron generic asa": "Positron Generic ASA",
+           "positron generic pa": "Positron Generic PA",
+           "positron generic pa-cf": "Positron Generic PA-CF",
+           "positron generic pc": "Positron Generic PC",
+           "positron generic petg": "Positron Generic PETG",
+           "positron generic pla": "Positron Generic PLA",
+           "positron generic pla-cf": "Positron Generic PLA-CF",
+           "positron generic pva": "Positron Generic PVA",
+           "positron generic tpu": "Positron Generic TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -243,7 +274,34 @@
            "name": "0.32mm Standard @The Positron",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Positron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Positron Generic ABS",
+           "ASA": "Positron Generic ASA",
+           "PA": "Positron Generic PA",
+           "PA-CF": "Positron Generic PA-CF",
+           "PC": "Positron Generic PC",
+           "PETG": "Positron Generic PETG",
+           "PLA": "Positron Generic PLA",
+           "PLA-CF": "Positron Generic PLA-CF",
+           "PVA": "Positron Generic PVA",
+           "TPU": "Positron Generic TPU"
+          },
+          "products": {
+           "positron generic abs": "Positron Generic ABS",
+           "positron generic asa": "Positron Generic ASA",
+           "positron generic pa": "Positron Generic PA",
+           "positron generic pa-cf": "Positron Generic PA-CF",
+           "positron generic pc": "Positron Generic PC",
+           "positron generic petg": "Positron Generic PETG",
+           "positron generic pla": "Positron Generic PLA",
+           "positron generic pla-cf": "Positron Generic PLA-CF",
+           "positron generic pva": "Positron Generic PVA",
+           "positron generic tpu": "Positron Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -283,7 +341,34 @@
            "name": "0.40mm Standard @The Positron",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Positron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Positron Generic ABS",
+           "ASA": "Positron Generic ASA",
+           "PA": "Positron Generic PA",
+           "PA-CF": "Positron Generic PA-CF",
+           "PC": "Positron Generic PC",
+           "PETG": "Positron Generic PETG",
+           "PLA": "Positron Generic PLA",
+           "PLA-CF": "Positron Generic PLA-CF",
+           "PVA": "Positron Generic PVA",
+           "TPU": "Positron Generic TPU"
+          },
+          "products": {
+           "positron generic abs": "Positron Generic ABS",
+           "positron generic asa": "Positron Generic ASA",
+           "positron generic pa": "Positron Generic PA",
+           "positron generic pa-cf": "Positron Generic PA-CF",
+           "positron generic pc": "Positron Generic PC",
+           "positron generic petg": "Positron Generic PETG",
+           "positron generic pla": "Positron Generic PLA",
+           "positron generic pla-cf": "Positron Generic PLA-CF",
+           "positron generic pva": "Positron Generic PVA",
+           "positron generic tpu": "Positron Generic TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -319,7 +404,34 @@
            "name": "0.56mm Standard @The Positron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Positron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Positron Generic ABS",
+           "ASA": "Positron Generic ASA",
+           "PA": "Positron Generic PA",
+           "PA-CF": "Positron Generic PA-CF",
+           "PC": "Positron Generic PC",
+           "PETG": "Positron Generic PETG",
+           "PLA": "Positron Generic PLA",
+           "PLA-CF": "Positron Generic PLA-CF",
+           "PVA": "Positron Generic PVA",
+           "TPU": "Positron Generic TPU"
+          },
+          "products": {
+           "positron generic abs": "Positron Generic ABS",
+           "positron generic asa": "Positron Generic ASA",
+           "positron generic pa": "Positron Generic PA",
+           "positron generic pa-cf": "Positron Generic PA-CF",
+           "positron generic pc": "Positron Generic PC",
+           "positron generic petg": "Positron Generic PETG",
+           "positron generic pla": "Positron Generic PLA",
+           "positron generic pla-cf": "Positron Generic PLA-CF",
+           "positron generic pva": "Positron Generic PVA",
+           "positron generic tpu": "Positron Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -346,7 +458,8 @@
            "name": "0.16mm Optimal @The Positron",
            "layerHeight": 0.16
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -382,7 +495,8 @@
            "name": "0.32mm Standard @The Positron",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -422,7 +536,8 @@
            "name": "0.40mm Standard @The Positron",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -458,7 +573,8 @@
            "name": "0.56mm Standard @The Positron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -485,7 +601,8 @@
            "name": "0.16mm Optimal @The Positron",
            "layerHeight": 0.16
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -521,7 +638,8 @@
            "name": "0.32mm Standard @The Positron",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -561,7 +679,8 @@
            "name": "0.40mm Standard @The Positron",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -597,7 +716,8 @@
            "name": "0.56mm Standard @The Positron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -624,7 +744,8 @@
            "name": "0.16mm Optimal @The Positron",
            "layerHeight": 0.16
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -660,7 +781,8 @@
            "name": "0.32mm Standard @The Positron",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -700,7 +822,8 @@
            "name": "0.40mm Standard @The Positron",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -736,7 +859,8 @@
            "name": "0.56mm Standard @The Positron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }

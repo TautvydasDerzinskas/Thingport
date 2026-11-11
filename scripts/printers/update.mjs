@@ -40,7 +40,8 @@ for (const source of sources) {
 
 const { printers, report, records } = mergeCatalogue(sources, reads);
 const covers = await writeCovers(printers, path.join(OUT, "covers"), path.join(ROOT, "backend"));
-const written = writeCatalogue(OUT, { printers, sources: pinned, covers });
+const filaments = Object.fromEntries(sources.map((s) => [s.id, reads[s.id].filaments ?? null]));
+const written = writeCatalogue(OUT, { printers, sources: pinned, covers, filaments });
 
 const reportFile = path.join(cacheDir, "report.json");
 writeFileSync(

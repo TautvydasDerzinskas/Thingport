@@ -70,7 +70,8 @@
            "name": "0.20mm Standard @Sovol SV01",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -89,7 +90,8 @@
            "name": "0.20mm Standard @Sovol SV01",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -108,7 +110,8 @@
            "name": "0.20mm Standard @Sovol SV01",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -360,7 +363,8 @@
            "name": "0.20mm Standard @Sovol SV01Pro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -383,7 +387,21 @@
            "name": "0.20mm Standard @Sovol SV01Pro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -406,7 +424,8 @@
            "name": "0.20mm Standard @Sovol SV01Pro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -429,7 +448,8 @@
            "name": "0.20mm Standard @Sovol SV01Pro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -452,7 +472,8 @@
            "name": "0.20mm Standard @Sovol SV01Pro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -662,7 +683,8 @@
            "name": "0.20mm Standard @Sovol SV02",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -685,7 +707,21 @@
            "name": "0.20mm Standard @Sovol SV02",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -708,7 +744,8 @@
            "name": "0.20mm Standard @Sovol SV02",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -731,7 +768,8 @@
            "name": "0.20mm Standard @Sovol SV02",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -754,7 +792,8 @@
            "name": "0.20mm Standard @Sovol SV02",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1930,7 +1969,8 @@
            "name": "0.20mm Standard @Sovol SV05",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1953,7 +1993,21 @@
            "name": "0.20mm Standard @Sovol SV05",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1976,7 +2030,8 @@
            "name": "0.20mm Standard @Sovol SV05",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1999,7 +2054,8 @@
            "name": "0.20mm Standard @Sovol SV05",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2022,7 +2078,8 @@
            "name": "0.20mm Standard @Sovol SV05",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2228,7 +2285,8 @@
            "name": "0.20mm High-Speed @Sovol SV06",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Sovol SV06 0.4 nozzle",
@@ -2242,7 +2300,8 @@
            "name": "0.20mm Standard @Sovol SV06",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2269,7 +2328,21 @@
            "name": "0.20mm Standard @Sovol SV06",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -2288,7 +2361,8 @@
            "name": "0.20mm High-Speed @Sovol SV06",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Sovol SV06 0.4 nozzle",
@@ -2302,7 +2376,8 @@
            "name": "0.20mm Standard @Sovol SV06",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2321,7 +2396,8 @@
            "name": "0.20mm High-Speed @Sovol SV06",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Sovol SV06 0.4 nozzle",
@@ -2335,7 +2411,8 @@
            "name": "0.20mm Standard @Sovol SV06",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2354,7 +2431,8 @@
            "name": "0.20mm High-Speed @Sovol SV06",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "Sovol SV06 0.4 nozzle",
@@ -2368,7 +2446,8 @@
            "name": "0.20mm Standard @Sovol SV06",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2566,7 +2645,22 @@
            "name": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 ACE",
+           "PETG": "Generic PETG @Sovol SV06 ACE",
+           "PLA": "Generic PLA @Sovol SV06 ACE",
+           "TPU": "Generic TPU @Sovol SV06 ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 ACE",
+           "generic petg": "Generic PETG @Sovol SV06 ACE",
+           "generic pla": "Generic PLA @Sovol SV06 ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 ACE"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2590,7 +2684,22 @@
            "name": "0.28mm Fast @Sovol SV06 ACE",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 ACE",
+           "PETG": "Generic PETG @Sovol SV06 ACE",
+           "PLA": "Generic PLA @Sovol SV06 ACE",
+           "TPU": "Generic TPU @Sovol SV06 ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 ACE",
+           "generic petg": "Generic PETG @Sovol SV06 ACE",
+           "generic pla": "Generic PLA @Sovol SV06 ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 ACE"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2602,7 +2711,22 @@
            "name": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 ACE",
+           "PETG": "Generic PETG @Sovol SV06 ACE",
+           "PLA": "Generic PLA @Sovol SV06 ACE",
+           "TPU": "Generic TPU @Sovol SV06 ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 ACE",
+           "generic petg": "Generic PETG @Sovol SV06 ACE",
+           "generic pla": "Generic PLA @Sovol SV06 ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 ACE"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2614,7 +2738,22 @@
            "name": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 ACE",
+           "PETG": "Generic PETG @Sovol SV06 ACE",
+           "PLA": "Generic PLA @Sovol SV06 ACE",
+           "TPU": "Generic TPU @Sovol SV06 ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 ACE",
+           "generic petg": "Generic PETG @Sovol SV06 ACE",
+           "generic pla": "Generic PLA @Sovol SV06 ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 ACE"
+          }
+         }
         }
        ]
       }
@@ -2633,7 +2772,22 @@
            "name": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2657,7 +2811,22 @@
            "name": "0.28mm Fast @Sovol SV06 ACE",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2669,7 +2838,22 @@
            "name": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2681,7 +2865,22 @@
            "name": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ]
       }
@@ -2700,7 +2899,22 @@
            "name": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2724,7 +2938,22 @@
            "name": "0.28mm Fast @Sovol SV06 ACE",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2736,7 +2965,22 @@
            "name": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2748,7 +2992,22 @@
            "name": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ]
       }
@@ -2767,7 +3026,20 @@
            "name": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2791,7 +3063,22 @@
            "name": "0.28mm Fast @Sovol SV06 ACE",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2803,7 +3090,22 @@
            "name": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2815,7 +3117,22 @@
            "name": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
         }
        ]
       }
@@ -2892,7 +3209,8 @@
            "name": "0.20mm Standard @Sovol SV06Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2915,7 +3233,21 @@
            "name": "0.20mm Standard @Sovol SV06Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -2938,7 +3270,8 @@
            "name": "0.20mm Standard @Sovol SV06Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2961,7 +3294,8 @@
            "name": "0.20mm Standard @Sovol SV06Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2984,7 +3318,8 @@
            "name": "0.20mm Standard @Sovol SV06Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3179,7 +3514,22 @@
            "name": "0.20mm Standard @Sovol SV06 Plus ACE",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 Plus ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 Plus ACE",
+           "PETG": "Generic PETG @Sovol SV06 Plus ACE",
+           "PLA": "Generic PLA @Sovol SV06 Plus ACE",
+           "TPU": "Generic TPU @Sovol SV06 Plus ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 Plus ACE",
+           "generic petg": "Generic PETG @Sovol SV06 Plus ACE",
+           "generic pla": "Generic PLA @Sovol SV06 Plus ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 Plus ACE"
+          }
+         }
         }
        ]
       }
@@ -3198,7 +3548,22 @@
            "name": "0.20mm Standard @Sovol SV06 Plus ACE",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 Plus ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 Plus ACE ABS",
+           "PETG": "Sovol SV06 Plus ACE PETG",
+           "PLA": "Sovol SV06 Plus ACE PLA",
+           "TPU": "Sovol SV06 Plus ACE TPU"
+          },
+          "products": {
+           "sovol sv06 plus ace abs": "Sovol SV06 Plus ACE ABS",
+           "sovol sv06 plus ace petg": "Sovol SV06 Plus ACE PETG",
+           "sovol sv06 plus ace pla": "Sovol SV06 Plus ACE PLA",
+           "sovol sv06 plus ace tpu": "Sovol SV06 Plus ACE TPU"
+          }
+         }
         }
        ]
       }
@@ -3217,7 +3582,22 @@
            "name": "0.20mm Standard @Sovol SV06 Plus ACE",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 Plus ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 Plus ACE ABS",
+           "PETG": "Sovol SV06 Plus ACE PETG",
+           "PLA": "Sovol SV06 Plus ACE PLA",
+           "TPU": "Sovol SV06 Plus ACE TPU"
+          },
+          "products": {
+           "sovol sv06 plus ace abs": "Sovol SV06 Plus ACE ABS",
+           "sovol sv06 plus ace petg": "Sovol SV06 Plus ACE PETG",
+           "sovol sv06 plus ace pla": "Sovol SV06 Plus ACE PLA",
+           "sovol sv06 plus ace tpu": "Sovol SV06 Plus ACE TPU"
+          }
+         }
         }
        ]
       }
@@ -3236,7 +3616,22 @@
            "name": "0.20mm Standard @Sovol SV06 Plus ACE",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV06 Plus ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 Plus ACE ABS",
+           "PETG": "Sovol SV06 Plus ACE PETG",
+           "PLA": "Sovol SV06 Plus ACE PLA",
+           "TPU": "Sovol SV06 Plus ACE TPU"
+          },
+          "products": {
+           "sovol sv06 plus ace abs": "Sovol SV06 Plus ACE ABS",
+           "sovol sv06 plus ace petg": "Sovol SV06 Plus ACE PETG",
+           "sovol sv06 plus ace pla": "Sovol SV06 Plus ACE PLA",
+           "sovol sv06 plus ace tpu": "Sovol SV06 Plus ACE TPU"
+          }
+         }
         }
        ]
       }
@@ -3303,7 +3698,15 @@
            "name": "0.20mm Standard @Sovol SV07",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Sovol SV07"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Sovol SV07"
+          }
+         }
         }
        ]
       }
@@ -3326,7 +3729,21 @@
            "name": "0.20mm Standard @Sovol SV07",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU",
+           "sovol sv07 pla": "Sovol SV07 PLA"
+          }
+         }
         }
        ]
       }
@@ -3349,7 +3766,15 @@
            "name": "0.20mm Standard @Sovol SV07",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PLA": "Sovol SV07 PLA"
+          },
+          "products": {
+           "sovol sv07 pla": "Sovol SV07 PLA"
+          }
+         }
         }
        ]
       }
@@ -3372,7 +3797,15 @@
            "name": "0.20mm Standard @Sovol SV07",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PLA": "Sovol SV07 PLA"
+          },
+          "products": {
+           "sovol sv07 pla": "Sovol SV07 PLA"
+          }
+         }
         }
        ]
       }
@@ -3395,7 +3828,15 @@
            "name": "0.20mm Standard @Sovol SV07",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PLA": "Sovol SV07 PLA"
+          },
+          "products": {
+           "sovol sv07 pla": "Sovol SV07 PLA"
+          }
+         }
         }
        ]
       }
@@ -3462,7 +3903,8 @@
            "name": "0.20mm Standard @Sovol SV07 Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3485,7 +3927,21 @@
            "name": "0.20mm Standard @Sovol SV07 Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -3508,7 +3964,8 @@
            "name": "0.20mm Standard @Sovol SV07 Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3531,7 +3988,8 @@
            "name": "0.20mm Standard @Sovol SV07 Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3554,7 +4012,8 @@
            "name": "0.20mm Standard @Sovol SV07 Plus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3622,7 +4081,22 @@
            "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08",
+           "PETG": "Generic PETG @Sovol SV08",
+           "PLA": "Generic PLA @Sovol SV08 0.2 nozzle",
+           "TPU": "Generic TPU @Sovol SV08"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08",
+           "generic petg": "Generic PETG @Sovol SV08",
+           "generic pla": "Generic PLA @Sovol SV08 0.2 nozzle",
+           "generic tpu": "Generic TPU @Sovol SV08"
+          }
+         }
         }
        ],
        "0.4": [
@@ -3642,7 +4116,22 @@
            "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08",
+           "PETG": "Generic PETG @Sovol SV08",
+           "PLA": "Generic PLA @Sovol SV08",
+           "TPU": "Generic TPU @Sovol SV08"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08",
+           "generic petg": "Generic PETG @Sovol SV08",
+           "generic pla": "Generic PLA @Sovol SV08",
+           "generic tpu": "Generic TPU @Sovol SV08"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3654,7 +4143,22 @@
            "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08",
+           "PETG": "Generic PETG @Sovol SV08",
+           "PLA": "Generic PLA @Sovol SV08",
+           "TPU": "Generic TPU @Sovol SV08"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08",
+           "generic petg": "Generic PETG @Sovol SV08",
+           "generic pla": "Generic PLA @Sovol SV08",
+           "generic tpu": "Generic TPU @Sovol SV08"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3666,7 +4170,22 @@
            "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08",
+           "PETG": "Generic PETG @Sovol SV08",
+           "PLA": "Generic PLA @Sovol SV08",
+           "TPU": "Generic TPU @Sovol SV08"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08",
+           "generic petg": "Generic PETG @Sovol SV08",
+           "generic pla": "Generic PLA @Sovol SV08",
+           "generic tpu": "Generic TPU @Sovol SV08"
+          }
+         }
         }
        ]
       }
@@ -3685,7 +4204,21 @@
            "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA @SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -3701,7 +4234,21 @@
            "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3713,7 +4260,21 @@
            "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3725,7 +4286,21 @@
            "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ]
       }
@@ -3744,7 +4319,22 @@
            "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA @SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -3764,7 +4354,22 @@
            "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3776,7 +4381,22 @@
            "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3788,7 +4408,22 @@
            "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ]
       }
@@ -3807,7 +4442,22 @@
            "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA @SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -3823,7 +4473,22 @@
            "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3835,7 +4500,22 @@
            "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3847,7 +4527,22 @@
            "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ]
       }
@@ -3866,7 +4561,22 @@
            "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA @SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -3882,7 +4592,22 @@
            "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3894,7 +4619,22 @@
            "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3906,7 +4646,22 @@
            "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
         }
        ]
       }
@@ -3979,7 +4734,27 @@
            "name": "0.50mm Standard @Sovol SV08 MAX 1.0 nozzle",
            "layerHeight": 0.5
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ],
        "0.2": [
@@ -3991,7 +4766,27 @@
            "name": "0.10mm Standard @Sovol SV08 MAX 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ],
        "0.4": [
@@ -4003,7 +4798,27 @@
            "name": "0.20mm Standard @Sovol SV08 MAX 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ],
        "0.6": [
@@ -4015,7 +4830,27 @@
            "name": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ],
        "0.8": [
@@ -4027,7 +4862,27 @@
            "name": "0.40mm Standard @Sovol SV08 MAX 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ]
       }
@@ -4046,7 +4901,27 @@
            "name": "0.20mm Standard @Sovol SV08 MAX 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ],
        "0.6": [
@@ -4058,7 +4933,27 @@
            "name": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ],
        "0.8": [
@@ -4070,7 +4965,27 @@
            "name": "0.40mm Standard @Sovol SV08 MAX 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ]
       }
@@ -4089,7 +5004,27 @@
            "name": "0.20mm Standard @Sovol SV08 MAX 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ],
        "0.6": [
@@ -4101,7 +5036,27 @@
            "name": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ],
        "0.8": [
@@ -4113,7 +5068,27 @@
            "name": "0.40mm Standard @Sovol SV08 MAX 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
         }
        ]
       }
@@ -4186,7 +5161,25 @@
            "name": "0.70mm Fast @Sovol Zero 1.0 nozzle",
            "layerHeight": 0.7
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         },
         {
          "name": "Sovol Zero 1.0 nozzle",
@@ -4204,7 +5197,25 @@
            "name": "0.70mm Fast @Sovol Zero 1.0 nozzle",
            "layerHeight": 0.7
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         }
        ],
        "0.2": [
@@ -4224,7 +5235,25 @@
            "name": "0.14mm Fast @Sovol Zero 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         },
         {
          "name": "Sovol Zero 0.2 nozzle",
@@ -4242,7 +5271,25 @@
            "name": "0.14mm Fast @Sovol Zero 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         }
        ],
        "0.4": [
@@ -4266,7 +5313,26 @@
            "name": "0.28mm Fast @Sovol Zero 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA SPEEDBENCHY @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic pla speedbenchy": "Generic PLA SPEEDBENCHY @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         },
         {
          "name": "Sovol Zero 0.4 nozzle",
@@ -4288,7 +5354,26 @@
            "name": "0.28mm Fast @Sovol Zero 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic pla speedbenchy": "Generic PLA SPEEDBENCHY @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         }
        ],
        "0.6": [
@@ -4308,7 +5393,25 @@
            "name": "0.42mm Fast @Sovol Zero 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         },
         {
          "name": "Sovol Zero 0.6 nozzle",
@@ -4326,7 +5429,25 @@
            "name": "0.42mm Fast @Sovol Zero 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         }
        ],
        "0.8": [
@@ -4346,7 +5467,25 @@
            "name": "0.56mm Fast @Sovol Zero 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         },
         {
          "name": "Sovol Zero 0.8 nozzle",
@@ -4364,7 +5503,25 @@
            "name": "0.56mm Fast @Sovol Zero 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
         }
        ]
       }
@@ -4383,7 +5540,28 @@
            "name": "0.20mm Standard @Sovol Zero 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol Zero PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Zero ABS",
+           "PC": "Sovol Zero PC",
+           "PETG": "Sovol Zero PETG",
+           "PLA": "Sovol Zero PLA Silk",
+           "TPU": "Sovol Zero TPU"
+          },
+          "products": {
+           "sovol zero abs": "Sovol Zero ABS",
+           "sovol zero pc": "Sovol Zero PC",
+           "sovol zero petg": "Sovol Zero PETG",
+           "sovol zero petg hs nozzle": "Sovol Zero PETG HS Nozzle",
+           "sovol zero pla basic": "Sovol Zero PLA Basic",
+           "sovol zero pla basic hs nozzle": "Sovol Zero PLA Basic HS Nozzle",
+           "sovol zero pla silk": "Sovol Zero PLA Silk",
+           "sovol zero pla silk hs nozzle": "Sovol Zero PLA Silk HS Nozzle",
+           "sovol zero tpu": "Sovol Zero TPU"
+          }
+         }
         }
        ]
       }
@@ -4402,7 +5580,28 @@
            "name": "0.20mm Standard @Sovol Zero 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Sovol Zero PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Zero ABS",
+           "PC": "Sovol Zero PC",
+           "PETG": "Sovol Zero PETG",
+           "PLA": "Sovol Zero PLA Silk",
+           "TPU": "Sovol Zero TPU"
+          },
+          "products": {
+           "sovol zero abs": "Sovol Zero ABS",
+           "sovol zero pc": "Sovol Zero PC",
+           "sovol zero petg": "Sovol Zero PETG",
+           "sovol zero petg hs nozzle": "Sovol Zero PETG HS Nozzle",
+           "sovol zero pla basic": "Sovol Zero PLA Basic",
+           "sovol zero pla basic hs nozzle": "Sovol Zero PLA Basic HS Nozzle",
+           "sovol zero pla silk": "Sovol Zero PLA Silk",
+           "sovol zero pla silk hs nozzle": "Sovol Zero PLA Silk HS Nozzle",
+           "sovol zero tpu": "Sovol Zero TPU"
+          }
+         }
         }
        ]
       }

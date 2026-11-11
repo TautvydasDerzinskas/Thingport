@@ -1,9 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { type Plate, type Print, printsApi } from "../../api/prints";
-import { planAdaptation, type AdaptPlan } from "../../adapter/plan.generated";
+import type { UserPrinter } from "../../api/printers";
+import { planAdaptation, type AdaptPlan, type PrinterChoice } from "../../adapter/plan.generated";
 import { slicerProfile } from "../../adapter/slicers/index.generated";
 import { SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
+import { useUserPrinters } from "../../hooks/useUserPrinters";
 import { slicerLaunchUrl } from "../../utils/slicerLaunch";
 
 /** A file of the model a slicer can open or the user can download: a plate, or the prepared print when it
@@ -21,8 +23,21 @@ export type ModelFile = {
   folder?: string | null;
 };
 export type SlicerTarget = ModelFile & { href: string };
-/** A plate's copy made for the slicer (src/adapter in the backend): `plan` says what it changes. */
-export type AdaptedTarget = SlicerTarget & { plan: AdaptPlan };
+/** A plate's copy made for the slicer (src/adapter in the backend): `plan` says what it changes, `printer` the
+ *  user's printer it's made for. With `ask`, which printer is asked first, and `withPrinter` makes the copy for the
+ *  one picked. */
+export type AdaptedTarget = SlicerTarget & {
+  plan: AdaptPlan;
+  printer: PrinterChoice | null;
+  ask?: boolean;
+  withPrinter?: (printer: UserPrinter) => AdaptedTarget | null;
+};
+
+/** The copy's printer as the slicer names it, null for a printer the slicer has no preset for. */
+export function printerChoice(printer: UserPrinter, slicerId: string): PrinterChoice | null {
+  const preset = printer.presets[slicerId];
+  return preset ? { id: printer.printer.id, nozzle: printer.nozzle, preset } : null;
+}
 
 export const PREPARED_KEY = "prepared";
 
@@ -79,6 +94,8 @@ export function useSlicerChoice() {
  *  better as a copy made for it, read from what kind of 3MF each is. */
 export function useOpenInSlicer(print: Print) {
   const { slicerOption, slicerOptions, bridged } = useSlicerChoice();
+  const { unadapted, printers: slicerPrinters } = useSlicerSettings();
+  const { printers } = useUserPrinters();
 
   const files = useMemo(() => modelFiles(print), [print]);
   const canOpen = Boolean(print.slicer_url) && files.length > 0;
@@ -92,19 +109,39 @@ export function useOpenInSlicer(print: Print) {
   );
 
   const adaptedTargets = useMemo<AdaptedTarget[]>(() => {
-    if (!slicerOption) return [];
+    if (!slicerOption || unadapted.includes(slicerOption.id)) return [];
     // A non-removable prepared print means the plates themselves are the sliced files.
     if (print.prepared_print && !print.prepared_print.removable) return [];
-    const profile = slicerProfile(slicerOption.id);
+    const slicerId = slicerOption.id;
+    const profile = slicerProfile(slicerId);
+    const remembered = printers.find((p) => p.printer.id === slicerPrinters[slicerId]);
+    const rememberedChoice = remembered ? printerChoice(remembered, slicerId) : null;
+    // With no printer remembered, one of the user's that the slicer has is asked for when it makes a difference.
+    const askable =
+      profile?.targetsPrinter && !rememberedChoice ? printers.filter((p) => printerChoice(p, slicerId)) : [];
+
+    const targetFor = (file: ModelFile, plate: Plate, choice: PrinterChoice | null): AdaptedTarget | null => {
+      const plan = planAdaptation(plate.format, profile, choice);
+      if (!plan) return null;
+      const printer = plan.output === "bambu" && plan.printer ? choice : null;
+      const adaptedUrl = printsApi.adaptedPlateUrl(plate, slicerId, printer);
+      const href = slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(adaptedUrl), file.filename, bridged);
+      return { ...file, key: `adapted-${file.key}`, launchFilename: file.filename, plan, printer, href };
+    };
+
     return files.flatMap((file) => {
-      if (!file.plate || !isAdaptable3mf(file.filename)) return [];
-      const plan = planAdaptation(file.plate.format, profile);
-      if (!plan) return [];
-      const adaptedUrl = printsApi.adaptedPlateUrl(file.plate, slicerOption.id);
-      const href = slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(adaptedUrl), file.filename, bridged);
-      return [{ ...file, key: `adapted-${file.key}`, launchFilename: file.filename, plan, href }];
+      const plate = file.plate;
+      if (!plate || !isAdaptable3mf(file.filename)) return [];
+      const withPrinter = (printer: UserPrinter) => {
+        const choice = printerChoice(printer, slicerId);
+        return choice ? targetFor(file, plate, choice) : null;
+      };
+      const asked = askable.map(withPrinter).find((target) => target?.printer);
+      if (asked) return [{ ...asked, printer: null, href: "", ask: true, withPrinter }];
+      const target = targetFor(file, plate, rememberedChoice);
+      return target ? [target] : [];
     });
-  }, [files, print.prepared_print, slicerOption, bridged]);
+  }, [files, print.prepared_print, slicerOption, bridged, unadapted, slicerPrinters, printers]);
 
   /** The adapted counterpart of `file`, if the current slicer opens it better as one. */
   const adaptedTargetFor = useCallback(

@@ -50,7 +50,8 @@ has filament slots for, keeps only the colour group. Downloaded as an STL, it ke
 
 A 3MF made in one slicer, such as a MakerWorld model made in Bambu Studio, can open in another without its colours,
 parts or print settings. When yours would, Thingport offers **Open adapted**, which opens a copy made for your slicer
-instead. See [adapted 3MFs](adapted-3mf.md).
+instead, and for your printer where the slicer takes one. Right-click a slicer under **Configuration → Slicer** to
+switch its **Open adapted** off or on, and to pick its **Printer**. See [adapted 3MFs](adapted-3mf.md).
 
 Opening a model in a slicer counts towards its prints on the [dashboard](dashboard.md) and shows up in your
 [activity](profile-and-activity.md).

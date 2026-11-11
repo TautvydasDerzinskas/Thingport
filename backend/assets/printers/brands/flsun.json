@@ -81,7 +81,34 @@
            "name": "0.30mm Extra Draft @FLSun Q5",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @FLSun",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun",
+           "ASA": "Generic ASA @FLSun",
+           "PA": "Generic PA @FLSun",
+           "PA-CF": "Generic PA-CF @FLSun",
+           "PC": "Generic PC @FLSun",
+           "PETG": "Generic PETG @FLSun",
+           "PLA": "Generic PLA @FLSun",
+           "PLA-CF": "Generic PLA-CF @FLSun",
+           "PVA": "Generic PVA @FLSun",
+           "TPU": "Generic TPU @FLSun"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun",
+           "generic asa": "Generic ASA @FLSun",
+           "generic pa": "Generic PA @FLSun",
+           "generic pa-cf": "Generic PA-CF @FLSun",
+           "generic pc": "Generic PC @FLSun",
+           "generic petg": "Generic PETG @FLSun",
+           "generic pla": "Generic PLA @FLSun",
+           "generic pla-cf": "Generic PLA-CF @FLSun",
+           "generic pva": "Generic PVA @FLSun",
+           "generic tpu": "Generic TPU @FLSun"
+          }
+         }
         }
        ]
       }
@@ -116,7 +143,34 @@
            "name": "0.30mm Extra Draft @FLSun Q5",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -151,7 +205,34 @@
            "name": "0.30mm Extra Draft @FLSun Q5",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -186,7 +267,34 @@
            "name": "0.30mm Extra Draft @FLSun Q5",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -221,7 +329,34 @@
            "name": "0.30mm Extra Draft @FLSun Q5",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -481,7 +616,34 @@
            "name": "0.30mm Extra Draft @FLSun QQSPro",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @FLSun",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun",
+           "ASA": "Generic ASA @FLSun",
+           "PA": "Generic PA @FLSun",
+           "PA-CF": "Generic PA-CF @FLSun",
+           "PC": "Generic PC @FLSun",
+           "PETG": "Generic PETG @FLSun",
+           "PLA": "Generic PLA @FLSun",
+           "PLA-CF": "Generic PLA-CF @FLSun",
+           "PVA": "Generic PVA @FLSun",
+           "TPU": "Generic TPU @FLSun"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun",
+           "generic asa": "Generic ASA @FLSun",
+           "generic pa": "Generic PA @FLSun",
+           "generic pa-cf": "Generic PA-CF @FLSun",
+           "generic pc": "Generic PC @FLSun",
+           "generic petg": "Generic PETG @FLSun",
+           "generic pla": "Generic PLA @FLSun",
+           "generic pla-cf": "Generic PLA-CF @FLSun",
+           "generic pva": "Generic PVA @FLSun",
+           "generic tpu": "Generic TPU @FLSun"
+          }
+         }
         }
        ]
       }
@@ -516,7 +678,34 @@
            "name": "0.30mm Extra Draft @FLSun QQSPro",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -551,7 +740,34 @@
            "name": "0.30mm Extra Draft @FLSun QQSPro",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -586,7 +802,34 @@
            "name": "0.30mm Extra Draft @FLSun QQSPro",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -621,7 +864,34 @@
            "name": "0.30mm Extra Draft @FLSun QQSPro",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -779,7 +1049,25 @@
            "name": "0.30mm Extra Draft @FLSun S1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun S1",
+           "ASA": "Generic ASA @FLSun S1",
+           "PETG": "Generic PETG @FLSun S1",
+           "PLA": "Generic PLA @FLSun S1",
+           "TPU": "Generic TPU @FLSun S1"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun S1",
+           "generic asa": "Generic ASA @FLSun S1",
+           "generic petg": "Generic PETG @FLSun S1",
+           "generic pla": "Generic PLA @FLSun S1",
+           "generic pla high speed": "Generic PLA High Speed @FLSun S1",
+           "generic pla silk": "Generic PLA Silk @FLSun S1",
+           "generic tpu": "Generic TPU @FLSun S1"
+          }
+         }
         }
        ]
       }
@@ -814,7 +1102,25 @@
            "name": "0.30mm Extra Draft @FLSun S1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun S1 ABS",
+           "ASA": "FLSun S1 ASA",
+           "PETG": "FLSun S1 PETG",
+           "PLA": "FLSun S1 PLA Generic",
+           "TPU": "FLSun S1 TPU"
+          },
+          "products": {
+           "flsun s1 abs": "FLSun S1 ABS",
+           "flsun s1 asa": "FLSun S1 ASA",
+           "flsun s1 petg": "FLSun S1 PETG",
+           "flsun s1 pla generic": "FLSun S1 PLA Generic",
+           "flsun s1 pla high speed": "FLSun S1 PLA High Speed",
+           "flsun s1 pla silk": "FLSun S1 PLA Silk",
+           "flsun s1 tpu": "FLSun S1 TPU"
+          }
+         }
         }
        ]
       }
@@ -849,7 +1155,25 @@
            "name": "0.30mm Extra Draft @FLSun S1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun S1 ABS",
+           "ASA": "FLSun S1 ASA",
+           "PETG": "FLSun S1 PETG",
+           "PLA": "FLSun S1 PLA Generic",
+           "TPU": "FLSun S1 TPU"
+          },
+          "products": {
+           "flsun s1 abs": "FLSun S1 ABS",
+           "flsun s1 asa": "FLSun S1 ASA",
+           "flsun s1 petg": "FLSun S1 PETG",
+           "flsun s1 pla generic": "FLSun S1 PLA Generic",
+           "flsun s1 pla high speed": "FLSun S1 PLA High Speed",
+           "flsun s1 pla silk": "FLSun S1 PLA Silk",
+           "flsun s1 tpu": "FLSun S1 TPU"
+          }
+         }
         }
        ]
       }
@@ -884,7 +1208,25 @@
            "name": "0.30mm Extra Draft @FLSun S1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun S1 ABS",
+           "ASA": "FLSun S1 ASA",
+           "PETG": "FLSun S1 PETG",
+           "PLA": "FLSun S1 PLA Generic",
+           "TPU": "FLSun S1 TPU"
+          },
+          "products": {
+           "flsun s1 abs": "FLSun S1 ABS",
+           "flsun s1 asa": "FLSun S1 ASA",
+           "flsun s1 petg": "FLSun S1 PETG",
+           "flsun s1 pla generic": "FLSun S1 PLA Generic",
+           "flsun s1 pla high speed": "FLSun S1 PLA High Speed",
+           "flsun s1 pla silk": "FLSun S1 PLA Silk",
+           "flsun s1 tpu": "FLSun S1 TPU"
+          }
+         }
         }
        ]
       }
@@ -968,7 +1310,34 @@
            "name": "0.30mm Extra Draft @FLSun SR",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @FLSun",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun",
+           "ASA": "Generic ASA @FLSun",
+           "PA": "Generic PA @FLSun",
+           "PA-CF": "Generic PA-CF @FLSun",
+           "PC": "Generic PC @FLSun",
+           "PETG": "Generic PETG @FLSun",
+           "PLA": "Generic PLA @FLSun",
+           "PLA-CF": "Generic PLA-CF @FLSun",
+           "PVA": "Generic PVA @FLSun",
+           "TPU": "Generic TPU @FLSun"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun",
+           "generic asa": "Generic ASA @FLSun",
+           "generic pa": "Generic PA @FLSun",
+           "generic pa-cf": "Generic PA-CF @FLSun",
+           "generic pc": "Generic PC @FLSun",
+           "generic petg": "Generic PETG @FLSun",
+           "generic pla": "Generic PLA @FLSun",
+           "generic pla-cf": "Generic PLA-CF @FLSun",
+           "generic pva": "Generic PVA @FLSun",
+           "generic tpu": "Generic TPU @FLSun"
+          }
+         }
         }
        ]
       }
@@ -1003,7 +1372,34 @@
            "name": "0.30mm Extra Draft @FLSun SR",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1038,7 +1434,34 @@
            "name": "0.30mm Extra Draft @FLSun SR",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1073,7 +1496,34 @@
            "name": "0.30mm Extra Draft @FLSun SR",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1108,7 +1558,34 @@
            "name": "0.30mm Extra Draft @FLSun SR",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1193,7 +1670,25 @@
            "name": "0.30mm Extra Draft @FLSun T1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun T1",
+           "ASA": "Generic ASA @FLSun T1",
+           "PETG": "Generic PETG @FLSun T1",
+           "PLA": "Generic PLA @FLSun T1",
+           "TPU": "Generic TPU @FLSun T1"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun T1",
+           "generic asa": "Generic ASA @FLSun T1",
+           "generic petg": "Generic PETG @FLSun T1",
+           "generic pla": "Generic PLA @FLSun T1",
+           "generic pla high speed": "Generic PLA High Speed @FLSun T1",
+           "generic pla silk": "Generic PLA Silk @FLSun T1",
+           "generic tpu": "Generic TPU @FLSun T1"
+          }
+         }
         }
        ]
       }
@@ -1228,7 +1723,25 @@
            "name": "0.30mm Extra Draft @FLSun T1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun T1 ABS",
+           "ASA": "FLSun T1 ASA",
+           "PETG": "FLSun T1 PETG",
+           "PLA": "FLSun T1 PLA Generic",
+           "TPU": "FLSun T1 TPU"
+          },
+          "products": {
+           "flsun t1 abs": "FLSun T1 ABS",
+           "flsun t1 asa": "FLSun T1 ASA",
+           "flsun t1 petg": "FLSun T1 PETG",
+           "flsun t1 pla generic": "FLSun T1 PLA Generic",
+           "flsun t1 pla high speed": "FLSun T1 PLA High Speed",
+           "flsun t1 pla silk": "FLSun T1 PLA Silk",
+           "flsun t1 tpu": "FLSun T1 TPU"
+          }
+         }
         }
        ]
       }
@@ -1263,7 +1776,25 @@
            "name": "0.30mm Extra Draft @FLSun T1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun T1 ABS",
+           "ASA": "FLSun T1 ASA",
+           "PETG": "FLSun T1 PETG",
+           "PLA": "FLSun T1 PLA Generic",
+           "TPU": "FLSun T1 TPU"
+          },
+          "products": {
+           "flsun t1 abs": "FLSun T1 ABS",
+           "flsun t1 asa": "FLSun T1 ASA",
+           "flsun t1 petg": "FLSun T1 PETG",
+           "flsun t1 pla generic": "FLSun T1 PLA Generic",
+           "flsun t1 pla high speed": "FLSun T1 PLA High Speed",
+           "flsun t1 pla silk": "FLSun T1 PLA Silk",
+           "flsun t1 tpu": "FLSun T1 TPU"
+          }
+         }
         }
        ]
       }
@@ -1298,7 +1829,25 @@
            "name": "0.30mm Extra Draft @FLSun T1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun T1 ABS",
+           "ASA": "FLSun T1 ASA",
+           "PETG": "FLSun T1 PETG",
+           "PLA": "FLSun T1 PLA Generic",
+           "TPU": "FLSun T1 TPU"
+          },
+          "products": {
+           "flsun t1 abs": "FLSun T1 ABS",
+           "flsun t1 asa": "FLSun T1 ASA",
+           "flsun t1 petg": "FLSun T1 PETG",
+           "flsun t1 pla generic": "FLSun T1 PLA Generic",
+           "flsun t1 pla high speed": "FLSun T1 PLA High Speed",
+           "flsun t1 pla silk": "FLSun T1 PLA Silk",
+           "flsun t1 tpu": "FLSun T1 TPU"
+          }
+         }
         }
        ]
       }
@@ -1364,7 +1913,33 @@
            "name": "0.20mm Standard @FLSun V400",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun",
+           "ASA": "Generic ASA @FLSun",
+           "PA": "Generic PA @FLSun",
+           "PA-CF": "Generic PA-CF @FLSun",
+           "PC": "Generic PC @FLSun",
+           "PETG": "Generic PETG @FLSun",
+           "PLA": "Generic PLA @FLSun",
+           "PLA-CF": "Generic PLA-CF @FLSun",
+           "PVA": "Generic PVA @FLSun",
+           "TPU": "Generic TPU @FLSun"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun",
+           "generic asa": "Generic ASA @FLSun",
+           "generic pa": "Generic PA @FLSun",
+           "generic pa-cf": "Generic PA-CF @FLSun",
+           "generic pc": "Generic PC @FLSun",
+           "generic petg": "Generic PETG @FLSun",
+           "generic pla": "Generic PLA @FLSun",
+           "generic pla-cf": "Generic PLA-CF @FLSun",
+           "generic pva": "Generic PVA @FLSun",
+           "generic tpu": "Generic TPU @FLSun"
+          }
+         }
         }
        ]
       }
@@ -1383,7 +1958,33 @@
            "name": "0.20mm Standard @FLSun V400",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1402,7 +2003,33 @@
            "name": "0.20mm Standard @FLSun V400",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1421,7 +2048,33 @@
            "name": "0.20mm Standard @FLSun V400",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1440,7 +2093,33 @@
            "name": "0.20mm Standard @FLSun V400",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
         }
        ]
       }

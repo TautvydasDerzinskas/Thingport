@@ -55,7 +55,19 @@
            "name": "0.20mm Standard @IdeaFormer IR3 V2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @IdeaFormer IR3 V2",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @IdeaFormer IR3 V2",
+           "PLA": "Generic PLA @IdeaFormer IR3 V2"
+          },
+          "products": {
+           "esun pla": "eSUN PLA @IdeaFormer IR3 V2",
+           "generic petg": "Generic PETG @IdeaFormer IR3 V2",
+           "generic pla": "Generic PLA @IdeaFormer IR3 V2"
+          }
+         }
         }
        ]
       }

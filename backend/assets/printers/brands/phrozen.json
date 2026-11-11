@@ -57,7 +57,16 @@
            "name": "0.20mm Standard @Phrozen Arco 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Phrozen Arco 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Phrozen Arco 0.4 nozzle"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Phrozen Arco 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -76,7 +85,16 @@
            "name": "0.20mm Standard @Phrozen Arco 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Phrozen PLA @Phrozen Arco 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Phrozen PLA @Phrozen Arco 0.4 nozzle"
+          },
+          "products": {
+           "phrozen pla": "Phrozen PLA @Phrozen Arco 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -95,7 +113,16 @@
            "name": "0.20mm Standard @Phrozen Arco 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Phrozen PLA @Phrozen Arco 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Phrozen PLA @Phrozen Arco 0.4 nozzle"
+          },
+          "products": {
+           "phrozen pla": "Phrozen PLA @Phrozen Arco 0.4 nozzle"
+          }
+         }
         }
        ]
       }

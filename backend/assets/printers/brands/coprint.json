@@ -62,7 +62,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @CoPrint",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoPrint",
+           "PETG": "Generic PETG @CoPrint",
+           "PLA": "Generic PLA @CoPrint",
+           "TPU": "Generic TPU @CoPrint"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoPrint",
+           "generic petg": "Generic PETG @CoPrint",
+           "generic pla": "Generic PLA @CoPrint",
+           "generic tpu": "Generic TPU @CoPrint"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3",
@@ -76,7 +91,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @CoPrint",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoPrint",
+           "PETG": "Generic PETG @CoPrint",
+           "PLA": "Generic PLA @CoPrint",
+           "TPU": "Generic TPU @CoPrint"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoPrint",
+           "generic petg": "Generic PETG @CoPrint",
+           "generic pla": "Generic PLA @CoPrint",
+           "generic tpu": "Generic TPU @CoPrint"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle fast",
@@ -86,7 +116,22 @@
            "name": "0.2mm Fast @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @CoPrint",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoPrint",
+           "PETG": "Generic PETG @CoPrint",
+           "PLA": "Generic PLA @CoPrint",
+           "TPU": "Generic TPU @CoPrint"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoPrint",
+           "generic petg": "Generic PETG @CoPrint",
+           "generic pla": "Generic PLA @CoPrint",
+           "generic tpu": "Generic TPU @CoPrint"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle",
@@ -96,7 +141,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @CoPrint",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoPrint",
+           "PETG": "Generic PETG @CoPrint",
+           "PLA": "Generic PLA @CoPrint",
+           "TPU": "Generic TPU @CoPrint"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoPrint",
+           "generic petg": "Generic PETG @CoPrint",
+           "generic pla": "Generic PLA @CoPrint",
+           "generic tpu": "Generic TPU @CoPrint"
+          }
+         }
         }
        ]
       }
@@ -119,7 +179,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3",
@@ -133,7 +208,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle fast",
@@ -143,7 +233,22 @@
            "name": "0.2mm Fast @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle",
@@ -153,7 +258,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -176,7 +296,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3",
@@ -190,7 +325,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle fast",
@@ -200,7 +350,22 @@
            "name": "0.2mm Fast @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle",
@@ -210,7 +375,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -233,7 +413,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle - Ender-3 V3",
@@ -247,7 +442,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle fast",
@@ -257,7 +467,22 @@
            "name": "0.2mm Fast @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         },
         {
          "name": "Co Print ChromaSet 0.4 nozzle",
@@ -267,7 +492,22 @@
            "name": "0.2mm Standard @Co Print ChromaSet 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "CoPrint Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "CoPrint Generic ABS",
+           "PETG": "CoPrint Generic PETG",
+           "PLA": "CoPrint Generic PLA",
+           "TPU": "CoPrint Generic TPU"
+          },
+          "products": {
+           "coprint generic abs": "CoPrint Generic ABS",
+           "coprint generic petg": "CoPrint Generic PETG",
+           "coprint generic pla": "CoPrint Generic PLA",
+           "coprint generic tpu": "CoPrint Generic TPU"
+          }
+         }
         }
        ]
       }

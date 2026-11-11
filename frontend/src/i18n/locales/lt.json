@@ -3100,7 +3100,8 @@
       "tabs": {
         "appearance": "Išvaizda",
         "providers": "Šaltiniai",
-        "slicer": "Pjaustyklė"
+        "slicer": "Pjaustyklė",
+        "printers": "Spausdintuvai"
       }
     },
     "providers": {
@@ -3126,7 +3127,12 @@
       "lastUsed": "Paskutinė naudota",
       "deactivate": "Išjungti",
       "throughBridge": "Per Thingport Bridge",
-      "throughBridgeHelp": "Thingport Bridge atsisiunčia failą ir perduoda jį į {{slicer}} – kai {{slicer}} negali jo atsisiųsti iš šio Thingport serverio."
+      "throughBridgeHelp": "Thingport Bridge atsisiunčia failą ir perduoda jį į {{slicer}} – kai {{slicer}} negali jo atsisiųsti iš šio Thingport serverio.",
+      "openAdapted": "Atverti pritaikytą",
+      "openAdaptedHelp": "{{slicer}} atveria modelį kaip jai paruoštą kopiją, o jei ji priima spausdintuvą – ir jūsų spausdintuvui. Išjungus kiekvienas failas atveriamas toks, koks yra.",
+      "printer": "Spausdintuvas",
+      "askPrinter": "Klausti atveriant modelį",
+      "addPrinters": "Pridėti spausdintuvų…"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} iš {{total}} modelių",
@@ -4474,6 +4480,58 @@
       "noMatch": "Atitinkančių modelių nėra.",
       "emptyLibrary": "Jūsų bibliotekoje kol kas nėra modelių.",
       "loadFailed": "Nepavyko įkelti jūsų modelių."
+    },
+    "printers": {
+      "subtitle": "Dukart spustelėkite spausdintuvą, kad jį pridėtumėte ar pašalintumėte; dešiniuoju mygtuku – jo antgalis ir pjaustyklės.",
+      "failed": "Nepavyko išsaugoti spausdintuvo.",
+      "yours": "jūsų, {{nozzle}} mm antgalis",
+      "suggested": "Siūlomas",
+      "notYours": "Ne jūsų",
+      "nozzleShort": "{{nozzle}} mm",
+      "suggestedSliced_one": "jam supjaustytas {{count}} jūsų spaudinys",
+      "suggestedSliced_few": "jam supjaustyti {{count}} jūsų spaudiniai",
+      "suggestedSliced_other": "jam supjaustyta {{count}} jūsų spaudinių",
+      "suggestedProjects_one": "jam skirtas {{count}} jūsų projektas",
+      "suggestedProjects_few": "jam skirti {{count}} jūsų projektai",
+      "suggestedProjects_other": "jam skirta {{count}} jūsų projektų",
+      "empty": "Pridėkite spausdintuvus, kuriais spausdinate, ir modeliai jūsų pjaustyklėje atsivers pritaikyti jiems.",
+      "bambu": {
+        "region": "Jūsų Bambu Lab paskyra",
+        "question": "Rasti jūsų spausdintuvus Bambu Lab paskyroje?",
+        "find": "Rasti",
+        "later": "Ne dabar",
+        "found_one": "Pridėtas {{count}} spausdintuvas iš jūsų Bambu Lab paskyros.",
+        "found_few": "Pridėti {{count}} spausdintuvai iš jūsų Bambu Lab paskyros.",
+        "found_other": "Pridėta {{count}} spausdintuvų iš jūsų Bambu Lab paskyros.",
+        "none": "Jūsų Bambu Lab paskyroje nėra Thingport žinomų spausdintuvų.",
+        "expired": "Jūsų MakerWorld prisijungimas nebegalioja. Prisijunkite iš naujo skiltyje „Šaltiniai“.",
+        "signedOut": "Pirmiausia prisijunkite prie MakerWorld skiltyje „Šaltiniai“.",
+        "failed": "Bambu Lab nepateikė jūsų spausdintuvų. Bandykite vėliau."
+      },
+      "menu": {
+        "nozzle": "Antgalis",
+        "usedWith": "Naudojamas su",
+        "slicers_one": "{{count}} pjaustykle",
+        "slicers_few": "{{count}} pjaustyklėmis",
+        "slicers_other": "{{count}} pjaustyklių",
+        "unused": "Jokia",
+        "noSlicers": "Neįjungta nė viena pjaustyklė, priimanti spausdintuvą",
+        "notIn": "Nėra {{slicer}}",
+        "remove": "Pašalinti",
+        "add": "Pridėti prie mano spausdintuvų",
+        "notMine": "Ne mano",
+        "suggestAgain": "Vėl siūlyti"
+      },
+      "add": {
+        "tile": "Pridėti",
+        "title": "Pridėti spausdintuvą",
+        "search": "Ieškoti spausdintuvų",
+        "brands": "Gamintojai",
+        "failed": "Nepavyko įkelti spausdintuvų.",
+        "none": "Nė vienas spausdintuvas neatitinka „{{query}}“.",
+        "added": "pridėtas",
+        "done": "Baigta"
+      }
     }
   },
   "common": {
@@ -5264,7 +5322,8 @@
       "adaptedInfo": {
         "prusa": "Kopija, paruošta {{slicer}}: ji atsiveria su jūsų spausdintuvo, gijų ir spausdinimo nustatymais, autoriaus sluoksnio aukštis, sienelės, užpildas ir atramos nustatomi kiekvienam objektui, o nudažytos spalvos tenka jūsų ekstruderiams. Saugomas failas nekeičiamas.",
         "cura": "Kopija, paruošta {{slicer}}: kelių dalių objektai išlaiko savo dalis, kiekvieną su savo ekstruderiu, o autoriaus sienelės, viršutiniai ir apatiniai sluoksniai, užpildas ir atramos nustatomi kiekvienam objektui. Cura neskaito nudažytų spalvų. Saugomas failas nekeičiamas.",
-        "bambu": "Kopija, kurią {{slicer}} atveria kaip savo projektą: dalys, plokštės, dažymas ir autoriaus nustatymai lieka tokie, kokie yra, be klausimų apie failo versiją ar kitaip vadinamus nustatymus. Saugomas failas nekeičiamas."
+        "bambu": "Kopija, kurią {{slicer}} atveria kaip savo projektą: dalys, plokštės, dažymas ir autoriaus nustatymai lieka tokie, kokie yra, be klausimų apie failo versiją ar kitaip vadinamus nustatymus. Saugomas failas nekeičiamas.",
+        "bambuPrinter": "Kopija, kurią {{slicer}} atveria kaip savo projektą jūsų spausdintuvui: jos nustatymų rinkiniai tam spausdintuvui su autoriaus pakeitimais, o plokštės perkeltos ant jo pagrindo. Dalys ir dažymas lieka kaip buvo. Saugomas failas nekeičiamas."
       },
       "adaptPreparing": "Ruošiamas pritaikytas failas…",
       "adaptPreparingShort": "Ruošiamas pritaikytas failas…",
@@ -5383,7 +5442,17 @@
       "toolOwnedHint": "Jo negalima redaguoti ar ištrinti",
       "customize": "Keisti…",
       "scriptWithheld": "Scenarijus nepateiktas",
-      "scriptWithheldHint": "Šis modelis sukurtas iš scenarijaus, bet jo autorius nusprendė juo nesidalinti, tad čia nėra ko keisti. Tai pakeisti gali tik jis."
+      "scriptWithheldHint": "Šis modelis sukurtas iš scenarijaus, bet jo autorius nusprendė juo nesidalinti, tad čia nėra ko keisti. Tai pakeisti gali tik jis.",
+      "askPrinter": {
+        "title": "Kuriam spausdintuvui tai skirta?",
+        "subtitle": "{{slicer}} gauna jam paruoštą kopiją su autoriaus nustatymais.",
+        "notIn": "Nėra {{slicer}}",
+        "detail": "{{nozzle}} mm · {{x}} × {{y}}",
+        "nozzle": "{{nozzle}} mm",
+        "remember": "Įsiminti {{slicer}}",
+        "changeLater": "pakeisti galima konfigūracijoje",
+        "open": "Atverti"
+      }
     },
     "customizer": {
       "title": "Keičiamas {{model}}",

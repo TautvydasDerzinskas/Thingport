@@ -107,6 +107,30 @@ async function fetchCloudJson(
   return null;
 }
 
+// The printers bound to the Bambu account the MakerWorld sign-in is. Read only when the user asks Thingport to find
+// their printers there (Configuration > Printers).
+const BOUND_PRINTERS_URL = `${manifest.endpoints.cloudApi}/iot-service/api/user/bind`;
+
+/** A printer bound to the user's Bambu account: its model code ("C12" is the P1S), product name and nozzle. Its
+ *  serial, access code and name are left out, never kept. */
+export type BoundPrinter = { model: string | null; product: string | null; nozzle: number | null };
+
+/** The printers bound to the account; "rejected" when the sign-in is no longer good, null when Bambu can't say. */
+export async function fetchBoundPrinters(bearerToken: string): Promise<BoundPrinter[] | "rejected" | null> {
+  const result = await fetchCloudJson(BOUND_PRINTERS_URL, bearerToken);
+  if (!result) return null;
+  if (result.status === 401 || result.status === 403) return "rejected";
+  if (result.status !== 200 || !isRecord(result.data) || !Array.isArray(result.data.devices)) return null;
+  return result.data.devices.filter(isRecord).map((device) => {
+    const nozzle = Number(device.nozzle_diameter);
+    return {
+      model: typeof device.dev_model_name === "string" ? device.dev_model_name : null,
+      product: typeof device.dev_product_name === "string" ? device.dev_product_name : null,
+      nozzle: Number.isFinite(nozzle) && nozzle > 0 ? nozzle : null,
+    };
+  });
+}
+
 /** Pulls the `token` value out of a pasted `Cookie:` header, or accepts a bare token. */
 export function extractMakerworldBearerToken(rawCookieOrToken: string | null | undefined): string | null {
   const raw = (rawCookieOrToken || "").trim().replace(/^Cookie:\s*/i, "");

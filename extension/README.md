@@ -142,8 +142,9 @@ on your extruders. Hover the bulb on the button for what the copy keeps.
 
 - **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance, while the popup's
   **Adapt MakerWorld 3MFs** switch is on, under **Offline features** (**Extra features** once connected). It isn't
-  offered when your instance's slicer opens MakerWorld's files as they are, as Bambu Studio does. If the instance
-  doesn't say in time, the button is offered and asks it again when you click.
+  offered when your instance's slicer opens MakerWorld's files as they are, as Bambu Studio does, or when you switched
+  that slicer's **Open adapted** off in your instance's Configuration. If the instance doesn't say in time, the button
+  is offered and asks it again when you click.
 - **Where it runs:** entirely in your browser, with the same converter Thingport's **Open adapted** uses on the
   server. The file goes nowhere but your downloads folder.
 - **Limits:** you need to be signed in to MakerWorld, as for its own Download button, and files over

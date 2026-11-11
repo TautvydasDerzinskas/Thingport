@@ -107,7 +107,33 @@
            "name": "0.20mm Standard @Anycubic 4MaxPro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -126,7 +152,33 @@
            "name": "0.20mm Standard @Anycubic 4MaxPro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -145,7 +197,33 @@
            "name": "0.20mm Standard @Anycubic 4MaxPro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -164,7 +242,33 @@
            "name": "0.20mm Standard @Anycubic 4MaxPro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -183,7 +287,33 @@
            "name": "0.20mm Standard @Anycubic 4MaxPro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -206,7 +336,34 @@
            "name": "0.20mm Standard @Anycubic 4MaxPro",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -280,7 +437,34 @@
            "name": "0.30mm Draft @Anycubic 4MaxPro2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -307,7 +491,34 @@
            "name": "0.30mm Draft @Anycubic 4MaxPro2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -334,7 +545,34 @@
            "name": "0.30mm Draft @Anycubic 4MaxPro2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -361,7 +599,34 @@
            "name": "0.30mm Draft @Anycubic 4MaxPro2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -388,7 +653,34 @@
            "name": "0.30mm Draft @Anycubic 4MaxPro2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -415,7 +707,34 @@
            "name": "0.30mm Draft @Anycubic 4MaxPro2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -516,7 +835,34 @@
            "name": "0.30mm Draft @Anycubic Chiron",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -543,7 +889,34 @@
            "name": "0.30mm Draft @Anycubic Chiron",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -570,7 +943,34 @@
            "name": "0.30mm Draft @Anycubic Chiron",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -597,7 +997,34 @@
            "name": "0.30mm Draft @Anycubic Chiron",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -624,7 +1051,34 @@
            "name": "0.30mm Draft @Anycubic Chiron",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -651,7 +1105,34 @@
            "name": "0.30mm Draft @Anycubic Chiron",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -811,7 +1292,34 @@
            "name": "0.30mm Draft @Anycubic i3MegaS",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -838,7 +1346,34 @@
            "name": "0.30mm Draft @Anycubic i3MegaS",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -865,7 +1400,34 @@
            "name": "0.30mm Draft @Anycubic i3MegaS",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -892,7 +1454,34 @@
            "name": "0.30mm Draft @Anycubic i3MegaS",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -919,7 +1508,34 @@
            "name": "0.30mm Draft @Anycubic i3MegaS",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -946,7 +1562,34 @@
            "name": "0.30mm Draft @Anycubic i3MegaS",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -1096,7 +1739,34 @@
            "name": "0.30mm Draft @Anycubic Kobra",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1123,7 +1793,34 @@
            "name": "0.30mm Draft @Anycubic Kobra",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -1150,7 +1847,34 @@
            "name": "0.30mm Draft @Anycubic Kobra",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1177,7 +1901,34 @@
            "name": "0.30mm Draft @Anycubic Kobra",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1257,7 +2008,34 @@
            "name": "0.30mm Draft @Anycubic Kobra2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1284,7 +2062,34 @@
            "name": "0.30mm Draft @Anycubic Kobra2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -1311,7 +2116,34 @@
            "name": "0.30mm Draft @Anycubic Kobra2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1338,7 +2170,34 @@
            "name": "0.30mm Draft @Anycubic Kobra2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1365,7 +2224,34 @@
            "name": "0.30mm Draft @Anycubic Kobra2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1392,7 +2278,34 @@
            "name": "0.30mm Draft @Anycubic Kobra2",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -1460,7 +2373,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Max 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1479,7 +2401,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Max 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1498,7 +2429,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Max 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1517,7 +2457,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Max 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Max 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1579,7 +2528,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Neo 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1610,7 +2568,16 @@
            "name": "0.28mm Standard @Anycubic Kobra 2 Neo 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1641,7 +2608,16 @@
            "name": "0.28mm Standard @Anycubic Kobra 2 Neo 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1660,7 +2636,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Neo 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Neo 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1722,7 +2707,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Plus 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1741,7 +2735,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Plus 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1760,7 +2763,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Plus 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1779,7 +2791,16 @@
            "name": "0.20mm Standard @Anycubic Kobra 2 Plus 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Plus 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1849,7 +2870,16 @@
            "name": "0.28mm Draft @Anycubic Kobra 2 Pro 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1876,7 +2906,16 @@
            "name": "0.28mm Draft @Anycubic Kobra 2 Pro 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1903,7 +2942,16 @@
            "name": "0.28mm Draft @Anycubic Kobra 2 Pro 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1930,7 +2978,16 @@
            "name": "0.28mm Draft @Anycubic Kobra 2 Pro 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 2 Pro 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -2062,7 +3119,17 @@
            "name": "0.10mm Detail @Anycubic Kobra 3 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic Generic PLA"
+          },
+          "products": {
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.2 nozzle"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2094,7 +3161,35 @@
            "name": "0.28mm SuperDraft @Anycubic Kobra 3 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic tpu": "Anycubic Generic TPU",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla se": "Anycubic PLA SE @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla slik": "Anycubic PLA Slik @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra 3 0.4 nozzle",
+           "generic abs": "Generic ABS @Anycubic Kobra 3 0.4 nozzle",
+           "generic tpu": "Generic TPU @Anycubic Kobra 3 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2106,7 +3201,17 @@
            "name": "0.30mm Standard @Anycubic Kobra 3 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic Generic PLA"
+          },
+          "products": {
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2118,7 +3223,17 @@
            "name": "0.40mm Standard @Anycubic Kobra 3 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic Generic PLA"
+          },
+          "products": {
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -2137,7 +3252,17 @@
            "name": "0.10mm Detail @Anycubic Kobra 3 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Anycubic"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.2 nozzle",
+           "generic pla": "Generic PLA @Anycubic"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2169,7 +3294,33 @@
            "name": "0.28mm SuperDraft @Anycubic Kobra 3 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic Kobra 3 0.4 nozzle",
+           "ASA": "Generic ASA @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "TPU": "Generic TPU @Anycubic Kobra 3 0.4 nozzle"
+          },
+          "products": {
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla se": "Anycubic PLA SE @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla slik": "Anycubic PLA Slik @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra 3 0.4 nozzle",
+           "generic abs": "Generic ABS @Anycubic Kobra 3 0.4 nozzle",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic Kobra 3 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2181,7 +3332,17 @@
            "name": "0.30mm Standard @Anycubic Kobra 3 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Anycubic"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.6 nozzle",
+           "generic pla": "Generic PLA @Anycubic"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2193,7 +3354,17 @@
            "name": "0.40mm Standard @Anycubic Kobra 3 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Anycubic"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.8 nozzle",
+           "generic pla": "Generic PLA @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -2212,7 +3383,17 @@
            "name": "0.10mm Detail @Anycubic Kobra 3 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic Generic PLA"
+          },
+          "products": {
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.2 nozzle"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2244,7 +3425,35 @@
            "name": "0.28mm SuperDraft @Anycubic Kobra 3 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic tpu": "Anycubic Generic TPU",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla se": "Anycubic PLA SE @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla slik": "Anycubic PLA Slik @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra 3 0.4 nozzle",
+           "generic abs": "Generic ABS @Anycubic Kobra 3 0.4 nozzle",
+           "generic tpu": "Generic TPU @Anycubic Kobra 3 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2256,7 +3465,17 @@
            "name": "0.30mm Standard @Anycubic Kobra 3 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic Generic PLA"
+          },
+          "products": {
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2268,7 +3487,17 @@
            "name": "0.40mm Standard @Anycubic Kobra 3 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic Generic PLA"
+          },
+          "products": {
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -2287,7 +3516,17 @@
            "name": "0.10mm Detail @Anycubic Kobra 3 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic Generic PLA"
+          },
+          "products": {
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.2 nozzle"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2319,7 +3558,35 @@
            "name": "0.28mm SuperDraft @Anycubic Kobra 3 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic tpu": "Anycubic Generic TPU",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla se": "Anycubic PLA SE @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla slik": "Anycubic PLA Slik @Anycubic Kobra 3 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra 3 0.4 nozzle",
+           "generic abs": "Generic ABS @Anycubic Kobra 3 0.4 nozzle",
+           "generic tpu": "Generic TPU @Anycubic Kobra 3 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2331,7 +3598,17 @@
            "name": "0.30mm Standard @Anycubic Kobra 3 0.6 nozzle",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic Generic PLA"
+          },
+          "products": {
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2343,7 +3620,17 @@
            "name": "0.40mm Standard @Anycubic Kobra 3 0.8 nozzle",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic Generic PLA"
+          },
+          "products": {
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -2492,7 +3779,36 @@
            "name": "0.28mm Standard @Anycubic Kobra 3 Max 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 Max 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PEBA": "Anycubic PEBA 95A @Anycubic Kobra 3 Max 0.4 nozzle",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic peba 95a": "Anycubic PEBA 95A @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla luminous": "Anycubic PLA Luminous @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra 3 Max 0.4 nozzle",
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic petg basic": "Generic PETG Basic @Anycubic Kobra 3 Max 0.4 nozzle",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2520,7 +3836,24 @@
            "name": "0.42mm Standard @Anycubic Kobra 3 Max 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 Max 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra 3 Max 0.6 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra 3 Max 0.6 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra 3 Max 0.6 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra 3 Max 0.6 nozzle",
+           "TPU": "Anycubic TPU @Anycubic Kobra 3 Max 0.6 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra 3 Max 0.6 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra 3 Max 0.6 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 Max 0.6 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 Max 0.6 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra 3 Max 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2548,7 +3881,24 @@
            "name": "0.48mm Standard @Anycubic Kobra 3 Max 0.8 nozzle",
            "layerHeight": 0.48
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 Max 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra 3 Max 0.8 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra 3 Max 0.8 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra 3 Max 0.8 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra 3 Max 0.8 nozzle",
+           "TPU": "Anycubic TPU @Anycubic Kobra 3 Max 0.8 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra 3 Max 0.8 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra 3 Max 0.8 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 Max 0.8 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 Max 0.8 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra 3 Max 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -2587,7 +3937,36 @@
            "name": "0.28mm Standard @Anycubic Kobra 3 Max 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 Max 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PEBA": "Anycubic PEBA 95A @Anycubic Kobra 3 Max 0.4 nozzle",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic tpu": "Anycubic Generic TPU",
+           "anycubic peba 95a": "Anycubic PEBA 95A @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla luminous": "Anycubic PLA Luminous @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra 3 Max 0.4 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra 3 Max 0.4 nozzle",
+           "generic petg basic": "Generic PETG Basic @Anycubic Kobra 3 Max 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2615,7 +3994,24 @@
            "name": "0.42mm Standard @Anycubic Kobra 3 Max 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 Max 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra 3 Max 0.6 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra 3 Max 0.6 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra 3 Max 0.6 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra 3 Max 0.6 nozzle",
+           "TPU": "Anycubic TPU @Anycubic Kobra 3 Max 0.6 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra 3 Max 0.6 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra 3 Max 0.6 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 Max 0.6 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 Max 0.6 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra 3 Max 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2643,7 +4039,24 @@
            "name": "0.48mm Standard @Anycubic Kobra 3 Max 0.8 nozzle",
            "layerHeight": 0.48
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 Max 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra 3 Max 0.8 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra 3 Max 0.8 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra 3 Max 0.8 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra 3 Max 0.8 nozzle",
+           "TPU": "Anycubic TPU @Anycubic Kobra 3 Max 0.8 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra 3 Max 0.8 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra 3 Max 0.8 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 Max 0.8 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 Max 0.8 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra 3 Max 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -2718,7 +4131,16 @@
            "name": "0.10mm Standard @Anycubic Kobra 3 V2 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 V2 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra 3 V2 0.2 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 V2 0.2 nozzle"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2762,7 +4184,33 @@
            "name": "0.28mm Standard @Anycubic Kobra 3 V2 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 V2 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra 3 V2 0.4 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra 3 V2 0.4 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra 3 V2 0.4 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra 3 V2 0.4 nozzle",
+           "TPU": "Anycubic TPU @Anycubic Kobra 3 V2 0.4 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla galaxy": "Anycubic PLA Galaxy @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla marble": "Anycubic PLA Marble @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla metal": "Anycubic PLA Metal @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla se": "Anycubic PLA SE @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic pla translucent": "Anycubic PLA Translucent @Anycubic Kobra 3 V2 0.4 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra 3 V2 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2782,7 +4230,22 @@
            "name": "0.36mm Standard @Anycubic Kobra 3 V2 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 V2 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "Anycubic PETG @Anycubic Kobra 3 V2 0.6 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra 3 V2 0.6 nozzle"
+          },
+          "products": {
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 V2 0.6 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 V2 0.6 nozzle",
+           "anycubic pla galaxy": "Anycubic PLA Galaxy @Anycubic Kobra 3 V2 0.6 nozzle",
+           "anycubic pla marble": "Anycubic PLA Marble @Anycubic Kobra 3 V2 0.6 nozzle",
+           "anycubic pla metal": "Anycubic PLA Metal @Anycubic Kobra 3 V2 0.6 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra 3 V2 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2802,7 +4265,22 @@
            "name": "0.48mm Standard @Anycubic Kobra 3 V2 0.8 nozzle",
            "layerHeight": 0.48
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra 3 V2 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "Anycubic PETG @Anycubic Kobra 3 V2 0.8 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra 3 V2 0.8 nozzle"
+          },
+          "products": {
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra 3 V2 0.8 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra 3 V2 0.8 nozzle",
+           "anycubic pla galaxy": "Anycubic PLA Galaxy @Anycubic Kobra 3 V2 0.8 nozzle",
+           "anycubic pla marble": "Anycubic PLA Marble @Anycubic Kobra 3 V2 0.8 nozzle",
+           "anycubic pla metal": "Anycubic PLA Metal @Anycubic Kobra 3 V2 0.8 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra 3 V2 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -2932,7 +4410,34 @@
            "name": "0.30mm Draft @Anycubic KobraMax",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -2959,7 +4464,34 @@
            "name": "0.30mm Draft @Anycubic KobraMax",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -2986,7 +4518,34 @@
            "name": "0.30mm Draft @Anycubic KobraMax",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -3013,7 +4572,34 @@
            "name": "0.30mm Draft @Anycubic KobraMax",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -3040,7 +4626,34 @@
            "name": "0.30mm Draft @Anycubic KobraMax",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -3067,7 +4680,34 @@
            "name": "0.30mm Draft @Anycubic KobraMax",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -3145,7 +4785,16 @@
            "name": "0.28mm Standard @Anycubic Kobra Neo 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra Neo 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra Neo 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -3176,7 +4825,16 @@
            "name": "0.28mm Standard @Anycubic Kobra Neo 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "PLA": "Anycubic PLA @Anycubic Kobra Neo 0.4 nozzle"
+          },
+          "products": {
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra Neo 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -3250,7 +4908,34 @@
            "name": "0.30mm Draft @Anycubic KobraPlus",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -3277,7 +4962,34 @@
            "name": "0.30mm Draft @Anycubic KobraPlus",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -3304,7 +5016,34 @@
            "name": "0.30mm Draft @Anycubic KobraPlus",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -3331,7 +5070,34 @@
            "name": "0.30mm Draft @Anycubic KobraPlus",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -3358,7 +5124,34 @@
            "name": "0.30mm Draft @Anycubic KobraPlus",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -3377,7 +5170,34 @@
            "name": "0.20mm Standard @Anycubic KobraPlus",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -3447,7 +5267,27 @@
            "name": "0.20mm Standard @Anycubic Kobra S1 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 0.4 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 0.4 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 0.4 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+           "TPU": "Anycubic TPU @Anycubic Kobra S1 0.4 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra S1 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -3466,7 +5306,32 @@
            "name": "0.20mm Standard @Anycubic Kobra S1 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 0.4 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 0.4 nozzle",
+           "PA6-CF": "Fiberon PA6-CF20 @Anycubic Kobra S1",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 0.4 nozzle",
+           "PLA": "Panchroma PLA @Anycubic Kobra S1",
+           "TPU": "Anycubic TPU @Anycubic Kobra S1 0.4 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra S1 0.4 nozzle",
+           "fiberon pa6-cf20": "Fiberon PA6-CF20 @Anycubic Kobra S1",
+           "panchroma pla": "Panchroma PLA @Anycubic Kobra S1",
+           "polymaker pla pro": "Polymaker PLA Pro @Anycubic Kobra S1",
+           "polymaker pla pro metallic": "Polymaker PLA Pro Metallic @Anycubic Kobra S1"
+          }
+         }
         }
        ]
       }
@@ -3485,7 +5350,32 @@
            "name": "0.20mm Standard @Anycubic Kobra S1 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 0.4 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 0.4 nozzle",
+           "PA6-CF": "Fiberon PA6-CF20 @Anycubic Kobra S1",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 0.4 nozzle",
+           "PLA": "Panchroma PLA @Anycubic Kobra S1",
+           "TPU": "Anycubic TPU @Anycubic Kobra S1 0.4 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra S1 0.4 nozzle",
+           "fiberon pa6-cf20": "Fiberon PA6-CF20 @Anycubic Kobra S1",
+           "panchroma pla": "Panchroma PLA @Anycubic Kobra S1",
+           "polymaker pla pro": "Polymaker PLA Pro @Anycubic Kobra S1",
+           "polymaker pla pro metallic": "Polymaker PLA Pro Metallic @Anycubic Kobra S1"
+          }
+         }
         }
        ]
       }
@@ -3504,7 +5394,27 @@
            "name": "0.20mm Standard @Anycubic Kobra S1 0.4 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 0.4 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 0.4 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 0.4 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+           "TPU": "Anycubic TPU @Anycubic Kobra S1 0.4 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 0.4 nozzle",
+           "anycubic tpu": "Anycubic TPU @Anycubic Kobra S1 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -3589,7 +5499,22 @@
            "name": "0.14mm Standard @Anycubic Kobra S1 Max 0.25 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 Max 0.25 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 Max 0.25 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 Max 0.25 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 Max 0.25 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 Max 0.25 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 Max 0.25 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 Max 0.25 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 Max 0.25 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 Max 0.25 nozzle"
+          }
+         }
         }
        ],
        "0.4": [
@@ -3629,7 +5554,54 @@
            "name": "0.28mm Standard @Anycubic Kobra S1 Max 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 Max 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 Max 0.4 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PA": "Anycubic PA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PA6-CF": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PAHT-CF": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PC": "Anycubic PC @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PC-CF": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PC-GF": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PEBA": "Anycubic PEBA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PET-CF": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PETG": "Generic PETG @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PETG-CF": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PLA-CF": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PVA": "Anycubic PVA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "TPU": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.4 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pa": "Anycubic PA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pa6-cf": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic paht-cf": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pc": "Anycubic PC @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pc-cf": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pc-gf": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic peba": "Anycubic PEBA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pet-cf": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic petg-cf": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla translucent": "Anycubic PLA Translucent @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla-cf": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pva": "Anycubic PVA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic tpu 95a": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic tpu for ace": "Anycubic TPU for ACE @Anycubic Kobra S1 Max 0.4 nozzle",
+           "generic petg": "Generic PETG @Anycubic Kobra S1 Max 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3657,7 +5629,52 @@
            "name": "0.42mm Standard @Anycubic Kobra S1 Max 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 Max 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 Max 0.6 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PA": "Anycubic PA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PA6-CF": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PAHT-CF": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PC": "Anycubic PC @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PC-CF": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PC-GF": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PEBA": "Anycubic PEBA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PET-CF": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PETG-CF": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PLA-CF": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PVA": "Anycubic PVA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "TPU": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.6 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pa": "Anycubic PA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pa6-cf": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic paht-cf": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pc": "Anycubic PC @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pc-cf": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pc-gf": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic peba": "Anycubic PEBA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pet-cf": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic petg-cf": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla-cf": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pva": "Anycubic PVA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic tpu 95a": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic tpu for ace": "Anycubic TPU for ACE @Anycubic Kobra S1 Max 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3685,7 +5702,52 @@
            "name": "0.56mm Standard @Anycubic Kobra S1 Max 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 Max 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 Max 0.8 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PA": "Anycubic PA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PA6-CF": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PAHT-CF": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PC": "Anycubic PC @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PC-CF": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PC-GF": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PEBA": "Anycubic PEBA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PET-CF": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PETG-CF": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PLA-CF": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PVA": "Anycubic PVA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "TPU": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.8 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pa": "Anycubic PA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pa6-cf": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic paht-cf": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pc": "Anycubic PC @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pc-cf": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pc-gf": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic peba": "Anycubic PEBA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pet-cf": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic petg-cf": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla-cf": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pva": "Anycubic PVA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic tpu 95a": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic tpu for ace": "Anycubic TPU for ACE @Anycubic Kobra S1 Max 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -3720,7 +5782,22 @@
            "name": "0.14mm Standard @Anycubic Kobra S1 Max 0.25 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 Max 0.25 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 Max 0.25 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 Max 0.25 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 Max 0.25 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 Max 0.25 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 Max 0.25 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 Max 0.25 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 Max 0.25 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 Max 0.25 nozzle"
+          }
+         }
         }
        ],
        "0.4": [
@@ -3760,7 +5837,55 @@
            "name": "0.28mm Standard @Anycubic Kobra S1 Max 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 Max 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 Max 0.4 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PA": "Anycubic PA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PA6-CF": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PAHT-CF": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PC": "Anycubic PC @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PC-CF": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PC-GF": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PEBA": "Anycubic PEBA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PET-CF": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PETG": "Generic PETG @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PETG-CF": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PLA-CF": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "PVA": "Anycubic PVA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "TPU": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.4 nozzle",
+           "TPU for ACE": "Anycubic TPU for ACE @Anycubic Kobra S1 Max 0.4 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pa": "Anycubic PA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pa6-cf": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic paht-cf": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pc": "Anycubic PC @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pc-cf": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pc-gf": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic peba": "Anycubic PEBA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pet-cf": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic petg-cf": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla translucent": "Anycubic PLA Translucent @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla-cf": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic pva": "Anycubic PVA @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic tpu 95a": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.4 nozzle",
+           "anycubic tpu for ace": "Anycubic TPU for ACE @Anycubic Kobra S1 Max 0.4 nozzle",
+           "generic petg": "Generic PETG @Anycubic Kobra S1 Max 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3788,7 +5913,51 @@
            "name": "0.42mm Standard @Anycubic Kobra S1 Max 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 Max 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 Max 0.6 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PA": "Anycubic PA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PA6-CF": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PAHT-CF": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PC": "Anycubic PC @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PC-CF": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PC-GF": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PEBA": "Anycubic PEBA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PET-CF": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PETG-CF": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PLA-CF": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "PVA": "Anycubic PVA @Anycubic Kobra S1 Max 0.6 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pa": "Anycubic PA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pa6-cf": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic paht-cf": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pc": "Anycubic PC @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pc-cf": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pc-gf": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic peba": "Anycubic PEBA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pet-cf": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic petg-cf": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla-cf": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic pva": "Anycubic PVA @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic tpu 95a": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.6 nozzle",
+           "anycubic tpu for ace": "Anycubic TPU for ACE @Anycubic Kobra S1 Max 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3816,7 +5985,52 @@
            "name": "0.56mm Standard @Anycubic Kobra S1 Max 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra S1 Max 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra S1 Max 0.8 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PA": "Anycubic PA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PA6-CF": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PAHT-CF": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PC": "Anycubic PC @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PC-CF": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PC-GF": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PEBA": "Anycubic PEBA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PET-CF": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PETG": "Anycubic PETG @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PETG-CF": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PLA-CF": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "PVA": "Anycubic PVA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "TPU": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.8 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pa": "Anycubic PA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pa6-cf": "Anycubic PA6-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic paht-cf": "Anycubic PAHT-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pc": "Anycubic PC @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pc-cf": "Anycubic PC-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pc-gf": "Anycubic PC-GF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic peba": "Anycubic PEBA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pet-cf": "Anycubic PET-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic petg-cf": "Anycubic PETG-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla-cf": "Anycubic PLA-CF @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic pva": "Anycubic PVA @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic tpu 95a": "Anycubic TPU 95A @Anycubic Kobra S1 Max 0.8 nozzle",
+           "anycubic tpu for ace": "Anycubic TPU for ACE @Anycubic Kobra S1 Max 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -3908,7 +6122,33 @@
            "name": "0.28mm Standard @Anycubic Kobra X",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra X 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra X 0.4 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra X 0.4 nozzle",
+           "PETG": "Generic PETG @Anycubic Kobra X 0.4 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra X 0.4 nozzle",
+           "PVA": "Anycubic PVA @Anycubic Kobra X 0.4 nozzle",
+           "TPU": "Anycubic TPU 95A @Anycubic Kobra X 0.4 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra X 0.4 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra X 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pva": "Anycubic PVA @Anycubic Kobra X 0.4 nozzle",
+           "anycubic tpu 95a": "Anycubic TPU 95A @Anycubic Kobra X 0.4 nozzle",
+           "anycubic tpu for ace": "Anycubic TPU for ACE @Anycubic Kobra X 0.4 nozzle",
+           "generic petg": "Generic PETG @Anycubic Kobra X 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -3959,7 +6199,33 @@
            "name": "0.28mm Standard @Anycubic Kobra X",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic PLA @Anycubic Kobra X 0.4 nozzle;Anycubic ABS @Anycubic Kobra X 0.4 nozzle;Anycubic ASA @Anycubic Kobra X 0.4 nozzle;Anycubic PETG @Anycubic Kobra X 0.4 nozzle;Anycubic PLA+ @Anycubic Kobra X 0.4 nozzle;Anycubic PLA Glow @Anycubic Kobra X 0.4 nozzle;Anycubic PLA High Speed @Anycubic Kobra X 0.4 nozzle;Anycubic PLA Matte @Anycubic Kobra X 0.4 nozzle;Anycubic PLA Silk @Anycubic Kobra X 0.4 nozzle;Anycubic PVA @Anycubic Kobra X 0.4 nozzle;Anycubic TPU 95A @Anycubic Kobra X 0.4 nozzle;Anycubic TPU for ACE @Anycubic Kobra X 0.4 nozzle;Anycubic Generetic PETG @Anycubic Kobra X 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic ABS @Anycubic Kobra X 0.4 nozzle",
+           "ASA": "Anycubic ASA @Anycubic Kobra X 0.4 nozzle",
+           "PETG": "Generic PETG @Anycubic Kobra X 0.4 nozzle",
+           "PLA": "Anycubic PLA @Anycubic Kobra X 0.4 nozzle",
+           "PVA": "Anycubic PVA @Anycubic Kobra X 0.4 nozzle",
+           "TPU": "Anycubic TPU 95A @Anycubic Kobra X 0.4 nozzle"
+          },
+          "products": {
+           "anycubic abs": "Anycubic ABS @Anycubic Kobra X 0.4 nozzle",
+           "anycubic asa": "Anycubic ASA @Anycubic Kobra X 0.4 nozzle",
+           "anycubic petg": "Anycubic PETG @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla": "Anycubic PLA @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla glow": "Anycubic PLA Glow @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla high speed": "Anycubic PLA High Speed @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla matte": "Anycubic PLA Matte @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla silk": "Anycubic PLA Silk @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pla+": "Anycubic PLA+ @Anycubic Kobra X 0.4 nozzle",
+           "anycubic pva": "Anycubic PVA @Anycubic Kobra X 0.4 nozzle",
+           "anycubic tpu 95a": "Anycubic TPU 95A @Anycubic Kobra X 0.4 nozzle",
+           "anycubic tpu for ace": "Anycubic TPU for ACE @Anycubic Kobra X 0.4 nozzle",
+           "generic petg": "Generic PETG @Anycubic Kobra X 0.4 nozzle"
+          }
+         }
         }
        ]
       }
@@ -4573,7 +6839,34 @@
            "name": "0.30mm Draft @Anycubic Vyper",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -4600,7 +6893,34 @@
            "name": "0.30mm Draft @Anycubic Vyper",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }
@@ -4627,7 +6947,34 @@
            "name": "0.30mm Draft @Anycubic Vyper",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -4654,7 +7001,34 @@
            "name": "0.30mm Draft @Anycubic Vyper",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -4681,7 +7055,34 @@
            "name": "0.30mm Draft @Anycubic Vyper",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Anycubic Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Anycubic Generic ABS",
+           "ASA": "Anycubic Generic ASA",
+           "PA": "Anycubic Generic PA",
+           "PA-CF": "Anycubic Generic PA-CF",
+           "PC": "Anycubic Generic PC",
+           "PETG": "Anycubic Generic PETG",
+           "PLA": "Anycubic Generic PLA",
+           "PLA-CF": "Anycubic Generic PLA-CF",
+           "PVA": "Anycubic Generic PVA",
+           "TPU": "Anycubic Generic TPU"
+          },
+          "products": {
+           "anycubic generic abs": "Anycubic Generic ABS",
+           "anycubic generic asa": "Anycubic Generic ASA",
+           "anycubic generic pa": "Anycubic Generic PA",
+           "anycubic generic pa-cf": "Anycubic Generic PA-CF",
+           "anycubic generic pc": "Anycubic Generic PC",
+           "anycubic generic petg": "Anycubic Generic PETG",
+           "anycubic generic pla": "Anycubic Generic PLA",
+           "anycubic generic pla-cf": "Anycubic Generic PLA-CF",
+           "anycubic generic pva": "Anycubic Generic PVA",
+           "anycubic generic tpu": "Anycubic Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -4708,7 +7109,34 @@
            "name": "0.30mm Draft @Anycubic Vyper",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Anycubic",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anycubic",
+           "ASA": "Generic ASA @Anycubic",
+           "PA": "Generic PA @Anycubic",
+           "PA-CF": "Generic PA-CF @Anycubic",
+           "PC": "Generic PC @Anycubic",
+           "PETG": "Generic PETG @Anycubic",
+           "PLA": "Generic PLA @Anycubic",
+           "PLA-CF": "Generic PLA-CF @Anycubic",
+           "PVA": "Generic PVA @Anycubic",
+           "TPU": "Generic TPU @Anycubic"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anycubic",
+           "generic asa": "Generic ASA @Anycubic",
+           "generic pa": "Generic PA @Anycubic",
+           "generic pa-cf": "Generic PA-CF @Anycubic",
+           "generic pc": "Generic PC @Anycubic",
+           "generic petg": "Generic PETG @Anycubic",
+           "generic pla": "Generic PLA @Anycubic",
+           "generic pla-cf": "Generic PLA-CF @Anycubic",
+           "generic pva": "Generic PVA @Anycubic",
+           "generic tpu": "Generic TPU @Anycubic"
+          }
+         }
         }
        ]
       }

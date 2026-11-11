@@ -80,6 +80,8 @@ function recordsOf(source, read, brands) {
           ...(v.defaultProcess ? { defaultProcess: v.defaultProcess } : {}),
           processes: v.processes,
           ...(v.renamedFrom?.length ? { renamedFrom: v.renamedFrom } : {}),
+          ...(v.defaultFilament ? { defaultFilament: v.defaultFilament } : {}),
+          ...(v.filaments && Object.keys(v.filaments.types).length ? { filaments: v.filaments } : {}),
         });
       }
       const nozzles =

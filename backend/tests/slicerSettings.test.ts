@@ -20,7 +20,7 @@ beforeAll(async () => {
 
 describe("slicer settings", () => {
   it("starts with none", async () => {
-    expect(await get()).toEqual({ slicer: null, slicers: [], bridged: [] });
+    expect(await get()).toEqual({ slicer: null, slicers: [], bridged: [], unadapted: [], printers: {} });
   });
 
   it("adds a slicer picked on its own to the installed ones", async () => {
@@ -28,6 +28,8 @@ describe("slicer settings", () => {
       slicer: "orcaslicer",
       slicers: ["orcaslicer"],
       bridged: [],
+      unadapted: [],
+      printers: {},
     });
   });
 
@@ -36,6 +38,8 @@ describe("slicer settings", () => {
       slicer: "orcaslicer",
       slicers: ["bambustudio", "orcaslicer", "prusaslicer"],
       bridged: [],
+      unadapted: [],
+      printers: {},
     });
   });
 
@@ -44,6 +48,8 @@ describe("slicer settings", () => {
       slicer: "prusaslicer",
       slicers: ["bambustudio", "orcaslicer", "prusaslicer"],
       bridged: [],
+      unadapted: [],
+      printers: {},
     });
     expect((await get()).slicer).toBe("prusaslicer");
   });
@@ -53,11 +59,19 @@ describe("slicer settings", () => {
       slicer: "orcaslicer",
       slicers: ["orcaslicer", "cura"],
       bridged: [],
+      unadapted: [],
+      printers: {},
     });
   });
 
   it("has none once every slicer is removed", async () => {
-    expect((await patch({ slicers: [] })).body).toEqual({ slicer: null, slicers: [], bridged: [] });
+    expect((await patch({ slicers: [] })).body).toEqual({
+      slicer: null,
+      slicers: [],
+      bridged: [],
+      unadapted: [],
+      printers: {},
+    });
   });
 
   it("keeps every slicer picked by changes that arrive at once", async () => {
@@ -77,6 +91,8 @@ describe("slicer settings", () => {
       slicer: "prusaslicer",
       slicers: ["prusaslicer", "cura"],
       bridged: [],
+      unadapted: [],
+      printers: {},
     });
   });
 
@@ -105,5 +121,22 @@ describe("slicer settings", () => {
     expect((await patch({ slicers: ["notepad"] })).status).toBe(400);
     expect((await patch({ slicer: "notepad" })).status).toBe(400);
     expect((await patch({ enable: "notepad" })).status).toBe(400);
+    expect((await patch({ unadapt: "notepad" })).status).toBe(400);
+  });
+
+  it("switches a slicer's adapted copies off and on, as two devices would", async () => {
+    await Promise.all([patch({ unadapt: "cura" }), patch({ unadapt: "orcaslicer" })]);
+    expect((await get()).unadapted).toEqual(["orcaslicer", "cura"]);
+    expect((await patch({ adapt: "cura" })).body.unadapted).toEqual(["orcaslicer"]);
+  });
+
+  it("makes a slicer's copies for one of the user's printers, or asks again", async () => {
+    expect((await patch({ printer: { slicer: "orcaslicer", printer: "bambulab-p1s" } })).status).toBe(422);
+    expect((await request(app).put("/api/me/printers/bambulab-p1s").set(auth()).send({})).status).toBe(200);
+    expect((await patch({ printer: { slicer: "orcaslicer", printer: "bambulab-p1s" } })).body.printers).toEqual({
+      orcaslicer: "bambulab-p1s",
+    });
+    expect((await patch({ printer: { slicer: "orcaslicer", printer: null } })).body.printers).toEqual({});
+    expect((await patch({ printer: { slicer: "notepad", printer: null } })).status).toBe(400);
   });
 });

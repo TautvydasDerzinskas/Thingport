@@ -83,7 +83,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PETG @SecKit",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @SecKit",
+           "ASA": "Generic ASA @SecKit",
+           "PA": "Generic PA @SecKit",
+           "PA-CF": "Generic PA-CF @SecKit",
+           "PC": "Generic PC @SecKit",
+           "PETG": "Generic PETG @SecKit",
+           "PLA": "Generic PLA @SecKit",
+           "PLA-CF": "Generic PLA-CF @SecKit",
+           "PVA": "Generic PVA @SecKit",
+           "TPU": "Generic TPU @SecKit"
+          },
+          "products": {
+           "generic abs": "Generic ABS @SecKit",
+           "generic asa": "Generic ASA @SecKit",
+           "generic pa": "Generic PA @SecKit",
+           "generic pa-cf": "Generic PA-CF @SecKit",
+           "generic pc": "Generic PC @SecKit",
+           "generic petg": "Generic PETG @SecKit",
+           "generic pla": "Generic PLA @SecKit",
+           "generic pla-cf": "Generic PLA-CF @SecKit",
+           "generic pva": "Generic PVA @SecKit",
+           "generic tpu": "Generic TPU @SecKit"
+          }
+         }
         }
        ]
       }
@@ -126,7 +153,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -169,7 +223,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -212,7 +293,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -255,7 +363,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -389,7 +524,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PETG @SecKit",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @SecKit",
+           "ASA": "Generic ASA @SecKit",
+           "PA": "Generic PA @SecKit",
+           "PA-CF": "Generic PA-CF @SecKit",
+           "PC": "Generic PC @SecKit",
+           "PETG": "Generic PETG @SecKit",
+           "PLA": "Generic PLA @SecKit",
+           "PLA-CF": "Generic PLA-CF @SecKit",
+           "PVA": "Generic PVA @SecKit",
+           "TPU": "Generic TPU @SecKit"
+          },
+          "products": {
+           "generic abs": "Generic ABS @SecKit",
+           "generic asa": "Generic ASA @SecKit",
+           "generic pa": "Generic PA @SecKit",
+           "generic pa-cf": "Generic PA-CF @SecKit",
+           "generic pc": "Generic PC @SecKit",
+           "generic petg": "Generic PETG @SecKit",
+           "generic pla": "Generic PLA @SecKit",
+           "generic pla-cf": "Generic PLA-CF @SecKit",
+           "generic pva": "Generic PVA @SecKit",
+           "generic tpu": "Generic TPU @SecKit"
+          }
+         }
         }
        ]
       }
@@ -432,7 +594,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -475,7 +664,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -518,7 +734,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -561,7 +804,34 @@
            "name": "0.30mm Fast @SecKit",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
         }
        ]
       }

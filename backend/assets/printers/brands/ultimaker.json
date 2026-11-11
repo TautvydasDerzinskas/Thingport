@@ -154,7 +154,20 @@
            "name": "0.20mm Draft @UltiMaker 2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 0.4 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 0.4 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 0.4 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 0.4 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -166,7 +179,20 @@
            "name": "0.15mm Standard @UltiMaker 2 0.6 nozzle",
            "layerHeight": 0.15
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 0.6 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 0.6 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 0.6 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 0.6 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -178,7 +204,20 @@
            "name": "0.20mm Standard @UltiMaker 2 0.8 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 0.8 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 0.8 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 0.8 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 0.8 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -205,7 +244,20 @@
            "name": "0.25mm Draft @UltiMaker 2",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "UltiMaker Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "UltiMaker Generic ABS",
+           "PETG": "UltiMaker Generic PETG",
+           "PLA": "UltiMaker Generic PLA"
+          },
+          "products": {
+           "ultimaker generic abs": "UltiMaker Generic ABS",
+           "ultimaker generic petg": "UltiMaker Generic PETG",
+           "ultimaker generic pla": "UltiMaker Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -232,7 +284,8 @@
            "name": "0.25mm Draft @UltiMaker 2",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -259,7 +312,8 @@
            "name": "0.25mm Draft @UltiMaker 2",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -286,7 +340,8 @@
            "name": "0.25mm Draft @UltiMaker 2",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -745,7 +800,20 @@
            "name": "0.20mm Draft @UltiMaker 2 extended+",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 extended+ 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 extended+ 0.4 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 extended+ 0.4 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 extended+ 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 extended+ 0.4 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 extended+ 0.4 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 extended+ 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -757,7 +825,20 @@
            "name": "0.15mm Standard @UltiMaker 2 extended+ 0.6 nozzle",
            "layerHeight": 0.15
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 extended+ 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 extended+ 0.6 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 extended+ 0.6 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 extended+ 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 extended+ 0.6 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 extended+ 0.6 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 extended+ 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -769,7 +850,20 @@
            "name": "0.20mm Standard @UltiMaker 2 extended+ 0.8 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 extended+ 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 extended+ 0.8 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 extended+ 0.8 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 extended+ 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 extended+ 0.8 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 extended+ 0.8 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 extended+ 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -1175,7 +1269,20 @@
            "name": "0.20mm Draft @UltiMaker 2+",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2+ 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2+ 0.4 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2+ 0.4 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2+ 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2+ 0.4 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2+ 0.4 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2+ 0.4 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -1187,7 +1294,20 @@
            "name": "0.15mm Standard @UltiMaker 2+ 0.6 nozzle",
            "layerHeight": 0.15
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2+ 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2+ 0.6 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2+ 0.6 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2+ 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2+ 0.6 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2+ 0.6 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2+ 0.6 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -1199,7 +1319,20 @@
            "name": "0.20mm Standard @UltiMaker 2+ 0.8 nozzle",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2+ 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2+ 0.8 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2+ 0.8 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2+ 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2+ 0.8 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2+ 0.8 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2+ 0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -2322,7 +2455,8 @@
            "name": "0.2mm Fast @UltiMaker S5",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         },
         {
          "name": "UltiMaker S5 0.4 nozzle",
@@ -2336,7 +2470,8 @@
            "name": "0.2mm Fast @UltiMaker S5",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }

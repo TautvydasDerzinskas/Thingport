@@ -16,24 +16,24 @@ import type { AdaptState } from "./useAdaptedOpen";
 /** An element, or a bare point for a menu opened by right-click. */
 export type MenuAnchor = HTMLElement | { nodeType: 1; getBoundingClientRect: () => DOMRect } | null;
 
-type Props = {
+type Props<T extends SlicerTarget> = {
   anchorEl: MenuAnchor;
   onClose: () => void;
   slicerLabel: string;
-  targets: SlicerTarget[];
+  targets: T[];
   onOpen: () => void;
   /** Heading; defaults to "Open in <slicer>". */
   title?: string;
   /** Adapted picks go through the prepare step instead of being plain links. */
   adapted?: {
-    stateOf: (target: SlicerTarget) => AdaptState;
-    open: (target: SlicerTarget) => Promise<boolean>;
+    stateOf: (target: T) => AdaptState;
+    open: (target: T) => Promise<boolean>;
   };
   /** Opens below the anchor at its exact width, for a full-width button. */
   matchAnchorWidth?: boolean;
 };
 
-export default function SlicerFileMenu({
+export default function SlicerFileMenu<T extends SlicerTarget>({
   anchorEl,
   onClose,
   slicerLabel,
@@ -42,7 +42,7 @@ export default function SlicerFileMenu({
   title,
   adapted,
   matchAnchorWidth = false,
-}: Props) {
+}: Props<T>) {
   const { t } = useTranslation(["models"]);
   const names = useMemo(
     () =>

@@ -62,7 +62,8 @@
            "name": "0.20mm Standard @Kingroon KLP1",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -85,7 +86,8 @@
            "name": "0.20mm Standard @Kingroon KLP1",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -108,7 +110,8 @@
            "name": "0.20mm Standard @Kingroon KLP1",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -131,7 +134,8 @@
            "name": "0.20mm Standard @Kingroon KLP1",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -331,7 +335,33 @@
            "name": "0.30mm Standard @Kingroon KP3S 3.0",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Kingroon Generic ABS",
+           "ASA": "Kingroon Generic ASA",
+           "PA": "Kingroon Generic PA",
+           "PA-CF": "Kingroon Generic PA-CF",
+           "PC": "Kingroon Generic PC",
+           "PETG": "Kingroon Generic PETG",
+           "PLA": "Kingroon Generic PLA",
+           "PLA-CF": "Kingroon Generic PLA-CF",
+           "PVA": "Kingroon Generic PVA",
+           "TPU": "Kingroon Generic TPU"
+          },
+          "products": {
+           "kingroon generic abs": "Kingroon Generic ABS",
+           "kingroon generic asa": "Kingroon Generic ASA",
+           "kingroon generic pa": "Kingroon Generic PA",
+           "kingroon generic pa-cf": "Kingroon Generic PA-CF",
+           "kingroon generic pc": "Kingroon Generic PC",
+           "kingroon generic petg": "Kingroon Generic PETG",
+           "kingroon generic pla": "Kingroon Generic PLA",
+           "kingroon generic pla-cf": "Kingroon Generic PLA-CF",
+           "kingroon generic pva": "Kingroon Generic PVA",
+           "kingroon generic tpu": "Kingroon Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -545,7 +575,33 @@
            "name": "0.20mm Standard @Kingroon KP3S PRO S1",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Kingroon Generic ABS",
+           "ASA": "Kingroon Generic ASA",
+           "PA": "Kingroon Generic PA",
+           "PA-CF": "Kingroon Generic PA-CF",
+           "PC": "Kingroon Generic PC",
+           "PETG": "Kingroon Generic PETG",
+           "PLA": "Kingroon Generic PLA",
+           "PLA-CF": "Kingroon Generic PLA-CF",
+           "PVA": "Kingroon Generic PVA",
+           "TPU": "Kingroon Generic TPU"
+          },
+          "products": {
+           "kingroon generic abs": "Kingroon Generic ABS",
+           "kingroon generic asa": "Kingroon Generic ASA",
+           "kingroon generic pa": "Kingroon Generic PA",
+           "kingroon generic pa-cf": "Kingroon Generic PA-CF",
+           "kingroon generic pc": "Kingroon Generic PC",
+           "kingroon generic petg": "Kingroon Generic PETG",
+           "kingroon generic pla": "Kingroon Generic PLA",
+           "kingroon generic pla-cf": "Kingroon Generic PLA-CF",
+           "kingroon generic pva": "Kingroon Generic PVA",
+           "kingroon generic tpu": "Kingroon Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -689,7 +745,8 @@
            "name": "0.20mm Standard @Kingroon KP3S PRO V2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -708,7 +765,34 @@
            "name": "0.20mm Standard @Kingroon KP3S PRO V2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Kingroon Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Kingroon Generic ABS",
+           "ASA": "Kingroon Generic ASA",
+           "PA": "Kingroon Generic PA",
+           "PA-CF": "Kingroon Generic PA-CF",
+           "PC": "Kingroon Generic PC",
+           "PETG": "Kingroon Generic PETG",
+           "PLA": "Kingroon Generic PLA",
+           "PLA-CF": "Kingroon Generic PLA-CF",
+           "PVA": "Kingroon Generic PVA",
+           "TPU": "Kingroon Generic TPU"
+          },
+          "products": {
+           "kingroon generic abs": "Kingroon Generic ABS",
+           "kingroon generic asa": "Kingroon Generic ASA",
+           "kingroon generic pa": "Kingroon Generic PA",
+           "kingroon generic pa-cf": "Kingroon Generic PA-CF",
+           "kingroon generic pc": "Kingroon Generic PC",
+           "kingroon generic petg": "Kingroon Generic PETG",
+           "kingroon generic pla": "Kingroon Generic PLA",
+           "kingroon generic pla-cf": "Kingroon Generic PLA-CF",
+           "kingroon generic pva": "Kingroon Generic PVA",
+           "kingroon generic tpu": "Kingroon Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -727,7 +811,8 @@
            "name": "0.20mm Standard @Kingroon KP3S PRO V2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -746,7 +831,8 @@
            "name": "0.20mm Standard @Kingroon KP3S PRO V2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -765,7 +851,8 @@
            "name": "0.20mm Standard @Kingroon KP3S PRO V2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -827,7 +914,8 @@
            "name": "0.20mm Standard @Kingroon KP3S V1",
            "layerHeight": null
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -846,7 +934,8 @@
            "name": "0.20mm Standard @Kingroon KP3S V1",
            "layerHeight": null
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -865,7 +954,8 @@
            "name": "0.20mm Standard @Kingroon KP3S V1",
            "layerHeight": null
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -884,7 +974,8 @@
            "name": "0.20mm Standard @Kingroon KP3S V1",
            "layerHeight": null
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }

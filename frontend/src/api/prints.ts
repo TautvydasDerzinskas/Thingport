@@ -324,10 +324,14 @@ export const printsApi = {
     return appendTokenToUrl(`${apiBase()}${rel}`);
   },
 
-  /** A plate's link as `slicer` opens it best (its adapted copy, or the plate itself), relative like `plate.url`. The
-   *  slicer is in the path, not a query: OrcaSlicer names the file after everything past the URL's last slash. */
-  adaptedPlateUrl: (plate: Pick<Plate, "url">, slicer: string) =>
-    plate.url.replace(/\/file\/([^/]+)$/, (_all, name: string) => `/adapted/${encodeURIComponent(slicer)}/${name}`),
+  /** A plate's link as `slicer` opens it best (its adapted copy, or the plate itself), relative like `plate.url`, made
+   *  for `printer` when given. They're in the path, not a query: OrcaSlicer names the file after everything past the
+   *  URL's last slash. */
+  adaptedPlateUrl: (plate: Pick<Plate, "url">, slicer: string, printer?: { id: string; nozzle: string } | null) =>
+    plate.url.replace(/\/file\/([^/]+)$/, (_all, name: string) => {
+      const forPrinter = printer ? `/${encodeURIComponent(printer.id)}/${encodeURIComponent(printer.nozzle)}` : "";
+      return `/adapted/${encodeURIComponent(slicer)}${forPrinter}/${name}`;
+    }),
 
   /** An absolute file URL for a slicer to download, with the session in the path rather than `?token=`: OrcaSlicer
    *  and its forks name the file after everything past the last slash, query string included. */
@@ -929,11 +933,17 @@ export const printsApi = {
 
   /** Starts preparing the copy of a plate `slicer` gets (the model page's "Open adapted in <slicer>") if needed; poll
    *  until "ready". "original" when the slicer opens the plate itself as well as it can. */
-  adaptPlate: async (printId: string, plateId: string, slicer: string): Promise<{ status: AdaptStatus }> => {
+  /** `printer` makes the copy for one of the user's printers, as the adapted link with it does. */
+  adaptPlate: async (
+    printId: string,
+    plateId: string,
+    slicer: string,
+    printer?: { id: string; nozzle: string } | null,
+  ): Promise<{ status: AdaptStatus }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/adapt`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ slicer }),
+      body: JSON.stringify(printer ? { slicer, printer: { id: printer.id, nozzle: printer.nozzle } } : { slicer }),
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to prepare the adapted file"));

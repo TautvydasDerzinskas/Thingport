@@ -25,4 +25,7 @@ export type SlicerProfile = {
   /** Asks which printer to use for another maker's project and rebases the project on it, so such a project is
    *  left for it to do that. */
   asksForPrinter?: boolean;
+  /** Loads a project's printer, process and filament presets by name, so a copy can name its presets for the
+   *  user's printer (printer.ts). */
+  targetsPrinter?: boolean;
 };

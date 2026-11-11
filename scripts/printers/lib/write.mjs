@@ -2,6 +2,7 @@
 //   index.json        every printer's summary (brand, model, bed, height, nozzles, codes), for lists and fit checks
 //   brands/<id>.json  a brand's printers in full, each slicer's preset names among them
 //   names.json        every preset, model and definition name slicers use, as the printer (and nozzle) it is
+//   filaments/<slicer>.json  the filament presets a slicer installs for every printer, by type and by product
 //   covers/<id>.webp  pictures
 //   SOURCES.md        where it all came from, at which release, under which licence
 
@@ -59,7 +60,22 @@ function namesOf(printers) {
   return { names: Object.fromEntries([...names].sort(([a], [b]) => a.localeCompare(b))), shared };
 }
 
-export function writeCatalogue(dir, { printers, sources, covers }) {
+/** Each slicer's filaments for every printer (OrcaSlicer's filament library), in filaments/<slicer id>.json. */
+function writeFilaments(dir, filaments) {
+  mkdirSync(path.join(dir, "filaments"), { recursive: true });
+  const files = new Set();
+  for (const [id, choices] of Object.entries(filaments)) {
+    if (!choices || !Object.keys(choices.types).length) continue;
+    files.add(`${id}.json`);
+    writeFileSync(path.join(dir, "filaments", `${id}.json`), json({ version: CATALOGUE_VERSION, ...choices }));
+  }
+  for (const name of readdirSync(path.join(dir, "filaments"))) {
+    if (!files.has(name)) rmSync(path.join(dir, "filaments", name));
+  }
+}
+
+export function writeCatalogue(dir, { printers, sources, covers, filaments = {} }) {
+  writeFilaments(dir, filaments);
   mkdirSync(path.join(dir, "brands"), { recursive: true });
   const brands = new Map();
   for (const p of printers) {

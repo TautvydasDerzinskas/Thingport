@@ -204,6 +204,28 @@ describe("GET a plate adapted for a slicer", () => {
     expect(await fetchApplication(adaptedUrl("elegooslicer"))).toBe(COMPATIBLE_TAG);
   });
 
+  it("serves a copy made for a printer, naming that slicer's presets for it", async () => {
+    const url = fileUrl.replace(
+      /\/file\/([^/]+)$/,
+      (_all, name: string) => `/adapted/bambustudio/bambulab-p1s/0.4/${name}`,
+    );
+    const zip = await JSZip.loadAsync(await fetchBytes(url));
+    const settings = JSON.parse(await zip.file("Metadata/project_settings.config")!.async("string"));
+    expect(settings.printer_settings_id).toBe("Bambu Lab P1S 0.4 nozzle");
+    expect(settings.inherits_group).toEqual(["", "", ""]);
+    // One the slicer has no preset for gets the slicer's plain copy; a malformed printer isn't a link.
+    const unknown = fileUrl.replace(
+      /\/file\/([^/]+)$/,
+      (_all, name: string) => `/adapted/bambustudio/no-such-printer/0.4/${name}`,
+    );
+    expect(await fetchApplication(unknown)).toBe("BambuStudio-02.07.01.57");
+    const bad = fileUrl.replace(
+      /\/file\/([^/]+)$/,
+      (_all, name: string) => `/adapted/bambustudio/Bambu Lab/0.4/${name}`,
+    );
+    expect((await auth(request(app).get(`/api${encodeURI(bad)}`))).status).toBe(404);
+  });
+
   it("serves the file itself to a slicer that opens it as it is, or one it doesn't know", async () => {
     expect(await fetchApplication(adaptedUrl("bambustudio"))).toBe("BambuStudio-02.07.01.57");
     expect(await fetchApplication(adaptedUrl("other"))).toBe("BambuStudio-02.07.01.57");
@@ -257,6 +279,30 @@ describe("POST a plate's adapt status", () => {
       if (status !== "ready") await new Promise((r) => setTimeout(r, 100));
     }
     expect(status).toBe("ready");
+  });
+
+  it("prepares a copy for a printer, which the slicer would open as it is otherwise", async () => {
+    let status = "";
+    for (let i = 0; i < 50 && status !== "ready"; i++) {
+      const res = await auth(
+        request(app)
+          .post(adaptStatusUrl())
+          .send({
+            slicer: "bambustudio",
+            printer: { id: "bambulab-p1s", nozzle: "0.4" },
+          }),
+      );
+      expect(res.status).toBe(200);
+      status = res.body.status;
+      if (status !== "ready") await new Promise((r) => setTimeout(r, 100));
+    }
+    expect(status).toBe("ready");
+    const bad = await auth(
+      request(app)
+        .post(adaptStatusUrl())
+        .send({ slicer: "bambustudio", printer: { id: "../x" } }),
+    );
+    expect(bad.status).toBe(400);
   });
 
   it("says original when the slicer opens the file as it is", async () => {

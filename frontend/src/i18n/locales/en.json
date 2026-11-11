@@ -2956,7 +2956,8 @@
       "tabs": {
         "appearance": "Appearance",
         "providers": "Providers",
-        "slicer": "Slicer"
+        "slicer": "Slicer",
+        "printers": "Printers"
       }
     },
     "providers": {
@@ -2982,7 +2983,12 @@
       "lastUsed": "Last used",
       "deactivate": "Deactivate",
       "throughBridge": "Through Thingport Bridge",
-      "throughBridgeHelp": "Thingport Bridge downloads the file and hands it to {{slicer}}, for when {{slicer}} can't download from this Thingport instance itself."
+      "throughBridgeHelp": "Thingport Bridge downloads the file and hands it to {{slicer}}, for when {{slicer}} can't download from this Thingport instance itself.",
+      "openAdapted": "Open adapted",
+      "openAdaptedHelp": "{{slicer}} opens a model as a copy made for it, and for your printer where it takes one. Switched off, it opens each file as it is.",
+      "printer": "Printer",
+      "askPrinter": "Ask when I open a model",
+      "addPrinters": "Add printers…"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} of {{total}} models",
@@ -4289,6 +4295,54 @@
       "noMatch": "No models match.",
       "emptyLibrary": "Your library has no models yet.",
       "loadFailed": "Couldn't load your models."
+    },
+    "printers": {
+      "subtitle": "Double-click a printer to add or remove it; right-click for its nozzle and slicers.",
+      "failed": "Couldn't save the printer.",
+      "yours": "yours, {{nozzle}} mm nozzle",
+      "suggested": "Suggested",
+      "notYours": "Not yours",
+      "nozzleShort": "{{nozzle}} mm",
+      "suggestedSliced_one": "{{count}} of your prints was sliced for it",
+      "suggestedSliced_other": "{{count}} of your prints were sliced for it",
+      "suggestedProjects_one": "{{count}} of your projects is made for it",
+      "suggestedProjects_other": "{{count}} of your projects are made for it",
+      "empty": "Add the printers you print on, and models open in your slicer made for them.",
+      "bambu": {
+        "region": "Your Bambu Lab account",
+        "question": "Find your printers in your Bambu Lab account?",
+        "find": "Find them",
+        "later": "Not now",
+        "found_one": "Added {{count}} printer from your Bambu Lab account.",
+        "found_other": "Added {{count}} printers from your Bambu Lab account.",
+        "none": "Your Bambu Lab account has no printers Thingport knows.",
+        "expired": "Your MakerWorld sign-in has expired. Sign in again under Providers.",
+        "signedOut": "Sign in to MakerWorld under Providers first.",
+        "failed": "Bambu Lab didn't list your printers. Try again later."
+      },
+      "menu": {
+        "nozzle": "Nozzle",
+        "usedWith": "Used with",
+        "slicers_one": "{{count}} slicer",
+        "slicers_other": "{{count}} slicers",
+        "unused": "None",
+        "noSlicers": "No slicer that takes a printer is on",
+        "notIn": "Not in {{slicer}}",
+        "remove": "Remove",
+        "add": "Add to my printers",
+        "notMine": "Not mine",
+        "suggestAgain": "Suggest it again"
+      },
+      "add": {
+        "tile": "Add",
+        "title": "Add a printer",
+        "search": "Search printers",
+        "brands": "Brands",
+        "failed": "Couldn't load the printers.",
+        "none": "No printer matches “{{query}}”.",
+        "added": "added",
+        "done": "Done"
+      }
     }
   },
   "common": {
@@ -5072,7 +5126,8 @@
       "adaptedInfo": {
         "prusa": "A copy made for {{slicer}}: it goes into your own printer, filament and print settings, with the designer's layer height, walls, infill and supports set on each object and the painted colors on your extruders. The stored file isn't changed.",
         "cura": "A copy made for {{slicer}}: multi-part objects keep their parts, each on its own extruder, and the designer's walls, top and bottom layers, infill and supports are set on each object. Cura doesn't read painted colors. The stored file isn't changed.",
-        "bambu": "A copy {{slicer}} opens as its own project: parts, plates, painting and the designer's settings as they are, with no questions about the file's version or settings it names differently. The stored file isn't changed."
+        "bambu": "A copy {{slicer}} opens as its own project: parts, plates, painting and the designer's settings as they are, with no questions about the file's version or settings it names differently. The stored file isn't changed.",
+        "bambuPrinter": "A copy {{slicer}} opens as its own project on your printer: the presets it has for that printer, with the designer's changes on top, and the plates moved onto its bed. Parts and painting stay as they are. The stored file isn't changed."
       },
       "adaptPreparing": "Preparing adapted file…",
       "adaptPreparingShort": "Preparing adapted file…",
@@ -5184,7 +5239,17 @@
       "toolOwnedHint": "It can't be edited or deleted",
       "customize": "Customize…",
       "scriptWithheld": "Script not shared",
-      "scriptWithheldHint": "This model was built from a script, but its creator chose not to share it, so there is nothing here to customise. Only they can change that."
+      "scriptWithheldHint": "This model was built from a script, but its creator chose not to share it, so there is nothing here to customise. Only they can change that.",
+      "askPrinter": {
+        "title": "Which printer is this for?",
+        "subtitle": "{{slicer}} gets a copy made for it, with the designer's settings.",
+        "notIn": "Not in {{slicer}}",
+        "detail": "{{nozzle}} mm · {{x}} × {{y}}",
+        "nozzle": "{{nozzle}} mm",
+        "remember": "Remember for {{slicer}}",
+        "changeLater": "change it in Configuration",
+        "open": "Open"
+      }
     },
     "customizer": {
       "title": "Customizing {{model}}",

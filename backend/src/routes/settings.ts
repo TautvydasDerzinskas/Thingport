@@ -73,6 +73,7 @@ import {
 } from "../services/printService";
 import {
   BRIDGEABLE_SLICER_IDS,
+  NotYourPrinterError,
   SLICER_IDS,
   getUserSlicerSettings,
   setUserSlicerSettings,
@@ -817,12 +818,24 @@ const slicerSettingsSchema = z.object({
   // The others always go through the Bridge, so there's nothing to choose for them.
   bridge: z.enum(BRIDGEABLE_SLICER_IDS).optional(),
   unbridge: z.enum(BRIDGEABLE_SLICER_IDS).optional(),
+  adapt: z.enum(SLICER_IDS).optional(),
+  unadapt: z.enum(SLICER_IDS).optional(),
+  // Null: ask which printer when a model is opened adapted in it.
+  printer: z
+    .object({ slicer: z.enum(SLICER_IDS), printer: z.string().trim().min(1).max(200).nullable() })
+    .strict()
+    .optional(),
 });
 router.patch(
   "/settings/slicer",
   asyncHandler(async (req, res) => {
     const body = parseBody(slicerSettingsSchema, req.body);
-    res.json(await setUserSlicerSettings(req.userId!, body));
+    try {
+      res.json(await setUserSlicerSettings(req.userId!, body));
+    } catch (err) {
+      if (err instanceof NotYourPrinterError) throw new HttpError(422, "That printer isn't one of yours.");
+      throw err;
+    }
   }),
 );
 

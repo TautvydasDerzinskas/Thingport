@@ -136,7 +136,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -160,7 +161,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -188,7 +190,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -216,7 +219,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -248,7 +252,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -280,7 +285,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -312,7 +318,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -340,7 +347,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -371,7 +379,34 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.15": [
@@ -395,7 +430,34 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.2": [
@@ -423,7 +485,34 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.25": [
@@ -451,7 +540,34 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -483,7 +599,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -515,7 +658,34 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -539,7 +709,34 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -570,7 +767,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -594,7 +792,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -622,7 +821,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -650,7 +850,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -682,7 +883,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -714,7 +916,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -746,7 +949,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -774,7 +978,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -805,7 +1010,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -829,7 +1035,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -857,7 +1064,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -885,7 +1093,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -917,7 +1126,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -949,7 +1159,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -981,7 +1192,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -1005,7 +1217,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1036,7 +1249,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -1060,7 +1274,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -1088,7 +1303,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -1116,7 +1332,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -1148,7 +1365,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -1180,7 +1398,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -1212,7 +1431,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -1236,7 +1456,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1275,7 +1496,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Voron",
+           "ASA": "Generic ASA @Voron",
+           "PA": "Generic PA @Voron",
+           "PA-CF": "Generic PA-CF @Voron",
+           "PC": "Generic PC @Voron",
+           "PETG": "Generic PETG @Voron",
+           "PLA": "Generic PLA @Voron",
+           "PLA-CF": "Generic PLA-CF @Voron",
+           "PVA": "Generic PVA @Voron",
+           "TPU": "Generic TPU @Voron"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Voron",
+           "generic asa": "Generic ASA @Voron",
+           "generic pa": "Generic PA @Voron",
+           "generic pa-cf": "Generic PA-CF @Voron",
+           "generic pc": "Generic PC @Voron",
+           "generic petg": "Generic PETG @Voron",
+           "generic pla": "Generic PLA @Voron",
+           "generic pla-cf": "Generic PLA-CF @Voron",
+           "generic pva": "Generic PVA @Voron",
+           "generic tpu": "Generic TPU @Voron"
+          }
+         }
         }
        ]
       }
@@ -1366,7 +1614,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -1390,7 +1639,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -1418,7 +1668,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -1446,7 +1697,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -1478,7 +1730,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -1510,7 +1763,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -1542,7 +1796,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -1570,7 +1825,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1601,7 +1857,34 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.15": [
@@ -1625,7 +1908,34 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.2": [
@@ -1653,7 +1963,34 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.25": [
@@ -1681,7 +2018,34 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -1713,7 +2077,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -1745,7 +2136,34 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -1769,7 +2187,34 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1800,7 +2245,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -1824,7 +2270,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -1852,7 +2299,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -1880,7 +2328,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -1912,7 +2361,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -1944,7 +2394,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -1976,7 +2427,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -2004,7 +2456,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2035,7 +2488,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -2059,7 +2513,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -2087,7 +2542,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -2115,7 +2571,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -2147,7 +2604,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -2179,7 +2637,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -2211,7 +2670,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -2235,7 +2695,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2266,7 +2727,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -2290,7 +2752,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -2318,7 +2781,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -2346,7 +2810,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -2378,7 +2843,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -2410,7 +2876,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -2442,7 +2909,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -2466,7 +2934,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2505,7 +2974,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Voron",
+           "ASA": "Generic ASA @Voron",
+           "PA": "Generic PA @Voron",
+           "PA-CF": "Generic PA-CF @Voron",
+           "PC": "Generic PC @Voron",
+           "PETG": "Generic PETG @Voron",
+           "PLA": "Generic PLA @Voron",
+           "PLA-CF": "Generic PLA-CF @Voron",
+           "PVA": "Generic PVA @Voron",
+           "TPU": "Generic TPU @Voron"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Voron",
+           "generic asa": "Generic ASA @Voron",
+           "generic pa": "Generic PA @Voron",
+           "generic pa-cf": "Generic PA-CF @Voron",
+           "generic pc": "Generic PC @Voron",
+           "generic petg": "Generic PETG @Voron",
+           "generic pla": "Generic PLA @Voron",
+           "generic pla-cf": "Generic PLA-CF @Voron",
+           "generic pva": "Generic PVA @Voron",
+           "generic tpu": "Generic TPU @Voron"
+          }
+         }
         }
        ]
       }
@@ -3528,7 +4024,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -3552,7 +4049,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -3580,7 +4078,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -3608,7 +4107,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -3640,7 +4140,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -3672,7 +4173,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -3704,7 +4206,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -3732,7 +4235,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3763,7 +4267,34 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.15": [
@@ -3787,7 +4318,34 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.2": [
@@ -3815,7 +4373,34 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.25": [
@@ -3843,7 +4428,34 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -3875,7 +4487,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -3907,7 +4546,34 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -3931,7 +4597,34 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -3962,7 +4655,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -3986,7 +4680,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -4014,7 +4709,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -4042,7 +4738,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -4074,7 +4771,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -4106,7 +4804,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -4138,7 +4837,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -4166,7 +4866,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -4197,7 +4898,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -4221,7 +4923,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -4249,7 +4952,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -4277,7 +4981,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -4309,7 +5014,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -4341,7 +5047,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -4373,7 +5080,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -4397,7 +5105,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -4428,7 +5137,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -4452,7 +5162,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -4480,7 +5191,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -4508,7 +5220,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -4540,7 +5253,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -4572,7 +5286,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -4604,7 +5319,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -4628,7 +5344,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -4667,7 +5384,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Voron",
+           "ASA": "Generic ASA @Voron",
+           "PA": "Generic PA @Voron",
+           "PA-CF": "Generic PA-CF @Voron",
+           "PC": "Generic PC @Voron",
+           "PETG": "Generic PETG @Voron",
+           "PLA": "Generic PLA @Voron",
+           "PLA-CF": "Generic PLA-CF @Voron",
+           "PVA": "Generic PVA @Voron",
+           "TPU": "Generic TPU @Voron"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Voron",
+           "generic asa": "Generic ASA @Voron",
+           "generic pa": "Generic PA @Voron",
+           "generic pa-cf": "Generic PA-CF @Voron",
+           "generic pc": "Generic PC @Voron",
+           "generic petg": "Generic PETG @Voron",
+           "generic pla": "Generic PLA @Voron",
+           "generic pla-cf": "Generic PLA-CF @Voron",
+           "generic pva": "Generic PVA @Voron",
+           "generic tpu": "Generic TPU @Voron"
+          }
+         }
         }
        ]
       }
@@ -5690,7 +6434,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -5714,7 +6459,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -5742,7 +6488,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -5770,7 +6517,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -5802,7 +6550,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -5834,7 +6583,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -5866,7 +6616,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -5894,7 +6645,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -5925,7 +6677,34 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.15": [
@@ -5949,7 +6728,34 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.2": [
@@ -5977,7 +6783,34 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.25": [
@@ -6005,7 +6838,34 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -6037,7 +6897,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -6069,7 +6956,34 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -6093,7 +7007,34 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -6124,7 +7065,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -6148,7 +7090,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -6176,7 +7119,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -6204,7 +7148,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -6236,7 +7181,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -6268,7 +7214,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -6300,7 +7247,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -6328,7 +7276,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -6359,7 +7308,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -6383,7 +7333,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -6411,7 +7362,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -6439,7 +7391,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -6471,7 +7424,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -6503,7 +7457,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -6535,7 +7490,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -6559,7 +7515,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -6590,7 +7547,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -6614,7 +7572,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -6642,7 +7601,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -6670,7 +7630,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -6702,7 +7663,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -6734,7 +7696,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -6766,7 +7729,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -6790,7 +7754,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -6829,7 +7794,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Voron",
+           "ASA": "Generic ASA @Voron",
+           "PA": "Generic PA @Voron",
+           "PA-CF": "Generic PA-CF @Voron",
+           "PC": "Generic PC @Voron",
+           "PETG": "Generic PETG @Voron",
+           "PLA": "Generic PLA @Voron",
+           "PLA-CF": "Generic PLA-CF @Voron",
+           "PVA": "Generic PVA @Voron",
+           "TPU": "Generic TPU @Voron"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Voron",
+           "generic asa": "Generic ASA @Voron",
+           "generic pa": "Generic PA @Voron",
+           "generic pa-cf": "Generic PA-CF @Voron",
+           "generic pc": "Generic PC @Voron",
+           "generic petg": "Generic PETG @Voron",
+           "generic pla": "Generic PLA @Voron",
+           "generic pla-cf": "Generic PLA-CF @Voron",
+           "generic pva": "Generic PVA @Voron",
+           "generic tpu": "Generic TPU @Voron"
+          }
+         }
         }
        ]
       }
@@ -8869,7 +9861,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -8893,7 +9886,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -8921,7 +9915,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -8949,7 +9944,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -8981,7 +9977,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -9013,7 +10010,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -9045,7 +10043,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -9073,7 +10072,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -9104,7 +10104,34 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.15": [
@@ -9128,7 +10155,34 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.2": [
@@ -9156,7 +10210,34 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.25": [
@@ -9184,7 +10265,34 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -9216,7 +10324,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -9248,7 +10383,34 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -9272,7 +10434,34 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -9303,7 +10492,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -9327,7 +10517,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -9355,7 +10546,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -9383,7 +10575,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -9415,7 +10608,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -9447,7 +10641,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -9479,7 +10674,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -9507,7 +10703,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -9538,7 +10735,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -9562,7 +10760,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -9590,7 +10789,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -9618,7 +10818,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -9650,7 +10851,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -9682,7 +10884,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -9714,7 +10917,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -9738,7 +10942,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -9769,7 +10974,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -9793,7 +10999,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -9821,7 +11028,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -9849,7 +11057,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -9881,7 +11090,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -9913,7 +11123,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -9945,7 +11156,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -9969,7 +11181,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -10057,7 +11270,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -10081,7 +11295,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -10109,7 +11324,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -10137,7 +11353,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -10169,7 +11386,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -10201,7 +11419,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -10233,7 +11452,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -10261,7 +11481,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -10292,7 +11513,34 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.15": [
@@ -10316,7 +11564,34 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.2": [
@@ -10344,7 +11619,34 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.25": [
@@ -10372,7 +11674,34 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -10404,7 +11733,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -10436,7 +11792,34 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -10460,7 +11843,34 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -10491,7 +11901,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -10515,7 +11926,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -10543,7 +11955,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -10571,7 +11984,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -10603,7 +12017,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -10635,7 +12050,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -10667,7 +12083,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -10695,7 +12112,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -10726,7 +12144,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -10750,7 +12169,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -10778,7 +12198,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -10806,7 +12227,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -10838,7 +12260,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -10870,7 +12293,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -10902,7 +12326,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -10926,7 +12351,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -10957,7 +12383,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -10981,7 +12408,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -11009,7 +12437,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -11037,7 +12466,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -11069,7 +12499,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -11101,7 +12532,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -11133,7 +12565,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -11157,7 +12590,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -11196,7 +12630,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Voron",
+           "ASA": "Generic ASA @Voron",
+           "PA": "Generic PA @Voron",
+           "PA-CF": "Generic PA-CF @Voron",
+           "PC": "Generic PC @Voron",
+           "PETG": "Generic PETG @Voron",
+           "PLA": "Generic PLA @Voron",
+           "PLA-CF": "Generic PLA-CF @Voron",
+           "PVA": "Generic PVA @Voron",
+           "TPU": "Generic TPU @Voron"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Voron",
+           "generic asa": "Generic ASA @Voron",
+           "generic pa": "Generic PA @Voron",
+           "generic pa-cf": "Generic PA-CF @Voron",
+           "generic pc": "Generic PC @Voron",
+           "generic petg": "Generic PETG @Voron",
+           "generic pla": "Generic PLA @Voron",
+           "generic pla-cf": "Generic PLA-CF @Voron",
+           "generic pva": "Generic PVA @Voron",
+           "generic tpu": "Generic TPU @Voron"
+          }
+         }
         }
        ]
       }
@@ -11647,7 +13108,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -11671,7 +13133,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -11699,7 +13162,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -11727,7 +13191,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -11759,7 +13224,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -11791,7 +13257,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -11823,7 +13290,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -11851,7 +13319,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -11882,7 +13351,34 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.15": [
@@ -11906,7 +13402,34 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.2": [
@@ -11934,7 +13457,34 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.25": [
@@ -11962,7 +13512,34 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -11994,7 +13571,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -12026,7 +13630,34 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -12050,7 +13681,34 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -12081,7 +13739,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -12105,7 +13764,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -12133,7 +13793,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -12161,7 +13822,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -12193,7 +13855,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -12225,7 +13888,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -12257,7 +13921,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -12285,7 +13950,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -12316,7 +13982,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -12340,7 +14007,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -12368,7 +14036,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -12396,7 +14065,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -12428,7 +14098,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -12460,7 +14131,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -12492,7 +14164,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -12516,7 +14189,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -12547,7 +14221,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -12571,7 +14246,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -12599,7 +14275,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -12627,7 +14304,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -12659,7 +14337,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -12691,7 +14370,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -12723,7 +14403,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -12747,7 +14428,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -12786,7 +14468,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Voron",
+           "ASA": "Generic ASA @Voron",
+           "PA": "Generic PA @Voron",
+           "PA-CF": "Generic PA-CF @Voron",
+           "PC": "Generic PC @Voron",
+           "PETG": "Generic PETG @Voron",
+           "PLA": "Generic PLA @Voron",
+           "PLA-CF": "Generic PLA-CF @Voron",
+           "PVA": "Generic PVA @Voron",
+           "TPU": "Generic TPU @Voron"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Voron",
+           "generic asa": "Generic ASA @Voron",
+           "generic pa": "Generic PA @Voron",
+           "generic pa-cf": "Generic PA-CF @Voron",
+           "generic pc": "Generic PC @Voron",
+           "generic petg": "Generic PETG @Voron",
+           "generic pla": "Generic PLA @Voron",
+           "generic pla-cf": "Generic PLA-CF @Voron",
+           "generic pva": "Generic PVA @Voron",
+           "generic tpu": "Generic TPU @Voron"
+          }
+         }
         }
        ]
       }
@@ -13237,7 +14946,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -13261,7 +14971,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -13289,7 +15000,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -13317,7 +15029,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -13349,7 +15062,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -13381,7 +15095,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -13413,7 +15128,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -13441,7 +15157,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -13472,7 +15189,34 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.15": [
@@ -13496,7 +15240,34 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.2": [
@@ -13524,7 +15295,34 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.25": [
@@ -13552,7 +15350,34 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.4": [
@@ -13584,7 +15409,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -13616,7 +15468,34 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ],
        "0.8": [
@@ -13640,7 +15519,34 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Voron Generic ABS",
+           "ASA": "Voron Generic ASA",
+           "PA": "Voron Generic PA",
+           "PA-CF": "Voron Generic PA-CF",
+           "PC": "Voron Generic PC",
+           "PETG": "Voron Generic PETG",
+           "PLA": "Voron Generic PLA",
+           "PLA-CF": "Voron Generic PLA-CF",
+           "PVA": "Voron Generic PVA",
+           "TPU": "Voron Generic TPU"
+          },
+          "products": {
+           "voron generic abs": "Voron Generic ABS",
+           "voron generic asa": "Voron Generic ASA",
+           "voron generic pa": "Voron Generic PA",
+           "voron generic pa-cf": "Voron Generic PA-CF",
+           "voron generic pc": "Voron Generic PC",
+           "voron generic petg": "Voron Generic PETG",
+           "voron generic pla": "Voron Generic PLA",
+           "voron generic pla-cf": "Voron Generic PLA-CF",
+           "voron generic pva": "Voron Generic PVA",
+           "voron generic tpu": "Voron Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -13671,7 +15577,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -13695,7 +15602,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -13723,7 +15631,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -13751,7 +15660,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -13783,7 +15693,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -13815,7 +15726,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -13847,7 +15759,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -13875,7 +15788,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -13906,7 +15820,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -13930,7 +15845,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -13958,7 +15874,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -13986,7 +15903,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -14018,7 +15936,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -14050,7 +15969,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -14082,7 +16002,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -14106,7 +16027,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -14137,7 +16059,8 @@
            "name": "0.80mm Extra Draft 1.0 nozzle @Voron",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.15": [
@@ -14161,7 +16084,8 @@
            "name": "0.12mm Draft 0.15 nozzle @Voron",
            "layerHeight": 0.12
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.2": [
@@ -14189,7 +16113,8 @@
            "name": "0.14mm Extra Draft 0.2 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.25": [
@@ -14217,7 +16142,8 @@
            "name": "0.14mm Extra Draft 0.25 nozzle @Voron",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -14249,7 +16175,8 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.5": [
@@ -14281,7 +16208,8 @@
            "name": "0.35mm Extra Draft 0.5 nozzle @Voron",
            "layerHeight": 0.35
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -14313,7 +16241,8 @@
            "name": "0.42mm Extra Draft 0.6 nozzle @Voron",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -14337,7 +16266,8 @@
            "name": "0.56mm Extra Draft 0.8 nozzle @Voron",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -14376,7 +16306,34 @@
            "name": "0.28mm Extra Draft @Voron",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Voron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Voron",
+           "ASA": "Generic ASA @Voron",
+           "PA": "Generic PA @Voron",
+           "PA-CF": "Generic PA-CF @Voron",
+           "PC": "Generic PC @Voron",
+           "PETG": "Generic PETG @Voron",
+           "PLA": "Generic PLA @Voron",
+           "PLA-CF": "Generic PLA-CF @Voron",
+           "PVA": "Generic PVA @Voron",
+           "TPU": "Generic TPU @Voron"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Voron",
+           "generic asa": "Generic ASA @Voron",
+           "generic pa": "Generic PA @Voron",
+           "generic pa-cf": "Generic PA-CF @Voron",
+           "generic pc": "Generic PC @Voron",
+           "generic petg": "Generic PETG @Voron",
+           "generic pla": "Generic PLA @Voron",
+           "generic pla-cf": "Generic PLA-CF @Voron",
+           "generic pva": "Generic PVA @Voron",
+           "generic tpu": "Generic TPU @Voron"
+          }
+         }
         }
        ]
       }

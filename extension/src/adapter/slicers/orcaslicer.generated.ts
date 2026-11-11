@@ -10,4 +10,5 @@ export const orcaslicer: SlicerProfile = {
   ownApps: ["BambuStudio", "OrcaSlicer"],
   ownWithOrcaTag: true,
   dialect: "orca",
+  targetsPrinter: true,
 };

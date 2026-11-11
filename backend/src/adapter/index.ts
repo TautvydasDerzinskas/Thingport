@@ -26,13 +26,14 @@ export async function adapt3mf(
   const pkg = await readBambuPackage(input instanceof ArrayBuffer ? new Uint8Array(input) : input);
   if (plan.output === "prusa") return writePrusa(pkg, options);
   if (plan.output === "cura") return writeCura(pkg, options);
-  return writeBambu(pkg, plan);
+  return writeBambu(pkg, plan, options.printer);
 }
 
 export { classify3mf, FORMAT_VERSION, parseGenerator, storedFormat } from "./format";
 export type { ThreeMfFiles, ThreeMfFormat, ThreeMfKind } from "./format";
-export { COMPATIBLE_TAG, planAdaptation, planKey, versionAtMost } from "./plan";
-export type { AdaptPlan } from "./plan";
+export { COMPATIBLE_TAG, madeFor, planAdaptation, planKey, versionAtMost } from "./plan";
+export type { AdaptPlan, PrinterChoice } from "./plan";
+export type { FilamentChoices, PrinterRecipe } from "./printer";
 export { SLICER_PROFILES, slicerProfile } from "./slicers";
 export type { SlicerProfile } from "./slicers";
 export type { AdaptReport, WriteOptions, Written } from "./writers/types";

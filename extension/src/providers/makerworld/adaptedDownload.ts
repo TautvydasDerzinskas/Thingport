@@ -388,21 +388,29 @@ export function unmountAdaptedDownload(): void {
 const SLICER_LOOKUP_MS = 5000;
 const SLICER_RETRY_MS = 15000;
 
-/** The instance's answer (its slicer, null for none picked), or null when it can't say in time. */
-export async function instanceSlicer(waitMs = SLICER_LOOKUP_MS): Promise<{ slicer: string | null } | null> {
-  const lookup = api<{ slicer: string | null }>("GET", "/settings/slicer")
-    .then((res) => ({ slicer: res.slicer }))
+/** The instance's answer (its slicer, null for none picked), or null when it can't say in time. `adapted` is false
+ *  when its user switched "Open adapted" off for that slicer; an instance from before the switch doesn't say. */
+export async function instanceSlicer(
+  waitMs = SLICER_LOOKUP_MS,
+): Promise<{ slicer: string | null; adapted?: false } | null> {
+  const lookup = api<{ slicer: string | null; unadapted?: string[] }>("GET", "/settings/slicer")
+    .then((res) => ({
+      slicer: res.slicer,
+      ...(res.slicer && res.unadapted?.includes(res.slicer) ? { adapted: false as const } : {}),
+    }))
     .catch(() => null);
   const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), waitMs));
   return Promise.race([lookup, timeout]);
 }
 
-/** What the button offers for the instance's answer: nothing when its slicer opens MakerWorld's files as they are,
- *  and a button that asks again when it didn't answer, rather than taking that as no slicer. */
+/** What the button offers for the instance's answer: nothing when its slicer opens MakerWorld's files as they are or
+ *  its user wants them as they are, and a button that asks again when it didn't answer, rather than taking that as no
+ *  slicer. */
 export function offerFor(
-  answer: { slicer: string | null } | null,
+  answer: { slicer: string | null; adapted?: false } | null,
 ): { target: Target; output: AdaptPlan["output"] } | null {
   if (!answer) return { target: { known: false }, output: "prusa" };
+  if (answer.adapted === false) return null;
   const plan = planFor(MAKERWORLD_FORMAT, answer.slicer);
   return plan ? { target: { known: true, slicer: answer.slicer }, output: plan.output } : null;
 }

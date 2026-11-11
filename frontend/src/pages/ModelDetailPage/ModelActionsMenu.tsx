@@ -546,6 +546,7 @@ export default function ModelActionsMenu({
           adapted={adapted}
         />
       )}
+      {adapted.dialog}
       {slicerOption && slicerTargets.length > 1 && (
         <SlicerFileMenu
           anchorEl={slicerMenuAnchor}
