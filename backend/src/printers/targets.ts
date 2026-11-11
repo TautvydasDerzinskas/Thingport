@@ -75,7 +75,6 @@ export function printerTarget(
     defaultProcess: preset.defaultProcess ?? null,
     filaments: preset.filaments ?? null,
     everyPrinter: slicerFilaments(slicerId),
-    defaultFilament: preset.defaultFilament ?? null,
     bed: bedBox(found.bed),
     height: found.height,
   };

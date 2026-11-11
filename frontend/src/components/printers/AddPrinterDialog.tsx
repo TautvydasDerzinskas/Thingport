@@ -11,6 +11,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
 import Skeleton from "@mui/material/Skeleton";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -53,6 +54,8 @@ export default function AddPrinterDialog({ open, onClose, owned, initialBrand, o
   useEffect(() => {
     if (!open || catalogue) return;
     let active = true;
+    // Opening it again after a failure tries again.
+    setFailed(false);
     printersApi
       .catalogue()
       .then((res) => {
@@ -129,6 +132,23 @@ export default function AddPrinterDialog({ open, onClose, owned, initialBrand, o
           }}
           sx={{ mt: 0.5 }}
         />
+        {/* The brand list beside the printers doesn't fit a phone: there it's a picker under the search. */}
+        {!matching && catalogue && (
+          <TextField
+            select
+            size="small"
+            label={t("printers.add.brands")}
+            value={shownBrand ?? ""}
+            onChange={(event) => setBrand(event.target.value)}
+            sx={{ display: { xs: "flex", sm: "none" } }}
+          >
+            {catalogue.brands.map((b) => (
+              <MenuItem key={b.id} value={b.id}>
+                {b.name} ({b.printers})
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
         <Box sx={{ display: "flex", gap: 2, flex: 1, minHeight: 0 }}>
           {!matching && (
             <List

@@ -95,7 +95,7 @@ export function useSlicerChoice() {
 export function useOpenInSlicer(print: Print) {
   const { slicerOption, slicerOptions, bridged } = useSlicerChoice();
   const { unadapted, printers: slicerPrinters } = useSlicerSettings();
-  const { printers } = useUserPrinters();
+  const { printers, loaded: printersLoaded } = useUserPrinters();
 
   const files = useMemo(() => modelFiles(print), [print]);
   const canOpen = Boolean(print.slicer_url) && files.length > 0;
@@ -114,6 +114,8 @@ export function useOpenInSlicer(print: Print) {
     if (print.prepared_print && !print.prepared_print.removable) return [];
     const slicerId = slicerOption.id;
     const profile = slicerProfile(slicerId);
+    // Until the user's printers are known, a copy for a slicer that loads a printer's presets isn't the one to offer.
+    if (profile?.targetsPrinter && !printersLoaded) return [];
     const remembered = printers.find((p) => p.printer.id === slicerPrinters[slicerId]);
     const rememberedChoice = remembered ? printerChoice(remembered, slicerId) : null;
     // With no printer remembered, one of the user's that the slicer has is asked for when it makes a difference.
@@ -141,7 +143,7 @@ export function useOpenInSlicer(print: Print) {
       const target = targetFor(file, plate, rememberedChoice);
       return target ? [target] : [];
     });
-  }, [files, print.prepared_print, slicerOption, bridged, unadapted, slicerPrinters, printers]);
+  }, [files, print.prepared_print, slicerOption, bridged, unadapted, slicerPrinters, printers, printersLoaded]);
 
   /** The adapted counterpart of `file`, if the current slicer opens it better as one. */
   const adaptedTargetFor = useCallback(

@@ -4484,6 +4484,7 @@
     "printers": {
       "subtitle": "Dukart spustelėkite spausdintuvą, kad jį pridėtumėte ar pašalintumėte; dešiniuoju mygtuku – jo antgalis ir pjaustyklės.",
       "failed": "Nepavyko išsaugoti spausdintuvo.",
+      "loadFailed": "Nepavyko įkelti jūsų spausdintuvų.",
       "yours": "jūsų, {{nozzle}} mm antgalis",
       "suggested": "Siūlomas",
       "notYours": "Ne jūsų",

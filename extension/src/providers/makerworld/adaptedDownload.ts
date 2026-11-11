@@ -257,6 +257,12 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
       if (!target.known) {
         label.textContent = "Asking your instance…";
         const answer = await instanceSlicer(SLICER_RETRY_MS);
+        if (answer?.adapted === false) {
+          // Its user wants that slicer's files as they are: no copy, and no button once they've read why.
+          showBubble("Open adapted is off for your slicer in Thingport, so there's no copy to download.", false, true);
+          setTimeout(() => host === el && unmountAdaptedDownload(), ERROR_SHOW_MS);
+          return;
+        }
         if (answer) {
           target = { known: true, slicer: answer.slicer };
           output = planFor(MAKERWORLD_FORMAT, answer.slicer)?.output ?? output;

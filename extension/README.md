@@ -135,8 +135,8 @@ MakerWorld's files are Bambu Studio projects, which PrusaSlicer, Cura, eufyMake 
 OrcaSlicer often open without their colors, parts or print settings, or with questions about the file's version. On a
 MakerWorld model page, the extension adds a **Download adapted** button under MakerWorld's own "Open in Bambu Studio"
 (or Download) button. Clicking it downloads the selected print profile's file and saves `<name>-adapted.3mf`, a copy
-made for the slicer your Thingport instance opens files in (picked in its Configuration), the same copy Thingport's
-**Open adapted** gives that slicer. Without an instance, it's the copy PrusaSlicer and the slicers like it read: it goes
+made for the slicer your Thingport instance opens files in (picked in its Configuration), the copy Thingport's
+**Open adapted** gives that slicer without a printer: it isn't made for your printer yet. Without an instance, it's the copy PrusaSlicer and the slicers like it read: it goes
 into your own printer, filament and print settings, with the designer's settings on each object and the painted colors
 on your extruders. Hover the bulb on the button for what the copy keeps.
 

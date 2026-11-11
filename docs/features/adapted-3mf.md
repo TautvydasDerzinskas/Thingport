@@ -37,14 +37,16 @@ Add your printers under **Configuration → Printers**, and their copies are mad
 
 - The copy names the printer, process and filament presets your slicer has for it. The printer is exactly as your
   slicer has it. The process is the one at the height and quality the designer's started from ("0.20mm Strength"),
-  and each filament the same product for your printer, or a generic one of its type. The changes the designer made to
+  and each filament the same product for your printer, or a generic one of its type; one your slicer has none of
+  that type for keeps the designer's. The changes the designer made to
   their process and filaments are kept on top, as the slicer itself keeps them.
 - Each plate's objects move onto your printer's bed, and so does its wipe tower.
 - Parts and painting stay as they are.
 
 Which printer is set per slicer: right-click it under **Configuration → Slicer**, then **Printer**. With none set,
-opening a model adapted asks **Which printer is this for?**, and remembers your answer for that slicer unless you
-untick **Remember**. A project made for the very preset you'd pick needs no copy for it.
+opening a model adapted in one of the slicers above asks **Which printer is this for?** when the slicer has a preset
+for one of your printers, and remembers your answer for that slicer unless you untick **Remember**; otherwise the copy
+isn't made for a printer. A project made for the very preset you'd pick needs no copy for it.
 
 **Configuration → Printers** shows your printers as tiles: double-click one to add or remove it, and right-click it for
 its nozzle and the slicers it's used with. **Add** lists every printer the slicers know, with their pictures. Printers

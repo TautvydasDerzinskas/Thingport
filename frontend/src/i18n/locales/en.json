@@ -4299,6 +4299,7 @@
     "printers": {
       "subtitle": "Double-click a printer to add or remove it; right-click for its nozzle and slicers.",
       "failed": "Couldn't save the printer.",
+      "loadFailed": "Couldn't load your printers.",
       "yours": "yours, {{nozzle}} mm nozzle",
       "suggested": "Suggested",
       "notYours": "Not yours",

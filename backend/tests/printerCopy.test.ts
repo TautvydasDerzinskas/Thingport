@@ -36,7 +36,6 @@ const RECIPE: PrinterRecipe = {
     products: { "bambu pla basic": "Bambu PLA Basic @BBL P1S 0.4 nozzle" },
   },
   everyPrinter: { types: { TPU: "Generic TPU @System" }, products: { "panchroma pla": "Panchroma PLA @System" } },
-  defaultFilament: "Bambu PLA Basic @BBL P1S 0.4 nozzle",
   bed: { minX: 0, minY: 0, maxX: 256, maxY: 256 },
   height: 250,
 };
@@ -64,19 +63,14 @@ describe("a copy's presets", () => {
     expect(filamentProduct("Bambu PLA Basic @BBL A1M")).toBe("bambu pla basic");
     expect(filamentProduct("Anker Generic PLA 0.2 nozzle")).toBe("anker generic pla");
     const pick = (name: string, type: string, inherits = "") => chooseFilament(RECIPE, { name, inherits, type });
-    expect(pick("Bambu PLA Basic @BBL A1M", "PLA")).toEqual({
-      name: "Bambu PLA Basic @BBL P1S 0.4 nozzle",
-      typeKept: true,
-    });
+    expect(pick("Bambu PLA Basic @BBL A1M", "PLA")).toBe("Bambu PLA Basic @BBL P1S 0.4 nozzle");
     // A designer's own preset by the one it inherits.
-    expect(pick("My copy", "PLA", "Bambu PLA Basic @BBL X1C")?.name).toBe("Bambu PLA Basic @BBL P1S 0.4 nozzle");
-    expect(pick("Panchroma PLA @BBL A1", "PLA")?.name).toBe("Panchroma PLA @System");
-    expect(pick("Bambu PETG HF @BBL A1M", "PETG")?.name).toBe("Generic PETG");
-    expect(pick("Bambu TPU 95A @BBL A1M", "tpu")?.name).toBe("Generic TPU @System");
-    expect(pick("Bambu PA6-CF @BBL X1E", "PA6-CF")).toEqual({
-      name: "Bambu PLA Basic @BBL P1S 0.4 nozzle",
-      typeKept: false,
-    });
+    expect(pick("My copy", "PLA", "Bambu PLA Basic @BBL X1C")).toBe("Bambu PLA Basic @BBL P1S 0.4 nozzle");
+    expect(pick("Panchroma PLA @BBL A1", "PLA")).toBe("Panchroma PLA @System");
+    expect(pick("Bambu PETG HF @BBL A1M", "PETG")).toBe("Generic PETG");
+    expect(pick("Bambu TPU 95A @BBL A1M", "tpu")).toBe("Generic TPU @System");
+    // None of its type: not another material's preset, whose temperatures would replace the designer's.
+    expect(pick("Bambu PA6-CF @BBL X1E", "PA6-CF")).toBeNull();
   });
 });
 
@@ -111,17 +105,26 @@ describe("a copy's settings", () => {
     expect(settings.printer_model).toBe("Bambu Lab P1S");
     expect(process).toBe("0.20mm Standard @BBL X1C");
     expect(settings.print_settings_id).toBe(process);
-    expect(filaments).toEqual(["Bambu PLA Basic @BBL P1S 0.4 nozzle", "Bambu PLA Basic @BBL P1S 0.4 nozzle"]);
+    // The printer has no PA6-CF preset, so that filament keeps the designer's.
+    expect(filaments).toEqual(["Bambu PLA Basic @BBL P1S 0.4 nozzle", "Bambu PA6-CF @BBL H2D"]);
     expect(settings.inherits_group).toEqual(["", "", "", ""]);
-    // The PA6-CF slot got another type's preset, so it keeps its type; the printer's slot is emptied.
+    // The printer's slot is emptied.
     expect(settings.different_settings_to_system).toEqual([
       "wall_loops;sparse_infill_density",
       "nozzle_temperature",
-      "filament_type",
+      "",
       "",
     ]);
     expect(settings.print_compatible_printers).toEqual(["Bambu Lab P1S 0.4 nozzle"]);
     expect(settings.wall_loops).toBe("4");
+  });
+
+  it("has a slot for each filament preset, with or without a colour for it", () => {
+    const { filament_colour: _colours, ...uncoloured } = DESIGNER;
+    const copy = retargetSettings(uncoloured, RECIPE);
+    expect(copy.filaments).toEqual(["Bambu PLA Basic @BBL P1S 0.4 nozzle", "Bambu PA6-CF @BBL H2D"]);
+    expect(copy.settings.inherits_group).toHaveLength(4);
+    expect(copy.settings.filament_adhesiveness_category).toEqual(["100", "100"]);
   });
 
   it("leaves out the designer's printer's G-code and sizes per-filament lists to the filaments", () => {

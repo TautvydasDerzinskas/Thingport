@@ -32,7 +32,6 @@ export type PrinterRecipe = {
   /** The filaments made for this printer, then the slicer's for every printer. */
   filaments: FilamentChoices | null;
   everyPrinter: FilamentChoices | null;
-  defaultFilament: string | null;
   bed: BedBox | null;
   height: number | null;
 };
@@ -111,20 +110,19 @@ function lookup(map: Record<string, string> | undefined, key: string): string | 
 
 /**
  * The filament preset for one of the designer's filaments: the same product made for this printer, else for every
- * printer, else the printer's preset for that filament type, else the printer's own first filament. `typeKept` is
- * false for that last one, when the preset may be another type than the designer's.
+ * printer, else the printer's preset for that filament type. Null when the slicer has none of that type for the
+ * printer: the designer's own preset stays, because another material's would set what the designer's list of changes
+ * doesn't name (its temperatures) to that material's.
  */
 export function chooseFilament(
   recipe: PrinterRecipe,
   designer: { name: string; inherits: string; type: string },
-): { name: string; typeKept: boolean } | null {
+): string | null {
   for (const key of [filamentProduct(designer.name), filamentProduct(designer.inherits)]) {
     const name = lookup(recipe.filaments?.products, key) ?? lookup(recipe.everyPrinter?.products, key);
-    if (name) return { name, typeKept: true };
+    if (name) return name;
   }
-  const byType = lookup(recipe.filaments?.types, designer.type) ?? lookup(recipe.everyPrinter?.types, designer.type);
-  if (byType) return { name: byType, typeKept: true };
-  return recipe.defaultFilament ? { name: recipe.defaultFilament, typeKept: false } : null;
+  return lookup(recipe.filaments?.types, designer.type) ?? lookup(recipe.everyPrinter?.types, designer.type);
 }
 
 /** The bounding box of `printable_area` ("XxY" points), or null without two distinct points. */
@@ -270,11 +268,6 @@ function sized(list: string[], length: number): string[] {
   return Array.from({ length }, (_, i) => list[i] ?? "");
 }
 
-function addKey(diff: string, key: string): string {
-  const keys = diff.split(";").filter(Boolean);
-  return keys.includes(key) ? diff : [...keys, key].join(";");
-}
-
 const mm = (n: number) => String(Math.round(n * 1000) / 1000);
 
 function rectangle(bed: BedBox): string[] {
@@ -301,7 +294,8 @@ export type RetargetResult = {
  */
 export function retargetSettings(config: Settings, recipe: PrinterRecipe): RetargetResult {
   const out: Settings = { ...config };
-  const count = Math.max(strings(config.filament_colour).length, 1);
+  // Each filament has a preset; a colour list may be missing or shorter.
+  const count = Math.max(strings(config.filament_settings_id).length, strings(config.filament_colour).length, 1);
   const inherits = sized(strings(config.inherits_group), count + 2);
   const diff = sized(strings(config.different_settings_to_system), count + 2);
 
@@ -312,13 +306,9 @@ export function retargetSettings(config: Settings, recipe: PrinterRecipe): Retar
 
   const names = sized(strings(config.filament_settings_id), count);
   const types = sized(strings(config.filament_type), count);
-  const filaments = names.map((name, i) => {
-    const picked = chooseFilament(recipe, { name, inherits: inherits[i + 1], type: types[i] });
-    if (!picked) return name;
-    // Another type's preset keeps the designer's type, so colours and the AMS still read it as theirs.
-    if (!picked.typeKept && types[i]) diff[i + 1] = addKey(diff[i + 1], "filament_type");
-    return picked.name;
-  });
+  const filaments = names.map(
+    (name, i) => chooseFilament(recipe, { name, inherits: inherits[i + 1], type: types[i] }) ?? name,
+  );
   out.filament_settings_id = filaments;
 
   out.printer_settings_id = recipe.preset;

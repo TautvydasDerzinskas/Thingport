@@ -4442,6 +4442,7 @@
     "printers": {
       "subtitle": "Double-cliquez sur une imprimante pour l’ajouter ou la retirer ; clic droit pour sa buse et ses slicers.",
       "failed": "Impossible d’enregistrer l’imprimante.",
+      "loadFailed": "Impossible de charger vos imprimantes.",
       "yours": "la vôtre, buse de {{nozzle}} mm",
       "suggested": "Suggérée",
       "notYours": "Pas la vôtre",

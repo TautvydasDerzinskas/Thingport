@@ -47,9 +47,11 @@ export function useAdaptedOpen(
       `${slicerId ?? ""}:${target.printer ? `${target.printer.id}@${target.printer.nozzle}` : ""}:${target.key}`,
     [slicerId],
   );
+  // A pick is the slicer's: after switching slicers the target asks again.
+  const pickKey = useCallback((target: AdaptedTarget) => `${slicerId ?? ""}:${target.key}`, [slicerId]);
   const current = useCallback(
-    (target: AdaptedTarget) => (target.ask ? (picked[target.key] ?? target) : target),
-    [picked],
+    (target: AdaptedTarget) => (target.ask ? (picked[pickKey(target)] ?? target) : target),
+    [picked, pickKey],
   );
 
   const setState = useCallback((key: string, state: AdaptState) => {
@@ -111,10 +113,10 @@ export function useAdaptedOpen(
       const now = current(target);
       if (now.ask) return new Promise<boolean>((resolve) => setAsking({ target, resolve }));
       const launched = await openNow(now);
-      if (launched && target.ask) forget(target.key);
+      if (launched && target.ask) forget(pickKey(target));
       return launched;
     },
-    [current, openNow, forget],
+    [current, openNow, forget, pickKey],
   );
 
   const choose = async (printer: UserPrinter, remember: boolean) => {
@@ -131,9 +133,9 @@ export function useAdaptedOpen(
           if (err instanceof UnauthorizedError) onUnauthorized?.();
         });
     }
-    setPicked((prev) => ({ ...prev, [target.key]: chosen }));
+    setPicked((prev) => ({ ...prev, [pickKey(target)]: chosen }));
     const launched = await openNow(chosen);
-    if (launched) forget(target.key);
+    if (launched) forget(pickKey(target));
     resolve(launched);
   };
 

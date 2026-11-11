@@ -12,7 +12,7 @@ vi.mock("../src/providers/makerworld/api", async (importOriginal) => {
     ...real,
     fetchBoundPrinters: async (token: string) => {
       bound.calls.push(token);
-      return bound.answer;
+      return typeof bound.answer === "function" ? await (bound.answer as () => Promise<unknown>)() : bound.answer;
     },
   };
 });
@@ -174,6 +174,16 @@ describe("printers from the Bambu account", () => {
     bound.answer = null;
     await setUserMakerworldCookie(otherId, "token=abc123", { verified: true });
     expect((await request(app).post("/api/me/printers/bambu").set(as(other))).status).toBe(502);
+  });
+
+  it("don't mark a sign-in given while the old one was being turned down", async () => {
+    bound.answer = async () => {
+      await setUserMakerworldCookie(otherId, "token=newer456");
+      return "rejected";
+    };
+    expect((await request(app).post("/api/me/printers/bambu").set(as(other))).status).toBe(409);
+    expect(await getMakerworldConnection(otherId)).toBe("connected");
+    bound.answer = null;
   });
 });
 

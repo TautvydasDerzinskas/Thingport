@@ -4429,6 +4429,7 @@
     "printers": {
       "subtitle": "Haz doble clic en una impresora para añadirla o quitarla; clic derecho para su boquilla y sus slicers.",
       "failed": "No se pudo guardar la impresora.",
+      "loadFailed": "No se pudieron cargar tus impresoras.",
       "yours": "tuya, boquilla de {{nozzle}} mm",
       "suggested": "Sugerida",
       "notYours": "No es tuya",

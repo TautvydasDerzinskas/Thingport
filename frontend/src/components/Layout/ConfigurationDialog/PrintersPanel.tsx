@@ -46,7 +46,7 @@ type Tile =
 export default function PrintersPanel({ onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const showToast = useToast();
-  const { printers, suggestions, bambu, loaded } = useUserPrinters(onUnauthorized);
+  const { printers, suggestions, bambu, loaded, failed, reload } = useUserPrinters(onUnauthorized);
   const slicerSettings = useSlicerSettings();
   const [menu, setMenu] = React.useState<{ id: string; top: number; left: number } | null>(null);
   const [adding, setAdding] = React.useState(false);
@@ -98,8 +98,13 @@ export default function PrintersPanel({ onUnauthorized }: Props) {
   const remove = (printer: PrinterSummary) =>
     run(async () => {
       await printersApi.remove(printer.id);
-      // The slicers that made copies for it ask again, which the server has done too.
-      setCachedSlicerSettings(await settingsApi.getSlicer());
+      // The slicers that made copies for it ask again, which the server has done too. The printer is gone either
+      // way, so run's reload of the printers comes after this whether or not it worked.
+      try {
+        setCachedSlicerSettings(await settingsApi.getSlicer());
+      } catch (err) {
+        if (err instanceof UnauthorizedError) throw err;
+      }
     });
   const activate = (tile: Tile) => (tile.kind === "mine" ? remove(tile.printer) : add(tile.printer, tile.nozzle));
 
@@ -183,7 +188,16 @@ export default function PrintersPanel({ onUnauthorized }: Props) {
         </Box>
       )}
 
-      {!loaded ? (
+      {failed ? (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {t("printers.loadFailed")}
+          </Typography>
+          <Button size="small" startIcon={<ReplayIcon />} onClick={() => void reload().catch(() => undefined)}>
+            {t("common:retry")}
+          </Button>
+        </Box>
+      ) : !loaded ? (
         <AppGrid column={TILE + 32}>
           {Array.from({ length: 3 }, (_, i) => (
             <Box key={i} sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.75, py: 1 }}>
@@ -219,7 +233,7 @@ export default function PrintersPanel({ onUnauthorized }: Props) {
           <AddTile label={t("printers.add.tile")} size={TILE} onClick={() => setAdding(true)} />
         </AppGrid>
       )}
-      {loaded && printers.length === 0 && (
+      {loaded && !failed && printers.length === 0 && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1.5 }}>
           {t("printers.empty")}
         </Typography>

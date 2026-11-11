@@ -76,6 +76,7 @@ import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
 import { resetCustomWidgets } from "./hooks/useCustomWidgets";
 import { resetTools } from "./hooks/useTools";
 import { resetToolsView } from "./hooks/useToolsView";
+import { resetUserPrinters } from "./hooks/useUserPrinters";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 import ScrollReset from "./components/Layout/ScrollReset";
@@ -554,6 +555,7 @@ export default function App() {
     resetCustomWidgets();
     resetTools();
     resetToolsView();
+    resetUserPrinters();
     storeToken(tok);
     storeUser(loggedInUser);
     setToken(tok);
@@ -663,6 +665,7 @@ export default function App() {
     resetCustomWidgets();
     resetTools();
     resetToolsView();
+    resetUserPrinters();
     clearToken();
     clearUser();
     setToken(null);

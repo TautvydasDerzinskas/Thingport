@@ -7,6 +7,10 @@ const EMPTY: MyPrinters = { printers: [], suggestions: [], bambu: false };
 // Shared by every mounted instance so there's one request, and changes reach all of them.
 let cached: MyPrinters | undefined;
 let inFlight: Promise<MyPrinters> | null = null;
+// A read asked for while one was out, which may have missed the change it was asked after.
+let queued: Promise<MyPrinters> | null = null;
+// Which account's they are: a read from before a sign-in or sign-out doesn't fill the cache.
+let session = 0;
 const listeners = new Set<(value: MyPrinters) => void>();
 
 export function setCachedPrinters(value: MyPrinters) {
@@ -14,24 +18,48 @@ export function setCachedPrinters(value: MyPrinters) {
   listeners.forEach((listener) => listener(value));
 }
 
-/** Reads them again, e.g. after a change the server makes more of (suggestions, the Bambu offer). */
-export function reloadPrinters(): Promise<MyPrinters> {
-  inFlight ??= printersApi
+/** Forgets them, on signing in or out: they're the account's. */
+export function resetUserPrinters() {
+  session += 1;
+  cached = undefined;
+  inFlight = null;
+  queued = null;
+}
+
+function read(): Promise<MyPrinters> {
+  const started = session;
+  const request: Promise<MyPrinters> = printersApi
     .mine()
     .then((res) => {
-      setCachedPrinters(res);
+      if (started === session) setCachedPrinters(res);
       return res;
     })
     .finally(() => {
-      inFlight = null;
+      if (inFlight === request) inFlight = null;
     });
-  return inFlight;
+  inFlight = request;
+  return request;
 }
 
-/** The user's printers, their library's suggestions and the Bambu offer; `loaded` false until the first answer. */
+/** Reads them again, e.g. after a change the server makes more of (suggestions, the Bambu offer). */
+export function reloadPrinters(): Promise<MyPrinters> {
+  const running = inFlight;
+  if (!running) return read();
+  queued ??= running
+    .catch(() => undefined)
+    .then(() => {
+      queued = null;
+      return read();
+    });
+  return queued;
+}
+
+/** The user's printers, their library's suggestions and the Bambu offer; `loaded` false until the first answer, and
+ *  `failed` when that answer was an error, which `reload` tries again. */
 export function useUserPrinters(onUnauthorized?: () => void) {
   const [value, setValue] = useState<MyPrinters>(cached ?? EMPTY);
   const [loaded, setLoaded] = useState(cached !== undefined);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -39,12 +67,15 @@ export function useUserPrinters(onUnauthorized?: () => void) {
       if (!active) return;
       setValue(next);
       setLoaded(true);
+      setFailed(false);
     };
     listeners.add(listener);
     if (cached === undefined) {
       reloadPrinters().catch((err: unknown) => {
-        if (active && err instanceof UnauthorizedError) onUnauthorized?.();
-        if (active) setLoaded(true);
+        if (!active) return;
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else setFailed(true);
+        setLoaded(true);
       });
     }
     return () => {
@@ -53,6 +84,13 @@ export function useUserPrinters(onUnauthorized?: () => void) {
     };
   }, [onUnauthorized]);
 
-  const reload = useCallback(() => reloadPrinters(), []);
-  return { ...value, loaded, reload };
+  const reload = useCallback(() => {
+    setFailed(false);
+    return reloadPrinters().catch((err: unknown) => {
+      if (err instanceof UnauthorizedError) onUnauthorized?.();
+      else setFailed(true);
+      throw err;
+    });
+  }, [onUnauthorized]);
+  return { ...value, loaded, failed, reload };
 }

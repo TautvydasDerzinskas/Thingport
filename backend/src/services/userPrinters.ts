@@ -194,11 +194,12 @@ export class BambuAccountError extends Error {
 /** Adds the printers bound to the user's Bambu account (those the catalogue knows) and returns them, ones they had
  *  already among them. Nothing about a printer but its model and nozzle is read. */
 export async function addBambuAccountPrinters(userId: string): Promise<UserPrinterView[]> {
-  const token = extractMakerworldBearerToken(await getUserMakerworldCookie(userId));
-  if (!token) throw new BambuAccountError("signed-out");
+  const cookie = await getUserMakerworldCookie(userId);
+  const token = extractMakerworldBearerToken(cookie);
+  if (!cookie || !token) throw new BambuAccountError("signed-out");
   const bound = await fetchBoundPrinters(token);
   if (bound === "rejected") {
-    await markMakerworldCookieRejected(userId);
+    await markMakerworldCookieRejected(userId, cookie);
     throw new BambuAccountError("rejected");
   }
   if (!bound) throw new BambuAccountError("unavailable");
