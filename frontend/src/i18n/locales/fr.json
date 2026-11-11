@@ -5690,6 +5690,7 @@
       },
       "sync": {
         "badgeOff": "{{provider}} est désactivé sur cette instance Thingport : rien ne se synchronise tant qu’un administrateur ne le réactive pas",
+        "badgeSourceOff": "{{provider}} est désactivé sur cette instance Thingport : ses sources attendent qu’un administrateur le réactive ; les autres continuent de se synchroniser",
         "menuProviderOff": "{{provider}} est désactivé",
         "badge": "Synchronisée avec une collection {{provider}}",
         "menu": "Configuration de la synchronisation",

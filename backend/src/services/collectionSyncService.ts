@@ -168,7 +168,13 @@ export async function enableSync(userId: string, input: EnableSyncInput): Promis
     const found = await prisma.collection.findFirst({ where: { id: input.collectionId, userId } });
     if (!found) throw new HttpError(404, "Collection not found");
     const result = await createSync(userId, found, source, { knownIds, title, alongside: true });
-    if ("link" in result) return result.link;
+    if ("link" in result) {
+      // Another request linked the same source a moment ago: here, that's this link; elsewhere, it's taken, as above.
+      if (result.link.collection_id !== found.id) {
+        throw new HttpError(409, `This collection is already synced with "${result.link.collection_name}"`);
+      }
+      return result.link;
+    }
     if ("takenBy" in result) throw new Error("A sync alongside others was refused");
     created = result.created;
   } else {

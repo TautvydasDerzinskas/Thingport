@@ -5677,6 +5677,7 @@
       },
       "sync": {
         "badgeOff": "{{provider}} está desactivado en esta instancia de Thingport, así que no se sincroniza nada hasta que un administrador lo vuelva a activar",
+        "badgeSourceOff": "{{provider}} está desactivado en esta instancia de Thingport, así que sus orígenes esperan hasta que un administrador lo vuelva a activar; los demás siguen sincronizándose",
         "menuProviderOff": "{{provider}} está desactivado",
         "badge": "Sincronizada con una colección de {{provider}}",
         "menu": "Configuración de sincronización",

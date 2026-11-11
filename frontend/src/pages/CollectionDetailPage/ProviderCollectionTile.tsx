@@ -66,7 +66,8 @@ export default function ProviderCollectionTile({
   const { t } = useTranslation("models");
   const Tile = COLLECTION_TILES[provider]?.Tile;
   const collection = { ...given, name: displayName(given, t) };
-  const taken = collection.synced !== null;
+  const { synced } = collection;
+  const taken = synced !== null;
   return (
     <Box>
       <ButtonBase
@@ -113,11 +114,11 @@ export default function ProviderCollectionTile({
           </Box>
         )}
       </ButtonBase>
-      {taken && (
+      {synced && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-          {collection.synced!.collection_id === forCollectionId
+          {synced.collection_id === forCollectionId
             ? t("collections.sync.browse.syncsHere")
-            : t("collections.sync.browse.takenBy", { name: collection.synced!.collection_name })}
+            : t("collections.sync.browse.takenBy", { name: synced.collection_name })}
         </Typography>
       )}
     </Box>

@@ -5731,6 +5731,7 @@
       },
       "sync": {
         "badgeOff": "{{provider}} šiame Thingport serveryje išjungtas, todėl niekas nesinchronizuojama, kol administratorius jo vėl neįjungs",
+        "badgeSourceOff": "{{provider}} šiame Thingport serveryje išjungtas, todėl jo šaltiniai laukia, kol administratorius jį vėl įjungs; kiti toliau sinchronizuojami",
         "menuProviderOff": "{{provider}} išjungtas",
         "badge": "Sinchronizuojama su {{provider}} kolekcija",
         "menu": "Sinchronizavimo konfigūracija",

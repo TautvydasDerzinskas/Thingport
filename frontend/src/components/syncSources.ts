@@ -21,7 +21,7 @@ export function sourceName(sync: CollectionSync, t: TFunction): string {
 }
 
 export const isSourceOff = (sync: CollectionSync, disabled: ReadonlySet<ImportProvider>) =>
-  disabled.has(sync.provider as ImportProvider);
+  isProviderId(sync.provider) && disabled.has(sync.provider);
 
 export function syncHealth(syncs: CollectionSync[], disabled: ReadonlySet<ImportProvider>): SyncHealth {
   const off = syncs.filter((sync) => isSourceOff(sync, disabled)).length;
@@ -50,8 +50,10 @@ export function syncsLabel(syncs: CollectionSync[], disabled: ReadonlySet<Import
     synced = t("models:collections.sync.badgeMany", { count: syncs.length, sources });
   }
   const off = [...new Set(syncs.filter((sync) => isSourceOff(sync, disabled)).map((sync) => sync.provider))];
+  // While other sources still sync, a turned-off site holds up only its own.
+  const offKey = syncHealth(syncs, disabled) === "partial" ? "badgeSourceOff" : "badgeOff";
   return [
     synced,
-    ...off.map((provider) => t("models:collections.sync.badgeOff", { provider: providerLabel(provider) })),
+    ...off.map((provider) => t(`models:collections.sync.${offKey}`, { provider: providerLabel(provider) })),
   ].join(". ");
 }

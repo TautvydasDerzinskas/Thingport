@@ -276,14 +276,14 @@ export async function mergeCollections(
     });
     await moveCollectionBookmark(userId, mergedIds, primary.id, tx);
     // A collection follows any number of sources, so theirs carry on into the kept one, and what they've queued lands
-    // there too rather than in a collection that's gone.
+    // there too rather than in a collection that's gone: a failed link too, which a retry runs again.
     await tx.collectionSync.updateMany({
       where: { collectionId: { in: mergedIds } },
       data: { collectionId: primary.id },
     });
     await tx.$executeRaw`
       UPDATE "ImportJobItem" SET payload = jsonb_set(payload::jsonb, '{collection_id}', to_jsonb(${primary.id}::text))
-      WHERE status = 'PENDING' AND payload->>'collection_id' = ANY(${mergedIds})`;
+      WHERE status IN ('PENDING', 'FAILED') AND payload->>'collection_id' = ANY(${mergedIds})`;
     await tx.grabImport.updateMany({ where: { collectionId: { in: mergedIds } }, data: { collectionId: primary.id } });
     await queueCollectionsGone(tx, mergedIds);
     await tx.collection.deleteMany({ where: { id: { in: mergedIds } } });

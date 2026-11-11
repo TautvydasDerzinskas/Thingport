@@ -5523,6 +5523,7 @@
       },
       "sync": {
         "badgeOff": "{{provider}} is turned off on this Thingport instance, so nothing syncs until an admin turns it back on",
+        "badgeSourceOff": "{{provider}} is turned off on this Thingport instance, so its sources wait until an admin turns it back on; the rest still sync",
         "menuProviderOff": "{{provider}} is turned off",
         "badge": "Synced with a {{provider}} collection",
         "menu": "Sync configuration",

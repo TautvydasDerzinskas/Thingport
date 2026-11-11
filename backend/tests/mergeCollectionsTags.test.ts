@@ -89,7 +89,8 @@ describe("merging collections", () => {
       });
     const keptSync = await source(kept, `k${stamp}`);
     const movedSync = await source(synced, `m${stamp}`);
-    // A model the merged one's sync found and queued, and one waiting for Thingport Grab.
+    // Models the merged one's sync found and queued, one that failed and can be retried, one done, and one waiting
+    // for Thingport Grab.
     const job = await prisma.importJob.create({
       data: {
         userId,
@@ -100,13 +101,13 @@ describe("merging collections", () => {
         collectionSyncId: movedSync.id,
       },
     });
-    const [pending, done] = await Promise.all(
-      ["PENDING", "DONE"].map((status) =>
+    const [pending, failed, done] = await Promise.all(
+      ["PENDING", "FAILED", "DONE"].map((status) =>
         prisma.importJobItem.create({
           data: {
             jobId: job.id,
             url: `https://x/${status}`,
-            status: status as "PENDING" | "DONE",
+            status: status as "PENDING" | "FAILED" | "DONE",
             payload: { collection_id: synced, scope: "url", title: null },
           },
         }),
@@ -125,6 +126,7 @@ describe("merging collections", () => {
     const payloadOf = async (id: string) =>
       (await prisma.importJobItem.findUniqueOrThrow({ where: { id } })).payload as { collection_id: string };
     expect((await payloadOf(pending.id)).collection_id).toBe(kept);
+    expect((await payloadOf(failed.id)).collection_id).toBe(kept);
     // What's done is left as it was.
     expect((await payloadOf(done.id)).collection_id).toBe(synced);
     expect((await prisma.grabImport.findUniqueOrThrow({ where: { id: waiting.id } })).collectionId).toBe(kept);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -409,6 +409,12 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
   }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The collection as the page has it now. An action's answer is applied to this, not to the collection as it was when
+  // the action started: the page may have reloaded it meanwhile, as it does when an import finishes.
+  const latest = useRef(collection);
+  useEffect(() => {
+    latest.current = collection;
+  }, [collection]);
 
   const open = syncs.find((sync) => sourceSection(sync) === section) ?? null;
   // A source stopped, or gone since: back to where the dialog would open.
@@ -447,7 +453,8 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
       });
       if (!ok) return;
       await run(async () => {
-        onUpdated(withSync(collection, await collectionsApi.runSync(collection.id, sync.id)));
+        const started = await collectionsApi.runSync(collection.id, sync.id);
+        onUpdated(withSync(latest.current, started));
         showToast({ message: t("models:collections.sync.syncNowStarted", { name: collection.name }) });
       });
     },
@@ -470,7 +477,7 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
             ? t("models:collections.sync.stoppedSource", { name: collection.name, source })
             : t("models:collections.sync.stopped", { name: collection.name }),
         });
-        const next = withoutSync(collection, sync.id);
+        const next = withoutSync(latest.current, sync.id);
         onUpdated(next);
         if (!next.syncs.length) onClose();
         else setSection(homeSection(next.syncs));
@@ -480,7 +487,8 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
     save: async (sync, change, revert) => {
       let saved = false;
       await run(async () => {
-        onUpdated(withSync(collection, await collectionsApi.updateSync(collection.id, sync.id, change)));
+        const updated = await collectionsApi.updateSync(collection.id, sync.id, change);
+        onUpdated(withSync(latest.current, updated));
         saved = true;
         showToast({ message: t("models:collections.sync.saved") });
       });
@@ -496,18 +504,18 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
     });
     if (!ok) return;
     await run(async () => {
-      let next = collection;
+      const started: CollectionSync[] = [];
       let failure: unknown = null;
       // One at a time: each joins the sync lane, which runs them in turn anyway.
       for (const sync of ready) {
         try {
-          next = withSync(next, await collectionsApi.runSync(collection.id, sync.id));
+          started.push(await collectionsApi.runSync(collection.id, sync.id));
         } catch (err) {
           if (err instanceof UnauthorizedError) throw err;
           failure ??= err;
         }
       }
-      onUpdated(next);
+      onUpdated(started.reduce(withSync, latest.current));
       if (failure) throw failure;
       showToast({ message: t("models:collections.sync.syncAllStarted", { name: collection.name }) });
     });
@@ -521,7 +529,7 @@ export default function CollectionSyncDialog({ collection, onClose, onUpdated, o
         // The instance names a likes card in English; Likes are named after their user anyway.
         title: picked.collection.likes ? null : picked.collection.name,
       });
-      onUpdated(withSync(collection, result.sync));
+      onUpdated(withSync(latest.current, result.sync));
       const provider = providerLabel(picked.provider);
       showToast({
         message: t(

@@ -423,6 +423,26 @@ describe("synced collections", () => {
     expect(same.body.id).toBe(first.body.id);
   });
 
+  it("links a source racing into two collections to one of them, refusing the other", async () => {
+    const cid = newId();
+    const [a, b] = await Promise.all(
+      ["A", "B"].map((side) =>
+        request(app)
+          .post("/api/collections")
+          .set(auth())
+          .send({ name: `Race ${side} ${cid}` }),
+      ),
+    );
+    const [first, second] = await Promise.all(
+      [a, b].map((c) => enable({ url: collectionUrl(cid), collection_id: c.body.id, known_ids: [] })),
+    );
+    expect([first.status, second.status].toSorted()).toEqual([200, 409]);
+    const winner = first.status === 200 ? first : second;
+    expect(
+      await prisma.collectionSync.findMany({ where: { externalId: cid, userId }, select: { collectionId: true } }),
+    ).toEqual([{ collectionId: winner.body.collection_id }]);
+  });
+
   it("lets a collection follow several sources, each changed, synced and stopped on its own", async () => {
     const [cidA, cidB] = [newId(), newId()];
     const first = await enable({ url: collectionUrl(cidA), title: `Printer ${cidA}`, known_ids: [] });
