@@ -12,7 +12,9 @@ an API key an admin sets once; each user's own sign-in adds the models they boug
 
 ## What comes in
 
-- With the API key alone, free models, their details, collections and authors, for everyone.
+- With the API key alone, free models, their details, collections and authors, for everyone. That includes a free
+  model whose files are zip archives the designer uploaded, as its page's Download button offers them; with several,
+  each archive's files come in a folder named after it.
 - With your own session, the **paid models you bought**, and free ones whose files only download when signed in, from
   your MyMiniFactory library. Where MyMiniFactory has unpacked a model's archives, Thingport fetches just the model
   files from them, so RAR archives and very large zips are no problem.

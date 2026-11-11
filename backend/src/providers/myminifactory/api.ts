@@ -258,9 +258,14 @@ export async function resolveMyminifactoryObject(
 export type MyminifactoryDownload = { kind: "file"; url: string } | { kind: "login" } | { kind: "missing" };
 
 /** Where /download/{id} sends an anonymous visitor: a signed link to the file (or a zip of all of
- *  them), or the login page for a paid or members-only object. */
-export async function resolveMyminifactoryDownload(objectId: string): Promise<MyminifactoryDownload> {
-  const res = await browserFetch(`${MYMINIFACTORY_ORIGIN}/download/${encodeURIComponent(objectId)}`, {
+ *  them), or the login page for a paid or members-only object. With `archiveId`, one of a free object's archives
+ *  (myminifactoryArchivesFrom). */
+export async function resolveMyminifactoryDownload(
+  objectId: string,
+  archiveId?: string,
+): Promise<MyminifactoryDownload> {
+  const query = archiveId ? `?archive_id=${encodeURIComponent(archiveId)}` : "";
+  const res = await browserFetch(`${MYMINIFACTORY_ORIGIN}/download/${encodeURIComponent(objectId)}${query}`, {
     redirect: "manual",
     timeoutMs: API_TIMEOUT_MS,
   });
@@ -274,6 +279,56 @@ export async function resolveMyminifactoryDownload(objectId: string): Promise<My
     if (/\/(login|object)\b/i.test(target.pathname)) return { kind: "login" };
   }
   return { kind: "missing" };
+}
+
+/** One of an object's archives, as the designer uploaded it. */
+export type MyminifactoryArchive = { id: string; name: string };
+
+/** The archives a free object's page offers under its Download button, each downloadable by anyone at
+ *  `/download/{id}?archive_id=`, as the button's own links go. Empty when the page offers none. Apart from the fetch,
+ *  so it can be tested on its own. */
+export function myminifactoryArchivesFrom(html: string, objectId: string): MyminifactoryArchive[] {
+  const props = html.match(/<script\b[^>]*data-component-name="DownloadButton"[^>]*>([\s\S]*?)<\/script>/);
+  if (!props) return [];
+  let data: unknown;
+  try {
+    data = JSON.parse(props[1]);
+  } catch {
+    return [];
+  }
+  if (!isRecord(data) || !Array.isArray(data.archives)) return [];
+  return data.archives.flatMap((archive) => {
+    if (!isRecord(archive) || archive.id == null || !str(archive.path) || !str(archive.download_url)) return [];
+    const id = String(archive.id);
+    try {
+      const link = new URL(str(archive.download_url)!, MYMINIFACTORY_ORIGIN);
+      const own =
+        link.origin === MYMINIFACTORY_ORIGIN &&
+        link.pathname === `/download/${objectId}` &&
+        link.searchParams.get("archive_id") === id &&
+        /^\d+$/.test(id);
+      return own ? [{ id, name: str(archive.path)!.split(/[\\/]/).pop()! }] : [];
+    } catch {
+      return [];
+    }
+  });
+}
+
+/** A free object's archives, from its page; none when the page won't say. */
+export async function fetchMyminifactoryArchives(objectId: string): Promise<MyminifactoryArchive[]> {
+  // Redirected to the page under its slug.
+  const res = await browserFetch(`${MYMINIFACTORY_ORIGIN}/object/${encodeURIComponent(objectId)}`, {
+    timeoutMs: API_TIMEOUT_MS,
+  });
+  if (res.status === 429 || isCloudflareChallenge(res.headers)) {
+    await res.body?.cancel().catch(() => undefined);
+    throw new MyminifactoryRateLimitError();
+  }
+  if (!res.ok) {
+    await res.body?.cancel().catch(() => undefined);
+    return [];
+  }
+  return myminifactoryArchivesFrom(await res.text(), objectId);
 }
 
 export class MyminifactorySessionExpiredError extends Error {

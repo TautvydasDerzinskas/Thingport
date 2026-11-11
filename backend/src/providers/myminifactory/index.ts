@@ -25,6 +25,7 @@ import type {
 } from "../types";
 import { MANIFESTS } from "../index.generated";
 import {
+  fetchMyminifactoryArchives,
   fetchMyminifactoryCollectionObjects,
   isMyminifactoryFileHost,
   listMyminifactoryLibraryFiles,
@@ -56,6 +57,38 @@ type MyminifactoryObject = ResolvedModel & { paid: boolean; archives: boolean };
 async function downloadFile(url: string, kit: ImportKit, suggestedName?: string): Promise<NewPlateInput[]> {
   const name = suggestedName ?? decodeURIComponent(new URL(url).pathname.split("/").pop() || "myminifactory-file");
   return (await kit.downloadSignedFile({ url, name }, isMyminifactoryFileHost, BLOCKED)) ?? [];
+}
+
+/** A free object's archives, as anyone may download them from its page's Download button, each unpacked into its
+ *  model files (each in a folder named after it when there are several). Empty when they aren't for anyone: an
+ *  archive the button sends to a sign-in, or archives Thingport can't open (RAR), which come from the user's library
+ *  instead, where MyMiniFactory has unpacked them. */
+async function downloadFreeArchives(objectId: string, kit: ImportKit): Promise<NewPlateInput[]> {
+  const archives = await fetchMyminifactoryArchives(objectId);
+  const zips = archives.filter((archive) => /\.zip$/i.test(archive.name));
+  if (!zips.length || zips.length < archives.length) return [];
+  const downloaded: NewPlateInput[] = [];
+  const discard = () =>
+    Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
+  try {
+    for (const archive of zips) {
+      const download = await resolveMyminifactoryDownload(objectId, archive.id);
+      if (download.kind !== "file") {
+        await discard();
+        return [];
+      }
+      await maybeSleep(FILE_DELAY_MS);
+      const folder = zips.length > 1 ? archive.name.replace(/\.zip$/i, "") : null;
+      const inputs = await downloadFile(download.url, kit, archive.name);
+      downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(folder, input.folder) })));
+    }
+  } catch (err) {
+    await discard();
+    throw err;
+  }
+  if (downloaded.some((input) => kit.isModelFile(input.filename))) return downloaded;
+  await discard();
+  return [];
 }
 
 /** As the user, from their MyMiniFactory library: what Thingport can't download anonymously. */
@@ -139,8 +172,13 @@ export const myminifactoryImport: SourcedImport<string, MyminifactoryObject> = {
   missingMessage: MISSING,
   noFilesMessage: "This MyMiniFactory object has no model files Thingport can import.",
   async downloadModel({ userId, externalId }, object, _apiKey, _requested, kit) {
-    // Paid models, and free ones whose files are archives, only download as the user, from their library.
-    const anonymous = object.paid || object.archives ? null : await resolveMyminifactoryDownload(externalId);
+    // A free model's archives are anyone's to download, as its page offers them; paid models, and free ones whose
+    // archives aren't, download as the user, from their library.
+    if (!object.paid && object.archives) {
+      const free = await downloadFreeArchives(externalId, kit);
+      return free.length ? free : downloadFromLibrary(userId, externalId, false, kit);
+    }
+    const anonymous = object.paid ? null : await resolveMyminifactoryDownload(externalId);
     if (anonymous?.kind === "missing") throw new HttpError(404, MISSING);
     return anonymous?.kind === "file"
       ? downloadFile(anonymous.url, kit)
