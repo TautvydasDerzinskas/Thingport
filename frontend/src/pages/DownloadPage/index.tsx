@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
@@ -6,6 +6,9 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
+import Link from "@mui/material/Link";
+import Collapse from "@mui/material/Collapse";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -16,8 +19,15 @@ import LaptopWindowsIcon from "@mui/icons-material/LaptopWindows";
 import AppleIcon from "@mui/icons-material/Apple";
 import TerminalIcon from "@mui/icons-material/Terminal";
 import CableIcon from "@mui/icons-material/Cable";
+import SystemUpdateAltIcon from "@mui/icons-material/SystemUpdateAlt";
 import { usePageHeader } from "../../components/Layout/PageHeaderContext";
-import { BRIDGE_DOWNLOADS, bridgeDownloadUrl, type BridgeDownload } from "../../constants/bridge";
+import {
+  BRIDGE_DOWNLOADS,
+  BRIDGE_UNINSTALL_DOCS_URL,
+  BRIDGE_VERSION_COMMANDS,
+  bridgeDownloadUrl,
+  type BridgeDownload,
+} from "../../constants/bridge";
 import { EXTENSION_DOWNLOADS, type ExtensionDownload } from "../../constants/extension";
 import extensionIcon from "../../assets/logos/thingport-icon-color.svg";
 // Official browser logos (github.com/alrra/browser-logos), shown only to mark which browser each
@@ -88,6 +98,56 @@ function InstallSteps({ steps }: { steps: InstallStep[] }) {
         </Stack>
       ))}
     </Stack>
+  );
+}
+
+// Updating is the same steps over the old version, so this only says what's different.
+function UpdateNote({ os }: { os: BridgeDownload["os"] }) {
+  const { t } = useTranslation("app");
+  const [showVersion, setShowVersion] = useState(false);
+  const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const versionId = useId();
+  return (
+    <Box sx={{ mt: 2.5, p: 1.5, borderRadius: 1, border: 1, borderColor: "divider", display: "flex", gap: 1.25 }}>
+      <SystemUpdateAltIcon color="primary" sx={{ fontSize: 20, mt: "1px" }} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="body2">
+          <Box component="strong" sx={{ fontWeight: 600 }}>
+            {t("download.modal.update.title")}
+          </Box>{" "}
+          {t("download.modal.update.text")}
+          {os === "macos" && ` ${t("download.modal.update.macosQuit")}`}
+        </Typography>
+        <Stack direction="row" spacing={2} sx={{ mt: 0.75 }}>
+          <Link
+            component="button"
+            type="button"
+            variant="caption"
+            onClick={() => setShowVersion((shown) => !shown)}
+            aria-expanded={showVersion}
+            aria-controls={versionId}
+          >
+            {t(showVersion ? "download.modal.update.hideVersion" : "download.modal.update.checkVersion")}
+          </Link>
+          <Link
+            href={BRIDGE_UNINSTALL_DOCS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="caption"
+            sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+          >
+            {t("download.modal.update.uninstall")}
+            <OpenInNewIcon sx={{ fontSize: 12 }} />
+          </Link>
+        </Stack>
+        <Collapse in={showVersion} timeout={reduceMotion ? 0 : "auto"} id={versionId}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1, mb: 0.5 }}>
+            {t(os === "windows" ? "download.modal.update.inPowerShell" : "download.modal.update.inTerminal")}
+          </Typography>
+          <CodeBlock>{BRIDGE_VERSION_COMMANDS[os]}</CodeBlock>
+        </Collapse>
+      </Box>
+    </Box>
   );
 }
 
@@ -224,6 +284,7 @@ export default function DownloadPage() {
                   {t("download.modal.macos.note")}
                 </Typography>
               )}
+              <UpdateNote os={installOs} />
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setInstallOs(null)}>{t("common:close")}</Button>

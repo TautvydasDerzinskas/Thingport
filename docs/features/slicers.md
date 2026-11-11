@@ -28,7 +28,9 @@ button downloads the file instead, for when you'd rather open files yourself.
 
 Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next won't open a link from a self-hosted server on their own.
 [Thingport Bridge](../../bridge/README.md) is a small helper app for Windows, macOS and Linux that takes the link from
-Thingport and opens the file in the slicer. Download it from Thingport's **Downloads** page.
+Thingport and opens the file in the slicer. Download it from Thingport's **Downloads** page. To
+[update it](../../bridge/README.md#update), install the new version over the old one; a notification tells you when
+there's a newer one.
 
 OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca and eufyMake Studio download the link themselves. When one
 can't, for instance because it doesn't trust your instance's certificate, send it through the Bridge too: right-click

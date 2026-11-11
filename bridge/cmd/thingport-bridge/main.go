@@ -81,7 +81,7 @@ func runInstallAndReport() {
 		fmt.Printf("Install failed: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Installed Thingport Bridge at %s\n", target)
+	fmt.Printf("Installed Thingport Bridge %s at %s\n", version, target)
 	fmt.Println("You can now use \"Open in Bambu Studio\" from Thingport.")
 }
 
@@ -128,7 +128,7 @@ func handleProtocol(raw string, cfg Config) error {
 	}
 
 	slicerID := strings.ToLower(strings.TrimSpace(q.Get("slicer")))
-	log.Printf("open request slicer=%s url=%s filename=%s", slicerID, redactURL(downloadURL), filename)
+	log.Printf("open request version=%s slicer=%s url=%s filename=%s", version, slicerID, redactURL(downloadURL), filename)
 
 	downloadDir := resolveDownloadDir(cfg)
 	if err := os.MkdirAll(downloadDir, 0755); err != nil {
@@ -261,6 +261,8 @@ func downloadFile(downloadURL, targetPath string) error {
 	if err != nil {
 		return fmt.Errorf("request: %w", scrubURL(err))
 	}
+	// Thingport tells the user when a newer Bridge is out (bridgeUpdateService).
+	req.Header.Set("User-Agent", userAgent())
 	res, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("download: %w", scrubURL(err))
@@ -278,6 +280,10 @@ func downloadFile(downloadURL, targetPath string) error {
 		return fmt.Errorf("save file: %w", err)
 	}
 	return nil
+}
+
+func userAgent() string {
+	return fmt.Sprintf("Thingport-Bridge/%s (%s)", version, runtime.GOOS)
 }
 
 // scrubURL redacts the URL a *url.Error repeats (net/http's and url.Parse's errors do), so a

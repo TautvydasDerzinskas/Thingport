@@ -183,9 +183,10 @@ export const SYSTEM_NOTIFICATIONS_URL = (
 ).trim();
 
 export const DEFAULT_RELEASE_NOTES_URL = "https://raw.githubusercontent.com/TautvydasDerzinskas/Thingport/main";
-// The repo files "What's new" reads: the CHANGELOG.md files and release-notes/latest-release-notes.json. Set to an
-// empty value to stop fetching them, or to a file:// URL to read a checkout. `npm run dev` reads the one it runs
-// from, so notes can be previewed before they're pushed.
+// The repo files "What's new" reads: the CHANGELOG.md files and release-notes/latest-release-notes.json, and
+// bridge/package.json for the Bridge update notification. Set to an empty value to stop fetching them, or to a
+// file:// URL to read a checkout. `npm run dev` reads the one it runs from, so notes can be previewed before they're
+// pushed.
 export const RELEASE_NOTES_URL = (
   process.env.RELEASE_NOTES_URL ??
   (process.env.npm_lifecycle_event === "dev" ? pathToFileURL(path.resolve("..")).href : DEFAULT_RELEASE_NOTES_URL)

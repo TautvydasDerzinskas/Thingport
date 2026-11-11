@@ -558,7 +558,8 @@
         "importRun_other": "{{done}} sur {{count}} modèles importés",
         "importRunFrom_one": "{{done}} sur {{count}} modèle importé depuis {{site}}",
         "importRunFrom_many": "{{done}} sur {{count}} de modèles importés depuis {{site}}",
-        "importRunFrom_other": "{{done}} sur {{count}} modèles importés depuis {{site}}"
+        "importRunFrom_other": "{{done}} sur {{count}} modèles importés depuis {{site}}",
+        "bridgeUpdate": "Thingport Bridge {{version}} est disponible"
       },
       "minutesAgo_many": "il y a {{count}} minutes",
       "hoursAgo_many": "il y a {{count}} heures",
@@ -2911,6 +2912,16 @@
           "step2": "Supprimez l’indicateur de quarantaine de Gatekeeper : les fichiers téléchargés sont automatiquement mis en quarantaine.",
           "step3": "Installez-le. Cela copie l’application dans ~/Applications et enregistre le lien thingport://.",
           "note": "Si macOS refuse toujours de la lancer, ouvrez Réglages du Système → Confidentialité et sécurité et autorisez-la à cet endroit."
+        },
+        "update": {
+          "title": "Mise à jour ?",
+          "text": "Suivez les mêmes étapes par-dessus l’ancienne version. Inutile de la supprimer avant, et vos réglages sont conservés.",
+          "macosQuit": "L’installation ferme aussi le Bridge en cours d’exécution, pour que le prochain lien ouvre la nouvelle version.",
+          "checkVersion": "Vérifier votre version",
+          "hideVersion": "Masquer la vérification",
+          "inPowerShell": "Dans PowerShell :",
+          "inTerminal": "Dans un terminal :",
+          "uninstall": "Comment désinstaller"
         }
       }
     },

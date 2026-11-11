@@ -66,6 +66,61 @@ stale, invalidly-signed binary rather than a Gatekeeper block -- re-sign it your
 codesign --force -s - ~/Downloads/thingport-bridge-macos
 ```
 
+## Update
+
+Download the new version and install it the same way, over the old one. There's nothing to remove first: installing
+replaces the old Bridge, and your `config.json` and log stay as they are.
+
+On macOS, installing also quits the Bridge that's running, so the next link opens the new version. Bridge 1.0.1 and
+older don't do this. If you're installing one of those, run `killall thingport-bridge` first, or the old version
+keeps opening links until you log out.
+
+Thingport tells you when there's a newer one: the first time an older Bridge opens a model after a release, you get a
+notification that takes you to the Downloads page, once per version. The Bridge names its version when it downloads
+the file, and the instance checks `bridge/package.json` in this repository for the newest.
+
+To see which version you have:
+
+- Windows (PowerShell): `& "$env:LOCALAPPDATA\Thingport\Bridge\thingport-bridge.exe" --version`
+- macOS: `~/Applications/Thingport\ Bridge.app/Contents/MacOS/thingport-bridge --version`, or **Get Info** on the app
+  in Finder (1.0.1 and older show 1.0 there)
+- Linux: `~/.local/bin/thingport-bridge --version`
+
+The newest is on the
+[`bridge-latest` release](https://github.com/TautvydasDerzinskas/Thingport/releases/tag/bridge-latest), and what each
+version changed is in [CHANGELOG.md](CHANGELOG.md).
+
+## Uninstall
+
+Windows (PowerShell):
+
+```powershell
+Remove-Item -Recurse "$env:LOCALAPPDATA\Thingport\Bridge"
+Remove-Item -Recurse "HKCU:\Software\Classes\thingport"
+```
+
+macOS:
+
+```bash
+killall thingport-bridge
+rm -rf ~/Applications/Thingport\ Bridge.app
+```
+
+Linux:
+
+```bash
+rm ~/.local/bin/thingport-bridge ~/.local/share/applications/thingport-bridge.desktop
+```
+
+That leaves your settings and log, and the files the Bridge downloaded for your slicers. Delete these folders too if
+you want nothing left behind:
+
+| OS      | Settings and log                                 | Downloaded files                    |
+| ------- | ------------------------------------------------ | ----------------------------------- |
+| Windows | `%APPDATA%\thingport-bridge`                     | `%LOCALAPPDATA%\thingport-bridge`   |
+| macOS   | `~/Library/Application Support/thingport-bridge` | `~/Library/Caches/thingport-bridge` |
+| Linux   | `~/.config/thingport-bridge`                     | `~/.cache/thingport-bridge`         |
+
 ## Build
 
 You need Go installed (1.21+ recommended). macOS builds also need Xcode's command line tools
