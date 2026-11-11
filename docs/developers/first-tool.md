@@ -180,7 +180,7 @@ export default async function mount(thingport) {
         files: [{ name: `${name}.stl`, data: stl }],
       });
       output.textContent = "";
-      ui.toast(t("saved", { name: model.name, collection: collection.name }), "success");
+      ui.toast(t("saved", { name: model.name, collection: collection.name }), "success", { openModel: model.id });
     } catch (error) {
       output.textContent = t("failed", { reason: error.message });
     } finally {
@@ -236,7 +236,8 @@ What it does:
   watertight, and `getMesh()` gives its triangles, written out here as a binary STL.
 - `download()` hands the file to the browser. `collections.pick()` asks which collection to save into, or for a new
   one, and gives `null` when the user cancels; `models.create()` then makes the model, with the STL as its plate.
-- `ui.toast()` says what happened, in Thingport's own toast, and errors are shown in the window rather than lost.
+- `ui.toast()` says what happened, in Thingport's own toast, and `openModel` puts an Open button on it for the new
+  model. Errors are shown in the window rather than lost.
 
 Nothing is returned for a cleanup: the tool starts no timers and adds no listeners outside its own window, whose
 content goes when it closes. The first two lines are for an editor of your own: put

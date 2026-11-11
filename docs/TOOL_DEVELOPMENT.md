@@ -76,7 +76,8 @@ review does:
 - Colours come from the theme: the CSS variables (`--tp-accent`, `--tp-paper`, `--tp-text`, …) or `thingport.theme`.
   Both themes are then right without the tool knowing which is on.
 - Anything outside Thingport goes through `thingport.fetch`, to a host the metadata lists, and the README says why.
-- It changes the user's library only when they ask, and says what it did through `ui.toast`.
+- It changes the user's library only when they ask, and says what it did through `ui.toast`, with `openModel` on a
+  toast about a model it saved, so the toast has an Open button.
 - No minified or obfuscated code, and nothing loaded at run time the review can't see. A built `tool.js` comes with its
   `source/` and a header saying what built it.
 

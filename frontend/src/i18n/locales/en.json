@@ -4316,7 +4316,8 @@
     "retry": "Retry",
     "language": "Language",
     "more": "More",
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "open": "Open"
   },
   "library": {
     "grid": {

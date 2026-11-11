@@ -4459,7 +4459,8 @@
     "retry": "Réessayer",
     "language": "Langue",
     "more": "Plus",
-    "moreActions": "Plus d’actions"
+    "moreActions": "Plus d’actions",
+    "open": "Ouvrir"
   },
   "library": {
     "grid": {

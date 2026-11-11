@@ -3511,7 +3511,7 @@ export default async function mount(thingport) {
           const picture = await viewer?.toBlob("image/png");
           if (picture) await models.addImages(model.id, [{ name: `${fileBase(chosen)}.png`, data: picture }]);
           close();
-          ui.toast(t("save.done", { name: chosen, collection: collection.name }), "success");
+          ui.toast(t("save.done", { name: chosen, collection: collection.name }), "success", { openModel: model.id });
         } catch (error) {
           go.disabled = false;
           go.textContent = t("save.go");

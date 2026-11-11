@@ -1568,7 +1568,7 @@ export default async function mount(thingport) {
           const record = await storage.get(`project:${projectId}`);
           if (record) await storage.set(`project:${projectId}`, { ...record, modelId: created.id });
         }
-        ui.toast(`Saved ${created.name} to Thingport`, "success");
+        ui.toast(t("save.done", { name: created.name }), "success", { openModel: created.id });
         showStatus(`Saved as ${created.name}.`, [
           [t("save.openIt"), () => models.open(created.id)],
           [

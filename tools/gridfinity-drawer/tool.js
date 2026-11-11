@@ -1553,7 +1553,7 @@ export default async function mount(thingport) {
           },
         ],
       ]);
-      ui.toast(`Saved ${model.name}`, "success");
+      ui.toast(t("save.done", { name: model.name }), "success", { openModel: model.id });
     } catch (err) {
       showStatus("");
       status.hidden = true;

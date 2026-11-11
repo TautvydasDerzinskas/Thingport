@@ -4,6 +4,7 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert, { type AlertColor } from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+import Portal from "@mui/material/Portal";
 import Tooltip from "@mui/material/Tooltip";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -20,6 +21,7 @@ type QueuedToast = ToastOptions & { key: number };
 
 const ToastContext = React.createContext<((options: ToastOptions) => void) | null>(null);
 const CurrentToastContext = React.createContext<QueuedToast | null>(null);
+const HostContext = React.createContext<((host: HTMLElement, on: boolean) => void) | null>(null);
 
 let nextKey = 0;
 
@@ -29,6 +31,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [queue, setQueue] = React.useState<QueuedToast[]>([]);
   const [current, setCurrent] = React.useState<QueuedToast | null>(null);
   const [open, setOpen] = React.useState(false);
+  // Open windows that toasts show inside, newest last; with none, toasts show on the page.
+  const [hosts, setHosts] = React.useState<HTMLElement[]>([]);
+  const host = hosts.at(-1) ?? null;
+  const registerHost = React.useCallback((element: HTMLElement, on: boolean) => {
+    setHosts((prev) => [...prev.filter((h) => h !== element), ...(on ? [element] : [])]);
+  }, []);
 
   const showToast = React.useCallback((options: ToastOptions) => {
     setQueue((prev) => [...prev, { ...options, key: nextKey++ }]);
@@ -44,6 +52,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }
   }, [queue, current, open]);
 
+  // Moving remounts the toast. One already on its way out would come back closed and never finish leaving, which
+  // holds up the queue, so it's done with instead.
+  React.useEffect(() => {
+    if (!open) setCurrent(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [host]);
+
   const handleClose = (_event: unknown, reason?: string) => {
     if (reason === "clickaway") return;
     setOpen(false);
@@ -51,53 +66,57 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastContext.Provider value={showToast}>
-      <CurrentToastContext.Provider value={current}>{children}</CurrentToastContext.Provider>
-      <Snackbar
-        key={current?.key}
-        open={open}
-        autoHideDuration={current?.autoHideMs ?? 4000}
-        onClose={handleClose}
-        slotProps={{ transition: { onExited: () => setCurrent(null) } }}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setOpen(false)}
-          // Alert renders an action instead of its close button, never both.
-          action={
-            current?.action && (
-              <>
-                <Button
-                  color="inherit"
-                  size="small"
-                  sx={{ whiteSpace: "nowrap", minHeight: { xs: 44, md: 0 } }}
-                  onClick={() => {
-                    setOpen(false);
-                    current.action?.onClick();
-                  }}
-                >
-                  {current.action.label}
-                </Button>
-                <Tooltip title={t("close")}>
-                  <IconButton
+      <HostContext.Provider value={registerHost}>
+        <CurrentToastContext.Provider value={current}>{children}</CurrentToastContext.Provider>
+      </HostContext.Provider>
+      <Portal container={host} disablePortal={!host}>
+        <Snackbar
+          key={current?.key}
+          open={open}
+          autoHideDuration={current?.autoHideMs ?? 4000}
+          onClose={handleClose}
+          slotProps={{ transition: { onExited: () => setCurrent(null) } }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            onClose={() => setOpen(false)}
+            // Alert renders an action instead of its close button, never both.
+            action={
+              current?.action && (
+                <>
+                  <Button
                     color="inherit"
                     size="small"
-                    aria-label={t("close")}
-                    onClick={() => setOpen(false)}
-                    sx={{ width: { xs: 44, md: 30 }, height: { xs: 44, md: 30 } }}
+                    sx={{ whiteSpace: "nowrap", minHeight: { xs: 44, md: 0 } }}
+                    onClick={() => {
+                      setOpen(false);
+                      current.action?.onClick();
+                    }}
                   >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </>
-            )
-          }
-          severity={current?.severity ?? "success"}
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          {current?.message}
-        </Alert>
-      </Snackbar>
+                    {current.action.label}
+                  </Button>
+                  <Tooltip title={t("close")}>
+                    <IconButton
+                      color="inherit"
+                      size="small"
+                      aria-label={t("close")}
+                      onClick={() => setOpen(false)}
+                      sx={{ width: { xs: 44, md: 30 }, height: { xs: 44, md: 30 } }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )
+            }
+            severity={current?.severity ?? "success"}
+            variant="filled"
+            sx={{ width: "100%" }}
+          >
+            {current?.message}
+          </Alert>
+        </Snackbar>
+      </Portal>
     </ToastContext.Provider>
   );
 }
@@ -106,6 +125,22 @@ export function useToast() {
   const showToast = React.useContext(ToastContext);
   if (!showToast) throw new Error("useToast must be used within a ToastProvider");
   return showToast;
+}
+
+/**
+ * Shows toasts inside a modal window while `active`, rather than on the page behind it: there the window's focus
+ * trap keeps a keyboard from reaching a toast's button, and screen readers don't hear the page while it's open.
+ * Returns a ref for the window's paper. Toasts go back to the page when it closes.
+ */
+export function useToastHost(active: boolean) {
+  const register = React.useContext(HostContext);
+  const [element, setElement] = React.useState<HTMLElement | null>(null);
+  React.useEffect(() => {
+    if (!register || !element || !active) return;
+    register(element, true);
+    return () => register(element, false);
+  }, [register, element, active]);
+  return setElement;
 }
 
 /** The toast on screen, for what has to say it again. */

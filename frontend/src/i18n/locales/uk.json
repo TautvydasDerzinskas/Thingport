@@ -35,7 +35,8 @@
     "retry": "Спробувати ще раз",
     "language": "Мова",
     "more": "Більше",
-    "moreActions": "Інші дії"
+    "moreActions": "Інші дії",
+    "open": "Відкрити"
   },
   "app": {
     "studio": {

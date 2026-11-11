@@ -84,6 +84,7 @@
   "problem.bin": "{w}×{d} dėžutė {issues}.",
   "problem.cellTooBig": "Vienas langelis su rėmeliu netelpa ant stalo: padidinkite stalą.",
   "save.addToCollection": "Įdėti į rinkinį",
+  "save.done": "Įrašyta: {name}",
   "save.go": "Įrašyti",
   "save.making": "Kuriamos dalys…",
   "save.note": "Kiekviena dalis viename modelyje, su nurodymu, kiek kurios spausdinti, aprašyme.",

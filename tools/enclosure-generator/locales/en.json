@@ -126,6 +126,7 @@
   "reset.body": "Every setting goes back to how it starts. Undo brings them back.",
   "reset.title": "Back to the defaults?",
   "save.addToCollection": "Add to a collection",
+  "save.done": "Saved {name} to Thingport",
   "save.nothingYet": "There's nothing to save yet",
   "save.openIt": "Open it",
   "screw.baseHole": "Base hole",

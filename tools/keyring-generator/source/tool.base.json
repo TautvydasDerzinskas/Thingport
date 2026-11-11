@@ -1,7 +1,7 @@
 {
   "name": "Keyring generator",
   "description": "Turns what you type into a printable keyring: every letter's real outline with its counters intact, a border grown around them and bridged where it would fall apart, key rings and magnet pockets you drag into place, and a 3MF that opens in a slicer with each piece already assigned its filament.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Thingport contributors",
   "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
   "window": {

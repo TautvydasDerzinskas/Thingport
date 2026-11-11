@@ -194,6 +194,16 @@ export interface SdkConfirmOptions {
 /** How a toast looks. */
 export type SdkSeverity = "success" | "info" | "warning" | "error";
 
+/** What a toast can carry besides its message. */
+export interface SdkToastOptions {
+  /**
+   * A model's id: the toast gets an Open button that leaves for the model's page, as `ui.openModel` does, and stays
+   * up longer so it can be reached. Pass it whenever the toast says a model was saved or changed. An older Thingport
+   * instance shows the message without the button.
+   */
+  openModel?: string;
+}
+
 /** A model a tool from the repository brings, as `toolModels()` lists it. */
 export interface SdkToolModel {
   /** What the tool's metadata calls it. */
@@ -649,10 +659,12 @@ export interface SdkUi {
    *
    * @param message What to say.
    * @param severity How it looks: `"info"` when left out.
+   * @param options `openModel`: a model's id, for an Open button on the toast that leaves for its page.
    * @example
-   * thingport.ui.toast(t("save.done"), "success");
+   * const model = await thingport.models.create({ name, files });
+   * thingport.ui.toast(t("save.done", { name: model.name }), "success", { openModel: model.id });
    */
-  toast(message: string, severity?: SdkSeverity): void;
+  toast(message: string, severity?: SdkSeverity, options?: SdkToastOptions): void;
   /**
    * Asks the user to confirm, in Thingport's own dialog.
    *
