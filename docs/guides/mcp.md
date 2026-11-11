@@ -47,7 +47,7 @@ These read your library, and are on for a new token:
 | `search_models`     | Finds models by words in their title, tags, creator or description, plus matching collections and tags. |
 | `list_models`       | Lists models by tag, category, collection or author, newest, most viewed or most printed first.         |
 | `get_model`         | One model's description, files, tags, category, author, collections and where it was imported from.     |
-| `list_collections`  | Your collections and how many models each holds, plus Favourites and Browsing History.                  |
+| `list_collections`  | Your collections, model counts and what each syncs with, plus Favourites and Browsing History.          |
 | `get_collection`    | The models in one collection.                                                                           |
 | `list_tags`         | Your tags, most used first, narrowed by a word if you like.                                             |
 | `list_categories`   | Your category and folder tree.                                                                          |

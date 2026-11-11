@@ -21,6 +21,8 @@ export type DialogSection<T extends string> = {
   /** A pill at the row's end. Left out by sections that count nothing. */
   count?: number;
   countTone?: CountTone;
+  /** The whole label, for one long enough to be cut off in the rail, e.g. a name the user chose. */
+  title?: string;
 };
 
 const selectedBg = (theme: Theme) =>
@@ -101,7 +103,13 @@ export function SectionNavButton({
     >
       {!tabs && icon}
       {count === undefined ? (
-        label
+        title && side ? (
+          <Box component="span" sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+            {label}
+          </Box>
+        ) : (
+          label
+        )
       ) : (
         <>
           {/* With the pill beside it there's less room. A name can be cut off, as its whole text is on hover; a

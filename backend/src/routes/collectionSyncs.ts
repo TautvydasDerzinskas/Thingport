@@ -38,7 +38,7 @@ const enableSchema = z.object({
   collection_id: z.string().nullable().optional(),
 });
 
-// Only Grab turns sync on: it has seen the provider's collection, so it knows which models are
+// Thingport Grab, on a provider's collection page: it has seen the provider's collection, so it knows which models are
 // already there and which are new from now on.
 router.post(
   "/collection-sync",
@@ -70,21 +70,30 @@ const settingsSchema = z
     message: "Nothing to change",
   });
 
+// A collection follows several sources, each with its own settings: `syncId` names one. Without it, these routes act
+// on the collection's only source, as older clients (Thingport Grab's sync toggle among them) expect, and are refused
+// on a collection with several.
+const syncIdOf = (params: { syncId?: string }) => params.syncId ?? null;
+
 router.patch(
-  "/collection/:id/sync",
+  ["/collection/:id/sync", "/collection/:id/sync/:syncId"],
   asyncHandler(async (req, res) => {
     const body = parseBody(settingsSchema, req.body);
     res.json(
-      await updateSyncSettings(req.userId!, req.params.id, {
-        profileScope: body.profile_scope,
-        intervalHours: body.interval_hours,
-      }),
+      await updateSyncSettings(
+        req.userId!,
+        req.params.id,
+        { profileScope: body.profile_scope, intervalHours: body.interval_hours },
+        syncIdOf(req.params),
+      ),
     );
   }),
 );
 
 const enableFromAppSchema = z.object({
   url: z.string().min(1),
+  // The provider collection's name as Browse showed it, to tell the collection's sources apart.
+  title: z.string().max(500).nullable().optional(),
   profile_scope: z.enum(["url", "designer", "all"]).optional(),
   interval_hours: z
     .number()
@@ -93,8 +102,8 @@ const enableFromAppSchema = z.object({
     .optional(),
 });
 
-// The app's Browse tab: links this collection to a provider's. Thingport Grab uses POST
-// /collection-sync instead, with the model ids it saw on the page.
+// The app's Browse tab: links this collection to a provider's, alongside any it already follows. Thingport Grab uses
+// POST /collection-sync instead, with the model ids it saw on the page.
 router.post(
   "/collection/:id/sync",
   asyncHandler(async (req, res) => {
@@ -102,6 +111,7 @@ router.post(
     res.json(
       await enableSyncFromApp(req.userId!, req.params.id, {
         url: body.url,
+        title: body.title,
         profileScope: body.profile_scope,
         intervalHours: body.interval_hours,
       }),
@@ -112,11 +122,11 @@ router.post(
 // Answers once the sync has started; how it went arrives as a notification, since reading a large
 // collection is paced and can take minutes.
 router.post(
-  "/collection/:id/sync/run",
+  ["/collection/:id/sync/run", "/collection/:id/sync/:syncId/run"],
   asyncHandler(async (req, res) => {
-    const sync = await syncForCollection(req.userId!, req.params.id);
+    const sync = await syncForCollection(req.userId!, req.params.id, syncIdOf(req.params));
     // Claimed before anything else is awaited, so two clicks at once can't both start a sync.
-    if (!reserveSync(sync.id)) throw new HttpError(409, "This collection is already syncing");
+    if (!reserveSync(sync.id)) throw new HttpError(409, "This source is already syncing");
     let started;
     try {
       // Answered here, so the click gets the reason, rather than a sync that quietly doesn't run.
@@ -138,9 +148,9 @@ router.post(
 );
 
 router.delete(
-  "/collection/:id/sync",
+  ["/collection/:id/sync", "/collection/:id/sync/:syncId"],
   asyncHandler(async (req, res) => {
-    await disableSync(req.userId!, req.params.id);
+    await disableSync(req.userId!, req.params.id, syncIdOf(req.params));
     res.json({ ok: true });
   }),
 );

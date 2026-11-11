@@ -243,8 +243,9 @@ export async function previewCollectionMerge(userId: string, ids: string[]): Pro
   return { models: rows.length };
 }
 
-/** Moves the others' models into `primaryId` after its own, in the others' order, then deletes the others with their
- *  syncs. The kept one keeps its name, description, tags and sync, and takes over a bookmark if it had none. */
+/** Moves the others' models into `primaryId` after its own, in the others' order, then deletes the others. The kept one
+ *  keeps its name, description, tags and syncs, takes over the others' syncs, with the imports they've queued, and
+ *  takes over a bookmark if it had none. */
 export async function mergeCollections(
   userId: string,
   primaryId: string,
@@ -274,6 +275,16 @@ export async function mergeCollections(
       skipDuplicates: true,
     });
     await moveCollectionBookmark(userId, mergedIds, primary.id, tx);
+    // A collection follows any number of sources, so theirs carry on into the kept one, and what they've queued lands
+    // there too rather than in a collection that's gone.
+    await tx.collectionSync.updateMany({
+      where: { collectionId: { in: mergedIds } },
+      data: { collectionId: primary.id },
+    });
+    await tx.$executeRaw`
+      UPDATE "ImportJobItem" SET payload = jsonb_set(payload::jsonb, '{collection_id}', to_jsonb(${primary.id}::text))
+      WHERE status = 'PENDING' AND payload->>'collection_id' = ANY(${mergedIds})`;
+    await tx.grabImport.updateMany({ where: { collectionId: { in: mergedIds } }, data: { collectionId: primary.id } });
     await queueCollectionsGone(tx, mergedIds);
     await tx.collection.deleteMany({ where: { id: { in: mergedIds } } });
     return count;

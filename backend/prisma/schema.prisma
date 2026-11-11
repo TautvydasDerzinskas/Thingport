@@ -312,7 +312,8 @@ model Collection {
   tags           String[]                 @default([])
   items          CollectionItem[]
   bookmarks      Bookmark[]
-  sync           CollectionSync?
+  // The provider collections it follows, oldest first. Each is checked and set up on its own.
+  syncs          CollectionSync[]
   // Set on the collection a tool keeps its models in: fixed, listed last, and gone with the tool.
   toolId         String?
   tool           Tool?                    @relation(fields: [toolId], references: [id], onDelete: Cascade)
@@ -357,17 +358,21 @@ model CollectionShare {
 }
 
 /// Keeps a collection in step with one on a provider: models added there later are imported into
-/// it by the scheduled sync (services/collectionSyncRunner.ts). Only Thingport Grab creates these.
+/// it by the scheduled sync (services/collectionSyncRunner.ts). Made by Thingport Grab or the sync dialog's Browse
+/// tab. A collection can follow several, from one provider or many; a provider collection feeds only one.
 /// Tracked by the provider's own id, so renaming either side keeps the link.
 model CollectionSync {
   id            String      @id @default(cuid())
   userId        String
   user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  collectionId  String      @unique
+  collectionId  String
   collection    Collection  @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   provider      String
   externalId    String
   sourceUrl     String
+  // The provider collection's name when it was linked, to tell a collection's sources apart. Null on links made
+  // before it was kept, and on Likes, which are named after their user.
+  title         String?
   // MakerWorld only: which print profiles a new model brings ("url" is the model's default one).
   // New MakerWorld syncs start on "designer" (see createSync).
   profileScope  String      @default("url")
@@ -384,6 +389,7 @@ model CollectionSync {
   importJobs    ImportJob[]
 
   @@unique([userId, provider, externalId])
+  @@index([collectionId])
 }
 
 /// Lists Thingport Grab reads from a provider with the user's own login, for what the instance

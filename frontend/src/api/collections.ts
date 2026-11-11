@@ -13,10 +13,14 @@ export type SyncIntervalHours = (typeof SYNC_INTERVAL_HOURS)[number];
 /** Which print profiles a synced MakerWorld collection brings for each new model. */
 export type SyncProfileScope = "url" | "designer" | "all";
 
-/** A collection linked to one on a provider, by Thingport Grab or the sync dialog's Browse tab. */
+/** One of the provider collections a collection follows, linked by Thingport Grab or the sync dialog's Browse tab. */
 export type CollectionSync = {
+  /** Names this source in the calls that change, sync or stop it. */
+  id: string;
   provider: string;
   source_url: string;
+  /** The provider collection's name when it was linked; null on older links and on Likes (see `likes_of`). */
+  title: string | null;
   profile_scope: SyncProfileScope;
   last_checked_at: string | null;
   last_error: string | null;
@@ -43,6 +47,9 @@ export type Collection = {
   system_key: SystemCollectionKey | null;
   /** Always false for a system pseudo-collection. */
   bookmarked: boolean;
+  /** The provider collections it follows, oldest first; empty when it isn't synced. */
+  syncs: CollectionSync[];
+  /** The first of `syncs`, kept for older clients. Use `syncs`. */
   sync: CollectionSync | null;
   /** Set on the collection of a tool's models: it can be opened and bookmarked, not edited, and goes with the tool. */
   tool_id: string | null;
@@ -294,11 +301,13 @@ export const collectionsApi = {
     assertOk(res, "Failed to remove bookmark");
   },
 
+  /** One source's settings; the collection's other sources keep theirs. */
   updateSync: async (
     id: string,
+    syncId: string,
     settings: { profile_scope?: SyncProfileScope; interval_hours?: SyncIntervalHours },
   ): Promise<CollectionSync> => {
-    const res = await fetch(`${apiBase()}/collection/${id}/sync`, {
+    const res = await fetch(`${apiBase()}/collection/${id}/sync/${syncId}`, {
       method: "PATCH",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(settings),
@@ -307,13 +316,18 @@ export const collectionsApi = {
     return res.json();
   },
 
-  /** Links this collection to a provider's, from the sync dialog's Browse tab. `importing`: the
-   *  provider collection's current models are being imported (not on MakerWorld, which only
-   *  follows new ones). `waiting`: a private Printables collection or likes, whose models come in
-   *  on the user's next visit to Printables with Thingport Grab. */
+  /** Links this collection to a provider's, alongside any it already follows, from the sync dialog's Browse tab.
+   *  `title`: the provider collection's name, to tell the sources apart. `importing`: the provider collection's current
+   *  models are being imported (not on MakerWorld, which only follows new ones). `waiting`: a private Printables
+   *  collection or likes, whose models come in on the user's next visit to Printables with Thingport Grab. */
   enableSync: async (
     id: string,
-    input: { url: string; profile_scope?: SyncProfileScope; interval_hours?: SyncIntervalHours },
+    input: {
+      url: string;
+      title?: string | null;
+      profile_scope?: SyncProfileScope;
+      interval_hours?: SyncIntervalHours;
+    },
   ): Promise<{ sync: CollectionSync; importing: boolean; waiting: boolean }> => {
     const res = await fetch(`${apiBase()}/collection/${id}/sync`, {
       method: "POST",
@@ -324,17 +338,36 @@ export const collectionsApi = {
     return res.json();
   },
 
-  /** Starts a sync of this collection alone; its result arrives as a notification. Answers with
-   *  the sync as it starts, its Sync now cool-down included. */
-  runSync: async (id: string): Promise<CollectionSync> => {
-    const res = await fetch(`${apiBase()}/collection/${id}/sync/run`, { method: "POST", headers: authHeaders() });
+  /** Starts a sync of one source of this collection; its result arrives as a notification. Answers with the source as
+   *  it starts, its Sync now cool-down included. */
+  runSync: async (id: string, syncId: string): Promise<CollectionSync> => {
+    const res = await fetch(`${apiBase()}/collection/${id}/sync/${syncId}/run`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to start syncing"));
     return res.json();
   },
 
-  /** The collection and its models stay; new models just stop coming in. */
-  stopSync: async (id: string): Promise<void> => {
-    const res = await fetch(`${apiBase()}/collection/${id}/sync`, { method: "DELETE", headers: authHeaders() });
+  /** The collection, its models and its other sources stay; new models from this source just stop coming in. */
+  stopSync: async (id: string, syncId: string): Promise<void> => {
+    const res = await fetch(`${apiBase()}/collection/${id}/sync/${syncId}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to stop syncing"));
   },
 };
+
+/** `collection` with `sync` in place of the source of the same id, or added when it's new. */
+export function withSync(collection: Collection, sync: CollectionSync): Collection {
+  const known = collection.syncs.some((s) => s.id === sync.id);
+  const syncs = known ? collection.syncs.map((s) => (s.id === sync.id ? sync : s)) : [...collection.syncs, sync];
+  return { ...collection, syncs, sync: syncs[0] ?? null };
+}
+
+/** `collection` without the source `syncId`. */
+export function withoutSync(collection: Collection, syncId: string): Collection {
+  const syncs = collection.syncs.filter((s) => s.id !== syncId);
+  return { ...collection, syncs, sync: syncs[0] ?? null };
+}

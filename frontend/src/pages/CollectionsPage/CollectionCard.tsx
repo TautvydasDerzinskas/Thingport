@@ -410,9 +410,9 @@ export default function CollectionCard({
                 </Tooltip>
               )}
               {collection.tool_id && <ToolCollectionBadge toolId={collection.tool_id} />}
-              {collection.sync && (
+              {collection.syncs.length > 0 && (
                 <CollectionSyncBadge
-                  sync={collection.sync}
+                  syncs={collection.syncs}
                   onClick={selectMode ? undefined : () => setSyncOpen(true)}
                 />
               )}
@@ -428,9 +428,9 @@ export default function CollectionCard({
             onOpenCollection={() => navigate(collectionPath(collection))}
           />
         )}
-        {syncOpen && collection.sync && (
+        {syncOpen && collection.syncs.length > 0 && (
           <CollectionSyncDialog
-            collection={{ ...collection, sync: collection.sync }}
+            collection={collection}
             onClose={() => setSyncOpen(false)}
             onUpdated={onUpdated}
             onUnauthorized={onUnauthorized}

@@ -17,7 +17,7 @@ import CallMergeIcon from "@mui/icons-material/CallMerge";
 import CheckIcon from "@mui/icons-material/Check";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
-import SyncDisabledIcon from "@mui/icons-material/SyncDisabled";
+import SyncIcon from "@mui/icons-material/Sync";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { UnauthorizedError } from "../api/client";
@@ -36,8 +36,9 @@ export type MergeItem = {
   /** A small square picture of it. */
   thumbnail: ReactNode;
   bookmarked: boolean;
-  /** Collections only: the provider it syncs with, whose sync stops if it's merged away. */
-  syncProvider?: string | null;
+  /** Collections only: the providers of the collections it syncs with, which the kept one syncs with too if it's
+   *  merged away. */
+  syncProviders?: string[];
 };
 
 type Props = {
@@ -118,7 +119,7 @@ export default function MergeDialog({
   const otherNames = list(others.map((item) => item.name));
   const added = union === null ? null : Math.max(0, union - primary.count);
   const bookmarkMoves = !primary.bookmarked && others.some((item) => item.bookmarked);
-  const syncsLost = others.filter((item) => item.syncProvider);
+  const syncsMove = others.filter((item) => item.syncProviders?.length);
   const k = KEY_OF_KIND[kind];
 
   const merge = async () => {
@@ -200,7 +201,12 @@ export default function MergeDialog({
                       </Typography>
                       <Typography variant="caption" color="text.secondary" component="div" noWrap>
                         {item.caption ?? t("models:collections.card.itemCount", { count: item.count })}
-                        {item.syncProvider && ` · ${t("models:merge.syncsWith", { provider: item.syncProvider })}`}
+                        {Boolean(item.syncProviders?.length) &&
+                          ` · ${t("models:merge.syncsWith", {
+                            provider: new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(
+                              item.syncProviders!,
+                            ),
+                          })}`}
                       </Typography>
                     </Box>
                     <StatusPill kept={kept} label={kept ? t("models:merge.kept") : t(`models:merge.${k}.goes`)} />
@@ -258,6 +264,15 @@ export default function MergeDialog({
                 <Outcome icon={<LockOutlinedIcon fontSize="small" color="action" />}>
                   {t(`models:merge.${k}.keepsOwn`, { name: primary.name })}
                 </Outcome>
+                {syncsMove.length > 0 && (
+                  <Outcome icon={<SyncIcon fontSize="small" color="primary" />}>
+                    {t("models:merge.collections.syncsMove", {
+                      names: list(syncsMove.map((item) => item.name)),
+                      count: oneOrSeveral(syncsMove.length),
+                      name: primary.name,
+                    })}
+                  </Outcome>
+                )}
                 {bookmarkMoves && (
                   <Outcome icon={<BookmarkBorderIcon fontSize="small" color="primary" />}>
                     {t("models:merge.bookmarkMoves", { name: primary.name })}
@@ -268,14 +283,6 @@ export default function MergeDialog({
           </Box>
 
           {notice}
-          {syncsLost.length > 0 && (
-            <Alert severity="warning" icon={<SyncDisabledIcon fontSize="inherit" />} sx={{ py: 0.25 }}>
-              {t("models:merge.collections.syncStops", {
-                names: list(syncsLost.map((item) => item.name)),
-                count: oneOrSeveral(syncsLost.length),
-              })}
-            </Alert>
-          )}
           {error && <Alert severity="error">{error}</Alert>}
           <Stack direction="row" spacing={0.75} alignItems="center" sx={{ color: "text.secondary" }}>
             <InfoOutlinedIcon sx={{ fontSize: 16 }} />
