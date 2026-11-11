@@ -30,5 +30,6 @@ The [MakerWorld 3MF normalizer](../../tools/makerworld-3mf-normalizer) tool make
 
 ## Without Thingport
 
-[Thingport Grab](../../extension/README.md), the browser extension, converts a MakerWorld model in your browser with
-its **Download normalized** button, with no Thingport instance needed.
+[Thingport Grab](../../extension/README.md), the browser extension, makes the same copy of a MakerWorld model in your
+browser with its **Download adapted** button: for the slicer your Thingport instance opens files in, or without an
+instance, the one PrusaSlicer and the slicers like it read.

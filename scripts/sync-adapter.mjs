@@ -1,5 +1,6 @@
 // Copies the 3MF adapter, backend/src/adapter/, where else it runs, as <file>.generated.ts: the server makes the
-// adapted copies, and the web app needs the same plan to know which slicers get one. Each package builds on its own
+// adapted copies, the web app needs the same plan to know which slicers get one, and Thingport Grab makes copies in
+// the browser for people without an instance. Each package builds on its own
 // (its own Docker context and lockfile), which is why it's a copy. Only *.generated.ts files are ever written or
 // removed there. The copies are committed:
 //
@@ -19,14 +20,18 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = "backend/src/adapter";
 const GENERATED = /\.generated\.ts$/;
 
-// What each copy takes: the web app plans but makes no copies, so it has no writers (nor JSZip).
-const TARGETS = [{ dir: "frontend/src/adapter", files: ["format.ts", "plan.ts", "settings.ts", "slicers/"] }];
+// What each copy takes: the web app plans but makes no copies, so it has no writers (nor JSZip); Grab takes it all.
+const TARGETS = [
+  { dir: "frontend/src/adapter", files: ["format.ts", "plan.ts", "settings.ts", "slicers/"] },
+  { dir: "extension/src/adapter", files: ["/"] },
+];
 
 const check = process.argv.includes("--check");
 
 // The sources, by their path relative to SOURCE with "/" between folders: on disk, or as they're about to be committed.
 const disk = {
-  list: (dir) => readdirSync(path.join(ROOT, SOURCE, dir)),
+  list: (dir, recursive) =>
+    readdirSync(path.join(ROOT, SOURCE, dir), { recursive }).map((file) => String(file).split(path.sep).join("/")),
   read: (rel) => readFileSync(path.join(ROOT, SOURCE, rel), "utf8"),
   isFolder: (rel) => existsSync(path.join(ROOT, SOURCE, rel)) && statSync(path.join(ROOT, SOURCE, rel)).isDirectory(),
 };
@@ -42,9 +47,9 @@ function committed(staged) {
       .filter((rel) => !rel.startsWith("../")),
   );
   return {
-    list: (dir) =>
+    list: (dir, recursive) =>
       files
-        .filter((file) => file.startsWith(dir) && !file.slice(dir.length).includes("/"))
+        .filter((file) => file.startsWith(dir) && (recursive || !file.slice(dir.length).includes("/")))
         .map((file) => file.slice(dir.length)),
     read: (rel) => (fromDisk.has(rel) ? disk.read(rel) : git("show", `:${SOURCE}/${rel}`)),
     isFolder: (rel) => files.some((file) => file.startsWith(`${rel}/`)),
@@ -54,13 +59,15 @@ const stagedAt = process.argv.indexOf("--staged");
 const sources =
   stagedAt >= 0 ? committed(process.argv.slice(stagedAt + 1).filter((arg) => !arg.startsWith("--"))) : disk;
 
-/** Every .ts file under `rel` (a file, or a folder ending in /), relative to SOURCE. */
+/** Every .ts file of `rel`, relative to SOURCE: a file, a folder's own ("slicers/"), or the whole tree ("/"). */
 function sourceFiles(rel) {
   if (!rel.endsWith("/")) return [rel];
+  const recursive = rel === "/";
+  const dir = recursive ? "" : rel;
   return sources
-    .list(rel)
+    .list(dir, recursive)
     .filter((file) => file.endsWith(".ts") && !file.endsWith(".test.ts"))
-    .map((file) => `${rel}${file}`);
+    .map((file) => `${dir}${file}`);
 }
 
 /** A copied file's relative imports, which are all of other copies, by their copies' names. */

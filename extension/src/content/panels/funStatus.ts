@@ -80,12 +80,12 @@ export function loadingModelsPhrases(provider: Provider): string[] {
   ];
 }
 
-/** Short, for the "Download normalized" button: MakerWorld hands over the 3MF. */
+/** Short, for the "Download adapted" button: MakerWorld hands over the 3MF. */
 export const gettingFilePhrases = ["Getting file…", "Finding the 3MF…", "Asking MakerWorld…"];
 
-/** Short, for the "Download normalized" button: the Bambu project becomes a plain 3MF. */
-export const normalizingPhrases = [
-  "Normalizing…",
+/** Short, for the "Download adapted" button: the Bambu project becomes a copy for the slicer. */
+export const adaptingPhrases = [
+  "Adapting…",
   "Keeping the colors…",
   "Translating settings…",
   "Repacking plates…",

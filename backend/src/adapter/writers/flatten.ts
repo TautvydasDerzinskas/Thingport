@@ -263,6 +263,12 @@ function counted(part: Part): CountedPart {
   return { ...part, vertices: countMatches(part.body, VERTEX_RE), triangles: countMatches(part.body, TRIANGLE_RE) };
 }
 
+/** The filament painted on a part's unpainted triangles: none on one that isn't printed itself (a modifier, a negative
+ *  or support volume). */
+function partColor(part: CountedPart): string {
+  return part.role === "normal_part" ? encodePaintState(part.extruder) : "";
+}
+
 type Resolved = {
   kind: "mesh" | "assembly";
   obj: ModelObject;
@@ -583,8 +589,6 @@ export function flattenProject({
     flip,
     stats,
   });
-  // A part that isn't printed itself (a modifier, a negative or support volume) gets no filament painted on.
-  const partColor = (part: CountedPart) => (part.role === "normal_part" ? encodePaintState(part.extruder) : "");
 
   const buildXml = buildItems
     .map((item) => {
