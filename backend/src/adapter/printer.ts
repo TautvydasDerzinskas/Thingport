@@ -270,6 +270,10 @@ function sized(list: string[], length: number): string[] {
 
 const mm = (n: number) => String(Math.round(n * 1000) / 1000);
 
+// The slicers lay a project's settings over their own defaults, which have one filament in this colour
+// (PrintConfig.cpp), so a project without a colour list loads only its first filament.
+const SLICER_DEFAULT_COLOUR = "#F2754E";
+
 function rectangle(bed: BedBox): string[] {
   return [
     `${mm(bed.minX)}x${mm(bed.minY)}`,
@@ -337,6 +341,10 @@ export function retargetSettings(config: Settings, recipe: PrinterRecipe): Retar
     const list = strings(config[key]);
     if (list.length && list.length < count) out[key] = sized(list, count).map((v) => v || list[list.length - 1]);
   }
+  // Without one, or with an empty one (which Bambu Studio and OrcaSlicer refuse), each filament gets the colour the
+  // slicer would give the first, so every one of them loads.
+  if (!strings(config.filament_colour).length)
+    out.filament_colour = Array.from({ length: count }, () => SLICER_DEFAULT_COLOUR);
 
   const from = bedBoxOf(config.printable_area);
   if (from && recipe.bed) {

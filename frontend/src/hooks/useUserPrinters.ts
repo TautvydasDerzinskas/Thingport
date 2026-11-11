@@ -45,12 +45,19 @@ function read(): Promise<MyPrinters> {
 export function reloadPrinters(): Promise<MyPrinters> {
   const running = inFlight;
   if (!running) return read();
-  queued ??= running
-    .catch(() => undefined)
-    .then(() => {
-      queued = null;
-      return read();
-    });
+  if (!queued) {
+    const asked = session;
+    const next: Promise<MyPrinters> = running
+      .catch(() => undefined)
+      .then(() => {
+        // Signed in or out since: the new account's reads aren't this one's to start or to stand in for.
+        if (asked !== session) return running;
+        if (queued === next) queued = null;
+        // One started since the last settled already reads after the change; two at once could land out of order.
+        return inFlight ?? read();
+      });
+    queued = next;
+  }
   return queued;
 }
 

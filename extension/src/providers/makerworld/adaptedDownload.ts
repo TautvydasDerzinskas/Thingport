@@ -222,8 +222,10 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
   root.append(style, button, bubble);
 
   // An error, or a note on what was saved: shown for a while, not only while hovered.
+  let held = false;
   const showBubble = (text: string, error = false, note = false) => {
     clearTimeout(bubbleTimer);
+    held = error || note;
     bubble.textContent = text;
     bubble.classList.toggle("tg-nd-bubble--error", error);
     bubble.hidden = false;
@@ -234,19 +236,24 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
     // Above when there's no room below, e.g. in MakerWorld's bottom-stuck action bar.
     const below = rect.bottom + 8 + bubble.offsetHeight <= window.innerHeight;
     bubble.style.top = `${below ? rect.bottom + 8 : Math.max(8, rect.top - 8 - bubble.offsetHeight)}px`;
-    if (error || note) bubbleTimer = setTimeout(hideBubble, ERROR_SHOW_MS);
+    if (held) bubbleTimer = setTimeout(hideBubble, ERROR_SHOW_MS);
   };
   const hideBubble = () => {
     clearTimeout(bubbleTimer);
+    held = false;
     bubble.hidden = true;
   };
   const showInfo = () => {
     if (bubble.hidden) showBubble(explanation(target, output));
   };
   icon.addEventListener("mouseenter", showInfo);
-  icon.addEventListener("mouseleave", () => !bubble.classList.contains("tg-nd-bubble--error") && hideBubble());
+  // An error or a note stays its while: moving away hides only the explanation.
+  icon.addEventListener("mouseleave", () => !held && hideBubble());
   button.addEventListener("focus", () => button.matches(":focus-visible") && showInfo());
-  button.addEventListener("blur", () => !bubble.classList.contains("tg-nd-bubble--error") && hideBubble());
+  button.addEventListener("blur", () => !held && hideBubble());
+
+  // Once the instance says its user wants that slicer's files as they are, the button stays off until it goes.
+  let switchedOff = false;
 
   button.addEventListener("click", async () => {
     hideBubble();
@@ -259,6 +266,7 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
         const answer = await instanceSlicer(SLICER_RETRY_MS);
         if (answer?.adapted === false) {
           // Its user wants that slicer's files as they are: no copy, and no button once they've read why.
+          switchedOff = true;
           showBubble("Open adapted is off for your slicer in Thingport, so there's no copy to download.", false, true);
           setTimeout(() => host === el && unmountAdaptedDownload(), ERROR_SHOW_MS);
           return;
@@ -281,7 +289,7 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
     } catch (err) {
       showBubble(err instanceof Error ? err.message : String(err), true);
     } finally {
-      button.disabled = false;
+      button.disabled = switchedOff;
       icon.replaceChildren(bulbIcon());
       label.textContent = LABEL;
     }

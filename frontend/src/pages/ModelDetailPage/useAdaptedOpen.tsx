@@ -9,7 +9,7 @@ import { useToast } from "../../components/ToastProvider";
 import { SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { setCachedSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
-import type { AdaptedTarget } from "./useOpenInSlicer";
+import { isAdaptedTarget, type AdaptedTarget } from "./useOpenInSlicer";
 
 export type AdaptState = "idle" | "preparing" | "ready";
 
@@ -132,6 +132,12 @@ export function useAdaptedOpen(
         .catch((err: unknown) => {
           if (err instanceof UnauthorizedError) onUnauthorized?.();
         });
+    }
+    // Made for that very printer: the file opens as it is, as Open opens it.
+    if (!isAdaptedTarget(chosen)) {
+      window.location.href = chosen.href;
+      onOpened();
+      return resolve(true);
     }
     setPicked((prev) => ({ ...prev, [pickKey(target)]: chosen }));
     const launched = await openNow(chosen);

@@ -1,3 +1,5 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MyPrinters } from "../api/printers";
 
@@ -5,6 +7,22 @@ const mine = vi.fn<() => Promise<MyPrinters>>();
 vi.mock("../api/printers", () => ({ printersApi: { mine: () => mine() } }));
 
 const answer = (bambu: boolean): MyPrinters => ({ printers: [], suggestions: [], bambu });
+// An answer told apart from others by its suggestions' count.
+const nth = (n: number): MyPrinters => ({ printers: [], suggestions: Array(n).fill(null), bambu: false });
+
+/** What a component using the hook gets now: its first render reads the shared cache. */
+function seen(useUserPrinters: () => MyPrinters): MyPrinters {
+  let value: MyPrinters | null = null;
+  renderToStaticMarkup(
+    createElement(() => {
+      value = useUserPrinters();
+      return null;
+    }),
+  );
+  return value!;
+}
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // The printers are kept for the whole page, so each test gets the module afresh.
 async function freshModule() {
@@ -40,16 +58,45 @@ describe("the user's printers", () => {
   });
 
   it("aren't read from a request made before a sign-in or sign-out", async () => {
-    const { reloadPrinters, resetUserPrinters } = await freshModule();
+    const { reloadPrinters, resetUserPrinters, useUserPrinters } = await freshModule();
     const old = pending();
     mine.mockReturnValueOnce(old.promise).mockResolvedValueOnce(answer(true));
 
     void reloadPrinters();
     resetUserPrinters();
-    const fresh = reloadPrinters();
+    expect(await reloadPrinters()).toEqual(answer(true));
+    // The old account's answer comes last, and the new one's stays.
     old.resolve(answer(false));
+    await settle();
 
-    expect(await fresh).toEqual(answer(true));
+    expect(seen(useUserPrinters).bambu).toBe(true);
     expect(mine).toHaveBeenCalledTimes(2);
+  });
+
+  it("aren't read again for a reload queued before a sign-in or sign-out, beside the new account's reads", async () => {
+    const { reloadPrinters, resetUserPrinters, useUserPrinters } = await freshModule();
+    const [old, first, second, third] = [pending(), pending(), pending(), pending()];
+    mine
+      .mockReturnValueOnce(old.promise)
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise)
+      .mockReturnValueOnce(third.promise);
+
+    void reloadPrinters();
+    void reloadPrinters();
+    resetUserPrinters();
+    void reloadPrinters();
+    old.resolve(answer(false));
+    await settle();
+    // A printer changed while the new account's first read was out.
+    const afterChange = reloadPrinters();
+    second.resolve(nth(2));
+    third.resolve(nth(2));
+    first.resolve(nth(1));
+
+    expect((await afterChange).suggestions).toHaveLength(2);
+    await settle();
+    expect(seen(useUserPrinters).suggestions).toHaveLength(2);
+    expect(mine).toHaveBeenCalledTimes(3);
   });
 });

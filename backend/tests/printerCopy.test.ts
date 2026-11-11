@@ -125,7 +125,12 @@ describe("a copy's settings", () => {
     expect(copy.filaments).toEqual(["Bambu PLA Basic @BBL P1S 0.4 nozzle", "Bambu PA6-CF @BBL H2D"]);
     expect(copy.settings.inherits_group).toHaveLength(4);
     expect(copy.settings.filament_adhesiveness_category).toEqual(["100", "100"]);
-    expect(copy.settings.filament_colour).toBeUndefined();
+    // The slicers would load just the first filament, in their default colour, so each gets that colour.
+    expect(copy.settings.filament_colour).toEqual(["#F2754E", "#F2754E"]);
+    expect(retargetSettings({ ...DESIGNER, filament_colour: [] }, RECIPE).settings.filament_colour).toEqual([
+      "#F2754E",
+      "#F2754E",
+    ]);
     const short = retargetSettings({ ...DESIGNER, filament_colour: ["#FFFFFF"] }, RECIPE);
     expect(short.settings.filament_colour).toEqual(["#FFFFFF", "#FFFFFF"]);
   });
