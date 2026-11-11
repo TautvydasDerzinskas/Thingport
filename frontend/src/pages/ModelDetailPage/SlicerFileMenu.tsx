@@ -11,7 +11,7 @@ import PlateThumbnail from "../../components/media/PlateThumbnail";
 import { fileRowText } from "./fileRowText";
 import { folderLabel, shortNames } from "../../utils/fileFolders";
 import type { SlicerTarget } from "./useOpenInSlicer";
-import type { NormalizeState } from "./useNormalizedOpen";
+import type { AdaptState } from "./useAdaptedOpen";
 
 /** An element, or a bare point for a menu opened by right-click. */
 export type MenuAnchor = HTMLElement | { nodeType: 1; getBoundingClientRect: () => DOMRect } | null;
@@ -24,9 +24,9 @@ type Props = {
   onOpen: () => void;
   /** Heading; defaults to "Open in <slicer>". */
   title?: string;
-  /** Normalized picks go through the prepare step instead of being plain links. */
-  normalized?: {
-    stateOf: (target: SlicerTarget) => NormalizeState;
+  /** Adapted picks go through the prepare step instead of being plain links. */
+  adapted?: {
+    stateOf: (target: SlicerTarget) => AdaptState;
     open: (target: SlicerTarget) => Promise<boolean>;
   };
   /** Opens below the anchor at its exact width, for a full-width button. */
@@ -40,7 +40,7 @@ export default function SlicerFileMenu({
   targets,
   onOpen,
   title,
-  normalized,
+  adapted,
   matchAnchorWidth = false,
 }: Props) {
   const { t } = useTranslation(["models"]);
@@ -74,17 +74,17 @@ export default function SlicerFileMenu({
         const text = target.plate
           ? fileRowText(t, target.filename, target.index, target.folder, names.get(target.key))
           : { primary: t("models:detail.preparedPrintFile"), secondary: target.filename };
-        const state = normalized?.stateOf(target) ?? "idle";
+        const state = adapted?.stateOf(target) ?? "idle";
         // The folder stays beside the state: two files of one name are told apart by theirs.
         const withFolder = (status: string) => (target.folder ? `${folderLabel(target.folder)} · ${status}` : status);
-        if (state === "preparing") text.secondary = withFolder(t("models:detail.normalizePreparingShort"));
-        if (state === "ready") text.secondary = withFolder(t("models:detail.normalizeReadyShort"));
-        const action = normalized
+        if (state === "preparing") text.secondary = withFolder(t("models:detail.adaptPreparingShort"));
+        if (state === "ready") text.secondary = withFolder(t("models:detail.adaptReadyShort"));
+        const action = adapted
           ? {
               disabled: state === "preparing",
               onClick: () => {
                 // Stays open while preparing, so the row can show progress and then "ready".
-                void normalized.open(target).then((launched) => launched && onClose());
+                void adapted.open(target).then((launched) => launched && onClose());
               },
             }
           : {

@@ -664,6 +664,9 @@ model Plate {
   // The printability check's result (services/meshQuality.ts QualityReport), or { version, status: "skipped" }
   // for a file it couldn't check. Null until the model is first opened with checks on.
   qualityCheck     Json?
+  // What kind of 3MF it is (src/adapter/format.ts ThreeMfFormat): which slicer wrote it, its designer's printer, its
+  // plates. Read when it's stored; null for other files and until an older 3MF's model is opened.
+  format           Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

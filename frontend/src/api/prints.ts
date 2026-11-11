@@ -1,3 +1,4 @@
+import type { ThreeMfFormat } from "../adapter/format.generated";
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
 import type { RemoteOrigin, UserCard } from "./social";
@@ -11,6 +12,9 @@ export type PreparedPrint = {
   format?: string | null; // "gcode" | "bgcode" | "gcode_3mf"
   removable: boolean;
 };
+
+/** Where an adapted copy is: being made, made, failed (open the plate itself), or not needed for that slicer. */
+export type AdaptStatus = "ready" | "preparing" | "failed" | "original";
 
 export type Plate = {
   id: string;
@@ -33,6 +37,9 @@ export type Plate = {
   profile_id?: string | null;
   /** That profile as the model page shows it, from the detail fetch only. */
   profile?: PrintProfile | null;
+  /** What kind of 3MF it is, from which the page tells which slicers get an adapted copy; null for other files, and
+   *  absent from an older backend. */
+  format?: ThreeMfFormat | null;
 };
 
 export type ProfileFilament = { type: string | null; color: string | null; grams: number | null };
@@ -319,6 +326,11 @@ export const printsApi = {
 
   /** An absolute file URL for a slicer to download, with the session in the path rather than `?token=`: OrcaSlicer
    *  and its forks name the file after everything past the last slash, query string included. */
+  /** A plate's link as `slicer` opens it best (its adapted copy, or the plate itself), relative like `plate.url`. The
+   *  slicer is in the path, not a query: OrcaSlicer names the file after everything past the URL's last slash. */
+  adaptedPlateUrl: (plate: Pick<Plate, "url">, slicer: string) =>
+    plate.url.replace(/\/file\/([^/]+)$/, (_all, name: string) => `/adapted/${encodeURIComponent(slicer)}/${name}`),
+
   slicerFileUrl: (rel: string) => {
     const token = readToken();
     const path = token ? `${apiBase()}/t/${encodeURIComponent(token)}${rel}` : `${apiBase()}${rel}`;
@@ -915,14 +927,16 @@ export const printsApi = {
     return res.json();
   },
 
-  /** Starts preparing a normalized copy for "Open normalized in <slicer>" if needed; poll until "ready". */
-  normalizePlate: async (printId: string, plateId: string): Promise<{ status: "ready" | "preparing" | "failed" }> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/normalize`, {
+  /** Starts preparing the copy of a plate `slicer` gets (the model page's "Open adapted in <slicer>") if needed; poll
+   *  until "ready". "original" when the slicer opens the plate itself as well as it can. */
+  adaptPlate: async (printId: string, plateId: string, slicer: string): Promise<{ status: AdaptStatus }> => {
+    const res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/adapt`, {
       method: "POST",
-      headers: authHeaders(),
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ slicer }),
     });
     if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to prepare normalized file"));
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to prepare the adapted file"));
     return res.json();
   },
 

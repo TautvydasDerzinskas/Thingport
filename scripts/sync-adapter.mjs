@@ -1,0 +1,84 @@
+// Copies the 3MF adapter, backend/src/adapter/, where else it runs, as <file>.generated.ts: the server makes the
+// adapted copies, and the web app needs the same plan to know which slicers get one. Each package builds on its own
+// (its own Docker context and lockfile), which is why it's a copy. Only *.generated.ts files are ever written or
+// removed there. The copies are committed:
+//
+//   npm run adapter:sync    rewrite them
+//   npm run adapter:check   fail when one is out of date (CI)
+
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import * as prettier from "prettier";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SOURCE = "backend/src/adapter";
+const GENERATED = /\.generated\.ts$/;
+
+// What each copy takes: the web app plans but makes no copies, so it has no writers (nor JSZip).
+const TARGETS = [{ dir: "frontend/src/adapter", files: ["format.ts", "plan.ts", "settings.ts", "slicers/"] }];
+
+const check = process.argv.includes("--check");
+
+/** Every .ts file under `rel` (a file, or a folder ending in /), relative to SOURCE. */
+function sourceFiles(rel) {
+  if (!rel.endsWith("/")) return [rel];
+  return readdirSync(path.join(ROOT, SOURCE, rel))
+    .filter((file) => file.endsWith(".ts") && !file.endsWith(".test.ts"))
+    .map((file) => `${rel}${file}`);
+}
+
+/** A copied file's relative imports, which are all of other copies, by their copies' names. */
+function pointAtCopies(text, rel) {
+  return text.replace(/(from\s+")(\.{1,2}\/[^"]+)(")/g, (_all, open, spec, close) => {
+    const resolved = path.join(ROOT, SOURCE, path.dirname(rel), spec);
+    const isFolder = existsSync(resolved) && statSync(resolved).isDirectory();
+    return `${open}${spec}${isFolder ? "/index" : ""}.generated${close}`;
+  });
+}
+
+const header = (from) =>
+  `// GENERATED from ${from} by scripts/sync-adapter.mjs. Don't edit it here:\n` +
+  `// change ${SOURCE}/ and run npm run adapter:sync.\n`;
+
+function generatedIn(dir) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { recursive: true })
+    .map(String)
+    .filter((file) => GENERATED.test(file));
+}
+
+const stale = [];
+for (const target of TARGETS) {
+  const options = await prettier.resolveConfig(path.join(ROOT, target.dir, "x.ts"));
+  const wanted = new Map();
+  for (const rel of target.files.flatMap(sourceFiles)) {
+    const from = `${SOURCE}/${rel}`;
+    const text = header(from) + pointAtCopies(readFileSync(path.join(ROOT, from), "utf8"), rel);
+    wanted.set(
+      rel.replace(/\.ts$/, ".generated.ts"),
+      await prettier.format(text, { ...options, parser: "typescript" }),
+    );
+  }
+  const targetDir = path.join(ROOT, target.dir);
+  for (const [file, text] of wanted) {
+    const at = path.join(targetDir, file);
+    if (existsSync(at) && readFileSync(at, "utf8") === text) continue;
+    stale.push(`${target.dir}/${file}`);
+    if (!check) {
+      mkdirSync(path.dirname(at), { recursive: true });
+      writeFileSync(at, text);
+    }
+  }
+  for (const file of generatedIn(targetDir)) {
+    if (wanted.has(file)) continue;
+    stale.push(`${target.dir}/${file} (no longer in ${SOURCE})`);
+    if (!check) rmSync(path.join(targetDir, file));
+  }
+}
+
+if (check && stale.length) {
+  console.error(`The adapter's copies are out of date; run npm run adapter:sync:\n  ${stale.join("\n  ")}`);
+  process.exit(1);
+}
+if (!check && stale.length) console.log(`Wrote ${stale.length} adapter cop${stale.length === 1 ? "y" : "ies"}.`);

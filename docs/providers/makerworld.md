@@ -22,8 +22,8 @@ imports a model with its print profiles, imports collections, and keeps them in 
 - Collections, private ones included, through your cookie. MakerWorld rate-limits bulk imports quickly, so collections
   are imported with Thingport Grab, which waits between models, and a synced collection brings in only models added
   from then on.
-- MakerWorld's files are Bambu Studio projects; other slicers can open them as
-  [normalized 3MFs](../features/normalized-3mf.md).
+- MakerWorld's files are Bambu Studio projects; other slicers open them as
+  [adapted 3MFs](../features/adapted-3mf.md).
 
 ## Setup
 

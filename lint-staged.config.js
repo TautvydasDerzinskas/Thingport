@@ -20,6 +20,11 @@ module.exports = {
     "npm run studio:sync",
     "git add --all -- backend/src/studio/*.generated.ts",
   ],
+  // The 3MF adapter, copied into the web app (scripts/sync-adapter.mjs), is committed with it.
+  "{backend/src/adapter/**,scripts/sync-adapter.mjs}": () => [
+    "npm run adapter:sync",
+    "git add --all -- frontend/src/adapter",
+  ],
   "bridge/**/*.go": "gofmt -w",
   "backend/prisma/schema.prisma": () =>
     "npm --prefix backend exec -- prisma format --schema backend/prisma/schema.prisma",

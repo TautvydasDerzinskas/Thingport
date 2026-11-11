@@ -1,9 +1,10 @@
 import { useCallback, useMemo } from "react";
 import { type Plate, type Print, printsApi } from "../../api/prints";
-import { NORMALIZE_3MF_SLICER_IDS, SLICER_OPTIONS } from "../../constants/settingsOptions";
+import { planAdaptation, type AdaptPlan } from "../../adapter/plan.generated";
+import { slicerProfile } from "../../adapter/slicers/index.generated";
+import { SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerLaunchUrl } from "../../utils/slicerLaunch";
-import { isProviderId, manifestOf } from "../../providers/index.generated";
 
 /** A file of the model a slicer can open or the user can download: a plate, or the prepared print when it
  *  isn't one of them. `launchFilename` is what the slicer is told the file is called. */
@@ -20,11 +21,13 @@ export type ModelFile = {
   folder?: string | null;
 };
 export type SlicerTarget = ModelFile & { href: string };
+/** A plate's copy made for the slicer (src/adapter in the backend): `plan` says what it changes. */
+export type AdaptedTarget = SlicerTarget & { plan: AdaptPlan };
 
 export const PREPARED_KEY = "prepared";
 
-/** Sliced .gcode.3mf plates are never normalized: dropping their G-code would leave nothing to print. */
-function isNormalizable3mf(filename: string): boolean {
+/** Sliced .gcode.3mf plates are never adapted: dropping their G-code would leave nothing to print. */
+function isAdaptable3mf(filename: string): boolean {
   const lower = filename.toLowerCase();
   return lower.endsWith(".3mf") && !lower.endsWith(".gcode.3mf");
 }
@@ -72,8 +75,8 @@ export function useSlicerChoice() {
 
 /** `slicerOptions` are the installed slicers that can be launched, `slicerOption` the one the main button opens
  *  (the last one used), null without any. `targets` are empty when the model has nothing a slicer opens; with
- *  several, the caller offers a pick rather than opening the first. `normalizedTargets` is empty unless the
- *  slicer needs MakerWorld 3MFs converted. */
+ *  several, the caller offers a pick rather than opening the first. `adaptedTargets` are the files that slicer opens
+ *  better as a copy made for it, read from what kind of 3MF each is. */
 export function useOpenInSlicer(print: Print) {
   const { slicerOption, slicerOptions, bridged } = useSlicerChoice();
 
@@ -88,34 +91,27 @@ export function useOpenInSlicer(print: Print) {
     [files, canOpen, slicerOption, bridged],
   );
 
-  const normalizedTargets = useMemo<SlicerTarget[]>(() => {
-    const source = print.source_provider;
-    const bambuProjects = !!source && isProviderId(source) && manifestOf(source).capabilities.bambuProjects;
-    if (!slicerOption || !NORMALIZE_3MF_SLICER_IDS.has(slicerOption.id) || !bambuProjects) {
-      return [];
-    }
+  const adaptedTargets = useMemo<AdaptedTarget[]>(() => {
+    if (!slicerOption) return [];
     // A non-removable prepared print means the plates themselves are the sliced files.
     if (print.prepared_print && !print.prepared_print.removable) return [];
-    return files
-      .filter((file) => file.plate && isNormalizable3mf(file.filename))
-      .map(({ key, url, filename, launchFilename, index, plate, folder }) => ({
-        key: `normalized-${key}`,
-        url,
-        filename,
-        launchFilename,
-        index,
-        plate,
-        folder,
-        href: slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(`${url}?normalize=1`), filename, bridged),
-      }));
-  }, [files, print.source_provider, print.prepared_print, slicerOption, bridged]);
+    const profile = slicerProfile(slicerOption.id);
+    return files.flatMap((file) => {
+      if (!file.plate || !isAdaptable3mf(file.filename)) return [];
+      const plan = planAdaptation(file.plate.format, profile);
+      if (!plan) return [];
+      const adaptedUrl = printsApi.adaptedPlateUrl(file.plate, slicerOption.id);
+      const href = slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(adaptedUrl), file.filename, bridged);
+      return [{ ...file, key: `adapted-${file.key}`, launchFilename: file.filename, plan, href }];
+    });
+  }, [files, print.prepared_print, slicerOption, bridged]);
 
-  /** The normalized counterpart of `file`, if the current slicer offers one. */
-  const normalizedTargetFor = useCallback(
+  /** The adapted counterpart of `file`, if the current slicer opens it better as one. */
+  const adaptedTargetFor = useCallback(
     (file: ModelFile | null) =>
-      file ? normalizedTargets.find((target) => target.key === `normalized-${file.key}`) : undefined,
-    [normalizedTargets],
+      file ? adaptedTargets.find((target) => target.key === `adapted-${file.key}`) : undefined,
+    [adaptedTargets],
   );
 
-  return { slicerOption, slicerOptions, files, canOpen, targets, normalizedTargets, normalizedTargetFor };
+  return { slicerOption, slicerOptions, files, canOpen, targets, adaptedTargets, adaptedTargetFor };
 }

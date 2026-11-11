@@ -138,6 +138,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
     description: "Download model files and 3D previews.",
     paths: [
       "/print/:id/plate/:plateId/file/:filename",
+      "/print/:id/plate/:plateId/adapted/:slicer/:filename",
       "/plate/:id/preview.glb",
       "/print/:id/files",
       "/print/:id/files/:fileId",

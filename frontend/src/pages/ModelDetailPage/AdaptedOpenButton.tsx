@@ -3,34 +3,34 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import { alpha } from "@mui/material/styles";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import NormalizeInfoIcon from "./NormalizeInfoIcon";
-import type { SlicerTarget } from "./useOpenInSlicer";
-import type { NormalizeState } from "./useNormalizedOpen";
+import AdaptedInfoIcon from "./AdaptedInfoIcon";
+import type { AdaptedTarget } from "./useOpenInSlicer";
+import type { AdaptState } from "./useAdaptedOpen";
 
 type Props = {
-  targets: SlicerTarget[];
+  targets: AdaptedTarget[];
   slicerLabel: string;
-  stateOf: (target: SlicerTarget) => NormalizeState;
-  open: (target: SlicerTarget) => Promise<boolean>;
+  stateOf: (target: AdaptedTarget) => AdaptState;
+  open: (target: AdaptedTarget) => Promise<boolean>;
   /** Several targets: opens the file picker, whose rows show each file's progress. */
   onPick: (anchor: HTMLElement) => void;
 };
 
-/** The side panel's "Open normalized in <slicer>" button, in the bulb's warning color. */
-export default function NormalizedOpenButton({ targets, slicerLabel, stateOf, open, onPick }: Props) {
+/** The side panel's "Open adapted in <slicer>" button, in the bulb's warning color. */
+export default function AdaptedOpenButton({ targets, slicerLabel, stateOf, open, onPick }: Props) {
   const { t } = useTranslation(["models"]);
   const single = targets.length === 1 ? targets[0] : null;
-  const state: NormalizeState = single
+  const state: AdaptState = single
     ? stateOf(single)
     : targets.some((target) => stateOf(target) === "preparing")
       ? "preparing"
       : "idle";
   const label =
     state === "preparing"
-      ? t("models:detail.normalizePreparing")
+      ? t("models:detail.adaptPreparing")
       : state === "ready"
-        ? t("models:detail.normalizeReady", { slicer: slicerLabel })
-        : t("models:detail.openNormalizedInSlicer", { slicer: slicerLabel });
+        ? t("models:detail.adaptReady", { slicer: slicerLabel })
+        : t("models:detail.openAdaptedInSlicer", { slicer: slicerLabel });
 
   return (
     <Button
@@ -40,9 +40,9 @@ export default function NormalizedOpenButton({ targets, slicerLabel, stateOf, op
       startIcon={
         state === "preparing" ? (
           <CircularProgress size={16} color="inherit" />
-        ) : (
-          <NormalizeInfoIcon slicerLabel={slicerLabel} />
-        )
+        ) : targets[0] ? (
+          <AdaptedInfoIcon slicerLabel={slicerLabel} plan={targets[0].plan} />
+        ) : undefined
       }
       endIcon={single ? undefined : <ArrowDropDownIcon />}
       fullWidth

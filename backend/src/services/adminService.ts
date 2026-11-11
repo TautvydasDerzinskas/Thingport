@@ -5,7 +5,7 @@ import {
   BUNDLES,
   DESCRIPTION_IMAGES,
   MODEL_PREVIEWS,
-  NORMALIZED_3MFS,
+  ADAPTED_3MFS,
   PREVIEWS,
   STORAGE,
   TAG_MOSAICS,
@@ -202,7 +202,7 @@ function measureDisk(): Promise<DiskUsage> {
     pictureFolders.then((folders) =>
       sum([...folders, THUMBS, PREVIEWS, DESCRIPTION_IMAGES, MODEL_PREVIEWS, TAG_MOSAICS]),
     ),
-    sum([NORMALIZED_3MFS, BUNDLES]),
+    sum([ADAPTED_3MFS, BUNDLES]),
   ]).then(([totalBytes, pictureBytes, otherGeneratedBytes]) => ({ totalBytes, pictureBytes, otherGeneratedBytes }));
   diskUsage = { at: Date.now(), value };
   // A failed walk isn't kept, so the next request tries again.

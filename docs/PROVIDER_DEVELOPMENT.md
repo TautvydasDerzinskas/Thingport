@@ -176,8 +176,8 @@ Rules of thumb:
 - **MakerWorld** imports through the shared link import in `services/importService.ts`, which every page link of no
   provider's goes through too (`LINK_PROVIDER`). It pauses after a CAPTCHA until a manual retry (`liftHolds`), paces
   its calls (`IMPORT_MAKERWORLD_CALL_DELAY_MS`), and downloads a model with no print profiles as a zip of its raw
-  files (`rawFilesZip`). Its 3MFs are Bambu Studio projects, so Grab and the app offer them normalized
-  (`bambuProjects`).
+  files (`rawFilesZip`). Its 3MFs are Bambu Studio projects, so Grab offers them converted for other slicers
+  (`bambuProjects`); the app reads what kind of 3MF each file is itself.
 - **MakerOnline** can't download server-side at all: the download call needs a Risk-Token that only the site's
   anti-bot script makes in a real page. It uses `customImport` with a `grabQueue`. The backend plans the files, Grab
   gets their links signed on a makeronline.com page, and imports started elsewhere wait in `GrabImport` until the

@@ -38,14 +38,14 @@ import { useDownloadPrint } from "./useDownloadPrint";
 import { useOpenInSlicer } from "./useOpenInSlicer";
 import { useOpenInStudio } from "./useOpenInStudio";
 import { hasGeneratorScript, useCustomize } from "./useCustomize";
-import NormalizedOpenButton from "./NormalizedOpenButton";
+import AdaptedOpenButton from "./AdaptedOpenButton";
 import CopiedFromRemote from "./CopiedFromRemote";
 import ModelFileSelect from "./ModelFileSelect";
 import PrintProfilesSection from "./PrintProfiles";
 import type { ProfileEntry } from "./PrintProfiles/entries";
 import type { PrintProfilesView } from "../../api/settings";
 import OpenInSlicerButton from "./OpenInSlicerButton";
-import { useNormalizedOpen } from "./useNormalizedOpen";
+import { useAdaptedOpen } from "./useAdaptedOpen";
 import AddToCollectionModal from "./AddToCollectionModal";
 import RollingNumber from "../../components/RollingNumber";
 import { formatFileSize } from "../../utils/fileSize";
@@ -148,7 +148,7 @@ export default function ModelSidePanel({
   const viewerAvatarUrl = viewer?.avatar_url;
   const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
 
-  const { slicerOption, slicerOptions, files, canOpen, normalizedTargetFor } = useOpenInSlicer(print);
+  const { slicerOption, slicerOptions, files, canOpen, adaptedTargetFor } = useOpenInSlicer(print);
   // Every action below applies to this file; until one is picked, the first profile (the designer's, where there is
   // one), else the first file.
   const [ownSelectedKey, setOwnSelectedKey] = useState<string | null>(null);
@@ -161,12 +161,12 @@ export default function ModelSidePanel({
   const firstProfileFile = profilesShown ? files.find((file) => file.key === entries[0].key) : undefined;
   const selectedFile = files.find((file) => file.key === selectedKey) ?? firstProfileFile ?? files[0] ?? null;
   const otherFiles = profilesShown ? files.filter((file) => !entries.some((entry) => entry.key === file.key)) : [];
-  const normalizedTarget = normalizedTargetFor(selectedFile);
+  const adaptedTarget = adaptedTargetFor(selectedFile);
 
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
   const studio = useOpenInStudio(print, onUnauthorized);
   const studioPlate = studio.files.find((plate) => plate.id === selectedFile?.plate?.id) ?? null;
-  const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
+  const adapted = useAdaptedOpen(print.id, slicerOption?.id ?? null, recordUse, onUnauthorized);
   // Opened from the button below rather than a menu, so there is no menu to close.
   const customize = useCustomize(print, () => {}, onUnauthorized);
   // Another user's model, from one of their public collections.
@@ -547,12 +547,12 @@ export default function ModelSidePanel({
             openingInStudio={studio.opening}
           />
         )}
-        {slicerOption && normalizedTarget && (
-          <NormalizedOpenButton
-            targets={[normalizedTarget]}
+        {slicerOption && adaptedTarget && (
+          <AdaptedOpenButton
+            targets={[adaptedTarget]}
             slicerLabel={slicerOption.label}
-            stateOf={normalized.stateOf}
-            open={normalized.open}
+            stateOf={adapted.stateOf}
+            open={adapted.open}
             onPick={() => {}}
           />
         )}

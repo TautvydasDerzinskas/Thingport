@@ -16,18 +16,6 @@ export const SLICER_OPTIONS: SlicerOption[] = [
   { id: "other", label: "Other / Manual" },
 ];
 
-// Offered "Open normalized in <slicer>" for MakerWorld 3MFs. They mis-import Bambu projects (lost colors,
-// settings or parts); Orca forks too, since each copied Bambu's 3MF handling at a different point.
-export const NORMALIZE_3MF_SLICER_IDS: ReadonlySet<string> = new Set([
-  "prusaslicer",
-  "cura",
-  "anycubicslicernext",
-  "crealityprintlink",
-  "elegooslicer",
-  "snapmaker-orca",
-  "eufystudio3d",
-]);
-
 /** "system" follows prefers-color-scheme; resolve with useResolvedTheme before rendering. */
 export type ThemeSelection = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";

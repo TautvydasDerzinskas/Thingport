@@ -46,11 +46,11 @@ Studio and OrcaSlicer offer to put on filaments when they open it, and as per-fa
 OrcaSlicer and PrusaSlicer put on filament slots straight away. A model with more than 16 colours, more than a slicer
 has filament slots for, keeps only the colour group. Downloaded as an STL, it keeps only its shape.
 
-## MakerWorld models in other slicers
+## Files from other slicers
 
-MakerWorld files are Bambu Studio projects, which many other slicers open without their colours or print settings. For
-those, Thingport offers **Open normalized**, which opens a converted copy instead. See
-[normalized MakerWorld 3MFs](normalized-3mf.md).
+A 3MF made in one slicer, such as a MakerWorld model made in Bambu Studio, can open in another without its colours,
+parts or print settings. When yours would, Thingport offers **Open adapted**, which opens a copy made for your slicer
+instead. See [adapted 3MFs](adapted-3mf.md).
 
 Opening a model in a slicer counts towards its prints on the [dashboard](dashboard.md) and shows up in your
 [activity](profile-and-activity.md).
