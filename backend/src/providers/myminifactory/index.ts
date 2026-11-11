@@ -59,14 +59,17 @@ async function downloadFile(url: string, kit: ImportKit, suggestedName?: string)
   return (await kit.downloadSignedFile({ url, name }, isMyminifactoryFileHost, BLOCKED)) ?? [];
 }
 
+const ARCHIVE_FAILED = "MyMiniFactory didn't hand over one of this model's archives. Try the import again in a while.";
+
 /** A free object's archives, as anyone may download them from its page's Download button, each unpacked into its
- *  model files (each in a folder named after it when there are several). Empty when they aren't for anyone: an
+ *  model files (each in a folder named after it when there are several). Null when they aren't for anyone: an
  *  archive the button sends to a sign-in, or archives Thingport can't open (RAR), which come from the user's library
- *  instead, where MyMiniFactory has unpacked them. */
-async function downloadFreeArchives(objectId: string, kit: ImportKit): Promise<NewPlateInput[]> {
+ *  instead, where MyMiniFactory has unpacked them. Throws when one doesn't download, rather than make a model of the
+ *  rest: a later import would find it and never fetch what's missing. */
+async function downloadFreeArchives(objectId: string, kit: ImportKit): Promise<NewPlateInput[] | null> {
   const archives = await fetchMyminifactoryArchives(objectId);
   const zips = archives.filter((archive) => /\.zip$/i.test(archive.name));
-  if (!zips.length || zips.length < archives.length) return [];
+  if (!zips.length || zips.length < archives.length) return null;
   const downloaded: NewPlateInput[] = [];
   const discard = () =>
     Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
@@ -75,11 +78,17 @@ async function downloadFreeArchives(objectId: string, kit: ImportKit): Promise<N
       const download = await resolveMyminifactoryDownload(objectId, archive.id);
       if (download.kind !== "file") {
         await discard();
-        return [];
+        return null;
       }
       await maybeSleep(FILE_DELAY_MS);
       const folder = zips.length > 1 ? archive.name.replace(/\.zip$/i, "") : null;
-      const inputs = await downloadFile(download.url, kit, archive.name);
+      // Null when it didn't download at all, as against a zip with nothing in it worth importing.
+      const inputs = await kit.downloadSignedFile(
+        { url: download.url, name: archive.name },
+        isMyminifactoryFileHost,
+        BLOCKED,
+      );
+      if (inputs === null) throw new HttpError(502, ARCHIVE_FAILED);
       downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(folder, input.folder) })));
     }
   } catch (err) {
@@ -88,8 +97,12 @@ async function downloadFreeArchives(objectId: string, kit: ImportKit): Promise<N
   }
   if (downloaded.some((input) => kit.isModelFile(input.filename))) return downloaded;
   await discard();
-  return [];
+  return null;
 }
+
+/** Whether `err` says MyMiniFactory is turning requests away for now, which holds for the user's library too. */
+const isRateLimit = (err: unknown) =>
+  err instanceof MyminifactoryRateLimitError || (err instanceof HttpError && err.status === 429);
 
 /** As the user, from their MyMiniFactory library: what Thingport can't download anonymously. */
 async function downloadFromLibrary(
@@ -175,8 +188,16 @@ export const myminifactoryImport: SourcedImport<string, MyminifactoryObject> = {
     // A free model's archives are anyone's to download, as its page offers them; paid models, and free ones whose
     // archives aren't, download as the user, from their library.
     if (!object.paid && object.archives) {
-      const free = await downloadFreeArchives(externalId, kit);
-      return free.length ? free : downloadFromLibrary(userId, externalId, false, kit);
+      let free: NewPlateInput[] | null;
+      try {
+        free = await downloadFreeArchives(externalId, kit);
+      } catch (err) {
+        // The library may have them where the page didn't answer, for someone signed in; without a sign-in, what
+        // went wrong is the answer, not a request to sign in.
+        if (isRateLimit(err) || !(await getUserMyminifactoryCookie(userId))) throw err;
+        free = null;
+      }
+      return free ?? downloadFromLibrary(userId, externalId, false, kit);
     }
     const anonymous = object.paid ? null : await resolveMyminifactoryDownload(externalId);
     if (anonymous?.kind === "missing") throw new HttpError(404, MISSING);

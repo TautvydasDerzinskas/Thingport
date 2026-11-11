@@ -426,13 +426,13 @@ export async function listMyminifactoryLibraryFiles(
     archive.files.flatMap((file) => {
       const levels = file.path.split(/[\\/]+/).filter(Boolean);
       const name = levels.pop() ?? file.path;
-      const folder = archives.length > 1 ? joinFolders(archive.name.replace(/\.[^.]+$/, ""), levels.join("/")) : levels;
+      const folder = joinFolders(archives.length > 1 ? archive.name.replace(/\.[^.]+$/, "") : null, levels.join("/"));
       return isModelFile(name)
         ? [
             {
               name,
               path: `/api/data-library/archive-file-contents/${encodeURIComponent(file.id)}/download`,
-              folder: normalizeFolder(folder),
+              folder,
             },
           ]
         : [];

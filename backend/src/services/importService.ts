@@ -319,7 +319,7 @@ async function renameProfilePlates(printId: string, renames: { plate: Plate; fil
   const print = await prisma.print.findUnique({ where: { id: printId } });
   if (!print) return;
   for (const { plate, filename } of renames) {
-    const next = await availablePlateFilename(printId, filename, plate.id);
+    const next = await availablePlateFilename(printId, filename, plate.id, plate.folder);
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: next } });
     await relocatePrint(print, [{ ...plate, filename: next }]);
     if (plate.position === 0) await refreshAutoPreparedMetadata(printId);

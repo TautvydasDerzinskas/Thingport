@@ -20,6 +20,7 @@ const app = createApp();
 const stamp = Date.now();
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-folders-"));
 let userId: string;
+let token: string;
 let previousTemplate: string;
 
 function tmpFile(name: string, contents = `solid ${name} endsolid`): string {
@@ -47,6 +48,7 @@ beforeAll(async () => {
     .post("/api/register")
     .send({ displayName: "Folder Tester", email: `folders-${stamp}@example.com`, password: "password123" });
   userId = res.body.user.id;
+  token = res.body.token;
 });
 
 afterAll(async () => {
@@ -202,6 +204,20 @@ describe("a model's files in folders", () => {
     expect(await names("USB C")).toEqual([`${print.name}/USB C/Lid.stl`, `${print.name}/USB C/Handles/Lid.stl`]);
     // A folder's name is a whole level: "USB" holds neither.
     expect(await names("USB")).toEqual([]);
+
+    // One that names no folder at all is refused, rather than taken to mean every file.
+    for (const folder of ["..", "./"]) {
+      const res = await request(app)
+        .post("/api/download/zip")
+        .set({ Authorization: `Bearer ${token}` })
+        .send({ print_ids: [print.id], folder });
+      expect(res.status).toBe(400);
+    }
+    const one = await request(app)
+      .post("/api/download/zip")
+      .set({ Authorization: `Bearer ${token}` })
+      .send({ print_ids: [print.id], folder: "USB A" });
+    expect(one.status).toBe(200);
   });
 });
 

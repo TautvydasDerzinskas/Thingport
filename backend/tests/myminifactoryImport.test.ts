@@ -184,16 +184,23 @@ describe("importPrintFromUrl -- MyMiniFactory, from the user's library", () => {
     library = "owned",
     archives = ["Skull.rar"],
     free = false,
+    pageFails = false,
+    failArchive,
   }: {
     paid?: boolean;
     library?: "owned" | "not-owned" | "expired";
     archives?: string[];
     free?: boolean;
+    /** The object's page doesn't answer at all. */
+    pageFails?: boolean;
+    /** Which archive (by index) answers its signed link with a 500. */
+    failArchive?: number;
   }) {
     return vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async (input, init) => {
       const url = String(input);
       const cookie = new Headers(init?.headers).get("cookie");
       if (url === `https://www.myminifactory.com/object/${OBJECT_ID}`) {
+        if (pageFails) throw new TypeError("fetch failed");
         const button = {
           isLoggedIn: false,
           archives: archives.map((name, i) => ({
@@ -220,6 +227,7 @@ describe("importPrintFromUrl -- MyMiniFactory, from the user's library", () => {
         });
       }
       const zipped = url.match(/threedfiles\/archive-(\d+)\.zip/);
+      if (zipped && Number(zipped[1]) - 70 === failArchive) return new Response("oops", { status: 500 });
       if (zipped) {
         const zip = new JSZip();
         zip.file(
@@ -340,6 +348,33 @@ describe("importPrintFromUrl -- MyMiniFactory, from the user's library", () => {
       expect(result.plates.map((plate) => plate.filename).toSorted()).toEqual(["moustache.stl", "skull.stl"]);
       await prisma.print.deleteMany({ where: { userId, sourceProvider: "myminifactory" } });
     }
+  });
+
+  // Where the page or an archive doesn't answer, a signed-in user's library may still have the files; without a
+  // sign-in, what went wrong is said rather than a request to sign in.
+  it("falls back to the library when the page doesn't answer, for someone signed in", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    global.fetch = mockLibrary({ archives: ["Heroes.zip"], free: true, pageFails: true }) as unknown as typeof fetch;
+    await expect(importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] })).rejects.toThrow(/fetch failed/);
+
+    await setUserMyminifactoryCookie(userId, SESSION);
+    const result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
+    expect(result.plates.map((plate) => plate.filename).toSorted()).toEqual(["moustache.stl", "skull.stl"]);
+  });
+
+  // A model made of the archives that did come would be the one a later import finds, never fetching the rest.
+  it("won't make a model of some archives when another didn't download", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    const options = { archives: ["Heroes.zip", "Villains.zip"], free: true, failArchive: 1 };
+    global.fetch = mockLibrary(options) as unknown as typeof fetch;
+    await expect(importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] })).rejects.toThrow(
+      /didn't hand over one of this model's archives/,
+    );
+    expect(await prisma.print.count({ where: { userId, sourceProvider: "myminifactory" } })).toBe(0);
+
+    await setUserMyminifactoryCookie(userId, SESSION);
+    const result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
+    expect(result.plates.map((plate) => plate.filename).toSorted()).toEqual(["moustache.stl", "skull.stl"]);
   });
 
   it("takes only an archive link of the object's own from its page", () => {

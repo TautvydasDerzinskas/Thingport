@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -8,6 +9,7 @@ import Box from "@mui/material/Box";
 import PrintIcon from "@mui/icons-material/Print";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
 import { fileRowText } from "./fileRowText";
+import { shortNames } from "../../utils/fileFolders";
 import type { SlicerTarget } from "./useOpenInSlicer";
 import type { NormalizeState } from "./useNormalizedOpen";
 
@@ -42,6 +44,16 @@ export default function SlicerFileMenu({
   matchAnchorWidth = false,
 }: Props) {
   const { t } = useTranslation(["models"]);
+  const names = useMemo(
+    () =>
+      shortNames(
+        targets,
+        (target) => target.key,
+        (target) => target.filename,
+        (target) => target.folder,
+      ),
+    [targets],
+  );
   const paperSx =
     matchAnchorWidth && anchorEl instanceof HTMLElement ? { width: anchorEl.offsetWidth } : { maxWidth: 360 };
   return (
@@ -60,7 +72,7 @@ export default function SlicerFileMenu({
       </ListSubheader>
       {targets.map((target) => {
         const text = target.plate
-          ? fileRowText(t, target.filename, target.index, target.folder)
+          ? fileRowText(t, target.filename, target.index, target.folder, names.get(target.key))
           : { primary: t("models:detail.preparedPrintFile"), secondary: target.filename };
         const state = normalized?.stateOf(target) ?? "idle";
         if (state === "preparing") text.secondary = t("models:detail.normalizePreparingShort");

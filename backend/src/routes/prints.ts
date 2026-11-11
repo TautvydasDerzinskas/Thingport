@@ -460,7 +460,10 @@ router.post(
         downloadName = `${safeName}.zip`;
       }
     }
-    await sendPrintsZip(res, prints, downloadName, { flatten, folder: normalizeFolder(body.folder) });
+    // A folder that names none (".", "..") would otherwise mean every file.
+    const folder = normalizeFolder(body.folder);
+    if (body.folder && !folder) throw new HttpError(400, "That isn't a folder a model's files can be in");
+    await sendPrintsZip(res, prints, downloadName, { flatten, folder });
   }),
 );
 
