@@ -131,9 +131,21 @@ export function classify3mf(files: ThreeMfFiles): ThreeMfFormat {
   return { ...base, kind: "plain", ...empty };
 }
 
-/** The format as stored, or null for one an older classification wrote (read it again). */
+/** The format as stored, its own fields only, or null for one an older classification wrote (read it again). */
 export function storedFormat(value: unknown): ThreeMfFormat | null {
   if (!value || typeof value !== "object") return null;
-  const format = value as Partial<ThreeMfFormat>;
-  return format.v === FORMAT_VERSION && typeof format.kind === "string" ? (format as ThreeMfFormat) : null;
+  const f = value as Partial<ThreeMfFormat>;
+  if (f.v !== FORMAT_VERSION || typeof f.kind !== "string") return null;
+  return {
+    v: f.v,
+    kind: f.kind,
+    app: f.app ?? null,
+    appVersion: f.appVersion ?? null,
+    orcaTag: f.orcaTag ?? null,
+    printer: f.printer ?? null,
+    nozzle: f.nozzle ?? null,
+    filaments: f.filaments ?? null,
+    plates: f.plates ?? null,
+    dialect: f.dialect ?? null,
+  };
 }

@@ -5263,7 +5263,7 @@
       "openAdaptedInSlicer": "Atverti pritaikytą su {{slicer}}",
       "adaptedInfo": {
         "prusa": "Kopija, paruošta {{slicer}}: ji atsiveria su jūsų spausdintuvo, gijų ir spausdinimo nustatymais, autoriaus sluoksnio aukštis, sienelės, užpildas ir atramos nustatomi kiekvienam objektui, o nudažytos spalvos tenka jūsų ekstruderiams. Saugomas failas nekeičiamas.",
-        "cura": "Kopija, paruošta {{slicer}}: kelių dalių objektai išlaiko savo dalis, kiekvieną su savo ekstruderiu, o autoriaus sienelės, sluoksniai, užpildas ir atramos nustatomi kiekvienam objektui. Cura neskaito nudažytų spalvų. Saugomas failas nekeičiamas.",
+        "cura": "Kopija, paruošta {{slicer}}: kelių dalių objektai išlaiko savo dalis, kiekvieną su savo ekstruderiu, o autoriaus sienelės, viršutiniai ir apatiniai sluoksniai, užpildas ir atramos nustatomi kiekvienam objektui. Cura neskaito nudažytų spalvų. Saugomas failas nekeičiamas.",
         "bambu": "Kopija, kurią {{slicer}} atveria kaip savo projektą: dalys, plokštės, dažymas ir autoriaus nustatymai lieka tokie, kokie yra, be klausimų apie failo versiją ar kitaip vadinamus nustatymus. Saugomas failas nekeičiamas."
       },
       "adaptPreparing": "Ruošiamas pritaikytas failas…",

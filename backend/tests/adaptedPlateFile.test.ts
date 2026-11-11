@@ -8,6 +8,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { COMPATIBLE_TAG } from "../src/adapter";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { resolvePlateFilePath } from "../src/services/printCreation";
+import { readThreeMfFormat } from "../src/services/threeMfFormat";
 
 const app = createApp();
 let token: string;
@@ -69,6 +71,47 @@ const adaptedUrl = (slicer: string) =>
   fileUrl.replace(/\/file\/([^/]+)$/, (_all, name: string) => `/adapted/${slicer}/${name}`);
 const adaptStatusUrl = () => `/api${fileUrl.replace(/\/file\/[^/]+$/, "/adapt")}`;
 
+async function prusaProject(): Promise<Buffer> {
+  const zip = new JSZip();
+  zip.file(
+    "3D/3dmodel.model",
+    '<?xml version="1.0"?><model><metadata name="Application">PrusaSlicer-2.9.2</metadata></model>',
+  );
+  zip.file("Metadata/Slic3r_PE.config", "; printer_settings_id = Original Prusa MK4\n");
+  return zip.generateAsync({ type: "nodebuffer" });
+}
+
+/** A print: G-code alongside the model, as a slicer's "export plate sliced file" writes it, under a plain name. */
+async function slicedPrint(): Promise<Buffer> {
+  const zip = await JSZip.loadAsync(await bambuProject());
+  zip.file("Metadata/plate_1.gcode", "G28\n");
+  return zip.generateAsync({ type: "nodebuffer" });
+}
+
+async function uploadModel(
+  content: Buffer,
+  name: string,
+): Promise<{ id: string; plates: { id: string; url: string }[] }> {
+  const file = path.join(os.tmpdir(), `adapt-${Date.now()}-${name}`);
+  fs.writeFileSync(file, content);
+  const upload = await auth(request(app).post("/api/upload")).attach("files", file, name);
+  fs.rmSync(file, { force: true });
+  if (upload.status !== 200) throw new Error(`upload failed: ${upload.status}`);
+  return upload.body.prints[0];
+}
+
+async function fetchBytes(url: string): Promise<Buffer> {
+  const res = await auth(request(app).get(`/api${url}`))
+    .buffer(true)
+    .parse((r, cb) => {
+      const chunks: Buffer[] = [];
+      r.on("data", (c: Buffer) => chunks.push(c));
+      r.on("end", () => cb(null, Buffer.concat(chunks)));
+    });
+  expect(res.status).toBe(200);
+  return res.body as Buffer;
+}
+
 async function uploadStl(): Promise<{ id: string; plates: { url: string }[] }> {
   const file = path.join(os.tmpdir(), `adapt-${Date.now()}.stl`);
   fs.writeFileSync(file, "solid x endsolid");
@@ -115,6 +158,44 @@ describe("a plate's 3MF format", () => {
     const res = await auth(request(app).get(`/api/print/${printId}`));
     expect(res.body.plates[0].format).toMatchObject({ kind: "bambu" });
   });
+
+  it("is read again once the file has changed in place, and keeps what it was read from to itself", async () => {
+    const model = await uploadModel(await bambuProject(), "changing.3mf");
+    try {
+      const plate = await prisma.plate.findUniqueOrThrow({ where: { id: model.plates[0].id } });
+      expect(plate.format).toMatchObject({ kind: "bambu", file: { size: expect.any(Number) } });
+      const before = await auth(request(app).get(`/api/print/${model.id}`));
+      expect(before.body.plates[0].format).not.toHaveProperty("file");
+
+      const filePath = resolvePlateFilePath(plate)!;
+      fs.writeFileSync(filePath, await prusaProject());
+      const after = await auth(request(app).get(`/api/print/${model.id}`));
+      expect(after.body.plates[0].format).toMatchObject({ kind: "prusa", printer: "Original Prusa MK4" });
+      const adapt = `/api${model.plates[0].url.replace(/\/file\/[^/]+$/, "/adapt")}`;
+      expect((await auth(request(app).post(adapt).send({ slicer: "prusaslicer" }))).body).toEqual({
+        status: "original",
+      });
+    } finally {
+      await auth(request(app).delete(`/api/print/${model.id}`));
+    }
+  });
+
+  it("finds its small files under names written with backslashes", async () => {
+    const zip = new JSZip();
+    zip.file("3D\\3dmodel.model", '<model><metadata name="Application">BambuStudio-02.08.02.61</metadata></model>');
+    zip.file("Metadata\\project_settings.config", JSON.stringify({ printer_settings_id: "Bambu Lab P1S 0.4 nozzle" }));
+    const file = path.join(os.tmpdir(), `adapt-slash-${Date.now()}.3mf`);
+    fs.writeFileSync(file, await zip.generateAsync({ type: "nodebuffer" }));
+    try {
+      expect(await readThreeMfFormat(file)).toMatchObject({
+        kind: "bambu",
+        app: "BambuStudio",
+        printer: "Bambu Lab P1S 0.4 nozzle",
+      });
+    } finally {
+      fs.rmSync(file, { force: true });
+    }
+  });
 });
 
 describe("GET a plate adapted for a slicer", () => {
@@ -132,6 +213,24 @@ describe("GET a plate adapted for a slicer", () => {
     expect(await fetchApplication(`${fileUrl}?normalize=1`)).toBe("Thingport");
     expect(await fetchApplication(fileUrl)).toMatch(/^BambuStudio/);
     expect(await fetchApplication(`${fileUrl}?normalize=auto`)).toMatch(/^BambuStudio/);
+  });
+
+  it("never makes the old normalized copy of a print, even one that isn't the model's first file", async () => {
+    const model = await uploadModel(await bambuProject(), "project.3mf");
+    try {
+      const file = path.join(os.tmpdir(), `adapt-${Date.now()}-print.3mf`);
+      fs.writeFileSync(file, await slicedPrint());
+      const added = await auth(request(app).post(`/api/print/${model.id}/plates`)).attach("files", file, "print.3mf");
+      fs.rmSync(file, { force: true });
+      expect(added.status).toBe(200);
+      const sliced = added.body.print.plates.find((p: { filename: string }) => p.filename === "print.3mf");
+      const bytes = await fetchBytes(`${sliced.url}?normalize=1`);
+      expect((await JSZip.loadAsync(bytes)).file("Metadata/plate_1.gcode")).not.toBeNull();
+      const status = `/api${sliced.url.replace(/\/file\/[^/]+$/, "/normalize")}`;
+      expect((await auth(request(app).post(status))).body).toEqual({ status: "ready" });
+    } finally {
+      await auth(request(app).delete(`/api/print/${model.id}`));
+    }
   });
 
   it("leaves non-3MF plates untouched", async () => {

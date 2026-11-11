@@ -28,6 +28,7 @@ export const SLICER_PROFILES: Readonly<Record<string, SlicerProfile>> = Object.f
   ].map((profile) => [profile.id, profile]),
 );
 
+/** The slicer's profile; null for one the adapter doesn't know, "constructor" and the like included. */
 export function slicerProfile(id: string | null | undefined): SlicerProfile | null {
-  return (id && SLICER_PROFILES[id]) || null;
+  return id && Object.hasOwn(SLICER_PROFILES, id) ? SLICER_PROFILES[id] : null;
 }

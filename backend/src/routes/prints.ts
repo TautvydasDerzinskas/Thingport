@@ -498,8 +498,9 @@ async function adaptPlanFor(plate: ReadablePlate, filePath: string, slicer: unkn
   return planAdaptation(await ensurePlateFormat(plate, filePath), slicerProfile(slicer));
 }
 
-// What a page loaded before "Open adapted" asked for with "Open normalized": the copy PrusaSlicer gets, nearest to it.
-const NORMALIZED_PLAN: AdaptPlan = { output: "prusa" };
+// What a page loaded before "Open adapted" asked for with "Open normalized": the copy PrusaSlicer gets, nearest to
+// it, for the same files (a Bambu layout project, never a print).
+const NORMALIZED_FOR = "prusaslicer";
 
 function sendPlateFile(res: Response, plate: ReadablePlate, filePath: string) {
   res.setHeader("Content-Type", plate.mime || "application/octet-stream");
@@ -512,8 +513,8 @@ router.get(
   "/print/:id/plate/:plateId/file/:filename",
   asyncHandler(async (req, res) => {
     const { plate, filePath } = await readablePlate(req);
-    const adapted =
-      req.query.normalize === "1" && adaptable(plate) ? await adapted3mfFor(plate.id, filePath, NORMALIZED_PLAN) : null;
+    const plan = req.query.normalize === "1" ? await adaptPlanFor(plate, filePath, NORMALIZED_FOR) : null;
+    const adapted = plan ? await adapted3mfFor(plate.id, filePath, plan) : null;
     sendPlateFile(res, plate, adapted ?? filePath);
   }),
 );
@@ -547,7 +548,9 @@ router.post(
   asyncHandler(async (req, res) => {
     const { plate, filePath } = await readablePlate(req);
     if (!adaptable(plate)) throw new HttpError(400, "Only a plain 3MF project can be normalized.");
-    res.json({ status: await adapt3mfStatus(plate.id, filePath, NORMALIZED_PLAN) });
+    const plan = await adaptPlanFor(plate, filePath, NORMALIZED_FOR);
+    // Ready to open: the file itself, when it isn't a project a copy is made of.
+    res.json({ status: plan ? await adapt3mfStatus(plate.id, filePath, plan) : "ready" });
   }),
 );
 

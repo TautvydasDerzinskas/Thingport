@@ -14,13 +14,22 @@ import {
   type ModelObject,
   type ObjectSettings,
   type ParsedModel,
+  type PartRole,
   type PartSettings,
   type PlateInstance,
   type PlateSettings,
   type SourceBuildItem,
 } from "../readers/bambuProject.generated";
 import { asArray, type Settings } from "../settings.generated";
-import { formatNumber, formatTransform, IDENTITY, multiplyTransform, parseTransform } from "../transform.generated";
+import {
+  composeTransform,
+  formatNumber,
+  formatTransform,
+  IDENTITY,
+  mirrors,
+  parseTransform,
+  transformPoint,
+} from "../transform.generated";
 import { escapeXml, normalizePath, parseAttrs, pathKey } from "../xml.generated";
 
 const CORE_NS = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02";
@@ -45,11 +54,21 @@ export type FlattenMode = "merge" | "group";
 /** What each triangle's painting is written as: Bambu's names and PrusaSlicer's, or none (Cura reads neither). */
 export type PaintNames = "prusa" | "none";
 
-export type Volume = { name: string; extruder: number; firstid: number; lastid: number };
+/** One part of an object of the result, by its triangles in the object's mesh. */
+export type Volume = {
+  name: string;
+  extruder: number;
+  firstid: number;
+  lastid: number;
+  role: PartRole;
+  /** The settings the designer changed for this part alone, by Bambu key. */
+  settings: Record<string, string>;
+};
 export type ObjectMeta = {
   id: number;
   name: string;
   extruder: number;
+  /** Every mesh's parts, one for a single mesh; empty for a group, whose parts are objects of their own. */
   volumes: Volume[];
   partIds: number[];
   /** The settings the designer changed for this object alone, by Bambu key. */
@@ -83,12 +102,16 @@ export type FlattenInput = {
   plates: PlateSettings[];
   mode: FlattenMode;
   paint: PaintNames;
+  /** The model's own metadata beside what's kept of the source's, by name. */
+  modelMetadata?: Record<string, string>;
   /** Metadata put in an object of the result (`<metadatagroup>`): a whole mesh, one part of a group, or the group.
-   *  `settings` are those the designer changed for the object it belongs to. */
+   *  `settings` are those the designer changed for the object it belongs to; `part` is the part's, for a mesh that's
+   *  one part (a single mesh's or one of a group's). */
   objectMetadata?: (object: {
     kind: "mesh" | "part" | "group";
     extruder: number;
     settings: Record<string, string>;
+    part: { role: PartRole; settings: Record<string, string> } | null;
   }) => Record<string, string>;
 };
 
@@ -174,13 +197,7 @@ function* vertexLines(body: string, transform: string): Generator<string> {
     const x = Number.parseFloat(a.x) || 0;
     const y = Number.parseFloat(a.y) || 0;
     const z = Number.parseFloat(a.z) || 0;
-    const p = identity
-      ? [x, y, z]
-      : [
-          M[0] * x + M[1] * y + M[2] * z + M[9],
-          M[3] * x + M[4] * y + M[5] * z + M[10],
-          M[6] * x + M[7] * y + M[8] * z + M[11],
-        ];
+    const p = identity ? [x, y, z] : transformPoint([x, y, z], M);
     const out = chunker.push(
       `     <vertex x="${formatNumber(p[0])}" y="${formatNumber(p[1])}" z="${formatNumber(p[2])}"/>`,
     );
@@ -198,6 +215,9 @@ type TriangleStyle = {
   /** Painting for a triangle that has none: the part's own filament, so colours survive slicers that ignore
    *  per-part extruders. */
   fallbackColor: string;
+  /** The mesh was mirrored as its vertices were moved: each triangle's first and last vertex swap so it faces out
+   *  again, as PrusaSlicer writes a mirrored part. */
+  flip: boolean;
   stats: FlattenStats;
 };
 
@@ -217,9 +237,10 @@ function* triangleLines(body: string, offset: number, style: TriangleStyle): Gen
     const painting = paintAttributes(style.paint, a, style.fallbackColor);
     style.stats.triangles++;
     if (painting.includes("paint_color=")) style.stats.paintColors++;
-    const v1 = Number.parseInt(a.v1, 10) + offset;
+    const first = Number.parseInt(a.v1, 10) + offset;
     const v2 = Number.parseInt(a.v2, 10) + offset;
-    const v3 = Number.parseInt(a.v3, 10) + offset;
+    const last = Number.parseInt(a.v3, 10) + offset;
+    const [v1, v3] = style.flip ? [last, first] : [first, last];
     const out = chunker.push(
       `     <triangle v1="${v1}" v2="${v2}" v3="${v3}" pid="${style.materialsId}" p1="${idx}"${painting}/>`,
     );
@@ -229,11 +250,25 @@ function* triangleLines(body: string, offset: number, style: TriangleStyle): Gen
   if (rest) yield rest;
 }
 
-type Part = { name: string; extruder: number; body: string; localTransform: string };
+type Part = {
+  name: string;
+  extruder: number;
+  body: string;
+  /** Where the part sits in the object the build item places. */
+  localTransform: string;
+  role: PartRole;
+  settings: Record<string, string>;
+};
 type CountedPart = Part & { vertices: number; triangles: number };
 
 function counted(part: Part): CountedPart {
   return { ...part, vertices: countMatches(part.body, VERTEX_RE), triangles: countMatches(part.body, TRIANGLE_RE) };
+}
+
+/** The filament painted on a part's unpainted triangles: none on one that isn't printed itself (a modifier, a negative
+ *  or support volume). */
+function partColor(part: CountedPart): string {
+  return part.role === "normal_part" ? encodePaintState(part.extruder) : "";
 }
 
 type Resolved = {
@@ -269,7 +304,7 @@ function resolveTarget(
       parsedModels,
       childPath,
       c.objectid,
-      formatTransform(multiplyTransform(transform, c.transform)),
+      formatTransform(composeTransform(transform, c.transform)),
       seen,
     );
   }
@@ -280,8 +315,18 @@ function partInfo(wrapper: Partial<ObjectSettings>, componentObjectId: string, c
   const parts = wrapper.parts || [];
   return (
     parts.find((p) => String(p.id) === String(componentObjectId)) ||
-    parts[componentIndex] || { name: wrapper.name || "", extruder: wrapper.extruder || 1 }
+    parts[componentIndex] || {
+      name: wrapper.name || "",
+      extruder: wrapper.extruder || 1,
+      role: "normal_part",
+      settings: {},
+    }
   );
+}
+
+/** Settings in an order of their own, so two objects that changed the same ones compare equal. */
+function settingsKey(settings: Record<string, string>): string {
+  return JSON.stringify(Object.entries(settings).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
 function assignInstancesToPlates(sourcePlates: PlateSettings[], emitted: OutBuildItem[]): PlateSettings[] {
@@ -341,7 +386,7 @@ function metadataGroup(values: Record<string, string>): string {
 /** An object of the result, written out when the model is: a mesh as it was, several parts merged into one mesh, one
  *  part of a group, or the group itself. */
 type EmittedObject = { id: number; extruder: number; settings: Record<string, string> } & (
-  | { kind: "mesh"; body: string }
+  | { kind: "mesh"; body: string; partSettings: Record<string, string> }
   | { kind: "merged"; parts: CountedPart[] }
   | { kind: "part"; part: CountedPart }
   | { kind: "group"; componentIds: number[] }
@@ -355,6 +400,7 @@ export function flattenProject({
   plates,
   mode,
   paint,
+  modelMetadata,
   objectMetadata,
 }: FlattenInput): Flattened {
   const root = parsedModels[pathKey(rootPath)];
@@ -365,52 +411,68 @@ export function flattenProject({
   const materialsId = 1;
   let nextId = 2;
 
-  const meshKeyToId = new Map<string, { id: number; extruder: number }>();
+  const meshObjects = new Map<string, { id: number; triangles: number } | null>();
+  const meshTriangles = new Map<string, number>();
   const emitted: EmittedObject[] = [];
   const buildItems: OutBuildItem[] = [];
   const objectMeta: ObjectMeta[] = [];
 
-  // A shared mesh used with a different extruder is cloned, since the filament lives on the object.
+  // One object of the result per mesh, filament and settings, its instances sharing it: a shared mesh used with
+  // another filament or other settings is copied, since both live on the object.
   function ensureMesh(
     filePath: string,
     objectId: string,
     extruder: number,
     own: Record<string, string>,
-  ): number | null {
-    const key = `${pathKey(filePath)}::${objectId}`;
+    partSettings: Record<string, string>,
+  ): { id: number; triangles: number } | null {
+    const meshKey = `${pathKey(filePath)}::${objectId}`;
+    const key = `${meshKey}|${extruder}|${settingsKey(own)}|${settingsKey(partSettings)}`;
+    const existing = meshObjects.get(key);
+    if (existing !== undefined) return existing;
     const src = getObject(parsedModels, filePath, objectId);
-    const existing = meshKeyToId.get(key);
-    if (existing) {
-      if (existing.extruder && extruder && existing.extruder !== extruder && src) {
-        const cloneId = nextId++;
-        emitted.push({ kind: "mesh", id: cloneId, body: src.body, extruder, settings: own });
-        return cloneId;
-      }
-      return existing.id;
+    let triangles = meshTriangles.get(meshKey);
+    if (triangles === undefined && src?.hasMesh) {
+      triangles = countMatches(src.body, TRIANGLE_RE);
+      meshTriangles.set(meshKey, triangles);
     }
-    if (!src || !src.hasMesh) return null;
-    const id = nextId++;
-    meshKeyToId.set(key, { id, extruder });
-    emitted.push({ kind: "mesh", id, body: src.body, extruder, settings: own });
-    return id;
+    // A mesh without triangles is nothing to print, and a slicer rejects the empty part it would be.
+    if (!src || !triangles) {
+      meshObjects.set(key, null);
+      return null;
+    }
+    const made = { id: nextId++, triangles };
+    meshObjects.set(key, made);
+    emitted.push({ kind: "mesh", id: made.id, body: src.body, extruder, settings: own, partSettings });
+    return made;
   }
 
   function rememberObjectMeta(meta: ObjectMeta) {
     if (!objectMeta.some((o) => o.id === meta.id)) objectMeta.push(meta);
   }
 
-  function gatherParts(node: Resolved | null, wrapper: Partial<ObjectSettings>, localTransform: string): Part[] {
+  // `node.transform` places it in the assembly the build item places; the wrappers resolveTarget passed through on
+  // the way down are in it already. `ancestors` stops a file whose assemblies hold each other.
+  function gatherParts(
+    node: Resolved | null,
+    info: Pick<PartSettings, "name" | "extruder" | "role" | "settings">,
+    wrapper: Partial<ObjectSettings>,
+    ancestors: Set<string>,
+  ): Part[] {
     if (!node) return [];
-    if (node.kind === "mesh") {
-      return [{ name: wrapper.name || "", extruder: wrapper.extruder || 1, body: node.obj.body, localTransform }];
-    }
+    const local = node.transform ?? IDENTITY;
+    if (node.kind === "mesh") return [{ ...info, body: node.obj.body, localTransform: local }];
+    const mark = `${pathKey(node.filePath)}::${node.objectId}`;
+    if (ancestors.has(mark)) return [];
+    const inside = new Set(ancestors).add(mark);
     const out: Part[] = [];
     node.obj.components.forEach((c, index) => {
-      const info = partInfo(wrapper, c.objectid, index);
+      // The object's own parts are named in model_settings.config; deeper ones take their parent part's.
+      const part = wrapper.parts?.length ? partInfo(wrapper, c.objectid, index) : info;
       const childPath = c.path ? normalizePath(c.path) : node.filePath;
-      const childLocal = formatTransform(multiplyTransform(localTransform, c.transform));
-      const child = resolveTarget(parsedModels, childPath, c.objectid, c.transform, new Set());
-      out.push(...gatherParts(child, { name: info.name, extruder: info.extruder, parts: [] }, childLocal));
+      const placed = formatTransform(composeTransform(local, c.transform));
+      const child = resolveTarget(parsedModels, childPath, c.objectid, placed, new Set(inside));
+      out.push(...gatherParts(child, part, { name: part.name, extruder: part.extruder, parts: [] }, inside));
     });
     return out;
   }
@@ -428,14 +490,38 @@ export function flattenProject({
     const printable = item.printable ?? "1";
     const source = { sourceObjectId: String(item.objectid), sourceInstanceId: item.instanceId };
     if (resolved.kind === "mesh") {
-      const extruder = wrapper.extruder || 1;
-      const newId = ensureMesh(resolved.filePath, resolved.objectId, extruder, own);
-      if (!newId) continue;
-      buildItems.push({ objectid: newId, transform: resolved.transform, printable, ...source });
-      rememberObjectMeta({ id: newId, name: wrapper.name || "", extruder, volumes: [], partIds: [], settings: own });
+      // A single mesh is the object's one part, printed whatever its entry says, in the part's filament if it has one.
+      const part = partInfo(wrapper, resolved.objectId, 0);
+      const extruder = part.extruder || wrapper.extruder || 1;
+      const mesh = ensureMesh(resolved.filePath, resolved.objectId, extruder, own, part.settings);
+      if (!mesh) continue;
+      buildItems.push({ objectid: mesh.id, transform: resolved.transform, printable, ...source });
+      const volume: Volume = {
+        name: part.name,
+        extruder,
+        firstid: 0,
+        lastid: mesh.triangles - 1,
+        role: "normal_part",
+        settings: part.settings,
+      };
+      rememberObjectMeta({
+        id: mesh.id,
+        name: wrapper.name || "",
+        extruder,
+        volumes: [volume],
+        partIds: [],
+        settings: own,
+      });
       continue;
     }
-    const parts = gatherParts(resolved, wrapper, IDENTITY)
+    const top = {
+      name: wrapper.name || "",
+      extruder: wrapper.extruder || 1,
+      role: "normal_part" as const,
+      settings: {},
+    };
+    // The build item places the assembly with the wrappers above it; its parts are placed inside it.
+    const parts = gatherParts({ ...resolved, transform: IDENTITY }, top, wrapper, new Set())
       .map(counted)
       .filter((part) => part.triangles > 0);
     if (!parts.length) continue;
@@ -444,10 +530,17 @@ export function flattenProject({
     if (mode === "merge") {
       const id = nextId++;
       emitted.push({ kind: "merged", id, parts, extruder, settings: own });
-      buildItems.push({ objectid: id, transform: item.transform, printable, ...source });
+      buildItems.push({ objectid: id, transform: resolved.transform, printable, ...source });
       let first = 0;
-      const volumes = parts.map((part) => {
-        const volume = { name: part.name, extruder: part.extruder, firstid: first, lastid: first + part.triangles - 1 };
+      const volumes = parts.map((part): Volume => {
+        const volume = {
+          name: part.name,
+          extruder: part.extruder,
+          firstid: first,
+          lastid: first + part.triangles - 1,
+          role: part.role,
+          settings: part.settings,
+        };
         first += part.triangles;
         return volume;
       });
@@ -461,7 +554,7 @@ export function flattenProject({
     });
     const groupId = nextId++;
     emitted.push({ kind: "group", id: groupId, componentIds: partIds, extruder, settings: own });
-    buildItems.push({ objectid: groupId, transform: item.transform, printable, ...source });
+    buildItems.push({ objectid: groupId, transform: resolved.transform, printable, ...source });
     rememberObjectMeta({ id: groupId, name, extruder, volumes: [], partIds, settings: own });
   }
 
@@ -473,6 +566,7 @@ export function flattenProject({
     if (name && KEEP_META_NAMES.has(name)) metadataXml.push(formatCoreMetadata(name, meta.text));
   }
   metadataXml.push(` <metadata name="Application">Thingport</metadata>`);
+  for (const [name, value] of Object.entries(modelMetadata ?? {})) metadataXml.push(formatCoreMetadata(name, value));
 
   const paletteSize = colors.length || 1;
   const pindexFor = (extruder: number) =>
@@ -488,12 +582,13 @@ export function flattenProject({
     materials: colors.length || 1,
   };
 
-  const style = (extruder: number, fallbackColor: string): TriangleStyle => ({
+  const style = (extruder: number, fallbackColor: string, flip = false): TriangleStyle => ({
     materialsId,
     extruder,
     paletteSize,
     paint,
     fallbackColor,
+    flip,
     stats,
   });
 
@@ -529,14 +624,14 @@ export function flattenProject({
       if (obj.kind === "group") {
         const comps = obj.componentIds.map((id) => `    <component objectid="${id}"/>`).join("\n");
         const meta = metadataGroup(
-          objectMetadata?.({ kind: "group", extruder: obj.extruder, settings: obj.settings }) ?? {},
+          objectMetadata?.({ kind: "group", extruder: obj.extruder, settings: obj.settings, part: null }) ?? {},
         );
         yield `\n <object id="${obj.id}" type="model">${meta}\n   <components>\n${comps}\n   </components>\n  </object>`;
         continue;
       }
       if (obj.kind === "merged") {
         const meta = metadataGroup(
-          objectMetadata?.({ kind: "mesh", extruder: obj.extruder, settings: obj.settings }) ?? {},
+          objectMetadata?.({ kind: "mesh", extruder: obj.extruder, settings: obj.settings, part: null }) ?? {},
         );
         let offset = 0;
         const parts = obj.parts.map((part) => {
@@ -544,7 +639,7 @@ export function flattenProject({
             body: part.body,
             transform: part.localTransform,
             offset,
-            triangles: style(part.extruder, encodePaintState(part.extruder)),
+            triangles: style(part.extruder, partColor(part), mirrors(part.localTransform)),
           };
           offset += part.vertices;
           return entry;
@@ -554,22 +649,33 @@ export function flattenProject({
         continue;
       }
       if (obj.kind === "part") {
+        const { part } = obj;
         const meta = metadataGroup(
-          objectMetadata?.({ kind: "part", extruder: obj.part.extruder, settings: obj.settings }) ?? {},
+          objectMetadata?.({
+            kind: "part",
+            extruder: part.extruder,
+            settings: obj.settings,
+            part: { role: part.role, settings: part.settings },
+          }) ?? {},
         );
-        stats.vertices += obj.part.vertices;
-        yield* meshObject(obj.id, obj.part.extruder, meta, [
+        stats.vertices += part.vertices;
+        yield* meshObject(obj.id, part.extruder, meta, [
           {
-            body: obj.part.body,
-            transform: obj.part.localTransform,
+            body: part.body,
+            transform: part.localTransform,
             offset: 0,
-            triangles: style(obj.part.extruder, encodePaintState(obj.part.extruder)),
+            triangles: style(part.extruder, partColor(part), mirrors(part.localTransform)),
           },
         ]);
         continue;
       }
       const meta = metadataGroup(
-        objectMetadata?.({ kind: "mesh", extruder: obj.extruder, settings: obj.settings }) ?? {},
+        objectMetadata?.({
+          kind: "mesh",
+          extruder: obj.extruder,
+          settings: obj.settings,
+          part: { role: "normal_part", settings: obj.partSettings },
+        }) ?? {},
       );
       stats.vertices += countMatches(obj.body, VERTEX_RE);
       yield* meshObject(obj.id, obj.extruder, meta, [

@@ -13,7 +13,7 @@ import { writePrusa } from "./writers/prusa";
 import type { WriteOptions, Written } from "./writers/types";
 
 /** Bumped whenever a writer's output changes, so copies made by an older one are made again. */
-export const ADAPTER_VERSION = 1;
+export const ADAPTER_VERSION = 2;
 
 export const ADAPT_ZIP_OPTIONS = { compression: "DEFLATE", compressionOptions: { level: 6 } } as const;
 

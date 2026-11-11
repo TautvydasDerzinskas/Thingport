@@ -1,4 +1,6 @@
-// 3MF transforms: a row-major 3x3 followed by the translation, twelve numbers in all.
+// 3MF transforms: twelve numbers, m00 m01 m02 m10 m11 m12 m20 m21 m22 m30 m31 m32, applied to a point as a row
+// vector, (x y z 1) times the 4x4 matrix whose last column is 0 0 0 1. So x' = x*m00 + y*m10 + z*m20 + m30, and the
+// translation is the last three numbers (3MF Core Specification, 3D Matrices).
 
 export const IDENTITY = "1 0 0 0 1 0 0 0 1 0 0 0";
 
@@ -12,26 +14,17 @@ export function parseTransform(str: string | null | undefined): number[] {
   return n.length !== 12 || n.some((x) => Number.isNaN(x)) ? identity : n;
 }
 
-/** out = A * B. */
-export function multiplyTransform(aStr: string | null, bStr: string | null): number[] {
-  const A = parseTransform(aStr);
-  const B = parseTransform(bStr);
-  const [a00, a01, a02, a10, a11, a12, a20, a21, a22, atx, aty, atz] = A;
-  const [b00, b01, b02, b10, b11, b12, b20, b21, b22, btx, bty, btz] = B;
-  return [
-    a00 * b00 + a01 * b10 + a02 * b20,
-    a00 * b01 + a01 * b11 + a02 * b21,
-    a00 * b02 + a01 * b12 + a02 * b22,
-    a10 * b00 + a11 * b10 + a12 * b20,
-    a10 * b01 + a11 * b11 + a12 * b21,
-    a10 * b02 + a11 * b12 + a12 * b22,
-    a20 * b00 + a21 * b10 + a22 * b20,
-    a20 * b01 + a21 * b11 + a22 * b21,
-    a20 * b02 + a21 * b12 + a22 * b22,
-    a00 * btx + a01 * bty + a02 * btz + atx,
-    a10 * btx + a11 * bty + a12 * btz + aty,
-    a20 * btx + a21 * bty + a22 * btz + atz,
-  ];
+/** The transform applying `inner` first and then `outer`, as a component's inside the object holding it. */
+export function composeTransform(outer: string | null, inner: string | null): number[] {
+  const O = parseTransform(outer);
+  const I = parseTransform(inner);
+  // Row `r` of inner's rows (the translation the fourth) times outer's 3x3, plus outer's translation for the fourth.
+  return Array.from({ length: 12 }, (_, at) => {
+    const r = Math.floor(at / 3);
+    const c = at % 3;
+    const row = I[r * 3] * O[c] + I[r * 3 + 1] * O[3 + c] + I[r * 3 + 2] * O[6 + c];
+    return r === 3 ? row + O[9 + c] : row;
+  });
 }
 
 export function formatNumber(n: number): string {
@@ -43,12 +36,21 @@ export function formatTransform(m: number[]): string {
   return m.map(formatNumber).join(" ");
 }
 
-export function transformPoint(point: number[], matrix: string): number[] {
-  const M = parseTransform(matrix);
+/** `point` moved by `matrix` (a transform string, or one parseTransform read). */
+export function transformPoint(point: number[], matrix: string | number[]): number[] {
+  const M = typeof matrix === "string" ? parseTransform(matrix) : matrix;
   const [x, y, z] = point;
   return [
-    M[0] * x + M[1] * y + M[2] * z + M[9],
-    M[3] * x + M[4] * y + M[5] * z + M[10],
-    M[6] * x + M[7] * y + M[8] * z + M[11],
+    x * M[0] + y * M[3] + z * M[6] + M[9],
+    x * M[1] + y * M[4] + z * M[7] + M[10],
+    x * M[2] + y * M[5] + z * M[8] + M[11],
   ];
+}
+
+/** Whether the transform mirrors, which turns a mesh's triangles inside out when it's baked into the vertices. */
+export function mirrors(matrix: string | number[]): boolean {
+  const M = typeof matrix === "string" ? parseTransform(matrix) : matrix;
+  const det =
+    M[0] * (M[4] * M[8] - M[5] * M[7]) - M[1] * (M[3] * M[8] - M[5] * M[6]) + M[2] * (M[3] * M[7] - M[4] * M[6]);
+  return det < 0;
 }

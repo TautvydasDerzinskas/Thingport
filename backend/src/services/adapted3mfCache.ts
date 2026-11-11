@@ -65,26 +65,51 @@ function adaptInWorker(input: Adapt3mfWorkerInput): Promise<Adapt3mfWorkerResult
   });
 }
 
-async function buildAdapted(plateId: string, srcPath: string, plan: AdaptPlan): Promise<string | null> {
+/** A copy being made. Cancelled when its plate's copies are deleted: it then leaves nothing behind. */
+type Job = { result: Promise<string | null>; cancelled: boolean };
+
+async function sourceStamp(srcPath: string): Promise<string | null> {
+  try {
+    const { size, mtimeMs } = await fs.stat(srcPath);
+    return `${size}:${mtimeMs}`;
+  } catch {
+    return null;
+  }
+}
+
+// What's kept is checked against `job` after it's in place, so a deletion that came meanwhile still removes it.
+async function keep(job: Job, file: string): Promise<boolean> {
+  if (!job.cancelled) return true;
+  await fs.rm(file, { force: true });
+  return false;
+}
+
+async function buildAdapted(job: Job, plateId: string, srcPath: string, plan: AdaptPlan): Promise<string | null> {
+  if (job.cancelled) return null;
   const dest = adaptedPath(plateId, plan);
   const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
   await fs.mkdir(ADAPTED_3MFS, { recursive: true });
+  const before = await sourceStamp(srcPath);
   try {
     const result = await adaptInWorker({ srcPath, destPath: tmp, plan });
+    // Made from a file that has changed since (or gone): not a copy of what's there now, nor a reason to give up on it.
+    if (job.cancelled || before === null || (await sourceStamp(srcPath)) !== before) return null;
     if (result.status === "ok") {
       await fs.rename(tmp, dest);
+      if (!(await keep(job, dest))) return null;
       await fs.rm(errorPath(plateId, plan), { force: true });
       return dest;
     }
     console.warn(`Adapting the 3MF of plate ${plateId} (${planKey(plan)}) failed; serving the original:`, result.error);
     await fs.writeFile(errorPath(plateId, plan), result.error);
+    await keep(job, errorPath(plateId, plan));
     return null;
   } finally {
     await fs.rm(tmp, { force: true }).catch(() => undefined);
   }
 }
 
-const inFlight = new Map<string, Promise<string | null>>();
+const inFlight = new Map<string, Job>();
 // One at a time: a large 3MF is held in memory several times over while it's rewritten.
 let queue: Promise<unknown> = Promise.resolve();
 
@@ -102,14 +127,14 @@ async function recentlyFailed(plateId: string, plan: AdaptPlan, srcMtimeMs: numb
 
 function startJob(plateId: string, srcPath: string, plan: AdaptPlan): Promise<string | null> {
   const key = copyName(plateId, plan);
-  let pending = inFlight.get(key);
-  if (!pending) {
-    pending = queue.then(() => buildAdapted(plateId, srcPath, plan));
-    queue = pending.catch(() => undefined);
-    inFlight.set(key, pending);
-    void pending.finally(() => inFlight.delete(key)).catch(() => undefined);
-  }
-  return pending;
+  const running = inFlight.get(key);
+  if (running) return running.result;
+  const job: Job = { result: Promise.resolve(null), cancelled: false };
+  job.result = queue.then(() => buildAdapted(job, plateId, srcPath, plan));
+  queue = job.result.catch(() => undefined);
+  inFlight.set(key, job);
+  void job.result.finally(() => inFlight.delete(key)).catch(() => undefined);
+  return job.result;
 }
 
 export type Adapt3mfStatus = "ready" | "preparing" | "failed";
@@ -142,9 +167,10 @@ export async function adapted3mfFor(plateId: string, srcPath: string, plan: Adap
   }
 }
 
-/** Every copy of the plate's, whatever it was made for. */
+/** Every copy of the plate's, whatever it was made for, and any still being made. */
 export async function deleteAdapted3mfs(plateId: string): Promise<void> {
   const prefix = `${plateId}.`;
+  for (const [key, job] of inFlight) if (key.startsWith(prefix)) job.cancelled = true;
   const names = await fs.readdir(ADAPTED_3MFS).catch(() => [] as string[]);
   await Promise.all(
     names

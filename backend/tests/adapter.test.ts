@@ -16,16 +16,19 @@ import {
   type ThreeMfFormat,
 } from "../src/adapter";
 import { decodePaintState, encodePaintState, stateToMaterialIndex } from "../src/adapter/paint";
-import { parsePlates } from "../src/adapter/readers/bambuProject";
+import { parseModelSettings, parsePlates } from "../src/adapter/readers/bambuProject";
 import {
   curaObjectSettings,
   extractBambuSettings,
   normalizeProjectSettings,
   prusaObjectSettings,
+  prusaVolumeSettings,
   settingsDialectOf,
   settingsIn,
 } from "../src/adapter/settings";
+import { composeTransform, mirrors, transformPoint } from "../src/adapter/transform";
 import { retagModelHead } from "../src/adapter/writers/bambu";
+import { decodeXml, parseAttrs } from "../src/adapter/xml";
 
 // Pure: no database. The cache test points storage at a temp dir before loading config.
 
@@ -201,6 +204,79 @@ async function readOut(zip: JSZip, name: string): Promise<string> {
   return file.async("string");
 }
 
+/** A triangle whose first corner is at (x, 0, 0), so where it lands shows the transforms it went through. */
+const triangleMesh = (id: string, x = 0) => `  <object id="${id}" type="model"><mesh>
+   <vertices><vertex x="${x}" y="0" z="0"/><vertex x="${x + 1}" y="0" z="0"/><vertex x="${x}" y="1" z="0"/></vertices>
+   <triangles><triangle v1="0" v2="1" v3="2"/></triangles>
+  </mesh></object>`;
+
+/** A Bambu layout project: `root` objects and `build` items in 3D/3dmodel.model, `meshes` in 3D/Objects/object_1.model. */
+async function projectZip(options: {
+  root: string;
+  build: string;
+  meshes: string;
+  objects?: string;
+  settings?: Record<string, unknown>;
+  head?: string;
+}): Promise<Uint8Array> {
+  const zip = new JSZip();
+  zip.file(
+    "3D/3dmodel.model",
+    `<?xml version="1.0"?>
+<model unit="millimeter" ${MODEL_NS}>
+${options.head ?? ""}
+ <metadata name="Application">BambuStudio-02.08.02.61</metadata>
+ <resources>
+${options.root}
+ </resources>
+ <build>${options.build}</build>
+</model>`,
+  );
+  zip.file(
+    "3D/Objects/object_1.model",
+    `<?xml version="1.0"?>
+<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+ <resources>
+${options.meshes}
+ </resources>
+ <build/>
+</model>`,
+  );
+  zip.file(
+    "Metadata/project_settings.config",
+    JSON.stringify({ filament_colour: ["#FFFFFF", "#000000"], ...options.settings }),
+  );
+  zip.file("Metadata/model_settings.config", `<?xml version="1.0"?>\n<config>\n${options.objects ?? ""}\n</config>`);
+  return zip.generateAsync({ type: "uint8array" });
+}
+
+const component = (objectid: string, transform?: string, inObjects = true) =>
+  `<component${inObjects ? ' p:path="/3D/Objects/object_1.model"' : ""} objectid="${objectid}"${transform ? ` transform="${transform}"` : ""}/>`;
+
+/** Every vertex of the model, in order, -0 read as 0. */
+function vertices(xml: string): number[][] {
+  return [...xml.matchAll(/<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"\/>/g)].map((m) =>
+    m.slice(1, 4).map((n) => Number(n) + 0),
+  );
+}
+
+/** Each object's `<metadatagroup>`, by name, in the order the objects come. */
+function objectMetadata(xml: string): Record<string, string>[] {
+  return [...xml.matchAll(/<object id="\d+"[^>]*>([\s\S]*?)<\/object>/g)]
+    .filter((m) => m[1].includes("<mesh>"))
+    .map((m) =>
+      Object.fromEntries([...m[1].matchAll(/<metadata name="([^"]+)">([^<]*)<\/metadata>/g)].map((e) => [e[1], e[2]])),
+    );
+}
+
+/** Slic3r_PE_model.config's volumes, each its metadata by key. */
+function volumesOf(config: string): Record<string, string>[] {
+  return [...config.matchAll(/<volume firstid="(\d+)" lastid="(\d+)">([\s\S]*?)<\/volume>/g)].map((m) => ({
+    range: `${m[1]}-${m[2]}`,
+    ...Object.fromEntries([...m[3].matchAll(/key="([^"]+)" value="([^"]*)"/g)].map((e) => [e[1], e[2]])),
+  }));
+}
+
 function format(overrides: Partial<ThreeMfFormat> = {}): ThreeMfFormat {
   return {
     v: 1,
@@ -268,6 +344,27 @@ describe("project settings", () => {
     expect(Object.keys(out)).not.toContain("extrusion_width");
     expect(Object.keys(out)).not.toContain("temperature");
     expect(prusaObjectSettings({ sparse_infill_pattern: "2dlattice" })).toEqual({});
+  });
+
+  it("translates the legacy nested process block too, leaving the file's own settings as they were", () => {
+    const config = {
+      ensure_vertical_shell_thickness: "partial",
+      process_settings: { "1": { ensure_vertical_shell_thickness: "enabled", wall_loops: "3" }, "2": { x: 1 } },
+    };
+    const out = settingsIn("orca", config);
+    expect(out.ensure_vertical_shell_thickness).toBe("ensure_moderate");
+    expect(out.process_settings).toEqual({
+      "1": { ensure_vertical_shell_thickness: "ensure_all", wall_loops: "3" },
+      "2": { x: 1 },
+    });
+    expect(config.process_settings["1"].ensure_vertical_shell_thickness).toBe("enabled");
+  });
+
+  it("gives a PrusaSlicer part only the settings PrusaSlicer takes per part", () => {
+    expect(prusaVolumeSettings({ wall_loops: "5", sparse_infill_density: "100%", layer_height: "0.1" })).toEqual({
+      perimeters: "5",
+      fill_density: "100%",
+    });
   });
 
   it("gives Cura the walls, layers, infill and supports it takes per object", () => {
@@ -412,6 +509,11 @@ describe("planAdaptation", () => {
     });
   });
 
+  it("knows only its own slicers, not an object's inherited names", () => {
+    for (const id of ["constructor", "__proto__", "toString", "hasOwnProperty"]) expect(slicerProfile(id)).toBeNull();
+    expect(planAdaptation(format(), slicerProfile("constructor"))).toBeNull();
+  });
+
   it("makes nothing of other kinds of file, or for a slicer it doesn't know", () => {
     for (const kind of ["prusa", "cura", "plain", "sliced"] as const) expect(plan("cura", format({ kind }))).toBeNull();
     expect(plan("other")).toBeNull();
@@ -531,6 +633,243 @@ describe("the Bambu layout copy", () => {
   });
 });
 
+describe("3MF transforms", () => {
+  const TURN = "0 1 0 -1 0 0 0 0 1 0 0 0"; // A quarter turn about Z: x goes to y.
+  const SHIFT = "1 0 0 0 1 0 0 0 1 10 0 0";
+  const at = (point: number[], matrix: string | number[]) => transformPoint(point, matrix).map((n) => n + 0);
+
+  it("move a point as a row vector, the translation last", () => {
+    expect(at([1, 0, 0], "0 1 0 -1 0 0 0 0 1 5 0 0")).toEqual([5, 1, 0]);
+    expect(at([0, 1, 0], TURN)).toEqual([-1, 0, 0]);
+  });
+
+  it("place a component inside its parent: the component's first, then the parent's", () => {
+    const placed = composeTransform(TURN, SHIFT);
+    expect(at([0, 0, 0], placed)).toEqual([0, 10, 0]);
+    for (const point of [
+      [1, 2, 3],
+      [-4, 0.5, 7],
+    ]) {
+      expect(at(point, placed)).toEqual(at(at(point, SHIFT), TURN));
+    }
+  });
+
+  it("tell a mirroring transform from a turn", () => {
+    expect(mirrors("-1 0 0 0 1 0 0 0 1 0 0 0")).toBe(true);
+    expect(mirrors(composeTransform(TURN, "1 0 0 0 1 0 0 0 -1 0 0 0"))).toBe(true);
+    expect(mirrors(TURN)).toBe(false);
+  });
+});
+
+describe("XML text", () => {
+  it("is read once, so what's written again is escaped once", () => {
+    expect(decodeXml("Fish &amp; Chips &lt;3 &#38; &#x26; &quot;x&quot; &apos;")).toBe(`Fish & Chips <3 & & "x" '`);
+    expect(decodeXml("&amp;amp; &unknown; &#0;")).toBe("&amp; &unknown; &#0;");
+    expect(parseAttrs('name="A &amp; B" value="&lt;5"')).toEqual({ name: "A & B", value: "<5" });
+  });
+});
+
+describe("the PrusaSlicer copy's objects", () => {
+  it("gives a single mesh a volume, which PrusaSlicer makes the object's geometry of, and tags the 3MF as its own", async () => {
+    const { zip } = await generate(await makeBambuZip(), { output: "prusa" });
+    expect(volumesOf(await readOut(zip, "Metadata/Slic3r_PE_model.config"))).toEqual([
+      { range: "0-1", name: "DesignerPart", volume_type: "ModelPart", extruder: "2" },
+    ]);
+    expect(await readOut(zip, "3D/3dmodel.model")).toMatch(/<metadata name="slic3rpe:Version3mf">1<\/metadata>/);
+    const cura = await generate(await makeBambuZip(), { output: "cura" });
+    expect(await readOut(cura.zip, "3D/3dmodel.model")).not.toMatch(/slic3rpe:Version3mf/);
+  });
+
+  it("keeps each part what it is, with its own settings, and paints only the printed ones", async () => {
+    const ids = ["1", "2", "3", "4", "5"];
+    const input = await projectZip({
+      root: `<object id="9" type="model"><components>${ids.map((id) => component(id)).join("")}</components></object>`,
+      build: `<item objectid="9" transform="1 0 0 0 1 0 0 0 1 50 50 0" printable="1"/>`,
+      meshes: ids.map((id, i) => triangleMesh(id, i * 2)).join("\n"),
+      objects: `<object id="9"><metadata key="name" value="Box"/><metadata key="extruder" value="2"/>
+  <part id="1" subtype="normal_part"><metadata key="name" value="Body"/><metadata key="matrix" value="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"/><metadata key="source_object_id" value="0"/><metadata key="wall_loops" value="5"/><metadata key="layer_height" value="0.1"/></part>
+  <part id="2" subtype="modifier_part"><metadata key="name" value="Dense"/><metadata key="extruder" value="0"/><metadata key="sparse_infill_density" value="100%"/></part>
+  <part id="3" subtype="negative_part"><metadata key="name" value="Hole"/></part>
+  <part id="4" subtype="support_enforcer"><metadata key="name" value="Enforcer"/></part>
+  <part id="5" subtype="support_blocker"><metadata key="name" value="Blocker"/></part>
+</object>`,
+    });
+    const { zip } = await generate(input, { output: "prusa" });
+    expect(volumesOf(await readOut(zip, "Metadata/Slic3r_PE_model.config"))).toEqual([
+      // A part takes the settings PrusaSlicer keeps per part; the layer height is the whole object's.
+      { range: "0-0", name: "Body", volume_type: "ModelPart", extruder: "2", perimeters: "5" },
+      { range: "1-1", name: "Dense", volume_type: "ParameterModifier", fill_density: "100%" },
+      { range: "2-2", name: "Hole", volume_type: "NegativeVolume" },
+      { range: "3-3", name: "Enforcer", volume_type: "SupportEnforcer" },
+      { range: "4-4", name: "Blocker", volume_type: "SupportBlocker" },
+    ]);
+    expect((await readOut(zip, "3D/3dmodel.model")).match(/paint_color=/g)).toHaveLength(1);
+  });
+
+  it("places parts as the 3MF spec turns and moves them, through every wrapper on the way", async () => {
+    const input = await projectZip({
+      root: `<object id="8" type="model"><components>${component("1", "1 0 0 0 1 0 0 0 1 10 0 0")}</components></object>
+  <object id="9" type="model"><components>${component("8", "0 1 0 -1 0 0 0 0 1 0 0 0", false)}${component("2")}</components></object>
+  <object id="7" type="model"><components>${component("9", "1 0 0 0 1 0 0 0 1 0 0 5", false)}</components></object>`,
+      build: `<item objectid="7" transform="1 0 0 0 1 0 0 0 1 50 50 0" printable="1"/>`,
+      meshes: `${triangleMesh("1")}\n${triangleMesh("2", 2)}`,
+    });
+    const { zip } = await generate(input, { output: "prusa" });
+    const xml = await readOut(zip, "3D/3dmodel.model");
+    // Mesh 1 moved 10 along x by its wrapper, then turned a quarter: (0,0,0) lands on (0,10,0).
+    expect(vertices(xml)).toEqual([
+      [0, 10, 0],
+      [0, 11, 0],
+      [-1, 10, 0],
+      [2, 0, 0],
+      [3, 0, 0],
+      [2, 1, 0],
+    ]);
+    // The wrapper above the assembly lifts it 5.
+    expect(xml).toMatch(/<item objectid="\d+" transform="1 0 0 0 1 0 0 0 1 50 50 5" printable="1"\/>/);
+  });
+
+  it("places the parts of an assembly inside another, turned one the same way", async () => {
+    const input = await projectZip({
+      root: `<object id="10" type="model"><components>${component("1", "1 0 0 0 1 0 0 0 1 10 0 0")}${component("2")}</components></object>
+  <object id="9" type="model"><components>${component("10", "0 1 0 -1 0 0 0 0 1 0 0 0", false)}${component("3")}</components></object>`,
+      build: `<item objectid="9" printable="1"/>`,
+      meshes: `${triangleMesh("1")}\n${triangleMesh("2", 2)}\n${triangleMesh("3", 4)}`,
+    });
+    const xml = await readOut((await generate(input, { output: "prusa" })).zip, "3D/3dmodel.model");
+    expect(vertices(xml)).toEqual([
+      [0, 10, 0],
+      [0, 11, 0],
+      [-1, 10, 0],
+      [0, 2, 0],
+      [0, 3, 0],
+      [-1, 2, 0],
+      [4, 0, 0],
+      [5, 0, 0],
+      [4, 1, 0],
+    ]);
+  });
+
+  it("composes a single mesh's placement the same way", async () => {
+    const input = await projectZip({
+      root: `<object id="2" type="model"><components>${component("1", "1 0 0 0 1 0 0 0 1 5 0 0")}</components></object>`,
+      build: `<item objectid="2" transform="0 1 0 -1 0 0 0 0 1 100 0 0" printable="1"/>`,
+      meshes: triangleMesh("1"),
+    });
+    const xml = await readOut((await generate(input, { output: "prusa" })).zip, "3D/3dmodel.model");
+    expect(xml).toMatch(/<item objectid="\d+" transform="0 1 0 -1 0 0 0 0 1 100 5 0" printable="1"\/>/);
+  });
+
+  it("turns a mirrored part's triangles back outward, as PrusaSlicer writes one", async () => {
+    const input = await projectZip({
+      root: `<object id="9" type="model"><components>${component("1", "-1 0 0 0 1 0 0 0 1 0 0 0")}${component("2")}</components></object>`,
+      build: `<item objectid="9" printable="1"/>`,
+      meshes: `${triangleMesh("1")}\n${triangleMesh("2", 2)}`,
+    });
+    const xml = await readOut((await generate(input, { output: "prusa" })).zip, "3D/3dmodel.model");
+    const triangles = [...xml.matchAll(/<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"/g)].map((m) => m.slice(1, 4));
+    expect(triangles).toEqual([
+      ["2", "1", "0"],
+      ["3", "4", "5"],
+    ]);
+  });
+
+  it("shares a mesh between objects only while their settings agree", async () => {
+    const twoObjects = (second: string) =>
+      projectZip({
+        root: `<object id="2" type="model"><components>${component("1")}</components></object>
+  <object id="3" type="model"><components>${component("1")}</components></object>`,
+        build: `<item objectid="2" printable="1"/><item objectid="3" printable="1"/><item objectid="3" transform="1 0 0 0 1 0 0 0 1 9 0 0" printable="1"/>`,
+        meshes: triangleMesh("1"),
+        objects: `<object id="2"><metadata key="name" value="A &amp; B"/><metadata key="wall_loops" value="3"/></object>
+  <object id="3"><metadata key="name" value="C"/><metadata key="wall_loops" value="${second}"/></object>`,
+      });
+    const apart = await generate(await twoObjects("5"), { output: "prusa" });
+    const config = await readOut(apart.zip, "Metadata/Slic3r_PE_model.config");
+    expect(config.match(/<object id=/g)).toHaveLength(2);
+    expect(config).toMatch(/key="perimeters" value="3"[\s\S]*key="perimeters" value="5"/);
+    expect(config).toMatch(/key="name" value="A &amp; B"/);
+    const items = (xml: string) => [...xml.matchAll(/<item objectid="(\d+)"/g)].map((m) => m[1]);
+    const [a, b, c] = items(await readOut(apart.zip, "3D/3dmodel.model"));
+    expect(a).not.toBe(b);
+    expect(b).toBe(c);
+
+    const shared = await generate(await twoObjects("3"), { output: "prusa" });
+    expect(new Set(items(await readOut(shared.zip, "3D/3dmodel.model")))).toHaveProperty("size", 1);
+  });
+
+  it("decodes the model's text once and leaves out meshes with no triangles", async () => {
+    const input = await projectZip({
+      head: ' <metadata name="Title">Fish &amp; Chips</metadata>',
+      root: `<object id="2" type="model"><components>${component("1")}</components></object>
+  <object id="3" type="model"><components>${component("4")}</components></object>`,
+      build: `<item objectid="2" printable="1"/><item objectid="3" printable="1"/>`,
+      meshes: `${triangleMesh("1")}\n  <object id="4" type="model"><mesh><vertices></vertices><triangles></triangles></mesh></object>`,
+    });
+    const { zip } = await generate(input, { output: "prusa" });
+    const xml = await readOut(zip, "3D/3dmodel.model");
+    expect(xml).toMatch(/<metadata name="Title">Fish &amp; Chips<\/metadata>/);
+    expect(xml.match(/<item\b/g)).toHaveLength(1);
+    expect(volumesOf(await readOut(zip, "Metadata/Slic3r_PE_model.config"))).toHaveLength(1);
+  });
+});
+
+describe("a project's parts", () => {
+  it("are what Bambu Studio reads them as: the subtype, unless an older file's metadata names one", () => {
+    const parts = parseModelSettings(`<config><object id="9"><metadata key="extruder" value="2"/>
+  <part id="1" subtype="modifier_part"/>
+  <part id="2" subtype="normal_part"><metadata key="volume_type" value="negative_part"/></part>
+  <part id="3"><metadata key="part_type" value="support_blocker"/></part>
+  <part id="4" subtype="ParameterModifier"><metadata key="extruder" value="3"/></part>
+</object></config>`)["9"].parts;
+    expect(parts.map((part) => [part.role, part.extruder])).toEqual([
+      ["modifier_part", 2],
+      ["negative_part", 2],
+      ["support_blocker", 2],
+      ["normal_part", 3],
+    ]);
+  });
+});
+
+describe("the Cura copy's parts", () => {
+  it("are Cura's mesh types: a modifier and a negative part cut, support volumes say where support goes", async () => {
+    const ids = ["1", "2", "3", "4", "5"];
+    const input = await projectZip({
+      root: `<object id="9" type="model"><components>${ids.map((id) => component(id)).join("")}</components></object>`,
+      build: `<item objectid="9" printable="1"/>`,
+      meshes: ids.map((id, i) => triangleMesh(id, i * 2)).join("\n"),
+      settings: { wall_loops: "2" },
+      objects: `<object id="9"><metadata key="name" value="Box"/><metadata key="extruder" value="2"/><metadata key="top_shell_layers" value="6"/>
+  <part id="1" subtype="normal_part"><metadata key="name" value="Body"/><metadata key="wall_loops" value="5"/></part>
+  <part id="2" subtype="modifier_part"><metadata key="name" value="Dense"/><metadata key="sparse_infill_density" value="100%"/></part>
+  <part id="3" subtype="negative_part"><metadata key="name" value="Hole"/></part>
+  <part id="4" subtype="support_enforcer"><metadata key="name" value="Enforcer"/></part>
+  <part id="5" subtype="support_blocker"><metadata key="name" value="Blocker"/></part>
+</object>`,
+    });
+    const { zip } = await generate(input, { output: "cura" });
+    expect(objectMetadata(await readOut(zip, "3D/3dmodel.model"))).toEqual([
+      { "cura:wall_line_count": "5", "cura:top_layers": "6", "cura:extruder_nr": "1" },
+      {
+        "cura:wall_line_count": "2",
+        "cura:top_layers": "6",
+        "cura:infill_sparse_density": "100",
+        "cura:cutting_mesh": "True",
+        "cura:extruder_nr": "1",
+      },
+      {
+        "cura:cutting_mesh": "True",
+        "cura:wall_line_count": "0",
+        "cura:top_layers": "0",
+        "cura:bottom_layers": "0",
+        "cura:infill_sparse_density": "0",
+      },
+      { "cura:support_mesh": "True" },
+      { "cura:anti_overhang_mesh": "True" },
+    ]);
+  });
+});
+
 describe("adapted3mfFor", () => {
   it("adapts in a worker, caches the copy, falls back to null for a broken file and deletes a plate's copies", async () => {
     const storage = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-adapt-"));
@@ -557,4 +896,60 @@ describe("adapted3mfFor", () => {
     expect(fs.existsSync(cura!)).toBe(false);
     fs.rmSync(storage, { recursive: true, force: true });
   });
+
+  it("keeps nothing of a copy whose plate is deleted while it's made, nor of one made from a file that changed", async () => {
+    const { ADAPTED_3MFS } = await import("../src/config");
+    const { adapt3mfStatus, adapted3mfFor, deleteAdapted3mfs } = await import("../src/services/adapted3mfCache");
+    const plan: AdaptPlan = { output: "prusa" };
+    const left = (plateId: string) =>
+      (fs.existsSync(ADAPTED_3MFS) ? fs.readdirSync(ADAPTED_3MFS) : []).filter((name) =>
+        name.startsWith(`${plateId}.`),
+      );
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-adapt-src-"));
+    try {
+      const big = await bigProject();
+
+      const deleted = path.join(dir, "deleted.3mf");
+      fs.writeFileSync(deleted, big);
+      expect(await adapt3mfStatus("plate-c", deleted, plan)).toBe("preparing");
+      await deleteAdapted3mfs("plate-c");
+      expect(await adapted3mfFor("plate-c", deleted, plan)).toBeNull();
+      expect(left("plate-c")).toEqual([]);
+
+      const changing = path.join(dir, "changing.3mf");
+      fs.writeFileSync(changing, big);
+      expect(await adapt3mfStatus("plate-d", changing, plan)).toBe("preparing");
+      // Changed once the copy is being written, so after it was read.
+      await until(() => left("plate-d").some((name) => name.endsWith(".tmp")));
+      fs.writeFileSync(changing, await makeBambuZip());
+      expect(await adapted3mfFor("plate-d", changing, plan)).toBeNull();
+      expect(left("plate-d")).toEqual([]);
+      const fresh = await adapted3mfFor("plate-d", changing, plan);
+      expect(await readOut(await JSZip.loadAsync(fs.readFileSync(fresh!)), "3D/3dmodel.model")).toMatch(/Test Cube/);
+      await deleteAdapted3mfs("plate-d");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }, 60_000);
 });
+
+/** A project of one mesh with `triangles` triangles, whose copy takes a while (about a second). */
+async function bigProject(triangles = 150_000): Promise<Uint8Array> {
+  const vertexList: string[] = [];
+  const triangleList: string[] = [];
+  for (let i = 0; i < triangles + 2; i++) vertexList.push(`<vertex x="${i}" y="${i % 7}" z="${i % 3}"/>`);
+  for (let i = 0; i < triangles; i++) triangleList.push(`<triangle v1="${i}" v2="${i + 1}" v3="${i + 2}"/>`);
+  return projectZip({
+    root: `<object id="2" type="model"><components>${component("1")}</components></object>`,
+    build: `<item objectid="2" printable="1"/>`,
+    meshes: `<object id="1" type="model"><mesh><vertices>${vertexList.join("")}</vertices><triangles>${triangleList.join("")}</triangles></mesh></object>`,
+  });
+}
+
+async function until(check: () => boolean, timeoutMs = 30_000): Promise<void> {
+  const end = Date.now() + timeoutMs;
+  while (!check()) {
+    if (Date.now() > end) throw new Error("timed out waiting");
+    await new Promise((resolve) => setTimeout(resolve, 2));
+  }
+}
