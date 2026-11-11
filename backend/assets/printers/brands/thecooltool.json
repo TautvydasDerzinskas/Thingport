@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "thecooltool",
+  "name": "TheCoolTool"
+ },
+ "printers": [
+  {
+   "id": "thecooltool-uniprint3d",
+   "brand": "thecooltool",
+   "model": "Uni-Print-3D",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 186,
+    "y": 220,
+    "origin": [
+     -93,
+     -110
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 230,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "uni_print_3d"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "uni_print_3d",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

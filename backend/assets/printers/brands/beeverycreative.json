@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "beeverycreative",
+  "name": "Beeverycreative"
+ },
+ "printers": [
+  {
+   "id": "beeverycreative-hellobeeprusa",
+   "brand": "beeverycreative",
+   "model": "Hello Bee Prusa",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 185,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 190,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "helloBEEprusa"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "helloBEEprusa",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

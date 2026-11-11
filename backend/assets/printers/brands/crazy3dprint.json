@@ -1,0 +1,56 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "crazy3dprint",
+  "name": "Crazy3DPrint"
+ },
+ "printers": [
+  {
+   "id": "crazy3dprint-cz300",
+   "brand": "crazy3dprint",
+   "model": "CZ-300",
+   "aliases": [
+    "crazy3dprintcz300"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "crazy3dprint_cz_300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "crazy3dprint_cz_300",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

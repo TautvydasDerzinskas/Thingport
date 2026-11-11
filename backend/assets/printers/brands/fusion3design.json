@@ -1,0 +1,61 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "fusion3design",
+  "name": "Fusion3Design"
+ },
+ "printers": [
+  {
+   "id": "fusion3design-fusion3f410",
+   "brand": "fusion3design",
+   "model": "Fusion3 F410",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 355,
+    "y": 355,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 315,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusion3_f410"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusion3_f410",
+      "nozzles": [
+       "0.4mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

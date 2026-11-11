@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "fracktal",
+  "name": "Fracktal"
+ },
+ "printers": [
+  {
+   "id": "fracktal-julia",
+   "brand": "fracktal",
+   "model": "Julia",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 210,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "julia"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "julia",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

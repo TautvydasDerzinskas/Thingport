@@ -108,6 +108,12 @@ Studio, the CAD page, has one rule: everything a person can do to a design is a 
 an AI can do it too. How that's built and the steps for a new command are in
 [docs/STUDIO_DEVELOPMENT.md](docs/STUDIO_DEVELOPMENT.md).
 
+## Updating the printer catalogue
+
+The printers Thingport knows, their beds and each slicer's names for them, are built from the slicers' own profiles
+by `npm run printers:update` and committed. How it's built and how to update it or add a slicer are in
+[docs/PRINTERS_DEVELOPMENT.md](docs/PRINTERS_DEVELOPMENT.md).
+
 ## Working on social features
 
 Connected Thingport instances see each other's people as if they were on one instance, so every social feature has to

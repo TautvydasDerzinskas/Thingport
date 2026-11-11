@@ -1,0 +1,53 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "3deometryinnovations",
+  "name": "3Deometry Innovations"
+ },
+ "printers": [
+  {
+   "id": "3deometryinnovations-3did300",
+   "brand": "3deometryinnovations",
+   "model": "3DI D300",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     -150,
+     -150
+    ],
+    "diameter": 300
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "3di_d300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "3di_d300",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

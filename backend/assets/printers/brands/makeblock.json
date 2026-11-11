@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "makeblock",
+  "name": "Makeblock"
+ },
+ "printers": [
+  {
+   "id": "makeblock-mcreate",
+   "brand": "makeblock",
+   "model": "mCreate",
+   "aliases": [
+    "makeblockmcreate"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 225,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "makeblock_mcreate"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "makeblock_mcreate",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

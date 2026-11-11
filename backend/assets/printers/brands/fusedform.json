@@ -1,0 +1,396 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "fusedform",
+  "name": "Fused Form"
+ },
+ "printers": [
+  {
+   "id": "fusedform-ff300",
+   "brand": "fusedform",
+   "model": "FF300",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 360,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 320,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusedform_300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusedform_300",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "fusedform-ff300doppia",
+   "brand": "fusedform",
+   "model": "FF300 Doppia",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 360,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 320,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusedform_300_doppia"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusedform_300_doppia",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "fusedform-ff600",
+   "brand": "fusedform",
+   "model": "FF600",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusedform_600"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusedform_600",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "fusedform-ff600doppia",
+   "brand": "fusedform",
+   "model": "FF600 Doppia",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusedform_600_doppia"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusedform_600_doppia",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "fusedform-ff600plus",
+   "brand": "fusedform",
+   "model": "FF600plus",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusedform_600plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusedform_600plus",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "fusedform-ff600plusdoppia",
+   "brand": "fusedform",
+   "model": "FF600plus Doppia",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusedform_600plus_doppia"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusedform_600plus_doppia",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "fusedform-ffmini",
+   "brand": "fusedform",
+   "model": "FFmini",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusedform_mini"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusedform_mini",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "fusedform-ffstd",
+   "brand": "fusedform",
+   "model": "FFSTD",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 320,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusedform_std"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusedform_std",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "fusedform-ffstddoppia",
+   "brand": "fusedform",
+   "model": "FFSTD Doppia",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 320,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fusedform_std_doppia"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fusedform_std_doppia",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

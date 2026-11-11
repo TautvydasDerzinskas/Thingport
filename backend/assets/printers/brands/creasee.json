@@ -1,0 +1,234 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "creasee",
+  "name": "Creasee"
+ },
+ "printers": [
+  {
+   "id": "creasee-cs20",
+   "brand": "creasee",
+   "model": "CS20",
+   "aliases": [
+    "creaseecs20"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "creasee_cs20"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "creasee_cs20",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "creasee-cs30",
+   "brand": "creasee",
+   "model": "CS30",
+   "aliases": [
+    "creaseecs30"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "creasee_cs30"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "creasee_cs30",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "creasee-cs50spro",
+   "brand": "creasee",
+   "model": "CS50s Pro",
+   "aliases": [
+    "creaseecs50spro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "creasee_cs50spro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "creasee_cs50spro",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "creasee-phoenix",
+   "brand": "creasee",
+   "model": "Phoenix",
+   "aliases": [
+    "creaseephoenix"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "creasee_phoenix"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "creasee_phoenix",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "creasee-skywalker",
+   "brand": "creasee",
+   "model": "Skywalker",
+   "aliases": [
+    "creaseeskywalker"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "creasee_skywalker"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "creasee_skywalker",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

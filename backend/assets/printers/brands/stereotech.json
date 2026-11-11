@@ -1,0 +1,99 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "stereotech",
+  "name": "Stereotech"
+ },
+ "printers": [
+  {
+   "id": "stereotech-start",
+   "brand": "stereotech",
+   "model": "Start",
+   "aliases": [
+    "stereotechstart"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 190,
+    "y": 190,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 190,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "stereotech_start"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "stereotech_start",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "stereotech-ste320",
+   "brand": "stereotech",
+   "model": "STE320",
+   "aliases": [
+    "stereotechste320"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 218,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "stereotech_ste320"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "stereotech_ste320",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

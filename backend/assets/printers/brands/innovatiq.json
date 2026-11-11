@@ -1,0 +1,351 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "innovatiq",
+  "name": "innovatiQ"
+ },
+ "printers": [
+  {
+   "id": "innovatiq-tiq2",
+   "brand": "innovatiq",
+   "model": "TiQ2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 330,
+    "y": 330,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "TiQ2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "TiQ2",
+      "presets": {
+       "0.25": [
+        {
+         "name": "iQ TiQ2 0.25 Nozzle",
+         "defaultProcess": "0.15mm Standard @iQ TiQ2 (0.25 Nozzle)",
+         "processes": [
+          {
+           "name": "0.15mm Standard @iQ TiQ2 (0.25 Nozzle)",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "iQ TiQ2 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": [
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P1 - HPP4GF25 Grauts (0.4 Nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P1 - PETG Polymax Polymaker (0.4 Nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P2 - PACF Pro Fiberthree + VXL90 Xioneer (0.4 Nozzle)",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "iQ TiQ2 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @iQ TiQ2 (0.6 Nozzle)",
+         "processes": [
+          {
+           "name": "0.30mm Standard @iQ TiQ2 (0.6 Nozzle)",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "iQ TiQ2 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @iQ TiQ2 (0.8 Nozzle)",
+         "processes": [
+          {
+           "name": "0.40mm Standard @iQ TiQ2 (0.8 Nozzle)",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "TiQ2",
+      "presets": {
+       "0.25": [
+        {
+         "name": "iQ TiQ2 0.25 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": []
+        }
+       ],
+       "0.4": [
+        {
+         "name": "iQ TiQ2 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": [
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P1 - HPP4GF25 Grauts (0.4 Nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P1 - PETG Polymax Polymaker (0.4 Nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P2 - PACF Pro Fiberthree + VXL90 Xioneer (0.4 Nozzle)",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "iQ TiQ2 0.6 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": []
+        }
+       ],
+       "0.8": [
+        {
+         "name": "iQ TiQ2 0.8 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": []
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "TiQ2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "iQ TiQ2 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": [
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @iQ TiQ2 P1 - PETG Polymax Polymaker (0.4 Nozzle)",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "innovatiq-tiq8",
+   "brand": "innovatiq",
+   "model": "TiQ8",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 450,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "TiQ8"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "TiQ8",
+      "presets": {
+       "0.25": [
+        {
+         "name": "iQ TiQ8 0.25 Nozzle",
+         "defaultProcess": "0.15mm Standard @iQ TiQ8 (0.25 Nozzle)",
+         "processes": [
+          {
+           "name": "0.15mm Standard @iQ TiQ8 (0.25 Nozzle)",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "iQ TiQ8 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ8 P1 - ABS Natur Material4Print (0.4 Nozzle)",
+         "processes": [
+          {
+           "name": "0.20mm Standard @iQ TiQ8 P1 - ABS Natur Material4Print (0.4 Nozzle)",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "iQ TiQ8 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @iQ TiQ8 (0.6 Nozzle)",
+         "processes": [
+          {
+           "name": "0.30mm Standard @iQ TiQ8 (0.6 Nozzle)",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "iQ TiQ8 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @iQ TiQ8 (0.8 Nozzle)",
+         "processes": [
+          {
+           "name": "0.40mm Standard @iQ TiQ8 (0.8 Nozzle)",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "TiQ8",
+      "presets": {
+       "0.25": [
+        {
+         "name": "iQ TiQ8 0.25 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": []
+        }
+       ],
+       "0.4": [
+        {
+         "name": "iQ TiQ8 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": [
+          {
+           "name": "0.20mm Standard @iQ TiQ8 P1 - ABS Natur Material4Print (0.4 Nozzle)",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "iQ TiQ8 0.6 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": []
+        }
+       ],
+       "0.8": [
+        {
+         "name": "iQ TiQ8 0.8 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": []
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "TiQ8",
+      "presets": {
+       "0.4": [
+        {
+         "name": "iQ TiQ8 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @iQ TiQ2 P1 - PACF Pro Fiberthree (0.4 Nozzle)",
+         "processes": [
+          {
+           "name": "0.20mm Standard @iQ TiQ8 P1 - ABS Natur Material4Print (0.4 Nozzle)",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "naxe",
+  "name": "Naxe"
+ },
+ "printers": [
+  {
+   "id": "naxe-nps",
+   "brand": "naxe",
+   "model": "nps",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "nps"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "nps",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

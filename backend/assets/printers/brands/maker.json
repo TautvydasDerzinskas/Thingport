@@ -1,0 +1,144 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "maker",
+  "name": "Maker"
+ },
+ "printers": [
+  {
+   "id": "maker-300x",
+   "brand": "maker",
+   "model": "300x",
+   "aliases": [
+    "makermade300x"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "maker_made_300x"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "maker_made_300x",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "maker-pegasus",
+   "brand": "maker",
+   "model": "Pegasus",
+   "aliases": [
+    "makerpegasus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "makeR_pegasus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "makeR_pegasus",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "maker-prusataironai3",
+   "brand": "maker",
+   "model": "Prusa Tairona i3",
+   "aliases": [
+    "makerprusataironai3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "makeR_prusa_tairona_i3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "makeR_prusa_tairona_i3",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

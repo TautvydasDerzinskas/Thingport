@@ -1,0 +1,2065 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "ankermake",
+  "name": "AnkerMake"
+ },
+ "printers": [
+  {
+   "id": "ankermake-m5",
+   "brand": "ankermake",
+   "model": "M5",
+   "aliases": [
+    "ankerm5",
+    "ankerm5allmetalhotend",
+    "ankermakem5",
+    "m5allmetalhotend"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.25",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "V8111",
+    "prusa": "M5",
+    "cura": "ankermake_m5"
+   },
+   "device": null,
+   "sources": [
+    "bambustudio",
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker.json",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker.json",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "bambustudio": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "AnkerMake M5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "AnkerMake M5 (0.4 mm nozzle)",
+         "defaultProcess": "0.2 mm OPTIMAL (0.4 mm nozzle) @ANKER",
+         "processes": [
+          {
+           "name": "0.10 mm HIGHDETAIL (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20 mm NORMAL (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30 mm SUPERDRAFT (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "ankermake_m5",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "ankermake-m5c",
+   "brand": "ankermake",
+   "model": "M5C",
+   "aliases": [
+    "ankerm5c",
+    "ankermakem5c"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.25",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "V81101C3",
+    "prusa": "M5C",
+    "cura": "ankermake_m5c"
+   },
+   "device": null,
+   "sources": [
+    "bambustudio",
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker.json",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "bambustudio": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "AnkerMake M5C",
+      "presets": {
+       "0.4": [
+        {
+         "name": "AnkerMake M5C (0.4 mm nozzle)",
+         "defaultProcess": "0.2 mm OPTIMAL (0.4 mm nozzle) @ANKER",
+         "processes": [
+          {
+           "name": "Precision - M5C (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "Normal - M5C (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "Fast - M5C (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "ankermake_m5c",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -1,0 +1,335 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "lh",
+  "name": "LH"
+ },
+ "printers": [
+  {
+   "id": "lh-stinger",
+   "brand": "lh",
+   "model": "Stinger",
+   "aliases": [
+    "lhstinger"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     18,
+     38
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "LHS_M_base"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "LH Stinger",
+      "presets": {
+       "0.4": [
+        {
+         "name": "LH Stinger 0.4 nozzle",
+         "defaultProcess": "0.20mm Daily @LH Stinger",
+         "processes": [
+          {
+           "name": "0.10mm HueForge @LH Stinger",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.14mm Detail @LH Stinger",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.14mm Detail Strength @LH Stinger",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.20mm Daily @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm PETG @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Quiet @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Solid @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Speed @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm TPU @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Vase Mode @LH Stinger",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "LH Stinger",
+      "presets": {
+       "0.4": [
+        {
+         "name": "LH Stinger 0.4 nozzle",
+         "defaultProcess": "0.20mm Daily @LH Stinger",
+         "processes": [
+          {
+           "name": "0.10mm HueForge @LH Stinger",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.14mm Detail @LH Stinger",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.14mm Detail Strength @LH Stinger",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.20mm Daily @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm PETG @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Quiet @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Solid @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Speed @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm TPU @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Vase Mode @LH Stinger",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lh-stingermmu",
+   "brand": "lh",
+   "model": "Stinger MMU",
+   "aliases": [
+    "lhstingermmu"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     18,
+     38
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "LHS_M_mmu"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "LH Stinger MMU",
+      "presets": {
+       "0.4": [
+        {
+         "name": "LH Stinger MMU 0.4 nozzle",
+         "defaultProcess": "0.20mm Daily @LH Stinger",
+         "processes": [
+          {
+           "name": "0.10mm HueForge @LH Stinger",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.14mm Detail @LH Stinger",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.14mm Detail Strength @LH Stinger",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.20mm Daily @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm MMU @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm PETG @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Quiet @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Solid @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Speed @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm TPU @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Vase Mode @LH Stinger",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "LH Stinger MMU",
+      "presets": {
+       "0.4": [
+        {
+         "name": "LH Stinger MMU 0.4 nozzle",
+         "defaultProcess": "0.20mm Daily @LH Stinger",
+         "processes": [
+          {
+           "name": "0.10mm HueForge @LH Stinger",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.14mm Detail @LH Stinger",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.14mm Detail Strength @LH Stinger",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.20mm Daily @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm MMU @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm PETG @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Quiet @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Solid @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Speed @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm TPU @LH Stinger",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Vase Mode @LH Stinger",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -1,0 +1,256 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "inat",
+  "name": "INAT"
+ },
+ "printers": [
+  {
+   "id": "inat-protonxrail",
+   "brand": "inat",
+   "model": "Proton X Rail",
+   "aliases": [
+    "inatprotonxrail"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 304,
+    "y": 304,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 650,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 470,
+    "bed": 150
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "PROTON_X_RAIL",
+    "cura": "inat_proton_x_rail"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "INAT Proton X Rail",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Proton X Rail",
+         "defaultProcess": "0.2mm Standard @PROTON_X",
+         "processes": [
+          {
+           "name": "0.12mm Fine @PROTON_X",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.2mm Advanced Material @PROTON_X",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @PROTON_X",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Strong @PROTON_X",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.32mm Draft @PROTON_X",
+           "layerHeight": 0.32
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "inat_proton_x_rail",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "inat-protonxrod",
+   "brand": "inat",
+   "model": "Proton X Rod",
+   "aliases": [
+    "inatprotonxrod"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 304,
+    "y": 304,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 650,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 470,
+    "bed": 150
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "PROTON_X_ROD",
+    "cura": "inat_proton_x_rod"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "INAT Proton X Rod",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Proton X Rod",
+         "defaultProcess": "0.2mm Standard @PROTON_X",
+         "processes": [
+          {
+           "name": "0.12mm Fine @PROTON_X",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.2mm Advanced Material @PROTON_X",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @PROTON_X",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Strong @PROTON_X",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.32mm Draft @PROTON_X",
+           "layerHeight": 0.32
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "inat_proton_x_rod",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "inat-protonxe750",
+   "brand": "inat",
+   "model": "Proton XE-750",
+   "aliases": [
+    "inatprotonxe750"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 750,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "PROTON_XE750"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "INAT Proton XE-750",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Proton XE-750",
+         "defaultProcess": "0.2mm Standard @PROTON_XE750",
+         "processes": [
+          {
+           "name": "0.12mm Fine @PROTON_XE750",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.2mm Advanced Material @PROTON_XE750",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Standard @PROTON_XE750",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Strong @PROTON_XE750",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.32mm Draft @PROTON_XE750",
+           "layerHeight": 0.32
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

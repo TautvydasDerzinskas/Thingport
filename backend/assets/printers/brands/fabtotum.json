@@ -1,0 +1,66 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "fabtotum",
+  "name": "Fabtotum"
+ },
+ "printers": [
+  {
+   "id": "fabtotum-personalfabricator",
+   "brand": "fabtotum",
+   "model": "Personal Fabricator",
+   "aliases": [
+    "fabtotumpersonalfabricator"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 214,
+    "y": 234,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 241.5,
+   "nozzles": [
+    "0.2",
+    "0.35",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fabtotum"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fabtotum",
+      "nozzles": [
+       "Hybrid 0.35 mm",
+       "Lite 0.4 mm",
+       "Lite 0.6 mm",
+       "Pro 0.2 mm",
+       "Pro 0.4 mm",
+       "Pro 0.6 mm",
+       "Pro 0.8 mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

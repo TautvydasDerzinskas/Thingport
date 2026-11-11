@@ -1,0 +1,182 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "mixware",
+  "name": "Mixware"
+ },
+ "printers": [
+  {
+   "id": "mixware-hyperk",
+   "brand": "mixware",
+   "model": "Hyper K",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 225,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mixware_hyper_k"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mixware_hyper_k",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "mixware-hypers",
+   "brand": "mixware",
+   "model": "Hyper S",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mixware_hyper_s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mixware_hyper_s",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "mixware-vulcan",
+   "brand": "mixware",
+   "model": "Vulcan",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 240,
+    "y": 240,
+    "origin": [
+     -120,
+     -120
+    ],
+    "diameter": 240
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mixware_vulcan"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mixware_vulcan",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "mixware-wand",
+   "brand": "mixware",
+   "model": "Wand",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 102,
+    "y": 102,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 102,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mixware_wand"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mixware_wand",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

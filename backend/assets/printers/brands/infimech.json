@@ -1,0 +1,671 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "infimech",
+  "name": "InfiMech"
+ },
+ "printers": [
+  {
+   "id": "infimech-ex",
+   "brand": "infimech",
+   "model": "EX",
+   "aliases": [
+    "infimechex"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      242,
+      0
+     ],
+     [
+      250,
+      0
+     ],
+     [
+      250,
+      30
+     ],
+     [
+      242,
+      30
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "InfiMech_EX"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "InfiMech EX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech EX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech EX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech EX",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech EX",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech EX",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech EX",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech EX",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "InfiMech EX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech EX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech EX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech EX",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech EX",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech EX",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech EX",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech EX",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "infimech-explusaps",
+   "brand": "infimech",
+   "model": "EX+APS",
+   "aliases": [
+    "infimechexplusaps"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      242,
+      0
+     ],
+     [
+      250,
+      0
+     ],
+     [
+      250,
+      30
+     ],
+     [
+      242,
+      30
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 167,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "InfiMech_EX+APS"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "InfiMech EX+APS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech EX+APS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech EX+APS",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech EX+APS",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech EX+APS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech EX+APS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech EX+APS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech EX+APS",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "InfiMech EX+APS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech EX+APS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech EX+APS",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech EX+APS",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech EX+APS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech EX+APS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech EX+APS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech EX+APS",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "infimech-tx",
+   "brand": "infimech",
+   "model": "TX",
+   "aliases": [
+    "infimechtx"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "InfiMech_TX"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "InfiMech TX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech TX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech TX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech TX",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech TX",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech TX",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech TX",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech TX",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "InfiMech TX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech TX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech TX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech TX",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech TX",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech TX",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech TX",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech TX",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "InfiMech TX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech TX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech TX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech TX",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech TX",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech TX",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech TX",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech TX",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "InfiMech TX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech TX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech TX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech TX",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech TX",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech TX",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech TX",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech TX",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "InfiMech TX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech TX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech TX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech TX",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech TX",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech TX",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech TX",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech TX",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "infimech-txhardenedsteelnozzle",
+   "brand": "infimech",
+   "model": "TX Hardened Steel Nozzle",
+   "aliases": [
+    "infimechtxhardenedsteelnozzle"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "InfiMech_TX_HSN"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "InfiMech TX Hardened Steel Nozzle",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech TX HSN 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech TX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech TX HSN",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech TX HSN",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech TX HSN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech TX HSN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech TX HSN",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "InfiMech TX Hardened Steel Nozzle",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech TX HSN 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech TX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech TX HSN",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech TX HSN",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech TX HSN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech TX HSN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech TX HSN",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "InfiMech TX Hardened Steel Nozzle",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech TX HSN 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech TX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech TX HSN",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech TX HSN",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech TX HSN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech TX HSN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech TX HSN",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "InfiMech TX Hardened Steel Nozzle",
+      "presets": {
+       "0.4": [
+        {
+         "name": "InfiMech TX HSN 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @InfiMech TX",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @InfiMech TX HSN",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @InfiMech TX HSN",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @InfiMech TX HSN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @InfiMech TX HSN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @InfiMech TX HSN",
+           "layerHeight": 0.24
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -1,0 +1,1046 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "makergear",
+  "name": "MakerGear"
+ },
+ "printers": [
+  {
+   "id": "makergear-m2v4hotend",
+   "brand": "makergear",
+   "model": "M2(V4 Hotend)",
+   "aliases": [
+    "m2",
+    "m2dual",
+    "makergearm2",
+    "makergearm2dual",
+    "makergearm2v4hotend"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 251,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.4",
+    "0.5",
+    "0.75"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "MAKERGEAR_M2",
+    "cura": "makergear_m2"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "MakerGear M2(V4 Hotend)",
+      "presets": {
+       "0.35": [
+        {
+         "name": "MakerGear M2 (V4 Hotend)",
+         "defaultProcess": "0.20mm Normal @0.35 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.10mm Fine @0.35 nozzle MakerGear",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Quality @0.35 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.35 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Speed @0.35 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "MakerGear M2 0.25 Nozzle",
+         "defaultProcess": "0.15mm Normal @0.25 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Normal @0.25 nozzle MakerGear",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.50": [
+        {
+         "name": "MakerGear M2 0.50 Nozzle",
+         "defaultProcess": "0.20mm Quality @0.50 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.20mm Quality @0.50 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Normal @0.50 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Speed @0.50 nozzle MakerGear",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.75": [
+        {
+         "name": "MakerGear M2 0.75 Nozzle",
+         "defaultProcess": "0.25mm Quality @0.75 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.25mm Quality @0.75 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Normal @0.75 nozzle MakerGear",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Speed @0.75 nozzle MakerGear",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "MakerGear M2 Dual",
+      "presets": {
+       "0.35": [
+        {
+         "name": "MakerGear M2 Dual",
+         "defaultProcess": "0.20mm Normal @0.35 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.10mm Fine @0.35 nozzle MakerGear",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Quality @0.35 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.35 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Speed @0.35 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "MakerGear M2 Dual 0.25 Nozzle",
+         "defaultProcess": "0.15mm Normal @0.25 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Normal @0.25 nozzle MakerGear",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.50": [
+        {
+         "name": "MakerGear M2 Dual 0.50 Nozzle",
+         "defaultProcess": "0.20mm Quality @0.50 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.20mm Quality @0.50 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Normal @0.50 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Speed @0.50 nozzle MakerGear",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.75": [
+        {
+         "name": "MakerGear M2 Dual 0.75 Nozzle",
+         "defaultProcess": "0.25mm Quality @0.75 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.25mm Quality @0.75 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Normal @0.75 nozzle MakerGear",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Speed @0.75 nozzle MakerGear",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "makergear_m2",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "makergear-m3independentdualrev0duplicationmode",
+   "brand": "makergear",
+   "model": "M3 - Independent Dual Rev.0 (Duplication Mode)",
+   "aliases": [
+    "m3independentdualrev0"
+   ],
+   "bed": {
+    "shape": "polygon",
+    "x": 200,
+    "y": 255,
+    "origin": [
+     0,
+     0
+    ],
+    "points": [
+     [
+      0,
+      0
+     ],
+     [
+      200,
+      0
+     ],
+     [
+      200,
+      255
+     ],
+     [
+      0,
+      251
+     ]
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.5",
+    "0.75"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "MAKERGEAR_M3_ID_0_DUPLICATION"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "M3 - Independent Dual Rev.0 (Duplication Mode)",
+      "presets": {
+       "0.35": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.0",
+         "defaultProcess": "0.20mm Normal @0.35 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.10mm Fine @0.35 nozzle MakerGear",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Quality @0.35 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.35 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Speed @0.35 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        },
+        {
+         "name": "MakerGear M3 Independent Dual Rev.0 (Duplication Mode)",
+         "defaultProcess": "0.20mm Normal @0.35 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.10mm Fine @0.35 nozzle MakerGear",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Quality @0.35 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.35 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Speed @0.35 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.0 0.25 Nozzle",
+         "defaultProcess": "0.15mm Normal @0.25 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Normal @0.25 nozzle MakerGear",
+           "layerHeight": 0.15
+          }
+         ]
+        },
+        {
+         "name": "MakerGear M3 Independent Dual Rev.0 0.25 Nozzle (Duplication Mode)",
+         "defaultProcess": "0.15mm Normal @0.25 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Normal @0.25 nozzle MakerGear",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.50": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.0 0.50 Nozzle",
+         "defaultProcess": "0.20mm Quality @0.50 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.20mm Quality @0.50 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Normal @0.50 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Speed @0.50 nozzle MakerGear",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "MakerGear M3 Independent Dual Rev.0 0.50 Nozzle (Duplication Mode)",
+         "defaultProcess": "0.20mm Quality @0.50 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.20mm Quality @0.50 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Normal @0.50 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Speed @0.50 nozzle MakerGear",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.75": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.0 0.75 Nozzle",
+         "defaultProcess": "0.25mm Quality @0.75 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.25mm Quality @0.75 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Normal @0.75 nozzle MakerGear",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Speed @0.75 nozzle MakerGear",
+           "layerHeight": 0.35
+          }
+         ]
+        },
+        {
+         "name": "MakerGear M3 Independent Dual Rev.0 0.75 Nozzle (Duplication Mode)",
+         "defaultProcess": "0.25mm Quality @0.75 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.25mm Quality @0.75 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Normal @0.75 nozzle MakerGear",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Speed @0.75 nozzle MakerGear",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "makergear-m3independentdualrev1",
+   "brand": "makergear",
+   "model": "M3 - Independent Dual Rev.1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 251,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.5",
+    "0.75"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "MAKERGEAR_M3_ID_1"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "M3 - Independent Dual Rev.1",
+      "presets": {
+       "0.35": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.1",
+         "defaultProcess": "0.20mm Normal @0.35 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.10mm Fine @0.35 nozzle MakerGear",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Quality @0.35 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.35 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Speed @0.35 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.1 0.25 Nozzle",
+         "defaultProcess": "0.15mm Normal @0.25 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Normal @0.25 nozzle MakerGear",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.50": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.1 0.50 Nozzle",
+         "defaultProcess": "0.20mm Quality @0.50 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.20mm Quality @0.50 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Normal @0.50 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Speed @0.50 nozzle MakerGear",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.75": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.1 0.75 Nozzle",
+         "defaultProcess": "0.25mm Quality @0.75 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.25mm Quality @0.75 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Normal @0.75 nozzle MakerGear",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Speed @0.75 nozzle MakerGear",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "model": "M3 - Independent Dual Rev.1 (Duplication Mode)",
+      "presets": {
+       "0.35": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.1 (Duplication Mode)",
+         "defaultProcess": "0.20mm Normal @0.35 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.10mm Fine @0.35 nozzle MakerGear",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Quality @0.35 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.35 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Speed @0.35 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.1 0.25 Nozzle (Duplication Mode)",
+         "defaultProcess": "0.15mm Normal @0.25 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Normal @0.25 nozzle MakerGear",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.50": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.1 0.50 Nozzle (Duplication Mode)",
+         "defaultProcess": "0.20mm Quality @0.50 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.20mm Quality @0.50 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Normal @0.50 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Speed @0.50 nozzle MakerGear",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.75": [
+        {
+         "name": "MakerGear M3 Independent Dual Rev.1 0.75 Nozzle (Duplication Mode)",
+         "defaultProcess": "0.25mm Quality @0.75 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.25mm Quality @0.75 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Normal @0.75 nozzle MakerGear",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Speed @0.75 nozzle MakerGear",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "makergear-m3singleextruder",
+   "brand": "makergear",
+   "model": "M3 - Single Extruder",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 251,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.5",
+    "0.75"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "MAKERGEAR_M3_SE"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "M3 - Single Extruder",
+      "presets": {
+       "0.35": [
+        {
+         "name": "MakerGear M3 Single Extruder",
+         "defaultProcess": "0.20mm Normal @0.35 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.10mm Fine @0.35 nozzle MakerGear",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Quality @0.35 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.35 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Speed @0.35 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "MakerGear M3 Single Extruder 0.25 Nozzle",
+         "defaultProcess": "0.15mm Normal @0.25 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Normal @0.25 nozzle MakerGear",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.50": [
+        {
+         "name": "MakerGear M3 Single Extruder 0.50 Nozzle",
+         "defaultProcess": "0.20mm Quality @0.50 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.20mm Quality @0.50 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Normal @0.50 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Speed @0.50 nozzle MakerGear",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.75": [
+        {
+         "name": "MakerGear M3 Single Extruder 0.75 Nozzle",
+         "defaultProcess": "0.25mm Quality @0.75 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.25mm Quality @0.75 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Normal @0.75 nozzle MakerGear",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Speed @0.75 nozzle MakerGear",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "makergear-micro",
+   "brand": "makergear",
+   "model": "Micro",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 81,
+    "y": 81,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "MAKERGEAR_MICRO"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Micro",
+      "presets": {
+       "0.40": [
+        {
+         "name": "MakerGear Micro",
+         "defaultProcess": "0.20mm Normal @0.40 Nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Quality @0.40 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.40 Nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @0.40 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "makergear-ultraone",
+   "brand": "makergear",
+   "model": "Ultra One",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 406,
+    "y": 355,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.5",
+    "0.75"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "prusa": "MAKERGEAR_U1"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Ultra One",
+      "presets": {
+       "0.50": [
+        {
+         "name": "MakerGear Ultra One",
+         "defaultProcess": "0.20mm Quality @0.50 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.20mm Quality @0.50 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Normal @0.50 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Speed @0.50 nozzle MakerGear",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "MakerGear Ultra One 0.25 Nozzle",
+         "defaultProcess": "0.15mm Normal @0.25 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Normal @0.25 nozzle MakerGear",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.35": [
+        {
+         "name": "MakerGear Ultra One 0.35 Nozzle",
+         "defaultProcess": "0.20mm Normal @0.35 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.10mm Fine @0.35 nozzle MakerGear",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Quality @0.35 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.35 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Speed @0.35 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.75": [
+        {
+         "name": "MakerGear Ultra One 0.75 Nozzle",
+         "defaultProcess": "0.25mm Quality @0.75 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.25mm Quality @0.75 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Normal @0.75 nozzle MakerGear",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Speed @0.75 nozzle MakerGear",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "model": "Ultra One (Duplication Mode)",
+      "presets": {
+       "0.50": [
+        {
+         "name": "MakerGear Ultra One (Duplication Mode)",
+         "defaultProcess": "0.20mm Quality @0.50 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.20mm Quality @0.50 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Normal @0.50 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Speed @0.50 nozzle MakerGear",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "MakerGear Ultra One 0.25 Nozzle (Duplication Mode)",
+         "defaultProcess": "0.15mm Normal @0.25 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.15mm Normal @0.25 nozzle MakerGear",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.35": [
+        {
+         "name": "MakerGear Ultra One 0.35 Nozzle (Duplication Mode)",
+         "defaultProcess": "0.20mm Normal @0.35 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.10mm Fine @0.35 nozzle MakerGear",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Quality @0.35 nozzle MakerGear",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @0.35 nozzle MakerGear",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Speed @0.35 nozzle MakerGear",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.75": [
+        {
+         "name": "MakerGear Ultra One 0.75 Nozzle (Duplication Mode)",
+         "defaultProcess": "0.25mm Quality @0.75 nozzle MakerGear",
+         "processes": [
+          {
+           "name": "0.25mm Quality @0.75 nozzle MakerGear",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Normal @0.75 nozzle MakerGear",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Speed @0.75 nozzle MakerGear",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

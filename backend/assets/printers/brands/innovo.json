@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "innovo",
+  "name": "Innovo"
+ },
+ "printers": [
+  {
+   "id": "innovo-inventor",
+   "brand": "innovo",
+   "model": "Inventor",
+   "aliases": [
+    "innovoinventor"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 340,
+    "y": 300,
+    "origin": [
+     -170,
+     -150
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 290,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "innovo_inventor"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "innovo_inventor",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

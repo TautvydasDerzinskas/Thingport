@@ -1,0 +1,106 @@
+{
+  "$comment": "Where the printer catalogue comes from (scripts/printers/update.mjs). Each source is pinned to a release; bump `ref` and run npm run printers:update. `id` is Thingport's slicer id where Thingport opens files in that slicer. A source with a `brand` is that maker's own slicer: its data for its own printers is preferred.",
+  "sources": [
+    {
+      "id": "bambustudio",
+      "name": "Bambu Studio",
+      "repo": "bambulab/BambuStudio",
+      "ref": "v02.09.01.70",
+      "licence": "AGPL-3.0",
+      "format": "orca",
+      "brand": "Bambu Lab",
+      "paths": ["resources/profiles", "resources/printers"],
+      "devices": "resources/printers"
+    },
+    {
+      "id": "orcaslicer",
+      "name": "OrcaSlicer",
+      "repo": "OrcaSlicer/OrcaSlicer",
+      "ref": "v2.5.0",
+      "licence": "AGPL-3.0",
+      "format": "orca",
+      "paths": ["resources/profiles"]
+    },
+    {
+      "id": "crealityprintlink",
+      "name": "Creality Print",
+      "repo": "CrealityOfficial/CrealityPrint",
+      "ref": "v7.3.1",
+      "licence": "AGPL-3.0",
+      "format": "orca",
+      "brand": "Creality",
+      "paths": ["resources/profiles"]
+    },
+    {
+      "id": "elegooslicer",
+      "name": "Elegoo Slicer",
+      "repo": "elegooofficial/ElegooSlicer",
+      "ref": "v1.5.3.5",
+      "licence": "AGPL-3.0",
+      "format": "orca",
+      "brand": "Elegoo",
+      "paths": ["resources/profiles"]
+    },
+    {
+      "id": "snapmaker-orca",
+      "name": "Snapmaker Orca",
+      "repo": "Snapmaker/OrcaSlicer",
+      "ref": "v2.4.1",
+      "licence": "AGPL-3.0",
+      "format": "orca",
+      "brand": "Snapmaker",
+      "paths": ["resources/profiles"]
+    },
+    {
+      "id": "anycubicslicernext",
+      "name": "Anycubic Slicer Next",
+      "repo": "ANYCUBIC-3D/AnycubicSlicerNext",
+      "ref": "v2.3.0",
+      "licence": "AGPL-3.0",
+      "format": "orca",
+      "brand": "Anycubic",
+      "paths": ["resources/profiles"]
+    },
+    {
+      "id": "orca-flashforge",
+      "name": "Orca-Flashforge",
+      "repo": "FlashForge/Orca-Flashforge",
+      "ref": "1.7.15",
+      "licence": "AGPL-3.0",
+      "format": "orca",
+      "brand": "Flashforge",
+      "paths": ["resources/profiles"]
+    },
+    {
+      "id": "qidistudio",
+      "name": "QIDI Studio",
+      "repo": "QIDITECH/QIDIStudio",
+      "ref": "v2.07.02.73",
+      "licence": "AGPL-3.0",
+      "format": "orca",
+      "brand": "QIDI",
+      "paths": ["resources/profiles", "resources/printers"],
+      "devices": "resources/printers"
+    },
+    {
+      "id": "prusaslicer",
+      "name": "PrusaSlicer",
+      "repo": "prusa3d/PrusaSlicer",
+      "ref": "version_2.9.7",
+      "licence": "AGPL-3.0",
+      "format": "prusa",
+      "brand": "Prusa Research",
+      "paths": ["resources/profiles"]
+    },
+    {
+      "id": "cura",
+      "name": "UltiMaker Cura",
+      "repo": "Ultimaker/Cura",
+      "ref": "5.14.0",
+      "licence": "LGPL-3.0",
+      "format": "cura",
+      "brand": "UltiMaker",
+      "paths": ["resources/definitions", "resources/extruders", "resources/variants"]
+    }
+  ]
+}

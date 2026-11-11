@@ -1,0 +1,189 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "tevo",
+  "name": "Tevo"
+ },
+ "printers": [
+  {
+   "id": "tevo-blackwidow",
+   "brand": "tevo",
+   "model": "Black Widow",
+   "aliases": [
+    "tevoblackwidow"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tevo_blackwidow"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tevo_blackwidow",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "tevo-tarantula",
+   "brand": "tevo",
+   "model": "Tarantula",
+   "aliases": [
+    "tevotarantula"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tevo_tarantula"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tevo_tarantula",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "tevo-tarantulapro",
+   "brand": "tevo",
+   "model": "Tarantula Pro",
+   "aliases": [
+    "tevotarantulapro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tevo_tarantula_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tevo_tarantula_pro",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "tevo-tornado",
+   "brand": "tevo",
+   "model": "Tornado",
+   "aliases": [
+    "tevotornado"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tevo_tornado"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tevo_tornado",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

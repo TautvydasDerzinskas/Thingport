@@ -1,0 +1,961 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "tiertime",
+  "name": "Tiertime"
+ },
+ "printers": [
+  {
+   "id": "tiertime-up300hs",
+   "brand": "tiertime",
+   "model": "UP300 HS",
+   "aliases": [
+    "tiertimeup300hs"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 207,
+    "y": 255,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 230,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "my_tiertime_up300_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Tiertime UP300 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP300 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP300 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP300 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP300 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP300 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP300 HS",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Tiertime UP300 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP300 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP300 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP300 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP300 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP300 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP300 HS",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Tiertime UP300 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP300 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP300 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP300 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP300 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP300 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP300 HS",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "tiertime-up310pro",
+   "brand": "tiertime",
+   "model": "UP310 Pro",
+   "aliases": [
+    "tiertimeup310pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "my_tiertime310_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Tiertime UP310 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP310 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP310 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP310 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP310 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Tiertime UP310 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP310 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP310 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP310 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP310 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Tiertime UP310 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP310 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP310 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP310 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP310 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "tiertime-up400pro",
+   "brand": "tiertime",
+   "model": "UP400 Pro",
+   "aliases": [
+    "tiertimeup400pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 380,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "my_tiertime_up400_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Tiertime UP400 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP400 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP400 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP400 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP400 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP400 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP400 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Tiertime UP400 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP400 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP400 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP400 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP400 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP400 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP400 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Tiertime UP400 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP400 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP400 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP400 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP400 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP400 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP400 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "tiertime-up600hs",
+   "brand": "tiertime",
+   "model": "UP600 HS",
+   "aliases": [
+    "tiertimeup600hs"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "my_tiertime_up600_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Tiertime UP600 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP600 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP600 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP600 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP600 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP600 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP600 HS",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP600 HS 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP600 HS 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Tiertime UP600 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP600 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP600 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP600 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP600 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP600 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP600 HS",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP600 HS 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP600 HS 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Tiertime UP600 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP600 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP600 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP600 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP600 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP600 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP600 HS",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP600 HS 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP600 HS 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

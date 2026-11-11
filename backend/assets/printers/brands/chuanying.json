@@ -1,0 +1,275 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "chuanying",
+  "name": "Chuanying"
+ },
+ "printers": [
+  {
+   "id": "chuanying-x1",
+   "brand": "chuanying",
+   "model": "X1",
+   "aliases": [
+    "chuanyingx1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     -110,
+     -110
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 220,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Chuanying-X1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Chuanying X1",
+      "presets": {
+       "0.25": [
+        {
+         "name": "Chuanying X1 0.25 Nozzle",
+         "defaultProcess": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+           "layerHeight": 0.12
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Chuanying X1 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Chuanying X1 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Chuanying X1 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Chuanying X1",
+      "presets": {
+       "0.25": [
+        {
+         "name": "Chuanying X1 0.25 Nozzle",
+         "defaultProcess": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+           "layerHeight": 0.12
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Chuanying X1 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Chuanying X1 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Chuanying X1 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Chuanying X1",
+      "presets": {
+       "0.25": [
+        {
+         "name": "Chuanying X1 0.25 Nozzle",
+         "defaultProcess": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+           "layerHeight": 0.12
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Chuanying X1 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Chuanying X1 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Chuanying X1 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Chuanying X1",
+      "presets": {
+       "0.25": [
+        {
+         "name": "Chuanying X1 0.25 Nozzle",
+         "defaultProcess": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+           "layerHeight": 0.12
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Chuanying X1 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Chuanying X1 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Chuanying X1 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}
