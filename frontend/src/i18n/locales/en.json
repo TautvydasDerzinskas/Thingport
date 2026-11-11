@@ -553,7 +553,8 @@
         "importRun_one": "Imported {{done}} of {{count}} model",
         "importRun_other": "Imported {{done}} of {{count}} models",
         "importRunFrom_one": "Imported {{done}} of {{count}} model from {{site}}",
-        "importRunFrom_other": "Imported {{done}} of {{count}} models from {{site}}"
+        "importRunFrom_other": "Imported {{done}} of {{count}} models from {{site}}",
+        "bridgeUpdate": "Thingport Bridge {{version}} is available"
       }
     },
     "search": {
@@ -2828,6 +2829,16 @@
           "step2": "Remove the Gatekeeper quarantine flag -- downloaded files are quarantined automatically.",
           "step3": "Install it. This copies the app into ~/Applications and registers the thingport:// link.",
           "note": "If macOS still refuses to run it, open System Settings -> Privacy & Security and allow it there instead."
+        },
+        "update": {
+          "title": "Updating?",
+          "text": "Run the same steps over the old version. There's nothing to remove first, and your settings stay.",
+          "macosQuit": "Installing also quits the Bridge that's running, so the next link opens the new version.",
+          "checkVersion": "Check your version",
+          "hideVersion": "Hide version check",
+          "inPowerShell": "In PowerShell:",
+          "inTerminal": "In a terminal:",
+          "uninstall": "How to uninstall"
         }
       }
     },

@@ -407,7 +407,8 @@ version inside it: one that names another is never shown. Then replace the file'
 - A file that doesn't parse falls back to the changelog, as does one naming a version outside the running
   release's `x.y` line. One naming an earlier patch of that line still counts, for the quiet hotfixes below.
 - `RELEASE_NOTES_URL` points a backend at another copy of the repo files, or a `file://` URL at a checkout; an empty
-  value turns fetching off.
+  value turns fetching off. It's also where the backend finds the newest Thingport Bridge (`bridge/package.json`), for
+  the notification that tells someone theirs is out of date.
 
 To preview the notes before they're pushed, open What's new on a backend started with `npm run dev`: it reads these
 files from the checkout it runs in rather than from `main`, afresh each time, and shows the latest file under its own

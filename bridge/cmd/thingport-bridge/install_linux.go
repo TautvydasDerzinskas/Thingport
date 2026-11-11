@@ -26,7 +26,7 @@ func installSelf() (string, error) {
 	installDir := filepath.Join(home, ".local", "bin")
 	targetPath := filepath.Join(installDir, "thingport-bridge")
 	if !samePath(exePath, targetPath) {
-		if err := copyFile(exePath, targetPath, 0755); err != nil {
+		if err := replaceFile(exePath, targetPath, 0755); err != nil {
 			return "", fmt.Errorf("copy binary: %w", err)
 		}
 	} else if err := os.Chmod(targetPath, 0755); err != nil {

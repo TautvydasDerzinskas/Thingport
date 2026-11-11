@@ -565,7 +565,8 @@
         "importRunFrom_one": "{{site}}: importuota {{done}} iš {{count}} modelio",
         "importRunFrom_few": "{{site}}: importuota {{done}} iš {{count}} modelių",
         "importRunFrom_many": "{{site}}: importuota {{done}} iš {{count}} modelio",
-        "importRunFrom_other": "{{site}}: importuota {{done}} iš {{count}} modelių"
+        "importRunFrom_other": "{{site}}: importuota {{done}} iš {{count}} modelių",
+        "bridgeUpdate": "Yra nauja Thingport Bridge versija {{version}}"
       }
     },
     "search": {
@@ -2947,6 +2948,16 @@
           "step2": "Pašalinkite Gatekeeper karantino žymą -- atsisiųsti failai automatiškai pažymimi karantinu.",
           "step3": "Įdiekite jį. Tai nukopijuos programą į ~/Applications ir užregistruos thingport:// nuorodą.",
           "note": "Jei „macOS“ vis tiek atsisako jį paleisti, atidarykite System Settings -> Privacy & Security ir leiskite jį ten."
+        },
+        "update": {
+          "title": "Atnaujinate?",
+          "text": "Įdiekite naują versiją tais pačiais veiksmais. Senosios šalinti nereikia, o jūsų nustatymai išliks.",
+          "macosQuit": "Diegimas taip pat uždaro veikiantį Bridge, todėl kita nuoroda atsidarys naujoje versijoje.",
+          "checkVersion": "Patikrinti versiją",
+          "hideVersion": "Slėpti versijos patikrą",
+          "inPowerShell": "PowerShell lange:",
+          "inTerminal": "Terminale:",
+          "uninstall": "Kaip pašalinti"
         }
       }
     },

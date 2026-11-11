@@ -112,6 +112,26 @@ func TestDownloadFileDoesNotExposeTokenInError(t *testing.T) {
 	}
 }
 
+// Thingport reads the version from it to say when a newer Bridge is out; 1.0.1 and older sent Go's default.
+func TestDownloadFileNamesTheBridgeAndItsVersion(t *testing.T) {
+	var got string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Get("User-Agent")
+		_, _ = w.Write([]byte("solid t\nendsolid t\n"))
+	}))
+	defer server.Close()
+
+	old := version
+	version = "1.2.3"
+	defer func() { version = old }()
+	if err := downloadFile(server.URL+"/model.stl", filepath.Join(t.TempDir(), "model.stl")); err != nil {
+		t.Fatal(err)
+	}
+	if want := "Thingport-Bridge/1.2.3 (" + runtime.GOOS + ")"; got != want {
+		t.Fatalf("User-Agent = %q, want %q", got, want)
+	}
+}
+
 func TestDownloadTLSErrorDoesNotLeakSignedURL(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

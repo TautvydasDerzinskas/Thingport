@@ -406,7 +406,7 @@ export function notesFromChangelogs(
 const cache = new Map<string, { at: number; text: string | null }>();
 
 /** A failed fetch keeps the last good copy; misses are cached too, so a dialog opened offline doesn't wait each time. */
-async function fetchText(url: string, now = Date.now()): Promise<string | null> {
+export async function fetchText(url: string, now = Date.now()): Promise<string | null> {
   // A checkout is read afresh, so notes being written show as soon as they're saved.
   if (isLocal(url)) {
     return fs.promises.readFile(new URL(url), "utf8").catch((error: NodeJS.ErrnoException) => {
