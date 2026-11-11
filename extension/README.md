@@ -9,9 +9,9 @@ panel: the model's picture and name as the page shows them, and one box that pic
 new one as you type (on a list's page, the models it lists instead). It imports the same way Thingport's own
 "Add > Import" does.
 
-It's useful without Thingport too: on MakerWorld model pages it adds a **Download normalized**
-button that turns the Bambu Studio project into a 3MF that PrusaSlicer, Cura and other slicers open
-with its colors and print settings intact. See [Download normalized](#download-normalized-no-thingport-needed).
+It's useful without Thingport too: on MakerWorld model pages it adds a **Download adapted**
+button that saves the Bambu Studio project as a copy made for your slicer, so it opens there with its colors and print
+settings. See [Download adapted](#download-adapted-no-thingport-needed).
 It can also give Thingiverse a [dark theme and hide its ads](#thingiverse-dark-mode-and-hidden-ads-no-thingport-needed).
 
 <table>
@@ -128,23 +128,23 @@ Only needed if you can't use the store, e.g. to get a release before the store's
 A hand-installed copy doesn't update itself -- repeat these steps for a newer version.
 </details>
 
-## Download normalized (no Thingport needed)
+## Download adapted (no Thingport needed)
 
-MakerWorld's files are Bambu Studio projects, which PrusaSlicer, Cura, Anycubic Slicer Next,
-Creality Print, Elegoo Slicer, Snapmaker Orca and eufyMake Studio often open without their colors or print settings.
-On a MakerWorld model page, the extension adds a **Download normalized** button under MakerWorld's
-own "Open in Bambu Studio" (or Download) button. Clicking it downloads the selected print profile's file, converts it, and saves
-a `<name>-normalized.3mf` that keeps painted colors, filament colors, plates and the designer's
-settings (walls, layer height, infill, supports). Multi-part objects may be merged into one,
-per-object overrides and layer color changes are dropped, and you pick your own printer profile.
-Hover the bulb on the button for the same summary.
+MakerWorld's files are Bambu Studio projects, which PrusaSlicer, Cura, eufyMake Studio and the slicers built on
+OrcaSlicer often open without their colors, parts or print settings, or with questions about the file's version. On a
+MakerWorld model page, the extension adds a **Download adapted** button under MakerWorld's own "Open in Bambu Studio"
+(or Download) button. Clicking it downloads the selected print profile's file and saves `<name>-adapted.3mf`, a copy
+made for the slicer your Thingport instance opens files in (picked in its Configuration), the same copy Thingport's
+**Open adapted** gives that slicer. Without an instance, it's the copy PrusaSlicer and the slicers like it read: it goes
+into your own printer, filament and print settings, with the designer's settings on each object and the painted colors
+on your extruders. Hover the bulb on the button for what the copy keeps.
 
-- **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance. The
-  switch in the popup is the only thing that decides: turn off **Normalize MakerWorld 3MFs** under **Offline
-  features** (**Extra features** once connected) to hide it. With Bambu Studio or OrcaSlicer, MakerWorld's own
-  file is already the right one, so you probably want it off.
-- **Where it runs:** entirely in your browser, the same conversion Thingport's "Open normalized"
-  does on the server. The file goes nowhere but your downloads folder.
+- **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance, while the popup's
+  **Adapt MakerWorld 3MFs** switch is on, under **Offline features** (**Extra features** once connected). It isn't
+  offered when your instance's slicer opens MakerWorld's files as they are, as Bambu Studio does. If the instance
+  doesn't say in time, the button is offered and asks it again when you click.
+- **Where it runs:** entirely in your browser, with the same converter Thingport's **Open adapted** uses on the
+  server. The file goes nowhere but your downloads folder.
 - **Limits:** you need to be signed in to MakerWorld, as for its own Download button, and files over
   50 MB are too big to convert in the browser -- the button says so. MakerWorld's own button is found by
   its label, in any of the languages the site comes in.
@@ -185,7 +185,7 @@ import button. Reopen the popup any time to change the instance (the pencil next
 for a connection approved in Thingport, removes it from your Thingport profile too.
 
 Once connected, the popup's tabs are **Providers** (the sites Grab runs on; click one to open it), **Appearance**,
-**Extra features** (the [ones that need no Thingport](#download-normalized-no-thingport-needed)) and **History**: your
+**Extra features** (the [ones that need no Thingport](#download-adapted-no-thingport-needed)) and **History**: your
 last imports, and the last 10 models you opened on any of those sites, each with its site's logo. Recently viewed
 models are listed before you connect too, and they stay in this browser. Click the instance's address under the title
 to open it.

@@ -57,20 +57,38 @@ const MAKERWORLD_FORMAT: ThreeMfFormat = {
   dialect: "bambu",
 };
 
-function explanation(slicer: string | null, output: AdaptPlan["output"]): string {
+/** Which slicer the copy is for: the instance's (null when it has none picked), or not known yet. */
+export type Target = { known: true; slicer: string | null } | { known: false };
+
+function explanation(target: Target, output: AdaptPlan["output"]): string {
+  const slicer = target.known ? target.slicer : null;
   const name = slicer ? (SLICER_LABELS[slicer] ?? null) : null;
   const made = "Made in your browser by Thingport Grab.";
+  if (!target.known) {
+    return (
+      "Your Thingport instance didn't say in time which slicer it opens files in. Grab asks again when you click; " +
+      `if it still can't tell, this downloads the copy PrusaSlicer and the slicers like it read. ${made}`
+    );
+  }
+  if (output === "bambu" && slicer === "crealityprintlink") {
+    return (
+      "This downloads a copy that keeps the parts, plates, painting and the designer's settings, under the names " +
+      `Creality Print gives them. It still asks which of your printers to use. ${made}`
+    );
+  }
   if (output === "bambu") {
     return (
       `This downloads a copy ${name ?? "your slicer"} opens as its own project: parts, plates, painting and the ` +
-      `designer's settings as they are, with no questions about the file's version or settings it names differently. ${made}`
+      "designer's settings, without questions about the file's version. A setting it names differently is renamed, " +
+      `to the nearest of its choices where it has fewer. ${made}`
     );
   }
   if (output === "cura") {
     return (
       "MakerWorld files are Bambu Studio projects, which Cura opens without their parts' filaments or the designer's " +
       "settings. This downloads a copy whose multi-part objects keep their parts, each on its own extruder, with the " +
-      `designer's walls, layers, infill and supports set on each object. Cura doesn't read painted colors. ${made}`
+      "designer's walls, top and bottom layers, infill and whether to print supports set on each object. Cura " +
+      `doesn't read painted colors. ${made}`
     );
   }
   const slicers = name ? `${name} often opens` : "PrusaSlicer, Cura and other slicers often open";
@@ -142,11 +160,12 @@ function saveFile(bytes: Uint8Array, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
+/** Saves the copy made for `slicer`, or the file itself when it needs none; which of them it saved. */
 async function downloadAdapted(
   pageUrl: string,
   slicer: string | null,
   onProgress: (text: string) => void,
-): Promise<void> {
+): Promise<AdaptPlan["output"] | null> {
   let stopRotation = rotatePhrases(gettingFilePhrases, onProgress);
   // The adapter reads the 3MF project, never the raw-files zip.
   const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stopRotation);
@@ -174,9 +193,13 @@ async function downloadAdapted(
   }
   const source = sourceFilename(res, resolved.downloadUrl);
   saveFile(adapted.bytes, adapted.output ? adaptedFilename(source) : source);
+  return adapted.output;
 }
 
-function buildHost(pageUrl: string, slicer: string | null, output: AdaptPlan["output"]): HTMLElement {
+function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan["output"]): HTMLElement {
+  // Settled on the first click when the instance didn't answer before.
+  let target = firstTarget;
+  let output = firstOutput;
   const el = document.createElement("span");
   el.id = HOST_ID;
   const root = el.attachShadow({ mode: "open" });
@@ -198,7 +221,8 @@ function buildHost(pageUrl: string, slicer: string | null, output: AdaptPlan["ou
   bubble.hidden = true;
   root.append(style, button, bubble);
 
-  const showBubble = (text: string, error = false) => {
+  // An error, or a note on what was saved: shown for a while, not only while hovered.
+  const showBubble = (text: string, error = false, note = false) => {
     clearTimeout(bubbleTimer);
     bubble.textContent = text;
     bubble.classList.toggle("tg-nd-bubble--error", error);
@@ -210,14 +234,14 @@ function buildHost(pageUrl: string, slicer: string | null, output: AdaptPlan["ou
     // Above when there's no room below, e.g. in MakerWorld's bottom-stuck action bar.
     const below = rect.bottom + 8 + bubble.offsetHeight <= window.innerHeight;
     bubble.style.top = `${below ? rect.bottom + 8 : Math.max(8, rect.top - 8 - bubble.offsetHeight)}px`;
-    if (error) bubbleTimer = setTimeout(hideBubble, ERROR_SHOW_MS);
+    if (error || note) bubbleTimer = setTimeout(hideBubble, ERROR_SHOW_MS);
   };
   const hideBubble = () => {
     clearTimeout(bubbleTimer);
     bubble.hidden = true;
   };
   const showInfo = () => {
-    if (bubble.hidden) showBubble(explanation(slicer, output));
+    if (bubble.hidden) showBubble(explanation(target, output));
   };
   icon.addEventListener("mouseenter", showInfo);
   icon.addEventListener("mouseleave", () => !bubble.classList.contains("tg-nd-bubble--error") && hideBubble());
@@ -229,9 +253,25 @@ function buildHost(pageUrl: string, slicer: string | null, output: AdaptPlan["ou
     button.disabled = true;
     icon.replaceChildren(element("span", "tg-nd__spinner"));
     try {
-      await downloadAdapted(pageUrl, slicer, (text) => (label.textContent = text));
+      let note: string | null = null;
+      if (!target.known) {
+        label.textContent = "Asking your instance…";
+        const answer = await instanceSlicer(SLICER_RETRY_MS);
+        if (answer) {
+          target = { known: true, slicer: answer.slicer };
+          output = planFor(MAKERWORLD_FORMAT, answer.slicer)?.output ?? output;
+        } else {
+          note = "Your Thingport instance didn't answer, so this is the copy PrusaSlicer and the slicers like it read.";
+        }
+      }
+      const slicer = target.known ? target.slicer : null;
+      const saved = await downloadAdapted(pageUrl, slicer, (text) => (label.textContent = text));
+      if (!saved) note = "Your slicer opens MakerWorld's files as they are, so this is the file itself.";
       label.textContent = "Downloaded";
+      if (note) showBubble(note, false, true);
       await new Promise((resolve) => setTimeout(resolve, DONE_RESET_MS));
+      // Not offered to a slicer that needs no copy, now that it's known.
+      if (target.known && !planFor(MAKERWORLD_FORMAT, slicer)) unmountAdaptedDownload();
     } catch (err) {
       showBubble(err instanceof Error ? err.message : String(err), true);
     } finally {
@@ -311,9 +351,9 @@ function place(): void {
   host.toggleAttribute("data-gapped", Boolean(gap) && gap !== "normal" && gap !== "0px");
 }
 
-function mount(pageUrl: string, slicer: string | null, output: AdaptPlan["output"]): void {
+function mount(pageUrl: string, target: Target, output: AdaptPlan["output"]): void {
   unmountAdaptedDownload();
-  host = buildHost(pageUrl, slicer, output);
+  host = buildHost(pageUrl, target, output);
   let scheduled = false;
   const schedule = () => {
     if (scheduled) return;
@@ -344,16 +384,27 @@ export function unmountAdaptedDownload(): void {
   clearTimeout(bubbleTimer);
 }
 
-// Long enough for an instance that's up, short enough that the button doesn't seem missing.
+// Long enough for an instance that's up, short enough that the button doesn't seem missing; a click waits longer.
 const SLICER_LOOKUP_MS = 5000;
+const SLICER_RETRY_MS = 15000;
 
-/** The instance's slicer, or null when it can't say in time. */
-async function instanceSlicer(): Promise<string | null> {
+/** The instance's answer (its slicer, null for none picked), or null when it can't say in time. */
+export async function instanceSlicer(waitMs = SLICER_LOOKUP_MS): Promise<{ slicer: string | null } | null> {
   const lookup = api<{ slicer: string | null }>("GET", "/settings/slicer")
-    .then((res) => res.slicer)
+    .then((res) => ({ slicer: res.slicer }))
     .catch(() => null);
-  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), SLICER_LOOKUP_MS));
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), waitMs));
   return Promise.race([lookup, timeout]);
+}
+
+/** What the button offers for the instance's answer: nothing when its slicer opens MakerWorld's files as they are,
+ *  and a button that asks again when it didn't answer, rather than taking that as no slicer. */
+export function offerFor(
+  answer: { slicer: string | null } | null,
+): { target: Target; output: AdaptPlan["output"] } | null {
+  if (!answer) return { target: { known: false }, output: "prusa" };
+  const plan = planFor(MAKERWORLD_FORMAT, answer.slicer);
+  return plan ? { target: { known: true, slicer: answer.slicer }, output: plan.output } : null;
 }
 
 /** Offered where the popup's switch is on, unless the instance's slicer opens MakerWorld's files as they are. */
@@ -363,9 +414,7 @@ export async function offerAdaptedDownload(
   isStale: () => boolean,
 ): Promise<void> {
   if (isStale()) return;
-  const slicer = configured ? await instanceSlicer() : null;
-  if (isStale()) return;
-  const plan = planFor(MAKERWORLD_FORMAT, slicer);
-  if (!plan) return;
-  mount(pageUrl, slicer, plan.output);
+  const offer = offerFor(configured ? await instanceSlicer() : { slicer: null });
+  if (isStale() || !offer) return;
+  mount(pageUrl, offer.target, offer.output);
 }

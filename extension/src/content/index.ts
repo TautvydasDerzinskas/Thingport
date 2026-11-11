@@ -1,5 +1,5 @@
 // Content script entry point (MakerWorld, Thingiverse, Printables, and the optional sites in optionalSites.ts once
-// turned on). Network calls go through the background (see runtime.ts). MakerWorld's normalized download and its
+// turned on). Network calls go through the background (see runtime.ts). MakerWorld's adapted download and its
 // download resolution for the import button are wired in here, as the page's offline features and the button are
 // every provider's.
 
