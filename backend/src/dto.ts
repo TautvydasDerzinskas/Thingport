@@ -110,7 +110,10 @@ export type PlateOut = {
   id: string;
   print_id: string;
   position: number;
+  /** Unique within its folder, not the whole model. */
   filename: string;
+  /** The folder its source kept it in, levels joined by "/" ("USB C version/Handles"); null for none. */
+  folder: string | null;
   mime: string;
   size: number;
   url: string;
@@ -135,6 +138,8 @@ export type PlateOut = {
 export type PrintFileOut = {
   id: string;
   filename: string;
+  /** As PlateOut.folder. */
+  folder: string | null;
   mime: string;
   size: number;
   url: string;
@@ -195,7 +200,7 @@ export type PrintOut = {
   /** The scripts it can be generated again from, as `{ id, filename }`, out of the files kept beside it. Empty
    *  for an ordinary model. Here rather than behind a request of its own because the files are already loaded,
    *  and because a list of models needs it too: it is what marks one as generated rather than only printed. */
-  generator_scripts: { id: string; filename: string }[];
+  generator_scripts: { id: string; filename: string; folder: string | null }[];
   /** The source had a script for this model but its creator chose not to share it, so there is none to open.
    *  Without it, that is indistinguishable from a model that never had one. */
   generator_script_withheld: boolean;
@@ -308,6 +313,7 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     print_id: printId,
     position: plate.position,
     filename: plate.filename,
+    folder: plate.folder ?? null,
     mime: plate.mime,
     size: plate.size,
     url: `/print/${printId}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
@@ -348,6 +354,7 @@ export function toPrintFileOut(printFile: PrintFile): PrintFileOut {
   return {
     id: printFile.id,
     filename: printFile.filename,
+    folder: printFile.folder ?? null,
     mime: printFile.mime,
     size: printFile.size,
     url: `/print/${printFile.printId}/files/${printFile.id}`,
@@ -381,7 +388,7 @@ export function toPrintOut(
   const supportingCount = supporting.length;
   const generatorScripts = supporting
     .filter((f) => f.filename.toLowerCase().endsWith(".scad"))
-    .map((f) => ({ id: f.id, filename: f.filename }));
+    .map((f) => ({ id: f.id, filename: f.filename, folder: f.folder ?? null }));
   // The model's own files: LICENSE.txt is Thingport's, written from its licence.
   const totalSize =
     plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + (f.role === "LICENSE" ? 0 : f.size), 0);

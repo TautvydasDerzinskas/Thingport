@@ -6,6 +6,8 @@ import { isProviderId, modelUrl, parseModelUrl } from "../providers/index.genera
 import type { CategoryRef } from "../services/categoryService";
 import { compactFacts, hexColor, type ProviderProfileFacts } from "../services/printProfileFacts";
 import { SOURCE_GAPS, type SourceGap } from "../services/sourceGaps";
+import { sanitizeFilename } from "../utils/fileUtils";
+import { normalizeFolder } from "../utils/fileFolder";
 import { originOf } from "./addresses";
 import { FederationFetchError } from "./fetch";
 import { forgetMedia, pruneMedia } from "./media";
@@ -290,6 +292,8 @@ const modelSchema = z.object({
             .catch(undefined),
           "thingport:thumb": z.string().optional().catch(undefined),
           "thingport:thumbGenerated": flag,
+          // Its folder and real name, "Supported/Arm.stl"; `name` is what a partner without folders goes by.
+          "thingport:path": z.string().max(1000).optional().catch(undefined),
         })
         .passthrough(),
     )
@@ -368,6 +372,8 @@ export type RemoteFileDetails = {
   thumb?: string;
   /** `thumb` is the partner's render, which a copy takes only where its instance won't make its own. */
   thumbGenerated?: boolean;
+  /** The folder it's in at the partner (Plate.folder), checked as any source's is; none from one too old to say. */
+  folder?: string;
 };
 
 const collectionSchema = z.object({
@@ -578,6 +584,15 @@ async function readModelIds(
   return { modelIds: ids.slice(0, MAX_COLLECTION_MODELS), allIds: true };
 }
 
+/** A file's name and folder from where its partner says it is ("Supported/Arm.stl"), checked as any source's folder
+ *  is; its plain name, in no folder, from a partner too old to say or a path that names no file. */
+function placeOf(where: string | undefined, name: string): { name: string; folder?: string } {
+  const levels = where?.split("/") ?? [];
+  const filename = sanitizeFilename(levels.pop());
+  const folder = normalizeFolder(levels);
+  return where && filename !== "imported-file" && folder ? { name: filename.slice(0, 255), folder } : { name };
+}
+
 /** A model as it's kept (RemoteModel), from what its partner said of it. */
 export function remoteModelData(model: Model, own: (url: string | undefined) => url is string) {
   const pictures = model.image.filter((image) => own(image.url)).slice(0, 20);
@@ -588,7 +603,7 @@ export function remoteModelData(model: Model, own: (url: string | undefined) => 
     description: markdownOf(model.source, 20_000),
     images: pictures.map((image) => image.url),
     files: (model.attachment ?? []).slice(0, 100).map((file): RemoteFileDetails & Record<string, unknown> => ({
-      name: file.name ?? "file",
+      ...placeOf(file["thingport:path"], file.name ?? "file"),
       size: file["thingport:size"] ?? null,
       mediaType: file.mediaType ?? null,
       // Where it's fetched from, signed, to download, open or copy it: only ever on the partner's own origin.

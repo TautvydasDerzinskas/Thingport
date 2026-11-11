@@ -4789,6 +4789,7 @@
       "downloadPickerTitle": "Спампаваць",
       "downloadAllZip": "Спампаваць усе {{count}} файлаў (.zip)",
       "orDownloadOne": "або спампаваць адзін файл",
+      "downloadFolderZip": "Спампаваць «{{folder}}» (.zip)",
       "tags": "Цэтлікі",
       "noTags": "Цэтлікаў пакуль няма.",
       "previousImage": "Папярэдняя выява",

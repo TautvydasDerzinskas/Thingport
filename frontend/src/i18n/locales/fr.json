@@ -5230,6 +5230,7 @@
       "downloadPickerTitle": "Télécharger",
       "downloadAllZip": "Télécharger les {{count}} fichiers (.zip)",
       "orDownloadOne": "ou télécharger un seul fichier",
+      "downloadFolderZip": "Télécharger « {{folder}} » (.zip)",
       "tags": "Étiquettes",
       "noTags": "Aucune étiquette pour le moment.",
       "previousImage": "Image précédente",

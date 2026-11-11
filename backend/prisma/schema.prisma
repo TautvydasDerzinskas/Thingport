@@ -636,6 +636,9 @@ model Plate {
   size             Int      @default(0)
   storagePath      String   @unique
   sourcePath       String?
+  // The folder its source kept it in ("USB C version/Handles"), levels joined by "/"; null for none. Names are unique
+  // within a folder, not the whole model (utils/fileFolder.ts).
+  folder           String?
   // The print profile ("instance" on MakerWorld) this file came from. Each profile's 3MF has its own print
   // settings, so each gets its own Plate.
   sourceInstanceId String?
@@ -724,6 +727,8 @@ model PrintFile {
   print         Print         @relation("PrintFiles", fields: [printId], references: [id], onDelete: Cascade)
   role          PrintFileRole
   filename      String
+  // As Plate.folder.
+  folder        String?
   mime          String
   size          Int           @default(0)
   storagePath   String        @unique

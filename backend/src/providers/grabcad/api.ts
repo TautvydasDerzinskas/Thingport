@@ -6,6 +6,7 @@ import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/im
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import { mapWithConcurrency, sleep } from "../../utils/concurrency";
+import { normalizeFolder } from "../../utils/fileFolder";
 import { likesCollectionName } from "../names";
 import {
   grabcadLikesKey,
@@ -280,6 +281,8 @@ export type GrabcadFile = {
   system: string | null;
   /** Its API link, which answers a signed-in user with where the file is. */
   downloadUrl: string;
+  /** The folder it's in on the model's Files tab ("rev. 4/STL"), or null at the top. */
+  folder: string | null;
 };
 
 type Folder = { files: GrabcadFile[]; folders: number[] };
@@ -289,12 +292,18 @@ type Folder = { files: GrabcadFile[]; folders: number[] };
 export function grabcadFolderFrom(data: unknown): Folder | null {
   const folder = asRecord(data);
   if (!folder || !Array.isArray(folder.files)) return null;
+  // Its path from the top, which starts with the model itself: a folder of the same name that holds everything.
+  const within = normalizeFolder(
+    recordsOf(folder.folder_path)
+      .slice(1)
+      .flatMap((level) => clean(asText(level.name)) ?? []),
+  );
   return {
     files: recordsOf(folder.files).flatMap((file) => {
       const name = clean(asText(file.name));
       const downloadUrl = asText(file.download_url);
       return name && downloadUrl && isGrabcadDownloadLink(downloadUrl)
-        ? [{ name, system: asText(file.system), downloadUrl }]
+        ? [{ name, system: asText(file.system), downloadUrl, folder: within }]
         : [];
     }),
     folders: recordsOf(folder.folders).flatMap((sub) => asCount(sub.id) ?? []),

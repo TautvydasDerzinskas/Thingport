@@ -33,8 +33,12 @@ files, and its pictures (gallery and description images, thumbnails and renders)
     Renders/
 ```
 
+A model whose files came in folders, from its site or its zip, keeps them as folders beside its other files:
+`<user>/Organizers/Cable organizer/USB C version/Lid.stl`. A folder named `Images` there becomes `Images (files)`, so it
+stays apart from the pictures.
+
 With a layout that keeps several models in one folder, such as `{category-or-folder}/{model} - {filename}`, the
-pictures folder takes the model's name too: `Cable clip - Images`. Installations from before this layout have their
+pictures folder takes the model's name too: `Cable clip - Images`, and so does each folder of its files. Installations from before this layout have their
 pictures and supporting files moved in beside the model files in the background the first time they start.
 
 A model with a [licence](licenses.md#licensetxt) also has a `LICENSE.txt` beside its files, unless an admin turned that

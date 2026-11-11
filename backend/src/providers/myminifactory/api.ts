@@ -1,5 +1,6 @@
 import { browserCredentialRequest, assertCredentialDestination } from "../credentialRequest";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
+import { joinFolders, normalizeFolder } from "../../utils/fileFolder";
 import { browserFetch } from "../../utils/browserFetch";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
@@ -257,9 +258,14 @@ export async function resolveMyminifactoryObject(
 export type MyminifactoryDownload = { kind: "file"; url: string } | { kind: "login" } | { kind: "missing" };
 
 /** Where /download/{id} sends an anonymous visitor: a signed link to the file (or a zip of all of
- *  them), or the login page for a paid or members-only object. */
-export async function resolveMyminifactoryDownload(objectId: string): Promise<MyminifactoryDownload> {
-  const res = await browserFetch(`${MYMINIFACTORY_ORIGIN}/download/${encodeURIComponent(objectId)}`, {
+ *  them), or the login page for a paid or members-only object. With `archiveId`, one of a free object's archives
+ *  (myminifactoryArchivesFrom). */
+export async function resolveMyminifactoryDownload(
+  objectId: string,
+  archiveId?: string,
+): Promise<MyminifactoryDownload> {
+  const query = archiveId ? `?archive_id=${encodeURIComponent(archiveId)}` : "";
+  const res = await browserFetch(`${MYMINIFACTORY_ORIGIN}/download/${encodeURIComponent(objectId)}${query}`, {
     redirect: "manual",
     timeoutMs: API_TIMEOUT_MS,
   });
@@ -273,6 +279,56 @@ export async function resolveMyminifactoryDownload(objectId: string): Promise<My
     if (/\/(login|object)\b/i.test(target.pathname)) return { kind: "login" };
   }
   return { kind: "missing" };
+}
+
+/** One of an object's archives, as the designer uploaded it. */
+export type MyminifactoryArchive = { id: string; name: string };
+
+/** The archives a free object's page offers under its Download button, each downloadable by anyone at
+ *  `/download/{id}?archive_id=`, as the button's own links go. Empty when the page offers none. Apart from the fetch,
+ *  so it can be tested on its own. */
+export function myminifactoryArchivesFrom(html: string, objectId: string): MyminifactoryArchive[] {
+  const props = html.match(/<script\b[^>]*data-component-name="DownloadButton"[^>]*>([\s\S]*?)<\/script>/);
+  if (!props) return [];
+  let data: unknown;
+  try {
+    data = JSON.parse(props[1]);
+  } catch {
+    return [];
+  }
+  if (!isRecord(data) || !Array.isArray(data.archives)) return [];
+  return data.archives.flatMap((archive) => {
+    if (!isRecord(archive) || archive.id == null || !str(archive.path) || !str(archive.download_url)) return [];
+    const id = String(archive.id);
+    try {
+      const link = new URL(str(archive.download_url)!, MYMINIFACTORY_ORIGIN);
+      const own =
+        link.origin === MYMINIFACTORY_ORIGIN &&
+        link.pathname === `/download/${objectId}` &&
+        link.searchParams.get("archive_id") === id &&
+        /^\d+$/.test(id);
+      return own ? [{ id, name: str(archive.path)!.split(/[\\/]/).pop()! }] : [];
+    } catch {
+      return [];
+    }
+  });
+}
+
+/** A free object's archives, from its page; none when the page won't say. */
+export async function fetchMyminifactoryArchives(objectId: string): Promise<MyminifactoryArchive[]> {
+  // Redirected to the page under its slug.
+  const res = await browserFetch(`${MYMINIFACTORY_ORIGIN}/object/${encodeURIComponent(objectId)}`, {
+    timeoutMs: API_TIMEOUT_MS,
+  });
+  if (res.status === 429 || isCloudflareChallenge(res.headers)) {
+    await res.body?.cancel().catch(() => undefined);
+    throw new MyminifactoryRateLimitError();
+  }
+  if (!res.ok) {
+    await res.body?.cancel().catch(() => undefined);
+    return [];
+  }
+  return myminifactoryArchivesFrom(await res.text(), objectId);
 }
 
 export class MyminifactorySessionExpiredError extends Error {
@@ -318,8 +374,9 @@ export async function checkMyminifactorySession(cookie: string): Promise<"ok" | 
   }
 }
 
-/** A file in the user's library, and where its download starts. */
-export type MyminifactoryLibraryFile = { name: string; path: string };
+/** A file in the user's library, where its download starts, and the folder it's in within its archive (with the
+ *  archive's name above it when the object has several), or null. */
+export type MyminifactoryLibraryFile = { name: string; path: string; folder?: string | null };
 
 /** What's in an archive's MyMiniFactory unpacked, or the archive itself when it wasn't. */
 type LibraryArchive = { id: string | null; name: string; files: { id: string; path: string }[] };
@@ -367,16 +424,33 @@ export async function listMyminifactoryLibraryFiles(
   const archives = Array.isArray(data.archives) ? data.archives.flatMap((a) => libraryArchive(a) ?? []) : [];
   const unpacked = archives.flatMap((archive) =>
     archive.files.flatMap((file) => {
-      const name = file.path.split("/").pop()!;
+      const levels = file.path.split(/[\\/]+/).filter(Boolean);
+      const name = levels.pop() ?? file.path;
+      const folder = joinFolders(archives.length > 1 ? archive.name.replace(/\.[^.]+$/, "") : null, levels.join("/"));
       return isModelFile(name)
-        ? [{ name, path: `/api/data-library/archive-file-contents/${encodeURIComponent(file.id)}/download` }]
+        ? [
+            {
+              name,
+              path: `/api/data-library/archive-file-contents/${encodeURIComponent(file.id)}/download`,
+              folder,
+            },
+          ]
         : [];
     }),
   );
   if (unpacked.length) return unpacked;
   // Not unpacked by MyMiniFactory: the archive itself, for the caller to open if it can.
   return archives.flatMap((archive) =>
-    archive.id ? [{ name: archive.name, path: `/download/${id}?archive_id=${encodeURIComponent(archive.id)}` }] : [],
+    archive.id
+      ? [
+          {
+            name: archive.name,
+            path: `/download/${id}?archive_id=${encodeURIComponent(archive.id)}`,
+            // Several archives' files kept apart by theirs, as the unpacked ones above are.
+            folder: archives.length > 1 ? normalizeFolder(archive.name.replace(/\.[^.]+$/, "")) : null,
+          },
+        ]
+      : [],
   );
 }
 

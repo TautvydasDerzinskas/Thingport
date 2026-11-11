@@ -122,6 +122,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
           ? [
               {
                 filename: plate.filename,
+                folder: plate.folder,
                 mime: plate.mime,
                 copyFromPath: from,
                 sourceInstanceId: plate.sourceInstanceId,
@@ -175,7 +176,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
 async function copyFiles(
   userId: string,
   printId: string,
-  files: (Pick<PrintFile, "storagePath" | "filename" | "mime"> & { role: "SUPPORTING" | "PREPARED" })[],
+  files: (Pick<PrintFile, "storagePath" | "filename" | "folder" | "mime"> & { role: "SUPPORTING" | "PREPARED" })[],
 ) {
   if (!files.length) return;
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "thingport-copy-"));
@@ -183,7 +184,7 @@ async function copyFiles(
     for (const [index, file] of files.entries()) {
       const temp = path.join(dir, String(index));
       await fs.copyFile(managedPrintFilePath(file), temp);
-      await saveFileFromTemp(userId, printId, temp, file.filename, file.mime, { role: file.role });
+      await saveFileFromTemp(userId, printId, temp, file.filename, file.mime, { role: file.role, folder: file.folder });
     }
   } finally {
     await fs.rm(dir, { recursive: true, force: true }).catch(() => undefined);

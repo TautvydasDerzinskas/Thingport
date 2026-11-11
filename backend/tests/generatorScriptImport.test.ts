@@ -111,7 +111,7 @@ describe("importing a model built from a script", () => {
     const printId = await importDesign(designId);
 
     const print = (await request(app).get(`/api/print/${printId}`).set(auth())).body;
-    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "keychain.scad" }]);
+    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "keychain.scad", folder: null }]);
     expect(print.generator_script_withheld).toBe(false);
 
     const file = await request(app).get(`/api/print/${printId}/files/${print.generator_scripts[0].id}`).set(auth());
@@ -129,7 +129,7 @@ describe("importing a model built from a script", () => {
     const printId = await importDesign(designId);
 
     const print = (await request(app).get(`/api/print/${printId}`).set(auth())).body;
-    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "generator.scad" }]);
+    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "generator.scad", folder: null }]);
     // Nothing printable came in the zip, so the zip itself is the model's file.
     expect(print.plates.length).toBe(1);
   }, 120000);

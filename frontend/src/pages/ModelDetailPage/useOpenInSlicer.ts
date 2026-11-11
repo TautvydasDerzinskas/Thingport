@@ -16,6 +16,8 @@ export type ModelFile = {
   plate: Plate | null;
   /** Given where the size isn't on the plate: a partner's model's files. */
   size?: number | null;
+  /** The folder it's in (Plate.folder), which the model page groups its files by. */
+  folder?: string | null;
 };
 export type SlicerTarget = ModelFile & { href: string };
 
@@ -38,7 +40,15 @@ export function modelFiles(print: Print): ModelFile[] {
   sortedPlates.forEach((plate, index) => {
     const launchFilename =
       plate.url === print.slicer_url && print.slicer_filename ? print.slicer_filename : plate.filename;
-    out.push({ key: plate.id, url: plate.url, filename: plate.filename, launchFilename, index, plate });
+    out.push({
+      key: plate.id,
+      url: plate.url,
+      filename: plate.filename,
+      launchFilename,
+      index,
+      plate,
+      folder: plate.folder ?? null,
+    });
   });
   return out;
 }
@@ -88,13 +98,14 @@ export function useOpenInSlicer(print: Print) {
     if (print.prepared_print && !print.prepared_print.removable) return [];
     return files
       .filter((file) => file.plate && isNormalizable3mf(file.filename))
-      .map(({ key, url, filename, launchFilename, index, plate }) => ({
+      .map(({ key, url, filename, launchFilename, index, plate, folder }) => ({
         key: `normalized-${key}`,
         url,
         filename,
         launchFilename,
         index,
         plate,
+        folder,
         href: slicerLaunchUrl(slicerOption.id, printsApi.slicerFileUrl(`${url}?normalize=1`), filename, bridged),
       }));
   }, [files, print.source_provider, print.prepared_print, slicerOption, bridged]);

@@ -4783,6 +4783,7 @@
       "downloadPickerTitle": "Скачать",
       "downloadAllZip": "Скачать все {{count}} файлов (.zip)",
       "orDownloadOne": "или скачать один файл",
+      "downloadFolderZip": "Скачать «{{folder}}» (.zip)",
       "tags": "Метки",
       "noTags": "Меток пока нет.",
       "previousImage": "Предыдущее изображение",

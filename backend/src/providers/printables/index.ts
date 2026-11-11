@@ -59,13 +59,13 @@ export const printablesImport: SourcedImport<null, Model> = {
     const results = await Promise.all(
       modelFiles.flatMap((file) => {
         const link = links.get(file.id);
-        return link ? [kit.downloadFile(link, file.name)] : [];
+        return link ? [kit.downloadFile(link, file.name).then((result) => ({ result, folder: file.folder }))] : [];
       }),
     );
-    const downloaded = results
-      .filter((result): result is { input: NewPlateInput } => result !== null && "input" in result)
-      .map((result) => result.input);
-    if (!downloaded.length && results.some((result) => result !== null && "rateLimited" in result)) {
+    const downloaded = results.flatMap(({ result, folder }): NewPlateInput[] =>
+      result !== null && "input" in result ? [{ ...result.input, folder }] : [],
+    );
+    if (!downloaded.length && results.some(({ result }) => result !== null && "rateLimited" in result)) {
       throw new HttpError(
         429,
         "Printables blocked a file download (rate limit or Cloudflare challenge). This usually clears after a while -- wait, then retry the same import.",

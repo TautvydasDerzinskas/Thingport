@@ -3,6 +3,7 @@ import { withStorageLock } from "../utils/storageLock";
 import fsSync from "node:fs";
 import path from "node:path";
 import { HttpError } from "../utils/fileUtils";
+import { folderLevels } from "../utils/fileFolder";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
@@ -230,6 +231,26 @@ function renderModelPath(
   return assertWithinStorage(path.join(userSegment, ...parts));
 }
 
+/** A file of the model in one of its folders: in a folder where the template would put a file named like the folder's
+ *  first level, as the pictures' Images folder is placed, so a template that gives each model a folder of its own nests
+ *  it there ("Props/Gadget/Plugs/Plug.stl") and one that keeps models side by side gives it a folder beside the model's
+ *  files ("Props/Gadget - Plugs/Gadget - Plug.stl"). A source's folder named like the pictures' goes beside them. */
+function renderFilePath(
+  print: PrintLike,
+  template: string,
+  printValues: PrintTemplateValues,
+  filename: string,
+  plate: number | null,
+  folder: string | null | undefined,
+): string {
+  const flat = renderModelPath(print, template, printValues, filename, plate);
+  const levels = folderLevels(folder).map((level) => sanitizePathSegment(level, "Folder"));
+  if (!levels.length) return flat;
+  if (levels[0].toLowerCase() === ASSETS_FOLDER.toLowerCase()) levels[0] = `${levels[0]} (files)`;
+  const home = renderModelPath(print, template, printValues, levels[0], null);
+  return assertWithinStorage(path.join(home, ...levels.slice(1), path.basename(flat)));
+}
+
 /** The model's pictures folder: where the template would put a file named "Images", so it sits beside the model's
  *  files -- "Props/Gadget/Images", or "Props/Gadget - Images" under a template that keeps models side by side. */
 function renderAssetsPath(print: PrintLike, template: string, printValues: PrintTemplateValues): string {
@@ -243,11 +264,15 @@ export async function renderPlateStoragePath(
   print: PrintLike,
   plateFilename: string,
   platePosition: number,
+  folder?: string | null,
   template?: string | null,
 ): Promise<string> {
   const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
   const printValues = await printTemplateValues(print, safeTemplate);
-  return freePlatePath(renderModelPath(print, safeTemplate, printValues, plateFilename, platePosition), print.id);
+  return freePlatePath(
+    renderFilePath(print, safeTemplate, printValues, plateFilename, platePosition, folder),
+    print.id,
+  );
 }
 
 /** What already holds a path, so it counts as free for that one: it's where it is. */
@@ -292,10 +317,14 @@ async function freePrintFilePath(relative: string, printFileId?: string): Promis
 }
 
 /** Where a new supporting or prepared file goes. */
-export async function renderPrintFileStoragePath(print: PrintLike, filename: string): Promise<string> {
+export async function renderPrintFileStoragePath(
+  print: PrintLike,
+  filename: string,
+  folder?: string | null,
+): Promise<string> {
   const template = validateStorageTemplate(await getStorageTemplate());
   const values = await printTemplateValues(print, template);
-  return freePrintFilePath(renderModelPath(print, template, values, filename, null));
+  return freePrintFilePath(renderFilePath(print, template, values, filename, null, folder));
 }
 
 /** The model's pictures folder, chosen now if it has none yet: a model from before gets one the first time a
@@ -397,14 +426,16 @@ export async function availableModelName(
   }
 }
 
-/** Auto-suffixes a plate's filename until it's unique among its print's other plates. */
+/** `desiredFilename`, or one numbered apart from the model's other plates in the same folder: a name only has to be
+ *  unique within its folder, as on disk. */
 export async function availablePlateFilename(
   printId: string,
   desiredFilename: string,
   excludePlateId?: string,
+  folder?: string | null,
 ): Promise<string> {
   const siblings = await prisma.plate.findMany({
-    where: { printId, ...(excludePlateId ? { id: { not: excludePlateId } } : {}) },
+    where: { printId, folder: folder ?? null, ...(excludePlateId ? { id: { not: excludePlateId } } : {}) },
     select: { filename: true },
   });
   return freePlateFilename(desiredFilename, new Set(siblings.map((p) => p.filename.toLowerCase())));
@@ -503,7 +534,7 @@ async function relocatePrintFiles(
   const files = await prisma.printFile.findMany({ where: { printId: print.id }, orderBy: { id: "asc" } });
   let moved = 0;
   for (const file of files) {
-    const rendered = renderModelPath(print, template, printValues, file.filename, null);
+    const rendered = renderFilePath(print, template, printValues, file.filename, null, file.folder);
     const newRelative = samePath(file.storagePath, rendered) ? rendered : await freePrintFilePath(rendered, file.id);
     if (samePath(file.storagePath, newRelative)) continue;
     const didMove = await moveStored(
@@ -598,7 +629,7 @@ export async function relocatePrint(
   let moved = 0;
   for (const plate of plates) {
     const oldPath = managedPlatePath(plate);
-    const rendered = renderModelPath(print, safeTemplate, printValues, plate.filename, plate.position);
+    const rendered = renderFilePath(print, safeTemplate, printValues, plate.filename, plate.position, plate.folder);
     // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
     const newRelative =
       path.resolve(oldPath) === path.resolve(STORAGE, rendered)
@@ -696,7 +727,7 @@ export async function storageOutOfPlace(template: string): Promise<{ files: numb
   const prints = await prisma.print.findMany({
     include: {
       plates: true,
-      files: { select: { filename: true, storagePath: true } },
+      files: { select: { filename: true, folder: true, storagePath: true } },
       _count: { select: { previewImages: true, descriptionImages: true } },
     },
   });
@@ -720,12 +751,12 @@ export async function storageOutOfPlace(template: string): Promise<{ files: numb
       (plate) =>
         !inPlace(
           plate.storagePath,
-          renderModelPath(print, safeTemplate, values, plate.filename, plate.position),
+          renderFilePath(print, safeTemplate, values, plate.filename, plate.position, plate.folder),
           print.id,
         ),
     ).length;
     misplaced += print.files.filter((file) => {
-      const target = renderModelPath(print, safeTemplate, values, file.filename, null);
+      const target = renderFilePath(print, safeTemplate, values, file.filename, null, file.folder);
       return file.storagePath !== target && withoutNumber(file.storagePath) !== target;
     }).length;
     const assetsTarget = renderAssetsPath(print, safeTemplate, values);

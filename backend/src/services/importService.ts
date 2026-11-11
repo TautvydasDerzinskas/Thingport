@@ -83,7 +83,15 @@ export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLi
 /** A Cults3D import refused for want of the user's API key, or of the browser's sign-in, or because one was turned
  *  down. */
 export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
-import { extractZipEntryToFile, listZipEntries } from "../utils/zipReader";
+import { extractZipEntryToFile, listZipEntries, type ZipEntryInfo } from "../utils/zipReader";
+import {
+  isZipJunk,
+  joinFolders,
+  normalizeFolder,
+  sharedTopLevels,
+  withoutSharedTop,
+  withoutTopLevels,
+} from "../utils/fileFolder";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { importedLicenseData } from "./licenseService";
 import { upsertAuthorFromImport } from "./authorService";
@@ -318,7 +326,7 @@ async function renameProfilePlates(printId: string, renames: { plate: Plate; fil
   const print = await prisma.print.findUnique({ where: { id: printId } });
   if (!print) return;
   for (const { plate, filename } of renames) {
-    const next = await availablePlateFilename(printId, filename, plate.id);
+    const next = await availablePlateFilename(printId, filename, plate.id, plate.folder);
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: next } });
     await relocatePrint(print, [{ ...plate, filename: next }]);
     if (plate.position === 0) await refreshAutoPreparedMetadata(printId);
@@ -983,7 +991,8 @@ function isUnreadableZip(err: unknown): boolean {
 }
 
 /** The files wanted from the zips a zip holds, for an archive that wraps the model's own instead of its files. Each
- *  nested zip is unpacked on its own, so files named alike within it are still told apart by their folder. */
+ *  nested zip's files go in a folder named after it, where it sat ("Base/32mm.zip" gives "Base/32mm"), less what all of
+ *  them share: one zip wrapped in another adds no folder, two side by side keep theirs apart. */
 async function filesFromNestedZips(
   zipPath: string,
   exts: ReadonlySet<string>,
@@ -991,9 +1000,13 @@ async function filesFromNestedZips(
   budget: NestedZipBudget,
 ): Promise<NewPlateInput[]> {
   const nested = (await listZipEntries(zipPath)).filter(
-    (entry) => !entry.isDirectory && path.extname(entry.name).toLowerCase() === ".zip",
+    (entry) => !entry.isDirectory && !isZipJunk(entry.name) && path.extname(entry.name).toLowerCase() === ".zip",
   );
   const inputs: NewPlateInput[] = [];
+  // Every importable file's folder, of both kinds whichever this call takes, so the plates and the scripts of a zip
+  // read twice over (platesAndSourcesFromZip) lose the same levels. The files beside the zips count too: a script at
+  // the top keeps the folder the zip of its parts gives them.
+  const everyFolder: (string | null)[] = (await zipEntriesInFolders(zipPath)).map((placed) => placed.folder);
   try {
     for (const entry of nested) {
       if (budget.archives <= 0 || budget.bytes <= 0) break;
@@ -1003,7 +1016,12 @@ async function filesFromNestedZips(
         const written = await extractZipEntryToFile(zipPath, entry.name, tempZipPath, budget.bytes);
         if (written === null) continue;
         budget.bytes -= written;
-        inputs.push(...(await filesFromZip(tempZipPath, exts, depth + 1, budget)));
+        const folder = normalizeFolder(entry.name.replace(/\.zip$/i, ""));
+        const found = await filesFromZip(tempZipPath, exts, depth + 1, budget);
+        for (const input of found) inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
+        // A zip that only wraps yet another has no files of its own to go by: the ones found in it stand in.
+        const placed = await placedZipEntries(tempZipPath);
+        for (const each of placed.length ? placed : found) everyFolder.push(joinFolders(folder, each.folder));
       } catch (err) {
         // One entry that isn't the zip it's named like doesn't make the files out of its siblings unimportable.
         if (!isUnreadableZip(err)) throw err;
@@ -1015,7 +1033,8 @@ async function filesFromNestedZips(
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
   }
-  return inputs;
+  const shared = sharedTopLevels(everyFolder);
+  return inputs.map((input) => ({ ...input, folder: withoutTopLevels(input.folder, shared) }));
 }
 
 /** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. */
@@ -1067,10 +1086,32 @@ async function fetchParametricSources(source: ParametricSourceInfo | undefined):
   }
 }
 
-/** The entries of a downloaded zip whose extension is one of `exts`, each written to its own temp file; the zip itself
- *  is left for the caller. Plates have no folders, so files named alike in different folders are named after their
- *  folder too: "2x2 - Top.stl". An archive holding none of the files wanted is opened a level deeper, where the ones
- *  that only wrap another zip keep them. */
+/** What a zip's folders are worked out over, whichever of its files a call takes, so its plates and scripts, read
+ *  twice over (platesAndSourcesFromZip), get the same folders. */
+const ZIP_FOLDER_EXTS: ReadonlySet<string> = new Set([...MULTI_FILE_PLATE_EXTS, ...PARAMETRIC_SOURCE_EXTS]);
+
+/** A zip's plates and scripts, each with the folder it's in, less the top folders every one of them shares. */
+async function placedZipEntries(
+  zipPath: string,
+): Promise<{ entry: ZipEntryInfo; parts: string[]; folder: string | null }[]> {
+  return withoutSharedTop(await zipEntriesInFolders(zipPath));
+}
+
+/** A zip's plates and scripts, each with the folder it's in, as the zip has it. */
+async function zipEntriesInFolders(
+  zipPath: string,
+): Promise<{ entry: ZipEntryInfo; parts: string[]; folder: string | null }[]> {
+  return (await listZipEntries(zipPath))
+    .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
+    .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
+    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()))
+    .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) }));
+}
+
+/** The entries of a downloaded zip whose extension is one of `exts`, each written to its own temp file and kept in the
+ *  folder it has in the zip, less the top folders every file in it shares (a zip named after its model holding one
+ *  folder named after it again); the zip itself is left for the caller. An archive holding none of the files wanted
+ *  is opened a level deeper, where the ones that only wrap another zip keep them. */
 async function filesFromZip(
   zipPath: string,
   exts: ReadonlySet<string>,
@@ -1079,23 +1120,18 @@ async function filesFromZip(
 ): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
-    const entries = (await listZipEntries(zipPath))
-      .filter((entry) => !entry.isDirectory)
-      .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
-      .filter(({ parts }) => parts.length && exts.has(path.extname(parts.at(-1)!).toLowerCase()));
-    const sameName = new Map<string, number>();
-    for (const { parts } of entries) sameName.set(parts.at(-1)!, (sameName.get(parts.at(-1)!) ?? 0) + 1);
-    for (const { entry, parts } of entries) {
-      const name = parts.at(-1)!;
-      const folder = parts.at(-2);
-      const filename = sanitizeFilename(sameName.get(name)! > 1 && folder ? `${folder} - ${name}` : name);
+    const entries = (await placedZipEntries(zipPath)).filter(({ parts }) =>
+      exts.has(path.extname(parts.at(-1)!).toLowerCase()),
+    );
+    for (const { entry, parts, folder } of entries) {
+      const filename = sanitizeFilename(parts.at(-1)!);
       const tempFilePath = path.join(
         os.tmpdir(),
         `thingport-zip-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
       );
       // Straight to the file: a model file is as big as an import is allowed to be, and holding it is pointless.
       if ((await extractZipEntryToFile(zipPath, entry.name, tempFilePath, IMPORT_MAX_BYTES)) === null) continue;
-      inputs.push({ filename, mime: guessMimeFromPath(filename), tempFilePath });
+      inputs.push({ filename, mime: guessMimeFromPath(filename), tempFilePath, folder });
     }
   } catch (err) {
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
@@ -1296,6 +1332,8 @@ async function importSourced(
     throw await impl.mapError(userId, err);
   }
   if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
+  // A folder every file shares says nothing of which is which.
+  downloaded = withoutSharedTop(downloaded);
   return createSourcedPrint(
     userId,
     source,
@@ -1527,7 +1565,7 @@ export async function downloadSourcedModelFiles(
   if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
   const profiles = profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true });
   return {
-    inputs: nameInputsApart(downloaded, profiles.titles),
+    inputs: nameInputsApart(withoutSharedTop(downloaded), profiles.titles),
     coverImageUrl: resolved.meta.previewImageUrl ?? null,
     galleryImages: resolved.galleryImages,
     profiles,

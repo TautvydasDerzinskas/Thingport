@@ -118,7 +118,8 @@ export type RemoteModel = RemoteModelCard & {
   description: string | null;
   images: string[];
   /** `url` is API-relative, through this instance; null when the partner gave no address for the file. */
-  files: { name: string; size: number | null; media_type: string | null; url: string | null }[];
+  /** `folder` as Plate.folder, from a partner new enough to say. */
+  files: { name: string; folder?: string | null; size: number | null; media_type: string | null; url: string | null }[];
   updated_at: string | null;
   owner_handle: string | null;
   collections: { id: string; name: string }[];

@@ -343,7 +343,7 @@ export type RemoteModelOut = RemoteModelCardOut & {
   description: string | null;
   images: string[];
   /** `url` is API-relative, through this instance; null when the partner gave no address for it. */
-  files: { name: string; size: number | null; media_type: string | null; url: string | null }[];
+  files: { name: string; folder: string | null; size: number | null; media_type: string | null; url: string | null }[];
   updated_at: string | null;
   owner_handle: string | null;
   /** Its owner's public collections it's in. */
@@ -378,6 +378,7 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
     images: row.images.flatMap((url) => mediaAddress(url) ?? []),
     files: filesOf(row, row.peer.origin).map((file) => ({
       name: file.name,
+      folder: file.folder ?? null,
       size: file.size,
       media_type: file.mediaType,
       url: file.url ? remoteFileRoute(row.id, file.url, file.name) : null,

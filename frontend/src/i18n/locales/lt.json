@@ -5272,6 +5272,7 @@
       "downloadPickerTitle": "Atsisiųsti",
       "downloadAllZip": "Atsisiųsti visus failus ({{count}}, .zip)",
       "orDownloadOne": "arba atsisiųsti vieną failą",
+      "downloadFolderZip": "Atsisiųsti „{{folder}}“ (.zip)",
       "tags": "Žymos",
       "noTags": "Kol kas nėra žymų.",
       "previousImage": "Ankstesnis paveikslėlis",

@@ -16,7 +16,10 @@ export type Plate = {
   id: string;
   print_id: string;
   position: number; // dense, 0-based, ordered
-  filename: string;
+  filename: string; // unique within its folder, not the whole model
+  /** The folder its source kept it in, levels joined by "/" ("USB C version/Handles"); null or absent (from an older
+   *  backend) for none. */
+  folder?: string | null;
   mime: string;
   size: number;
   url: string; // /print/{printId}/plate/{plateId}/file/{filename}
@@ -77,6 +80,8 @@ export type PrintProfiles = {
 export type PrintFile = {
   id: string;
   filename: string;
+  /** As Plate.folder. */
+  folder?: string | null;
   mime: string;
   size: number;
   url: string; // /print/{printId}/files/{fileId}
@@ -146,7 +151,7 @@ export type Print = {
   own_colors?: boolean; // any plate carries colours of its own
   supporting_file_count: number;
   /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
-  generator_scripts?: { id: string; filename: string }[];
+  generator_scripts?: { id: string; filename: string; folder?: string | null }[];
   /** The source had a script for it but its creator chose not to share it: there is none to open, and that is
    *  why, which a model that simply never had one wouldn't explain. */
   generator_script_withheld?: boolean;
@@ -877,7 +882,8 @@ export const printsApi = {
     return res.json();
   },
 
-  downloadZip: async (opts: DownloadZipFilter & { filename?: string }) => {
+  /** `folder`: only the files in that folder of the models (Plate.folder) and the folders in it. */
+  downloadZip: async (opts: DownloadZipFilter & { filename?: string; folder?: string }) => {
     const res = await fetch(`${apiBase()}/download/zip`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
