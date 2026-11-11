@@ -178,14 +178,23 @@ export function verticalShellIn(dialect: SettingsDialect, value: string): string
   return VERTICAL_SHELL_TO[dialect][value] ?? value;
 }
 
-/** The project's settings with their names in `dialect`. */
-export function settingsIn(dialect: SettingsDialect, config: Settings): Settings {
+function shellIn(dialect: SettingsDialect, config: Settings): Settings {
   const shell = config.ensure_vertical_shell_thickness;
   if (shell === undefined) return config;
   const translated = Array.isArray(shell)
     ? shell.map((value) => verticalShellIn(dialect, String(value)))
     : verticalShellIn(dialect, String(shell));
   return { ...config, ensure_vertical_shell_thickness: translated };
+}
+
+/** The project's settings with their names in `dialect`, the legacy nested `process_settings["1"]` too. */
+export function settingsIn(dialect: SettingsDialect, config: Settings): Settings {
+  const out = shellIn(dialect, config);
+  const processSettings = config.process_settings;
+  if (!processSettings || typeof processSettings !== "object" || Array.isArray(processSettings)) return out;
+  const nested = (processSettings as Record<string, unknown>)["1"];
+  if (!nested || typeof nested !== "object" || Array.isArray(nested)) return out;
+  return { ...out, process_settings: { ...processSettings, "1": shellIn(dialect, nested as Settings) } };
 }
 
 // Values that read alike across slicers.
@@ -336,6 +345,33 @@ function objectSettings(
 /** The designer's settings as PrusaSlicer per-object settings, keyed by PrusaSlicer's names. */
 export function prusaObjectSettings(settings: Settings): Record<string, string> {
   return objectSettings(settings, PRUSA_OBJECT_SETTINGS);
+}
+
+// The ones PrusaSlicer also takes from a part or a modifier (PrintRegionConfig); the rest are the whole object's.
+const PRUSA_REGION_KEYS = new Set([
+  "perimeters",
+  "top_solid_layers",
+  "bottom_solid_layers",
+  "top_solid_min_thickness",
+  "bottom_solid_min_thickness",
+  "fill_density",
+  "fill_pattern",
+  "top_fill_pattern",
+  "bottom_fill_pattern",
+  "fill_angle",
+  "infill_overlap",
+  "thin_walls",
+  "ensure_vertical_shell_thickness",
+  "ironing",
+  "ironing_flowrate",
+  "ironing_spacing",
+]);
+
+/** A part's or modifier's own settings as PrusaSlicer per-volume settings. */
+export function prusaVolumeSettings(settings: Settings): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(prusaObjectSettings(settings)).filter(([key]) => PRUSA_REGION_KEYS.has(key)),
+  );
 }
 
 // Cura's own names for the few choices it takes per object from a 3MF (`cura:` metadata).

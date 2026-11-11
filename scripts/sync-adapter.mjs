@@ -5,7 +5,11 @@
 //
 //   npm run adapter:sync    rewrite them
 //   npm run adapter:check   fail when one is out of date (CI)
+//
+// --staged <files> takes the sources as they're about to be committed, for the commit hook: the staged files it names
+// as they are on disk (where the hook's own fixes are), every other source as git's index has it.
 
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,10 +24,41 @@ const TARGETS = [{ dir: "frontend/src/adapter", files: ["format.ts", "plan.ts", 
 
 const check = process.argv.includes("--check");
 
+// The sources, by their path relative to SOURCE with "/" between folders: on disk, or as they're about to be committed.
+const disk = {
+  list: (dir) => readdirSync(path.join(ROOT, SOURCE, dir)),
+  read: (rel) => readFileSync(path.join(ROOT, SOURCE, rel), "utf8"),
+  isFolder: (rel) => existsSync(path.join(ROOT, SOURCE, rel)) && statSync(path.join(ROOT, SOURCE, rel)).isDirectory(),
+};
+function committed(staged) {
+  const git = (...args) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const files = git("ls-files", "-z", "--cached", "--", SOURCE)
+    .split("\0")
+    .filter(Boolean)
+    .map((file) => file.slice(SOURCE.length + 1));
+  const fromDisk = new Set(
+    staged
+      .map((file) => path.relative(path.join(ROOT, SOURCE), path.resolve(ROOT, file)).split(path.sep).join("/"))
+      .filter((rel) => !rel.startsWith("../")),
+  );
+  return {
+    list: (dir) =>
+      files
+        .filter((file) => file.startsWith(dir) && !file.slice(dir.length).includes("/"))
+        .map((file) => file.slice(dir.length)),
+    read: (rel) => (fromDisk.has(rel) ? disk.read(rel) : git("show", `:${SOURCE}/${rel}`)),
+    isFolder: (rel) => files.some((file) => file.startsWith(`${rel}/`)),
+  };
+}
+const stagedAt = process.argv.indexOf("--staged");
+const sources =
+  stagedAt >= 0 ? committed(process.argv.slice(stagedAt + 1).filter((arg) => !arg.startsWith("--"))) : disk;
+
 /** Every .ts file under `rel` (a file, or a folder ending in /), relative to SOURCE. */
 function sourceFiles(rel) {
   if (!rel.endsWith("/")) return [rel];
-  return readdirSync(path.join(ROOT, SOURCE, rel))
+  return sources
+    .list(rel)
     .filter((file) => file.endsWith(".ts") && !file.endsWith(".test.ts"))
     .map((file) => `${rel}${file}`);
 }
@@ -31,8 +66,7 @@ function sourceFiles(rel) {
 /** A copied file's relative imports, which are all of other copies, by their copies' names. */
 function pointAtCopies(text, rel) {
   return text.replace(/(from\s+")(\.{1,2}\/[^"]+)(")/g, (_all, open, spec, close) => {
-    const resolved = path.join(ROOT, SOURCE, path.dirname(rel), spec);
-    const isFolder = existsSync(resolved) && statSync(resolved).isDirectory();
+    const isFolder = sources.isFolder(path.posix.join(path.posix.dirname(rel), spec));
     return `${open}${spec}${isFolder ? "/index" : ""}.generated${close}`;
   });
 }
@@ -41,10 +75,11 @@ const header = (from) =>
   `// GENERATED from ${from} by scripts/sync-adapter.mjs. Don't edit it here:\n` +
   `// change ${SOURCE}/ and run npm run adapter:sync.\n`;
 
+// With "/" between folders, as `wanted` names them; readdirSync gives the platform's separator.
 function generatedIn(dir) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { recursive: true })
-    .map(String)
+    .map((file) => String(file).split(path.sep).join("/"))
     .filter((file) => GENERATED.test(file));
 }
 
@@ -54,7 +89,7 @@ for (const target of TARGETS) {
   const wanted = new Map();
   for (const rel of target.files.flatMap(sourceFiles)) {
     const from = `${SOURCE}/${rel}`;
-    const text = header(from) + pointAtCopies(readFileSync(path.join(ROOT, from), "utf8"), rel);
+    const text = header(from) + pointAtCopies(sources.read(rel), rel);
     wanted.set(
       rel.replace(/\.ts$/, ".generated.ts"),
       await prettier.format(text, { ...options, parser: "typescript" }),

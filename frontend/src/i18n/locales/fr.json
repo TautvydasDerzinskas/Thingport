@@ -5221,7 +5221,7 @@
       "openAdaptedInSlicer": "Ouvrir la version adaptée dans {{slicer}}",
       "adaptedInfo": {
         "prusa": "Une copie faite pour {{slicer}} : elle rejoint vos propres réglages d’imprimante, de filament et d’impression, avec la hauteur de couche, les parois, le remplissage et les supports du créateur réglés sur chaque objet, et les couleurs peintes sur vos extrudeurs. Le fichier stocké n’est pas modifié.",
-        "cura": "Une copie faite pour {{slicer}} : les objets en plusieurs pièces gardent leurs pièces, chacune sur son extrudeur, et les parois, couches, remplissage et supports du créateur sont réglés sur chaque objet. Cura ne lit pas les couleurs peintes. Le fichier stocké n’est pas modifié.",
+        "cura": "Une copie faite pour {{slicer}} : les objets en plusieurs pièces gardent leurs pièces, chacune sur son extrudeur, et les parois, couches supérieures et inférieures, remplissage et supports du créateur sont réglés sur chaque objet. Cura ne lit pas les couleurs peintes. Le fichier stocké n’est pas modifié.",
         "bambu": "Une copie que {{slicer}} ouvre comme son propre projet : pièces, plateaux, peinture et réglages du créateur tels quels, sans questions sur la version du fichier ni sur des réglages qu’il nomme autrement. Le fichier stocké n’est pas modifié."
       },
       "adaptPreparing": "Préparation du fichier adapté…",

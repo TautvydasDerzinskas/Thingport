@@ -5208,7 +5208,7 @@
       "openAdaptedInSlicer": "Abrir versión adaptada en {{slicer}}",
       "adaptedInfo": {
         "prusa": "Una copia hecha para {{slicer}}: entra en tus propios ajustes de impresora, filamento e impresión, con la altura de capa, las paredes, el relleno y los soportes del diseñador en cada objeto, y los colores pintados en tus extrusores. El archivo guardado no cambia.",
-        "cura": "Una copia hecha para {{slicer}}: los objetos con varias piezas conservan sus piezas, cada una en su propio extrusor, y las paredes, capas, relleno y soportes del diseñador se ajustan en cada objeto. Cura no lee los colores pintados. El archivo guardado no cambia.",
+        "cura": "Una copia hecha para {{slicer}}: los objetos con varias piezas conservan sus piezas, cada una en su propio extrusor, y las paredes, capas superiores e inferiores, relleno y soportes del diseñador se ajustan en cada objeto. Cura no lee los colores pintados. El archivo guardado no cambia.",
         "bambu": "Una copia que {{slicer}} abre como su propio proyecto: piezas, placas, pintura y ajustes del diseñador tal cual, sin preguntas sobre la versión del archivo ni sobre ajustes que llama de otra forma. El archivo guardado no cambia."
       },
       "adaptPreparing": "Preparando el archivo adaptado…",

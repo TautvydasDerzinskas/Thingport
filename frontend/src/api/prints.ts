@@ -324,13 +324,13 @@ export const printsApi = {
     return appendTokenToUrl(`${apiBase()}${rel}`);
   },
 
-  /** An absolute file URL for a slicer to download, with the session in the path rather than `?token=`: OrcaSlicer
-   *  and its forks name the file after everything past the last slash, query string included. */
   /** A plate's link as `slicer` opens it best (its adapted copy, or the plate itself), relative like `plate.url`. The
    *  slicer is in the path, not a query: OrcaSlicer names the file after everything past the URL's last slash. */
   adaptedPlateUrl: (plate: Pick<Plate, "url">, slicer: string) =>
     plate.url.replace(/\/file\/([^/]+)$/, (_all, name: string) => `/adapted/${encodeURIComponent(slicer)}/${name}`),
 
+  /** An absolute file URL for a slicer to download, with the session in the path rather than `?token=`: OrcaSlicer
+   *  and its forks name the file after everything past the last slash, query string included. */
   slicerFileUrl: (rel: string) => {
     const token = readToken();
     const path = token ? `${apiBase()}/t/${encodeURIComponent(token)}${rel}` : `${apiBase()}${rel}`;
