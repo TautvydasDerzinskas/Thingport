@@ -8,7 +8,7 @@ import Typography from "@mui/material/Typography";
 import type { Theme } from "@mui/material/styles";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import thingportIcon from "../../assets/logos/thingport-icon-color.svg";
-import type { Collection } from "../../api/collections";
+import type { Collection, CollectionSync } from "../../api/collections";
 import { printsApi, type Print } from "../../api/prints";
 import { importProviderInfo } from "../../constants/importProviders";
 import { hasProviderLogo, ProviderLogo } from "../../components/Layout/ConfigurationDialog/providerLogos";
@@ -48,7 +48,7 @@ function coverUrl(print: Print): string | null {
 }
 
 /** The collection's grid tile, in miniature. */
-function MiniCollection({ collection }: { collection: Collection }) {
+function MiniCollection({ collection, still }: { collection: Collection; still: boolean }) {
   const { t } = useTranslation(["models", "common"]);
   const covers = collection.cover_items.slice(0, 4).map((print) => ({ id: print.id, src: coverUrl(print) }));
   return (
@@ -83,7 +83,7 @@ function MiniCollection({ collection }: { collection: Collection }) {
           border: "1px solid",
           borderColor: "divider",
           bgcolor: cardBackground,
-          animation: `${glow(96)} ${CYCLE} ease-out infinite`,
+          animation: still ? "none" : `${glow(96)} ${CYCLE} ease-out infinite`,
           ...reducedMotion,
         }}
       >
@@ -138,7 +138,7 @@ const ACTION_SIZE = 32;
 
 /** A stretch of the chain, with the pulse running along it from right to left, and optionally an
  *  action sitting on it in the middle. The action itself never pulses. */
-function Segment({ leg, action }: { leg: "first" | "second"; action?: React.ReactNode }) {
+function Segment({ leg, action, still }: { leg: "first" | "second"; action?: React.ReactNode; still: boolean }) {
   return (
     <Box
       sx={{
@@ -160,7 +160,8 @@ function Segment({ leg, action }: { leg: "first" | "second"; action?: React.Reac
             height: "100%",
             background: (theme) =>
               `linear-gradient(90deg, transparent, ${theme.palette.success.main} 35%, ${theme.palette.success.light} 50%, transparent)`,
-            animation: `${leg === "first" ? firstLeg : secondLeg} ${CYCLE} linear infinite`,
+            animation: still ? "none" : `${leg === "first" ? firstLeg : secondLeg} ${CYCLE} linear infinite`,
+            opacity: still ? 0 : undefined,
             // Without motion, the plain line is the chain.
             "@media (prefers-reduced-motion: reduce)": { animation: "none", opacity: 0 },
           }}
@@ -264,51 +265,60 @@ function NodeLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Collection, Thingport, provider: models flow from right to left. Sync now sits on the link to
- *  the collection, Stop syncing on the link to the provider. */
+/** Collection, Thingport, one of its sources: models flow from right to left. Sync now sits on the link to the
+ *  collection, Stop syncing on the link to the provider. An admin having turned the provider off, it's still drawn,
+ *  with no pulse along the line. */
 export default function SyncChain({
   collection,
+  sync,
   syncNow,
   stop,
+  off = false,
 }: {
-  collection: Collection & { sync: NonNullable<Collection["sync"]> };
+  collection: Collection;
+  sync: CollectionSync;
   syncNow: ChainAction;
   stop: ChainAction;
+  off?: boolean;
 }) {
-  const { provider } = collection.sync;
+  const { provider } = sync;
   const providerLabel = importProviderInfo(provider)?.label ?? provider;
   return (
     <Box sx={{ display: "flex", alignItems: "center", py: 2 }}>
       {/* The text above says the same in words; only the two actions are for screen readers. */}
       <Box aria-hidden sx={{ display: "flex" }}>
-        <MiniCollection collection={collection} />
+        <MiniCollection collection={collection} still={off} />
       </Box>
-      <Segment leg="second" action={<ActionButton action={syncNow} />} />
+      <Segment leg="second" action={<ActionButton action={syncNow} />} still={off} />
       <Box
         aria-hidden
         sx={{
           ...nodeSx,
           width: THINGPORT_NODE,
           height: THINGPORT_NODE,
-          animation: `${glow(50)} ${CYCLE} ease-out infinite`,
+          animation: off ? "none" : `${glow(50)} ${CYCLE} ease-out infinite`,
           ...reducedMotion,
         }}
       >
         <Box component="img" src={thingportIcon} alt="" sx={{ width: 26, height: 26 }} />
         <NodeLabel>Thingport</NodeLabel>
       </Box>
-      <Segment leg="first" action={<ActionButton action={stop} />} />
+      <Segment leg="first" action={<ActionButton action={stop} />} still={off} />
       <Box
         aria-hidden
         sx={{
           ...nodeSx,
           width: PROVIDER_NODE,
           height: PROVIDER_NODE,
-          animation: `${glow(4)} ${CYCLE} ease-out infinite`,
+          animation: off ? "none" : `${glow(4)} ${CYCLE} ease-out infinite`,
           ...reducedMotion,
         }}
       >
-        {hasProviderLogo(provider) && <ProviderLogo id={provider} size={30} />}
+        {hasProviderLogo(provider) && (
+          <Box sx={{ lineHeight: 0, opacity: off ? 0.45 : 1, filter: off ? "grayscale(1)" : "none" }}>
+            <ProviderLogo id={provider} size={30} />
+          </Box>
+        )}
         <NodeLabel>{providerLabel}</NodeLabel>
       </Box>
     </Box>

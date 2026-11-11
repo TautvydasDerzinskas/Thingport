@@ -55,6 +55,8 @@ export type ImportJob = {
 
 /** A Thingport collection kept in step with this provider collection. */
 export type SyncLink = {
+  /** This link among the collection's sources, which can be several. Instances from before that send none. */
+  id?: string;
   provider: string;
   collection_id: string;
   collection_name: string;

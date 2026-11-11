@@ -133,7 +133,7 @@ async function enable(body: Record<string, unknown>) {
 }
 
 async function syncOf(collectionId: string) {
-  return prisma.collectionSync.findUniqueOrThrow({ where: { collectionId } });
+  return prisma.collectionSync.findFirstOrThrow({ where: { collectionId } });
 }
 
 async function importDirectly(designId: string) {
@@ -209,7 +209,7 @@ describe("synced collections", () => {
     const title = `Old flock ${cid}`;
     const first = await enable({ url: collectionUrl(cid), title, known_ids: ids });
     await request(app).delete(`/api/collection/${first.body.collection_id}`).set(auth());
-    expect(await prisma.collectionSync.findUnique({ where: { collectionId: first.body.collection_id } })).toBeNull();
+    expect(await prisma.collectionSync.findFirst({ where: { collectionId: first.body.collection_id } })).toBeNull();
 
     const again = await enable({ url: collectionUrl(cid), title, known_ids: ids });
     expect(again.status).toBe(200);
@@ -406,7 +406,7 @@ describe("synced collections", () => {
     expect(res.body).toEqual({ supported: false, sync: null });
   });
 
-  it("never links two Thingport collections to one provider collection, or one to two", async () => {
+  it("never links one provider collection to two Thingport collections", async () => {
     const cid = newId();
     const first = await enable({ url: collectionUrl(cid), title: `Flock ${cid}`, known_ids: [] });
     const other = await request(app)
@@ -417,12 +417,106 @@ describe("synced collections", () => {
     const again = await enable({ url: collectionUrl(cid), collection_id: other.body.id, known_ids: [] });
     expect(again.status).toBe(409);
 
-    const secondSource = await enable({ url: collectionUrl(newId()), collection_id: first.body.collection_id });
-    expect(secondSource.status).toBe(409);
-
     // Enabling the same source again just returns the link.
     const same = await enable({ url: collectionUrl(cid), known_ids: [] });
     expect(same.body.collection_id).toBe(first.body.collection_id);
+    expect(same.body.id).toBe(first.body.id);
+  });
+
+  it("links a source racing into two collections to one of them, refusing the other", async () => {
+    const cid = newId();
+    const [a, b] = await Promise.all(
+      ["A", "B"].map((side) =>
+        request(app)
+          .post("/api/collections")
+          .set(auth())
+          .send({ name: `Race ${side} ${cid}` }),
+      ),
+    );
+    const [first, second] = await Promise.all(
+      [a, b].map((c) => enable({ url: collectionUrl(cid), collection_id: c.body.id, known_ids: [] })),
+    );
+    expect([first.status, second.status].toSorted()).toEqual([200, 409]);
+    const winner = first.status === 200 ? first : second;
+    expect(
+      await prisma.collectionSync.findMany({ where: { externalId: cid, userId }, select: { collectionId: true } }),
+    ).toEqual([{ collectionId: winner.body.collection_id }]);
+  });
+
+  it("lets a collection follow several sources, each changed, synced and stopped on its own", async () => {
+    const [cidA, cidB] = [newId(), newId()];
+    const first = await enable({ url: collectionUrl(cidA), title: `Printer ${cidA}`, known_ids: [] });
+    const collectionId = first.body.collection_id;
+    expect(first.body.title).toBe(`Printer ${cidA}`);
+    const second = await enable({
+      url: collectionUrl(cidB),
+      title: `Upgrades ${cidB}`,
+      collection_id: collectionId,
+      known_ids: [],
+    });
+    expect(second.status).toBe(200);
+    expect(second.body.collection_id).toBe(collectionId);
+    expect(second.body.id).not.toBe(first.body.id);
+    expect((await latestNotification()).title).toBe(`"Printer ${cidA}" now also syncs with MakerWorld`);
+
+    const listed = (await request(app).get("/api/collections").set(auth())).body.find(
+      (c: { id: string }) => c.id === collectionId,
+    );
+    expect(listed.syncs.map((s: { id: string; title: string }) => [s.id, s.title])).toEqual([
+      [first.body.id, `Printer ${cidA}`],
+      [second.body.id, `Upgrades ${cidB}`],
+    ]);
+    // Older clients and apps read the first.
+    expect(listed.sync.id).toBe(first.body.id);
+
+    // Each source's settings are its own.
+    const patched = await request(app)
+      .patch(`/api/collection/${collectionId}/sync/${second.body.id}`)
+      .set(auth())
+      .send({ interval_hours: 6 });
+    expect(patched.status).toBe(200);
+    expect(patched.body).toMatchObject({ id: second.body.id, interval_hours: 6 });
+    expect((await prisma.collectionSync.findUniqueOrThrow({ where: { id: first.body.id } })).intervalHours).toBe(24);
+
+    // A route naming no source can't guess which of the two is meant.
+    const vague = await request(app).delete(`/api/collection/${collectionId}/sync`).set(auth());
+    expect(vague.status).toBe(409);
+    expect((await request(app).post(`/api/collection/${collectionId}/sync/run`).set(auth())).status).toBe(409);
+    // Nor does a source of another collection belong to this one.
+    const elsewhere = await enable({ url: collectionUrl(newId()), title: `Else ${cidA}`, known_ids: [] });
+    expect(
+      (await request(app).delete(`/api/collection/${collectionId}/sync/${elsewhere.body.id}`).set(auth())).status,
+    ).toBe(404);
+
+    const stopped = await request(app).delete(`/api/collection/${collectionId}/sync/${first.body.id}`).set(auth());
+    expect(stopped.status).toBe(200);
+    expect(await prisma.collectionSync.findMany({ where: { collectionId }, select: { id: true } })).toEqual([
+      { id: second.body.id },
+    ]);
+    // With one left, the older routes find it again.
+    expect((await request(app).delete(`/api/collection/${collectionId}/sync`).set(auth())).status).toBe(200);
+    expect(await prisma.collectionSync.count({ where: { collectionId } })).toBe(0);
+  });
+
+  it("names the source in a notification when a collection follows two from one provider", async () => {
+    const [cidA, cidB] = [newId(), newId()];
+    collections.set(cidA, []);
+    collections.set(cidB, []);
+    const first = await enable({ url: collectionUrl(cidA), title: `Shelf ${cidA}`, known_ids: [] });
+    const second = await enable({
+      url: collectionUrl(cidB),
+      title: `Gone ${cidB}`,
+      collection_id: first.body.collection_id,
+      known_ids: [],
+    });
+    collections.set(cidB, "gone");
+    await prisma.collectionSync.update({ where: { id: second.body.id }, data: { missingChecks: 1 } });
+    expect(await syncCollection(second.body.id)).toBe("unsynced");
+    const notification = await latestNotification();
+    // The other source carries on, so the collection is still synced.
+    expect(notification.title).toBe(`"Shelf ${cidA}" no longer syncs with a MakerWorld collection`);
+    expect(notification.body).toContain(`Its MakerWorld collection "Gone ${cidB}" can't be found any more`);
+    expect(await prisma.collectionSync.count({ where: { collectionId: first.body.collection_id } })).toBe(1);
   });
 
   it("imports only models added since, into the collection whatever it's been renamed to", async () => {
@@ -478,7 +572,7 @@ describe("synced collections", () => {
 
     // Pretends the last check was long enough ago for Sync now to be available again.
     const coolDown = () =>
-      prisma.collectionSync.update({
+      prisma.collectionSync.updateMany({
         where: { collectionId },
         data: { lastCheckedAt: new Date(Date.now() - 10 * 60 * 1000) },
       });
@@ -853,7 +947,10 @@ describe("synced collections", () => {
     const enabled = await enable({ url: collectionUrl(cid), title: `Flock ${cid}`, known_ids: [] });
     const collectionId = enabled.body.collection_id;
     // The model's own profile, whose page fallback is what Cloudflare stands in front of.
-    const sync = await prisma.collectionSync.update({ where: { collectionId }, data: { profileScope: "url" } });
+    const sync = await prisma.collectionSync.update({
+      where: { id: enabled.body.id },
+      data: { profileScope: "url" },
+    });
     collections.set(cid, [first, second]);
     cloudflared.add(first);
 
@@ -878,12 +975,12 @@ describe("synced collections", () => {
   it("is removed with its collection, and can be turned off without touching the collection", async () => {
     const one = await enable({ url: collectionUrl(newId()), title: `Gone ${stamp}`, known_ids: [] });
     await request(app).delete(`/api/collection/${one.body.collection_id}`).set(auth());
-    expect(await prisma.collectionSync.findUnique({ where: { collectionId: one.body.collection_id } })).toBeNull();
+    expect(await prisma.collectionSync.findFirst({ where: { collectionId: one.body.collection_id } })).toBeNull();
 
     const two = await enable({ url: collectionUrl(newId()), title: `Kept ${stamp}`, known_ids: [] });
     const off = await request(app).delete(`/api/collection/${two.body.collection_id}/sync`).set(auth());
     expect(off.status).toBe(200);
-    expect(await prisma.collectionSync.findUnique({ where: { collectionId: two.body.collection_id } })).toBeNull();
+    expect(await prisma.collectionSync.findFirst({ where: { collectionId: two.body.collection_id } })).toBeNull();
     expect(await prisma.collection.findUnique({ where: { id: two.body.collection_id } })).not.toBeNull();
   });
 });

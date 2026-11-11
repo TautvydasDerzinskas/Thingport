@@ -37,6 +37,8 @@ type Props = {
   picked: BrowsePick | null;
   onPick: (pick: BrowsePick | null) => void;
   onUnauthorized?: () => void;
+  /** The Thingport collection being given a source, which may already follow some. */
+  collectionId: string;
 };
 
 const PASTE_DEBOUNCE_MS = 400;
@@ -56,9 +58,16 @@ function defaultProvider(
   return available.find((provider) => accounts[provider]?.connected) ?? preferred;
 }
 
-/** Picking the provider collection an unsynced Thingport collection should follow: the user's own
+/** Picking a provider collection for a Thingport collection to follow, alongside any it already does: the user's own
  *  collections on the chosen provider, or any collection by its link. */
-export default function SyncBrowse({ provider, onProviderChange, picked, onPick, onUnauthorized }: Props) {
+export default function SyncBrowse({
+  provider,
+  onProviderChange,
+  picked,
+  onPick,
+  onUnauthorized,
+  collectionId,
+}: Props) {
   // Turned off by an admin: not offered.
   const disabled = useDisabledProviders();
   const available = useMemo(() => BROWSABLE_PROVIDERS.filter((p) => !disabled.has(p)), [disabled]);
@@ -221,6 +230,7 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
           collection={collection}
           selected={isPicked(p, collection)}
           onSelect={() => onPick(isPicked(p, collection) ? null : { provider: p, collection })}
+          forCollectionId={collectionId}
         />
       ))}
     </Box>
@@ -284,13 +294,18 @@ export default function SyncBrowse({ provider, onProviderChange, picked, onPick,
         )}
         {pastedResult && pastedResult !== "loading" && "pick" in pastedResult && (
           <Box sx={{ mt: 1.5 }}>
-            {pastedResult.pick.collection.synced && (
-              <Alert severity="warning" sx={{ mb: 1.5 }}>
-                {t("models:collections.sync.browse.pastedTaken", {
-                  name: pastedResult.pick.collection.synced.collection_name,
-                })}
-              </Alert>
-            )}
+            {pastedResult.pick.collection.synced &&
+              (pastedResult.pick.collection.synced.collection_id === collectionId ? (
+                <Alert severity="info" sx={{ mb: 1.5 }}>
+                  {t("models:collections.sync.browse.pastedHere")}
+                </Alert>
+              ) : (
+                <Alert severity="warning" sx={{ mb: 1.5 }}>
+                  {t("models:collections.sync.browse.pastedTaken", {
+                    name: pastedResult.pick.collection.synced.collection_name,
+                  })}
+                </Alert>
+              ))}
             <Box sx={{ maxWidth: 220 }}>{tiles(pastedResult.pick.provider, [pastedResult.pick.collection])}</Box>
           </Box>
         )}

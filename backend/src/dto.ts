@@ -494,7 +494,9 @@ export type CollectionOut = {
   system_key: SystemCollectionKey | null;
   /** Always false for a system pseudo-collection, which can't be bookmarked. */
   bookmarked: boolean;
-  /** Set while the collection is synced with one on a provider. */
+  /** The provider collections it follows, oldest first; empty when it isn't synced. */
+  syncs: CollectionSyncOut[];
+  /** The first of `syncs`, or null. Kept for older clients and apps, which know only one. */
   sync: CollectionSyncOut | null;
   /** Set on the collection of a tool's models: fixed, and gone when the tool is uninstalled. */
   tool_id: string | null;
@@ -521,8 +523,12 @@ export type SharePersonOut = UserCardOut & {
 export type SyncProfileScope = "url" | "designer" | "all";
 
 export type CollectionSyncOut = {
+  /** Names this source in the routes that change or stop one of a collection's syncs. */
+  id: string;
   provider: string;
   source_url: string;
+  /** The provider collection's name when it was linked; null on older links and on Likes (see `likes_of`). */
+  title: string | null;
   profile_scope: SyncProfileScope;
   last_checked_at: string | null;
   last_error: string | null;
@@ -543,8 +549,10 @@ export { LIKES_ID_PREFIX, syncLikesUsername };
 export function toCollectionSyncOut(sync: CollectionSync): CollectionSyncOut {
   const syncNowAt = syncNowAvailableAt(sync.lastCheckedAt);
   return {
+    id: sync.id,
     provider: sync.provider,
     source_url: sync.sourceUrl,
+    title: sync.title,
     profile_scope: sync.profileScope as SyncProfileScope,
     last_checked_at: sync.lastCheckedAt?.toISOString() ?? null,
     last_error: sync.lastError,
@@ -555,14 +563,15 @@ export function toCollectionSyncOut(sync: CollectionSync): CollectionSyncOut {
   };
 }
 
-/** `coverPrints`: up to 4, in item position order. */
+/** `coverPrints`: up to 4, in item position order. `syncs`: the collection's, oldest first. */
 export function toCollectionOut(
   collection: Collection,
   itemCount: number,
   coverPrints: PrintOut[],
   bookmarked: boolean,
-  sync: CollectionSync | null = null,
+  syncs: CollectionSync[] = [],
 ): CollectionOut {
+  const syncsOut = syncs.map(toCollectionSyncOut);
   return {
     id: collection.id,
     name: collection.name,
@@ -573,7 +582,8 @@ export function toCollectionOut(
     created_at: collection.createdAt.toISOString(),
     system_key: null,
     bookmarked,
-    sync: sync ? toCollectionSyncOut(sync) : null,
+    syncs: syncsOut,
+    sync: syncsOut[0] ?? null,
     tool_id: collection.toolId ?? null,
     is_public: collection.visibility === "PUBLIC",
     visibility: visibilityOut(collection.visibility),
@@ -603,6 +613,7 @@ export function toSystemCollectionOut(
     created_at: new Date(0).toISOString(),
     system_key: key,
     bookmarked: false,
+    syncs: [],
     sync: null,
     tool_id: null,
     is_public: false,

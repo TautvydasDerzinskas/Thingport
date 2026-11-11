@@ -42,7 +42,7 @@ export type ProviderCollectionOut = {
   thumbnails: string[];
   private: boolean;
   owner: string | null;
-  /** The Thingport collection already synced with it, which can't take a second one. */
+  /** The Thingport collection already syncing with it: a provider collection feeds only one. */
   synced: { collection_id: string; collection_name: string } | null;
   /** The user's liked models, rather than a collection. */
   likes: boolean;
@@ -141,13 +141,14 @@ export async function lookupProviderCollection(userId: string, url: string): Pro
  *  they come in on the user's next visit to Printables. */
 export type EnableFromAppResult = { sync: CollectionSyncOut; importing: boolean; waiting: boolean };
 
-/** Links an existing Thingport collection to a provider's. Where the provider says so (MakerWorld rate-limits bulk
- *  imports hard), only models added from now on come in; elsewhere the collection's current models are imported too,
- *  by the sync's first check. Library models are filed into the collection either way. */
+/** Links an existing Thingport collection to a provider's, alongside any it already follows. Where the provider says so
+ *  (MakerWorld rate-limits bulk imports hard), only models added from now on come in; elsewhere the provider
+ *  collection's current models are imported too, by the sync's first check. Library models are filed into the
+ *  collection either way. */
 export async function enableSyncFromApp(
   userId: string,
   collectionId: string,
-  input: { url: string; intervalHours?: SyncIntervalHours; profileScope?: SyncProfileScope },
+  input: { url: string; title?: string | null; intervalHours?: SyncIntervalHours; profileScope?: SyncProfileScope },
 ): Promise<EnableFromAppResult> {
   if (isSystemCollectionId(collectionId)) throw new HttpError(400, "This collection can't be synced");
   const source = parseSyncSource(input.url);
@@ -169,24 +170,25 @@ export async function enableSyncFromApp(
   }
 
   const waiting = (await provider?.waitingForGrab?.(userId, source.externalId)) ?? false;
-  const link = await enableSync(userId, { url: input.url, collectionId, knownIds });
+  const link = await enableSync(userId, { url: input.url, title: input.title, collectionId, knownIds });
   let sync = link;
   if (input.intervalHours || input.profileScope) {
     sync = {
       ...link,
-      ...(await updateSyncSettings(userId, collectionId, {
-        intervalHours: input.intervalHours,
-        profileScope: input.profileScope,
-      })),
+      ...(await updateSyncSettings(
+        userId,
+        collectionId,
+        { intervalHours: input.intervalHours, profileScope: input.profileScope },
+        link.id,
+      )),
     };
   }
 
   const importing = !newOnly;
   if (importing) {
-    const created = await prisma.collectionSync.findUniqueOrThrow({ where: { collectionId } });
     // Never checked yet, so a check that finds the user busy importing is retried on the
     // scheduler's next tick rather than a day later.
-    void syncCollection(created.id).catch((err) => console.error(`[sync] first check of ${created.id} failed:`, err));
+    void syncCollection(link.id).catch((err) => console.error(`[sync] first check of ${link.id} failed:`, err));
   }
   return { sync, importing, waiting };
 }

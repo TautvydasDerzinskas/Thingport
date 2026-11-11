@@ -277,7 +277,9 @@ const getModel: McpToolDefinition = {
 const listCollections: McpToolDefinition = {
   name: "list_collections",
   title: "List collections",
-  description: "The user's collections, with how many models each holds, plus Favourites and Browsing History.",
+  description:
+    "The user's collections, with how many models each holds and the provider collections it syncs with (models " +
+    "added to any of those come in on their own), plus Favourites and Browsing History.",
   readOnly: true,
   inputSchema: {},
   async run(ctx) {
@@ -286,7 +288,10 @@ const listCollections: McpToolDefinition = {
       prisma.collection.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
-        include: { _count: { select: { items: true } }, sync: { select: { provider: true, sourceUrl: true } } },
+        include: {
+          _count: { select: { items: true } },
+          syncs: { select: { provider: true, sourceUrl: true, title: true }, orderBy: { createdAt: "asc" } },
+        },
       }),
       prisma.print.count({ where: { userId, favoritedAt: { not: null } } }),
       prisma.print.count({ where: { userId, lastViewedAt: { not: null } } }),
@@ -301,7 +306,7 @@ const listCollections: McpToolDefinition = {
           description: c.description,
           tags: c.tags,
           model_count: c._count.items,
-          synced_with: c.sync ? { provider: c.sync.provider, url: c.sync.sourceUrl } : null,
+          synced_with: c.syncs.map((sync) => ({ provider: sync.provider, url: sync.sourceUrl, name: sync.title })),
         })),
       ],
     };

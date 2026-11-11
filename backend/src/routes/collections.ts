@@ -37,6 +37,9 @@ import { collectionOutsFor, libraryCopyIds, readableCollection, readablePrintWhe
 import { copyPrintToLibrary } from "../services/modelCopyService";
 
 const router = Router();
+
+// A collection's sources, in the order they were linked.
+const SYNCS_OLDEST_FIRST = { orderBy: { createdAt: "asc" as const } };
 router.use(requireAuth);
 
 const collectionSchema = z.object({
@@ -111,7 +114,7 @@ router.get(
         include: {
           _count: { select: { items: true } },
           items: { orderBy: { position: "asc" }, take: COVER_ITEM_LIMIT },
-          sync: true,
+          syncs: SYNCS_OLDEST_FIRST,
         },
       }),
       listBookmarkedCollectionIdSet(req.userId!),
@@ -128,7 +131,7 @@ router.get(
             c._count.items,
             c.items.map((i) => printOuts.get(i.printId)).filter((p): p is PrintOut => Boolean(p)),
             bookmarkedIds.has(c.id),
-            c.sync,
+            c.syncs,
           ),
         ),
       )),
@@ -162,14 +165,14 @@ router.post(
   asyncHandler(async (req, res) => {
     const body = parseBody(mergeSchema, req.body);
     const { primary, merged, added } = await mergeCollections(req.userId!, body.primary_id, body.ids);
-    const [itemCount, covers, bookmarked, sync] = await Promise.all([
+    const [itemCount, covers, bookmarked, syncs] = await Promise.all([
       prisma.collectionItem.count({ where: { collectionId: primary.id } }),
       coverPrints(req.userId!, primary.id),
       prisma.bookmark.findFirst({ where: { userId: req.userId, type: "COLLECTION", collectionId: primary.id } }),
-      prisma.collectionSync.findUnique({ where: { collectionId: primary.id } }),
+      prisma.collectionSync.findMany({ where: { collectionId: primary.id }, ...SYNCS_OLDEST_FIRST }),
     ]);
     const [collection] = await withSharedWith(req.userId!, [
-      toCollectionOut(primary, itemCount, covers, Boolean(bookmarked), sync),
+      toCollectionOut(primary, itemCount, covers, Boolean(bookmarked), syncs),
     ]);
     res.json({ collection, merged_ids: merged.map((c) => c.id), added });
     void createLog({
@@ -208,7 +211,7 @@ router.get(
     }
     const collection = await prisma.collection.findFirst({
       where: { id: req.params.id, userId: req.userId },
-      include: { _count: { select: { items: true } }, sync: true },
+      include: { _count: { select: { items: true } }, syncs: SYNCS_OLDEST_FIRST },
     });
     if (!collection) {
       // Another user's public one, or one shared with the viewer, while social features are on.
@@ -228,7 +231,7 @@ router.get(
         collection._count.items,
         await coverPrints(req.userId!, collection.id),
         bookmarked,
-        collection.sync,
+        collection.syncs,
       ),
     ]);
     res.json(out);
@@ -274,14 +277,14 @@ router.patch(
     kickSharing();
     const renamed = body.name !== collection.name;
     if (renamed) await relocatePrintsForToken("collection", await collectionPrintIds(updated.id));
-    const [itemCount, covers, bookmarked, sync] = await Promise.all([
+    const [itemCount, covers, bookmarked, syncs] = await Promise.all([
       prisma.collectionItem.count({ where: { collectionId: updated.id } }),
       coverPrints(req.userId!, updated.id),
       prisma.bookmark.findFirst({ where: { userId: req.userId, type: "COLLECTION", collectionId: updated.id } }),
-      prisma.collectionSync.findUnique({ where: { collectionId: updated.id } }),
+      prisma.collectionSync.findMany({ where: { collectionId: updated.id }, ...SYNCS_OLDEST_FIRST }),
     ]);
     const [out] = await withSharedWith(req.userId!, [
-      toCollectionOut(updated, itemCount, covers, Boolean(bookmarked), sync),
+      toCollectionOut(updated, itemCount, covers, Boolean(bookmarked), syncs),
     ]);
     res.json(out);
     void createLog({

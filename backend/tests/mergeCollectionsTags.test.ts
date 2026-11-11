@@ -80,19 +80,56 @@ describe("merging collections", () => {
     expect(await prisma.print.count({ where: { id: { in: [a, b, c, d] } } })).toBe(4);
   });
 
-  it("drops a merged collection's sync and keeps the kept one's name", async () => {
-    const kept = await createCollection("Unsynced");
+  it("keeps the kept one's name and sync, and takes over the others' syncs with what they've queued", async () => {
+    const kept = await createCollection("Kept synced");
     const synced = await createCollection("Synced", [await createPrint()]);
-    await prisma.collectionSync.create({
-      data: { userId, collectionId: synced, provider: "printables", externalId: `x${stamp}`, sourceUrl: "https://x" },
+    const source = (collectionId: string, externalId: string) =>
+      prisma.collectionSync.create({
+        data: { userId, collectionId, provider: "printables", externalId, sourceUrl: `https://x/${externalId}` },
+      });
+    const keptSync = await source(kept, `k${stamp}`);
+    const movedSync = await source(synced, `m${stamp}`);
+    // Models the merged one's sync found and queued, one that failed and can be retried, one done, and one waiting
+    // for Thingport Grab.
+    const job = await prisma.importJob.create({
+      data: {
+        userId,
+        type: "LINKS",
+        status: "PAUSED",
+        sourceUrl: movedSync.sourceUrl,
+        total: 2,
+        collectionSyncId: movedSync.id,
+      },
     });
+    const [pending, failed, done] = await Promise.all(
+      ["PENDING", "FAILED", "DONE"].map((status) =>
+        prisma.importJobItem.create({
+          data: {
+            jobId: job.id,
+            url: `https://x/${status}`,
+            status: status as "PENDING" | "FAILED" | "DONE",
+            payload: { collection_id: synced, scope: "url", title: null },
+          },
+        }),
+      ),
+    );
+    const waiting = await prisma.grabImport.create({ data: { userId, url: "https://x/grab", collectionId: synced } });
+
     const res = await request(app)
       .post("/api/collections/merge")
       .set(auth())
       .send({ primary_id: kept, ids: [synced] });
-    expect(res.body.collection.name).toBe(`Unsynced ${stamp}`);
-    expect(res.body.collection.sync).toBeNull();
+    expect(res.body.collection.name).toBe(`Kept synced ${stamp}`);
+    expect(res.body.collection.syncs.map((s: { id: string }) => s.id)).toEqual([keptSync.id, movedSync.id]);
+    expect(res.body.collection.sync.id).toBe(keptSync.id);
     expect(await prisma.collectionSync.count({ where: { collectionId: synced } })).toBe(0);
+    const payloadOf = async (id: string) =>
+      (await prisma.importJobItem.findUniqueOrThrow({ where: { id } })).payload as { collection_id: string };
+    expect((await payloadOf(pending.id)).collection_id).toBe(kept);
+    expect((await payloadOf(failed.id)).collection_id).toBe(kept);
+    // What's done is left as it was.
+    expect((await payloadOf(done.id)).collection_id).toBe(synced);
+    expect((await prisma.grabImport.findUniqueOrThrow({ where: { id: waiting.id } })).collectionId).toBe(kept);
   });
 
   it("refuses a lone collection, a built-in one, or someone else's", async () => {

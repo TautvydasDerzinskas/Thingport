@@ -243,7 +243,9 @@ export default function CollectionDetailPage({
   return (
     <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        {collection.sync && <CollectionSyncIndicator sync={collection.sync} onClick={() => setSyncOpen(true)} />}
+        {collection.syncs.length > 0 && (
+          <CollectionSyncIndicator syncs={collection.syncs} onClick={() => setSyncOpen(true)} />
+        )}
         <ModelSelectionToolbar
           selection={selection}
           total={items.length}
@@ -271,9 +273,9 @@ export default function CollectionDetailPage({
       </Box>
       {/* Its name is already the page's title. */}
       <InfoBanner description={collection.description} />
-      {syncOpen && collection.sync && (
+      {syncOpen && collection.syncs.length > 0 && (
         <CollectionSyncDialog
-          collection={{ ...collection, sync: collection.sync }}
+          collection={collection}
           onClose={() => setSyncOpen(false)}
           onUpdated={setCollection}
           onUnauthorized={onUnauthorized}

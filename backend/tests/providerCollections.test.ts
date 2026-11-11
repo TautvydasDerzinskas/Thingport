@@ -262,12 +262,30 @@ describe("turning sync on from the app", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ importing: false, sync: { provider: "makerworld", interval_hours: 6 } });
 
-    const sync = await prisma.collectionSync.findUniqueOrThrow({ where: { collectionId } });
+    const sync = await prisma.collectionSync.findFirstOrThrow({ where: { collectionId } });
     expect(sync.knownIds.toSorted()).toEqual(makerworldDesigns[source.id].toSorted());
     expect(await prisma.importJob.count({ where: { collectionSyncId: sync.id } })).toBe(0);
 
     const list = await request(app).get("/api/provider-collections").query({ provider: "makerworld" }).set(auth());
     expect(list.body[0].synced).toEqual({ collection_id: collectionId, collection_name: `MakerWorld ${stamp}` });
+
+    // A second source joins the first, by its own name and with its own settings.
+    makerworldDesigns[makerworldCollections[1].id] = [];
+    const alongside = await request(app)
+      .post(`/api/collection/${collectionId}/sync`)
+      .set(auth())
+      .send({
+        url: `https://makerworld.com/en/collections/${makerworldCollections[1].id}`,
+        title: "Secret",
+        profile_scope: "all",
+      });
+    expect(alongside.status).toBe(200);
+    expect(alongside.body.sync).toMatchObject({ title: "Secret", profile_scope: "all" });
+    const both = await prisma.collectionSync.findMany({ where: { collectionId }, orderBy: { createdAt: "asc" } });
+    expect(both.map((s) => [s.externalId, s.profileScope, s.intervalHours])).toEqual([
+      [source.id, "designer", 6],
+      [makerworldCollections[1].id, "all", 24],
+    ]);
 
     // One provider collection syncs with one Thingport collection at most.
     const other = await newCollection("Second");
@@ -291,7 +309,7 @@ describe("turning sync on from the app", () => {
     // The first check runs in the background; the stand-in collection is empty, so it just finishes.
     await vi.waitFor(
       async () => {
-        const sync = await prisma.collectionSync.findUniqueOrThrow({ where: { collectionId } });
+        const sync = await prisma.collectionSync.findFirstOrThrow({ where: { collectionId } });
         expect(sync.lastCheckedAt).not.toBeNull();
       },
       { timeout: 5000 },
@@ -309,7 +327,7 @@ describe("turning sync on from the app", () => {
 });
 
 async function queuedUrls(collectionId: string): Promise<string[]> {
-  const sync = await prisma.collectionSync.findUniqueOrThrow({ where: { collectionId } });
+  const sync = await prisma.collectionSync.findFirstOrThrow({ where: { collectionId } });
   const items = await prisma.importJobItem.findMany({ where: { job: { collectionSyncId: sync.id } } });
   return items.map((item) => item.url).toSorted();
 }
@@ -370,7 +388,7 @@ describe("private Printables collections and likes, through Thingport Grab", () 
     expect(res.body).toMatchObject({ importing: true, waiting: true });
     await vi.waitFor(
       async () =>
-        expect((await prisma.collectionSync.findUniqueOrThrow({ where: { collectionId } })).lastError).toBe(
+        expect((await prisma.collectionSync.findFirstOrThrow({ where: { collectionId } })).lastError).toBe(
           WAITING_FOR_GRAB,
         ),
       { timeout: 5000 },

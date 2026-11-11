@@ -1,6 +1,6 @@
-// Synced collections: a Thingport collection linked to one on a provider, so models added there
-// later are imported by the scheduled sync (collectionSyncRunner.ts). Thingport Grab creates the
-// link; the app can change its profile scope or drop it.
+// Synced collections: a Thingport collection linked to collections on providers, so models added there later are
+// imported by the scheduled sync (collectionSyncRunner.ts). A collection can follow several, each a sync of its own
+// with its own settings. Thingport Grab or the sync dialog's Browse tab creates a link; the app changes or drops it.
 
 import type { Collection, CollectionSync } from "@prisma/client";
 import { prisma } from "../db";
@@ -32,11 +32,19 @@ export function hasProfiles(provider: string): boolean {
   return PROFILE_PROVIDERS.has(provider);
 }
 
-/** What a sync follows, for notifications: "its MakerWorld collection", "@alice's Thingiverse likes". */
-export function sourceDescription(sync: { provider: string; externalId: string; sourceUrl: string }): string {
+/** What a sync follows, for notifications: `its MakerWorld collection "Printer"`, "@alice's Thingiverse likes". The
+ *  name tells apart two sources from one provider. */
+export function sourceDescription(sync: {
+  provider: string;
+  externalId: string;
+  sourceUrl: string;
+  title?: string | null;
+}): string {
   const likesOf = syncLikesUsername(sync);
-  return likesOf
-    ? `@${likesOf}'s ${providerName(sync.provider)} likes`
+  if (likesOf) return `@${likesOf}'s ${providerName(sync.provider)} likes`;
+  const name = sync.title?.trim();
+  return name
+    ? `its ${providerName(sync.provider)} collection "${name}"`
     : `its ${providerName(sync.provider)} collection`;
 }
 
@@ -111,7 +119,7 @@ export async function findLibraryPrints(
 
 export type EnableSyncInput = {
   url: string;
-  /** The provider collection's name, for the Thingport collection when there isn't one yet. */
+  /** The provider collection's name: kept on the sync, and for the Thingport collection when there isn't one yet. */
   title?: string | null;
   /** Every model id Grab saw in the provider's collection. Only models added after these are
    *  imported by the sync, so models left unticked in the panel stay out. */
@@ -120,8 +128,9 @@ export type EnableSyncInput = {
   collectionId?: string | null;
 };
 
-/** Turns sync on for a provider collection, or returns the existing link. The models already in the
- *  library are filed into the collection now, so it starts out mirroring the provider's. */
+/** Turns sync on for a provider collection, or returns the existing link. With `collectionId`, the collection follows it
+ *  alongside any it already follows; without, it goes into a collection named after it that follows nothing else. The
+ *  models already in the library are filed into the collection now, so it starts out mirroring the provider's. */
 export async function enableSync(userId: string, input: EnableSyncInput): Promise<SyncLinkOut> {
   const source = parseSyncSource(input.url);
   if (!source) {
@@ -133,6 +142,8 @@ export async function enableSync(userId: string, input: EnableSyncInput): Promis
   const provider = PROVIDERS[source.provider].sync;
   await provider?.assertCanSync?.(userId, source);
   const knownIds = [...new Set(input.knownIds.map((id) => id.trim()).filter(Boolean))];
+  // Likes are named after their user, so only a collection's name is kept.
+  const title = source.likesOf ? null : (provider?.listName?.(source) ?? (input.title?.trim() || null));
 
   const existing = await findSyncForSource(userId, source);
   if (existing) {
@@ -142,7 +153,8 @@ export async function enableSync(userId: string, input: EnableSyncInput): Promis
     const merged = [...new Set([...existing.knownIds, ...knownIds])];
     const updated = await prisma.collectionSync.update({
       where: { id: existing.id },
-      data: { knownIds: merged },
+      // A name seen again is the current one.
+      data: { knownIds: merged, ...(title ? { title } : {}) },
       include: { collection: true },
     });
     await fileLibraryModels(userId, updated, knownIds);
@@ -155,31 +167,30 @@ export async function enableSync(userId: string, input: EnableSyncInput): Promis
     if (isSystemCollectionId(input.collectionId)) throw new HttpError(400, "This collection can't be synced");
     const found = await prisma.collection.findFirst({ where: { id: input.collectionId, userId } });
     if (!found) throw new HttpError(404, "Collection not found");
-    const result = await createSync(userId, found, source, knownIds);
-    if ("takenBy" in result) {
-      throw new HttpError(
-        409,
-        `"${found.name}" is already synced with another ${providerName(result.takenBy)} collection`,
-      );
+    const result = await createSync(userId, found, source, { knownIds, title, alongside: true });
+    if ("link" in result) {
+      // Another request linked the same source a moment ago: here, that's this link; elsewhere, it's taken, as above.
+      if (result.link.collection_id !== found.id) {
+        throw new HttpError(409, `This collection is already synced with "${result.link.collection_name}"`);
+      }
+      return result.link;
     }
-    if ("link" in result) return result.link;
+    if ("takenBy" in result) throw new Error("A sync alongside others was refused");
     created = result.created;
   } else {
-    const title = source.likesOf
+    const name = source.likesOf
       ? likesCollectionName(source.likesOf, source.provider)
-      : (provider?.listName?.(source) ??
-        (input.title?.trim() || `${providerName(source.provider)} Collection ${source.externalId}`));
+      : (title ?? `${providerName(source.provider)} Collection ${source.externalId}`);
     let found: (CollectionSync & { collection: Collection }) | null = null;
-    for (const name of collectionNamesFor(title, source.provider)) {
-      const collection = await findOrCreateCollectionByName(userId, name);
-      const result = await createSync(userId, collection, source, knownIds);
+    for (const candidate of collectionNamesFor(name, source.provider)) {
+      const collection = await findOrCreateCollectionByName(userId, candidate);
+      const result = await createSync(userId, collection, source, { knownIds, title, alongside: false });
       if ("takenBy" in result) continue;
       if ("link" in result) return result.link;
       found = result.created;
       break;
     }
-    if (!found)
-      throw new HttpError(409, `Every collection named like "${title}" is already synced with something else`);
+    if (!found) throw new HttpError(409, `Every collection named like "${name}" is already synced with something else`);
     created = found;
   }
   await fileLibraryModels(userId, created, knownIds);
@@ -210,9 +221,12 @@ async function notifySyncEnabled(sync: CollectionSync & { collection: Collection
     hasProfiles(sync.provider) && PROFILE_SCOPE_PHRASES[sync.profileScope]
       ? `, each with ${PROFILE_SCOPE_PHRASES[sync.profileScope]}`
       : "";
+  const others = await prisma.collectionSync.count({
+    where: { collectionId: sync.collectionId, id: { not: sync.id } },
+  });
   await createNotification(sync.userId, {
     type: "sync",
-    title: `"${name}" is now synced`,
+    title: others ? `"${name}" now also syncs with ${providerName(sync.provider)}` : `"${name}" is now synced`,
     body:
       `New models in ${sourceDescription(sync)} are imported here ${interval}${profiles}. ` +
       "Change this in the collection's sync configuration.",
@@ -226,7 +240,8 @@ const MAX_NAME_SUFFIX = 20;
 
 /** The names a new sync's collection may take: the provider's own name first, so a plain collection
  *  of that name is adopted; then, if that one already follows another source, the name with the
- *  provider after it ("Things (MakerWorld)", "Things (MakerWorld 2)", ...). */
+ *  provider after it ("Things (MakerWorld)", "Things (MakerWorld 2)", ...). Following a second source is a choice
+ *  made in the app, never by a name that happens to match. */
 function* collectionNamesFor(title: string, provider: string): Generator<string> {
   yield title;
   const label = providerName(provider);
@@ -237,37 +252,43 @@ function* collectionNamesFor(title: string, provider: string): Generator<string>
 // A synced collection follows what the designer publishes, so new models bring all of their profiles.
 const NEW_SYNC_PROFILE_SCOPE: SyncProfileScope = "designer";
 
-/** Links `collection` to `source`. `takenBy` names the provider when the collection already follows
- *  another source; `link` is the existing one when another request just made this same link. */
+/** Links `collection` to `source`. `alongside`: the collection may already follow other sources; without it, one that
+ *  does is `takenBy` that source's provider. `link` is the existing one when another request just made this same
+ *  link. */
 async function createSync(
   userId: string,
   collection: Collection,
   source: SyncSource,
-  knownIds: string[],
+  { knownIds, title, alongside }: { knownIds: string[]; title: string | null; alongside: boolean },
 ): Promise<{ takenBy: string } | { link: SyncLinkOut } | { created: CollectionSync & { collection: Collection } }> {
-  const existing = await prisma.collectionSync.findUnique({ where: { collectionId: collection.id } });
-  if (existing) return { takenBy: existing.provider };
   try {
-    const created = await prisma.collectionSync.create({
-      data: {
-        userId,
-        collectionId: collection.id,
-        provider: source.provider,
-        externalId: source.externalId,
-        sourceUrl: source.url,
-        knownIds,
-        ...(hasProfiles(source.provider) ? { profileScope: NEW_SYNC_PROFILE_SCOPE } : {}),
-      },
-      include: { collection: true },
+    return await prisma.$transaction(async (tx) => {
+      // Holds the collection while it's checked and linked, so two sources racing for one new name can't both land
+      // in it: the second sees the first's link and takes "Things (MakerWorld)".
+      await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${collection.id} FOR UPDATE`;
+      if (!alongside) {
+        const existing = await tx.collectionSync.findFirst({ where: { collectionId: collection.id } });
+        if (existing) return { takenBy: existing.provider };
+      }
+      const created = await tx.collectionSync.create({
+        data: {
+          userId,
+          collectionId: collection.id,
+          provider: source.provider,
+          externalId: source.externalId,
+          sourceUrl: source.url,
+          title,
+          knownIds,
+          ...(hasProfiles(source.provider) ? { profileScope: NEW_SYNC_PROFILE_SCOPE } : {}),
+        },
+        include: { collection: true },
+      });
+      return { created };
     });
-    return { created };
   } catch (err) {
-    // Another request won the unique index: for this same source, that's the link asked for; if it
-    // took this collection for another source, it's taken like any other.
+    // Another request won the unique index for this same source: that's the link asked for.
     const raced = await findSyncForSource(userId, source);
     if (raced) return { link: toSyncLinkOut(raced) };
-    const racedForCollection = await prisma.collectionSync.findUnique({ where: { collectionId: collection.id } });
-    if (racedForCollection) return { takenBy: racedForCollection.provider };
     throw err;
   }
 }
@@ -282,23 +303,45 @@ async function fileLibraryModels(userId: string, sync: CollectionSync, externalI
   await addPrintsToCollection(sync.collectionId, ordered);
 }
 
-async function ownedSync(userId: string, collectionId: string) {
-  const sync = await prisma.collectionSync.findFirst({
+/** One of the collection's syncs: `syncId`'s, or with none given its only one. Older clients (Thingport Grab's sync
+ *  toggle among them) name no sync, and are refused on a collection following several rather than handed one of them
+ *  at random. */
+async function ownedSync(userId: string, collectionId: string, syncId: string | null) {
+  if (syncId) {
+    const sync = await prisma.collectionSync.findFirst({
+      where: { id: syncId, collectionId, userId },
+      include: { collection: true },
+    });
+    if (!sync) throw new HttpError(404, "This collection doesn't sync with that source");
+    return sync;
+  }
+  const syncs = await prisma.collectionSync.findMany({
     where: { collectionId, userId },
     include: { collection: true },
+    take: 2,
   });
-  if (!sync) throw new HttpError(404, "This collection isn't synced");
-  return sync;
+  if (!syncs.length) throw new HttpError(404, "This collection isn't synced");
+  if (syncs.length > 1) {
+    throw new HttpError(
+      409,
+      "This collection syncs with several sources. Pick one in its sync configuration, or update Thingport Grab.",
+    );
+  }
+  return syncs[0];
 }
 
-/** The sync of one of the user's collections, for "Sync now". */
-export async function syncForCollection(userId: string, collectionId: string): Promise<CollectionSync> {
-  return ownedSync(userId, collectionId);
+/** One of the user's collection's syncs, for "Sync now". */
+export async function syncForCollection(
+  userId: string,
+  collectionId: string,
+  syncId: string | null = null,
+): Promise<CollectionSync> {
+  return ownedSync(userId, collectionId, syncId);
 }
 
-/** The collection and its models stay; new models just stop coming in. */
-export async function disableSync(userId: string, collectionId: string): Promise<void> {
-  const sync = await ownedSync(userId, collectionId);
+/** The collection and its models stay, and so do its other sources; new models from this one just stop coming in. */
+export async function disableSync(userId: string, collectionId: string, syncId: string | null = null): Promise<void> {
+  const sync = await ownedSync(userId, collectionId, syncId);
   await prisma.collectionSync.delete({ where: { id: sync.id } });
   void createLog({
     userId,
@@ -314,8 +357,9 @@ export async function updateSyncSettings(
   userId: string,
   collectionId: string,
   settings: { profileScope?: SyncProfileScope; intervalHours?: SyncIntervalHours },
+  syncId: string | null = null,
 ): Promise<CollectionSyncOut> {
-  const sync = await ownedSync(userId, collectionId);
+  const sync = await ownedSync(userId, collectionId, syncId);
   if (settings.profileScope && !hasProfiles(sync.provider)) {
     throw new HttpError(400, NO_PROFILES_TEXT);
   }

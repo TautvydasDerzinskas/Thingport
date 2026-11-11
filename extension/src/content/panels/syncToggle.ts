@@ -62,7 +62,10 @@ export async function applySyncToggle(
     return { change: state.sync ? "kept" : "enabled", link };
   }
   if (state.sync) {
-    await api("DELETE", `/collection/${state.sync.collection_id}/sync`);
+    // Only this page's source: the collection may follow others too. An instance that sends no id predates that, and
+    // knows only the collection's one sync.
+    const { id, collection_id } = state.sync;
+    await api("DELETE", id ? `/collection/${collection_id}/sync/${id}` : `/collection/${collection_id}/sync`);
     return { change: "disabled", link: null };
   }
   return { change: "none", link: null };

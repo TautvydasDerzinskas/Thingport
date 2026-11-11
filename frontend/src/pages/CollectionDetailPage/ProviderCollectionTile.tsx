@@ -15,6 +15,8 @@ type Props = {
   collection: ProviderCollection;
   selected: boolean;
   onSelect: () => void;
+  /** The Thingport collection being given a source: one it already syncs with says so, rather than naming it. */
+  forCollectionId?: string;
 };
 
 /** Any other provider's: a cover with a strip in its accent, the name and a count below. */
@@ -52,13 +54,20 @@ function displayName(collection: ProviderCollection, t: (key: string) => string)
   return collection.name;
 }
 
-/** A provider's collection to pick, drawn in that provider's colours and manner. One already synced
- *  with another Thingport collection can't be picked, and says with which. */
-export default function ProviderCollectionTile({ provider, collection: given, selected, onSelect }: Props) {
+/** A provider's collection to pick, drawn in that provider's colours and manner. One already synced with a Thingport
+ *  collection can't be picked, and says with which: a provider collection feeds one only. */
+export default function ProviderCollectionTile({
+  provider,
+  collection: given,
+  selected,
+  onSelect,
+  forCollectionId,
+}: Props) {
   const { t } = useTranslation("models");
   const Tile = COLLECTION_TILES[provider]?.Tile;
   const collection = { ...given, name: displayName(given, t) };
-  const taken = collection.synced !== null;
+  const { synced } = collection;
+  const taken = synced !== null;
   return (
     <Box>
       <ButtonBase
@@ -105,9 +114,11 @@ export default function ProviderCollectionTile({ provider, collection: given, se
           </Box>
         )}
       </ButtonBase>
-      {taken && (
+      {synced && (
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-          {t("collections.sync.browse.takenBy", { name: collection.synced!.collection_name })}
+          {synced.collection_id === forCollectionId
+            ? t("collections.sync.browse.syncsHere")
+            : t("collections.sync.browse.takenBy", { name: synced.collection_name })}
         </Typography>
       )}
     </Box>
