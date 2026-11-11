@@ -121,6 +121,18 @@ describe("a zip's files", () => {
     expect(placesOf(await modelFilesFromZip(zipPath))).toEqual(["STL/box.stl"]);
     expect(placesOf(await parametricSourcesFromZip(zipPath))).toEqual(["SCAD/box.scad"]);
   });
+
+  // Read twice over, a zip wrapped in another must still lose the same levels for both: here the script stays beside
+  // the "parts" folder it would read from, rather than the part losing it.
+  it("give a wrapped zip's plates and scripts the same folders too", async () => {
+    const inner = await zipOf({
+      "pack/main.scad": 'import("parts/part.stl");',
+      "pack/parts/part.stl": "solid p endsolid",
+    });
+    const zipPath = await zipOf({ "bundle.zip": fs.readFileSync(inner) });
+    expect(placesOf(await modelFilesFromZip(zipPath))).toEqual(["parts/part.stl"]);
+    expect(placesOf(await parametricSourcesFromZip(zipPath))).toEqual(["main.scad"]);
+  });
 });
 
 describe("a model's files in folders", () => {

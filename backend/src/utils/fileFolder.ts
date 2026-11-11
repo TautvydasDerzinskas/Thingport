@@ -67,14 +67,23 @@ export function isZipJunk(entryPath: string): boolean {
  * A file that sits at a level stops it there, so files beside folders keep them. Files are matched by index.
  */
 export function withoutSharedTop<T extends { folder?: string | null }>(files: T[]): T[] {
-  if (!files.length) return files;
-  const levels = files.map((file) => folderLevels(file.folder));
+  const shared = sharedTopLevels(files.map((file) => file.folder));
+  return shared ? files.map((file) => ({ ...file, folder: withoutTopLevels(file.folder, shared) })) : files;
+}
+
+/** How many top levels every one of `folders` shares; none when one of them is no folder at all. */
+export function sharedTopLevels(folders: readonly (string | null | undefined)[]): number {
+  if (!folders.length) return 0;
+  const levels = folders.map((folder) => folderLevels(folder));
   let shared = 0;
   for (;;) {
     const first = levels[0][shared];
-    if (first === undefined || !levels.every((each) => each[shared] === first)) break;
+    if (first === undefined || !levels.every((each) => each[shared] === first)) return shared;
     shared++;
   }
-  if (!shared) return files;
-  return files.map((file, index) => ({ ...file, folder: normalizeFolder(levels[index].slice(shared)) }));
+}
+
+/** `folder` without its first `count` levels. */
+export function withoutTopLevels(folder: string | null | undefined, count: number): string | null {
+  return normalizeFolder(folderLevels(folder).slice(count));
 }

@@ -136,6 +136,7 @@ export default function Model3DPreviewModal({
               launchFilename: plate.filename,
               index,
               plate,
+              folder: plate.folder ?? null,
             }))
         : [],
     [profileMode, profileEntries, sortedPlates],

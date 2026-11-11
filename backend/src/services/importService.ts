@@ -83,8 +83,15 @@ export const THANGS_DOWNLOAD_LIMIT_CODE = MANIFESTS.thangs.errorCodes.downloadLi
 /** A Cults3D import refused for want of the user's API key, or of the browser's sign-in, or because one was turned
  *  down. */
 export const CULTS3D_SESSION_CODE = MANIFESTS.cults3d.errorCodes.session;
-import { extractZipEntryToFile, listZipEntries } from "../utils/zipReader";
-import { isZipJunk, joinFolders, normalizeFolder, withoutSharedTop } from "../utils/fileFolder";
+import { extractZipEntryToFile, listZipEntries, type ZipEntryInfo } from "../utils/zipReader";
+import {
+  isZipJunk,
+  joinFolders,
+  normalizeFolder,
+  sharedTopLevels,
+  withoutSharedTop,
+  withoutTopLevels,
+} from "../utils/fileFolder";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { importedLicenseData } from "./licenseService";
 import { upsertAuthorFromImport } from "./authorService";
@@ -996,6 +1003,9 @@ async function filesFromNestedZips(
     (entry) => !entry.isDirectory && !isZipJunk(entry.name) && path.extname(entry.name).toLowerCase() === ".zip",
   );
   const inputs: NewPlateInput[] = [];
+  // Every importable file's folder, of both kinds whichever this call takes, so the plates and the scripts of a zip
+  // read twice over (platesAndSourcesFromZip) lose the same levels.
+  const everyFolder: (string | null)[] = [];
   try {
     for (const entry of nested) {
       if (budget.archives <= 0 || budget.bytes <= 0) break;
@@ -1006,9 +1016,11 @@ async function filesFromNestedZips(
         if (written === null) continue;
         budget.bytes -= written;
         const folder = normalizeFolder(entry.name.replace(/\.zip$/i, ""));
-        for (const input of await filesFromZip(tempZipPath, exts, depth + 1, budget)) {
-          inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
-        }
+        const found = await filesFromZip(tempZipPath, exts, depth + 1, budget);
+        for (const input of found) inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
+        // A zip that only wraps yet another has no files of its own to go by: the ones found in it stand in.
+        const placed = await placedZipEntries(tempZipPath);
+        for (const each of placed.length ? placed : found) everyFolder.push(joinFolders(folder, each.folder));
       } catch (err) {
         // One entry that isn't the zip it's named like doesn't make the files out of its siblings unimportable.
         if (!isUnreadableZip(err)) throw err;
@@ -1020,7 +1032,8 @@ async function filesFromNestedZips(
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
   }
-  return withoutSharedTop(inputs);
+  const shared = sharedTopLevels(everyFolder);
+  return inputs.map((input) => ({ ...input, folder: withoutTopLevels(input.folder, shared) }));
 }
 
 /** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. */
@@ -1076,6 +1089,19 @@ async function fetchParametricSources(source: ParametricSourceInfo | undefined):
  *  twice over (platesAndSourcesFromZip), get the same folders. */
 const ZIP_FOLDER_EXTS: ReadonlySet<string> = new Set([...MULTI_FILE_PLATE_EXTS, ...PARAMETRIC_SOURCE_EXTS]);
 
+/** A zip's plates and scripts, each with the folder it's in, less the top folders every one of them shares. */
+async function placedZipEntries(
+  zipPath: string,
+): Promise<{ entry: ZipEntryInfo; parts: string[]; folder: string | null }[]> {
+  return withoutSharedTop(
+    (await listZipEntries(zipPath))
+      .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
+      .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
+      .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()))
+      .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) })),
+  );
+}
+
 /** The entries of a downloaded zip whose extension is one of `exts`, each written to its own temp file and kept in the
  *  folder it has in the zip, less the top folders every file in it shares (a zip named after its model holding one
  *  folder named after it again); the zip itself is left for the caller. An archive holding none of the files wanted
@@ -1088,13 +1114,9 @@ async function filesFromZip(
 ): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
-    const entries = withoutSharedTop(
-      (await listZipEntries(zipPath))
-        .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
-        .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
-        .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()))
-        .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) })),
-    ).filter(({ parts }) => exts.has(path.extname(parts.at(-1)!).toLowerCase()));
+    const entries = (await placedZipEntries(zipPath)).filter(({ parts }) =>
+      exts.has(path.extname(parts.at(-1)!).toLowerCase()),
+    );
     for (const { entry, parts, folder } of entries) {
       const filename = sanitizeFilename(parts.at(-1)!);
       const tempFilePath = path.join(

@@ -9,7 +9,7 @@ import Box from "@mui/material/Box";
 import PrintIcon from "@mui/icons-material/Print";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
 import { fileRowText } from "./fileRowText";
-import { shortNames } from "../../utils/fileFolders";
+import { folderLabel, shortNames } from "../../utils/fileFolders";
 import type { SlicerTarget } from "./useOpenInSlicer";
 import type { NormalizeState } from "./useNormalizedOpen";
 
@@ -75,8 +75,10 @@ export default function SlicerFileMenu({
           ? fileRowText(t, target.filename, target.index, target.folder, names.get(target.key))
           : { primary: t("models:detail.preparedPrintFile"), secondary: target.filename };
         const state = normalized?.stateOf(target) ?? "idle";
-        if (state === "preparing") text.secondary = t("models:detail.normalizePreparingShort");
-        if (state === "ready") text.secondary = t("models:detail.normalizeReadyShort");
+        // The folder stays beside the state: two files of one name are told apart by theirs.
+        const withFolder = (status: string) => (target.folder ? `${folderLabel(target.folder)} · ${status}` : status);
+        if (state === "preparing") text.secondary = withFolder(t("models:detail.normalizePreparingShort"));
+        if (state === "ready") text.secondary = withFolder(t("models:detail.normalizeReadyShort"));
         const action = normalized
           ? {
               disabled: state === "preparing",
