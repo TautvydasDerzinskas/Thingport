@@ -124,6 +124,14 @@ describe("a zip's files", () => {
 
   // Read twice over, a zip wrapped in another must still lose the same levels for both: here the script stays beside
   // the "parts" folder it would read from, rather than the part losing it.
+  // The files beside a zip count too: a script at the top keeps the folder the zip of its parts gives them.
+  it("keep a zip's folder for its files when a script sits beside it", async () => {
+    const parts = await zipOf({ "part.stl": "solid p endsolid" });
+    const zipPath = await zipOf({ "main.scad": 'import("parts/part.stl");', "parts.zip": fs.readFileSync(parts) });
+    expect(placesOf(await modelFilesFromZip(zipPath))).toEqual(["parts/part.stl"]);
+    expect(placesOf(await parametricSourcesFromZip(zipPath))).toEqual(["main.scad"]);
+  });
+
   it("give a wrapped zip's plates and scripts the same folders too", async () => {
     const inner = await zipOf({
       "pack/main.scad": 'import("parts/part.stl");',

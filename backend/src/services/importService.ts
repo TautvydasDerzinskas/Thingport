@@ -1004,8 +1004,9 @@ async function filesFromNestedZips(
   );
   const inputs: NewPlateInput[] = [];
   // Every importable file's folder, of both kinds whichever this call takes, so the plates and the scripts of a zip
-  // read twice over (platesAndSourcesFromZip) lose the same levels.
-  const everyFolder: (string | null)[] = [];
+  // read twice over (platesAndSourcesFromZip) lose the same levels. The files beside the zips count too: a script at
+  // the top keeps the folder the zip of its parts gives them.
+  const everyFolder: (string | null)[] = (await zipEntriesInFolders(zipPath)).map((placed) => placed.folder);
   try {
     for (const entry of nested) {
       if (budget.archives <= 0 || budget.bytes <= 0) break;
@@ -1093,13 +1094,18 @@ const ZIP_FOLDER_EXTS: ReadonlySet<string> = new Set([...MULTI_FILE_PLATE_EXTS, 
 async function placedZipEntries(
   zipPath: string,
 ): Promise<{ entry: ZipEntryInfo; parts: string[]; folder: string | null }[]> {
-  return withoutSharedTop(
-    (await listZipEntries(zipPath))
-      .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
-      .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
-      .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()))
-      .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) })),
-  );
+  return withoutSharedTop(await zipEntriesInFolders(zipPath));
+}
+
+/** A zip's plates and scripts, each with the folder it's in, as the zip has it. */
+async function zipEntriesInFolders(
+  zipPath: string,
+): Promise<{ entry: ZipEntryInfo; parts: string[]; folder: string | null }[]> {
+  return (await listZipEntries(zipPath))
+    .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
+    .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
+    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()))
+    .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) }));
 }
 
 /** The entries of a downloaded zip whose extension is one of `exts`, each written to its own temp file and kept in the
