@@ -25,7 +25,7 @@ instance or account, so the new one has to be told.
   finishes or is cancelled, or that tab is closed, and it can't finish a pairing more than 15 minutes old.
 - **A session token** your Thingport instance issues when the extension signs in, and when it expires.
 - **Your settings:** whether the extension is switched on, which Offline features are on (the MakerWorld Download
-  normalized button, Thingiverse dark mode and hidden Thingiverse ads), whether your Thingport account is an admin's,
+  adapted button, Thingiverse dark mode and hidden Thingiverse ads), whether your Thingport account is an admin's,
   and whether your instance gives everyone an import queue of their own, so the import panel knows whether to offer
   **Add to the queue**. Which optional sites you turned on is kept by your browser, as the access you granted.
 - **Recent imports:** the title, a link, the address of the page it was imported from and of that page's picture of

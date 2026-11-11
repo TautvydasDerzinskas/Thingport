@@ -10,8 +10,9 @@ new one as you type (on a list's page, the models it lists instead). It imports 
 "Add > Import" does.
 
 It's useful without Thingport too: on MakerWorld model pages it adds a **Download adapted**
-button that saves the Bambu Studio project as a copy made for your slicer, so it opens there with its colors and print
-settings. See [Download adapted](#download-adapted-no-thingport-needed).
+button that saves the Bambu Studio project as a copy for the slicer your Thingport instance opens files in, or, without
+one, the copy PrusaSlicer and the slicers like it open with its colors and print settings. See
+[Download adapted](#download-adapted-no-thingport-needed).
 It can also give Thingiverse a [dark theme and hide its ads](#thingiverse-dark-mode-and-hidden-ads-no-thingport-needed).
 
 <table>

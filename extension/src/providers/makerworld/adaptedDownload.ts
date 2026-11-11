@@ -270,8 +270,8 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
       label.textContent = "Downloaded";
       if (note) showBubble(note, false, true);
       await new Promise((resolve) => setTimeout(resolve, DONE_RESET_MS));
-      // Not offered to a slicer that needs no copy, now that it's known.
-      if (target.known && !planFor(MAKERWORLD_FORMAT, slicer)) unmountAdaptedDownload();
+      // Not offered to a slicer that needs no copy, now that it's known; only this button, if the page moved on.
+      if (host === el && target.known && !planFor(MAKERWORLD_FORMAT, slicer)) unmountAdaptedDownload();
     } catch (err) {
       showBubble(err instanceof Error ? err.message : String(err), true);
     } finally {
