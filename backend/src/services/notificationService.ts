@@ -52,8 +52,9 @@ export async function createNotification(
     internalPath?: string | null;
     group?: Prisma.InputJsonValue;
   },
+  db: Prisma.TransactionClient = prisma,
 ): Promise<void> {
-  await prisma.notification.create({
+  await db.notification.create({
     data: {
       userId,
       type: data.type,

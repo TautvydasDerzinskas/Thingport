@@ -41,20 +41,29 @@ export async function notifyOutdatedBridge(userId: string, running: string, late
   if (!latest || compareVersions(running, latest) >= 0) return false;
   const key = `${userId}\n${latest}`;
   if (told.has(key)) return false;
-  // The receipt is the lock, so two files downloaded at once still make one notification.
-  const { count } = await prisma.systemReceipt.createMany({
-    data: [{ userId, systemId: `${BRIDGE_UPDATE_RECEIPT_PREFIX}${latest}` }],
-    skipDuplicates: true,
+  // The receipt is the lock, so two files downloaded at once still make one notification. One transaction, so a
+  // notification that fails to save leaves no receipt, and the next download tries again.
+  const sent = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.systemReceipt.createMany({
+      data: [{ userId, systemId: `${BRIDGE_UPDATE_RECEIPT_PREFIX}${latest}` }],
+      skipDuplicates: true,
+    });
+    if (count) {
+      await createNotification(
+        userId,
+        {
+          type: "system",
+          title: `Thingport Bridge ${latest} is available`,
+          message: { key: "bridgeUpdate", values: { version: latest } },
+          internalPath: "/downloads",
+        },
+        tx,
+      );
+    }
+    return count > 0;
   });
   told.add(key);
-  if (!count) return false;
-  await createNotification(userId, {
-    type: "system",
-    title: `Thingport Bridge ${latest} is available`,
-    message: { key: "bridgeUpdate", values: { version: latest } },
-    internalPath: "/downloads",
-  });
-  return true;
+  return sent;
 }
 
 /** A slicer link fetched by someone's Bridge. Never holds up the download. */

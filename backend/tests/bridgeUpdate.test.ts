@@ -19,6 +19,22 @@ const repo = vi.hoisted(() => {
   return dir;
 });
 
+// Fails the next notification to be saved, when set.
+const failing = vi.hoisted(() => ({ next: false }));
+vi.mock("../src/services/notificationService", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../src/services/notificationService")>();
+  return {
+    ...real,
+    createNotification: async (...args: Parameters<typeof real.createNotification>) => {
+      if (failing.next) {
+        failing.next = false;
+        throw new Error("couldn't save the notification");
+      }
+      return real.createNotification(...args);
+    },
+  };
+});
+
 beforeAll(() => {
   fs.mkdirSync(path.join(repo, "bridge"), { recursive: true });
 });
@@ -108,6 +124,16 @@ describe("the update notice", () => {
     ]);
     expect(sent.filter(Boolean)).toHaveLength(1);
     expect(await bridgeNotices(id)).toHaveLength(1);
+  });
+
+  it("is tried again when the notification couldn't be saved", async () => {
+    const { id } = await register("retry");
+    failing.next = true;
+    await expect(notifyOutdatedBridge(id, "1.0.1", "4.0.0")).rejects.toThrow("couldn't save the notification");
+    expect(await prisma.systemReceipt.count({ where: { userId: id } })).toBe(0);
+
+    expect(await notifyOutdatedBridge(id, "1.0.1", "4.0.0")).toBe(true);
+    expect((await bridgeNotices(id)).map((n) => n.title)).toEqual(["Thingport Bridge 4.0.0 is available"]);
   });
 
   it("comes when an older Bridge downloads through a slicer link", async () => {
