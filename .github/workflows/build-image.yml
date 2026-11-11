@@ -40,6 +40,22 @@ on:
         required: false
         type: string
         default: ""
+      wait_for_workflow:
+        description: >-
+          The other image's workflow file, e.g. frontend-image.yml: the image is pushed untagged and only tagged once
+          wait_for_job has succeeded in that workflow's run for the same commit, or straight away when it has none.
+          Empty to tag it as it's pushed
+        required: false
+        type: string
+        default: ""
+      wait_for_job:
+        description: >-
+          The job in wait_for_workflow to wait for, as the API names it, e.g. build / build. Empty to wait instead
+          until that workflow has no run queued or in progress on this branch, whatever its commit, and then tag
+          the image even if one failed
+        required: false
+        type: string
+        default: ""
 
 jobs:
   build:
@@ -49,6 +65,10 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+      digest: ${{ steps.build.outputs.digest }}
+      tags: ${{ steps.meta.outputs.tags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -107,7 +127,15 @@ jobs:
             # main, not "the default branch": that's develop now, and :latest is what's released.
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
+      # The owner in a registry path must be lower case; the tags above already are.
+      - name: Image name
+        id: image
+        env:
+          IMAGE: ${{ inputs.image_name }}
+        run: echo "name=${IMAGE,,}" >> "$GITHUB_OUTPUT"
+
       - name: Build (and push)
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ${{ inputs.context }}
@@ -115,11 +143,67 @@ jobs:
           # arm64 covers Apple Silicon and most ARM NAS units, built via QEMU on amd64 runners (the frontend's
           # Node stages run natively; see frontend/Dockerfile).
           platforms: linux/amd64,linux/arm64
-          push: ${{ inputs.push }}
-          tags: ${{ steps.meta.outputs.tags }}
+          # Waiting for the other image, this one is pushed by its digest alone, and the publish job tags it.
+          push: ${{ inputs.push && inputs.wait_for_workflow == '' }}
+          outputs: >-
+            ${{ inputs.push && inputs.wait_for_workflow != ''
+            && format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', steps.image.outputs.name)
+            || '' }}
+          tags: ${{ inputs.wait_for_workflow == '' && steps.meta.outputs.tags || '' }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GIT_SHA=${{ github.sha }}
             RELEASE_CHANNEL=${{ github.ref == 'refs/heads/develop' && inputs.version == '' && 'dev' || 'stable' }}
           cache-from: type=gha,scope=${{ inputs.cache_scope }}
           cache-to: type=gha,mode=max,scope=${{ inputs.cache_scope }}
+
+  # Tags the image pushed above once the other image's workflow has got far enough (.github/scripts/wait-for-job.mjs).
+  # Everything slow is done by then, so the two images' tags move seconds apart.
+  publish:
+    needs: build
+    if: inputs.push && inputs.wait_for_workflow != ''
+    runs-on: ubuntu-latest
+    # The wait gives up after 40 minutes, time for the other image's build or a re-run of it.
+    timeout-minutes: 45
+    permissions:
+      actions: read # the other workflow's run
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Wait for ${{ inputs.wait_for_job || 'the runs' }} in ${{ inputs.wait_for_workflow }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW: ${{ inputs.wait_for_workflow }}
+          JOB: ${{ inputs.wait_for_job }}
+        run: node .github/scripts/wait-for-job.mjs "$WORKFLOW" "$JOB" 40
+
+      - name: Tag the image
+        env:
+          IMAGE: ${{ needs.build.outputs.image }}
+          DIGEST: ${{ needs.build.outputs.digest }}
+          TAGS: ${{ needs.build.outputs.tags }}
+        run: |
+          args=()
+          while IFS= read -r tag; do
+            [ -z "$tag" ] || args+=(--tag "$tag")
+          done <<< "$TAGS"
+          if [ -z "$IMAGE" ] || [ -z "$DIGEST" ] || [ ${#args[@]} -eq 0 ]; then
+            echo "::error::The build job passed on no image, digest or tags to publish."
+            exit 1
+          fi
+          docker buildx imagetools create "${args[@]}" "$IMAGE@$DIGEST"
