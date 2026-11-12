@@ -9,8 +9,8 @@ panel: the model's picture and name as the page shows them, and one box that pic
 new one as you type (on a list's page, the models it lists instead). It imports the same way Thingport's own
 "Add > Import" does.
 
-It's useful without Thingport too: on MakerWorld, Printables, Creality Cloud, Snapmaker Space and NexPrint model pages it
-adds a **Download adapted**
+It's useful without Thingport too: on MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint, MakerOnline and
+eufyMake model pages it adds a **Download adapted**
 button that saves the model's 3MF as a copy made for your slicer and printer, picked in its popup (or your
 Thingport instance's, once connected). See [Download adapted](#download-adapted-no-thingport-needed).
 It can also give Thingiverse a [dark theme and hide its ads](#thingiverse-dark-mode-and-hidden-ads-no-thingport-needed).
@@ -135,7 +135,8 @@ MakerWorld's files are Bambu Studio projects, which PrusaSlicer, Cura, eufyMake 
 OrcaSlicer often open without their colors, parts or print settings, or with questions about the file's version.
 Printables' 3MFs come from PrusaSlicer as often as from Bambu Studio, and the Bambu family opens a PrusaSlicer project
 with none of its settings, colors or beds. Creality Cloud's are Creality Print projects, Snapmaker Space's Snapmaker Orca
-ones and NexPrint's Elegoo Slicer ones, which other slicers question or mis-read in the same ways. A project made for
+ones, NexPrint's Elegoo Slicer ones and MakerOnline's Anycubic Slicer Next ones, and eufyMake's print files are eufyMake
+Studio projects, which other slicers question or mis-read in the same ways. A project made for
 someone else's printer also opens on theirs. On a model page of any of these sites, the extension adds **Download
 adapted**: it downloads the model's 3MF (the print profile picked on the page, or on Printables the 3MF you pick) and
 saves a copy made for your slicer and, where your slicer loads a printer's presets by name, for your printer: that
@@ -146,9 +147,10 @@ slicer's presets for it, the designer's settings on top and the plates laid out 
   stays the main action. Under its label it names the copy a click makes, the last one made or else the first: "Bambu
   Lab P1S · Bambu Studio", after the file where the model has several 3MFs. Its ▾ lists the others, one per slicer,
   and one per printer for Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer and Anycubic Slicer Next, and above
-  them the model's 3MFs on Printables, or the profile it's made of where the page picks one. Its last item opens the
-  settings. Before a slicer is picked, it makes the copy PrusaSlicer and the slicers like it read, and the ▾ offers to
-  pick one. On Creality Cloud, Snapmaker Space and NexPrint it needs you signed in there, as their own Download does.
+  them the model's 3MFs on Printables, or the profile or file it's made of where the page picks one. Its last item
+  opens the settings. Before a slicer is picked, it makes the copy PrusaSlicer and the slicers like it read, and the ▾
+  offers to pick one. On Creality Cloud, Snapmaker Space, NexPrint and MakerOnline it needs you signed in there, as
+  their own Download does.
 - **In a file's row:** on Printables' **Files** tab, every 3MF also gets an **Adapted** button under its own Download,
   and on NexPrint every profile 3MF in its Files list one beside its own buttons; its menu lists that file's copies.
 - **In Grab's bubble instead:** where the settings say so, or where the site's own button can't be found, the copies
@@ -157,7 +159,8 @@ slicer's presets for it, the designer's settings on top and the plates laid out 
   **Download adapted** under the import shows them when clicked.
 - **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance, while the popup's
   **Adapt 3MFs** switch is on, under **Offline features** (**Extra features** once connected), on a model with a 3MF,
-  on a site the extension runs on (Creality Cloud, Snapmaker Space and NexPrint once you allow them). A paid model you
+  on a site the extension runs on (Creality Cloud, Snapmaker Space, NexPrint, MakerOnline and eufyMake once you allow
+  them). A paid model you
   haven't bought, or one for a site's members, gets none, as the site offers no download of it either. A
   slicer that opens every kind of 3MF the site has as it is gets no copy unless one is made for a printer, and a file
   your slicer opens as it is downloads as it is. Connected, nor does a slicer whose **Open adapted** you switched off in

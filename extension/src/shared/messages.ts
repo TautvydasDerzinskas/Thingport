@@ -235,6 +235,12 @@ export type BackgroundMessages = {
   };
   /** On any MakerOnline page: import what waits on the instance for Grab. How many came in. */
   RUN_MAKERONLINE_WAITING: { payload: void; result: number };
+  /** On a MakerOnline model page, for Download adapted: one 3MF's link, signed in the page as its own Download does.
+   *  `fileType` 2 is a print profile, `id` its id; 1 is a model file, `id` the model's. */
+  SIGN_MAKERONLINE_FILE: { payload: { key: string; fileType: 1 | 2; id: number; name: string }; result: string };
+  /** On a MakerOnline model page: keep the print profile and model file it picks on <html> (providers/makeronline/
+   *  pick.ts) as they change. False while the page's store isn't there yet. */
+  WATCH_MAKERONLINE_PICK: { payload: void; result: boolean };
   /** On an OwlCAD model page: export it in OwlCAD's editor, then import it. A library part needs no export, and is
    *  imported as any link is. */
   IMPORT_OWLCAD_MODEL: {

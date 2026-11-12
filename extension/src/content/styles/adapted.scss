@@ -131,6 +131,40 @@
   --nd-line: 1px;
 }
 
+// MakerOnline's: its blue, MiSans, 4px corners. It shows no dark theme in a browser.
+:host([data-site="makeronline"]) {
+  --nd-accent: #005aff;
+  --nd-text: #005aff;
+  --nd-hover: rgba(0, 90, 255, 0.06);
+  --nd-surface: #ffffff;
+  --nd-border: #e5e5e5;
+  --nd-ink: #333333;
+  --nd-muted: #666666;
+  --nd-row-hover: #f5f8ff;
+  --nd-shadow: rgba(0, 0, 0, 0.14);
+  --nd-font: MiSans, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --nd-radius: 4px;
+  --nd-line: 1px;
+}
+
+// eufyMake's: its green on its dark grey, 4px corners. It has no light theme, and loads no font of its own, so its
+// buttons fall back to Roboto, Helvetica or Arial.
+:host([data-site="eufymake"]),
+:host([data-site="eufymake"][data-dark]) {
+  --nd-accent: #88f387;
+  --nd-text: #88f387;
+  --nd-hover: rgba(136, 243, 135, 0.06);
+  --nd-surface: #1d1f22;
+  --nd-border: #434447;
+  --nd-ink: #ffffff;
+  --nd-muted: rgba(255, 255, 255, 0.6);
+  --nd-row-hover: #282a2c;
+  --nd-shadow: rgba(0, 0, 0, 0.5);
+  --nd-font: Roboto, Helvetica, Arial, sans-serif;
+  --nd-radius: 4px;
+  --nd-line: 1px;
+}
+
 // Under a full-width button, like MakerWorld's split "Open in Bambu Studio" one. Its spacing is set on the host
 // itself (site.ts placeAfter), where a page's reset can't undo it.
 :host([data-below]) {

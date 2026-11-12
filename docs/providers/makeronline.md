@@ -24,6 +24,10 @@ MakerOnline's download call wants a token that only its own anti-bot script make
 
 If MakerOnline asks for a captcha, download one file from a model page by hand and solve it, then reload.
 
+Its print profiles are Anycubic Slicer Next projects; other slicers open them as
+[adapted 3MFs](../features/adapted-3mf.md), and Grab's **Download adapted**, under a model's Download, saves one made for
+yours. Like the site's own Download, it needs your MakerOnline sign-in.
+
 ## Setup: your sign-in
 
 Per-user (**Configuration → Providers → MakerOnline**), only for your likes and private collections. Opening
