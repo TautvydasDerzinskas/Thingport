@@ -16,7 +16,13 @@ import {
 } from "./modelAssets";
 import { plainWriteMode, reuseMarker, shareStoredBytes, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
-import { ensureAssetHome, plateThumbExists, plateThumbReplaceable, saveThumbFromBytes } from "./printService";
+import {
+  ensureAssetHome,
+  plateThumbExists,
+  plateThumbPath,
+  plateThumbReplaceable,
+  saveThumbFromBytes,
+} from "./printService";
 import { Prisma, type PreviewImage } from "@prisma/client";
 
 /** `home` is the image's model's Print.assetsPath. */
@@ -114,14 +120,19 @@ export async function addPreviewImage(
   }
 }
 
-/** An existing image (e.g. an import's cover) always wins. */
-export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Buffer): Promise<void> {
+/** An existing image (e.g. an import's cover) always wins. True when this one became the cover. */
+export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Buffer): Promise<boolean> {
   const count = await prisma.previewImage.count({ where: { printId } });
-  if (count > 0) return;
+  if (count > 0) return false;
   const added = await addPreviewImage(printId, buffer, { generated: true });
+  if (!added) return false;
   // Something landed while this render was being written -- another plate's, or a picture. Anywhere but the
   // front of the gallery means it wasn't first after all, and only the first render stands in for a picture.
-  if (added && added.position > 0) await removePreviewImage(printId, added.id).catch(() => undefined);
+  if (added.position > 0) {
+    await removePreviewImage(printId, added.id).catch(() => undefined);
+    return false;
+  }
+  return true;
 }
 
 /** Drops our own renders, so the images that replace them start at position 0. */
@@ -192,37 +203,49 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
 // slate, like the live viewer's model.
 const RENDER_THUMB_SHADE = [0.58, 0.64, 0.72, 1];
 
+/** Whether `file` was last written before `other`; false where either can't be read. */
+async function writtenBefore(file: string, other: string): Promise<boolean> {
+  try {
+    const [a, b] = await Promise.all([fs.stat(file), fs.stat(other)]);
+    return a.mtimeMs < b.mtimeMs;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Our own render stands in as the plate's thumb, and the model's cover, while it has no picture at all, so
- * mosaics and lists that show thumbs have one without the model being opened. A thumb of our own is drawn again
- * from a render drawn anew (`drawn`), which an older renderer may have drawn differently -- one turned rotated parts
- * the wrong way; one from an import or an upload stays.
+ * mosaics and lists that show thumbs have one without the model being opened. A thumb of our own older than the
+ * render is drawn again from it: the render was drawn anew since, by a renderer that may draw differently (an older
+ * one turned rotated parts the wrong way), and a redraw that failed gets another go on the render's next view. One
+ * from an import or an upload stays.
  *
  * The thumb is always the one-colour render, tinted: a list of models reads as one set in whatever colour the
  * reader picked, and the Appearance panel's render colour goes on working. The cover is the picture in the
  * model's own colours where the file carried any -- that one is the model's page shown large, where the thing
  * as it would be printed is what someone is looking for.
+ *
+ * "covered" when this render became the cover too, "adopted" when it's the thumb only.
  */
 async function adoptRenderAsThumb(
   plateId: string,
   renderPath: string,
   colorPath: string | null,
-  drawn: boolean,
-): Promise<"adopted" | "redrawn" | null> {
+): Promise<"covered" | "adopted" | "redrawn" | null> {
   const plate = await prisma.plate.findUnique({
     where: { id: plateId },
     select: { printId: true, thumbGenerated: true },
   });
   if (!plate) return null;
-  const had = plateThumbExists(plateId, await plateAssetHome(plateId));
-  if (had && !(drawn && plate.thumbGenerated)) return null;
+  const home = await plateAssetHome(plateId);
+  const had = plateThumbExists(plateId, home);
+  if (had && !(plate.thumbGenerated && (await writtenBefore(plateThumbPath(plateId, home), renderPath)))) return null;
   const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
   if (!(await saveThumbFromBytes(plateId, buffer))) return null;
   await prisma.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
   if (had) return "redrawn";
   const cover = colorPath ? await fs.readFile(colorPath).catch(() => buffer) : buffer;
-  await addGeneratedPreviewImageIfNone(plate.printId, cover);
-  return "adopted";
+  return (await addGeneratedPreviewImageIfNone(plate.printId, cover)) ? "covered" : "adopted";
 }
 
 /**
@@ -253,12 +276,13 @@ async function replaceGeneratedCover(plateId: string, cover: Buffer): Promise<vo
 /** Queues the model card's render. Never throws. */
 export function generateCardRender(plateId: string, srcPath: string, filename: string): Promise<void> {
   return generateModelImage(plateId, srcPath, filename, "render", async (renderPath, colorPath, drawn) => {
-    const thumb = await adoptRenderAsThumb(plateId, renderPath, colorPath, drawn).catch((err: unknown) => {
+    const thumb = await adoptRenderAsThumb(plateId, renderPath, colorPath).catch((err: unknown) => {
       console.error(`Render thumb failed for ${plateId}:`, err);
       return null;
     });
-    // A cover just made from this render is this render already.
-    if (!drawn || thumb === "adopted") return;
+    // A cover just made from this render is this render already. One a later plate's render made first is the
+    // first plate's to take.
+    if (!drawn || thumb === "covered") return;
     try {
       const cover = colorPath ? await fs.readFile(colorPath) : await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
       await replaceGeneratedCover(plateId, cover);

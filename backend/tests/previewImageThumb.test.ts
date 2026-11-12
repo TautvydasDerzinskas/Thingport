@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -133,7 +133,7 @@ describe("a 3D render saved before uploaded images land", () => {
   });
 });
 
-describe("our own thumb and cover, from an older render", () => {
+describe("our own thumb and cover", () => {
   // Each render is this test's own: an upload doesn't start one.
   let previousPreviewMode: Awaited<ReturnType<typeof getPreviewMode>>;
   beforeAll(async () => {
@@ -176,6 +176,67 @@ describe("our own thumb and cover, from an older render", () => {
     await forgetRender();
     await generateCardRender(plate.id, src, plate.filename);
     expect(await greenOf(await thumb())).toBeLessThan(20);
+  });
+
+  it("are drawn again on the render's next view where drawing them failed", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const src = resolvePlateFilePath(plate)!;
+    const thumb = async () => plateThumbPath(plate.id, await plateAssetHome(plate.id));
+    await generateCardRender(plate.id, src, plate.filename);
+    // As an older renderer left it, then the render drawn anew while saving the new thumb fails.
+    await saveThumbFromBytes(plate.id, await png(250));
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: true } });
+    await fs.rm(modelImagePath(plate.id, await plateAssetHome(plate.id)), { force: true });
+    const thumbFile = path.basename(await thumb());
+    const rename = fs.rename;
+    const failing = vi.spyOn(fs, "rename").mockImplementation(async (from, to) => {
+      if (path.basename(String(to)) !== thumbFile) return rename(from, to);
+      throw Object.assign(new Error("ENOSPC: no space left on device"), { code: "ENOSPC" });
+    });
+    try {
+      await generateCardRender(plate.id, src, plate.filename);
+    } finally {
+      failing.mockRestore();
+    }
+    expect(await greenOf(await thumb())).toBeLessThan(20);
+    // A view of the render, which doesn't draw it again.
+    await generateCardRender(plate.id, src, plate.filename);
+    expect(await greenOf(await thumb())).toBeGreaterThan(40);
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(true);
+    // Drawn from this render now, so the next view leaves it.
+    const drawnAt = (await fs.stat(await thumb())).mtimeMs;
+    await generateCardRender(plate.id, src, plate.filename);
+    expect((await fs.stat(await thumb())).mtimeMs).toBe(drawnAt);
+  });
+
+  it("lead the model with its first plate, whichever plate drew first", async () => {
+    const print = await uploadStl();
+    const first = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const second = await prisma.plate.create({
+      data: {
+        printId: print.id,
+        position: 1,
+        filename: "second.stl",
+        mime: "model/stl",
+        storagePath: `${first.storagePath}.second`,
+      },
+    });
+    const src = resolvePlateFilePath(first)!;
+    const covers = () => prisma.previewImage.findMany({ where: { printId: print.id } });
+    // The second plate draws first, and its render stands in meanwhile.
+    await generateCardRender(second.id, src, second.filename);
+    const [fromSecond] = await covers();
+    expect(fromSecond.generated).toBe(true);
+    await generateCardRender(first.id, src, first.filename);
+    const afterFirst = await covers();
+    expect(afterFirst).toHaveLength(1);
+    expect(afterFirst[0].generated).toBe(true);
+    expect(afterFirst[0].id).not.toBe(fromSecond.id);
+    // The second plate's next render leaves it.
+    await fs.rm(modelImagePath(second.id, await plateAssetHome(second.id)), { force: true });
+    await generateCardRender(second.id, src, second.filename);
+    expect((await covers()).map((image) => image.id)).toEqual([afterFirst[0].id]);
   });
 });
 
